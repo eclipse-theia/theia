@@ -17,11 +17,11 @@
 import { inject, injectable, postConstruct } from "inversify";
 import { MergeConflict } from "./merge-conflict";
 import { TextEditor, EditorManager, EditorWidget } from "@theia/editor/lib/browser";
-import { Emitter, Event, DisposableCollection } from "@theia/core";
+import { Emitter, Event } from "@theia/core";
 import { Deferred } from "@theia/core/lib/common/promise-util";
 import { MergeConflictsParser } from "./merge-conflicts-parser";
 
-import throttle = require('lodash.throttle');
+import debounce = require('lodash.debounce');
 
 @injectable()
 export class MergeConflictsProvider {
@@ -35,17 +35,16 @@ export class MergeConflictsProvider {
     protected readonly onDidUpdateEmitter = new Emitter<MergeConflictsUpdate>();
     readonly onDidUpdate: Event<MergeConflictsUpdate> = this.onDidUpdateEmitter.event;
 
-    deferredValues = new Map<string, Deferred<MergeConflictsUpdate>>();
-    timeouts = new Map<string, number>();
+    protected values = new Map<string, Promise<MergeConflict[]>>();
+    protected valueTimeouts = new Map<string, number>();
 
     @postConstruct()
     protected initialize() {
         this.editorManager.onCreated(w => this.handleNewEditor(w));
     }
 
-    get(uri: string): Promise<MergeConflictsUpdate | undefined> {
-        const deferred = this.deferredValues.get(uri);
-        return deferred ? deferred.promise : Promise.resolve(undefined);
+    get(uri: string): Promise<MergeConflict[] | undefined> {
+        return this.values.get(uri) || Promise.resolve(undefined);
     }
 
     protected handleNewEditor(editorWidget: EditorWidget): void {
@@ -54,33 +53,36 @@ export class MergeConflictsProvider {
         if (uri.scheme !== 'file') {
             return;
         }
-        const toDispose = new DisposableCollection();
-        toDispose.push(editor.onDocumentContentChanged(throttle(document => this.contentChanged(editor), 500)));
-        editorWidget.disposed.connect(() => {
-            toDispose.dispose();
-        });
-        this.contentChanged(editor);
+        const debouncedUpdate = debounce(() => this.updateMergeConflicts(editor), 200, { leading: true });
+        const disposable = editor.onDocumentContentChanged(() => debouncedUpdate());
+        editorWidget.disposed.connect(() => disposable.dispose());
+        debouncedUpdate();
     }
 
-    protected contentChanged(editor: TextEditor): void {
+    protected updateMergeConflicts(editor: TextEditor): void {
         const uri = editor.uri.toString();
-        const deferred = new Deferred<MergeConflictsUpdate>();
-        this.deferredValues.set(uri, deferred);
+        if (this.valueTimeouts.has(uri)) {
+            window.clearTimeout(this.valueTimeouts.get(uri));
+        }
+        const deferred = new Deferred<MergeConflict[]>();
+        this.values.set(uri, deferred.promise);
         window.setTimeout(() => {
             const mergeConflicts = this.computeMergeConflicts(editor);
-            this.onDidUpdateEmitter.fire(mergeConflicts);
+            this.onDidUpdateEmitter.fire({ editor, mergeConflicts });
             deferred.resolve(mergeConflicts);
-        }, 100);
+        }, 50);
+        this.valueTimeouts.set(uri, window.setTimeout(() => {
+            this.values.delete(uri);
+        }, 1000));
     }
 
-    protected computeMergeConflicts(editor: TextEditor): MergeConflictsUpdate {
+    protected computeMergeConflicts(editor: TextEditor): MergeConflict[] {
         const document = editor.document;
         const input = <MergeConflictsParser.Input>{
             lineCount: document.lineCount,
             getLine: number => document.getLineContent(number + 1),
         };
-        const mergeConflicts: MergeConflict[] = this.mergeConflictParser.parse(input);
-        return { editor, mergeConflicts };
+        return this.mergeConflictParser.parse(input);
     }
 
 }
