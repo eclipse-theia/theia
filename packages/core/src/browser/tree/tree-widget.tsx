@@ -133,7 +133,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected rows = new Map<string, TreeWidget.NodeRow>();
-    protected updateRows(): void {
+    protected updateRows = debounce(() => this.doUpdateRows(), 10);
+    protected doUpdateRows(): void {
         const root = this.model.root;
         if (root) {
             const depths = new Map<CompositeTreeNode | undefined, number>();
