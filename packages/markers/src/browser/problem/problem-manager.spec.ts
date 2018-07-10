@@ -19,6 +19,7 @@ import * as chai from 'chai';
 import { ProblemManager } from './problem-manager';
 import URI from "@theia/core/lib/common/uri";
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
+import { Event } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -27,17 +28,18 @@ const expect = chai.expect;
 let manager: ProblemManager;
 let testContainer: Container;
 
-before(async () => {
+before(() => {
     testContainer = new Container();
     testContainer.bind(ILogger).to(MockLogger);
     testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
     testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
     // tslint:disable-next-line:no-any
-    testContainer.bind(FileSystemWatcher).toConstantValue(<any>undefined);
+    testContainer.bind(FileSystemWatcher).toConstantValue({
+        onFilesChanged: Event.None
+    } as FileSystemWatcher);
     testContainer.bind(ProblemManager).toSelf();
 
     manager = testContainer.get(ProblemManager);
-    await manager.initialized;
     manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
         {
             range: {
@@ -98,13 +100,13 @@ before(async () => {
 });
 
 describe('problem-manager', () => {
-    it('replaces markers', async () => {
+    it('replaces markers', () => {
         let events = 0;
         manager.onDidChangeMarkers(() => {
             events++;
         });
         expect(events).equal(0);
-        const previous = await manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
+        const previous = manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
             {
                 range: {
                     start: {
@@ -154,11 +156,5 @@ describe('problem-manager', () => {
         expect(manager.findMarkers({
             dataFilter: data => data.range.end.character > 1
         }).length).equal(1);
-    });
-
-    it('should persist markers', async () => {
-        const newManager = testContainer.get(ProblemManager);
-        await newManager.initialized;
-        expect(newManager.findMarkers().length).eq(4);
     });
 });
