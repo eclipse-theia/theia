@@ -56,7 +56,7 @@ function downloadJavaServer() {
                 const statusCode = response.statusCode;
                 const redirectLocation = response.headers.location;
                 if (statusCode >= 300 && statusCode < 400 && redirectLocation) {
-                    console.log("redirect location: " + redirectLocation)
+                    console.log('Redirect location: ' + redirectLocation);
                     downloadWithRedirect(redirectLocation);
                 } else if (statusCode === 200) {
                     response.on('end', () => resolve());

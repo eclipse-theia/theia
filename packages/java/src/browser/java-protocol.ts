@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { RequestType, NotificationType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
+import { VersionedTextDocumentIdentifier, TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
 
 export interface StatusReport {
     message: string;
@@ -33,10 +33,24 @@ export interface ActionableMessage {
     commands?: Command[];
 }
 
+export interface SemanticHighlightingParams {
+    readonly textDocument: VersionedTextDocumentIdentifier;
+    readonly lines: SemanticHighlightingInformation[];
+}
+
+export interface SemanticHighlightingInformation {
+    readonly line: number;
+    readonly tokens: string | undefined;
+}
+
 export namespace ClassFileContentsRequest {
     export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>('java/classFileContents');
 }
 
 export namespace ActionableNotification {
     export const type = new NotificationType<ActionableMessage, void>('language/actionableNotification');
+}
+
+export namespace SemanticHighlight {
+    export const type = new NotificationType<SemanticHighlightingParams, void>('textDocument/semanticHighlighting');
 }

@@ -89,17 +89,25 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
      */
     deltaDecorations(params: DeltaDecorationParams): string[];
 
+    /**
+     * Gets all the decorations for the lines between `startLineNumber` and `endLineNumber` as an array.
+     * @param startLineNumber The start line number.
+     * @param endLineNumber The end line number.
+     * @return An array with the decorations.
+     */
+    getLinesDecorations(startLineNumber: number, endLineNumber: number): EditorDecoration[];
+
     getVisibleColumn(position: Position): number;
 
     /**
-     * Replaces the text of source given in ReplacetextParams.
+     * Replaces the text of source given in ReplaceTextParams.
      * @param params: ReplaceTextParams
      */
     replaceText(params: ReplaceTextParams): Promise<boolean>;
 
     /**
      * Execute edits on the editor.
-     * @param edits: edits created with `lsp.TextEdit.replace`, `lsp.TextEdit.instert`, `lsp.TextEdit.del`
+     * @param edits: edits created with `lsp.TextEdit.replace`, `lsp.TextEdit.insert`, `lsp.TextEdit.del`
      */
     executeEdits(edits: lsp.TextEdit[]): boolean;
 }

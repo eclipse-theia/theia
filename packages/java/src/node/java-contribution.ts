@@ -17,10 +17,13 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as glob from 'glob';
-import { injectable } from 'inversify';
+import { Socket } from 'net';
+import { injectable, inject } from 'inversify';
+import { createSocketConnection } from 'vscode-ws-jsonrpc/lib/server';
 import { DEBUG_MODE } from '@theia/core/lib/node';
 import { IConnection, BaseLanguageServerContribution } from '@theia/languages/lib/node';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
+import { JavaCliContribution } from './java-cli-contribution';
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -31,10 +34,23 @@ configurations.set('linux', 'config_linux');
 @injectable()
 export class JavaContribution extends BaseLanguageServerContribution {
 
+    @inject(JavaCliContribution)
+    protected readonly cli: JavaCliContribution;
+
     readonly id = JAVA_LANGUAGE_ID;
     readonly name = JAVA_LANGUAGE_NAME;
 
     start(clientConnection: IConnection): void {
+
+        const socketPort = this.cli.lsPort();
+        if (socketPort) {
+            const socket = new Socket();
+            const serverConnection = createSocketConnection(socket, socket, () => socket.destroy());
+            this.forward(clientConnection, serverConnection);
+            socket.connect(socketPort);
+            return;
+        }
+
         const serverPath = path.resolve(__dirname, '..', '..', 'server');
         const jarPaths = glob.sync('**/plugins/org.eclipse.equinox.launcher_*.jar', { cwd: serverPath });
         if (jarPaths.length === 0) {
@@ -49,17 +65,20 @@ export class JavaContribution extends BaseLanguageServerContribution {
         }
         const configurationPath = path.resolve(serverPath, configuration);
         const command = 'java';
-        const args = [
+        const args: string[] = [];
+
+        if (DEBUG_MODE) {
+            args.push('-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1044');
+        }
+
+        args.push(...[
             '-Declipse.application=org.eclipse.jdt.ls.core.id1',
             '-Dosgi.bundles.defaultStartLevel=4',
             '-Declipse.product=org.eclipse.jdt.ls.core.product'
-        ];
+        ]);
 
         if (DEBUG_MODE) {
-            args.push(
-                '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044',
-                '-Dlog.level=ALL'
-            );
+            args.push('-Dlog.level=ALL');
         }
 
         args.push(
