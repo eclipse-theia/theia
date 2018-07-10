@@ -16,8 +16,12 @@
 
 import { injectable } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "@theia/languages/lib/node";
-import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME } from '../common';
-import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME } from '../common';
+import {
+    TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME,
+    TYPESCRIPT_REACT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_NAME,
+    JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME,
+    JAVASCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_NAME
+} from '../common';
 
 @injectable()
 export abstract class AbstractTypeScriptContribution extends BaseLanguageServerContribution {
@@ -46,5 +50,21 @@ export class JavaScriptContribution extends AbstractTypeScriptContribution {
 
     readonly id = JAVASCRIPT_LANGUAGE_ID;
     readonly name = JAVASCRIPT_LANGUAGE_NAME;
+
+}
+
+@injectable()
+export class TypeScriptReactContribution extends AbstractTypeScriptContribution {
+
+    readonly id = TYPESCRIPT_REACT_LANGUAGE_ID;
+    readonly name = TYPESCRIPT_REACT_LANGUAGE_NAME;
+
+}
+
+@injectable()
+export class JavaScriptReactContribution extends AbstractTypeScriptContribution {
+
+    readonly id = JAVASCRIPT_REACT_LANGUAGE_ID;
+    readonly name = JAVASCRIPT_REACT_LANGUAGE_NAME;
 
 }

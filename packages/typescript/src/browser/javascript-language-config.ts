@@ -14,17 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_NAME } from "../common";
+import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME, JAVASCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_NAME } from "../common";
 import { injectable } from "inversify";
 import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
 
 @injectable()
-export class TypescriptGrammarContribution implements LanguageGrammarDefinitionContribution {
+export class JavascriptGrammarContribution implements LanguageGrammarDefinitionContribution {
 
     registerTextmateLanguage(registry: TextmateRegistry) {
-        this.registerTypeScript();
-        const grammar = require('../../data/grammars/typescript.tmlanguage.json');
-        registry.registerTextMateGrammarScope('source.ts', {
+        this.registerJavaScript();
+        const grammar = require('../../data/grammars/javascript.tmlanguage.json');
+        registry.registerTextMateGrammarScope('source.js', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -33,10 +33,10 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             }
         });
 
-        registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_LANGUAGE_ID, 'source.ts');
+        registry.mapLanguageIdToTextmateGrammar(JAVASCRIPT_LANGUAGE_ID, 'source.js');
 
-        const jsxGrammar = require('../../data/grammars/typescript.tsx.tmlanguage.json');
-        registry.registerTextMateGrammarScope('source.tsx', {
+        const jsxGrammar = require('../../data/grammars/javascript.jsx.tmlanguage.json');
+        registry.registerTextMateGrammarScope('source.jsx', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -45,41 +45,48 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             }
         });
 
-        registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_REACT_LANGUAGE_ID, 'source.tsx');
+        registry.mapLanguageIdToTextmateGrammar(JAVASCRIPT_REACT_LANGUAGE_ID, 'source.jsx');
     }
 
-    protected registerTypeScript() {
+    protected registerJavaScript() {
         monaco.languages.register({
-            id: TYPESCRIPT_LANGUAGE_ID,
+            id: JAVASCRIPT_LANGUAGE_ID,
             aliases: [
-                TYPESCRIPT_LANGUAGE_NAME,
-                "typescript",
-                "ts"
+                JAVASCRIPT_LANGUAGE_NAME,
+                "javascript",
+                "js"
             ],
             extensions: [
-                ".ts"
+                ".js",
+                ".es6",
+                ".mjs",
+                ".pac"
             ],
+            filenames: [
+                "jakefile"
+            ],
+            firstLine: "^#!.*\\bnode",
             mimetypes: [
-                "text/typescript"
+                "text/javascript"
             ]
         });
 
-        monaco.languages.onLanguage(TYPESCRIPT_LANGUAGE_ID, () => {
-            monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, this.configuration);
+        monaco.languages.onLanguage(JAVASCRIPT_LANGUAGE_ID, () => {
+            monaco.languages.setLanguageConfiguration(JAVASCRIPT_LANGUAGE_ID, this.configuration);
         });
 
         monaco.languages.register({
-            id: TYPESCRIPT_REACT_LANGUAGE_ID,
+            id: JAVASCRIPT_REACT_LANGUAGE_ID,
             aliases: [
-                TYPESCRIPT_REACT_LANGUAGE_NAME,
-                "tsx"
+                JAVASCRIPT_REACT_LANGUAGE_NAME,
+                "jsx"
             ],
             extensions: [
-                ".tsx"
+                ".jsx"
             ]
         });
-        monaco.languages.onLanguage(TYPESCRIPT_REACT_LANGUAGE_ID, () => {
-            monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, this.configuration);
+        monaco.languages.onLanguage(JAVASCRIPT_REACT_LANGUAGE_ID, () => {
+            monaco.languages.setLanguageConfiguration(JAVASCRIPT_LANGUAGE_ID, this.configuration);
         });
     }
 

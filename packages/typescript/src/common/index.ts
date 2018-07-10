@@ -17,5 +17,11 @@
 export const TYPESCRIPT_LANGUAGE_ID = 'typescript';
 export const TYPESCRIPT_LANGUAGE_NAME = 'TypeScript';
 
+export const TYPESCRIPT_REACT_LANGUAGE_ID = 'typescriptreact';
+export const TYPESCRIPT_REACT_LANGUAGE_NAME = 'TypeScript React';
+
 export const JAVASCRIPT_LANGUAGE_ID = 'javascript';
 export const JAVASCRIPT_LANGUAGE_NAME = 'JavaScript';
+
+export const JAVASCRIPT_REACT_LANGUAGE_ID = 'javascriptreact';
+export const JAVASCRIPT_REACT_LANGUAGE_NAME = 'JavaScript React';

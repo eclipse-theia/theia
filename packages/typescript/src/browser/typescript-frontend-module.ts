@@ -20,8 +20,8 @@ import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { CallHierarchyService } from "@theia/callhierarchy/lib/browser";
 import { TypeScriptClientContribution, JavaScriptClientContribution } from "./typescript-client-contribution";
 import { TypeScriptCallHierarchyService } from "./typescript-callhierarchy-service";
-import { MonacoTextmateBuiltinGrammarContribution } from "./typescript-textmate-grammar-contribution";
-import { registerTypeScript, registerJavaScript } from "./typescript-language-config";
+import { TypescriptGrammarContribution } from "./typescript-language-config";
+import { JavascriptGrammarContribution } from "./javascript-language-config";
 
 export default new ContainerModule(bind => {
     bind(TypeScriptClientContribution).toSelf().inSingletonScope();
@@ -33,8 +33,6 @@ export default new ContainerModule(bind => {
     bind(TypeScriptCallHierarchyService).toSelf().inSingletonScope();
     bind(CallHierarchyService).toService(TypeScriptCallHierarchyService);
 
-    bind(LanguageGrammarDefinitionContribution).to(MonacoTextmateBuiltinGrammarContribution).inSingletonScope();
-
-    registerJavaScript();
-    registerTypeScript();
+    bind(LanguageGrammarDefinitionContribution).to(TypescriptGrammarContribution).inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).to(JavascriptGrammarContribution).inSingletonScope();
 });
