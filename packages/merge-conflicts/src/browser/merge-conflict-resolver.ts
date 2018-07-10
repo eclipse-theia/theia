@@ -15,16 +15,17 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { Workspace, TextDocumentEdit, TextEdit, TextDocument, Range } from "@theia/languages/lib/browser";
+import { TextEdit, TextDocument, Range } from "@theia/languages/lib/browser";
 import { CommandHandler } from '@theia/core/lib/common';
 import { MergeConflictCommandArgument, MergeConflict } from './merge-conflict';
+import { EditorManager } from "@theia/editor/lib/browser";
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class MergeConflictResolver {
 
-    constructor(
-        @inject(Workspace) protected readonly workspace: Workspace,
-    ) { }
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     readonly acceptCurrent: CommandHandler = {
         execute: args => this.doAcceptCurrent(args)
@@ -56,15 +57,14 @@ export class MergeConflictResolver {
         });
     }
 
-    protected doAccept(argument: MergeConflictCommandArgument, newTextFn: ((textOfRange: (range: Range | undefined) => string, conflict: MergeConflict) => string)) {
+    protected async doAccept(argument: MergeConflictCommandArgument, newTextFn: ((textOfRange: (range: Range | undefined) => string, conflict: MergeConflict) => string)) {
         const { uri, conflict } = argument;
-        const document = this.workspace.textDocuments.find(d => d.uri === uri);
-        if (document) {
-            const newText = newTextFn(range => this.getTextRange(range, document), conflict);
-            this.workspace.applyEdit!({
-                documentChanges: [TextDocumentEdit.create(document, [TextEdit.replace(conflict.total!, newText)])]
-            });
+        const editorWidget = await this.editorManager.getByUri(new URI(uri));
+        if (!editorWidget) {
+            return;
         }
+        const newText = newTextFn(range => this.getTextRange(range, editorWidget.editor.document), conflict);
+        editorWidget.editor.executeEdits([TextEdit.replace(conflict.total!, newText)]);
     }
 
     protected getTextRange(range: Range | undefined, document: TextDocument): string {
