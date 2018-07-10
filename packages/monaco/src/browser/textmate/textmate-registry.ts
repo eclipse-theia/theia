@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from "inversify";
-import { RegistryOptions } from "monaco-textmate";
+import { RegistryOptions, IGrammarConfiguration } from "monaco-textmate";
 
 export const TextmateRegistry = Symbol('TextmateRegistry');
 export interface TextmateRegistry {
@@ -27,11 +27,15 @@ export interface TextmateRegistry {
 
     hasScope(languageId: string): boolean;
     getScope(languageId: string): string | undefined;
+
+    registerGrammarConfiguration(languageId: string, config: IGrammarConfiguration): void;
+    getGrammarConfiguration(languageId: string): IGrammarConfiguration;
 }
 
 @injectable()
 export class TextmateRegistryImpl implements TextmateRegistry {
     public readonly scopeToProvider = new Map<string, RegistryOptions>();
+    public readonly languageToConfig = new Map<string, IGrammarConfiguration>();
     public readonly languageIdToScope = new Map<string, string>();
 
     registerTextMateGrammarScope(scopeName: string, provider: RegistryOptions): void {
@@ -56,5 +60,13 @@ export class TextmateRegistryImpl implements TextmateRegistry {
 
     getScope(languageId: string): string | undefined {
         return this.languageIdToScope.get(languageId);
+    }
+
+    registerGrammarConfiguration(languageId: string, config: IGrammarConfiguration): void {
+        this.languageToConfig.set(languageId, config);
+    }
+
+    getGrammarConfiguration(languageId: string): IGrammarConfiguration {
+        return this.languageToConfig.get(languageId) || {};
     }
 }
