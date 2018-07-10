@@ -348,26 +348,12 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     }
 
     getVisibleColumn(position: Position): number {
-        return this.editor.getVisibleColumnFromPosition({
-            column: position.character + 1,
-            lineNumber: position.line + 1
-        });
+        return this.editor.getVisibleColumnFromPosition(this.p2m.asPosition(position));
     }
 
     async replaceText(params: ReplaceTextParams): Promise<boolean> {
         const edits: IIdentifiedSingleEditOperation[] = params.replaceOperations.map(param => {
-            const startPos = param.range.start;
-            const endPos = param.range.end;
-            const range = this.p2m.asRange({
-                start: {
-                    line: startPos.line - 1,
-                    character: startPos.character - 1
-                },
-                end: {
-                    line: endPos.line - 1,
-                    character: endPos.character - 1
-                }
-            });
+            const range = monaco.Range.fromPositions(this.p2m.asPosition(param.range.start), this.p2m.asPosition(param.range.end));
             return {
                 forceMoveMarkers: true,
                 identifier: {
