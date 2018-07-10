@@ -326,12 +326,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 text: this._replaceTerm,
                 range: {
                     start: {
-                        line: resultLineNode.line,
-                        character: resultLineNode.character
+                        line: resultLineNode.line - 1,
+                        character: resultLineNode.character - 1
                     },
                     end: {
-                        line: resultLineNode.line,
-                        character: resultLineNode.character + resultLineNode.length
+                        line: resultLineNode.line - 1,
+                        character: resultLineNode.character - 1 + resultLineNode.length
                     }
                 }
             } as ReplaceOperation));
