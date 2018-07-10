@@ -1,12 +1,12 @@
 {
   "name": "@theia/debug",
-  "version": "0.3.10",
+  "version": "0.3.12",
   "description": "Theia - Debug Extension",
   "dependencies": {
-    "@theia/core": "^0.3.10",
-    "@theia/editor": "^0.3.10",
-    "@theia/monaco": "^0.3.10",
-    "@theia/process": "^0.3.10",
+    "@theia/core": "^0.3.12",
+    "@theia/editor": "^0.3.12",
+    "@theia/monaco": "^0.3.12",
+    "@theia/process": "^0.3.12",
     "vscode-debugprotocol": "^1.26.0"
   },
   "publishConfig": {
@@ -42,7 +42,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.10"
+    "@theia/ext-scripts": "^0.3.12"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
