@@ -39,6 +39,7 @@ import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
+import { ConsolidatedPluginConfigurationProvider } from '../../hosted/browser/consolidated-workspace-configuration';
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -47,6 +48,8 @@ export default new ContainerModule(bind => {
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
+
+    bind(ConsolidatedPluginConfigurationProvider).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();

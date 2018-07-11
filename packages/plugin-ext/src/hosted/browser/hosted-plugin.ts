@@ -15,13 +15,14 @@
  ********************************************************************************/
 import { injectable, inject, interfaces, named } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
-import { HostedPluginServer, PluginMetadata, PluginPackage } from '../../common/plugin-protocol';
+import { HostedPluginServer, PluginMetadata, PluginPackage, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
-import { PreferenceServiceImpl, PreferenceContribution, PreferenceSchema, PreferenceScope } from '@theia/core/lib/browser';
+import { PreferenceServiceImpl, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { ConsolidatedPluginConfigurationProvider } from './consolidated-workspace-configuration';
 
 @injectable()
 export class HostedPluginSupport {
@@ -37,8 +38,8 @@ export class HostedPluginSupport {
     @inject(HostedPluginWatcher)
     private readonly watcher: HostedPluginWatcher;
 
-    // @inject(PreferenceSchemaProvider)
-    // private readonly prefChemaProvider: PreferenceSchemaProvider;
+    @inject(ConsolidatedPluginConfigurationProvider)
+    private readonly consolidatedConfigProvider: ConsolidatedPluginConfigurationProvider;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -53,19 +54,6 @@ export class HostedPluginSupport {
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
     ) {
         this.theiaReadyPromise = Promise.all([this.prefService.ready]);
-
-        setTimeout(() => {
-            this.preferenceContributions.getContributions().forEach(contrib => {
-                for (const property in contrib.schema.properties) {
-                    if (this.combinedSchema.properties[property]) {
-                        this.logger.error("Preference name collision detected in the schema for property: " + property);
-                    } else {
-                        this.combinedSchema.properties[property] = contrib.schema.properties[property];
-                    }
-                }
-            });
-            console.log(this.combinedSchema);
-        }, 0);
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -74,7 +62,6 @@ export class HostedPluginSupport {
     }
 
     public initPlugins(): void {
-        console.log("init plugins....!");
         this.server.getHostedPlugin().then((pluginMetadata: any) => {
             if (pluginMetadata) {
                 this.loadPlugin(pluginMetadata, this.container);
@@ -95,6 +82,8 @@ export class HostedPluginSupport {
         const pluginModel = pluginMetadata.model;
         const pluginLifecycle = pluginMetadata.lifecycle;
         this.logger.info('Ask to load the plugin with model ', pluginModel, ' and lifecycle', pluginLifecycle);
+
+        const pluginId = getPluginId(pluginMetadata.source);
         if (pluginModel.entryPoint!.frontend) {
             this.logger.info(`Loading frontend hosted plugin: ${pluginModel.name}`);
             this.worker = new PluginWorker();
@@ -118,7 +107,7 @@ export class HostedPluginSupport {
                     this.frontendApiInitialized = true;
                 }
                 hostedExtManager.$loadPlugin(frontendInitPath, plugin);
-                this.applyPluginContributions(pluginMetadata.source);
+                this.applyPluginContributions(pluginId, pluginMetadata.source);
             });
         }
         if (pluginModel.entryPoint!.backend) {
@@ -144,41 +133,14 @@ export class HostedPluginSupport {
                     this.backendApiInitialized = true;
                 }
                 hostedExtManager.$loadPlugin(backendInitPath, plugin);
+                this.applyPluginContributions(pluginId, pluginMetadata.source);
             });
         }
     }
 
-    private applyPluginContributions(pluginPackage: PluginPackage) {
-        const contributes = pluginPackage.contributes;
-
-        console.log("All preferences: ", this.prefService.getPreferences());
-
-        if (contributes) {
-            Object.keys(contributes).filter(key => {
-                const contribution = (contributes as any)[key];
-                console.log("key: ", key, "value: ", contribution);
-                this.prefService.set(key, contribution, PreferenceScope.Workspace);
-            });
-
-            setTimeout(() => {
-                this.preferenceContributions.getContributions().forEach(contrib => {
-                    for (const property in contrib.schema.properties) {
-                        if (this.combinedSchema.properties[property]) {
-                            this.logger.error("Preference name collision detected in the schema for property: " + property);
-                        } else {
-                            this.combinedSchema.properties[property] = contrib.schema.properties[property];
-                        }
-                    }
-                });
-                console.log(this.combinedSchema);
-                console.log("combined chema is the same :)");
-            }, 0);
-            // console.log(" pref chema  ", this.prefChemaProvider.getSchema());
-
-            // .forEach(key => {
-            //     const contribution = contributes[key];
-            //
-            // });
+    private applyPluginContributions(pluginId: string, pluginPackage: PluginPackage) {
+        if (pluginPackage.contributes && pluginPackage.contributes.configuration ) {
+            this.consolidatedConfigProvider.applyPluginConfig(pluginId, pluginPackage.contributes.configuration);
         }
     }
 
