@@ -21,7 +21,7 @@ import { DebugProtocol } from "vscode-debugprotocol";
 import { SourceOpener, DebugUtils } from "../debug-utils";
 import { FrontendApplicationContribution } from "@theia/core/lib/browser";
 import { ActiveLineDecorator, BreakpointDecorator } from "./breakpoint-decorators";
-import { BreakpointStorage } from "./breakpoint-storage";
+import { BreakpointStorage } from "./breakpoint-marker";
 import {
     EditorManager,
     EditorWidget,
@@ -75,7 +75,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
         const id = DebugUtils.makeBreakpointId(srcBreakpoint);
 
         return this.storage.exists(id)
-            .then(exists => exists ? this.storage.delete(srcBreakpoint) : this.storage.add(srcBreakpoint))
+            .then(exists => exists ? this.storage.delete(srcBreakpoint) : this.storage.set(srcBreakpoint))
             .then(() => {
                 if (debugSession) {
                     const source = DebugUtils.toSource(editor.uri, debugSession);
@@ -137,7 +137,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 b.created = undefined;
                 return b;
             }))
-            .then(breakpoints => this.storage.updateAll(breakpoints))
+            .then(breakpoints => this.storage.set(breakpoints))
             .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
     }
 
@@ -156,7 +156,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 b.sessionId = undefined;
                 return b;
             }))
-            .then(breakpoints => this.storage.updateAll(breakpoints))
+            .then(breakpoints => this.storage.set(breakpoints))
             .then(() => {
                 this.breakpointDecorator.applyDecorations();
                 this.onDidChangeBreakpointsEmitter.fire(undefined);
@@ -194,9 +194,9 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                     case 'changed': {
                         if (sourceBreakpoint) {
                             sourceBreakpoint.created = breakpoint;
-                            return this.storage.update(sourceBreakpoint);
+                            return this.storage.set(sourceBreakpoint);
                         } else {
-                            return this.storage.add({
+                            return this.storage.set({
                                 sessionId: debugSession.sessionId,
                                 source: breakpoint.source,
                                 created: breakpoint,

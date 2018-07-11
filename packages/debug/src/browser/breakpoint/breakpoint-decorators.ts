@@ -26,7 +26,7 @@ import {
 import { DebugProtocol } from "vscode-debugprotocol";
 import { DebugSessionManager } from "../debug-session";
 import { DebugUtils } from "../debug-utils";
-import { BreakpointStorage } from "./breakpoint-storage";
+import { BreakpointStorage } from "./breakpoint-marker";
 
 const ActiveLineDecoration = <EditorDecorationOptions>{
     isWholeLine: true,

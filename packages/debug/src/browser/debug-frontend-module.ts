@@ -63,7 +63,7 @@ import { DebugSelectionService, DebugSelection } from './view/debug-selection-se
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
 import { ActiveLineDecorator, BreakpointDecorator } from './breakpoint/breakpoint-decorators';
 import { BreakpointsManager } from './breakpoint/breakpoint-manager';
-import { BreakpointStorage } from './breakpoint/breakpoint-storage';
+import { BreakpointStorage } from './breakpoint/breakpoint-marker';
 import { SourceOpener } from './debug-utils';
 import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 
