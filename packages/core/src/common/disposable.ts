@@ -40,7 +40,7 @@ export class DisposableCollection implements Disposable {
     }
 
     protected checkDisposed(): void {
-        if (this.disposed) {
+        if (this.disposed && !this.disposingElements) {
             this.onDisposeEmitter.fire(undefined);
         }
     }
@@ -49,10 +49,12 @@ export class DisposableCollection implements Disposable {
         return this.disposables.length === 0;
     }
 
+    private disposingElements = false;
     dispose(): void {
         if (this.disposed) {
             return;
         }
+        this.disposingElements = true;
         while (!this.disposed) {
             try {
                 this.disposables.pop()!.dispose();
@@ -60,6 +62,7 @@ export class DisposableCollection implements Disposable {
                 console.error(e);
             }
         }
+        this.disposingElements = false;
         this.checkDisposed();
     }
 
