@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { BreakpointStorage } from './breakpoint-storage';
+import { BreakpointStorage } from './breakpoint-marker';
 import { DebugUtils } from '../debug-utils';
 import { DebugSession } from '../debug-model';
 
@@ -52,7 +52,7 @@ export class BreakpointsApplier {
                                 }
                             }
                             return breakpointsBySource;
-                        }).then(result => this.storage.updateAll(result)));
+                        }).then(result => this.storage.set(result)));
                 }
 
                 return Promise.all(promises);
