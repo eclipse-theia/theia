@@ -29,6 +29,13 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 - Provide support for multiple languages via the language and debug server protocols
 - Provide modern GUI with javascript UI libraries
 
+
+## Prerequisites
+ - Node.js 8+
+ - Yarn 1.2.1+
+ - Git 2.11+
+ - Python 2.7.x (Python 3, is not supported.)
+
 ## Getting Started
 Here you can find guides and examples for common scenarios:
 - [Develop a new Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.html)
