@@ -22,7 +22,6 @@ import { isWindows, isOSX } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
 import { parseArgs } from '@theia/process/lib/node/utils';
-import { ProcessEnv } from 'node-pty/lib/interfaces';
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -37,8 +36,8 @@ export interface ShellProcessOptions {
     env?: { [key: string]: string | null },
 }
 
-function setUpEnvVariables(customEnv?:  { [key: string]: string | null }): ProcessEnv {
-    const processEnv: ProcessEnv = {};
+function setUpEnvVariables(customEnv?:  { [key: string]: string | null }): { [key: string]: string } {
+    const processEnv: { [key: string]: string } = {};
 
     const prEnv: NodeJS.ProcessEnv = process.env;
     Object.keys(prEnv).forEach((key: string) => {
