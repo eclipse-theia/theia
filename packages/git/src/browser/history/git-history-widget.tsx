@@ -73,18 +73,21 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         (async () => {
             const sc = await this.getScrollContainer();
             const listener = (e: UIEvent) => {
-                const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-                ll.className = "history-lazy-loading show";
-                this.addCommits({
-                    range: {
-                        toRevision: this.commits[this.commits.length - 1].commitSha
-                    },
-                    maxCount: GIT_HISTORY_MAX_COUNT
-                });
+                const el = (e.srcElement || e.target) as HTMLElement;
+                if (el.scrollTop + el.clientHeight > el.scrollHeight - 83) {
+                    const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
+                    ll.className = "history-lazy-loading show";
+                    this.addCommits({
+                        range: {
+                            toRevision: this.commits[this.commits.length - 1].commitSha
+                        },
+                        maxCount: GIT_HISTORY_MAX_COUNT
+                    });
+                }
             };
-            sc.addEventListener("ps-y-reach-end", listener);
+            sc.addEventListener("scroll", listener);
             this.toDispose.push(Disposable.create(() => {
-                sc.removeEventListener("ps-y-reach-end", listener);
+                sc.removeEventListener("scroll", listener);
             }));
         })();
     }
