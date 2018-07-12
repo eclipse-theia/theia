@@ -307,6 +307,7 @@
     display: flex;
     align-items:  center;
     width: 15px;
+    min-width: 15px;
     justify-content: center;
     margin-right: 2px;
     box-sizing: border-box;
