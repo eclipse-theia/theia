@@ -54,7 +54,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
 
-    rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
+    bind(WorkspaceStorageService).toSelf().inSingletonScope();
+    rebind(StorageService).toService(WorkspaceStorageService);
 
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
     bind(VariableContribution).to(WorkspaceVariableContribution).inSingletonScope();
