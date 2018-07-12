@@ -52,6 +52,9 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected onUpdateRequest(msg: Message): void {
+        if (!this.isAttached || !this.isVisible) {
+            return;
+        }
         super.onUpdateRequest(msg);
         (async () => {
             const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
@@ -94,7 +97,6 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         this.addKeyListener(this.node, Key.ARROW_UP, () => this.navigateUp());
         this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.navigateDown());
         this.addKeyListener(this.node, Key.ENTER, () => this.handleListEnter());
-
     }
 
     protected navigateLeft(): void {
