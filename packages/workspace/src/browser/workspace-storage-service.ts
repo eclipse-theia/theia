@@ -14,11 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { inject, injectable, postConstruct } from 'inversify';
+import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { WorkspaceService } from './workspace-service';
-import { inject, injectable } from 'inversify';
-import { ILogger } from '@theia/core/lib/common';
-import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 
 /*
  * Prefixes any stored data with the current workspace path.
@@ -28,10 +27,12 @@ export class WorkspaceStorageService implements StorageService {
 
     private prefix: string;
     private initialized: Promise<void>;
-    protected storageService: StorageService;
 
-    constructor( @inject(WorkspaceService) protected workspaceService: WorkspaceService,
-        @inject(ILogger) protected logger: ILogger) {
+    @inject(LocalStorageService) protected storageService: StorageService;
+    @inject(WorkspaceService) protected workspaceService: WorkspaceService;
+
+    @postConstruct()
+    protected init() {
         this.initialized = this.workspaceService.root.then(stat => {
             if (stat) {
                 this.prefix = stat.uri;
@@ -39,7 +40,6 @@ export class WorkspaceStorageService implements StorageService {
                 this.prefix = '_global_';
             }
         });
-        this.storageService = new LocalStorageService(this.logger);
     }
 
     async setData<T>(key: string, data: T): Promise<void> {
