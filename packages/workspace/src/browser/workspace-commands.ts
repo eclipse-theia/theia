@@ -35,6 +35,10 @@ export namespace WorkspaceCommands {
         id: 'workspace:open',
         label: 'Open...'
     };
+    export const OPEN_RECENT_WORKSPACE: Command = {
+        id: 'workspace:openRecent',
+        label: 'Open Recent Workspace...'
+    };
     export const CLOSE: Command = {
         id: 'workspace:close',
         label: 'Close Workspace'

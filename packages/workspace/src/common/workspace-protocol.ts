@@ -25,11 +25,16 @@ export interface WorkspaceServer {
     /**
      * Returns with a promise that resolves to the workspace root URI as a string. Resolves to `undefined` if the workspace root is not yet set.
      */
-    getRoot(): Promise<string | undefined>;
+    getWorkspace(): Promise<string | undefined>;
 
     /**
      * Sets the desired string representation of the URI as the workspace root.
      */
-    setRoot(uri: string): Promise<void>;
+    setWorkspace(uri: string): Promise<void>;
+
+    /**
+     * Returns list of recently opened workspaces as an array.
+     */
+    getRecentWorkspaces(): Promise<string[]>
 
 }

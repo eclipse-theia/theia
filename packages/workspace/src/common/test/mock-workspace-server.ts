@@ -19,7 +19,9 @@ import { WorkspaceServer } from '../workspace-protocol';
 @injectable()
 export class MockWorkspaceServer implements WorkspaceServer {
 
-    getRoot(): Promise<string | undefined> { return Promise.resolve(''); }
+    getWorkspace(): Promise<string | undefined> { return Promise.resolve(''); }
 
-    setRoot(uri: string): Promise<void> { return Promise.resolve(); }
+    setWorkspace(uri: string): Promise<void> { return Promise.resolve(); }
+
+    getRecentWorkspaces(): Promise<string[]> { return Promise.resolve([]); }
 }

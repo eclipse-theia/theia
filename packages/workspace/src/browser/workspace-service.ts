@@ -37,6 +37,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     readonly root = this.deferredRoot.promise;
 
+    private hasWorkspace: boolean = false;
+
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
@@ -57,7 +59,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const rootUri = await this.server.getRoot();
+        const rootUri = await this.server.getWorkspace();
         this._root = await this.toValidRoot(rootUri);
         if (this._root) {
             const uri = new URI(this._root.uri);
@@ -77,8 +79,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
      */
     onStop(app: FrontendApplication): void {
         if (this._root) {
-            this.server.setRoot(this._root.uri);
+            this.server.setWorkspace(this._root.uri);
         }
+    }
+
+    async onStart() {
+        const allWorkspace = await this.recentWorkspaces();
+        if (allWorkspace.length > 0) {
+            this.hasWorkspace = true;
+        }
+    }
+
+    get hasHistory(): boolean {
+        return this.hasWorkspace;
+    }
+
+    async recentWorkspaces(): Promise<string[]> {
+        return this.server.getRecentWorkspaces();
     }
 
     /**
@@ -106,7 +123,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 preserveWindow: this.preferences['workspace.preserveWindow'] || !(await this.root),
                 ...options
             };
-            await this.server.setRoot(rootUri);
+            await this.server.setWorkspace(rootUri);
             if (preserveWindow) {
                 this._root = valid;
             }
@@ -125,7 +142,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected async doClose(): Promise<void> {
         this._root = undefined;
-        await this.server.setRoot('');
+        await this.server.setWorkspace('');
         this.reloadWindow();
     }
 
