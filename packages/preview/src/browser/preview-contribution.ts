@@ -18,16 +18,15 @@ import { injectable, inject } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { FrontendApplicationContribution, WidgetOpenerOptions, WidgetOpenHandler } from "@theia/core/lib/browser";
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
-import {
-    ResourceProvider, DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry,
-    CommandHandler, Disposable, MessageService
-} from "@theia/core/lib/common";
+import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from "@theia/core/lib/common";
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider, } from './preview-handler';
 import { PreviewUri } from "./preview-uri";
 import { PreviewPreferences } from './preview-preferences';
+
+import debounce = require('lodash.debounce');
 
 export namespace PreviewCommands {
     export const OPEN: Command = {
@@ -51,12 +50,6 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
 
     @inject(PreviewHandlerProvider)
     protected readonly previewHandlerProvider: PreviewHandlerProvider;
-
-    @inject(ResourceProvider)
-    protected readonly resourceProvider: ResourceProvider;
-
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
 
     @inject(PreviewPreferences)
     protected readonly preferences: PreviewPreferences;
@@ -107,7 +100,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
         editorWidget.disposed.connect(() => syncDisposables.dispose());
 
         const editor = editorWidget.editor;
-        syncDisposables.push(editor.onCursorPositionChanged(position => this.revealSourceLineInPreview(previewWidget!, position)));
+        syncDisposables.push(editor.onCursorPositionChanged(debounce(position => this.revealSourceLineInPreview(previewWidget!, position)), 100));
         syncDisposables.push(this.synchronizeScrollToEditor(previewWidget, editor));
 
         this.synchronizedUris.add(uri);
@@ -144,6 +137,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
             });
             editor.revealPosition(location.range.start);
             editor.selection = location.range;
+            previewWidget.revealForSourceLine(location.range.start.line);
         });
         previewWidget.disposed.connect(() => disposable.dispose());
     }
