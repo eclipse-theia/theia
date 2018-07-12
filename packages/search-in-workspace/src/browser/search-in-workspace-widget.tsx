@@ -265,6 +265,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const input = <input
             id="search-input-field"
             type="text"
+            size={1}
             placeholder="Search"
             defaultValue={this.searchTerm}
             onFocus={e => {
@@ -306,6 +307,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             <input
                 id="replace-input-field"
                 type="text"
+                size={1}
                 placeholder="Replace"
                 defaultValue={this.replaceTerm}
                 onKeyUp={e => {
@@ -394,6 +396,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             <div className="label">{"files to " + kind}</div>
             <input
                 type="text"
+                size={1}
                 defaultValue={value}
                 id={kind + "-glob-field"}
                 onKeyUp={e => {
