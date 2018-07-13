@@ -16,8 +16,7 @@
 
 import { injectable, inject } from "inversify";
 import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '@theia/languages/lib/browser';
-import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME } from '../common';
-import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME } from '../common/index';
+import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_ID } from '../common';
 
 @injectable()
 export class TypeScriptClientContribution extends BaseLanguageClientContribution {
@@ -33,32 +32,35 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         super(workspace, languages, languageClientFactory);
     }
 
-    protected get globPatterns() {
+    protected get globPatterns(): string[] {
         return [
             '**/*.ts',
-            '**/*.tsx'
+            '**/*.tsx',
+            '**/*.js',
+            '**/*.jsx'
         ];
     }
 
-}
-@injectable()
-export class JavaScriptClientContribution extends BaseLanguageClientContribution {
-
-    readonly id = JAVASCRIPT_LANGUAGE_ID;
-    readonly name = JAVASCRIPT_LANGUAGE_NAME;
-
-    constructor(
-        @inject(Workspace) protected readonly workspace: Workspace,
-        @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
-    ) {
-        super(workspace, languages, languageClientFactory);
+    protected get documentSelector(): string[] {
+        return [
+            TYPESCRIPT_LANGUAGE_ID,
+            TYPESCRIPT_REACT_LANGUAGE_ID,
+            JAVASCRIPT_LANGUAGE_ID,
+            JAVASCRIPT_REACT_LANGUAGE_ID
+        ];
     }
 
-    protected get globPatterns() {
+    protected get workspaceContains() {
+        // FIXME requires https://github.com/theia-ide/theia/issues/2359
+        // return [
+        //     "**/tsconfig.json",
+        //     "**/jsconfig.json",
+        //     "**/tsconfig.*.json",
+        //     "**/jsconfig.*.json"
+        // ];
         return [
-            '**/*.js',
-            '**/*.jsx',
+            "tsconfig.json",
+            "jsconfig.json"
         ];
     }
 
