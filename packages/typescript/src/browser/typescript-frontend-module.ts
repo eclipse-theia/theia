@@ -18,7 +18,7 @@ import { ContainerModule } from "inversify";
 import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate";
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { CallHierarchyService } from "@theia/callhierarchy/lib/browser";
-import { TypeScriptClientContribution, JavaScriptClientContribution } from "./typescript-client-contribution";
+import { TypeScriptClientContribution } from "./typescript-client-contribution";
 import { TypeScriptCallHierarchyService } from "./typescript-callhierarchy-service";
 import { TypescriptGrammarContribution } from "./typescript-language-config";
 import { JavascriptGrammarContribution } from "./javascript-language-config";
@@ -26,9 +26,6 @@ import { JavascriptGrammarContribution } from "./javascript-language-config";
 export default new ContainerModule(bind => {
     bind(TypeScriptClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toService(TypeScriptClientContribution);
-
-    bind(JavaScriptClientContribution).toSelf().inSingletonScope();
-    bind(LanguageClientContribution).toService(JavaScriptClientContribution);
 
     bind(TypeScriptCallHierarchyService).toSelf().inSingletonScope();
     bind(CallHierarchyService).toService(TypeScriptCallHierarchyService);
