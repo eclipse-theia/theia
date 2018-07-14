@@ -16,15 +16,11 @@
 
 import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME, JAVASCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_NAME } from "../common";
 import { injectable } from "inversify";
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, getEncodedLanguageId } from "@theia/monaco/lib/browser/textmate";
 import { StandardTokenType } from "monaco-textmate";
 
 @injectable()
 export class JavascriptGrammarContribution implements LanguageGrammarDefinitionContribution {
-
-    private getLanguageNumericId(languageId: string): number {
-        return monaco.languages.getLanguages().findIndex(l => l.id === languageId) || 0;
-    }
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         this.registerJavaScript();
@@ -49,10 +45,10 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
 
         registry.registerGrammarConfiguration(JAVASCRIPT_LANGUAGE_ID, {
             embeddedLanguages: {
-                "meta.tag.js": this.getLanguageNumericId("jsx-tags"),
-                "meta.tag.without-attributes.js": this.getLanguageNumericId("jsx-tags"),
-                "meta.tag.attributes.js.jsx": this.getLanguageNumericId("javascriptreact"),
-                "meta.embedded.expression.js": this.getLanguageNumericId("javascriptreact")
+                "meta.tag.js": getEncodedLanguageId("jsx-tags"),
+                "meta.tag.without-attributes.js": getEncodedLanguageId("jsx-tags"),
+                "meta.tag.attributes.js.jsx": getEncodedLanguageId("javascriptreact"),
+                "meta.embedded.expression.js": getEncodedLanguageId("javascriptreact")
             },
             tokenTypes: {
                 "entity.name.type.instance.jsdoc": StandardTokenType.Other,
