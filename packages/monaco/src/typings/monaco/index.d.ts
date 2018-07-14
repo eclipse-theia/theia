@@ -348,8 +348,31 @@ declare module monaco.services {
         a: number;
     }
 
+    export enum LanguageId {
+        Null = 0,
+        PlainText = 1
+    }
+
+    export class LanguageIdentifier {
+        /**
+         * A string identifier. Unique across languages. e.g. 'javascript'.
+         */
+        readonly language: string;
+
+        /**
+         * A numeric identifier. Unique across languages. e.g. 5
+         * Will vary at runtime based on registration order, etc.
+         */
+        readonly id: LanguageId;
+    }
+
+    export interface IModeService {
+        getLanguageIdentifier(modeId: string | LanguageId): LanguageIdentifier;
+    }
+
     export module StaticServices {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
+        export const modeService: LazyStaticService<IModeService>;
     }
 }
 
