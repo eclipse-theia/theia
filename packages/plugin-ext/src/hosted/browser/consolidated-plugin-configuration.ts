@@ -14,8 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- import { injectable, inject } from "inversify";
-//  import { PreferenceSchemaProvider } from "@theia/core/lib/browser";
+import { injectable, inject } from "inversify";
 import { IConfiguration } from "../node/cotributions/contributions";
 import { ILogger } from "@theia/core";
 
@@ -28,7 +27,6 @@ import { ILogger } from "@theia/core";
     // todo subscript to stop plugin.... to clean up
     constructor(
          @inject(ILogger) protected readonly logger: ILogger,
-         // @inject(PreferenceSchemaProvider) private readonly prefSchemaProvider: PreferenceSchemaProvider
     ) {
         this.pluginConfigs = new Map<String, IConfiguration>();
     }

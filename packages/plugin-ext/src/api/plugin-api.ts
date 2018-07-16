@@ -447,6 +447,7 @@ export interface PreferenceRegistryMain {
     ): PromiseLike<void>;
 }
 export interface PreferenceRegistryExt {
+    // todo change format of the data?
     $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void;
 }
 

@@ -39,7 +39,8 @@ import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
-import { ConsolidatedPluginConfigurationProvider } from '../../hosted/browser/consolidated-workspace-configuration';
+import { ConsolidatedPluginConfigurationProvider } from '../../hosted/browser/consolidated-plugin-configuration';
+import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -50,6 +51,7 @@ export default new ContainerModule(bind => {
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
 
     bind(ConsolidatedPluginConfigurationProvider).toSelf().inSingletonScope();
+    bind(ConsolidatedConfigurationRegistry).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();

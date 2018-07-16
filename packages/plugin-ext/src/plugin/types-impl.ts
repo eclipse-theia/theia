@@ -559,5 +559,5 @@ export enum OverviewRulerLane {
 
 export enum ConfigurationTarget {
     User = 0,
-    Workspace = 1
+    Workspace = 1 // todo
 }

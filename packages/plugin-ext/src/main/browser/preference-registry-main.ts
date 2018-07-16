@@ -27,29 +27,36 @@ import {
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
+import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
 
 export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
     private proxy: PreferenceRegistryExt;
-    private preferenceService: PreferenceService;
+    private consolidateConfRegistry: ConsolidatedConfigurationRegistry;
+    // private preferenceService: PreferenceService;
 
     constructor(prc: RPCProtocol, container: interfaces.Container) {
         this.proxy = prc.getProxy(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT);
-        this.preferenceService = container.get(PreferenceService);
-        const preferenceServiceImpl = container.get(PreferenceServiceImpl);
 
-        preferenceServiceImpl.onPreferenceChanged(e => {
-            this.proxy.$acceptConfigurationChanged(preferenceServiceImpl.getPreferences(), e);
-        });
+        this.consolidateConfRegistry = container.get(ConsolidatedConfigurationRegistry);
+        // this.preferenceService = container.get(PreferenceService);
+        // const preferenceServiceImpl = container.get(PreferenceServiceImpl);
+
+        // preferenceServiceImpl.onPreferenceChanged(e => {
+
+        //     this.proxy.$acceptConfigurationChanged(preferenceServiceImpl.getPreferences(), e);
+        // });
     }
 
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, value, scope);
+        // return this.preferenceService.set(key, value, scope);
+        return Promise.resolve();
     }
 
     $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, undefined, scope);
+        // return this.preferenceService.set(key, undefined, scope);
+        return Promise.resolve();
     }
 
     private parseConfigurationTarget(arg?: boolean | ConfigurationTarget): PreferenceScope {
