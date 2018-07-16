@@ -61,8 +61,8 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
         this.grammarRegistry = new Registry({
             getGrammarDefinition: async (scopeName: string, dependentScope: string) => {
-                if (this.textmateRegistry.hasProvider(scopeName)) {
-                    const provider = this.textmateRegistry.getProvider(scopeName);
+                const provider = this.textmateRegistry.getProvider(scopeName);
+                if (provider) {
                     return await provider!.getGrammarDefinition(scopeName, dependentScope);
                 }
                 return {
