@@ -17,45 +17,29 @@
 import { injectable } from "inversify";
 import { RegistryOptions, IGrammarConfiguration } from "monaco-textmate";
 
-export const TextmateRegistry = Symbol('TextmateRegistry');
-export interface TextmateRegistry {
-    registerTextMateGrammarScope(scopeName: string, provider: RegistryOptions): void;
-    mapLanguageIdToTextmateGrammar(language: string, scopeName: string): void;
-
-    hasProvider(scopeName: string): boolean;
-    getProvider(scopeName: string): RegistryOptions | undefined;
-
-    hasScope(languageId: string): boolean;
-    getScope(languageId: string): string | undefined;
-
-    registerGrammarConfiguration(languageId: string, config: IGrammarConfiguration): void;
-    getGrammarConfiguration(languageId: string): IGrammarConfiguration;
-}
-
 @injectable()
-export class TextmateRegistryImpl implements TextmateRegistry {
-    public readonly scopeToProvider = new Map<string, RegistryOptions>();
-    public readonly languageToConfig = new Map<string, IGrammarConfiguration>();
-    public readonly languageIdToScope = new Map<string, string>();
+export class TextmateRegistry {
+    readonly scopeToProvider = new Map<string, RegistryOptions>();
+    readonly languageToConfig = new Map<string, IGrammarConfiguration>();
+    readonly languageIdToScope = new Map<string, string>();
 
-    registerTextMateGrammarScope(scopeName: string, provider: RegistryOptions): void {
-        this.scopeToProvider.set(scopeName, provider);
+    registerTextMateGrammarScope(scope: string, provider: RegistryOptions): void {
+        if (this.scopeToProvider.has(scope)) {
+            console.warn(new Error(`a registered grammar provider for '${scope}' scope is overriden`));
+        }
+        this.scopeToProvider.set(scope, provider);
     }
 
-    mapLanguageIdToTextmateGrammar(language: string, scopeName: string): void {
-        this.languageIdToScope.set(language, scopeName);
+    getProvider(scope: string): RegistryOptions | undefined {
+        return this.scopeToProvider.get(scope);
     }
 
-    hasProvider(scopeName: string): boolean {
-        return this.scopeToProvider.has(scopeName);
-    }
-
-    getProvider(scopeName: string): RegistryOptions | undefined {
-        return this.scopeToProvider.get(scopeName);
-    }
-
-    hasScope(languageId: string): boolean {
-        return this.languageIdToScope.has(languageId);
+    mapLanguageIdToTextmateGrammar(languageId: string, scope: string): void {
+        const existingScope = this.getScope(languageId);
+        if (typeof existingScope === "string") {
+            console.warn(new Error(`'${languageId}' language is remapped from '${existingScope}' to '${scope}' scope`));
+        }
+        this.languageIdToScope.set(languageId, scope);
     }
 
     getScope(languageId: string): string | undefined {
@@ -63,6 +47,9 @@ export class TextmateRegistryImpl implements TextmateRegistry {
     }
 
     registerGrammarConfiguration(languageId: string, config: IGrammarConfiguration): void {
+        if (this.languageToConfig.has(languageId)) {
+            console.warn(new Error(`a registered grammar configuration for '${languageId}' language is overriden`));
+        }
         this.languageToConfig.set(languageId, config);
     }
 
