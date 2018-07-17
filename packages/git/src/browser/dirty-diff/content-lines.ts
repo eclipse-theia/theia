@@ -25,14 +25,22 @@ export interface ContentLinesArrayLike extends ContentLines, ArrayLike<string> {
 }
 
 export namespace ContentLines {
+    const NL = '\n'.charCodeAt(0);
+    const CR = '\r'.charCodeAt(0);
 
     export function fromString(content: string): ContentLines {
         const computeLineStarts: (s: string) => number[] = s => {
-            const NL = '\n'.charCodeAt(0);
             const result: number[] = [0];
             for (let i = 0; i < s.length; i++) {
                 const chr = s.charCodeAt(i);
-                if (chr === NL) {
+                if (chr === CR) {
+                    if (i + 1 < s.length && s.charCodeAt(i + 1) === NL) {
+                        result[result.length] = i + 2;
+                        i++;
+                    } else {
+                        result[result.length] = i + 1;
+                    }
+                } else if (chr === NL) {
                     result[result.length] = i + 1;
                 }
             }
@@ -47,7 +55,10 @@ export namespace ContentLines {
                     throw new Error('line index out of bounds');
                 }
                 const start = lineStarts[line];
-                const end = (line === lineStarts.length - 1) ? undefined : lineStarts[line + 1] - 1;
+                let end = (line === lineStarts.length - 1) ? undefined : lineStarts[line + 1] - 1;
+                if (!!end && content.charCodeAt(end - 1) === CR) {
+                    end--; // ignore CR at the end
+                }
                 const lineContent = content.substring(start, end);
                 return lineContent;
             }
