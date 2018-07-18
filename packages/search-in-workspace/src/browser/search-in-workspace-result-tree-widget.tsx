@@ -392,9 +392,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
         const prefix = node.character > 26 ? '... ' : '';
-        return <div
-            className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`}
-            onClick={() => this.model.selectNode(node)}>
+        return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`}>
             <span>
                 {prefix + node.lineText.substr(0, node.character - 1).substr(-25)}
             </span>
