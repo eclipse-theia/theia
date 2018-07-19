@@ -26,9 +26,9 @@ import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
 import debounce = require('lodash.debounce');
 
 export namespace BlameCommands {
-    export const SHOW_GIT_ANNOTATIONS: Command = {
-        id: 'git.editor.show.annotations',
-        label: 'Git: Show Blame Annotations'
+    export const TOGGLE_GIT_ANNOTATIONS: Command = {
+        id: 'git.editor.toggle.annotations',
+        label: 'Git: Toggle Blame Annotations'
     };
     export const CLEAR_GIT_ANNOTATIONS: Command = {
         id: 'git.editor.clear.annotations'
@@ -48,11 +48,15 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
     protected readonly blameManager: BlameManager;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(BlameCommands.SHOW_GIT_ANNOTATIONS, {
+        commands.registerCommand(BlameCommands.TOGGLE_GIT_ANNOTATIONS, {
             execute: () => {
                 const editorWidget = this.currentFileEditorWidget;
                 if (editorWidget) {
-                    this.showBlame(editorWidget);
+                    if (this.showsBlameAnnotations(editorWidget.editor.uri)) {
+                        this.clearBlame(editorWidget.editor.uri);
+                    } else {
+                        this.showBlame(editorWidget);
+                    }
                 }
             },
             isVisible: () =>
@@ -132,14 +136,14 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EDITOR_CONTEXT_MENU_GIT, {
-            commandId: BlameCommands.SHOW_GIT_ANNOTATIONS.id,
-            label: BlameCommands.SHOW_GIT_ANNOTATIONS.label!.slice('Git: '.length)
+            commandId: BlameCommands.TOGGLE_GIT_ANNOTATIONS.id,
+            label: BlameCommands.TOGGLE_GIT_ANNOTATIONS.label!.slice('Git: '.length)
         });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
-            command: BlameCommands.SHOW_GIT_ANNOTATIONS.id,
+            command: BlameCommands.TOGGLE_GIT_ANNOTATIONS.id,
             context: EditorKeybindingContexts.editorTextFocus,
             keybinding: 'alt+b'
         });
