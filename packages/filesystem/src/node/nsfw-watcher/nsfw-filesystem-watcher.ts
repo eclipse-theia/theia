@@ -130,7 +130,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             this.watchers.delete(watcherId);
             this.debug('Stopping watching:', basePath);
             watcher.stop();
-            this.options.info('Stopped watching.');
+            this.options.info('Stopped watching:', basePath);
         });
         this.watcherOptions.set(watcherId, {
             ignored: options.ignored.map(pattern => new Minimatch(pattern))
