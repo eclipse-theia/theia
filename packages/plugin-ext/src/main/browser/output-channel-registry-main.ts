@@ -14,21 +14,25 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import {interfaces} from 'inversify';
-import {OUTPUT_WIDGET_KIND} from '@theia/output/lib/browser/output-widget';
+import {OutputWidget} from '@theia/output/lib/browser/output-widget';
+import {OutputContribution} from '@theia/output/lib/browser/output-contribution';
 import {OutputChannel, OutputChannelManager} from '@theia/output/lib/common/output-channel';
 import {OutputChannelRegistryMain} from '../../api/plugin-api';
 
 export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
-    private delegate: OutputChannelManager;
+    private outputChannelManager: OutputChannelManager;
+    private outputContribution: OutputContribution;
+    private commonOutputWidget: OutputWidget | undefined;
 
     private channels: Map<string, OutputChannel> = new Map();
 
     constructor(container: interfaces.Container) {
-        this.delegate = container.get(OutputChannelManager);
+        this.outputChannelManager = container.get(OutputChannelManager);
+        this.outputContribution = container.get(OutputContribution);
     }
 
     $append(channelName: string, value: string): PromiseLike<void> {
-        const outputChannel = this.getChannels(channelName);
+        const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
             outputChannel.append(value);
         }
@@ -37,7 +41,7 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
     }
 
     $clear(channelName: string): PromiseLike<void> {
-        const outputChannel = this.getChannels(channelName);
+        const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
             outputChannel.clear();
         }
@@ -46,7 +50,7 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
     }
 
     $dispose(channelName: string): PromiseLike<void> {
-        this.delegate.deleteChannel(channelName);
+        this.outputChannelManager.deleteChannel(channelName);
         if (this.channels.has(channelName)) {
             this.channels.delete(channelName);
         }
@@ -55,42 +59,41 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
     }
 
     $reveal(channelName: string, preserveFocus: boolean): PromiseLike<void> {
-        const outputChannel = this.getChannels(channelName);
+        const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
             outputChannel.setVisibility(true);
-            if (!preserveFocus) {
-                this.setOutputChannelFocus();
-            }
+            return this.outputContribution.openView({activate: !preserveFocus}).then((outputWidget: OutputWidget) => {
+                this.commonOutputWidget = outputWidget;
+                return Promise.resolve();
+            });
         }
 
         return Promise.resolve();
     }
 
     $close(channelName: string): PromiseLike<void> {
-        const outputChannel = this.getChannels(channelName);
+        const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
             outputChannel.setVisibility(false);
+        }
+        const channels = this.outputChannelManager.getChannels();
+        const isEmpty = channels.findIndex((channel: OutputChannel) => channel.isVisible) === -1;
+        if (isEmpty && this.commonOutputWidget) {
+            this.commonOutputWidget.close();
         }
 
         return Promise.resolve();
     }
 
-    private getChannels(channelName: string): OutputChannel | undefined {
+    private getChannel(channelName: string): OutputChannel | undefined {
         let outputChannel: OutputChannel | undefined;
         if (this.channels.has(channelName)) {
             outputChannel = this.channels.get(channelName);
         } else {
-            outputChannel = this.delegate.getChannel(channelName);
+            outputChannel = this.outputChannelManager.getChannel(channelName);
             this.channels.set(channelName, outputChannel);
         }
 
         return outputChannel;
-    }
-
-    private setOutputChannelFocus(): void {
-        const outputWidget = document.getElementById(OUTPUT_WIDGET_KIND);
-        if (outputWidget) {
-            outputWidget.focus();
-        }
     }
 }
