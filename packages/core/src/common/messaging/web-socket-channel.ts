@@ -27,7 +27,7 @@ export class WebSocketChannel implements IWebSocket {
 
     constructor(
         readonly id: number,
-        protected readonly doSend: (content: string) => void
+        protected readonly doSend: (content: string) => void,
     ) {
         this.toDispose.push(Disposable.NULL);
     }
@@ -57,7 +57,7 @@ export class WebSocketChannel implements IWebSocket {
         this.doSend(JSON.stringify(<WebSocketChannel.OpenMessage>{
             kind: 'open',
             id: this.id,
-            path
+            path,
         }));
     }
 
@@ -65,7 +65,7 @@ export class WebSocketChannel implements IWebSocket {
         this.checkNotDisposed();
         this.doSend(JSON.stringify(<WebSocketChannel.ReadyMessage>{
             kind: 'ready',
-            id: this.id
+            id: this.id,
         }));
     }
 
@@ -74,7 +74,7 @@ export class WebSocketChannel implements IWebSocket {
         this.doSend(JSON.stringify(<WebSocketChannel.DataMessage>{
             kind: 'data',
             id: this.id,
-            content
+            content,
         }));
     }
 
@@ -82,7 +82,7 @@ export class WebSocketChannel implements IWebSocket {
         this.checkNotDisposed();
         this.doSend(JSON.stringify(<WebSocketChannel.CloseMessage>{
             kind: 'close',
-            id: this.id
+            id: this.id,
         }));
     }
 

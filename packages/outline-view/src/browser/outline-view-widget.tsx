@@ -23,7 +23,7 @@ import {
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
-    ExpandableTreeNode
+    ExpandableTreeNode,
 } from "@theia/core/lib/browser";
 import { Message } from '@phosphor/messaging';
 import { Emitter } from '@theia/core';
@@ -51,7 +51,7 @@ export class OutlineViewWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) protected readonly treeProps: TreeProps,
         @inject(TreeModel) model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -67,7 +67,7 @@ export class OutlineViewWidget extends TreeWidget {
             name: 'Outline Root',
             visible: false,
             children: nodes,
-            parent: undefined
+            parent: undefined,
         } as CompositeTreeNode;
     }
 

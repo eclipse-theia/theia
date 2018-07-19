@@ -65,7 +65,7 @@ export class MonacoEditorProvider {
             editorService,
             textModelService,
             contextMenuService,
-            commandService
+            commandService,
         };
 
         const toDispose = new DisposableCollection();
@@ -186,7 +186,7 @@ export class MonacoEditorProvider {
                         control.revealRangeInCenterIfOutsideViewport(selection);
                     }
                     editor.focus();
-                }
+                },
             });
         };
     }
@@ -202,7 +202,7 @@ export class MonacoEditorProvider {
 
             referencesController._editorService.openEditor({
                 resource: uri,
-                options: { selection: range }
+                options: { selection: range },
             }).done(openedEditor => {
                 referencesController._ignoreModelChangeEvent = false;
                 if (!openedEditor) {
@@ -223,7 +223,7 @@ export class MonacoEditorProvider {
                     const modelPromise = Promise.resolve(model) as any;
                     modelPromise.cancel = () => { };
                     openedEditor.getControl()._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, {
-                        getMetaTitle: m => m.references.length > 1 ? ` – ${m.references.length} references` : ''
+                        getMetaTitle: m => m.references.length > 1 ? ` – ${m.references.length} references` : '',
                     });
                     return;
                 }

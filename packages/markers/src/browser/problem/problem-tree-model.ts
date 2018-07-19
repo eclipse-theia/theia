@@ -39,7 +39,7 @@ export class ProblemTreeModel extends MarkerTreeModel {
     protected getOpenerOptionsByMarker(node: MarkerNode): OpenerOptions | undefined {
         if (ProblemMarker.is(node.marker)) {
             return {
-                selection: node.marker.data.range
+                selection: node.marker.data.range,
             };
         }
         return undefined;

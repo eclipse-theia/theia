@@ -31,7 +31,7 @@ export class MonacoCommandRegistry {
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(SelectionService) protected readonly selectionService: SelectionService
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
     ) { }
 
     protected prefix(command: string): string {
@@ -46,7 +46,7 @@ export class MonacoCommandRegistry {
     registerCommand(command: Command, handler: MonacoEditorCommandHandler): void {
         this.commands.registerCommand({
             ...command,
-            id: this.prefix(command.id)
+            id: this.prefix(command.id),
         }, this.newHandler(handler));
     }
 
@@ -58,7 +58,7 @@ export class MonacoCommandRegistry {
         return {
             execute: (...args) => this.execute(monacoHandler, ...args),
             isEnabled: (...args) => this.isEnabled(monacoHandler, ...args),
-            isVisible: (...args) => this.isVisible(monacoHandler, ...args)
+            isVisible: (...args) => this.isVisible(monacoHandler, ...args),
         };
     }
 

@@ -29,7 +29,7 @@ export function bindProcessTaskRunnerModule(bind: interfaces.Bind) {
             child.parent = ctx.container;
             child.bind(TaskProcessOptions).toConstantValue(options);
             return child.get(ProcessTask);
-        }
+        },
     );
     bind(ProcessTaskRunner).toSelf().inSingletonScope();
     bind(ProcessTaskRunnerContribution).toSelf().inSingletonScope();

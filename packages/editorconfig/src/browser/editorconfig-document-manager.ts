@@ -25,7 +25,7 @@ export class EditorconfigDocumentManager {
 
     public static readonly LINE_ENDING = {
         LF: '\n',
-        CRLF: '\r\n'
+        CRLF: '\r\n',
     };
 
     @inject(EditorManager)
@@ -147,11 +147,11 @@ export class EditorconfigDocumentManager {
     ensureIndentStyle(editor: MonacoEditor, properties: KnownProps): void {
         if ('space' === properties.indent_style) {
             editor.document.textEditorModel.updateOptions({
-                insertSpaces: true
+                insertSpaces: true,
             });
         } else if ('tab' === properties.indent_style) {
             editor.document.textEditorModel.updateOptions({
-                insertSpaces: false
+                insertSpaces: false,
             });
         }
     }
@@ -169,7 +169,7 @@ export class EditorconfigDocumentManager {
         } else if (typeof properties.indent_size === 'number') {
             const indentSize: number = properties.indent_size as number;
             editor.document.textEditorModel.updateOptions({
-                tabSize: indentSize
+                tabSize: indentSize,
             });
         }
     }
@@ -183,7 +183,7 @@ export class EditorconfigDocumentManager {
         if (typeof properties.tab_width === 'number') {
             const tabWidth = properties.tab_width as number;
             editor.document.textEditorModel.updateOptions({
-                tabSize: tabWidth
+                tabSize: tabWidth,
             });
         }
     }
@@ -229,7 +229,7 @@ export class EditorconfigDocumentManager {
                     edits.push({
                         forceMoveMarkers: false,
                         range: new monaco.Range(i, trimmedLine.length + 1, i, line.length + 1),
-                        text: ""
+                        text: "",
                     });
                 }
             }
@@ -278,7 +278,7 @@ export class EditorconfigDocumentManager {
                 return {
                     forceMoveMarkers: false,
                     range: new monaco.Range(lines, lineContent.length + 1, lines, lineContent.length + 1),
-                    text: lineEnding
+                    text: lineEnding,
                 };
             }
         }

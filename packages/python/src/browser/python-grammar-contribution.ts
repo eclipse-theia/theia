@@ -29,7 +29,7 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
         brackets: [
             ['{', '}'],
             ['[', ']'],
-            ['(', ')']
+            ['(', ')'],
         ],
         autoClosingPairs: [
             { open: '[', close: ']' },
@@ -48,15 +48,15 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
         folding: {
             markers: {
                 start: new RegExp("^\\s*#pragma\\s+region\\b"),
-                end: new RegExp("^\\s*#pragma\\s+endregion\\b")
-            }
+                end: new RegExp("^\\s*#pragma\\s+endregion\\b"),
+            },
         },
         onEnterRules: [
             {
                 beforeText: /^\s*(?:def|class|for|if|elif|else|while|try|with|finally|except|async).*?:\s*$/,
-                action: { indentAction: monaco.languages.IndentAction.Indent }
-            }
-        ]
+                action: { indentAction: monaco.languages.IndentAction.Indent },
+            },
+        ],
     };
 
     registerTextmateLanguage(registry: TextmateRegistry) {
@@ -74,9 +74,9 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: platformGrammar
+                    content: platformGrammar,
                 };
-            }
+            },
         });
 
         const cGrammar = require('../../data/MagicRegExp.tmLanguage.json');
@@ -84,9 +84,9 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: cGrammar
+                    content: cGrammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(PYTHON_LANGUAGE_ID, 'source.python');
     }

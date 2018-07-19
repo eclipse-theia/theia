@@ -26,7 +26,7 @@ export class VariableResolverService {
     protected static VAR_REGEXP = /\$\{(.*?)\}/g;
 
     constructor(
-        @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry
+        @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry,
     ) { }
 
     /**

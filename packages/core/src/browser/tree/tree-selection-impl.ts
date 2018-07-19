@@ -56,13 +56,13 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
             if (TreeSelection.is(arg)) {
                 return {
                     type,
-                    ...arg
+                    ...arg,
                 };
             }
             const node = arg;
             return {
                 type,
-                node
+                node,
             };
         })(selectionOrTreeNode);
 

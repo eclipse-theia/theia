@@ -25,7 +25,7 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
 
     if (target === 'electron' && !fs.existsSync(browserModulesPath)) {
         const dependencies: {
-            [dependency: string]: string
+            [dependency: string]: string,
         } = {};
         for (const module of modulesToProcess) {
             console.log("Processing " + module);

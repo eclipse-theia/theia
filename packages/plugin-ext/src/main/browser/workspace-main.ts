@@ -38,17 +38,17 @@ export class WorkspaceMain {
                 const folder: WorkspaceFolder = {
                     uri: this.workspaceRoot,
                     name: workspacePath.base,
-                    index: 0
+                    index: 0,
                 } as WorkspaceFolder;
 
                 this.proxy.$onWorkspaceFoldersChanged({
                     added: [folder],
-                    removed: []
+                    removed: [],
                 } as WorkspaceFoldersChangeEvent);
             } else {
                 this.proxy.$onWorkspaceFoldersChanged({
                     added: [],
-                    removed: []
+                    removed: [],
                 } as WorkspaceFoldersChangeEvent);
             }
         });

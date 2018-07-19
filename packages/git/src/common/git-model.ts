@@ -198,7 +198,7 @@ export enum BranchType {
     /**
      * The remote branch type.
      */
-    Remote = 1
+    Remote = 1,
 
 }
 
@@ -393,7 +393,7 @@ export declare enum GitError {
     InvalidRefLength = 33,
     ProtectedBranchRequiresReview = 34,
     ProtectedBranchForcePush = 35,
-    PushWithPrivateEmail = 36
+    PushWithPrivateEmail = 36,
 }
 
 export interface GitFileBlame {

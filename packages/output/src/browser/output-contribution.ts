@@ -26,10 +26,10 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> {
             widgetId: OUTPUT_WIDGET_KIND,
             widgetName: 'Output',
             defaultWidgetOptions: {
-                area: 'bottom'
+                area: 'bottom',
             },
             toggleCommandId: 'output:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+u'
+            toggleKeybinding: 'ctrlcmd+shift+u',
         });
     }
 

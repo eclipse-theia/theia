@@ -34,7 +34,7 @@ export abstract class Task {
     constructor(
         protected readonly taskManager: TaskManager,
         protected readonly logger: ILogger,
-        protected readonly options: TaskOptions
+        protected readonly options: TaskOptions,
     ) {
         this.taskId = this.taskManager.register(this, this.options.context);
         this.exitEmitter = new Emitter<TaskExitedEvent>();

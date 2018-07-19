@@ -25,7 +25,7 @@ export abstract class ReactWidget extends BaseWidget {
 
     protected readonly onRender = new DisposableCollection();
     protected scrollOptions = {
-        suppressScrollX: true
+        suppressScrollX: true,
     };
 
     constructor() {

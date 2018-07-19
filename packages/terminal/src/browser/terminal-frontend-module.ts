@@ -48,13 +48,13 @@ export default new ContainerModule(bind => {
                 title: 'Terminal ' + counter,
                 useServerTitle: true,
                 destroyTermOnClose: true,
-                ...options
+                ...options,
             };
             child.bind(TerminalWidgetOptions).toConstantValue(widgetOptions);
             child.bind("terminal-dom-id").toConstantValue(domId);
 
             return child.get(TerminalWidget);
-        }
+        },
     }));
 
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();

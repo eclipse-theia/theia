@@ -32,7 +32,7 @@ export class TaskManager implements BackendApplicationContribution {
     protected readonly deleteEmitter = new Emitter<number>();
 
     constructor(
-        @inject(ILogger) @named('task') protected readonly logger: ILogger
+        @inject(ILogger) @named('task') protected readonly logger: ILogger,
     ) { }
 
     register(task: Task, ctx?: string): number {

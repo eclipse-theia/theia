@@ -50,7 +50,7 @@ export class BuiltinMonacoThemeProvider {
                     inherit: true,
                     rules: [],
                     colors: {},
-                }
+                },
             );
 
             monaco.editor.defineTheme(theme.name, theme);
@@ -93,7 +93,7 @@ export class BuiltinMonacoThemeProvider {
                     }, {});
 
                     monacoTheme.rules.push({
-                        ...settings, token: scope
+                        ...settings, token: scope,
                     });
                 }
             }

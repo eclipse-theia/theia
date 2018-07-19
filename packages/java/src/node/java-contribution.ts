@@ -52,20 +52,20 @@ export class JavaContribution extends BaseLanguageServerContribution {
         const args = [
             '-Declipse.application=org.eclipse.jdt.ls.core.id1',
             '-Dosgi.bundles.defaultStartLevel=4',
-            '-Declipse.product=org.eclipse.jdt.ls.core.product'
+            '-Declipse.product=org.eclipse.jdt.ls.core.product',
         ];
 
         if (DEBUG_MODE) {
             args.push(
                 '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044',
-                '-Dlog.level=ALL'
+                '-Dlog.level=ALL',
             );
         }
 
         args.push(
             '-jar', jarPath,
             '-configuration', configurationPath,
-            '-data', workspacePath
+            '-data', workspacePath,
         );
 
         this.startSocketServer().then(server => {

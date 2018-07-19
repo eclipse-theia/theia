@@ -44,7 +44,7 @@ function sameStart(a: Range, b: Range): boolean {
 
 export function filterSame(locations: Location[], definition: Location): Location[] {
     return locations.filter(candidate => candidate.uri !== definition.uri
-        || !sameStart(candidate.range, definition.range)
+        || !sameStart(candidate.range, definition.range),
     );
 }
 

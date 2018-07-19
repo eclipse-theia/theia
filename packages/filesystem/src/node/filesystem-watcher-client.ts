@@ -32,14 +32,14 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(IPCConnectionProvider) protected readonly ipcConnectionProvider: IPCConnectionProvider
+        @inject(IPCConnectionProvider) protected readonly ipcConnectionProvider: IPCConnectionProvider,
     ) {
         this.remote.setClient({
             onDidFilesChanged: e => {
                 if (this.client) {
                     this.client.onDidFilesChanged(e);
                 }
-            }
+            },
         });
         this.toDispose.push(this.remote);
         this.toDispose.push(this.listen());
@@ -68,8 +68,8 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
             entryPoint: path.resolve(__dirname, NSFW_WATCHER),
             errorHandler: new ConnectionErrorHandler({
                 serverName: NSFW_WATCHER,
-                logger: this.logger
-            })
+                logger: this.logger,
+            }),
         }, connection => this.proxyFactory.listen(connection));
     }
 

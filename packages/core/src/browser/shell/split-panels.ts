@@ -66,7 +66,7 @@ export class SplitPositionHandler {
             ...options,
             parent, targetSize, index,
             started: false,
-            ended: false
+            ended: false,
         };
         return this.moveSplitPos(move);
     }

@@ -134,7 +134,7 @@ export namespace MiniBrowserProps {
          * Allows the embedded browsing context to navigate (load) content to the top-level browsing context only when initiated by a user gesture.
          * If this keyword is not used, this operation is not allowed.
          */
-        'allow-top-navigation-by-user-activation'
+        'allow-top-navigation-by-user-activation',
     }
 
     export namespace SandboxOptions {
@@ -149,7 +149,7 @@ export namespace MiniBrowserProps {
             SandboxOptions['allow-scripts'],
             SandboxOptions['allow-popups'],
             SandboxOptions['allow-forms'],
-            SandboxOptions['allow-modals']
+            SandboxOptions['allow-modals'],
         ];
 
     }
@@ -195,7 +195,7 @@ export class MiniBrowserMouseClickTracker implements FrontendApplicationContribu
         const { layout } = this.applicationShell;
         if (layout instanceof PanelLayout) {
             this.toDispose.pushAll(
-                layout.widgets.filter(MiniBrowserMouseClickTracker.isSplitPanel).map(splitPanel => addEventListener(splitPanel.node, 'mousedown', this.mousedownListener, true))
+                layout.widgets.filter(MiniBrowserMouseClickTracker.isSplitPanel).map(splitPanel => addEventListener(splitPanel.node, 'mousedown', this.mousedownListener, true)),
             );
         }
         // Track the `mousedown` on each `DockPanel`.
@@ -210,7 +210,7 @@ export class MiniBrowserMouseClickTracker implements FrontendApplicationContribu
         this.toDispose.pushAll([
             this.mousedownEmitter,
             this.mouseupEmitter,
-            Disposable.create(() => document.removeEventListener('mouseup', this.mouseupListener, true))
+            Disposable.create(() => document.removeEventListener('mouseup', this.mouseupListener, true)),
         ]);
     }
 
@@ -301,7 +301,7 @@ export class MiniBrowser extends BaseWidget {
             this.navigateBackEmitter,
             this.navigateForwardEmitter,
             this.refreshEmitter,
-            this.openEmitter
+            this.openEmitter,
         ]);
     }
 
@@ -486,7 +486,7 @@ export class MiniBrowser extends BaseWidget {
                         input.select();
                     }
                 }
-            })
+            }),
         ]);
         parent.appendChild(input);
         return input;
@@ -596,7 +596,7 @@ export class MiniBrowser extends BaseWidget {
                     this.frame.style.display = 'none';
                     PDFObject.embed(url, this.pdfContainer, {
                         // tslint:disable-next-line:max-line-length
-                        fallbackLink: `<p style="padding: 0px 15px 0px 15px">Your browser does not support inline PDFs. Click on this <a href='[url]' target="_blank">link</a> to open the PDF in a new tab.</p>`
+                        fallbackLink: `<p style="padding: 0px 15px 0px 15px">Your browser does not support inline PDFs. Click on this <a href='[url]' target="_blank">link</a> to open the PDF in a new tab.</p>`,
                     });
                     this.hideLoadIndicator();
                 } else {

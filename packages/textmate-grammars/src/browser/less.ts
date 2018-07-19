@@ -34,7 +34,7 @@ export class LessContribution implements LanguageGrammarDefinitionContribution {
             wordPattern: /(#?-?\d*\.\d\w*%?)|([@#!.:]?[\w-?]+%?)|[@#!.]/g,
             comments: {
                 blockComment: ['/*', '*/'],
-                lineComment: '//'
+                lineComment: '//',
             },
             brackets: [
                 ['{', '}'],
@@ -58,9 +58,9 @@ export class LessContribution implements LanguageGrammarDefinitionContribution {
             folding: {
                 markers: {
                     start: new RegExp("^\\s*\\/\\*\\s*#region\\b\\s*(.*?)\\s*\\*\\/"),
-                    end: new RegExp("^\\s*\\/\\*\\s*#endregion\\b.*\\*\\/")
-                }
-            }
+                    end: new RegExp("^\\s*\\/\\*\\s*#endregion\\b.*\\*\\/"),
+                },
+            },
         });
 
         const grammar = require('../../data/less.tmLanguage.json');
@@ -68,9 +68,9 @@ export class LessContribution implements LanguageGrammarDefinitionContribution {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

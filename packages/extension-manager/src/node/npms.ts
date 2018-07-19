@@ -33,8 +33,8 @@ export function search(query: string, from?: number, size?: number): Promise<Nod
             } else if (response.statusCode === 200) {
                 const result = JSON.parse(body) as {
                     results: {
-                        package: NodePackage
-                    }[]
+                        package: NodePackage,
+                    }[],
                 };
                 resolve(result.results.map(v => v.package));
             } else {

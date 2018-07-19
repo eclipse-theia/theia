@@ -29,5 +29,5 @@ export const configuration: monaco.languages.LanguageConfiguration = {
         { open: '[', close: ']', notIn: ['string', 'comment'] },
         { open: '(', close: ')', notIn: ['string', 'comment'] },
         { open: '<', close: '>', notIn: ['string', 'comment'] },
-    ]
+    ],
 };

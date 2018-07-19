@@ -77,7 +77,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
 
             // disable redirect to grab the release
             const options = {
-                followRedirect: false
+                followRedirect: false,
             };
             // if latest, resolve first the real version
             if (version === 'latest') {

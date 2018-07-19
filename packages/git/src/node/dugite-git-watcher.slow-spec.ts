@@ -78,7 +78,7 @@ describe('git-watcher-slow', () => {
                 } else {
                     events.push(event);
                 }
-            }
+            },
         };
         watcher!.setClient(client);
         watchers.push(await watcher!.watchGitChanges(repository!));

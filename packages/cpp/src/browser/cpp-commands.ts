@@ -37,11 +37,11 @@ export const SWITCH_SOURCE_HEADER: Command = {
  * A command that is used to show the references from a CodeLens.
  */
 export const SHOW_CLANGD_REFERENCES: Command = {
-    id: 'clangd.references'
+    id: 'clangd.references',
 };
 
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
-    id: `file:openPath`
+    id: `file:openPath`,
 };
 
 export function editorContainsCppFiles(editorManager: EditorManager | undefined): boolean {
@@ -59,18 +59,17 @@ export class CppCommandContribution implements CommandContribution {
         @inject(CppLanguageClientContribution) protected readonly clientContribution: CppLanguageClientContribution,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(EditorManager) private editorService: EditorManager,
-        protected readonly selectionService: SelectionService
-
+        protected readonly selectionService: SelectionService,
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
             isEnabled: () => editorContainsCppFiles(this.editorService),
-            execute: () => this.switchSourceHeader()
+            execute: () => this.switchSourceHeader(),
         });
         commands.registerCommand(SHOW_CLANGD_REFERENCES, {
             execute: (doc: TextDocumentIdentifier, pos: Position, locs: Location[]) =>
-                commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, doc.uri, pos, locs)
+                commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, doc.uri, pos, locs),
         });
     }
 

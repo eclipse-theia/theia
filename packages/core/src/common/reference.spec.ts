@@ -25,7 +25,7 @@ describe('reference', () => {
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {
                 expectation.disposed = true;
-            }
+            },
         }));
         assert.ok(!references.has("a"));
         assert.ok(!expectation.disposed);
@@ -47,7 +47,7 @@ describe('reference', () => {
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {
                 expectation.disposed = true;
-            }
+            },
         }));
         assert.ok(!references.has("a"));
         assert.ok(!expectation.disposed);
@@ -75,7 +75,7 @@ describe('reference', () => {
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {
                 expectation.disposed = true;
-            }
+            },
         }));
         assert.ok(!references.has("a"));
         assert.ok(!expectation.disposed);
@@ -97,7 +97,7 @@ describe('reference', () => {
         const expectation: { disposed: boolean } = { disposed: false };
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {
-            }
+            },
         }));
         assert.ok(!references.has("a"));
         assert.ok(!expectation.disposed);
@@ -115,7 +115,7 @@ describe('reference', () => {
     it("the same object should be provided by an async factory for the same key", async () => {
         const references = new ReferenceCollection<string, Disposable>(async key => ({
             key, dispose: () => {
-            }
+            },
         }));
         const result = await Promise.all([...Array(10).keys()].map(() => references.acquire("a")));
         result.forEach(v => assert.ok(result[0].object === v.object));

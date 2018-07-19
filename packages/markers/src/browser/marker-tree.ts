@@ -33,7 +33,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
     constructor(
         protected readonly markerManager: MarkerManager<T>,
         protected readonly markerOptions: MarkerOptions,
-        protected readonly labelProvider: LabelProvider
+        protected readonly labelProvider: LabelProvider,
     ) {
         super();
 
@@ -45,7 +45,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
             name: 'MarkerTree',
             kind: markerOptions.kind,
             children: [],
-            parent: undefined
+            parent: undefined,
         };
     }
 
@@ -99,13 +99,13 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
             description,
             parent: this.root as MarkerRootNode,
             selected: false,
-            numberOfMarkers: 0
+            numberOfMarkers: 0,
         };
     }
 
     protected getMarkerNodes(parent: MarkerInfoNode, markers: Marker<T>[]): MarkerNode[] {
         return markers.map((marker, index) =>
-            this.createMarkerNode(marker, index, parent)
+            this.createMarkerNode(marker, index, parent),
         );
     }
     protected createMarkerNode(marker: Marker<T>, index: number, parent: MarkerInfoNode): MarkerNode {
@@ -121,7 +121,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
             parent,
             selected: false,
             uri: parent.uri,
-            marker
+            marker,
         };
     }
 }

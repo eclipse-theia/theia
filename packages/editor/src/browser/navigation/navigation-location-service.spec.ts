@@ -61,7 +61,7 @@ describe('navigation-location-service', () => {
     it('should allow navigating back when the stack has more than one locations', () => {
         stack.register(
             createCursorLocation(),
-            createCursorLocation({ line: 100, character: 100 })
+            createCursorLocation({ line: 100, character: 100 }),
         );
         expect(stack.canGoBack()).to.be.true;
     });
@@ -73,7 +73,7 @@ describe('navigation-location-service', () => {
     it('should not allow navigating forward when the pointer points to the end last element of the stack', () => {
         stack.register(
             createCursorLocation(),
-            createCursorLocation({ line: 100, character: 100 })
+            createCursorLocation({ line: 100, character: 100 }),
         );
         expect(stack.canGoForward()).to.be.false;
     });
@@ -88,7 +88,7 @@ describe('navigation-location-service', () => {
         it('should return with undefined if the stack contains no modifications', () => {
             stack.register(
                 createCursorLocation(),
-                createCursorLocation({ line: 100, character: 100 })
+                createCursorLocation({ line: 100, character: 100 }),
             );
             expect(stack.lastEditLocation()).to.be.undefined;
         });
@@ -97,12 +97,12 @@ describe('navigation-location-service', () => {
             const expected = NavigationLocation.create('file://path/to/file', {
                 text: '',
                 range: { start: { line: 200, character: 0 }, end: { line: 500, character: 0 } },
-                rangeLength: 0
+                rangeLength: 0,
             });
             stack.register(
                 createCursorLocation(),
                 expected,
-                createCursorLocation({ line: 100, character: 100 })
+                createCursorLocation({ line: 100, character: 100 }),
             );
             expect(stack.lastEditLocation()).to.be.deep.equal(expected);
         });
@@ -111,18 +111,18 @@ describe('navigation-location-service', () => {
             const modificationLocation = NavigationLocation.create('file://path/to/file', {
                 text: '',
                 range: { start: { line: 300, character: 0 }, end: { line: 500, character: 0 } },
-                rangeLength: 0
+                rangeLength: 0,
             });
             const expected = NavigationLocation.create('file://path/to/file', {
                 text: '',
                 range: { start: { line: 700, character: 0 }, end: { line: 800, character: 0 } },
-                rangeLength: 0
+                rangeLength: 0,
             });
             stack.register(
                 createCursorLocation(),
                 modificationLocation,
                 createCursorLocation({ line: 100, character: 100 }),
-                expected
+                expected,
             );
             await stack.back();
             await stack.back();

@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import {
     MessageClient,
     MessageType,
-    Message
+    Message,
 } from '@theia/core/lib/common';
 import { Notifications, NotificationAction } from './notifications';
 import { NotificationPreferences } from "./notification-preferences";
@@ -44,7 +44,7 @@ export class NotificationsMessageClient extends MessageClient {
         const text = message.text;
         const actions = (message.actions || []).map(action => <NotificationAction>{
             label: action,
-            fn: element => onCloseFn(action)
+            fn: element => onCloseFn(action),
         });
 
         const timeout = actions.length > 0 ? undefined
@@ -54,13 +54,13 @@ export class NotificationsMessageClient extends MessageClient {
 
         actions.push(<NotificationAction>{
             label: 'Close',
-            fn: element => onCloseFn(undefined)
+            fn: element => onCloseFn(undefined),
         });
         this.notifications.show({
             icon,
             text,
             actions,
-            timeout
+            timeout,
         });
     }
 

@@ -18,7 +18,7 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode,
-    MAIN_MENU_BAR, MenuModelRegistry, MenuPath
+    MAIN_MENU_BAR, MenuModelRegistry, MenuPath,
 } from '../../common';
 import { PreferenceService, KeybindingRegistry, Keybinding, KeyCode, Key } from '../../browser';
 
@@ -31,7 +31,7 @@ export class ElectronMainMenuFactory {
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(PreferenceService) protected readonly preferencesService: PreferenceService,
         @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
-        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
+        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry,
     ) { }
 
     createMenuBar(): Electron.Menu {
@@ -60,12 +60,12 @@ export class ElectronMainMenuFactory {
                     // should we create a submenu?
                     items.push({
                         label: menu.label,
-                        submenu: this.fillMenuTemplate([], menu)
+                        submenu: this.fillMenuTemplate([], menu),
                     });
                 } else {
                     // or just a separator?
                     items.push({
-                        type: 'separator'
+                        type: 'separator',
                     });
                     // followed by the elements
                     this.fillMenuTemplate(items, menu);
@@ -96,7 +96,7 @@ export class ElectronMainMenuFactory {
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
                     click: () => this.execute(commandId),
-                    accelerator
+                    accelerator,
                 });
                 if (this.commandRegistry.getToggledHandler(commandId)) {
                     toggledCommands.push(commandId);
@@ -182,34 +182,34 @@ export class ElectronMainMenuFactory {
             label: 'Theia',
             submenu: [
                 {
-                    role: 'about'
+                    role: 'about',
                 },
                 {
-                    type: 'separator'
+                    type: 'separator',
                 },
                 {
                     role: 'services',
-                    submenu: []
+                    submenu: [],
                 },
                 {
-                    type: 'separator'
+                    type: 'separator',
                 },
                 {
-                    role: 'hide'
+                    role: 'hide',
                 },
                 {
-                    role: 'hideothers'
+                    role: 'hideothers',
                 },
                 {
-                    role: 'unhide'
+                    role: 'unhide',
                 },
                 {
-                    type: 'separator'
+                    type: 'separator',
                 },
                 {
-                    role: 'quit'
-                }
-            ]
+                    role: 'quit',
+                },
+            ],
         };
     }
 

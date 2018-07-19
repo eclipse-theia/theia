@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenOptions,
-    QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
+    QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence,
 } from "@theia/core/lib/browser";
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ILogger } from '@theia/core';
@@ -93,7 +93,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
                 this.onClose(true);
             },
             onType: lookFor => this.onType(lookFor || ''),
-            onFocusLost: () => (this.opts && this.opts.ignoreFocusOut !== undefined) ? this.opts.ignoreFocusOut : false
+            onFocusLost: () => (this.opts && this.opts.ignoreFocusOut !== undefined) ? this.opts.ignoreFocusOut : false,
         }, {});
         this.attachQuickOpenStyler();
         this._widget.create();
@@ -140,7 +140,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
 
     constructor(
         protected readonly model: QuickOpenModel,
-        options?: QuickOpenOptions
+        options?: QuickOpenOptions,
     ) {
         this.model = model;
         this.options = QuickOpenOptions.resolve(options);
@@ -208,13 +208,13 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
             const idx = this.options.selectIndex(lookFor);
             if (idx >= 0) {
                 return {
-                    autoFocusIndex: idx
+                    autoFocusIndex: idx,
                 };
             }
         }
         return {
             autoFocusFirstEntry: true,
-            autoFocusPrefixMatch: lookFor
+            autoFocusPrefixMatch: lookFor,
         };
     }
 
@@ -223,7 +223,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
 export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
 
     constructor(
-        public readonly item: QuickOpenItem
+        public readonly item: QuickOpenItem,
     ) {
         super();
     }
@@ -278,7 +278,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
                     keyCode.shift,
                     keyCode.alt,
                     keyCode.meta,
-                    KEY_CODE_MAP[keyCode.key.keyCode]
+                    KEY_CODE_MAP[keyCode.key.keyCode],
                 );
                 return new monaco.keybindings.USLayoutResolvedKeybinding(simple, monaco.platform.OS);
             }
@@ -293,7 +293,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
                     first.shift,
                     first.alt,
                     first.meta,
-                    KEY_CODE_MAP[first.key.keyCode]
+                    KEY_CODE_MAP[first.key.keyCode],
                 );
 
                 const secondPart = new monaco.keybindings.SimpleKeybinding(
@@ -301,7 +301,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
                     second.shift,
                     second.alt,
                     second.meta,
-                    KEY_CODE_MAP[second.key.keyCode]
+                    KEY_CODE_MAP[second.key.keyCode],
                 );
 
                 return new monaco.keybindings.USLayoutResolvedKeybinding(
@@ -332,7 +332,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
 export class QuickOpenEntryGroup extends monaco.quickOpen.QuickOpenEntryGroup {
 
     constructor(
-        public readonly item: QuickOpenGroupItem
+        public readonly item: QuickOpenGroupItem,
     ) {
         super(new QuickOpenEntry(item));
     }

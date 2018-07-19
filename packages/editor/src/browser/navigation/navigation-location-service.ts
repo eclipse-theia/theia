@@ -209,7 +209,7 @@ export class NavigationLocationService {
             start = { ...start, character: start.character + location.context.text.length };
         }
         return {
-            selection: Range.create(start, start)
+            selection: Range.create(start, start),
         } as EditorOpenerOptions;
     }
 

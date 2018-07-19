@@ -86,11 +86,11 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.li(
             {
                 key, className, title: title.caption, style, dataset,
-                oncontextmenu: event => this.handleContextMenuEvent(event, title)
+                oncontextmenu: event => this.handleContextMenuEvent(event, title),
             },
             this.renderIcon(data),
             this.renderLabel(data),
-            this.renderCloseIcon(data)
+            this.renderCloseIcon(data),
         );
     }
 
@@ -293,7 +293,7 @@ export class SideTabBar extends ScrollableTabBar {
     private mouseData?: {
         pressX: number,
         pressY: number,
-        mouseDownTabIndex: number
+        mouseDownTabIndex: number,
     };
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
@@ -356,7 +356,7 @@ export class SideTabBar extends ScrollableTabBar {
                     const tabStyle = window.getComputedStyle(hiddenTab);
                     const rd: Partial<SideBarRenderData> = {
                         paddingTop: parseFloat(tabStyle.paddingTop!),
-                        paddingBottom: parseFloat(tabStyle.paddingBottom!)
+                        paddingBottom: parseFloat(tabStyle.paddingBottom!),
                     };
                     // Extract label size from the DOM
                     const labelElements = hiddenTab.getElementsByClassName('p-TabBar-tabLabel');
@@ -452,7 +452,7 @@ export class SideTabBar extends ScrollableTabBar {
         this.mouseData = {
             pressX: event.clientX,
             pressY: event.clientY,
-            mouseDownTabIndex: index
+            mouseDownTabIndex: index,
         };
     }
 

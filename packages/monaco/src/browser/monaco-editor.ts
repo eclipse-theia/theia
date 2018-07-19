@@ -73,7 +73,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             this.onCursorPositionChangedEmitter,
             this.onSelectionChangedEmitter,
             this.onFocusChangedEmitter,
-            this.onDocumentContentChangedEmitter
+            this.onDocumentContentChangedEmitter,
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -92,8 +92,8 @@ export class MonacoEditor implements TextEditor, IEditorReference {
                 verticalHasArrows: false,
                 horizontalHasArrows: false,
                 verticalScrollbarSize: 10,
-                horizontalScrollbarSize: 10
-            }
+                horizontalScrollbarSize: 10,
+            },
         }, override);
     }
 
@@ -105,7 +105,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             this.onDocumentContentChangedEmitter.fire({ document: this.document, contentChanges: e.changes.map(this.mapModelContentChange.bind(this)) });
         }));
         this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
-            this.onCursorPositionChangedEmitter.fire(this.cursor)
+            this.onCursorPositionChangedEmitter.fire(this.cursor),
         ));
         this.toDispose.push(codeEditor.onDidChangeCursorSelection(e => {
             this.onSelectionChangedEmitter.fire(this.selection);
@@ -114,7 +114,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             this.onFocusChangedEmitter.fire(this.isFocused());
         }));
         this.toDispose.push(codeEditor.onDidBlurEditor(() =>
-            this.onFocusChangedEmitter.fire(this.isFocused())
+            this.onFocusChangedEmitter.fire(this.isFocused()),
         ));
     }
 
@@ -122,7 +122,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return {
             range: this.m2p.asRange(change.range),
             rangeLength: change.rangeLength,
-            text: change.text
+            text: change.text,
         };
     }
 
@@ -358,10 +358,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
                 forceMoveMarkers: true,
                 identifier: {
                     major: range.startLineNumber,
-                    minor: range.startColumn
+                    minor: range.startColumn,
                 },
                 range,
-                text: param.text
+                text: param.text,
             };
         });
         return this.editor.executeEdits(params.source, edits);

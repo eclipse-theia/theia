@@ -57,7 +57,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
             placeholder: options.placeHolder,
             onClose: () => {
                 this.cleanUp();
-            }
+            },
         });
 
         return new Promise((resolve, reject) => {
@@ -81,7 +81,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
                         this.cleanUp();
                     }
                     return true;
-                }
+                },
             }));
         }
         if (this.acceptor) {

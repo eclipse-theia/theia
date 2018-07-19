@@ -105,14 +105,14 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
                 iconClass,
                 // Make sure the toolbar is not visible. We have the `iframe.src` anyway.
                 toolbar: 'hide',
-                resetBackground
+                resetBackground,
             };
         }
         if (options) {
             // Explicit options overrule everything.
             result = {
                 ...result,
-                ...options
+                ...options,
             };
         }
         return result;
@@ -128,7 +128,7 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
             mode: 'activate',
             widgetOptions: { area: 'main' },
             sandbox: MiniBrowserProps.SandboxOptions.DEFAULT,
-            toolbar: 'show'
+            toolbar: 'show',
         };
     }
 

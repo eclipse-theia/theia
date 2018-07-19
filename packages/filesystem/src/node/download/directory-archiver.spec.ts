@@ -59,28 +59,28 @@ describe('directory-archiver', () => {
             {
                 input: ['/A/B/C/D.txt', '/X/Y/Z.txt'],
                 expected: new Map([['/A/B/C', ['/A/B/C/D.txt']], ['/X/Y', ['/X/Y/Z.txt']]]),
-                folders: ['/A', '/A/B', '/A/B/C', '/X', '/X/Y']
+                folders: ['/A', '/A/B', '/A/B/C', '/X', '/X/Y'],
             },
             {
                 input: ['/A/B/C/D.txt', '/A/B/C/E.txt'],
                 expected: new Map([['/A/B/C', ['/A/B/C/D.txt', '/A/B/C/E.txt']]]),
-                folders: ['/A', '/A/B', '/A/B/C']
+                folders: ['/A', '/A/B', '/A/B/C'],
             },
             {
                 input: ['/A', '/A/B/C/D.txt', '/A/B/C/E.txt'],
                 expected: new Map([['/A', ['/A', '/A/B/C/D.txt', '/A/B/C/E.txt']]]),
-                folders: ['/A', '/A/B', '/A/B/C']
+                folders: ['/A', '/A/B', '/A/B/C'],
             },
             {
                 input: ['/A/B/C/D.txt', '/A/B/C/E.txt', '/A'],
                 expected: new Map([['/A', ['/A', '/A/B/C/D.txt', '/A/B/C/E.txt']]]),
-                folders: ['/A', '/A/B', '/A/B/C']
+                folders: ['/A', '/A/B', '/A/B/C'],
             },
             {
                 input: ['/A/B/C/D.txt', '/A/B/X/E.txt'],
                 expected: new Map([['/A/B', ['/A/B/C/D.txt', '/A/B/X/E.txt']]]),
-                folders: ['/A', '/A/B', '/A/B/C', '/A/B/X']
-            }
+                folders: ['/A', '/A/B', '/A/B/C', '/A/B/X'],
+            },
         ] as ({ input: string[], expected: Map<string, string[]>, folders?: string[] })[]).forEach(test => {
             const { input, expected, folders } = test;
             it(`should find the common parent URIs among [${input.join(', ')}] => [${Array.from(expected.keys()).join(', ')}]`, async () => {

@@ -36,7 +36,7 @@ export class GitLocatorClient implements GitLocator {
         return new Promise((resolve, reject) => {
             const toStop = this.ipcConnectionProvider.listen({
                 serverName: 'git-locator',
-                entryPoint: paths.resolve(__dirname, 'git-locator-host')
+                entryPoint: paths.resolve(__dirname, 'git-locator-host'),
             }, async connection => {
                 const proxyFactory = new JsonRpcProxyFactory<GitLocator>();
                 const remote = proxyFactory.createProxy();

@@ -51,7 +51,7 @@ export class Path {
      * The raw should be normalized, meaning that only '/' is allowed as a path separator.
      */
     constructor(
-        private raw: string
+        private raw: string,
     ) {
         const firstIndex = raw.indexOf(Path.separator);
         const lastIndex = raw.lastIndexOf(Path.separator);

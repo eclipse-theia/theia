@@ -33,36 +33,36 @@ const validFilename: (arg: string) => boolean = require('valid-filename');
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
         id: 'workspace:open',
-        label: 'Open...'
+        label: 'Open...',
     };
     export const CLOSE: Command = {
         id: 'workspace:close',
-        label: 'Close Workspace'
+        label: 'Close Workspace',
     };
     export const NEW_FILE: Command = {
         id: 'file.newFile',
-        label: 'New File'
+        label: 'New File',
     };
     export const NEW_FOLDER: Command = {
         id: 'file.newFolder',
-        label: 'New Folder'
+        label: 'New Folder',
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`,
         label: opener.label,
-        iconClass: opener.iconClass
+        iconClass: opener.iconClass,
     });
     export const FILE_RENAME: Command = {
         id: 'file.rename',
-        label: 'Rename'
+        label: 'Rename',
     };
     export const FILE_DELETE: Command = {
         id: 'file.delete',
-        label: 'Delete'
+        label: 'Delete',
     };
     export const FILE_COMPARE: Command = {
         id: 'file.compare',
-        label: 'Compare with Each Other'
+        label: 'Compare with Each Other',
     };
 }
 
@@ -71,10 +71,10 @@ export class FileMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
-            commandId: WorkspaceCommands.NEW_FILE.id
+            commandId: WorkspaceCommands.NEW_FILE.id,
         });
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
-            commandId: WorkspaceCommands.NEW_FOLDER.id
+            commandId: WorkspaceCommands.NEW_FOLDER.id,
         });
     }
 
@@ -89,7 +89,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(MessageService) protected readonly messageService: MessageService
+        @inject(MessageService) protected readonly messageService: MessageService,
 
     ) { }
 
@@ -100,7 +100,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
                     execute: uri => opener.open(uri),
                     isEnabled: uri => opener.canHandle(uri) > 0,
-                    isVisible: uri => opener.canHandle(uri) > 0
+                    isVisible: uri => opener.canHandle(uri) > 0,
                 }));
             }
         });
@@ -112,7 +112,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new SingleTextInputDialog({
                         title: `New File`,
                         initialValue: vacantChildUri.path.base,
-                        validate: name => this.validateFileName(name, parent)
+                        validate: name => this.validateFileName(name, parent),
                     });
                     dialog.open().then(name => {
                         const fileUri = parentUri.resolve(name);
@@ -121,7 +121,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         });
                     });
                 }
-            })
+            }),
         }));
         registry.registerCommand(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
@@ -131,13 +131,13 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new SingleTextInputDialog({
                         title: `New Folder`,
                         initialValue: vacantChildUri.path.base,
-                        validate: name => this.validateFileName(name, parent)
+                        validate: name => this.validateFileName(name, parent),
                     });
                     dialog.open().then(name =>
-                        this.fileSystem.createFolder(parentUri.resolve(name).toString())
+                        this.fileSystem.createFolder(parentUri.resolve(name).toString()),
                     );
                 }
-            })
+            }),
         }));
         registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newUriAwareCommandHandler({
             execute: uri => this.getParent(uri).then(parent => {
@@ -145,13 +145,13 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new SingleTextInputDialog({
                         title: 'Rename File',
                         initialValue: uri.path.base,
-                        validate: name => this.validateFileName(name, parent)
+                        validate: name => this.validateFileName(name, parent),
                     });
                     dialog.open().then(name =>
-                        this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
+                        this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString()),
                     );
                 }
-            })
+            }),
         }));
         let rootUri: URI | undefined;
         this.workspaceService.root.then(root => {
@@ -190,7 +190,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     uris.sort((left, right) => right.toString().length - left.toString().length);
                     await Promise.all(uris.map(uri => uri.toString()).map(uri => this.fileSystem.delete(uri)));
                 }
-            }
+            },
         }));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
             isVisible: uris => uris.length === 2,
@@ -198,7 +198,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 const [left, right] = uris;
                 const [leftExists, rightExists] = await Promise.all([
                     this.fileSystem.exists(left.toString()),
-                    this.fileSystem.exists(right.toString())
+                    this.fileSystem.exists(right.toString()),
                 ]);
                 if (leftExists && rightExists) {
                     const [leftStat, rightStat] = await Promise.all([
@@ -226,7 +226,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         }
                     }
                 }
-            }
+            },
         }));
     }
 
@@ -294,7 +294,7 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
     constructor(
         protected readonly workspaceService: WorkspaceService,
         protected readonly selectionService: SelectionService,
-        protected readonly handler: UriCommandHandler<URI>
+        protected readonly handler: UriCommandHandler<URI>,
     ) {
         super(selectionService, handler);
         workspaceService.root.then(root => {

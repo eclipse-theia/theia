@@ -41,7 +41,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             options = {
                 name: nameOrOptions,
                 shellPath: shellPath,
-                shellArgs: shellArgs
+                shellArgs: shellArgs,
             };
         }
 

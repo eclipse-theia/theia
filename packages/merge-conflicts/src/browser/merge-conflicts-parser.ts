@@ -120,7 +120,7 @@ export class MergeConflictsParser {
             ctx.new.incoming.marker = markerRange;
             ctx.new.total = {
                 start: ctx.new.current.marker!.start,
-                end: markerRange.end
+                end: markerRange.end,
             };
         };
         push.onEnter = (input, ctx) => {
@@ -155,7 +155,7 @@ export namespace MergeConflictsParser {
         new: MergeConflict = {
             current: {},
             incoming: {},
-            bases: []
+            bases: [],
         };
         all: MergeConflict[] = [];
     }

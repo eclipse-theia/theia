@@ -25,7 +25,7 @@ export const loggerFrontendModule = new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         initialize() {
             setRootLogger(ctx.container.get<ILogger>(ILogger));
-        }
+        },
     }));
 
     bind(LoggerName).toConstantValue(rootLoggerName);
@@ -43,6 +43,6 @@ export const loggerFrontendModule = new ContainerModule(bind => {
             child.bind(ILogger).to(Logger).inTransientScope();
             child.bind(LoggerName).toConstantValue(name);
             return child.get(ILogger);
-        }
+        },
     );
 });

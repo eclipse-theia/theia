@@ -34,10 +34,10 @@ export class AboutDialog extends AbstractDialog<void> {
     protected readonly appServer: ApplicationServer;
 
     constructor(
-        @inject(AboutDialogProps) protected readonly props: AboutDialogProps
+        @inject(AboutDialogProps) protected readonly props: AboutDialogProps,
     ) {
         super({
-            title: props.title
+            title: props.title,
         });
     }
 

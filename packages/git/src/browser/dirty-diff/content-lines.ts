@@ -61,7 +61,7 @@ export namespace ContentLines {
                 }
                 const lineContent = content.substring(start, end);
                 return lineContent;
-            }
+            },
         };
     }
 
@@ -105,7 +105,7 @@ export namespace ContentLines {
                     }
                 }
                 throw new Error(`get ${String(p)} not implemented`);
-            }
+            },
         };
     }
 }

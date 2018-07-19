@@ -32,7 +32,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
 
     constructor(
         protected readonly serviceIdentifier: interfaces.ServiceIdentifier<T>,
-        protected readonly container: interfaces.Container
+        protected readonly container: interfaces.Container,
     ) { }
 
     getContributions(recursive?: boolean): T[] {

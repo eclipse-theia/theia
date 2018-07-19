@@ -31,11 +31,11 @@ export default new ContainerModule(bind => {
     bind(ProblemManager).toSelf().inSingletonScope();
 
     bind(ProblemWidget).toDynamicValue(ctx =>
-        createProblemWidget(ctx.container)
+        createProblemWidget(ctx.container),
     );
     bind(WidgetFactory).toDynamicValue(context => ({
         id: PROBLEM_KIND,
-        createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
+        createWidget: () => context.container.get<ProblemWidget>(ProblemWidget),
     }));
 
     bindViewContribution(bind, ProblemContribution);

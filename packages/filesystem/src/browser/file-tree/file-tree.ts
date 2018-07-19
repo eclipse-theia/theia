@@ -54,7 +54,7 @@ export class FileTree extends TreeImpl {
             return [];
         }
         const result = await Promise.all(fileStat.children.map(async child =>
-            await this.toNode(child, parent)
+            await this.toNode(child, parent),
         ));
         return result.sort(DirNode.compare);
     }
@@ -74,7 +74,7 @@ export class FileTree extends TreeImpl {
                 id, uri, fileStat, name, icon, parent,
                 expanded: false,
                 selected: false,
-                children: []
+                children: [],
             };
         }
         if (FileNode.is(node)) {
@@ -83,7 +83,7 @@ export class FileTree extends TreeImpl {
         }
         return <FileNode>{
             id, uri, fileStat, name, icon, parent,
-            selected: false
+            selected: false,
         };
     }
 
@@ -132,7 +132,7 @@ export namespace DirNode {
             parent: undefined,
             children: [],
             expanded: true,
-            selected: false
+            selected: false,
         };
     }
 

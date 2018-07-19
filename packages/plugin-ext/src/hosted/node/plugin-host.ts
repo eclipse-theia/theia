@@ -32,7 +32,7 @@ const rpc = new RPCProtocolImpl({
         if (process.send) {
             process.send(JSON.stringify(m));
         }
-    }
+    },
 });
 process.on('message', (message: any) => {
     try {
@@ -72,5 +72,5 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
                 plugins.delete(pluginId);
             }
         });
-    }
+    },
 }));

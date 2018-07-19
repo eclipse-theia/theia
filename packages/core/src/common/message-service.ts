@@ -21,7 +21,7 @@ import { MessageClient, MessageType, MessageOptions } from "./message-service-pr
 export class MessageService {
 
     constructor(
-        @inject(MessageClient) protected readonly client: MessageClient
+        @inject(MessageClient) protected readonly client: MessageClient,
     ) { }
 
     log(message: string, ...actions: string[]): Promise<string | undefined>;

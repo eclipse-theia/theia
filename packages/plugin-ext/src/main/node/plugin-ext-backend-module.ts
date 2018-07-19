@@ -20,7 +20,7 @@ import { BackendApplicationContribution } from "@theia/core/lib/node";
 import { PluginDeployerContribution } from "./plugin-deployer-contribution";
 import {
     PluginDeployer, PluginDeployerResolver, PluginDeployerFileHandler,
-    PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath
+    PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath,
 } from "../../common/plugin-protocol";
 import { PluginDeployerImpl } from "./plugin-deployer-impl";
 import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-dir-resolver";
@@ -49,7 +49,7 @@ export function bindMainBackend(bind: interfaces.Bind): void {
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(pluginServerJsonRpcPath, () =>
-            ctx.container.get(PluginServer)
-        )
+            ctx.container.get(PluginServer),
+        ),
     ).inSingletonScope();
 }

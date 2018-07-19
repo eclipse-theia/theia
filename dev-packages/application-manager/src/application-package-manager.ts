@@ -86,8 +86,8 @@ export class ApplicationPackageManager {
             stdio: [0, 1, 2, 'ipc'],
             env: {
                 ...process.env,
-                THEIA_PARENT_PID: String(process.pid)
-            }
+                THEIA_PARENT_PID: String(process.pid),
+            },
         };
         const mainArgs = [...args];
         const inspectIndex = mainArgs.findIndex(v => v.startsWith('--inspect'));

@@ -40,7 +40,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected acceptButton: HTMLButtonElement | undefined;
 
     constructor(
-        @inject(DialogProps) protected readonly props: DialogProps
+        @inject(DialogProps) protected readonly props: DialogProps,
     ) {
         super();
         this.addClass('dialogOverlay');
@@ -205,7 +205,7 @@ export class ConfirmDialogProps extends DialogProps {
 export class ConfirmDialog extends AbstractDialog<boolean> {
 
     constructor(
-        @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
+        @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps,
     ) {
         super(props);
 
@@ -248,7 +248,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     protected readonly inputField: HTMLInputElement;
 
     constructor(
-        @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps
+        @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps,
     ) {
         super(props);
 

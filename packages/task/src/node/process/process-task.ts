@@ -38,7 +38,7 @@ export class ProcessTask extends Task {
     constructor(
         @inject(TaskManager) protected readonly taskManager: TaskManager,
         @inject(ILogger) @named('task') protected readonly logger: ILogger,
-        @inject(TaskProcessOptions) protected readonly options: TaskProcessOptions
+        @inject(TaskProcessOptions) protected readonly options: TaskProcessOptions,
     ) {
         super(taskManager, logger, options);
 
@@ -49,7 +49,7 @@ export class ProcessTask extends Task {
                     taskId: this.taskId,
                     ctx: this.options.context,
                     code: event.code,
-                    signal: event.signal
+                    signal: event.signal,
                 });
             });
 
@@ -75,7 +75,7 @@ export class ProcessTask extends Task {
             taskId: this.id,
             ctx: this.context,
             config: this.options.config,
-            terminalId: (this.processType === 'shell') ? this.process.id : undefined
+            terminalId: (this.processType === 'shell') ? this.process.id : undefined,
         };
     }
     get process() {

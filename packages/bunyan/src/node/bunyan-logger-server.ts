@@ -136,7 +136,7 @@ export class BunyanLoggerServer implements ILoggerServer {
         }
 
         return Promise.resolve(
-            this.toTheiaLevel(logger.level())
+            this.toTheiaLevel(logger.level()),
         );
     }
 

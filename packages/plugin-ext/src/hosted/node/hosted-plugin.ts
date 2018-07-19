@@ -73,7 +73,7 @@ export class HostedPluginSupport {
                 if (childProcess.send) {
                     childProcess.send(JSON.stringify(m));
                 }
-            }
+            },
         });
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
         hostedPluginManager.$stopPlugin('').then(() => {
@@ -89,7 +89,7 @@ export class HostedPluginSupport {
         this.cp = this.fork({
             serverName: "hosted-plugin",
             logger: this.logger,
-            args: []
+            args: [],
         });
         this.cp.on('message', message => {
             if (this.client) {
@@ -109,7 +109,7 @@ export class HostedPluginSupport {
             silent: true,
             env: env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));

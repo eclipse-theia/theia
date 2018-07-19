@@ -20,7 +20,7 @@ import { ErrorAction } from "vscode-base-languageclient/lib/base";
 import {
     Workspace, Languages, Window,
     ILanguageClient, LanguageClientOptions, BaseLanguageClient,
-    createConnection, ConnectionErrorHandler, ConnectionCloseHandler, LanguageContribution
+    createConnection, ConnectionErrorHandler, ConnectionCloseHandler, LanguageContribution,
 } from '../common';
 
 @injectable()
@@ -30,7 +30,7 @@ export class LanguageClientFactory {
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
         @inject(Window) protected readonly window: Window,
-        @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider
+        @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider,
     ) { }
 
     get(contribution: LanguageContribution, clientOptions: LanguageClientOptions): ILanguageClient {
@@ -41,7 +41,7 @@ export class LanguageClientFactory {
             clientOptions.errorHandler = {
                 // ignore connection errors
                 error: () => ErrorAction.Continue,
-                closed: () => defaultErrorHandler.closed()
+                closed: () => defaultErrorHandler.closed(),
             };
         }
         const client = new BaseLanguageClient({
@@ -58,10 +58,10 @@ export class LanguageClientFactory {
                                 resolve(connection);
                             },
                         },
-                            { reconnecting: false }
+                            { reconnecting: false },
                         );
-                    })
-            }
+                    }),
+            },
         });
         const defaultErrorHandler = client.createDefaultErrorHandler();
         return client;

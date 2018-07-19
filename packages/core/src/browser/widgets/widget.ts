@@ -80,7 +80,7 @@ export class BaseWidget extends Widget {
                 const container = await this.getScrollContainer();
                 container.style.overflow = 'hidden';
                 this.scrollBar = new PerfectScrollbar(container, {
-                    suppressScrollX: true
+                    suppressScrollX: true,
                 });
 
                 this.toDispose.push(Disposable.create(async () => {
@@ -156,11 +156,11 @@ export namespace EventListenerObject {
 }
 export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;
 export function addEventListener<K extends keyof HTMLElementEventMap>(
-    element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean
+    element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean,
 ): Disposable {
     element.addEventListener(type, listener, useCapture);
     return Disposable.create(() =>
-        element.removeEventListener(type, listener)
+        element.removeEventListener(type, listener),
     );
 }
 
@@ -214,6 +214,6 @@ export function addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element
     };
     document.addEventListener(type, documentListener);
     return Disposable.create(() =>
-        document.removeEventListener(type, documentListener)
+        document.removeEventListener(type, documentListener),
     );
 }

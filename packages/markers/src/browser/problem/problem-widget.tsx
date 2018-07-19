@@ -30,7 +30,7 @@ export class ProblemWidget extends TreeWidget {
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(treeProps, model, contextMenuRenderer);
 

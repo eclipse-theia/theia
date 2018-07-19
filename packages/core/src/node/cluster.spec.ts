@@ -29,7 +29,7 @@ describe('master-process', () => {
             exec: path.resolve(__dirname, '../../lib/node/test/cluster-test-worker.js'),
             execArgv: [],
             args: [job],
-            stdio: ['ipc', 1, 2]
+            stdio: ['ipc', 1, 2],
         };
         cluster.setupMaster(testSettings);
     }

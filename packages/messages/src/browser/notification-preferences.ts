@@ -20,7 +20,7 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceContribution,
-    PreferenceSchema
+    PreferenceSchema,
 } from '@theia/core/lib/browser/preferences';
 
 export const NotificationConfigSchema: PreferenceSchema = {
@@ -29,9 +29,9 @@ export const NotificationConfigSchema: PreferenceSchema = {
         "notification.timeout": {
             "type": "number",
             "description": "The time before auto-dismiss the notification.",
-            "default": 5000 // time express in millisec. 0 means : Do not remove
-        }
-    }
+            "default": 5000, // time express in millisec. 0 means : Do not remove
+        },
+    },
 };
 
 export interface NotificationConfiguration {

@@ -127,7 +127,7 @@ beforeEach(() => {
 
                 child.bind(RawProcessOptions).toConstantValue(options);
                 return child.get(RawProcess);
-            }
+            },
         );
     });
 
@@ -194,7 +194,7 @@ describe('ripgrep-search-in-workspace-server', function () {
                 { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
-                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
@@ -213,7 +213,7 @@ describe('ripgrep-search-in-workspace-server', function () {
                 { file: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
-                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
@@ -221,7 +221,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir, {
-            matchCase: true
+            matchCase: true,
         });
     });
 
@@ -233,7 +233,7 @@ describe('ripgrep-search-in-workspace-server', function () {
                 { file: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
-                { file: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' }
+                { file: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
@@ -241,7 +241,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir, {
-            matchWholeWord: true
+            matchWholeWord: true,
         });
     });
 
@@ -251,7 +251,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
                 { file: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
-                { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' }
+                { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
@@ -260,7 +260,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir, {
             matchWholeWord: true,
-            matchCase: true
+            matchCase: true,
         });
     });
 
@@ -389,7 +389,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir, {
-            useRegExp: true
+            useRegExp: true,
         });
     });
 
@@ -399,7 +399,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { file: 'regexes', line: 1, character: 5, length: 6, lineText: '' }
+                { file: 'regexes', line: 1, character: 5, length: 6, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
@@ -407,7 +407,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir, {
-            useRegExp: false
+            useRegExp: false,
         });
     });
 
@@ -422,7 +422,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
             if (!isWindows) {
                 expected.push(
-                    { file: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' }
+                    { file: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' },
                 );
             }
 
@@ -444,7 +444,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
             if (!isWindows) {
                 expected.push(
-                    { file: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' }
+                    { file: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' },
                 );
             }
 

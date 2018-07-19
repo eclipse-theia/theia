@@ -22,7 +22,7 @@ import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
 export class VirtualRenderer {
     readonly host: HTMLElement;
     constructor(
-        host?: HTMLElement
+        host?: HTMLElement,
     ) {
         this.host = host || document.createElement('div');
     }

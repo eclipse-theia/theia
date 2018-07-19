@@ -26,7 +26,7 @@ export class LoggerWatcher {
         return {
             onLogLevelChanged(event: ILogLevelChangedEvent) {
                 emitter.fire(event);
-            }
+            },
         };
     }
 

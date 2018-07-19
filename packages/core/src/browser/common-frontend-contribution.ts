@@ -54,99 +54,99 @@ export namespace CommonCommands {
 
     export const OPEN: Command = {
         id: 'core.open',
-        label: 'Open'
+        label: 'Open',
     };
 
     export const CUT: Command = {
         id: 'core.cut',
-        label: 'Cut'
+        label: 'Cut',
     };
     export const COPY: Command = {
         id: 'core.copy',
-        label: 'Copy'
+        label: 'Copy',
     };
     export const PASTE: Command = {
         id: 'core.paste',
-        label: 'Paste'
+        label: 'Paste',
     };
 
     export const UNDO: Command = {
         id: 'core.undo',
-        label: 'Undo'
+        label: 'Undo',
     };
     export const REDO: Command = {
         id: 'core.redo',
-        label: 'Redo'
+        label: 'Redo',
     };
 
     export const FIND: Command = {
         id: 'core.find',
-        label: 'Find'
+        label: 'Find',
     };
     export const REPLACE: Command = {
         id: 'core.replace',
-        label: 'Replace'
+        label: 'Replace',
     };
 
     export const NEXT_TAB: Command = {
         id: 'core.nextTab',
-        label: 'Switch to Next Tab'
+        label: 'Switch to Next Tab',
     };
     export const PREVIOUS_TAB: Command = {
         id: 'core.previousTab',
-        label: 'Switch to Previous Tab'
+        label: 'Switch to Previous Tab',
     };
     export const CLOSE_TAB: Command = {
         id: 'core.close.tab',
-        label: 'Close Tab'
+        label: 'Close Tab',
     };
     export const CLOSE_OTHER_TABS: Command = {
         id: 'core.close.other.tabs',
-        label: 'Close Other Tabs'
+        label: 'Close Other Tabs',
     };
     export const CLOSE_RIGHT_TABS: Command = {
         id: 'core.close.right.tabs',
-        label: 'Close Tabs to the Right'
+        label: 'Close Tabs to the Right',
     };
     export const CLOSE_ALL_TABS: Command = {
         id: 'core.close.all.tabs',
-        label: 'Close All Tabs'
+        label: 'Close All Tabs',
     };
     export const COLLAPSE_PANEL: Command = {
         id: 'core.collapse.tab',
-        label: 'Collapse Side Panel'
+        label: 'Collapse Side Panel',
     };
     export const COLLAPSE_ALL_PANELS: Command = {
         id: 'core.collapse.all.tabs',
-        label: 'Collapse All Side Panels'
+        label: 'Collapse All Side Panels',
     };
     export const TOGGLE_BOTTOM_PANEL: Command = {
         id: 'core.toggle.bottom.panel',
-        label: 'Toggle Bottom Panel'
+        label: 'Toggle Bottom Panel',
     };
 
     export const SAVE: Command = {
         id: 'core.save',
-        label: 'Save'
+        label: 'Save',
     };
     export const SAVE_ALL: Command = {
         id: 'core.saveAll',
-        label: 'Save All'
+        label: 'Save All',
     };
 
     export const AUTO_SAVE: Command = {
         id: 'textEditor.commands.autosave',
-        label: 'Auto Save'
+        label: 'Auto Save',
     };
 
     export const QUIT: Command = {
         id: 'core.quit',
-        label: 'Quit'
+        label: 'Quit',
     };
 
     export const ABOUT_COMMAND: Command = {
         id: 'core.about',
-        label: 'About'
+        label: 'About',
     };
 
 }
@@ -166,7 +166,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
+        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
@@ -176,91 +176,91 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         registry.registerSubmenu(CommonMenus.HELP, 'Help');
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
-            commandId: CommonCommands.SAVE.id
+            commandId: CommonCommands.SAVE.id,
         });
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
-            commandId: CommonCommands.SAVE_ALL.id
+            commandId: CommonCommands.SAVE_ALL.id,
         });
 
         registry.registerMenuAction(CommonMenus.FILE_AUTOSAVE, {
-            commandId: CommonCommands.AUTO_SAVE.id
+            commandId: CommonCommands.AUTO_SAVE.id,
         });
 
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
             commandId: CommonCommands.UNDO.id,
-            order: '0'
+            order: '0',
         });
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
             commandId: CommonCommands.REDO.id,
-            order: '1'
+            order: '1',
         });
 
         registry.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: CommonCommands.FIND.id,
-            order: '0'
+            order: '0',
         });
         registry.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: CommonCommands.REPLACE.id,
-            order: '1'
+            order: '1',
         });
 
         registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
             commandId: CommonCommands.CUT.id,
-            order: '0'
+            order: '0',
         });
         registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
             commandId: CommonCommands.COPY.id,
-            order: '1'
+            order: '1',
         });
         registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
             commandId: CommonCommands.PASTE.id,
-            order: '2'
+            order: '2',
         });
 
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
-            order: '0'
+            order: '0',
         });
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
-            order: '1'
+            order: '1',
         });
 
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_TAB.id,
             label: 'Close',
-            order: '0'
+            order: '0',
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
             label: 'Close Others',
-            order: '1'
+            order: '1',
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
             label: 'Close to the Right',
-            order: '2'
+            order: '2',
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_ALL_TABS.id,
             label: 'Close All',
-            order: '3'
+            order: '3',
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.COLLAPSE_PANEL.id,
             label: 'Collapse',
-            order: '4'
+            order: '4',
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
             label: 'About',
-            order: '9'
+            order: '9',
         });
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
         commandRegistry.registerCommand(CommonCommands.OPEN, new UriAwareCommandHandler<URI>(this.selectionService, {
-            execute: uri => open(this.openerService, uri)
+            execute: uri => open(this.openerService, uri),
         }));
         commandRegistry.registerCommand(CommonCommands.CUT, {
             execute: () => {
@@ -269,7 +269,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 } else {
                     this.messageService.warn("Please use the browser's cut command or shortcut.");
                 }
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.COPY, {
             execute: () => {
@@ -278,7 +278,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 } else {
                     this.messageService.warn("Please use the browser's copy command or shortcut.");
                 }
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.PASTE, {
             execute: () => {
@@ -287,7 +287,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 } else {
                     this.messageService.warn("Please use the browser's paste command or shortcut.");
                 }
-            }
+            },
         });
 
         commandRegistry.registerCommand(CommonCommands.UNDO);
@@ -298,11 +298,11 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
 
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.activateNextTab()
+            execute: () => this.shell.activateNextTab(),
         });
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.activatePreviousTab()
+            execute: () => this.shell.activatePreviousTab(),
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
@@ -310,7 +310,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 const tabBar = this.shell.currentTabBar!;
                 const currentTitle = tabBar.currentTitle;
                 this.shell.closeTabs(tabBar, (title, index) => title === currentTitle);
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
             isEnabled: () => {
@@ -324,7 +324,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 const tabBar = this.shell.currentTabBar!;
                 const currentTitle = tabBar.currentTitle;
                 this.shell.closeTabs(this.shell.currentTabArea!, (title, index) => title !== currentTitle);
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
             isEnabled: () => {
@@ -342,11 +342,11 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 const tabBar = this.shell.currentTabBar!;
                 const currentIndex = tabBar.currentIndex;
                 this.shell.closeTabs(tabBar, (title, index) => index > currentIndex);
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.closeTabs(this.shell.currentTabArea!)
+            execute: () => this.shell.closeTabs(this.shell.currentTabArea!),
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
             isEnabled: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
@@ -356,14 +356,14 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 if (ApplicationShell.isSideArea(currentArea)) {
                     this.shell.collapsePanel(currentArea);
                 }
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
             execute: () => {
                 this.shell.collapsePanel('left');
                 this.shell.collapsePanel('right');
                 this.shell.collapsePanel('bottom');
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_BOTTOM_PANEL, {
             isEnabled: () => this.shell.getWidgets('bottom').length > 0,
@@ -373,23 +373,23 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 } else {
                     this.shell.expandPanel('bottom');
                 }
-            }
+            },
         });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
-            execute: () => this.shell.save()
+            execute: () => this.shell.save(),
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
-            execute: () => this.shell.saveAll()
+            execute: () => this.shell.saveAll(),
         });
 
         commandRegistry.registerCommand(CommonCommands.QUIT, {
             execute: () => {
                 /* FIXME implement QUIT of innermost command.  */
-            }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.ABOUT_COMMAND, {
-            execute: () => this.openAbout()
+            execute: () => this.openAbout(),
         });
     }
 
@@ -397,61 +397,61 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         if (supportCut) {
             registry.registerKeybinding({
                 command: CommonCommands.CUT.id,
-                keybinding: "ctrlcmd+x"
+                keybinding: "ctrlcmd+x",
             });
         }
         if (supportCopy) {
             registry.registerKeybinding({
                 command: CommonCommands.COPY.id,
-                keybinding: "ctrlcmd+c"
+                keybinding: "ctrlcmd+c",
             });
         }
         if (supportPaste) {
             registry.registerKeybinding({
                 command: CommonCommands.PASTE.id,
-                keybinding: "ctrlcmd+v"
+                keybinding: "ctrlcmd+v",
             });
         }
         registry.registerKeybindings(
             {
                 command: CommonCommands.UNDO.id,
-                keybinding: "ctrlcmd+z"
+                keybinding: "ctrlcmd+z",
             },
             {
                 command: CommonCommands.REDO.id,
-                keybinding: "ctrlcmd+shift+z"
+                keybinding: "ctrlcmd+shift+z",
             },
             {
                 command: CommonCommands.FIND.id,
-                keybinding: "ctrlcmd+f"
+                keybinding: "ctrlcmd+f",
             },
             {
                 command: CommonCommands.REPLACE.id,
-                keybinding: "ctrlcmd+alt+f"
+                keybinding: "ctrlcmd+alt+f",
             },
             {
                 command: CommonCommands.NEXT_TAB.id,
-                keybinding: "ctrlcmd+tab"
+                keybinding: "ctrlcmd+tab",
             },
             {
                 command: CommonCommands.PREVIOUS_TAB.id,
-                keybinding: "ctrlcmd+shift+tab"
+                keybinding: "ctrlcmd+shift+tab",
             },
             {
                 command: CommonCommands.CLOSE_TAB.id,
-                keybinding: "alt+w"
+                keybinding: "alt+w",
             },
             {
                 command: CommonCommands.CLOSE_OTHER_TABS.id,
-                keybinding: "ctrlcmd+alt+t"
+                keybinding: "ctrlcmd+alt+t",
             },
             {
                 command: CommonCommands.CLOSE_ALL_TABS.id,
-                keybinding: "alt+shift+w"
+                keybinding: "alt+shift+w",
             },
             {
                 command: CommonCommands.COLLAPSE_PANEL.id,
-                keybinding: "alt+c"
+                keybinding: "alt+c",
             },
             {
                 command: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
@@ -463,16 +463,16 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             },
             {
                 command: CommonCommands.SAVE.id,
-                keybinding: "ctrlcmd+s"
+                keybinding: "ctrlcmd+s",
             },
             {
                 command: CommonCommands.SAVE_ALL.id,
-                keybinding: "ctrlcmd+alt+s"
+                keybinding: "ctrlcmd+alt+s",
             },
             {
                 command: CommonCommands.QUIT.id,
-                keybinding: "ctrlcmd+q"
-            }
+                keybinding: "ctrlcmd+q",
+            },
         );
     }
 

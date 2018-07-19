@@ -26,16 +26,16 @@ export class EditorKeybindingContribution implements KeybindingContribution {
         registry.registerKeybindings(
             {
                 command: EditorCommands.GO_BACK.id,
-                keybinding: isOSX ? 'ctrl+-' : isWindows ? 'alt+left' : /*isLinux*/ 'ctrl+alt+-'
+                keybinding: isOSX ? 'ctrl+-' : isWindows ? 'alt+left' : /*isLinux*/ 'ctrl+alt+-',
             },
             {
                 command: EditorCommands.GO_FORWARD.id,
-                keybinding: isOSX ? 'ctrl+shift+-' : isWindows ? 'alt+right' : /*isLinux*/ 'ctrl+shift+-'
+                keybinding: isOSX ? 'ctrl+shift+-' : isWindows ? 'alt+right' : /*isLinux*/ 'ctrl+shift+-',
             },
             {
                 command: EditorCommands.GO_LAST_EDIT.id,
-                keybinding: 'ctrl+alt+q'
-            }
+                keybinding: 'ctrl+alt+q',
+            },
         );
     }
 

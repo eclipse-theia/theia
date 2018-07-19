@@ -134,7 +134,7 @@ export class WidgetManager {
             this.widgetPromises.delete(key);
         });
         this.onDidCreateWidgetEmitter.fire({
-            factoryId, widget
+            factoryId, widget,
         });
         return widget as T;
     }

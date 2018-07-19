@@ -30,7 +30,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
                     format: 'json',
                     content: grammar,
                 };
-            }
+            },
         });
 
         registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_LANGUAGE_ID, 'source.ts');
@@ -42,7 +42,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
                     format: 'json',
                     content: jsxGrammar,
                 };
-            }
+            },
         });
 
         registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_REACT_LANGUAGE_ID, 'source.tsx');
@@ -54,14 +54,14 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             aliases: [
                 TYPESCRIPT_LANGUAGE_NAME,
                 "typescript",
-                "ts"
+                "ts",
             ],
             extensions: [
-                ".ts"
+                ".ts",
             ],
             mimetypes: [
-                "text/typescript"
-            ]
+                "text/typescript",
+            ],
         });
 
         monaco.languages.onLanguage(TYPESCRIPT_LANGUAGE_ID, () => {
@@ -72,11 +72,11 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             id: TYPESCRIPT_REACT_LANGUAGE_ID,
             aliases: [
                 TYPESCRIPT_REACT_LANGUAGE_NAME,
-                "tsx"
+                "tsx",
             ],
             extensions: [
-                ".tsx"
-            ]
+                ".tsx",
+            ],
         });
         monaco.languages.onLanguage(TYPESCRIPT_REACT_LANGUAGE_ID, () => {
             monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, this.configuration);
@@ -86,12 +86,12 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
     protected configuration: monaco.languages.LanguageConfiguration = {
         "comments": {
             "lineComment": "//",
-            "blockComment": ["/*", "*/"]
+            "blockComment": ["/*", "*/"],
         },
         "brackets": [
             ["{", "}"],
             ["[", "]"],
-            ["(", ")"]
+            ["(", ")"],
         ],
         "autoClosingPairs": [
             { "open": "{", "close": "}" },
@@ -100,7 +100,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             { "open": "'", "close": "'", "notIn": ["string", "comment"] },
             { "open": "\"", "close": "\"", "notIn": ["string"] },
             { "open": "`", "close": "`", "notIn": ["string", "comment"] },
-            { "open": "/**", "close": " */", "notIn": ["string"] }
+            { "open": "/**", "close": " */", "notIn": ["string"] },
         ],
         "surroundingPairs": [
             { "open": "{", "close": "}" },
@@ -108,13 +108,13 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             { "open": "(", "close": ")" },
             { "open": "'", "close": "'" },
             { "open": "\"", "close": "\"" },
-            { "open": "`", "close": "`" }
+            { "open": "`", "close": "`" },
         ],
         "folding": {
             "markers": {
                 "start": new RegExp("^\\s*//\\s*#?region\\b"),
-                "end": new RegExp("^\\s*//\\s*#?endregion\\b")
-            }
-        }
+                "end": new RegExp("^\\s*//\\s*#?endregion\\b"),
+            },
+        },
     };
 }

@@ -89,7 +89,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         this.root = new Deferred();
         this.root.resolve(uri);
         this.writeToUserHome({
-            recentRoots: [uri]
+            recentRoots: [uri],
         });
     }
 

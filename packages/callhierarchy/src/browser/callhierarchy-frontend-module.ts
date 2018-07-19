@@ -36,6 +36,6 @@ export default new ContainerModule(bind => {
 
     bind(WidgetFactory).toDynamicValue(context => ({
         id: CALLHIERARCHY_ID,
-        createWidget: () => createHierarchyTreeWidget(context.container)
+        createWidget: () => createHierarchyTreeWidget(context.container),
     }));
 });

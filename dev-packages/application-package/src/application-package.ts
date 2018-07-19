@@ -40,7 +40,7 @@ export class ApplicationPackage {
 
     static defaultConfig: ApplicationPackageConfig = {
         ...NpmRegistry.defaultConfig,
-        target: 'browser'
+        target: 'browser',
     };
 
     readonly projectPath: string;
@@ -48,7 +48,7 @@ export class ApplicationPackage {
     readonly error: ApplicationLog;
 
     constructor(
-        protected readonly options: ApplicationPackageOptions
+        protected readonly options: ApplicationPackageOptions,
     ) {
         this.projectPath = options.projectPath;
         this.log = options.log || console.log.bind(console);
@@ -99,7 +99,7 @@ export class ApplicationPackage {
         if (!this._extensionPackages) {
             const collector = new ExtensionPackageCollector(
                 raw => this.newExtensionPackage(raw),
-                this.resolveModule
+                this.resolveModule,
             );
             this._extensionPackages = collector.collect(this.pck);
         }
@@ -243,7 +243,7 @@ export class ApplicationPackage {
 
     save(): Promise<void> {
         return writeJsonFile(this.packagePath, this.pck, {
-            detectIndent: true
+            detectIndent: true,
         });
     }
 

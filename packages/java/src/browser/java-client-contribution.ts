@@ -17,7 +17,7 @@
 import { injectable, inject } from "inversify";
 import { CommandService } from "@theia/core/lib/common";
 import {
-    Window, ILanguageClient, BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory, LanguageClientOptions
+    Window, ILanguageClient, BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory, LanguageClientOptions,
 } from '@theia/languages/lib/browser';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { ActionableNotification, ActionableMessage, StatusReport, StatusNotification } from "./java-protocol";
@@ -37,7 +37,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
         @inject(Window) protected readonly window: Window,
         @inject(CommandService) protected readonly commandService: CommandService,
-        @inject(StatusBar) protected readonly statusBar: StatusBar
+        @inject(StatusBar) protected readonly statusBar: StatusBar,
     ) {
         super(workspace, languages, languageClientFactory);
     }
@@ -64,7 +64,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         const statusEntry = {
             alignment: StatusBarAlignment.LEFT,
             priority: 1,
-            text: "$(refresh~spin) " + message.message
+            text: "$(refresh~spin) " + message.message,
         } as StatusBarEntry;
         this.statusBar.setElement(this.statusNotificationName, statusEntry);
         this.statusBarTimeout = window.setTimeout(() => {
@@ -87,8 +87,8 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         const options = super.createOptions();
         options.initializationOptions = {
             extendedClientCapabilities: {
-                classFileContentsSupport: true
-            }
+                classFileContentsSupport: true,
+            },
         };
         return options;
     }

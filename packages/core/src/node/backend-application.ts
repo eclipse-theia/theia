@@ -80,7 +80,7 @@ export class BackendApplication {
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
         @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) {
         process.on('uncaughtException', error => {
             if (error) {

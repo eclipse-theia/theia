@@ -81,7 +81,7 @@ export class FrontendApplication {
         @inject(ContributionProvider) @named(FrontendApplicationContribution)
         protected readonly contributions: ContributionProvider<FrontendApplicationContribution>,
         @inject(ApplicationShell) protected readonly _shell: ApplicationShell,
-        @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService
+        @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService,
     ) { }
 
     get shell(): ApplicationShell {
@@ -122,7 +122,7 @@ export class FrontendApplication {
             return Promise.resolve(document.body);
         }
         return new Promise<HTMLElement>(resolve =>
-            window.addEventListener('load', () => resolve(document.body), { once: true })
+            window.addEventListener('load', () => resolve(document.body), { once: true }),
         );
     }
 

@@ -21,7 +21,7 @@ import { Disposable } from '../../common';
 export class ReactRenderer implements Disposable {
     readonly host: HTMLElement;
     constructor(
-        host?: HTMLElement
+        host?: HTMLElement,
     ) {
         this.host = host || document.createElement('div');
     }

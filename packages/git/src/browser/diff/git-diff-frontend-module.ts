@@ -26,7 +26,7 @@ export function bindGitDiffModule(bind: interfaces.Bind) {
     bind(GitDiffWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: GIT_DIFF,
-        createWidget: () => ctx.container.get<GitDiffWidget>(GitDiffWidget)
+        createWidget: () => ctx.container.get<GitDiffWidget>(GitDiffWidget),
     }));
 
     bindViewContribution(bind, GitDiffContribution);

@@ -35,7 +35,7 @@ export namespace GitBindingOptions {
     export const Default: GitBindingOptions = {
         bindManager(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
             return binding.to(GitRepositoryManager).inSingletonScope();
-        }
+        },
     };
 }
 
@@ -53,7 +53,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
             const logger = ctx.container.get<ILogger>(ILogger);
             return new GitLocatorImpl({
                 info: (message, ...args) => logger.info(message, ...args),
-                error: (message, ...args) => logger.error(message, ...args)
+                error: (message, ...args) => logger.error(message, ...args),
             });
         });
     } else {
@@ -79,7 +79,7 @@ export default new ContainerModule(bind => {
             const server = context.container.get<Git>(Git);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        })
+        }),
     ).inSingletonScope();
 
     bindRepositoryWatcher(bind);
@@ -89,6 +89,6 @@ export default new ContainerModule(bind => {
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        })
+        }),
     ).inSingletonScope();
 });

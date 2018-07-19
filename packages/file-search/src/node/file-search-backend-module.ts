@@ -24,7 +24,7 @@ export default new ContainerModule(bind => {
     bind(FileSearchService).to(FileSearchServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(fileSearchServicePath, () =>
-            ctx.container.get(FileSearchService)
-        )
+            ctx.container.get(FileSearchService),
+        ),
     ).inSingletonScope();
 });

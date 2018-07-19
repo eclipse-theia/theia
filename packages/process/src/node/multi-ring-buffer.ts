@@ -33,7 +33,7 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
 
     constructor(protected readonly ringBuffer: MultiRingBuffer,
         protected readonly reader: number,
-        protected readonly encoding = 'utf8'
+        protected readonly encoding = 'utf8',
     ) {
         super();
         this.setEncoding(encoding);

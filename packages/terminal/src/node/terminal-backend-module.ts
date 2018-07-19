@@ -32,7 +32,7 @@ export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, co
     identifier: interfaces.ServiceIdentifier<IBaseTerminalServer>,
     constructor: {
         new(...args: any[]): IBaseTerminalServer;
-    }
+    },
 }): void {
     const dispatchingClient = new DispatchingBaseTerminalClient();
     bind<IBaseTerminalServer>(identifier).to(constructor).inSingletonScope().onActivation((context, terminalServer) => {
@@ -48,7 +48,7 @@ export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, co
             const disposable = dispatchingClient.push(client);
             client.onDidCloseConnection(() => disposable.dispose());
             return ctx.container.get(identifier);
-        })
+        }),
     ).inSingletonScope();
 }
 
@@ -62,19 +62,19 @@ export default new ContainerModule(bind => {
             child.parent = ctx.container;
             child.bind(ShellProcessOptions).toConstantValue(options);
             return child.get(ShellProcess);
-        }
+        },
     );
 
     bind(TerminalWatcher).toSelf().inSingletonScope();
     bindTerminalServer(bind, {
         path: terminalPath,
         identifier: ITerminalServer,
-        constructor: TerminalServer
+        constructor: TerminalServer,
     });
     bindTerminalServer(bind, {
         path: shellTerminalPath,
         identifier: IShellTerminalServer,
-        constructor: ShellTerminalServer
+        constructor: ShellTerminalServer,
     });
 
     createCommonBindings(bind);

@@ -26,7 +26,7 @@ before(() => {
     testContainer.bind(CommandService).toDynamicValue(ctx => ({
         executeCommand<T>(): Promise<T | undefined> {
             return Promise.resolve(undefined);
-        }
+        },
     })).inSingletonScope();
 
     statusBarEntryUtility = testContainer.get(LabelParser);

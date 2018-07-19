@@ -30,25 +30,25 @@ export class PluginApiFrontendContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(HostedPluginCommands.START, {
-            execute: () => this.hostedPluginManagerClient.start()
+            execute: () => this.hostedPluginManagerClient.start(),
         });
         commands.registerCommand(HostedPluginCommands.STOP, {
-            execute: () => this.hostedPluginManagerClient.stop()
+            execute: () => this.hostedPluginManagerClient.stop(),
         });
         commands.registerCommand(HostedPluginCommands.RESTART, {
-            execute: () => this.hostedPluginManagerClient.restart()
+            execute: () => this.hostedPluginManagerClient.restart(),
         });
         commands.registerCommand(HostedPluginCommands.SELECT_PATH, {
-            execute: () => this.hostedPluginManagerClient.selectPluginPath()
+            execute: () => this.hostedPluginManagerClient.selectPluginPath(),
         });
 
         commands.registerCommand(PluginExtDeployCommandService.COMMAND, {
-            execute: () => this.pluginExtDeployCommandService.deploy()
+            execute: () => this.pluginExtDeployCommandService.deploy(),
         });
 
         // this command only for compatibility reason
         commands.registerCommand({ id: 'workbench.action.closeActiveEditor' }, {
-            execute: () => commands.executeCommand('core.close.tab')
+            execute: () => commands.executeCommand('core.close.tab'),
         });
     }
 

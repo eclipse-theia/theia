@@ -87,7 +87,7 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     protected async doOpen(widget: W, options?: WidgetOpenerOptions): Promise<void> {
         const op: WidgetOpenerOptions = {
             mode: 'activate',
-            ...options
+            ...options,
         };
         if (!widget.isAttached) {
             this.shell.addWidget(widget, op.widgetOptions || { area: 'main' });

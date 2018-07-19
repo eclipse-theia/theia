@@ -27,9 +27,9 @@ export class JavaTextmateContribution implements LanguageGrammarDefinitionContri
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: javaDocGrammar
+                    content: javaDocGrammar,
                 };
-            }
+            },
         });
         const scope = 'source.java';
         const javaGrammar = require('../../../data/java.tmlanguage.json');
@@ -37,9 +37,9 @@ export class JavaTextmateContribution implements LanguageGrammarDefinitionContri
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: javaGrammar
+                    content: javaGrammar,
                 };
-            }
+            },
         });
 
         registry.mapLanguageIdToTextmateGrammar(JAVA_LANGUAGE_ID, scope);

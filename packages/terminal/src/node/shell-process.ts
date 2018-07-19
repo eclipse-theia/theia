@@ -72,7 +72,7 @@ export class ShellProcess extends TerminalProcess {
         @inject(ShellProcessOptions) options: ShellProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named("terminal") logger: ILogger
+        @inject(ILogger) @named("terminal") logger: ILogger,
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),
@@ -83,7 +83,7 @@ export class ShellProcess extends TerminalProcess {
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
                 env: setUpEnvVariables(options.env),
-            }
+            },
         }, processManager, ringBuffer, logger);
     }
 

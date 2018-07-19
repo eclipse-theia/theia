@@ -25,7 +25,7 @@ export class GitRepositoryManager {
     @inject(GitRepositoryWatcherFactory)
     protected readonly watcherFactory: GitRepositoryWatcherFactory;
     protected readonly watchers = new ReferenceCollection<Repository, GitRepositoryWatcher>(
-        repository => this.watcherFactory({ repository })
+        repository => this.watcherFactory({ repository }),
     );
 
     run<T>(repository: Repository, op: () => Promise<T>): Promise<T> {

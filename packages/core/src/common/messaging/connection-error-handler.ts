@@ -36,7 +36,7 @@ export interface ResolvedConnectionErrorHandlerOptions {
 
 export type ConnectionErrorHandlerOptions = Partial<ResolvedConnectionErrorHandlerOptions> & {
     readonly serverName: string
-    readonly logger: ILogger
+    readonly logger: ILogger,
 };
 
 export class ConnectionErrorHandler {
@@ -47,7 +47,7 @@ export class ConnectionErrorHandler {
             maxErrors: 3,
             maxRestarts: 5,
             restartInterval: 3,
-            ...options
+            ...options,
         };
     }
 

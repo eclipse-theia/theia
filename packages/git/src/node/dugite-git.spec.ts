@@ -532,7 +532,7 @@ describe('git', async function () {
             await addAndCommit('add 🍏\n* green\n* red');
 
             await expectBlame([
-                [0, 'add 🍏', '* green\n* red']
+                [0, 'add 🍏', '* green\n* red'],
             ]);
         });
     });
@@ -794,7 +794,7 @@ namespace ChangeDelta {
     export function map(repository: Repository, fileChange: GitFileChange): ChangeDelta {
         return {
             pathSegment: toPathSegment(repository, fileChange.uri),
-            status: fileChange.status
+            status: fileChange.status,
         };
     }
 }

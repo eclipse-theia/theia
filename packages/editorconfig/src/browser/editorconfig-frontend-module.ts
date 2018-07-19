@@ -30,6 +30,6 @@ export default new ContainerModule((bind, unbind) => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         onStart(app: FrontendApplication): MaybePromise<void> {
             ctx.container.get<EditorconfigDocumentManager>(EditorconfigDocumentManager);
-        }
+        },
     }));
 });

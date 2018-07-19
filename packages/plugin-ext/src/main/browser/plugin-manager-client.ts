@@ -30,19 +30,19 @@ import { HostedPluginServer } from '../../common/plugin-protocol';
 export namespace HostedPluginCommands {
     export const START: Command = {
         id: 'hosted-plugin:start',
-        label: 'Hosted Plugin: Start Instance'
+        label: 'Hosted Plugin: Start Instance',
     };
     export const STOP: Command = {
         id: 'hosted-plugin:stop',
-        label: 'Hosted Plugin: Stop Instance'
+        label: 'Hosted Plugin: Stop Instance',
     };
     export const RESTART: Command = {
         id: 'hosted-plugin:restart',
-        label: 'Hosted Plugin: Restart Instance'
+        label: 'Hosted Plugin: Restart Instance',
     };
     export const SELECT_PATH: Command = {
         id: 'hosted-plugin:select-path',
-        label: 'Hosted Plugin: Select Path'
+        label: 'Hosted Plugin: Select Path',
     };
 }
 
@@ -54,7 +54,7 @@ export enum HostedPluginState {
     Starting = 'starting',
     Running = 'running',
     Stopping = 'stopping',
-    Failed = 'failed'
+    Failed = 'failed',
 }
 
 /**
@@ -83,7 +83,7 @@ export class HostedPluginManagerClient {
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(WindowService) protected readonly windowService: WindowService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
     ) {
         this.openNewTabAskDialog = new OpenHostedInstanceLinkDialog(windowService);
     }
@@ -216,7 +216,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
 
     constructor(windowService: WindowService) {
         super({
-            title: 'Your browser prevented opening of a new tab'
+            title: 'Your browser prevented opening of a new tab',
         });
         this.windowService = windowService;
 

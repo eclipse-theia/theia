@@ -158,7 +158,7 @@ export class TreeImpl implements Tree {
     protected readonly toDispose = new DisposableCollection();
 
     protected nodes: {
-        [id: string]: TreeNode | undefined
+        [id: string]: TreeNode | undefined,
     } = {};
 
     constructor() {

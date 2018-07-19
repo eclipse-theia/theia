@@ -77,7 +77,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         const root = this.root;
         if (FileStatNode.is(root)) {
             return changes.some(change =>
-                change.type < FileChangeType.DELETED && change.uri.toString() === root.uri.toString()
+                change.type < FileChangeType.DELETED && change.uri.toString() === root.uri.toString(),
             );
         }
         return false;
@@ -143,7 +143,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             title: 'Replace file',
             msg: `File '${fileName}' already exists in the destination folder. Do you want to replace it?`,
             ok: 'Yes',
-            cancel: 'No'
+            cancel: 'No',
         });
         return dialog.open();
     }

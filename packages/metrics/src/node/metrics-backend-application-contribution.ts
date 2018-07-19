@@ -26,7 +26,7 @@ import { MetricsContribution } from './metrics-contribution';
 export class MetricsBackendApplicationContribution implements BackendApplicationContribution {
     constructor(
         @inject(ContributionProvider) @named(MetricsContribution)
-        protected readonly metricsProviders: ContributionProvider<MetricsContribution>
+        protected readonly metricsProviders: ContributionProvider<MetricsContribution>,
     ) {
     }
 

@@ -44,11 +44,11 @@ export default new ContainerModule(bind => {
             const child = container.createChild();
             child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource });
             return child.get(PreviewWidget);
-        }
+        },
     })).inSingletonScope();
 
     bind(PreviewContribution).toSelf().inSingletonScope();
     [CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(PreviewContribution)
+        bind(serviceIdentifier).toService(PreviewContribution),
     );
 });

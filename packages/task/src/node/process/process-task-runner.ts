@@ -23,7 +23,7 @@ import {
     TerminalProcessOptions,
     RawProcessOptions,
     RawProcessFactory,
-    TerminalProcessFactory
+    TerminalProcessFactory,
 } from '@theia/process/lib/node';
 import URI from '@theia/core/lib/common/uri';
 import { TaskFactory } from './process-task';
@@ -85,7 +85,7 @@ export class ProcessTaskRunner implements TaskRunner {
         // new process, so e.g. we can re-use the system path
         options = {
             cwd: cwd,
-            env: process.env
+            env: process.env,
         };
 
         // When we create a process to execute a command, it's difficult to know if it failed
@@ -103,7 +103,7 @@ export class ProcessTaskRunner implements TaskRunner {
                     proc = this.rawProcessFactory(<RawProcessOptions>{
                         command: command,
                         args: args,
-                        options: options
+                        options: options,
                     });
                 } else {
                     // all Task types without specific TaskRunner will be run as a shell process e.g.: npm, gulp, etc.
@@ -111,7 +111,7 @@ export class ProcessTaskRunner implements TaskRunner {
                     proc = this.terminalProcessFactory(<TerminalProcessOptions>{
                         command: command,
                         args: args,
-                        options: options
+                        options: options,
                     });
                 }
                 return this.taskFactory(
@@ -121,7 +121,7 @@ export class ProcessTaskRunner implements TaskRunner {
                         process: proc,
                         processType: processType,
                         context: ctx,
-                        config: taskConfig
+                        config: taskConfig,
                     });
             } catch (error) {
                 this.logger.error(`Error occurred while creating task: ${error}`);

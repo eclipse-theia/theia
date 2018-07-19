@@ -121,7 +121,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
 
     constructor(widget: Widget) {
         super({
-            title: `Do you want to save the changes you made to ${widget.title.label || widget.title.caption}?`
+            title: `Do you want to save the changes you made to ${widget.title.label || widget.title.caption}?`,
         });
 
         const messageNode = document.createElement("div");

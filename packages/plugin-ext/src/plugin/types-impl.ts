@@ -39,13 +39,13 @@ export class Disposable {
 
 export enum StatusBarAlignment {
     Left = 1,
-    Right = 2
+    Right = 2,
 }
 
 export enum TextEditorLineNumbersStyle {
     Off = 0,
     On = 1,
-    Relative = 2
+    Relative = 2,
 }
 
 /**
@@ -56,7 +56,7 @@ export enum ViewColumn {
     Active = -1,
     One = 1,
     Two = 2,
-    Three = 3
+    Three = 3,
 }
 
 /**
@@ -67,7 +67,7 @@ export enum TextEditorSelectionChangeKind {
 
     Mouse = 2,
 
-    Command = 3
+    Command = 3,
 }
 
 export namespace TextEditorSelectionChangeKind {
@@ -399,7 +399,7 @@ export class Selection extends Range {
 
 export enum EndOfLine {
     LF = 1,
-    CRLF = 2
+    CRLF = 2,
 }
 
 export class SnippetString {
@@ -522,7 +522,7 @@ export enum TextEditorRevealType {
     Default = 0,
     InCenter = 1,
     InCenterIfOutsideViewport = 2,
-    AtTop = 3
+    AtTop = 3,
 }
 
 /**
@@ -544,7 +544,7 @@ export enum DecorationRangeBehavior {
     /**
      * TrackedRangeStickiness.GrowsOnlyWhenTypingAfter
      */
-    ClosedOpen = 3
+    ClosedOpen = 3,
 }
 
 /**
@@ -554,10 +554,10 @@ export enum OverviewRulerLane {
     Left = 1,
     Center = 2,
     Right = 4,
-    Full = 7
+    Full = 7,
 }
 
 export enum ConfigurationTarget {
     User = 0,
-    Workspace = 1
+    Workspace = 1,
 }

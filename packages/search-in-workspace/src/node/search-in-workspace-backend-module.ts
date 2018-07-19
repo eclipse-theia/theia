@@ -28,6 +28,6 @@ export default new ContainerModule(bind => {
                 server.setClient(client);
                 client.onDidCloseConnection(() => server.dispose());
                 return server;
-            })
+            }),
     );
 });

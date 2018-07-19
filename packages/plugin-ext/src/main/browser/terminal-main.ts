@@ -50,7 +50,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
             env: options.env,
             destroyTermOnClose: true,
             useServerTitle: false,
-            id: this.TERM_ID_PREFIX + counter
+            id: this.TERM_ID_PREFIX + counter,
         };
         let id: number;
         try {

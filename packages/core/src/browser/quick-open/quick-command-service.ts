@@ -28,7 +28,7 @@ export class QuickCommandService implements QuickOpenModel {
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
+        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
     ) { }
 
     open(): void {
@@ -44,7 +44,7 @@ export class QuickCommandService implements QuickOpenModel {
         this.quickOpenService.open(this, {
             placeholder: 'Type the name of a command you want to execute',
             fuzzyMatchLabel: true,
-            fuzzySort: false
+            fuzzySort: false,
         });
     }
 
@@ -62,7 +62,7 @@ export class CommandQuickOpenItem extends QuickOpenItem {
     constructor(
         protected readonly command: Command,
         protected readonly commands: CommandRegistry,
-        protected readonly keybindings: KeybindingRegistry
+        protected readonly keybindings: KeybindingRegistry,
     ) {
         super();
         this.activeElement = window.document.activeElement as HTMLElement;

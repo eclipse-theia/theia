@@ -41,43 +41,43 @@ describe('tree-decorator', () => {
             const expected = new Map<string, TreeDecoration.Data[]>();
             expected.set('id_1', [
                 {
-                    tooltip: 'tooltip'
+                    tooltip: 'tooltip',
                 },
                 {
                     fontData: {
-                        color: 'blue'
-                    }
-                }
+                        color: 'blue',
+                    },
+                },
             ]);
             expected.set('id_2', [
                 {
-                    backgroundColor: 'yellow'
+                    backgroundColor: 'yellow',
                 },
                 {
-                    priority: 100
-                }
+                    priority: 100,
+                },
             ]);
             expect(decoratorService.inflateDecorators(
                 {
                     "id_1": [
                         {
-                            "tooltip": "tooltip"
+                            "tooltip": "tooltip",
                         },
                         {
                             "fontData": {
-                                "color": "blue"
-                            }
-                        }
+                                "color": "blue",
+                            },
+                        },
                     ],
                     "id_2": [
                         {
-                            "backgroundColor": "yellow"
+                            "backgroundColor": "yellow",
                         },
                         {
-                            "priority": 100
-                        }
-                    ]
-                }
+                            "priority": 100,
+                        },
+                    ],
+                },
             )).to.be.deep.equal(expected);
         });
 
@@ -89,41 +89,41 @@ describe('tree-decorator', () => {
             const decorations = new Map<string, TreeDecoration.Data[]>();
             decorations.set('id_1', [
                 {
-                    tooltip: 'tooltip'
+                    tooltip: 'tooltip',
                 },
                 {
                     fontData: {
-                        color: 'blue'
-                    }
-                }
+                        color: 'blue',
+                    },
+                },
             ]);
             decorations.set('id_2', [
                 {
-                    backgroundColor: 'yellow'
+                    backgroundColor: 'yellow',
                 },
                 {
-                    priority: 100
-                }
+                    priority: 100,
+                },
             ]);
             expect(decoratorService.deflateDecorators(decorations)).to.be.deep.equal({
                 "id_1": [
                     {
-                        "tooltip": "tooltip"
+                        "tooltip": "tooltip",
                     },
                     {
                         "fontData": {
-                            "color": "blue"
-                        }
-                    }
+                            "color": "blue",
+                        },
+                    },
                 ],
                 "id_2": [
                     {
-                        "backgroundColor": "yellow"
+                        "backgroundColor": "yellow",
                     },
                     {
-                        "priority": 100
-                    }
-                ]
+                        "priority": 100,
+                    },
+                ],
             });
         });
 
@@ -150,7 +150,7 @@ describe('tree-decorator', () => {
 
         it('split', () => {
             const actual = TreeDecoration.CaptionHighlight.split('alma', {
-                ranges: [{ offset: 0, length: 1 }]
+                ranges: [{ offset: 0, length: 1 }],
             });
             expect(actual).has.lengthOf(2);
             expect(actual[0].highligh).to.be.true;

@@ -23,7 +23,7 @@ import {
     MetricsProjectPath,
     MetricsBackendApplicationContribution,
     ExtensionMetricsContribution,
-    MetricsCliContribution
+    MetricsCliContribution,
 } from './';
 
 export default new ContainerModule(bind => {

@@ -37,7 +37,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
                     this.proxy.$executeCommand(command.id);
                 },
                 isEnabled() { return true; },
-                isVisible() { return true; }
+                isVisible() { return true; },
             }));
     }
     $unregisterCommand(id: string): void {

@@ -43,7 +43,7 @@ export namespace Event {
     const _disposable = { dispose() { } };
     export const None: Event<any> = Object.assign(function () { return _disposable; }, {
         get maxListeners(): number { return 0; },
-        set maxListeners(maxListeners: number) { }
+        set maxListeners(maxListeners: number) { },
     });
 }
 
@@ -165,7 +165,7 @@ export class Emitter<T> {
                                 this._options.onLastListenerRemove(this);
                             }
                         }
-                    }
+                    },
                 };
                 if (Array.isArray(disposables)) {
                     disposables.push(result);
@@ -173,8 +173,8 @@ export class Emitter<T> {
 
                 return result;
             }, {
-                    maxListeners: 30
-                }
+                    maxListeners: 30,
+                },
             );
         }
         return this._event;

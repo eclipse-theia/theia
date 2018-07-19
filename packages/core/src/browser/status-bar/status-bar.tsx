@@ -46,7 +46,7 @@ export interface StatusBarEntry {
 }
 
 export enum StatusBarAlignment {
-    LEFT, RIGHT
+    LEFT, RIGHT,
 }
 
 export interface StatusBarEntryAttributes {
@@ -75,7 +75,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     constructor(
         @inject(CommandService) protected readonly commands: CommandService,
         @inject(LabelParser) protected readonly entryService: LabelParser,
-        @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService
+        @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
     ) {
         super();
         delete this.scrollOptions;
@@ -163,7 +163,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
 
         if (entry.color) {
             attrs.style = {
-                color: entry.color
+                color: entry.color,
             };
         }
 

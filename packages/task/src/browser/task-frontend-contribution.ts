@@ -35,12 +35,12 @@ export namespace TaskCommands {
     // run task command
     export const TASK_RUN: Command = {
         id: 'task:run',
-        label: 'Tasks: Run...'
+        label: 'Tasks: Run...',
     };
 
     export const TASK_ATTACH: Command = {
         id: 'task:attach',
-        label: 'Tasks: Attach...'
+        label: 'Tasks: Attach...',
     };
 }
 
@@ -83,15 +83,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN,
             {
                 isEnabled: () => true,
-                execute: () => this.quickOpenTask.open()
-            }
+                execute: () => this.quickOpenTask.open(),
+            },
         );
         registry.registerCommand(
             TaskCommands.TASK_ATTACH,
             {
                 isEnabled: () => true,
-                execute: () => this.quickOpenTask.attach()
-            }
+                execute: () => this.quickOpenTask.attach(),
+            },
         );
     }
 
@@ -101,13 +101,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         menus.registerMenuAction(TaskCommands.RUN_GROUP, {
             commandId: TaskCommands.TASK_RUN.id,
             label: TaskCommands.TASK_RUN.label ? TaskCommands.TASK_RUN.label.slice('Tasks: '.length) : TaskCommands.TASK_RUN.label,
-            order: '0'
+            order: '0',
         });
 
         menus.registerMenuAction(TaskCommands.RUN_GROUP, {
             commandId: TaskCommands.TASK_ATTACH.id,
             label: TaskCommands.TASK_ATTACH.label ? TaskCommands.TASK_ATTACH.label.slice('Tasks: '.length) : TaskCommands.TASK_ATTACH.label,
-            order: '1'
+            order: '1',
         });
     }
 }

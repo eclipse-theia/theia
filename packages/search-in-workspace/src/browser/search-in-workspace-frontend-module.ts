@@ -30,7 +30,7 @@ export default new ContainerModule(bind => {
     bind(SearchInWorkspaceWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(ctx => ({
         id: SearchInWorkspaceWidget.ID,
-        createWidget: () => ctx.container.get(SearchInWorkspaceWidget)
+        createWidget: () => ctx.container.get(SearchInWorkspaceWidget),
     }));
     bind(SearchInWorkspaceResultTreeWidget).toDynamicValue(ctx => createSearchTreeWidget(ctx.container));
 

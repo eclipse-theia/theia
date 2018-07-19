@@ -23,7 +23,7 @@ import {
     createProcessSocketConnection,
     createStreamConnection,
     forward,
-    IConnection
+    IConnection,
 } from 'vscode-ws-jsonrpc/lib/server';
 import { MaybePromise, ILogger } from "@theia/core/lib/common";
 import { LanguageContribution } from "../common";
@@ -31,7 +31,7 @@ import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-proce
 import { ProcessManager } from '@theia/process/lib/node/process-manager';
 
 export {
-    LanguageContribution, IConnection, Message
+    LanguageContribution, IConnection, Message,
 };
 
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
@@ -112,7 +112,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         return new Promise(resolve => {
             const server = net.createServer();
             server.addListener('listening', () =>
-                resolve(server)
+                resolve(server),
             );
             // allocate ports dynamically
             server.listen(0, '127.0.0.1');

@@ -29,7 +29,7 @@ export interface Extension {
 export class ExtensionPackage {
     constructor(
         readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
-        protected readonly registry: NpmRegistry
+        protected readonly registry: NpmRegistry,
     ) { }
 
     get name(): string {
@@ -188,10 +188,10 @@ export namespace RawExtensionPackage {
     export class ViewState {
         readme?: string;
         tags?: {
-            [tag: string]: string
+            [tag: string]: string,
         };
         constructor(
-            protected readonly registry: NpmRegistry
+            protected readonly registry: NpmRegistry,
         ) { }
         get latestVersion(): string | undefined {
             if (this.tags) {

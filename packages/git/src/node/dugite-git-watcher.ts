@@ -30,7 +30,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     protected readonly subscriptions = new Map<string, DisposableCollection>();
 
     constructor(
-        @inject(GitRepositoryManager) protected readonly manager: GitRepositoryManager
+        @inject(GitRepositoryManager) protected readonly manager: GitRepositoryManager,
     ) { }
 
     dispose(): void {

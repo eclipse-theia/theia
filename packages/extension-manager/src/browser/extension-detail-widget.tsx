@@ -23,7 +23,7 @@ import * as React from 'react';
 export class ExtensionDetailWidget extends ReactWidget {
 
     constructor(
-        protected readonly resolvedExtension: ResolvedExtension
+        protected readonly resolvedExtension: ResolvedExtension,
     ) {
         super();
         this.addClass('theia-extension-detail');

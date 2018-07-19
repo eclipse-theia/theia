@@ -47,7 +47,7 @@ export const ipcEntryPoint = process.env[THEIA_ENTRY_POINT];
 
 export function createIpcEnv(options?: {
     entryPoint?: string
-    env?: NodeJS.ProcessEnv
+    env?: NodeJS.ProcessEnv,
 }): NodeJS.ProcessEnv {
     const op = Object.assign({}, options);
     const childEnv = Object.assign({}, op.env);

@@ -27,15 +27,15 @@ describe('fuzzy-search', () => {
                 {
                     item: 'alma',
                     ranges: [
-                        { offset: 0, length: 1 }
-                    ]
-                }
-            ]
+                        { offset: 0, length: 1 },
+                    ],
+                },
+            ],
         },
         {
             pattern: 'a',
             items: ['körte'],
-            expected: []
+            expected: [],
         },
         {
             pattern: 'bcn',
@@ -46,23 +46,23 @@ describe('fuzzy-search', () => {
                     ranges: [
                         { offset: 0, length: 1 },
                         { offset: 2, length: 1 },
-                        { offset: 4, length: 1 }
-                    ]
+                        { offset: 4, length: 1 },
+                    ],
                 },
                 {
                     item: 'a mighty bear canoe',
                     ranges: [
                         { offset: 9, length: 1 },
                         { offset: 14, length: 1 },
-                        { offset: 16, length: 1 }
-                    ]
-                }
-            ]
-        }
+                        { offset: 16, length: 1 },
+                    ],
+                },
+            ],
+        },
     ] as {
         readonly pattern: string,
         readonly items: string[],
-        readonly expected: FuzzySearch.Match<string>[]
+        readonly expected: FuzzySearch.Match<string>[],
     }[]).forEach(test => {
         const { pattern, items, expected } = test;
         it(`should match ${expected.length} item${expected.length === 1 ? '' : 's'} when filtering [${items.join(', ')}] with pattern: '${pattern}'`, async () => {
@@ -72,7 +72,7 @@ describe('fuzzy-search', () => {
 
     ([
         ['con', ['configs', 'base.tsconfig.json', 'tsconfig.json', 'base.nyc.json', 'CONTRIBUTING.MD']],
-        ['bcn', ['baconing', 'narwhal', 'a mighty bear canoe'], ['baconing', 'a mighty bear canoe']]
+        ['bcn', ['baconing', 'narwhal', 'a mighty bear canoe'], ['baconing', 'a mighty bear canoe']],
     ] as ([string, string[], string[]])[]).forEach(test => {
         const [pattern, items, expected] = test;
         it(`should match the order of items after the filtering with pattern: '${pattern}'`, async () => {
@@ -92,7 +92,7 @@ describe('fuzzy-search', () => {
         return new FuzzySearch().filter({
             items,
             pattern,
-            transform: arg => arg
+            transform: arg => arg,
         });
     }
 

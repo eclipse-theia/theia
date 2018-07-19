@@ -101,7 +101,7 @@ function getWordAtPosFast(column: number, wordDefinition: RegExp, text: string, 
             return {
                 word: match[0],
                 startColumn: textOffset + 1 + match.index!,
-                endColumn: textOffset + 1 + wordDefinition.lastIndex
+                endColumn: textOffset + 1 + wordDefinition.lastIndex,
             };
         }
     }
@@ -129,7 +129,7 @@ function getWordAtPosSlow(column: number, wordDefinition: RegExp, text: string, 
             return {
                 word: match[0],
                 startColumn: textOffset + 1 + match.index!,
-                endColumn: textOffset + 1 + wordDefinition.lastIndex
+                endColumn: textOffset + 1 + wordDefinition.lastIndex,
             };
         }
     }

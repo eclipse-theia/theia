@@ -34,7 +34,7 @@ export class FileTreeWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileTreeModel) readonly model: FileTreeModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
         this.addClass(FILE_TREE_CLASS);
@@ -67,7 +67,7 @@ export class FileTreeWidget extends TreeWidget {
             onDragEnter: event => this.handleDragEnterEvent(this.model.root, event),
             onDragOver: event => this.handleDragOverEvent(this.model.root, event),
             onDragLeave: event => this.handleDragLeaveEvent(this.model.root, event),
-            onDrop: event => this.handleDropEvent(this.model.root, event)
+            onDrop: event => this.handleDropEvent(this.model.root, event),
         };
     }
 
@@ -80,7 +80,7 @@ export class FileTreeWidget extends TreeWidget {
             onDragEnter: event => this.handleDragEnterEvent(node, event),
             onDragOver: event => this.handleDragOverEvent(node, event),
             onDragLeave: event => this.handleDragLeaveEvent(node, event),
-            onDrop: event => this.handleDropEvent(node, event)
+            onDrop: event => this.handleDropEvent(node, event),
         };
     }
 

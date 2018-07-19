@@ -27,7 +27,7 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
     ) {
         super(workspace, languages, languageClientFactory);
     }
@@ -37,7 +37,7 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
             '**/*.ts',
             '**/*.tsx',
             '**/*.js',
-            '**/*.jsx'
+            '**/*.jsx',
         ];
     }
 
@@ -46,7 +46,7 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
             TYPESCRIPT_LANGUAGE_ID,
             TYPESCRIPT_REACT_LANGUAGE_ID,
             JAVASCRIPT_LANGUAGE_ID,
-            JAVASCRIPT_REACT_LANGUAGE_ID
+            JAVASCRIPT_REACT_LANGUAGE_ID,
         ];
     }
 
@@ -60,7 +60,7 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         // ];
         return [
             "tsconfig.json",
-            "jsconfig.json"
+            "jsconfig.json",
         ];
     }
 

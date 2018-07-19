@@ -52,7 +52,7 @@ export namespace MergeConflictsDecorations {
     export const Options = {
         CurrentMarker: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: 'merge-conflict-current-marker'
+            className: 'merge-conflict-current-marker',
         },
         CurrentContent: <EditorDecorationOptions>{
             isWholeLine: true,
@@ -60,11 +60,11 @@ export namespace MergeConflictsDecorations {
             overviewRuler: {
                 position: OverviewRulerLane.Full,
                 color: 'rgba(0, 255, 0, 0.3)',
-            }
+            },
         },
         BaseMarker: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: 'merge-conflict-base-marker'
+            className: 'merge-conflict-base-marker',
         },
         BaseContent: <EditorDecorationOptions>{
             isWholeLine: true,
@@ -72,11 +72,11 @@ export namespace MergeConflictsDecorations {
             overviewRuler: {
                 position: OverviewRulerLane.Full,
                 color: 'rgba(125, 125, 125, 0.3)',
-            }
+            },
         },
         IncomingMarker: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: 'merge-conflict-incoming-marker'
+            className: 'merge-conflict-incoming-marker',
         },
         IncomingContent: <EditorDecorationOptions>{
             isWholeLine: true,
@@ -84,7 +84,7 @@ export namespace MergeConflictsDecorations {
             overviewRuler: {
                 position: OverviewRulerLane.Full,
                 color: 'rgba(0, 0, 255, 0.3)',
-            }
+            },
         },
     };
 }

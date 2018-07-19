@@ -20,7 +20,7 @@ import {
     Command,
     CommandRegistry,
     MenuContribution,
-    MenuModelRegistry
+    MenuModelRegistry,
 } from '@theia/core/lib/common';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { FrontendApplication } from '@theia/core/lib/browser';
@@ -30,7 +30,7 @@ import { keymapsUri } from './keymaps-service';
 export namespace KeymapsCommands {
     export const OPEN_KEYMAPS: Command = {
         id: 'keymaps:open',
-        label: 'Open Keyboard Shortcuts'
+        label: 'Open Keyboard Shortcuts',
     };
 }
 
@@ -46,13 +46,13 @@ export class KeymapsFrontendContribution implements CommandContribution, MenuCon
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS, {
             isEnabled: () => true,
-            execute: () => this.openKeymapsFile()
+            execute: () => this.openKeymapsFile(),
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: KeymapsCommands.OPEN_KEYMAPS.id
+            commandId: KeymapsCommands.OPEN_KEYMAPS.id,
         });
     }
 

@@ -98,7 +98,7 @@ export class CommandRegistry implements CommandService {
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
-        protected readonly contributionProvider: ContributionProvider<CommandContribution>
+        protected readonly contributionProvider: ContributionProvider<CommandContribution>,
     ) { }
 
     onStart(): void {
@@ -132,7 +132,7 @@ export class CommandRegistry implements CommandService {
         return {
             dispose: () => {
                 delete this._commands[command.id];
-            }
+            },
         };
     }
 
@@ -151,7 +151,7 @@ export class CommandRegistry implements CommandService {
                 if (idx >= 0) {
                     handlers.splice(idx, 1);
                 }
-            }
+            },
         };
     }
 

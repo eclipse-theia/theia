@@ -33,7 +33,7 @@ export const doInitialization: BackendInitializationFn = (rpc: any) => {
             id: moduleName,
             filename: moduleName,
             loaded: true,
-            exports: theia
+            exports: theia,
         };
     });
 

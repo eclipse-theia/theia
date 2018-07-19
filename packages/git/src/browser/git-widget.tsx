@@ -89,7 +89,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     @postConstruct()
     protected init() {
         this.toDispose.push(this.repositoryProvider.onDidChangeRepository(repository =>
-            this.initialize(repository)
+            this.initialize(repository),
         ));
         this.initialize(this.repositoryProvider.selectedRepository);
         this.update();
@@ -124,7 +124,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         return {
             message: this.message,
             commitMessageValidationResult: this.commitMessageValidationResult,
-            messageBoxHeight
+            messageBoxHeight,
         };
     }
 
@@ -157,13 +157,13 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
             if (message.trim().length === 0) {
                 this.commitMessageValidationResult = {
                     status: 'error',
-                    message: 'Please provide a commit message'
+                    message: 'Please provide a commit message',
                 };
             }
             if (this.commitMessageValidationResult === undefined && !(await this.git.status(repository)).changes.some(c => c.staged === true)) {
                 this.commitMessageValidationResult = {
                     status: 'error',
-                    message: 'No changes added to commit'
+                    message: 'No changes added to commit',
                 };
             }
             if (this.commitMessageValidationResult === undefined) {
@@ -199,25 +199,25 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 const [icon, label, description] = await Promise.all([
                     this.labelProvider.getIcon(uri),
                     this.labelProvider.getName(uri),
-                    repository ? Repository.relativePath(repository, uri.parent).toString() : this.labelProvider.getLongName(uri.parent)
+                    repository ? Repository.relativePath(repository, uri.parent).toString() : this.labelProvider.getLongName(uri.parent),
                 ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
                         stagedChanges.push({
                             icon, label, description,
-                            ...change
+                            ...change,
                         });
                     } else {
                         unstagedChanges.push({
                             icon, label, description,
-                            ...change
+                            ...change,
                         });
                     }
                 } else {
                     if (!change.staged) {
                         mergeChanges.push({
                             icon, label, description,
-                            ...change
+                            ...change,
                         });
                     }
                 }
@@ -250,7 +250,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 }
                 style={
                     {
-                        display: !!this.commitMessageValidationResult ? 'block' : 'none'
+                        display: !!this.commitMessageValidationResult ? 'block' : 'none',
                     }
                 }>{validationMessage}</div>
         </div>;
@@ -372,7 +372,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         if (el) {
             this.contextMenuRenderer.render(GitWidget.ContextMenu.PATH, {
                 x: el.getBoundingClientRect().left,
-                y: el.getBoundingClientRect().top + el.offsetHeight
+                y: el.getBoundingClientRect().top + el.offsetHeight,
             });
         }
     }
@@ -431,7 +431,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     protected async getUserConfig(repository: Repository): Promise<[string, string]> {
         const [username, email] = (await Promise.all([
             this.git.exec(repository, ['config', 'user.name']),
-            this.git.exec(repository, ['config', 'user.email'])
+            this.git.exec(repository, ['config', 'user.email']),
         ])).map(result => result.stdout.trim());
         return [username, email];
     }

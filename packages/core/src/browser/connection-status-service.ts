@@ -53,7 +53,7 @@ export enum ConnectionStatus {
     /**
      * The connection is lost between frontend and backend.
      */
-    OFFLINE
+    OFFLINE,
 }
 
 @injectable()
@@ -85,7 +85,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
 
     constructor(
         @inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) {
     }
 
@@ -147,7 +147,7 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
         @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider,
         @inject(PingService) protected readonly pingService: PingService,
         @inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) {
         super(options, logger);
         this.schedulePing();
@@ -180,7 +180,7 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
     constructor(
         @inject(ConnectionStatusService) protected readonly connectionStatusService: ConnectionStatusService,
         @inject(StatusBar) protected readonly statusBar: StatusBar,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) {
         super();
         this.connectionStatusService.onStatusChange(state => this.onStateChange(state));
@@ -212,7 +212,7 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
             alignment: StatusBarAlignment.LEFT,
             text: 'Offline',
             tooltip: 'Cannot connect to backend.',
-            priority: 5000
+            priority: 5000,
         });
     }
 }

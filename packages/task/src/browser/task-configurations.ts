@@ -51,7 +51,7 @@ export class TaskConfigurations implements Disposable {
     constructor(
         @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
     ) {
         this.toDispose.push(watcherServer);
 
@@ -68,7 +68,7 @@ export class TaskConfigurations implements Disposable {
                 } catch (err) {
                     this.logger.error(err);
                 }
-            }
+            },
         });
 
         this.toDispose.push(Disposable.create(() => {
@@ -95,7 +95,7 @@ export class TaskConfigurations implements Disposable {
             this.watchedConfigFileUri = configFile;
             const watchId = await this.watcherServer.watchFileChanges(configFile);
             this.toDispose.push(Disposable.create(() =>
-                this.watcherServer.unwatchFileChanges(watchId))
+                this.watcherServer.unwatchFileChanges(watchId)),
             );
             this.refreshTasks();
         }

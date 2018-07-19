@@ -20,7 +20,7 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
+    PreferenceContribution,
 } from '@theia/core/lib/browser/preferences';
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
@@ -29,15 +29,15 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         "files.watcherExclude": {
             "description": "List of paths to exclude from the filesystem watcher",
             "additionalProperties": {
-                "type": "boolean"
+                "type": "boolean",
             },
             "default": {
                 "**/.git/objects/**": true,
                 "**/.git/subtree-cache/**": true,
-                "**/node_modules/**": true
-            }
-        }
-    }
+                "**/node_modules/**": true,
+            },
+        },
+    },
 };
 
 export interface FileSystemConfiguration {

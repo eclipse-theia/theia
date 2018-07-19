@@ -38,7 +38,7 @@ export class MonacoContextMenuService implements IContextMenuService {
             delegate.getActions().then(actions => {
                 const commands = new CommandRegistry();
                 const menu = new Menu({
-                    commands
+                    commands,
                 });
 
                 for (const action of actions) {
@@ -48,11 +48,11 @@ export class MonacoContextMenuService implements IContextMenuService {
                         className: action.class,
                         isToggled: () => action.checked,
                         isEnabled: () => action.enabled,
-                        execute: () => action.run()
+                        execute: () => action.run(),
                     });
                     menu.addItem({
                         type: 'command',
-                        command: commandId
+                        command: commandId,
                     });
                 }
                 menu.aboutToClose.connect(() => delegate.onHide(false));

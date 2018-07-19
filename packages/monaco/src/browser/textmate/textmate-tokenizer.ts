@@ -19,7 +19,7 @@ import { INITIAL, StackElement, IGrammar } from "monaco-textmate";
 export class State implements monaco.languages.IState {
 
     constructor(
-        public ruleStack: StackElement
+        public ruleStack: StackElement,
     ) { }
 
     clone(): monaco.languages.IState {
@@ -57,7 +57,7 @@ export function createTextmateTokenizer(grammar: IGrammar): monaco.languages.Tok
                         if (defaultForeground !== foregroundColor) {
                             return {
                                 ...token,
-                                scopes: scope!
+                                scopes: scope!,
                             };
                         }
                     }
@@ -67,6 +67,6 @@ export function createTextmateTokenizer(grammar: IGrammar): monaco.languages.Tok
                     };
                 }),
             };
-        }
+        },
     };
 }

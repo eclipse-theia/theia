@@ -60,7 +60,7 @@ export namespace EditorDecorationStyle {
     const editorDecorationsStyleSheet: CSSStyleSheet | undefined = createStyleSheet();
 
     export function createRule(selector: string, styleProvider: (style: CSSStyleDeclaration) => void,
-        styleSheet: CSSStyleSheet | undefined = editorDecorationsStyleSheet
+        styleSheet: CSSStyleSheet | undefined = editorDecorationsStyleSheet,
     ): void {
         if (!styleSheet) {
             return;

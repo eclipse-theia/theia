@@ -117,7 +117,7 @@ export enum PluginDeployerEntryType {
 
     FRONTEND,
 
-    BACKEND
+    BACKEND,
 }
 
 export interface PluginDeployerEntry {

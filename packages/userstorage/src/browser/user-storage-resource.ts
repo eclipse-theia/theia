@@ -26,7 +26,7 @@ export class UserStorageResource implements Resource {
     protected readonly toDispose = new DisposableCollection();
     constructor(
         public uri: URI,
-        protected readonly service: UserStorageService
+        protected readonly service: UserStorageService,
     ) {
         this.toDispose.push(this.service.onUserStorageChanged(e => {
             for (const changedUri of e.uris) {
@@ -60,7 +60,7 @@ export class UserStorageResource implements Resource {
 export class UserStorageResolver implements ResourceResolver {
 
     constructor(
-        @inject(UserStorageService) protected readonly service: UserStorageService
+        @inject(UserStorageService) protected readonly service: UserStorageService,
 
     ) { }
 

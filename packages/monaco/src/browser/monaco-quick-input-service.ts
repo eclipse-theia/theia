@@ -68,13 +68,13 @@ export class QuickInputService {
 
         const inputItem = new InputOpenItemOptions(options.prompt);
         this.opts = new MonacoQuickInputControllerOptsImpl({
-            onType: (s, a) => this.validateInput(s, a, inputItem)
+            onType: (s, a) => this.validateInput(s, a, inputItem),
         },
             options,
             {
                 prefix: options.value,
                 placeholder: options.placeHolder,
-                onClose: () => inputItem.resolve(undefined)
+                onClose: () => inputItem.resolve(undefined),
             });
         this.quickOpenService.internalOpen(this.opts);
 
@@ -152,7 +152,7 @@ class MonacoQuickInputControllerOptsImpl extends MonacoQuickOpenControllerOptsIm
     constructor(
         model: QuickOpenModel,
         inputOptions: QuickInputOptions,
-        options?: QuickOpenOptions
+        options?: QuickOpenOptions,
     ) {
         super(model, options);
         if (inputOptions.password) {

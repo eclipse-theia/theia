@@ -48,7 +48,7 @@ export class Extension extends protocol.Extension implements Disposable {
             }
         }));
         this.toDispose.push(Disposable.create(() =>
-            manager.onDidChange.maxListeners = manager.onDidChange.maxListeners - 1)
+            manager.onDidChange.maxListeners = manager.onDidChange.maxListeners - 1),
         );
     }
 
@@ -67,7 +67,7 @@ export class Extension extends protocol.Extension implements Disposable {
      */
     resolve(): Promise<ResolvedExtension> {
         return this.server.resolve(this.name).then(resolved =>
-            Object.assign(this, resolved)
+            Object.assign(this, resolved),
         );
     }
 
@@ -116,7 +116,7 @@ export class ExtensionManager implements Disposable {
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
-        @inject(protocol.ExtensionServer) protected readonly server: protocol.ExtensionServer
+        @inject(protocol.ExtensionServer) protected readonly server: protocol.ExtensionServer,
     ) {
         this.toDispose.push(server);
         this.toDispose.push(this.onChangedEmitter);
@@ -150,8 +150,8 @@ export class ExtensionManager implements Disposable {
     list(param?: protocol.SearchParam): Promise<Extension[]> {
         return this.server.list(param).then(extensions =>
             extensions.map(extension =>
-                new Extension(extension, this.server, this)
-            )
+                new Extension(extension, this.server, this),
+            ),
         );
     }
 

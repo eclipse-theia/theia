@@ -31,7 +31,7 @@ import debounce = require('lodash.debounce');
 export namespace PreviewCommands {
     export const OPEN: Command = {
         id: 'preview:open',
-        label: 'Open Preview'
+        label: 'Open Preview',
     };
 }
 
@@ -58,12 +58,12 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
 
     protected readonly defaultOpenFromEditorOptions: PreviewOpenerOptions = {
         widgetOptions: { area: 'main', mode: 'split-right' },
-        mode: 'reveal'
+        mode: 'reveal',
     };
 
     protected readonly defaultOpenOptions: PreviewOpenerOptions = {
         widgetOptions: { area: 'main', mode: 'tab-after' },
-        mode: 'activate'
+        mode: 'activate',
     };
 
     onStart() {
@@ -117,12 +117,12 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
             editor.revealRange({
                 start: {
                     line,
-                    character: 0
+                    character: 0,
                 },
                 end: {
                     line: line + 1,
-                    character: 0
-                }
+                    character: 0,
+                },
             }, { at: 'top' });
         });
     }
@@ -133,7 +133,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
             const { editor } = await this.editorManager.open(new URI(location.uri), {
                 widgetOptions: ref ?
                     { area: 'main', mode: 'tab-after', ref } :
-                    { area: 'main', mode: 'split-left' }
+                    { area: 'main', mode: 'split-left' },
             });
             editor.revealPosition(location.range.start);
             editor.selection = location.range;
@@ -236,7 +236,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
             ... this.defaultOpenFromEditorOptions,
             widgetOptions: ref ?
                 { area: 'main', mode: 'tab-after', ref } :
-                { area: 'main', mode: 'split-right' }
+                { area: 'main', mode: 'split-right' },
         });
     }
 

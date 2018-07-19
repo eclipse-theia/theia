@@ -25,7 +25,7 @@ export default new ContainerModule(bind => {
     bind(KeymapsFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, MenuContribution]) {
         bind(identifier).toDynamicValue(ctx =>
-            ctx.container.get(KeymapsFrontendContribution)
+            ctx.container.get(KeymapsFrontendContribution),
         ).inSingletonScope();
     }
 

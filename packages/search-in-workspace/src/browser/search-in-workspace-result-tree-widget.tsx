@@ -26,7 +26,7 @@ import {
     LabelProvider,
     TreeExpansionService,
     ApplicationShell,
-    DiffUris
+    DiffUris,
 } from "@theia/core/lib/browser";
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from "../common/search-in-workspace-interface";
 import { SearchInWorkspaceService } from "./search-in-workspace-service";
@@ -86,7 +86,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
 
@@ -95,7 +95,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             name: "ResultTree",
             parent: undefined,
             visible: false,
-            children: []
+            children: [],
         } as CompositeTreeNode;
 
         this.toDispose.push(model.onSelectionChanged(nodes => {
@@ -187,7 +187,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             id: path + "-" + name,
                             parent: this.model.root,
                             icon,
-                            file: result.file
+                            file: result.file,
                         };
                         resultElement.children.push(this.createResultLineNode(result, resultElement));
                         this.resultTree.set(result.file, resultElement);
@@ -199,7 +199,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     return;
                 }
                 this.refreshModelChildren();
-            }
+            },
         }, searchOptions);
         token.onCancellationRequested(() => {
             this.searchService.cancel(searchId);
@@ -255,7 +255,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             selected: false,
             id: result.file + "-" + result.line + "-" + result.character + "-" + result.length,
             name: result.lineText,
-            parent: resultNode
+            parent: resultNode,
         };
     }
 
@@ -327,17 +327,17 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 range: {
                     start: {
                         line: resultLineNode.line - 1,
-                        character: resultLineNode.character - 1
+                        character: resultLineNode.character - 1,
                     },
                     end: {
                         line: resultLineNode.line - 1,
-                        character: resultLineNode.character - 1 + resultLineNode.length
-                    }
-                }
+                        character: resultLineNode.character - 1 + resultLineNode.length,
+                    },
+                },
             } as ReplaceOperation));
             await widget.editor.replaceText({
                 source,
-                replaceOperations
+                replaceOperations,
             });
         }
     }
@@ -426,14 +426,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             selection: {
                 start: {
                     line: node.line - 1,
-                    character: node.character - 1
+                    character: node.character - 1,
                 },
                 end: {
                     line: node.line - 1,
-                    character: node.character - 1 + node.length
-                }
+                    character: node.character - 1 + node.length,
+                },
             },
-            mode: "reveal"
+            mode: "reveal",
         });
 
         this.decorateEditor(resultNode, editorWidget);
@@ -478,21 +478,21 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     range: {
                         start: {
                             line: res.line - 1,
-                            character: res.character - 1
+                            character: res.character - 1,
                         },
                         end: {
                             line: res.line - 1,
-                            character: res.character - 1 + res.length
-                        }
+                            character: res.character - 1 + res.length,
+                        },
                     },
                     options: {
                         overviewRuler: {
                             color: "rgba(230, 0, 0, 1)",
-                            position: OverviewRulerLane.Full
+                            position: OverviewRulerLane.Full,
                         },
                         className: res.selected ? "current-search-in-workspace-editor-match" : "search-in-workspace-editor-match",
-                        stickiness: TrackedRangeStickiness.GrowsOnlyWhenTypingBefore
-                    }
+                        stickiness: TrackedRangeStickiness.GrowsOnlyWhenTypingBefore,
+                    },
                 });
             });
         }

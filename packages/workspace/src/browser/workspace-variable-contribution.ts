@@ -35,7 +35,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: async () => {
                 const uri = await this.getWorkspaceRootUri();
                 return uri ? uri.path.toString() : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'workspaceFolderBasename',
@@ -43,7 +43,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: async () => {
                 const uri = await this.getWorkspaceRootUri();
                 return uri ? uri.displayName : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'file',
@@ -51,7 +51,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: () => {
                 const uri = this.getCurrentURI();
                 return uri ? uri.path.toString() : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'fileBasename',
@@ -59,7 +59,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: () => {
                 const uri = this.getCurrentURI();
                 return uri ? uri.path.base : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'fileBasenameNoExtension',
@@ -67,7 +67,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: () => {
                 const uri = this.getCurrentURI();
                 return uri ? uri.path.name : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'fileDirname',
@@ -75,7 +75,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: () => {
                 const uri = this.getCurrentURI();
                 return uri ? uri.path.dir.toString() : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'fileExtname',
@@ -83,7 +83,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: () => {
                 const uri = this.getCurrentURI();
                 return uri ? uri.path.ext : undefined;
-            }
+            },
         });
         variables.registerVariable({
             name: 'relativeFile',
@@ -91,7 +91,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: () => {
                 const currentURI = this.getCurrentURI();
                 return currentURI ? this.getWorkspaceRelativePath(currentURI) : undefined;
-            }
+            },
         });
     }
 

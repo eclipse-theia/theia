@@ -45,7 +45,7 @@ export class LocalStorageService implements StorageService {
     private storage: LocalStorage;
 
     constructor(
-        @inject(ILogger) protected logger: ILogger
+        @inject(ILogger) protected logger: ILogger,
     ) {
         if (typeof window !== 'undefined' && window.localStorage) {
             this.storage = window.localStorage;

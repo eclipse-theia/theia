@@ -26,7 +26,7 @@ const writer = new IPCMessageWriter(process);
 const logger = new ConsoleLogger();
 const connection = createMessageConnection(reader, writer, logger);
 connection.trace(Trace.Off, {
-    log: (message, data) => console.log(`${message} ${data}`)
+    log: (message, data) => console.log(`${message} ${data}`),
 });
 
 const entryPoint = require(ipcEntryPoint!).default as IPCEntryPoint;

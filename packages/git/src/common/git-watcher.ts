@@ -99,7 +99,7 @@ export class ReconnectingGitWatcherServer implements GitWatcherServer {
     private readonly localToRemoteWatcher = new Map<number, number>();
 
     constructor(
-        @inject(GitWatcherServerProxy) private readonly proxy: GitWatcherServerProxy
+        @inject(GitWatcherServerProxy) private readonly proxy: GitWatcherServerProxy,
     ) {
         this.proxy.onDidOpenConnection(() => this.reconnect());
     }
@@ -153,7 +153,7 @@ export class GitWatcher implements GitWatcherClient, Disposable {
     private readonly onGitEventEmitter: Emitter<GitStatusChangeEvent>;
 
     constructor(
-        @inject(GitWatcherServer) private readonly server: GitWatcherServer
+        @inject(GitWatcherServer) private readonly server: GitWatcherServer,
     ) {
         this.toDispose = new DisposableCollection();
         this.onGitEventEmitter = new Emitter<GitStatusChangeEvent>();

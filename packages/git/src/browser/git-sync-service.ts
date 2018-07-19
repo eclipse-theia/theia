@@ -80,13 +80,13 @@ export class GitSyncService {
             this.setSyncing(true);
             if (method === 'pull-push' || method === 'rebase-push') {
                 await this.git.pull(repository, {
-                    rebase: method === 'rebase-push'
+                    rebase: method === 'rebase-push',
                 });
                 status = await this.git.status(repository);
             }
             if (this.shouldPush(status)) {
                 await this.git.push(repository, {
-                    force: method === 'force-push'
+                    force: method === 'force-push',
                 });
             }
         } catch (error) {
@@ -107,19 +107,19 @@ export class GitSyncService {
         const methods: {
             label: string
             warning: string
-            value: GitSyncService.SyncMethod
+            value: GitSyncService.SyncMethod,
         }[] = [{
             label: `Pull and push commits from and to '${upstreamBranch}'`,
             warning: `This action will pull and push commits from and to '${upstreamBranch}'.`,
-            value: 'pull-push'
+            value: 'pull-push',
         }, {
             label: `Fetch, rebase and push commits from and to '${upstreamBranch}'`,
             warning: `This action will fetch, rebase and push commits from and to '${upstreamBranch}'.`,
-            value: 'rebase-push'
+            value: 'rebase-push',
         }, {
             label: `Force push commits to '${upstreamBranch}'`,
             warning: `This action will override commits in '${upstreamBranch}'.`,
-            value: 'force-push'
+            value: 'force-push',
         }];
         const method = await this.pick(`Pick how changes should be synchronized:`, methods);
         if (method && await this.confirm('Synchronize Changes', methods.find(({ value }) => value === method)!.warning)) {
@@ -148,7 +148,7 @@ export class GitSyncService {
         ) {
             try {
                 await this.git.push(repository, {
-                    remote, localBranch, setUpstream: true
+                    remote, localBranch, setUpstream: true,
                 });
             } catch (error) {
                 this.gitErrorHandler.handleError(error);
@@ -191,11 +191,11 @@ export class GitSyncService {
                         }
                         resolve(value);
                         return true;
-                    }
+                    },
                 });
             });
             this.quickOpenService.open({
-                onType: (lookFor, acceptor) => acceptor(items)
+                onType: (lookFor, acceptor) => acceptor(items),
             }, { placeholder, onClose: () => resolve(undefined) });
         });
     }

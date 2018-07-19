@@ -16,7 +16,7 @@
 import {Disposable, StatusBarAlignment} from './types-impl';
 import {StatusBarItem} from '@theia/plugin';
 import {
-    PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain
+    PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain,
 } from '../api/plugin-api';
 import {RPCProtocol} from '../api/rpc-protocol';
 import {StatusBarItemImpl} from "./status-bar/status-bar-item";

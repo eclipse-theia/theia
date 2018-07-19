@@ -45,7 +45,7 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
 
     constructor(
         @inject(FileDialogProps) props: FileDialogProps,
-        @inject(FileDialogWidget) readonly widget: FileDialogWidget
+        @inject(FileDialogWidget) readonly widget: FileDialogWidget,
     ) {
         super(props);
         this.toDispose.push(widget);

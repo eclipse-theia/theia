@@ -18,7 +18,7 @@ import { inject, injectable } from "inversify";
 import {
     BaseLanguageClientContribution, LanguageClientFactory,
     LanguageClientOptions,
-    ILanguageClient
+    ILanguageClient,
 } from '@theia/languages/lib/browser';
 import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from "@theia/languages/lib/common";
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -40,7 +40,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         @inject(Languages) protected readonly languages: Languages,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
         @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) {
         super(workspace, languages, languageClientFactory);
     }

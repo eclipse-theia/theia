@@ -17,7 +17,7 @@
 import { inject, injectable } from "inversify";
 import {
     QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenService,
-    OpenerService, KeybindingRegistry, Keybinding
+    OpenerService, KeybindingRegistry, Keybinding,
 } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -29,7 +29,7 @@ import { Command } from '@theia/core/lib/common';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
-    label: 'Open File...'
+    label: 'Open File...',
 };
 
 @injectable()
@@ -44,7 +44,7 @@ export class QuickFileOpenService implements QuickOpenModel {
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
         @inject(FileSearchService) protected readonly fileSearchService: FileSearchService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
     ) {
         workspaceService.root.then(root => this.wsRoot = root);
     }
@@ -165,7 +165,7 @@ export class FileQuickOpenItem extends QuickOpenItem {
         protected readonly label: string,
         protected readonly icon: string,
         protected readonly parent: string,
-        protected readonly openerService: OpenerService
+        protected readonly openerService: OpenerService,
     ) {
         super();
     }

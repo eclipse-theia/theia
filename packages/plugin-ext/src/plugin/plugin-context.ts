@@ -86,7 +86,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         // tslint:disable-next-line:no-any
         registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable {
             return commandRegistryExt.registerHandler(commandId, handler);
-        }
+        },
     };
 
     const window: typeof theia.window = {
@@ -181,7 +181,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
 
         createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
             return editors.createTextEditorDecorationType(options);
-        }
+        },
     };
 
     const workspace: typeof theia.workspace = {
@@ -231,7 +231,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
                     const data = documents.getDocumentData(uri);
                     return data && data.document;
                 }));
-        }
+        },
     };
 
     const env: typeof theia.env = {
@@ -243,7 +243,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         },
         getQueryParameters(): QueryParameters {
             return envExt.getQueryParameters();
-        }
+        },
     };
 
     return <typeof theia>{

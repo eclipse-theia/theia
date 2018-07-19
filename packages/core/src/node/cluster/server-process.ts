@@ -34,7 +34,7 @@ export const stubRemoteMasterProcessFactory: RemoteMasterProcessFactory = server
             if (!ready) {
                 throw new Error('onDidInitialize has not been called yet');
             }
-        }
+        },
     };
 };
 export const clusterRemoteMasterProcessFactory: RemoteMasterProcessFactory = serverProcess =>
@@ -48,7 +48,7 @@ export class ServerProcess implements BackendApplicationContribution {
     protected readonly sockets = new Set<net.Socket>();
 
     constructor(
-        @inject(RemoteMasterProcessFactory) protected readonly masterFactory: RemoteMasterProcessFactory
+        @inject(RemoteMasterProcessFactory) protected readonly masterFactory: RemoteMasterProcessFactory,
     ) {
         this.master = this.masterFactory({});
         this.master.onDidInitialize();

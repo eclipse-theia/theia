@@ -48,7 +48,7 @@ export class GitCommitDetailWidget extends GitDiffWidget {
     constructor(
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(GitCommitDetailWidgetOptions) protected readonly commitDetailOptions: GitCommitDetailWidgetOptions
+        @inject(GitCommitDetailWidgetOptions) protected readonly commitDetailOptions: GitCommitDetailWidgetOptions,
     ) {
         super();
         this.id = "commit" + commitDetailOptions.commitSha;
@@ -75,7 +75,7 @@ export class GitCommitDetailWidget extends GitDiffWidget {
             year: "numeric",
             hour12: true,
             hour: "numeric",
-            minute: "numeric"
+            minute: "numeric",
         });
         const date = h.div({ className: "date header-value noWrapInfo" }, dateStr);
         const dateRow = h.div({ className: "header-row noWrapInfo" }, h.div({ className: 'theia-header' }, 'date: '), date);
@@ -98,7 +98,7 @@ export class GitCommitDetailWidget extends GitDiffWidget {
             mode: 'reveal',
             widgetOptions: ref ?
                 { area: 'main', mode: 'tab-after', ref } :
-                { area: 'main', mode: 'split-right', ref: this }
+                { area: 'main', mode: 'split-right', ref: this },
         });
         this.ref = widget instanceof Widget ? widget : undefined;
         if (this.ref) {

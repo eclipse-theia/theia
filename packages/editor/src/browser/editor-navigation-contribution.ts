@@ -55,19 +55,19 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         this.toDispose.pushAll([
             // TODO listen on file resource changes, if a file gets deleted, remove the corresponding navigation locations (if any).
             // This would require introducing the FS dependency in the editor extension.
-            this.editorManager.onCurrentEditorChanged(this.onCurrentEditorChanged.bind(this))
+            this.editorManager.onCurrentEditorChanged(this.onCurrentEditorChanged.bind(this)),
         ]);
         this.commandRegistry.registerHandler(EditorCommands.GO_BACK.id, {
             execute: () => this.locationStack.back(),
-            isEnabled: () => this.locationStack.canGoBack()
+            isEnabled: () => this.locationStack.canGoBack(),
         });
         this.commandRegistry.registerHandler(EditorCommands.GO_FORWARD.id, {
             execute: () => this.locationStack.forward(),
-            isEnabled: () => this.locationStack.canGoForward()
+            isEnabled: () => this.locationStack.canGoForward(),
         });
         this.commandRegistry.registerHandler(EditorCommands.GO_LAST_EDIT.id, {
             execute: () => this.locationStack.reveal(this.locationStack.lastEditLocation()),
-            isEnabled: () => !!this.locationStack.lastEditLocation()
+            isEnabled: () => !!this.locationStack.lastEditLocation(),
         });
     }
 
@@ -92,7 +92,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
                 // Instead of registering an `onCursorPositionChanged` listener, we treat the zero length selection as a cursor position change.
                 // Otherwise we would have two events for a single cursor change interaction.
                 editor.onSelectionChanged(selection => this.onSelectionChanged(editor, selection)),
-                editor.onDocumentContentChanged(event => this.onDocumentContentChanged(editor, event))
+                editor.onDocumentContentChanged(event => this.onDocumentContentChanged(editor, event)),
             ]);
         }
     }
@@ -125,7 +125,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
 
     protected async storeState(): Promise<void> {
         this.storageService.setData(EditorNavigationContribution.ID, {
-            locations: this.locationStack.locations().map(NavigationLocation.toObject)
+            locations: this.locationStack.locations().map(NavigationLocation.toObject),
         });
     }
 

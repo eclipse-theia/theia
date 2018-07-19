@@ -25,7 +25,7 @@ export class LocationListRenderer extends ReactRenderer {
 
     constructor(
         readonly service: LocationService,
-        host?: HTMLElement
+        host?: HTMLElement,
     ) {
         super(host);
     }

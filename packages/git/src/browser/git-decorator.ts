@@ -98,7 +98,7 @@ export class GitDecorator implements TreeDecorator {
                     result.set(parentUriString, {
                         uri: parentUriString,
                         status: change.status,
-                        staged: !!change.staged
+                        staged: !!change.staged,
                     });
                     parentUri = parentUri.parent;
                 } else {
@@ -118,18 +118,18 @@ export class GitDecorator implements TreeDecorator {
                 {
                     data,
                     fontData: {
-                        color
+                        color,
                     },
-                    tooltip
-                }
-            ]
+                    tooltip,
+                },
+            ],
         };
         if (this.showColors) {
             decorationData = {
                 ...decorationData,
                 fontData: {
-                    color
-                }
+                    color,
+                },
             };
         }
         return decorationData;

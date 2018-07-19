@@ -89,7 +89,7 @@ export class DefaultResourceProvider {
 
     constructor(
         @inject(ContributionProvider) @named(ResourceResolver)
-        protected readonly resolversProvider: ContributionProvider<ResourceResolver>
+        protected readonly resolversProvider: ContributionProvider<ResourceResolver>,
     ) { }
 
     /**

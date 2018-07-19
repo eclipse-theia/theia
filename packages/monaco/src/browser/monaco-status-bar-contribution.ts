@@ -27,7 +27,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
 
     constructor(
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(StatusBar) protected readonly statusBar: StatusBar
+        @inject(StatusBar) protected readonly statusBar: StatusBar,
     ) { }
 
     onStart(app: FrontendApplication): void {
@@ -61,7 +61,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
                 text: `${useSpaceOrTab}: ${tabSize}`,
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 10,
-                command: EditorCommands.CONFIG_INDENTATION.id
+                command: EditorCommands.CONFIG_INDENTATION.id,
             });
         }
     }

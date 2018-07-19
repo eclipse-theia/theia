@@ -78,7 +78,7 @@ export interface NodeProps {
 }
 
 export const defaultTreeProps: TreeProps = {
-    leftPadding: 16
+    leftPadding: 16,
 };
 
 export namespace TreeWidget {
@@ -109,7 +109,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     ) {
         super();
         this.scrollOptions = {
-            suppressScrollX: true
+            suppressScrollX: true,
         };
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
@@ -124,7 +124,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
-            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations())
+            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations()),
         ]);
         setTimeout(() => {
             this.updateRows();
@@ -140,7 +140,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             const depths = new Map<CompositeTreeNode | undefined, number>();
             const rows = Array.from(new TopDownTreeIterator(root, {
                 pruneCollapsed: true,
-                pruneSiblings: true
+                pruneSiblings: true,
             }), (node, index) => {
                 const parentDepth = depths.get(node.parent);
                 const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
@@ -150,7 +150,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 return [node.id, {
                     index,
                     node,
-                    depth
+                    depth,
                 }] as [string, TreeWidget.NodeRow];
             });
             this.rows = new Map(rows);
@@ -221,7 +221,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         return {
             className: TREE_CONTAINER_CLASS,
-            onContextMenu: event => this.handleContextMenuEvent(this.model.root, event)
+            onContextMenu: event => this.handleContextMenuEvent(this.model.root, event),
         };
     }
 
@@ -284,7 +284,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 {
                     paddingLeft: '4px',
                     paddingRight: '6px',
-                    minWidth: '8px'
+                    minWidth: '8px',
                 }
             }
             onClick={this.toggle}>
@@ -299,12 +299,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         const className = classes.join(' ');
         let attrs = this.decorateCaption(node, {
-            className
+            className,
         });
         if (tooltip.length > 0) {
             attrs = {
                 ...attrs,
-                title: tooltip
+                title: tooltip,
             };
         }
         const highlight = this.getDecorationData(node, 'highlight')[0];
@@ -315,13 +315,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             if (highlight.color) {
                 style = {
                     ...style,
-                    color: highlight.color
+                    color: highlight.color,
                 };
             }
             if (highlight.backgroundColor) {
                 style = {
                     ...style,
-                    backgroundColor: highlight.backgroundColor
+                    backgroundColor: highlight.backgroundColor,
                 };
             }
             const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment) => {
@@ -343,12 +343,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const style = this.getDecorationData(node, 'fontData').filter(notEmpty).reverse().map(fontData => this.applyFontStyles({}, fontData)).reduce((acc, current) =>
             ({
                 ...acc,
-                ...current
+                ...current,
             })
             , {});
         return {
             ...attrs,
-            style
+            style,
         };
     }
 
@@ -365,7 +365,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (color) {
             modified = {
                 ...modified,
-                color
+                color,
             };
         }
         if (style) {
@@ -374,7 +374,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     case 'bold':
                         modified = {
                             ...modified,
-                            fontWeight: style
+                            fontWeight: style,
                         };
                         break;
                     case 'normal': // Fall through.
@@ -382,14 +382,14 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     case 'italic':
                         modified = {
                             ...modified,
-                            fontStyle: style
+                            fontStyle: style,
                         };
                         break;
                     case 'underline': // Fall through.
                     case 'line-through':
                         modified = {
                             ...modified,
-                            textDecoration: style
+                            textDecoration: style,
                         };
                         break;
                     default:
@@ -415,7 +415,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             const className = classes.join(' ');
             const attrs = {
                 className,
-                style
+                style,
             };
             children.push(React.createElement('div', attrs, affix.data));
         }
@@ -485,7 +485,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             style,
             onClick: event => this.handleClickEvent(node, event),
             onDoubleClick: event => this.handleDblClickEvent(node, event),
-            onContextMenu: event => this.handleContextMenuEvent(node, event)
+            onContextMenu: event => this.handleContextMenuEvent(node, event),
         };
     }
 
@@ -510,7 +510,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         // If the node is a composite, a toggle will be rendered. Otherwise we need to add the width and the left, right padding => 18px
         const paddingLeft = `${props.depth * this.props.leftPadding + (this.isExpandable(node) ? 0 : 18)}px`;
         return {
-            paddingLeft
+            paddingLeft,
         };
     }
 
@@ -523,7 +523,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (backgroundColor) {
             style = {
                 ...(style || {}),
-                backgroundColor
+                backgroundColor,
             };
         }
         return style;
@@ -548,11 +548,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected onAfterAttach(msg: Message): void {
         const up = [
             Key.ARROW_UP,
-            KeyCode.createKeyCode({ first: Key.ARROW_UP, modifiers: [KeyModifier.Shift] })
+            KeyCode.createKeyCode({ first: Key.ARROW_UP, modifiers: [KeyModifier.Shift] }),
         ];
         const down = [
             Key.ARROW_DOWN,
-            KeyCode.createKeyCode({ first: Key.ARROW_DOWN, modifiers: [KeyModifier.Shift] })
+            KeyCode.createKeyCode({ first: Key.ARROW_DOWN, modifiers: [KeyModifier.Shift] }),
         ];
         super.onAfterAttach(msg);
         this.addKeyListener(this.node, Key.ARROW_LEFT, event => this.handleLeft(event));
@@ -646,8 +646,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 const { x, y } = event.nativeEvent;
                 this.onRender.push(Disposable.create(() =>
                     setTimeout(() =>
-                        this.contextMenuRenderer.render(contextMenuPath, { x, y })
-                    )
+                        this.contextMenuRenderer.render(contextMenuPath, { x, y }),
+                    ),
                 ));
             }
             this.update();
@@ -709,12 +709,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     storeState(): object {
         const decorations = this.decoratorService.deflateDecorators(this.decorations);
         let state: object = {
-            decorations
+            decorations,
         };
         if (this.model.root) {
             state = {
                 ...state,
-                root: this.deflateForStorage(this.model.root)
+                root: this.deflateForStorage(this.model.root),
             };
         }
         return state;

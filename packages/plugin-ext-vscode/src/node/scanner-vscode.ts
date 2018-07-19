@@ -34,11 +34,11 @@ export class VsCodePluginScanner implements PluginScanner {
             description: plugin.description,
             engine: {
                 type: this._apiType,
-                version: plugin.engines[this._apiType]
+                version: plugin.engines[this._apiType],
             },
             entryPoint: {
-                backend: plugin.main
-            }
+                backend: plugin.main,
+            },
         };
     }
 
@@ -47,7 +47,7 @@ export class VsCodePluginScanner implements PluginScanner {
             startMethod: 'activate',
             stopMethod: 'deactivate',
 
-            backendInitPath: __dirname + '/plugin-vscode-init.js'
+            backendInitPath: __dirname + '/plugin-vscode-init.js',
         };
     }
 }

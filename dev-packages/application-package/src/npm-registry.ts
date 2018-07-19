@@ -61,10 +61,10 @@ export namespace PublishedNodePackage {
 
 export interface ViewResult {
     'dist-tags': {
-        [tag: string]: string
+        [tag: string]: string,
     }
     'versions': {
-        [version: string]: NodePackage
+        [version: string]: NodePackage,
     },
     'readme': string;
     [key: string]: any
@@ -99,7 +99,7 @@ export class NpmRegistry {
 
     static defaultConfig: NpmRegistryConfig = {
         next: false,
-        registry: 'https://registry.npmjs.org/'
+        registry: 'https://registry.npmjs.org/',
     };
 
     readonly config: NpmRegistryConfig = { ...NpmRegistry.defaultConfig };
@@ -111,7 +111,7 @@ export class NpmRegistry {
     constructor(options?: Partial<NpmRegistryOptions>) {
         this.options = {
             watchChanges: false,
-            ...options
+            ...options,
         };
         this.resetIndex();
     }
@@ -162,11 +162,11 @@ export class NpmRegistry {
             url += encodeURIComponent(name);
         }
         const headers: {
-            [header: string]: string
+            [header: string]: string,
         } = {};
         return new Promise((resolve, reject) => {
             request({
-                url, headers
+                url, headers,
             }, (err, response, body) => {
                 if (err) {
                     reject(err);

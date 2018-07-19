@@ -37,14 +37,14 @@ export interface MergeConflictCommandArgument {
 export namespace MergeConflictsCommands {
     export const AcceptCurrent: Command = {
         id: 'merge-conflicts:accept.current',
-        label: 'Merge Conflict: Accept Current Change'
+        label: 'Merge Conflict: Accept Current Change',
     };
     export const AcceptIncoming: Command = {
         id: 'merge-conflicts:accept.incoming',
-        label: 'Merge Conflict: Accept Incoming Change'
+        label: 'Merge Conflict: Accept Incoming Change',
     };
     export const AcceptBoth: Command = {
         id: 'merge-conflicts:accept.both',
-        label: 'Merge Conflict: Accept Both Changes'
+        label: 'Merge Conflict: Accept Both Changes',
     };
 }

@@ -31,7 +31,7 @@ let appProject: ApplicationProject;
 
 export async function assertInstallation(expectation: {
     installed?: string[],
-    uninstalled?: string[]
+    uninstalled?: string[],
 }): Promise<void> {
     const waitForWillInstall = new Promise<InstallationParam>(resolve => appProject.onWillInstall(resolve));
     const waitForDidInstall = new Promise<InstallationResult>(resolve => appProject.onDidInstall(resolve));
@@ -65,7 +65,7 @@ describe("application-project", function () {
             projectPath: appProjectPath,
             npmClient: 'yarn',
             autoInstall: false,
-            watchRegistry: false
+            watchRegistry: false,
         }).get(ApplicationProject);
     });
 
@@ -82,24 +82,24 @@ describe("application-project", function () {
             "private": true,
             "dependencies": {
                 "@theia/core": "0.1.1",
-                "@theia/filesystem": "0.1.1"
-            }
+                "@theia/filesystem": "0.1.1",
+            },
         });
         appProject.scheduleInstall();
         await assertInstallation({
-            installed: ['@theia/core', '@theia/filesystem']
+            installed: ['@theia/core', '@theia/filesystem'],
         });
 
         await fs.writeJSON(path.resolve(appProjectPath, 'package.json'), {
             "private": true,
             "dependencies": {
-                "@theia/core": "0.1.1"
-            }
+                "@theia/core": "0.1.1",
+            },
         });
         appProject.scheduleInstall();
         await assertInstallation({
             installed: ['@theia/core'],
-            uninstalled: ['@theia/filesystem']
+            uninstalled: ['@theia/filesystem'],
         });
     });
 

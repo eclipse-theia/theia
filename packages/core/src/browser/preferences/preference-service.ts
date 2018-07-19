@@ -22,7 +22,7 @@ import { PreferenceProvider } from './preference-provider';
 
 export enum PreferenceScope {
     User,
-    Workspace
+    Workspace,
 }
 
 export interface PreferenceChangedEvent {
@@ -69,7 +69,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         if (!this._preferenceProviders) {
             this._preferenceProviders = [
                 this.getPreferenceProvider(PreferenceScope.User),
-                this.getPreferenceProvider(PreferenceScope.Workspace)
+                this.getPreferenceProvider(PreferenceScope.Workspace),
             ];
         }
         return this._preferenceProviders;

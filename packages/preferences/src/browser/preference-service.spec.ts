@@ -27,7 +27,7 @@ import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
     PreferenceService, PreferenceScope,
-    PreferenceProviders, PreferenceServiceImpl, PreferenceProvider
+    PreferenceProviders, PreferenceServiceImpl, PreferenceProvider,
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -71,17 +71,17 @@ before(async () => {
         const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
 
         sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
-            mockUserPreferenceEmitter.event
+            mockUserPreferenceEmitter.event,
         );
         sinon.stub(workspaceProvider, 'onDidPreferencesChanged').get(() =>
-            mockWorkspacePreferenceEmitter.event
+            mockWorkspacePreferenceEmitter.event,
         );
         return scope === PreferenceScope.User ? userProvider : workspaceProvider;
     });
     testContainer.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
     testContainer.bind(PreferenceService).toDynamicValue(ctx =>
-        ctx.container.get(PreferenceServiceImpl)
+        ctx.container.get(PreferenceServiceImpl),
     ).inSingletonScope();
 
     testContainer.bind(FileSystemPreferences).toDynamicValue(ctx => {
@@ -111,18 +111,18 @@ before(async () => {
             },
             saveContents(content: string, options?: { encoding?: string }): Promise<void> {
                 return fs.writeFile(tempPath, content);
-            }
+            },
         }));
         return resourceProvider;
     });
     testContainer.bind(ResourceProvider).toProvider(context =>
-        uri => context.container.get(MockResourceProvider).get(uri)
+        uri => context.container.get(MockResourceProvider).get(uri),
     );
 
     /* FS mocks and bindings */
     testContainer.bind(FileSystemWatcherServer).to(MockFilesystemWatcherServer);
     testContainer.bind(FileSystemWatcher).toSelf().onActivation((_, watcher) =>
-        watcher
+        watcher,
     );
     testContainer.bind(FileSystem).to(MockFilesystem);
 
@@ -168,7 +168,7 @@ describe('Preference Service', function () {
 
         const userProvider = testContainer.get(UserPreferenceProvider);
         const stubGet = sinon.stub(userProvider, 'getPreferences').returns({
-            'testPref': prefValue
+            'testPref': prefValue,
         });
 
         mockUserPreferenceEmitter.fire(undefined);
@@ -180,11 +180,11 @@ describe('Preference Service', function () {
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
-            'test.number': 1
+            'test.number': 1,
         });
         const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
-            'test.number': 0
+            'test.number': 0,
         });
         mockUserPreferenceEmitter.fire(undefined);
 
@@ -204,11 +204,11 @@ describe('Preference Service', function () {
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
-            'test.number': 1
+            'test.number': 1,
         });
         const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
-            'test.number': 0
+            'test.number': 0,
         });
         mockUserPreferenceEmitter.fire(undefined);
 
@@ -228,8 +228,8 @@ describe('Preference Service', function () {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.immutable': [
-                'test', 'test', 'test'
-            ]
+                'test', 'test', 'test',
+            ],
         });
         mockUserPreferenceEmitter.fire(undefined);
 
@@ -248,11 +248,11 @@ describe('Preference Service', function () {
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         let stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
-            'test.number': 1
+            'test.number': 1,
         });
         const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
-            'test.number': 0
+            'test.number': 0,
         });
         mockUserPreferenceEmitter.fire(undefined);
 
@@ -262,7 +262,7 @@ describe('Preference Service', function () {
 
         stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
-            'test.number': 4
+            'test.number': 4,
         });
         mockUserPreferenceEmitter.fire(undefined);
 

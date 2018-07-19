@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import {
     WebSocketConnectionProvider, WidgetFactory,
-    OpenHandler, bindViewContribution
+    OpenHandler, bindViewContribution,
 } from '@theia/core/lib/browser';
 import { ExtensionServer, extensionPath } from '../common/extension-protocol';
 import { ExtensionManager } from '../common';
@@ -40,7 +40,7 @@ export default new ContainerModule(bind => {
     bind(ExtensionWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: EXTENSIONS_WIDGET_FACTORY_ID,
-        createWidget: () => ctx.container.get(ExtensionWidget)
+        createWidget: () => ctx.container.get(ExtensionWidget),
     }));
 
     bind(ExtensionWidgetFactory).toSelf().inSingletonScope();

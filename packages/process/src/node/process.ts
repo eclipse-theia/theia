@@ -25,7 +25,7 @@ export interface IProcessExitEvent {
 
 export enum ProcessType {
     'Raw',
-    'Terminal'
+    'Terminal',
 }
 
 export interface ProcessOptions {

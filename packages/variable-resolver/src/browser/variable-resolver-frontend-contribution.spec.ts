@@ -85,12 +85,12 @@ export class TestVariableContribution implements VariableContribution {
         variables.registerVariable({
             name: 'file',
             description: 'Resolves to file name opened in the current editor',
-            resolve: () => Promise.resolve('package.json')
+            resolve: () => Promise.resolve('package.json'),
         });
         variables.registerVariable({
             name: 'lineNumber',
             description: 'Resolves to current line number',
-            resolve: () => Promise.resolve('5')
+            resolve: () => Promise.resolve('5'),
         });
     }
 }

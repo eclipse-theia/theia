@@ -19,7 +19,7 @@ import * as theia from '@theia/plugin';
 import {
     PLUGIN_RPC_CONTEXT,
     PreferenceRegistryExt,
-    PreferenceRegistryMain
+    PreferenceRegistryMain,
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { isObject } from '../common/types';
@@ -120,7 +120,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                                 cloneTarget();
                                 Object.defineProperty(clonedTarget, prop, descr);
                                 return true;
-                            }
+                            },
                         });
                     };
                     return cloneOnWriteProxy(result, key);
@@ -136,7 +136,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
             },
             inspect: <T>(key: string): ConfigurationInspect<T> => {
                 throw new Error('Not implemented yet.');
-            }
+            },
         };
         return configuration;
     }
@@ -158,7 +158,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     throw new Error(`TypeError: Cannot set prototype for a readonly object`);
                 },
                 isExtensible: () => false,
-                preventExtensions: () => true
+                preventExtensions: () => true,
             })
             : target;
         return readonlyProxy(data);
@@ -190,7 +190,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     .reverse()
                     .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), eventData.newValue);
                 return !!lookUp(tree, section);
-            }
+            },
         });
     }
 

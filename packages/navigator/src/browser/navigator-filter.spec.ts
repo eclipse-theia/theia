@@ -47,68 +47,68 @@ describe('navigator-filter-glob', () => {
         '/src/foo/test/bar/b.js',
 
         '/test/baz/bar/a.js',
-        '/test/baz/bar/b.js'
+        '/test/baz/bar/b.js',
     ].map(toItem);
 
     ([
         {
             patterns: {
-                '**/.git/**': true
+                '**/.git/**': true,
             },
             includes: [
-                '/src/foo/'
+                '/src/foo/',
             ],
             excludes: [
                 '/.git/',
                 '/.git/a',
-                '/.git/b'
-            ]
-        },
-        {
-            patterns: {
-                '*.js': true
-            },
-            includes: [
-                '/src/foo/a.ts',
-                '/.git/'
+                '/.git/b',
             ],
-            excludes: [
-                '/src/foo/a.js',
-                '/test/baz/bar/a.js'
-            ]
-        },
-        {
-            patterns: {
-                '**/test/bar/**': true
-            },
-            includes: [
-                '/test/baz/bar/a.js',
-                '/test/baz/bar/b.js',
-                '/.git/'
-            ],
-            excludes: [
-                '/src/foo/test/bar/a.js',
-                '/src/foo/test/bar/b.js'
-            ]
         },
         {
             patterns: {
                 '*.js': true,
-                '**/.git/**': true
             },
             includes: [
-                '/src/foo/a.ts'
+                '/src/foo/a.ts',
+                '/.git/',
+            ],
+            excludes: [
+                '/src/foo/a.js',
+                '/test/baz/bar/a.js',
+            ],
+        },
+        {
+            patterns: {
+                '**/test/bar/**': true,
+            },
+            includes: [
+                '/test/baz/bar/a.js',
+                '/test/baz/bar/b.js',
+                '/.git/',
+            ],
+            excludes: [
+                '/src/foo/test/bar/a.js',
+                '/src/foo/test/bar/b.js',
+            ],
+        },
+        {
+            patterns: {
+                '*.js': true,
+                '**/.git/**': true,
+            },
+            includes: [
+                '/src/foo/a.ts',
             ],
             excludes: [
                 '/.git/',
                 '/src/foo/a.js',
-                '/test/baz/bar/a.js'
-            ]
+                '/test/baz/bar/a.js',
+            ],
         },
         {
             patterns: {
                 '*.js': false,
-                '**/.git/**': false
+                '**/.git/**': false,
             },
             includes: [
                 '/.git/',
@@ -122,12 +122,12 @@ describe('navigator-filter-glob', () => {
                 '/src/foo/test/bar/a.js',
                 '/src/foo/test/bar/b.js',
                 '/test/baz/bar/a.js',
-                '/test/baz/bar/b.js'
+                '/test/baz/bar/b.js',
             ],
             excludes: [
 
-            ]
-        }
+            ],
+        },
     ] as Input[]).forEach((test, index) => {
         it(`${index < 10 ? `0${index + 1}` : `${index + 1}`} glob-filter: (${Object.keys(test.patterns).map(key => `${key} [${test.patterns[key]}]`).join(', ')}) `, () => {
             const filter = new FileNavigatorFilterPredicate(test.patterns);

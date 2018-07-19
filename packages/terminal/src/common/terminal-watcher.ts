@@ -30,7 +30,7 @@ export class TerminalWatcher {
             },
             onTerminalError(event: IBaseTerminalErrorEvent) {
                 errorEmitter.fire(event);
-            }
+            },
         };
     }
 

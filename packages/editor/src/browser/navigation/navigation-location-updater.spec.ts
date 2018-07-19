@@ -47,7 +47,7 @@ describe('navigation-location-updater', () => {
         it('should never affect a location if they belong to different resources', () => {
             const actual = updater.affects(
                 NavigationLocation.create('file:///a', { line: 0, character: 0, }),
-                NavigationLocation.create('file:///b', { line: 0, character: 0, })
+                NavigationLocation.create('file:///b', { line: 0, character: 0, }),
             );
             expect(actual).to.be.false;
         });
@@ -57,70 +57,70 @@ describe('navigation-location-updater', () => {
             {
                 candidate: { start: { line: 3, character: 3 }, end: { line: 3, character: 12 } },
                 other: { range: { start: { line: 1, character: 6 }, end: { line: 3, character: 2 } }, rangeLength: 78, text: 'x' },
-                expected: { start: { line: 1, character: 8 }, end: { line: 1, character: 17 } }
+                expected: { start: { line: 1, character: 8 }, end: { line: 1, character: 17 } },
             },
             {
                 candidate: { start: { line: 3, character: 3 }, end: { line: 4, character: 18 } },
                 other: { range: { start: { line: 1, character: 6 }, end: { line: 3, character: 2 } }, rangeLength: 78, text: 'x' },
-                expected: { start: { line: 1, character: 8 }, end: { line: 2, character: 18 } }
+                expected: { start: { line: 1, character: 8 }, end: { line: 2, character: 18 } },
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 3, character: 26 } },
                 other: { range: { start: { line: 1, character: 3 }, end: { line: 1, character: 12 } }, rangeLength: 9, text: 'x' },
-                expected: false
+                expected: false,
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 3, character: 26 } },
                 other: { range: { start: { line: 1, character: 3 }, end: { line: 1, character: 12 } }, rangeLength: 9, text: 'a\n\b\nc' },
-                expected: { start: { line: 5, character: 17 }, end: { line: 5, character: 26 } }
+                expected: { start: { line: 5, character: 17 }, end: { line: 5, character: 26 } },
             },
             // Spec (3.)
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 3, character: 26 } },
                 other: { range: { start: { line: 3, character: 18 }, end: { line: 3, character: 24 } }, rangeLength: 6, text: 'x' },
-                expected: { start: { line: 3, character: 17 }, end: { line: 3, character: 21 } }
+                expected: { start: { line: 3, character: 17 }, end: { line: 3, character: 21 } },
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 3, character: 26 } },
                 other: { range: { start: { line: 3, character: 18 }, end: { line: 3, character: 23 } }, rangeLength: 5, text: 'a\n\b\nc' },
-                expected: { start: { line: 3, character: 17 }, end: { line: 5, character: 4 } }
+                expected: { start: { line: 3, character: 17 }, end: { line: 5, character: 4 } },
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 3, character: 19 }, end: { line: 4, character: 19 } }, rangeLength: 41, text: 'xxx' },
-                expected: { start: { line: 3, character: 17 }, end: { line: 3, character: 29 } }
+                expected: { start: { line: 3, character: 17 }, end: { line: 3, character: 29 } },
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 3, character: 19 }, end: { line: 3, character: 21 } }, rangeLength: 2, text: 'a\nb' },
-                expected: { start: { line: 3, character: 17 }, end: { line: 5, character: 26 } }
+                expected: { start: { line: 3, character: 17 }, end: { line: 5, character: 26 } },
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 3, character: 18 }, end: { line: 4, character: 24 } }, rangeLength: 47, text: 'a\nb\nc' },
-                expected: { start: { line: 3, character: 17 }, end: { line: 5, character: 3 } }
+                expected: { start: { line: 3, character: 17 }, end: { line: 5, character: 3 } },
             },
             // Spec (4.)
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 6, character: 13 }, end: { line: 6, character: 23 } }, rangeLength: 10, text: '' },
-                expected: false
+                expected: false,
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 6, character: 13 }, end: { line: 6, character: 23 } }, rangeLength: 10, text: 'a\nb\nc' },
-                expected: false
+                expected: false,
             },
             // Spec (5.)
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } }, rangeLength: 50, text: '' },
-                expected: { start: { line: 3, character: 17 }, end: { line: 3, character: 17 } }
+                expected: { start: { line: 3, character: 17 }, end: { line: 3, character: 17 } },
             },
             {
                 candidate: { start: { line: 3, character: 17 }, end: { line: 4, character: 26 } },
                 other: { range: { start: { line: 3, character: 17 }, end: { line: 4, character: 27 } }, rangeLength: 51, text: '' },
-                expected: undefined
+                expected: undefined,
             },
         ] as TestInput[]).forEach(test => {
             const { other, expected, candidate } = test;

@@ -22,7 +22,7 @@ import { Saveable, Navigatable } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
 
 export {
-    Position, Range
+    Position, Range,
 };
 
 export const TextEditorProvider = Symbol('TextEditorProvider');

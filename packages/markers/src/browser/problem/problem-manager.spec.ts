@@ -35,7 +35,7 @@ before(() => {
     testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
     // tslint:disable-next-line:no-any
     testContainer.bind(FileSystemWatcher).toConstantValue({
-        onFilesChanged: Event.None
+        onFilesChanged: Event.None,
     } as FileSystemWatcher);
     testContainer.bind(ProblemManager).toSelf();
 
@@ -45,28 +45,28 @@ before(() => {
             range: {
                 start: {
                     line: 1,
-                    character: 1
+                    character: 1,
                 },
                 end: {
                     line: 1,
-                    character: 1
-                }
+                    character: 1,
+                },
             },
-            message: "Foo"
+            message: "Foo",
         },
         {
             range: {
                 start: {
                     line: 1,
-                    character: 1
+                    character: 1,
                 },
                 end: {
                     line: 1,
-                    character: 1
-                }
+                    character: 1,
+                },
             },
-            message: "Bar"
-        }
+            message: "Bar",
+        },
     ]);
 
     manager.setMarkers(new URI('file:/foo/foo.txt'), 'me', [
@@ -74,28 +74,28 @@ before(() => {
             range: {
                 start: {
                     line: 1,
-                    character: 1
+                    character: 1,
                 },
                 end: {
                     line: 1,
-                    character: 1
-                }
+                    character: 1,
+                },
             },
-            message: "Foo"
+            message: "Foo",
         },
         {
             range: {
                 start: {
                     line: 1,
-                    character: 1
+                    character: 1,
                 },
                 end: {
                     line: 1,
-                    character: 2
-                }
+                    character: 2,
+                },
             },
-            message: "Bar"
-        }
+            message: "Bar",
+        },
     ]);
 });
 
@@ -111,28 +111,28 @@ describe('problem-manager', () => {
                 range: {
                     start: {
                         line: 2,
-                        character: 3
+                        character: 3,
                     },
                     end: {
                         line: 2,
-                        character: 1
-                    }
+                        character: 1,
+                    },
                 },
-                message: "Foo"
+                message: "Foo",
             },
             {
                 range: {
                     start: {
                         line: 1,
-                        character: 1
+                        character: 1,
                     },
                     end: {
                         line: 1,
-                        character: 1
-                    }
+                        character: 1,
+                    },
                 },
-                message: "Bar"
-            }
+                message: "Bar",
+            },
         ]);
         expect(previous.length).equal(2);
         expect(events).equal(1);
@@ -141,20 +141,20 @@ describe('problem-manager', () => {
 
     it('should find markers with filter', () => {
         expect(manager.findMarkers({
-            owner: 'me'
+            owner: 'me',
         }).length).equal(4);
 
         expect(manager.findMarkers({
-            owner: 'you'
+            owner: 'you',
         }).length).equal(0);
 
         expect(manager.findMarkers({
             uri: new URI('file:/foo/foo.txt'),
-            owner: 'me'
+            owner: 'me',
         }).length).equal(2);
 
         expect(manager.findMarkers({
-            dataFilter: data => data.range.end.character > 1
+            dataFilter: data => data.range.end.character > 1,
         }).length).equal(1);
     });
 });

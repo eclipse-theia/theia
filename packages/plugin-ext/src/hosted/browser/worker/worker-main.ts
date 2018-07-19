@@ -29,7 +29,7 @@ const rpc = new RPCProtocolImpl({
     onMessage: emitter.event,
     send: (m: {}) => {
         ctx.postMessage(m);
-    }
+    },
 });
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);
@@ -65,7 +65,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
                 plugins.delete(pluginId);
             }
         });
-    }
+    },
 }));
 
 function isElectron() {

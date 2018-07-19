@@ -46,7 +46,7 @@ export class SidePanelHandler {
      */
     protected static readonly rankProperty = new AttachedProperty<Widget, number | undefined>({
         name: 'sidePanelRank',
-        create: () => undefined
+        create: () => undefined,
     });
 
     /**
@@ -72,7 +72,7 @@ export class SidePanelHandler {
     readonly state: SidePanel.State = {
         empty: true,
         expansion: SidePanel.ExpansionState.collapsed,
-        pendingUpdate: Promise.resolve()
+        pendingUpdate: Promise.resolve(),
     };
 
     /**
@@ -117,7 +117,7 @@ export class SidePanelHandler {
             handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
             useBothWheelAxes: true,
             scrollYMarginOffset: 8,
-            suppressScrollX: true
+            suppressScrollX: true,
         });
         tabBarRenderer.tabBar = sideBar;
         tabBarRenderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
@@ -140,7 +140,7 @@ export class SidePanelHandler {
 
     protected createSidePanel(): TheiaDockPanel {
         const sidePanel = new TheiaDockPanel({
-            mode: 'single-document'
+            mode: 'single-document',
         });
         sidePanel.id = 'theia-' + this.side + '-side-panel';
 
@@ -184,7 +184,7 @@ export class SidePanelHandler {
         const items = toArray(map(this.tabBar.titles, title => <SidePanel.WidgetItem>{
             widget: title.owner,
             rank: SidePanelHandler.rankProperty.get(title.owner),
-            expanded: title === currentTitle
+            expanded: title === currentTitle,
         }));
         const size = currentTitle !== null ? this.getPanelSize() : this.state.lastPanelSize;
         return { type: 'sidepanel', items, size };
@@ -430,7 +430,7 @@ export class SidePanelHandler {
         const options: SplitPositionOptions = {
             side: this.side,
             duration: enableAnimation ? this.options.expandDuration : 0,
-            referenceWidget: this.dockPanel
+            referenceWidget: this.dockPanel,
         };
         const promise = this.splitPositionHandler.setSidePanelSize(this.container, size, options);
         const result = new Promise<void>(resolve => {
@@ -605,7 +605,7 @@ export namespace SidePanel {
         collapsed = 'collapsed',
         expanding = 'expanding',
         expanded = 'expanded',
-        collapsing = 'collapsing'
+        collapsing = 'collapsing',
     }
 }
 

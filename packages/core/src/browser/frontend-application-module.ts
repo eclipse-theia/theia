@@ -26,7 +26,7 @@ import {
     CommandContribution, CommandRegistry, CommandService,
     MenuModelRegistry, MenuContribution,
     MessageService,
-    MessageClient
+    MessageClient,
 } from "../common";
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from "./keybinding";
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
@@ -38,14 +38,14 @@ import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
-    TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory, SplitPositionHandler, DockPanelRendererFactory
+    TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory, SplitPositionHandler, DockPanelRendererFactory,
 } from './shell';
 import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
 import {
     PreferenceProviders, PreferenceProvider,
-    PreferenceScope, PreferenceService, PreferenceServiceImpl
+    PreferenceScope, PreferenceService, PreferenceServiceImpl,
 } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
@@ -93,7 +93,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context =>
-        uri => context.container.get(DefaultResourceProvider).get(uri)
+        uri => context.container.get(DefaultResourceProvider).get(uri),
     );
     bindContributionProvider(bind, ResourceResolver);
 
@@ -114,14 +114,14 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(CommonFrontendContribution)).inSingletonScope()
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(CommonFrontendContribution)).inSingletonScope(),
     );
 
     bind(QuickOpenService).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope()
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope(),
     );
 
     bind(LocalStorageService).toSelf().inSingletonScope();
@@ -150,7 +150,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         return {
             ping() {
                 return envServer.getValue('does_not_matter');
-            }
+            },
         };
     });
     bind(FrontendConnectionStatusService).toSelf().inSingletonScope();

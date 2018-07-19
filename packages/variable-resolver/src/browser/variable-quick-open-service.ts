@@ -25,19 +25,19 @@ export class VariableQuickOpenService implements QuickOpenModel {
 
     constructor(
         @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
+        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
     ) { }
 
     open(): void {
         this.items = this.variableRegistry.getVariables().map(
-            v => new VariableQuickOpenItem(v.name, v.description)
+            v => new VariableQuickOpenItem(v.name, v.description),
         );
 
         this.quickOpenService.open(this, {
             placeholder: 'Registered variables',
             fuzzyMatchLabel: true,
             fuzzyMatchDescription: true,
-            fuzzySort: true
+            fuzzySort: true,
         });
     }
 
@@ -50,7 +50,7 @@ export class VariableQuickOpenItem extends QuickOpenItem {
 
     constructor(
         protected readonly name: string,
-        protected readonly description?: string
+        protected readonly description?: string,
     ) {
         super();
     }

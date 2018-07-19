@@ -91,7 +91,7 @@ export class RPCProtocolImpl implements RPCProtocol {
                         this.remoteCall(proxyId, name, myArgs);
                 }
                 return target[name];
-            }
+            },
         };
         return new Proxy(Object.create(null), handler);
     }
@@ -270,7 +270,7 @@ class MessageFactory {
 const enum MessageType {
     Request = 1,
     Reply = 2,
-    ReplyErr = 3
+    ReplyErr = 3,
 }
 
 class RequestMessage {
@@ -310,7 +310,7 @@ export function transformErrorForSerialization(error: Error): SerializedError {
             $isError: true,
             name,
             message,
-            stack
+            stack,
         };
     }
 

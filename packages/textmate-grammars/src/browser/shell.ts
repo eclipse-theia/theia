@@ -27,7 +27,7 @@ export class ShellContribution implements LanguageGrammarDefinitionContribution 
         monaco.languages.register({
             id: this.id,
             extensions: ['.sh', '.bash'],
-            aliases: ['Shell', 'sh']
+            aliases: ['Shell', 'sh'],
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -57,9 +57,9 @@ export class ShellContribution implements LanguageGrammarDefinitionContribution 
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

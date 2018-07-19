@@ -54,7 +54,7 @@ export class TaskRunnerRegistry {
     registerRunner(type: string, runner: TaskRunner): Disposable {
         this.runners.set(type, runner);
         return {
-            dispose: () => this.runners.delete(type)
+            dispose: () => this.runners.delete(type),
         };
     }
 

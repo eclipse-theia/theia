@@ -32,7 +32,7 @@ export class PluginFrontendViewContribution extends AbstractViewContribution<Plu
             widgetName: 'Plugins',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 300
+                rank: 300,
             },
             toggleCommandId: 'pluginsView:toggle',
         });

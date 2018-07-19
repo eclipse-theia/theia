@@ -31,7 +31,7 @@ export function bindGitHistoryModule(bind: interfaces.Bind) {
     bind(GitHistoryWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: GIT_HISTORY,
-        createWidget: () => ctx.container.get<GitHistoryWidget>(GitHistoryWidget)
+        createWidget: () => ctx.container.get<GitHistoryWidget>(GitHistoryWidget),
     }));
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
@@ -42,7 +42,7 @@ export function bindGitHistoryModule(bind: interfaces.Bind) {
             child.bind(GitCommitDetailWidget).toSelf();
             child.bind(GitCommitDetailWidgetOptions).toConstantValue(options);
             return child.get(GitCommitDetailWidget);
-        }
+        },
     }));
 
     bind(GitCommitDetailOpenHandler).toSelf();

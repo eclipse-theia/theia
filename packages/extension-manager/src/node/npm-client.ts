@@ -28,7 +28,7 @@ export class NpmClient {
 
     constructor(
         @inject(NpmClientOptions) protected readonly options: NpmClientOptions,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) { }
 
     execute(projectPath: string, command: string, args: string[], token?: CancellationToken): Promise<void> {
@@ -41,10 +41,10 @@ export class NpmClient {
             }) : Disposable.NULL;
 
             npmProcess.stdout.on('data', data =>
-                this.logger.info(data.toString())
+                this.logger.info(data.toString()),
             );
             npmProcess.stderr.on('data', data =>
-                this.logger.error(data.toString())
+                this.logger.error(data.toString()),
             );
 
             npmProcess.on('close', (code, signal) => {
@@ -84,7 +84,7 @@ export class NpmClient {
     protected doSpawn(projectPath: string, [command, args]: CMD): cp.ChildProcess {
         this.logger.info(projectPath, command, ...args);
         return cp.spawn(command, args, {
-            cwd: projectPath
+            cwd: projectPath,
         });
     }
 

@@ -49,7 +49,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch,
         @inject(SearchBoxFactory) protected readonly searchBoxFactory: SearchBoxFactory,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
@@ -88,7 +88,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
                         this.model.expandNode(child);
                     }
                 }
-            })
+            }),
         ]);
     }
 

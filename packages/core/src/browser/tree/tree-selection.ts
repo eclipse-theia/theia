@@ -68,7 +68,7 @@ export namespace TreeSelection {
     export enum SelectionType {
         DEFAULT,
         TOGGLE,
-        RANGE
+        RANGE,
     }
 
     export function is(arg: Object | undefined): arg is TreeSelection {

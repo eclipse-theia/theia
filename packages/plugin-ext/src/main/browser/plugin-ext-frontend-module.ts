@@ -66,7 +66,7 @@ export default new ContainerModule(bind => {
 
             setUpPluginApi(worker.rpc, ctx.container);
             ctx.container.get(HostedPluginSupport).checkAndLoadPlugin(ctx.container);
-        }
+        },
     }));
     bind(HostedPluginServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
@@ -79,7 +79,7 @@ export default new ContainerModule(bind => {
     bind(PluginWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
-        createWidget: () => ctx.container.get(PluginWidget)
+        createWidget: () => ctx.container.get(PluginWidget),
     }));
 
     bind(PluginExtDeployCommandService).toSelf().inSingletonScope();

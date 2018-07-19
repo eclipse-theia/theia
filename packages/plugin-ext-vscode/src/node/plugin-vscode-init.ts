@@ -46,7 +46,7 @@ export const doInitialization: BackendInitializationFn = (rpc: any, pluginMetada
         id: vscodeModuleName,
         filename: vscodeModuleName,
         loaded: true,
-        exports: g[vscodeModuleName]
+        exports: g[vscodeModuleName],
     };
 
     // save original resolve method

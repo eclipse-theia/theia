@@ -23,7 +23,7 @@ export enum MessageType {
     Error = 1,
     Warning = 2,
     Info = 3,
-    Log = 4
+    Log = 4,
 }
 
 export interface Message {
@@ -62,7 +62,7 @@ export class DispatchingMessageClient extends MessageClient {
 
     showMessage(message: Message): Promise<string | undefined> {
         return Promise.race([...this.clients].map(client =>
-            client.showMessage(message)
+            client.showMessage(message),
         ));
     }
 

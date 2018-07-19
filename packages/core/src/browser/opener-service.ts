@@ -87,7 +87,7 @@ export class DefaultOpenerService implements OpenerService {
 
     constructor(
         @inject(ContributionProvider) @named(OpenHandler)
-        protected readonly handlersProvider: ContributionProvider<OpenHandler>
+        protected readonly handlersProvider: ContributionProvider<OpenHandler>,
     ) { }
 
     async getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler> {

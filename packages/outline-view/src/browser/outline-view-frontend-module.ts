@@ -23,7 +23,7 @@ import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widg
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
-        () => createOutlineViewWidget(ctx.container)
+        () => createOutlineViewWidget(ctx.container),
     );
 
     bind(OutlineViewService).toSelf().inSingletonScope();

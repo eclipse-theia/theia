@@ -162,7 +162,7 @@ describe("NodeFileSystem", function () {
             const stat = {
                 uri: uri.toString(),
                 lastModification: new Date().getTime(),
-                isDirectory: false
+                isDirectory: false,
             };
 
             await expectThrowsAsync(fileSystem.setContent(stat, "foo"), Error);

@@ -94,7 +94,7 @@ export class DocumentDataExt {
                 positionAt(offset) { return that.positionAt(offset); },
                 validateRange(ran) { return that.validateRange(ran); },
                 validatePosition(pos) { return that.validatePosition(pos); },
-                getWordRangeAtPosition(pos, regexp?) { return that.getWordRangeAtPosition(pos, regexp); }
+                getWordRangeAtPosition(pos, regexp?) { return that.getWordRangeAtPosition(pos, regexp); },
             };
         }
         return Object.freeze(this._document);
@@ -111,7 +111,7 @@ export class DocumentDataExt {
             this.setLineText(position.line - 1,
                 this.lines[position.line - 1].substring(0, position.character - 1)
                 + insertLines[0]
-                + this.lines[position.line - 1].substring(position.character - 1)
+                + this.lines[position.line - 1].substring(position.character - 1),
             );
             return;
         }
@@ -122,7 +122,7 @@ export class DocumentDataExt {
         // Delete overflowing text from first line and insert text on first line
         this.setLineText(position.line - 1,
             this.lines[position.line - 1].substring(0, position.character - 1)
-            + insertLines[0]
+            + insertLines[0],
         );
 
         // Insert new lines & store lengths
@@ -148,7 +148,7 @@ export class DocumentDataExt {
             // Delete text on the affected line
             this.setLineText(range.startLineNumber - 1,
                 this.lines[range.startLineNumber - 1].substring(0, range.startColumn - 1)
-                + this.lines[range.startLineNumber - 1].substring(range.endColumn - 1)
+                + this.lines[range.startLineNumber - 1].substring(range.endColumn - 1),
             );
             return;
         }
@@ -156,7 +156,7 @@ export class DocumentDataExt {
         // Take remaining text on last line and append it to remaining text on first line
         this.setLineText(range.startLineNumber - 1,
             this.lines[range.startLineNumber - 1].substring(0, range.startColumn - 1)
-            + this.lines[range.endLineNumber - 1].substring(range.endColumn - 1)
+            + this.lines[range.endLineNumber - 1].substring(range.endColumn - 1),
         );
 
         // Delete middle lines
@@ -285,7 +285,7 @@ export class DocumentDataExt {
                 rangeIncludingLineBreak,
                 text,
                 firstNonWhitespaceCharacterIndex,
-                isEmptyOrWhitespace: firstNonWhitespaceCharacterIndex === text.length
+                isEmptyOrWhitespace: firstNonWhitespaceCharacterIndex === text.length,
             });
 
             this.textLines[line] = result;
@@ -341,7 +341,7 @@ export class DocumentDataExt {
             position.character + 1,
             ensureValidWordDefinition(regexp),
             this.lines[position.line],
-            0
+            0,
         );
 
         if (wordAtText) {

@@ -28,24 +28,24 @@ export class YamlContribution implements LanguageGrammarDefinitionContribution {
             id: this.id,
             aliases: [
                 "YAML",
-                "yaml"
+                "yaml",
             ],
             extensions: [
                 ".yml",
                 ".eyaml",
                 ".eyml",
-                ".yaml"
+                ".yaml",
             ],
-            firstLine: "^#cloud-config"
+            firstLine: "^#cloud-config",
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                lineComment: '#',
             },
             brackets: [
                 ['{', '}'],
                 ['[', ']'],
-                ['(', ')']
+                ['(', ')'],
             ],
             autoClosingPairs: [
                 { open: '{', close: '}' },
@@ -62,8 +62,8 @@ export class YamlContribution implements LanguageGrammarDefinitionContribution {
                 { open: '\'', close: '\'' },
             ],
             folding: {
-                offSide: true
-            }
+                offSide: true,
+            },
         });
 
         const grammar = require('../../data/shell.tmLanguage.json');
@@ -71,9 +71,9 @@ export class YamlContribution implements LanguageGrammarDefinitionContribution {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

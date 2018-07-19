@@ -18,7 +18,7 @@ import { injectable, inject, interfaces } from "inversify";
 import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
-    MenuContribution, CommandRegistry
+    MenuContribution, CommandRegistry,
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from "../keybinding";
 import { WidgetManager } from '../widget-manager';
@@ -60,12 +60,12 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     readonly toggleCommand?: Command;
 
     constructor(
-        protected readonly options: ViewContributionOptions
+        protected readonly options: ViewContributionOptions,
     ) {
         if (options.toggleCommandId) {
             this.toggleCommand = {
                 id: options.toggleCommandId,
-                label: 'Toggle ' + options.widgetName + ' View'
+                label: 'Toggle ' + options.widgetName + ' View',
             };
         }
     }
@@ -87,7 +87,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
             // The widget is not attached yet, so add it to the shell
             const widgetArgs: OpenViewArguments = {
                 ...this.options.defaultWidgetOptions,
-                ...args
+                ...args,
             };
             shell.addWidget(widget, widgetArgs);
         } else if (args.toggle && area && shell.isExpanded(area) && tabBar.currentTitle === widget.title) {
@@ -107,8 +107,8 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
             commands.registerCommand(this.toggleCommand, {
                 execute: () => this.openView({
                     toggle: true,
-                    activate: true
-                })
+                    activate: true,
+                }),
             });
         }
     }
@@ -117,7 +117,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         if (this.toggleCommand) {
             menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
                 commandId: this.toggleCommand.id,
-                label: this.options.widgetName
+                label: this.options.widgetName,
             });
         }
     }
@@ -126,7 +126,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         if (this.toggleCommand && this.options.toggleKeybinding) {
             keybindings.registerKeybinding({
                 command: this.toggleCommand.id,
-                keybinding: this.options.toggleKeybinding
+                keybinding: this.options.toggleKeybinding,
             });
         }
     }

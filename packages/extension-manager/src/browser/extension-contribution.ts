@@ -35,10 +35,10 @@ export class ExtensionContribution extends AbstractViewContribution<ExtensionWid
             widgetName: 'Extensions',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 300
+                rank: 300,
             },
             toggleCommandId: 'extensionsView:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+x'
+            toggleKeybinding: 'ctrlcmd+shift+x',
         });
     }
 

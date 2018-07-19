@@ -21,7 +21,7 @@ export class MockConnectionStatusService extends AbstractConnectionStatusService
 
     constructor() {
         super({
-            offlineTimeout: 10
+            offlineTimeout: 10,
         }, new MockLogger());
     }
 

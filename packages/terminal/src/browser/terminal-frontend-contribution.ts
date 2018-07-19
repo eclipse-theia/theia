@@ -21,11 +21,11 @@ import {
     CommandRegistry,
     MenuContribution,
     MenuModelRegistry,
-    isOSX
+    isOSX,
 } from '@theia/core/lib/common';
 import {
     CommonMenus, ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry
+    KeyModifier, KeybindingRegistry,
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -37,7 +37,7 @@ import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 export namespace TerminalCommands {
     export const NEW: Command = {
         id: 'terminal:new',
-        label: 'Open New Terminal'
+        label: 'Open New Terminal',
     };
 }
 
@@ -47,7 +47,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -58,20 +58,20 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 const termWidget = await this.newTerminal({});
                 termWidget.start();
                 this.activateTerminal(termWidget);
-            }
+            },
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_NEW, {
-            commandId: TerminalCommands.NEW.id
+            commandId: TerminalCommands.NEW.id,
         });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
-            keybinding: "ctrl+`"
+            keybinding: "ctrl+`",
         });
 
         /* Register passthrough keybindings for combinations recognized by
@@ -95,7 +95,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.Alt] }).toString(),
-                context: TerminalKeybindingContexts.terminalActive
+                context: TerminalKeybindingContexts.terminalActive,
             });
         };
 
@@ -106,7 +106,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         for (let i = 0; i < 26; i++) {
             regCtrl({
                 keyCode: Key.KEY_A.keyCode + i,
-                code: 'Key' + String.fromCharCode('A'.charCodeAt(0) + i)
+                code: 'Key' + String.fromCharCode('A'.charCodeAt(0) + i),
             });
         }
 
@@ -135,7 +135,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         for (let i = 0; i < 26; i++) {
             regAlt({
                 keyCode: Key.KEY_A.keyCode + i,
-                code: 'Key' + String.fromCharCode('A'.charCodeAt(0) + i)
+                code: 'Key' + String.fromCharCode('A'.charCodeAt(0) + i),
             });
         }
 
@@ -146,7 +146,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         for (let i = 0; i < 10; i++) {
             regAlt({
                 keyCode: Key.DIGIT0.keyCode + i,
-                code: 'Digit' + String.fromCharCode('0'.charCodeAt(0) + i)
+                code: 'Digit' + String.fromCharCode('0'.charCodeAt(0) + i),
             });
         }
         if (isOSX) {
@@ -154,7 +154,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: "ctrlcmd+a",
-                context: TerminalKeybindingContexts.terminalActive
+                context: TerminalKeybindingContexts.terminalActive,
             });
         }
     }
@@ -162,7 +162,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
             created: new Date().toString(),
-            ...options
+            ...options,
         });
         return widget;
     }

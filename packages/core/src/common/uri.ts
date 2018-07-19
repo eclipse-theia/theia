@@ -74,7 +74,7 @@ export default class URI {
     withScheme(scheme: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
-            scheme
+            scheme,
         });
         return new URI(newCodeUri);
     }
@@ -92,7 +92,7 @@ export default class URI {
     withAuthority(authority: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
-            authority
+            authority,
         });
         return new URI(newCodeUri);
     }
@@ -110,7 +110,7 @@ export default class URI {
     withPath(path: string | Path): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
-            path: path.toString()
+            path: path.toString(),
         });
         return new URI(newCodeUri);
     }
@@ -128,7 +128,7 @@ export default class URI {
     withQuery(query: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
-            query
+            query,
         });
         return new URI(newCodeUri);
     }
@@ -146,7 +146,7 @@ export default class URI {
     withFragment(fragment: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
-            fragment
+            fragment,
         });
         return new URI(newCodeUri);
     }

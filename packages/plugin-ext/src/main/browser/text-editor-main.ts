@@ -24,7 +24,7 @@ import {
     ApplyEditsOptions,
     Range,
     UndoStopOptions,
-    DecorationOptions
+    DecorationOptions,
 } from "../../api/plugin-api";
 import { DisposableCollection, Emitter, Event } from "@theia/core";
 import { TextEditorCursorStyle, cursorStyleToString } from "../../common/editor-options";
@@ -42,7 +42,7 @@ export class TextEditorMain {
     constructor(
         private id: string,
         private model: monaco.editor.IModel,
-        editor: MonacoEditor
+        editor: MonacoEditor,
     ) {
         this.properties = undefined;
         this.modelListeners.push(this.model.onDidChangeOptions(e => {
@@ -140,7 +140,7 @@ export class TextEditorMain {
         if (newConfiguration.cursorStyle) {
             const newCursorStyle = cursorStyleToString(newConfiguration.cursorStyle);
             this.editor.getControl().updateOptions({
-                cursorStyle: newCursorStyle
+                cursorStyle: newCursorStyle,
             });
         }
 
@@ -157,7 +157,7 @@ export class TextEditorMain {
                     lineNumbers = 'off';
             }
             this.editor.getControl().updateOptions({
-                lineNumbers: lineNumbers
+                lineNumbers: lineNumbers,
             });
         }
     }
@@ -234,7 +234,7 @@ export class TextEditorMain {
             ({
                 range: monaco.Range.lift(edit.range),
                 text: edit.text!,
-                forceMoveMarkers: edit.forceMoveMarkers
+                forceMoveMarkers: edit.forceMoveMarkers,
             }));
 
         if (opts.undoStopBefore) {
@@ -304,7 +304,7 @@ export class TextEditorPropertiesMain {
     constructor(
         readonly selections: monaco.Selection[],
         readonly options: TextEditorConfiguration,
-        readonly visibleRanges: monaco.Range[]
+        readonly visibleRanges: monaco.Range[],
     ) {
     }
 
@@ -312,13 +312,13 @@ export class TextEditorPropertiesMain {
         const result: EditorChangedPropertiesData = {
             options: undefined,
             selections: undefined,
-            visibleRanges: undefined
+            visibleRanges: undefined,
         };
 
         if (!old || !TextEditorPropertiesMain.selectionsEqual(old.selections, this.selections)) {
             result.selections = {
                 selections: this.selections,
-                source: source
+                source: source,
             };
         }
 

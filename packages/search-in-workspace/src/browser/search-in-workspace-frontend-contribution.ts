@@ -24,16 +24,16 @@ import URI from "@theia/core/lib/common/uri";
 
 export namespace SearchInWorkspaceCommands {
     export const TOGGLE_SIW_WIDGET = {
-        id: "search-in-workspace.toggle"
+        id: "search-in-workspace.toggle",
     };
     export const OPEN_SIW_WIDGET = {
         id: "search-in-workspace.open",
-        label: "Search In Workspace"
+        label: "Search In Workspace",
 
     };
     export const FIND_IN_FOLDER = {
         id: "search-in-workspace.in-folder",
-        label: "Find In Folder..."
+        label: "Find In Folder...",
     };
 }
 
@@ -48,9 +48,9 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             widgetId: SearchInWorkspaceWidget.ID,
             widgetName: SearchInWorkspaceWidget.LABEL,
             defaultWidgetOptions: {
-                area: "left"
+                area: "left",
             },
-            toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
+            toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id,
         });
     }
 
@@ -58,18 +58,18 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
             execute: () => this.openView({
-                activate: true
-            })
+                activate: true,
+            }),
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER, this.newUriAwareCommandHandler({
             execute: async fileUri => {
                 const widget: SearchInWorkspaceWidget = await this.openView({
-                    activate: true
+                    activate: true,
                 });
                 const uriStr = this.labelProvider.getLongName(fileUri);
                 widget.findInFolder(uriStr);
-            }
+            },
         }));
     }
 
@@ -77,17 +77,17 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
-            keybinding: "ctrlcmd+shift+f"
+            keybinding: "ctrlcmd+shift+f",
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '6_find'], {
-            commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id
+            commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id,
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id
+            commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
         });
     }
 

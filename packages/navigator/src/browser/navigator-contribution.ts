@@ -30,11 +30,11 @@ import { FileNavigatorFilter } from "./navigator-filter";
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = {
         id: 'navigator.reveal',
-        label: 'Reveal in Files'
+        label: 'Reveal in Files',
     };
     export const TOGGLE_HIDDEN_FILES = {
         id: 'navigator.toggle.hidden.files',
-        label: 'Toggle Hidden Files'
+        label: 'Toggle Hidden Files',
     };
 }
 
@@ -55,17 +55,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter
+        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter,
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
             widgetName: 'Files',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 100
+                rank: 100,
             },
             toggleCommandId: 'fileNavigator:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+e'
+            toggleKeybinding: 'ctrlcmd+shift+e',
         });
     }
 
@@ -84,14 +84,14 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
             execute: () => this.openView({ activate: true }).then(() => this.selectWidgetFileNode(this.shell.currentWidget)),
             isEnabled: () => Navigatable.is(this.shell.currentWidget),
-            isVisible: () => Navigatable.is(this.shell.currentWidget)
+            isVisible: () => Navigatable.is(this.shell.currentWidget),
         });
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
                 this.fileNavigatorFilter.toggleHiddenFiles();
             },
             isEnabled: () => true,
-            isVisible: () => true
+            isVisible: () => true,
         });
     }
 
@@ -100,18 +100,18 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
             label: 'Reveal in Files',
-            order: '5'
+            order: '5',
         });
 
         registry.registerMenuAction(NavigatorContextMenu.OPEN, {
-            commandId: CommonCommands.OPEN.id
+            commandId: CommonCommands.OPEN.id,
         });
         registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
                 registry.registerMenuAction(NavigatorContextMenu.OPEN_WITH, {
-                    commandId: openWithCommand.id
+                    commandId: openWithCommand.id,
                 });
             }
         });
@@ -121,32 +121,32 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         // });
 
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
-            commandId: CommonCommands.COPY.id
+            commandId: CommonCommands.COPY.id,
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
-            commandId: CommonCommands.PASTE.id
+            commandId: CommonCommands.PASTE.id,
         });
 
         registry.registerMenuAction(NavigatorContextMenu.MOVE, {
-            commandId: WorkspaceCommands.FILE_RENAME.id
+            commandId: WorkspaceCommands.FILE_RENAME.id,
         });
         registry.registerMenuAction(NavigatorContextMenu.MOVE, {
-            commandId: WorkspaceCommands.FILE_DELETE.id
+            commandId: WorkspaceCommands.FILE_DELETE.id,
         });
         registry.registerMenuAction(NavigatorContextMenu.MOVE, {
             commandId: FileDownloadCommands.DOWNLOAD.id,
             label: 'Download',
-            order: 'z' // Should be the last item in the "move" menu group.
+            order: 'z', // Should be the last item in the "move" menu group.
         });
 
         registry.registerMenuAction(NavigatorContextMenu.NEW, {
-            commandId: WorkspaceCommands.NEW_FILE.id
+            commandId: WorkspaceCommands.NEW_FILE.id,
         });
         registry.registerMenuAction(NavigatorContextMenu.NEW, {
-            commandId: WorkspaceCommands.NEW_FOLDER.id
+            commandId: WorkspaceCommands.NEW_FOLDER.id,
         });
         registry.registerMenuAction(NavigatorContextMenu.DIFF, {
-            commandId: WorkspaceCommands.FILE_COMPARE.id
+            commandId: WorkspaceCommands.FILE_COMPARE.id,
         });
     }
 
@@ -154,32 +154,32 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         super.registerKeybindings(registry);
         registry.registerKeybinding({
             command: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
-            keybinding: "alt+r"
+            keybinding: "alt+r",
         });
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_DELETE.id,
             keybinding: "del",
-            context: NavigatorKeybindingContexts.navigatorActive
+            context: NavigatorKeybindingContexts.navigatorActive,
         });
         if (isOSX) {
             registry.registerKeybinding({
                 command: WorkspaceCommands.FILE_DELETE.id,
                 keybinding: "cmd+backspace",
-                context: NavigatorKeybindingContexts.navigatorActive
+                context: NavigatorKeybindingContexts.navigatorActive,
             });
         }
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_RENAME.id,
             keybinding: "f2",
-            context: NavigatorKeybindingContexts.navigatorActive
+            context: NavigatorKeybindingContexts.navigatorActive,
         });
 
         registry.registerKeybinding({
             command: FileNavigatorCommands.TOGGLE_HIDDEN_FILES.id,
             keybinding: "ctrlcmd+i",
-            context: NavigatorKeybindingContexts.navigatorActive
+            context: NavigatorKeybindingContexts.navigatorActive,
         });
     }
 

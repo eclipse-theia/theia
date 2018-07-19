@@ -51,7 +51,7 @@ export enum TextEditorCursorStyle {
     /**
      * As a thin horizontal line, under a character
      */
-    UnderlineThin = 6
+    UnderlineThin = 6,
 }
 
 export function cursorStyleToString(cursorStyle: TextEditorCursorStyle): string {

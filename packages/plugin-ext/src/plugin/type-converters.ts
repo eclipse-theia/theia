@@ -47,7 +47,7 @@ export function fromSelection(selection: types.Selection): Selection {
         selectionStartLineNumber: anchor.line + 1,
         selectionStartColumn: anchor.character + 1,
         positionLineNumber: active.line + 1,
-        positionColumn: active.character + 1
+        positionColumn: active.character + 1,
     };
 }
 
@@ -69,7 +69,7 @@ export function fromRange(range: theia.Range): Range | undefined {
         startLineNumber: start.line + 1,
         startColumn: start.character + 1,
         endLineNumber: end.line + 1,
-        endColumn: end.character + 1
+        endColumn: end.character + 1,
     };
 }
 
@@ -105,13 +105,13 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
                 range: fromRange(r.range)!,
                 hoverMessage: hoverMessage,
                 // tslint:disable-next-line:no-any
-                renderOptions: <any> /* URI vs Uri */r.renderOptions
+                renderOptions: <any> /* URI vs Uri */r.renderOptions,
             };
         });
     } else {
         return ranges.map((r): DecorationOptions =>
             ({
-                range: fromRange(r)!
+                range: fromRange(r)!,
             }));
     }
 }

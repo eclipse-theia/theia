@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import { Languages } from '../common';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
-    QuickOpenMode, KeybindingContribution, KeybindingRegistry
+    QuickOpenMode, KeybindingContribution, KeybindingRegistry,
 } from '@theia/core/lib/browser';
 import { WorkspaceSymbolParams, SymbolInformation } from 'vscode-base-languageclient/lib/base';
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
@@ -31,7 +31,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
     private command: Command = {
         id: 'languages.workspace.symbol',
-        label: 'Open Workspace Symbol...'
+        label: 'Open Workspace Symbol...',
     };
 
     constructor(@inject(Languages) protected languages: Languages,
@@ -71,7 +71,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
             this.cancellationSource = newCancellationSource;
 
             const param: WorkspaceSymbolParams = {
-                query: lookFor
+                query: lookFor,
             };
 
             const items: QuickOpenItem[] = [];
@@ -99,7 +99,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         parent = (parent || '') + uri.displayName;
         return new SimpleOpenItem(sym.name, icon, parent, uri.toString(), () => {
             this.openerService.getOpener(uri).then(opener => opener.open(uri, {
-                selection: Range.create(sym.location.range.start, sym.location.range.start)
+                selection: Range.create(sym.location.range.start, sym.location.range.start),
             }));
         });
     }
@@ -113,7 +113,7 @@ class SimpleOpenItem extends QuickOpenItem {
         protected readonly parent: string,
         protected readonly toolTip: string,
         protected readonly onOpen: () => void,
-        protected readonly onSelect?: () => void
+        protected readonly onSelect?: () => void,
     ) {
         super();
     }
@@ -169,5 +169,5 @@ enum SymbolKind {
     String = 15,
     Number = 16,
     Boolean = 17,
-    Array = 18
+    Array = 18,
 }

@@ -56,7 +56,7 @@ export default new ContainerModule(bind => {
     bind(GitWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: GIT_WIDGET_FACTORY_ID,
-        createWidget: () => context.container.get<GitWidget>(GitWidget)
+        createWidget: () => context.container.get<GitWidget>(GitWidget),
     })).inSingletonScope();
 
     bind(GitResourceResolver).toSelf().inSingletonScope();

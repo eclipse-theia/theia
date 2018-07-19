@@ -57,8 +57,8 @@ before(async () => {
             'files.watcherExclude': {
                 "**/.git/objects/**": true,
                 "**/.git/subtree-cache/**": true,
-                "**/node_modules/**": true
-            }
+                "**/node_modules/**": true,
+            },
         });
         return createFileSystemPreferences(preferences);
     }).inSingletonScope();
@@ -67,7 +67,7 @@ before(async () => {
     testContainer.bind(FileSystemWatcherServer).to(MockFilesystemWatcherServer).inSingletonScope();
     testContainer.bind(FileSystemWatcher).toSelf().inSingletonScope().onActivation((_, watcher) => {
         sinon.stub(watcher, 'onFilesChanged').get(() =>
-            mockOnFileChangedEmitter.event
+            mockOnFileChangedEmitter.event,
         );
         return watcher;
     });
@@ -82,13 +82,13 @@ before(async () => {
             {
                 uri: 'file://' + homeDir,
                 lastModification: 0,
-                isDirectory: true
+                isDirectory: true,
             }));
 
         sinon.stub(fs, 'resolveContent').callsFake((uri): Promise<{ stat: FileStat, content: string }> => {
             const content = files[uri];
             return Promise.resolve(
-                { stat: { uri: uri, lastModification: 0, isDirectory: false }, content: content }
+                { stat: { uri: uri, lastModification: 0, isDirectory: false }, content: content },
             );
         });
 
@@ -98,7 +98,7 @@ before(async () => {
         });
 
         sinon.stub(fs, 'getFileStat').callsFake(uri =>
-            Promise.resolve({ uri, lastModification: 0, isDirectory: false })
+            Promise.resolve({ uri, lastModification: 0, isDirectory: false }),
         );
 
         return fs;
@@ -160,8 +160,8 @@ describe('User Storage Service (Filesystem implementation)', () => {
         mockOnFileChangedEmitter.fire([
             {
                 type: FileChangeType.UPDATED,
-                uri: userStorageFolder.resolve(testFile)
-            }
+                uri: userStorageFolder.resolve(testFile),
+            },
         ]);
 
     }).timeout(2000);
@@ -212,8 +212,8 @@ describe('User Storage Resource (Filesystem implementation)', () => {
         mockOnFileChangedEmitter.fire([
             {
                 type: FileChangeType.UPDATED,
-                uri: userStorageFolder.resolve(testFile)
-            }
+                uri: userStorageFolder.resolve(testFile),
+            },
         ]);
     }).timeout(2000);
 

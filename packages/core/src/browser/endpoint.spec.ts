@@ -27,13 +27,13 @@ describe("Endpoint", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
-                    path: "/miau/"
+                    path: "/miau/",
                 },
                 {
                     host: "example.org",
                     pathname: "/",
                     search: "",
-                    protocol: ""
+                    protocol: "",
                 }, "ws://example.org/miau/");
         });
 
@@ -41,13 +41,13 @@ describe("Endpoint", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
-                    path: "/miau/"
+                    path: "/miau/",
                 },
                 {
                     host: "example.org",
                     pathname: "/mainresource",
                     search: "",
-                    protocol: ""
+                    protocol: "",
                 }, "ws://example.org/mainresource/miau/");
         });
 
@@ -55,13 +55,13 @@ describe("Endpoint", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
-                    path: "/miau/"
+                    path: "/miau/",
                 },
                 {
                     host: "example.org",
                     pathname: "/mainresource/",
                     search: "",
-                    protocol: ""
+                    protocol: "",
                 }, "ws://example.org/mainresource/miau/");
         });
 
@@ -69,13 +69,13 @@ describe("Endpoint", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
-                    path: "/miau"
+                    path: "/miau",
                 },
                 {
                     host: "example.org",
                     pathname: "/mainresource",
                     search: "",
-                    protocol: ""
+                    protocol: "",
                 }, "ws://example.org/mainresource/miau");
         });
     });
@@ -85,13 +85,13 @@ describe("Endpoint", () => {
         it("Should choose https:// if location protocol is https://", () => {
             expectRestUri(
                 {
-                    path: "/"
+                    path: "/",
                 },
                 {
                     host: "example.org",
                     pathname: "/",
                     search: "",
-                    protocol: "https:"
+                    protocol: "https:",
                 }, "https://example.org/");
         });
     });

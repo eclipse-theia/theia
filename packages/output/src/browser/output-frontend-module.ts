@@ -28,7 +28,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WidgetFactory).toDynamicValue(context => ({
         id: OUTPUT_WIDGET_KIND,
-        createWidget: () => context.container.get<OutputWidget>(OutputWidget)
+        createWidget: () => context.container.get<OutputWidget>(OutputWidget),
     }));
 
     bindViewContribution(bind, OutputContribution);

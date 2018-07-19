@@ -82,7 +82,7 @@ export class ProblemDecorator implements TreeDecorator {
                         data: marker.data,
                         uri: parentUriString,
                         owner: marker.owner,
-                        kind: marker.kind
+                        kind: marker.kind,
                     });
                     parentUri = parentUri.parent;
                 } else {
@@ -113,9 +113,9 @@ export class ProblemDecorator implements TreeDecorator {
                 color,
                 background: {
                     shape: 'circle',
-                    color: 'var(--theia-layout-color0)'
-                }
-            }
+                    color: 'var(--theia-layout-color0)',
+                },
+            },
         };
     }
 

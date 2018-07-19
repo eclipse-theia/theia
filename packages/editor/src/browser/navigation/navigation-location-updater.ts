@@ -85,7 +85,7 @@ export class NavigationLocationUpdater {
             return {
                 uri,
                 type,
-                context
+                context,
             };
         }
 
@@ -106,7 +106,7 @@ export class NavigationLocationUpdater {
             return {
                 uri,
                 type,
-                context
+                context,
             };
         }
 
@@ -134,8 +134,8 @@ export class NavigationLocationUpdater {
             start,
             end: {
                 line: endLine,
-                character: endCharacter
-            }
+                character: endCharacter,
+            },
         };
         if (SelectionLocation.is(candidate)) {
             return range;
@@ -145,7 +145,7 @@ export class NavigationLocationUpdater {
             return {
                 range,
                 rangeLength,
-                text
+                text,
             };
         }
         throw new Error(`Unexpected navigation location: ${candidate}.`);
@@ -157,12 +157,12 @@ export class NavigationLocationUpdater {
         range = {
             start: {
                 line: range.start.line,
-                character: startCharacter
+                character: startCharacter,
             },
             end: {
                 line: range.end.line,
-                character: endCharacter
-            }
+                character: endCharacter,
+            },
         };
         if (CursorLocation.is(candidate)) {
             return range.start;
@@ -175,7 +175,7 @@ export class NavigationLocationUpdater {
             return {
                 range,
                 rangeLength,
-                text
+                text,
             };
         }
         throw new Error(`Unexpected navigation location: ${candidate}.`);
@@ -188,13 +188,13 @@ export class NavigationLocationUpdater {
             const { line, character } = input;
             return {
                 line: line + diff,
-                character
+                character,
             };
         }
         const { start, end } = input;
         return {
             start: this.shiftLine(start, diff),
-            end: this.shiftLine(end, diff)
+            end: this.shiftLine(end, diff),
         };
     }
 

@@ -95,7 +95,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             priority: 100,
             onclick: e => {
                 this.showMenu(e.clientX, e.clientY);
-            }
+            },
         };
 
         this.entry.className = HostedPluginController.HOSTED_PLUGIN;
@@ -111,7 +111,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         this.entry = {
             text: `$(cog~spin) Hosted Plugin: Starting`,
             alignment: StatusBarAlignment.LEFT,
-            priority: 100
+            priority: 100,
         };
 
         this.entry.className = HostedPluginController.HOSTED_PLUGIN;
@@ -130,7 +130,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             priority: 100,
             onclick: e => {
                 this.showMenu(e.clientX, e.clientY);
-            }
+            },
         };
 
         this.entry.className = HostedPluginController.HOSTED_PLUGIN;
@@ -149,7 +149,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             priority: 100,
             onclick: e => {
                 this.showMenu(e.clientX, e.clientY);
-            }
+            },
         };
 
         this.entry.className = HostedPluginController.HOSTED_PLUGIN_FAILED;
@@ -166,7 +166,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
                 const offlineElement = {
                     text: `Hosted Plugin: Stopped`,
                     alignment: StatusBarAlignment.LEFT,
-                    priority: 100
+                    priority: 100,
                 };
 
                 this.entry.className = HostedPluginController.HOSTED_PLUGIN_OFFLINE;
@@ -192,7 +192,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     protected showMenu(x: number, y: number): void {
         const commands = new CommandRegistry();
         const menu = new Menu({
-            commands
+            commands,
         });
 
         if (this.pluginState === 'running') {
@@ -211,23 +211,23 @@ export class HostedPluginController implements FrontendApplicationContribution {
         commands.addCommand(HostedPluginCommands.STOP.id, {
             label: 'Stop Instance',
             icon: 'fa fa-stop',
-            execute: () => setTimeout(() => this.hostedPluginManagerClient.stop(), 100)
+            execute: () => setTimeout(() => this.hostedPluginManagerClient.stop(), 100),
         });
 
         menu.addItem({
             type: 'command',
-            command: HostedPluginCommands.STOP.id
+            command: HostedPluginCommands.STOP.id,
         });
 
         commands.addCommand(HostedPluginCommands.RESTART.id, {
             label: 'Restart Instance',
             icon: 'fa fa-repeat',
-            execute: () => setTimeout(() => this.hostedPluginManagerClient.restart(), 100)
+            execute: () => setTimeout(() => this.hostedPluginManagerClient.restart(), 100),
         });
 
         menu.addItem({
             type: 'command',
-            command: HostedPluginCommands.RESTART.id
+            command: HostedPluginCommands.RESTART.id,
         });
     }
 
@@ -238,12 +238,12 @@ export class HostedPluginController implements FrontendApplicationContribution {
         commands.addCommand(HostedPluginCommands.START.id, {
             label: "Start Instance",
             icon: 'fa fa-play',
-            execute: () => setTimeout(() => this.hostedPluginManagerClient.start(), 100)
+            execute: () => setTimeout(() => this.hostedPluginManagerClient.start(), 100),
         });
 
         menu.addItem({
             type: 'command',
-            command: HostedPluginCommands.START.id
+            command: HostedPluginCommands.START.id,
         });
     }
 
