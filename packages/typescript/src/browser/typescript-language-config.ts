@@ -34,6 +34,14 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
         });
 
         registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_LANGUAGE_ID, 'source.ts');
+        registry.registerGrammarConfiguration(TYPESCRIPT_LANGUAGE_ID, {
+            "tokenTypes": {
+                "entity.name.type.instance.jsdoc": 0,
+                "entity.name.function.tagged-template": 0,
+                "meta.import string.quoted": 0,
+                "variable.other.jsdoc": 0
+            }
+        });
 
         const jsxGrammar = require('../../data/grammars/typescript.tsx.tmlanguage.json');
         registry.registerTextMateGrammarScope('source.tsx', {
