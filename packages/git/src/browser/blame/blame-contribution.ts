@@ -28,10 +28,10 @@ import debounce = require('lodash.debounce');
 export namespace BlameCommands {
     export const SHOW_GIT_ANNOTATIONS: Command = {
         id: 'git.editor.show.annotations',
-        label: 'Git: Show Blame Annotations'
+        label: 'Git: Show Blame Annotations',
     };
     export const CLEAR_GIT_ANNOTATIONS: Command = {
-        id: 'git.editor.clear.annotations'
+        id: 'git.editor.clear.annotations',
     };
 }
 
@@ -63,7 +63,7 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
             isEnabled: () => {
                 const editorWidget = this.currentFileEditorWidget;
                 return !!editorWidget && this.isBlameable(editorWidget.editor.uri);
-            }
+            },
         });
         commands.registerCommand(BlameCommands.CLEAR_GIT_ANNOTATIONS, {
             execute: () => {
@@ -78,7 +78,7 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
                 const editorWidget = this.currentFileEditorWidget;
                 const enabled = !!editorWidget && this.appliedDecorations.has(editorWidget.editor.uri.toString());
                 return enabled;
-            }
+            },
         });
     }
 
@@ -132,7 +132,7 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EDITOR_CONTEXT_MENU_GIT, {
             commandId: BlameCommands.SHOW_GIT_ANNOTATIONS.id,
-            label: BlameCommands.SHOW_GIT_ANNOTATIONS.label!.slice('Git: '.length)
+            label: BlameCommands.SHOW_GIT_ANNOTATIONS.label!.slice('Git: '.length),
         });
     }
 
@@ -140,12 +140,12 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
         keybindings.registerKeybinding({
             command: BlameCommands.SHOW_GIT_ANNOTATIONS.id,
             context: EditorKeybindingContexts.editorTextFocus,
-            keybinding: 'alt+b'
+            keybinding: 'alt+b',
         });
         keybindings.registerKeybinding({
             command: BlameCommands.CLEAR_GIT_ANNOTATIONS.id,
             context: EditorKeybindingContexts.strictEditorTextFocus,
-            keybinding: 'esc'
+            keybinding: 'esc',
         });
     }
 

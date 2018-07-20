@@ -42,7 +42,7 @@ export class GitResourceResolver implements ResourceResolver {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
     ) { }
 
     resolve(uri: URI): Resource | Promise<Resource> {

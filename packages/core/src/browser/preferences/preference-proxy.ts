@@ -51,14 +51,14 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
                 } else {
                     onPreferenceChangedEmitter.fire({
                         preferenceName: e.preferenceName,
-                        newValue: configuration[e.preferenceName]
+                        newValue: configuration[e.preferenceName],
                     });
                 }
             } else {
                 onPreferenceChangedEmitter.fire({
                     preferenceName: e.preferenceName,
                     newValue: configuration[e.preferenceName],
-                    oldValue: e.oldValue
+                    oldValue: e.oldValue,
                 });
             }
         }
@@ -89,7 +89,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
         },
         set: unsupportedOperation,
         deleteProperty: unsupportedOperation,
-        defineProperty: unsupportedOperation
+        defineProperty: unsupportedOperation,
     });
 }
 

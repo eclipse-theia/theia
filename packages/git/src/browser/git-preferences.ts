@@ -23,24 +23,24 @@ export const GitConfigSchema: PreferenceSchema = {
         'git.decorations.enabled': {
             'type': 'boolean',
             'description': 'Show Git file status in the navigator.',
-            'default': true
+            'default': true,
         },
         'git.decorations.colors': {
             'type': 'boolean',
             'description': 'Use color decoration in the navigator.',
-            'default': false
+            'default': false,
         },
         'git.editor.decorations.enabled': {
             'type': 'boolean',
             'description': 'Show git decorations in the editor.',
-            'default': true
+            'default': true,
         },
         'git.editor.dirtydiff.linesLimit': {
             'type': 'number',
             'description': 'Do not show dirty diff decorations, if editor\'s line count exceeds this limit.',
-            'default': 1000
-        }
-    }
+            'default': 1000,
+        },
+    },
 };
 
 export interface GitConfiguration {

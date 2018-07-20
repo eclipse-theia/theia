@@ -31,7 +31,7 @@ export class ExtensionWidgetFactory implements WidgetFactory {
 
     constructor(
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager
+        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
     ) { }
 
     async createWidget(options: ExtensionWidgetOptions): Promise<ExtensionDetailWidget> {

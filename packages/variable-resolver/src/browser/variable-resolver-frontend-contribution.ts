@@ -22,7 +22,7 @@ import { VariableQuickOpenService } from './variable-quick-open-service';
 
 export const LIST_VARIABLES: Command = {
     id: 'variable.list',
-    label: 'Variable: List All'
+    label: 'Variable: List All',
 };
 
 @injectable()
@@ -32,19 +32,19 @@ export class VariableResolverFrontendContribution implements FrontendApplication
         @inject(ContributionProvider) @named(VariableContribution)
         protected readonly contributionProvider: ContributionProvider<VariableContribution>,
         @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry,
-        @inject(VariableQuickOpenService) protected readonly variableQuickOpenService: VariableQuickOpenService
+        @inject(VariableQuickOpenService) protected readonly variableQuickOpenService: VariableQuickOpenService,
     ) { }
 
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib =>
-            contrib.registerVariables(this.variableRegistry)
+            contrib.registerVariables(this.variableRegistry),
         );
     }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(LIST_VARIABLES, {
             isEnabled: () => true,
-            execute: () => this.variableQuickOpenService.open()
+            execute: () => this.variableQuickOpenService.open(),
         });
     }
 }

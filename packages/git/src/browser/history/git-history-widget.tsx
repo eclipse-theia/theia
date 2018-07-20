@@ -79,9 +79,9 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     ll.className = "history-lazy-loading show";
                     this.addCommits({
                         range: {
-                            toRevision: this.commits[this.commits.length - 1].commitSha
+                            toRevision: this.commits[this.commits.length - 1].commitSha,
                         },
-                        maxCount: GIT_HISTORY_MAX_COUNT
+                        maxCount: GIT_HISTORY_MAX_COUNT,
                     });
                 }
             };
@@ -129,7 +129,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                             fileChangeNodes,
                             fileChanges: commit.fileChanges,
                             expanded: false,
-                            selected: false
+                            selected: false,
                         });
                     }
                     this.commits.push(...commits);
@@ -151,7 +151,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 const description = this.relativePath(fileChangeUri.parent);
                 const caption = this.computeCaption(fileChange);
                 commit.fileChangeNodes.push({
-                    ...fileChange, icon, label, description, caption, commitSha: commit.commitSha
+                    ...fileChange, icon, label, description, caption, commitSha: commit.commitSha,
                 });
             }));
             delete commit.fileChanges;
@@ -164,7 +164,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         return {
             commits,
             options,
-            singleFileMode
+            singleFileMode,
         };
     }
 
@@ -297,7 +297,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected async openDetailWidget(commit: GitCommitNode) {
         const commitDetails = this.detailOpenHandler.getCommitDetailWidgetOptions(commit);
         this.detailOpenHandler.open(GitCommitDetailUri.toUri(commit.commitSha), {
-            ...commitDetails
+            ...commitDetails,
         } as GitCommitDetailOpenerOptions);
     }
 

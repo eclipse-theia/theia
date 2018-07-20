@@ -32,7 +32,7 @@ export class GitRepositoryProvider {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
     ) {
         this.initialize();
     }
@@ -79,7 +79,7 @@ export class GitRepositoryProvider {
             return;
         }
         const repositories = await this.git.repositories(root.uri, {
-            ...options
+            ...options,
         });
         this._allRepositories = repositories;
         const selectedRepository = this._selectedRepository;

@@ -32,7 +32,7 @@ export class PluginWidget extends ReactWidget {
 
     constructor(
         @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
     ) {
         super();
         this.id = 'plugins';

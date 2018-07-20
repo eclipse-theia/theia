@@ -37,7 +37,7 @@ export default new ContainerModule(bind => {
 
             child.bind(RawProcessOptions).toConstantValue(options);
             return child.get(RawProcess);
-        }
+        },
     );
 
     bind(TerminalProcess).toSelf().inTransientScope();
@@ -48,7 +48,7 @@ export default new ContainerModule(bind => {
 
             child.bind(TerminalProcessOptions).toConstantValue(options);
             return child.get(TerminalProcess);
-        }
+        },
     );
 
     bind(MultiRingBuffer).toSelf().inTransientScope();

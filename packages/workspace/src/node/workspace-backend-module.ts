@@ -25,12 +25,12 @@ export default new ContainerModule(bind => {
     bind(CliContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceCliContribution));
     bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx =>
-        ctx.container.get(DefaultWorkspaceServer)
+        ctx.container.get(DefaultWorkspaceServer),
     ).inSingletonScope();
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(workspacePath, () =>
-            ctx.container.get(WorkspaceServer)
-        )
+            ctx.container.get(WorkspaceServer),
+        ),
     ).inSingletonScope();
 });

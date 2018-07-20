@@ -26,7 +26,7 @@ export class HostedPluginWatcher {
             postMessage(message: string): Promise<void> {
                 messageEmitter.fire(JSON.parse(message));
                 return Promise.resolve();
-            }
+            },
         };
     }
 

@@ -48,14 +48,14 @@ export class EditorContribution implements FrontendApplicationContribution {
             this.statusBar.setElement('editor-status-language', {
                 text: languageName,
                 alignment: StatusBarAlignment.RIGHT,
-                priority: 1
+                priority: 1,
             });
 
             this.setCursorPositionStatus(widget.editor.cursor, widget.editor);
             this.toDisposeOnCurrentEditorChanged.push(
                 widget.editor.onCursorPositionChanged(position =>
-                    this.setCursorPositionStatus(position, widget.editor)
-                )
+                    this.setCursorPositionStatus(position, widget.editor),
+                ),
             );
         } else {
             this.statusBar.removeElement('editor-status-language');
@@ -67,7 +67,7 @@ export class EditorContribution implements FrontendApplicationContribution {
         this.statusBar.setElement('editor-status-cursor-position', {
             text: `Ln ${position.line + 1}, Col ${editor.getVisibleColumn(position)}`,
             alignment: StatusBarAlignment.RIGHT,
-            priority: 100
+            priority: 100,
         });
     }
 }

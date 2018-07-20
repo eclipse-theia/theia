@@ -29,7 +29,7 @@ const Consoles = new Map<LogLevel, Console>([
     [LogLevel.WARN, console.warn],
     [LogLevel.INFO, console.info],
     [LogLevel.DEBUG, console.debug],
-    [LogLevel.TRACE, console.trace]
+    [LogLevel.TRACE, console.trace],
 ]);
 
 @injectable()
@@ -56,7 +56,7 @@ export class ConsoleLoggerServer implements ILoggerServer {
         this.loggers.set(name, newLogLevel);
         const event = {
             loggerName: name,
-            newLogLevel
+            newLogLevel,
         };
         if (this.client !== undefined) {
             this.client.onLogLevelChanged(event);

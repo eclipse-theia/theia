@@ -80,7 +80,7 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
         const references = this.references.get(key) || this.createReferences(key, object);
         const reference: Reference<V> = {
             object,
-            dispose: () => { }
+            dispose: () => { },
         };
         references.push(reference);
         return reference;

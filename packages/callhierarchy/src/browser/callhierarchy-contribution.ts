@@ -29,7 +29,7 @@ export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
 export namespace CallHierarchyCommands {
     export const OPEN: Command = {
         id: 'callhierarchy:open',
-        label: 'Open Call Hierarchy'
+        label: 'Open Call Hierarchy',
     };
 }
 
@@ -43,10 +43,10 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
             widgetId: CALLHIERARCHY_ID,
             widgetName: CALL_HIERARCHY_LABEL,
             defaultWidgetOptions: {
-                area: 'bottom'
+                area: 'bottom',
             },
             toggleCommandId: CALL_HIERARCHY_TOGGLE_COMMAND_ID,
-            toggleKeybinding: 'ctrlcmd+shift+f1'
+            toggleKeybinding: 'ctrlcmd+shift+f1',
         });
     }
 
@@ -68,9 +68,9 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         commands.registerCommand(CallHierarchyCommands.OPEN, {
             execute: () => this.openView({
                 toggle: false,
-                activate: true
+                activate: true,
             }),
-            isEnabled: this.isCallHierarchyAvailable.bind(this)
+            isEnabled: this.isCallHierarchyAvailable.bind(this),
         });
         super.registerCommands(commands);
     }
@@ -79,7 +79,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         const menuPath = [...EDITOR_CONTEXT_MENU, 'navigation'];
         menus.registerMenuAction(menuPath, {
             commandId: CallHierarchyCommands.OPEN.id,
-            label: CALL_HIERARCHY_LABEL
+            label: CALL_HIERARCHY_LABEL,
         });
         super.registerMenus(menus);
     }
@@ -88,7 +88,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: CallHierarchyCommands.OPEN.id,
-            keybinding: 'ctrlcmd+f1'
+            keybinding: 'ctrlcmd+f1',
         });
     }
 }

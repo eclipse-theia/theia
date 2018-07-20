@@ -31,7 +31,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
                     format: 'json',
                     content: grammar,
                 };
-            }
+            },
         });
 
         registry.registerTextMateGrammarScope('source.js.regexp', {
@@ -40,7 +40,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
                     format: 'plist',
                     content: regExpGrammar,
                 };
-            }
+            },
         });
 
         registry.registerGrammarConfiguration(JAVASCRIPT_LANGUAGE_ID, {
@@ -48,14 +48,14 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
                 "meta.tag.js": getEncodedLanguageId("jsx-tags"),
                 "meta.tag.without-attributes.js": getEncodedLanguageId("jsx-tags"),
                 "meta.tag.attributes.js.jsx": getEncodedLanguageId("javascriptreact"),
-                "meta.embedded.expression.js": getEncodedLanguageId("javascriptreact")
+                "meta.embedded.expression.js": getEncodedLanguageId("javascriptreact"),
             },
             tokenTypes: {
                 "entity.name.type.instance.jsdoc": StandardTokenType.Other,
                 "entity.name.function.tagged-template": StandardTokenType.Other,
                 "meta.import string.quoted": StandardTokenType.Other,
-                "variable.other.jsdoc": StandardTokenType.Other
-            }
+                "variable.other.jsdoc": StandardTokenType.Other,
+            },
         });
 
         registry.mapLanguageIdToTextmateGrammar(JAVASCRIPT_LANGUAGE_ID, 'source.js');
@@ -67,7 +67,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
                     format: 'json',
                     content: jsxGrammar,
                 };
-            }
+            },
         });
 
         registry.mapLanguageIdToTextmateGrammar(JAVASCRIPT_REACT_LANGUAGE_ID, 'source.jsx');
@@ -79,21 +79,21 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             aliases: [
                 JAVASCRIPT_LANGUAGE_NAME,
                 "javascript",
-                "js"
+                "js",
             ],
             extensions: [
                 ".js",
                 ".es6",
                 ".mjs",
-                ".pac"
+                ".pac",
             ],
             filenames: [
-                "jakefile"
+                "jakefile",
             ],
             firstLine: "^#!.*\\bnode",
             mimetypes: [
-                "text/javascript"
-            ]
+                "text/javascript",
+            ],
         });
 
         monaco.languages.onLanguage(JAVASCRIPT_LANGUAGE_ID, () => {
@@ -104,11 +104,11 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             id: JAVASCRIPT_REACT_LANGUAGE_ID,
             aliases: [
                 JAVASCRIPT_REACT_LANGUAGE_NAME,
-                "jsx"
+                "jsx",
             ],
             extensions: [
-                ".jsx"
-            ]
+                ".jsx",
+            ],
         });
         monaco.languages.onLanguage(JAVASCRIPT_REACT_LANGUAGE_ID, () => {
             monaco.languages.setLanguageConfiguration(JAVASCRIPT_LANGUAGE_ID, this.configuration);
@@ -118,12 +118,12 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
     protected configuration: monaco.languages.LanguageConfiguration = {
         "comments": {
             "lineComment": "//",
-            "blockComment": ["/*", "*/"]
+            "blockComment": ["/*", "*/"],
         },
         "brackets": [
             ["{", "}"],
             ["[", "]"],
-            ["(", ")"]
+            ["(", ")"],
         ],
         "autoClosingPairs": [
             { "open": "{", "close": "}" },
@@ -132,7 +132,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             { "open": "'", "close": "'", "notIn": ["string", "comment"] },
             { "open": "\"", "close": "\"", "notIn": ["string"] },
             { "open": "`", "close": "`", "notIn": ["string", "comment"] },
-            { "open": "/**", "close": " */", "notIn": ["string"] }
+            { "open": "/**", "close": " */", "notIn": ["string"] },
         ],
         "surroundingPairs": [
             { "open": "{", "close": "}" },
@@ -140,14 +140,14 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             { "open": "(", "close": ")" },
             { "open": "'", "close": "'" },
             { "open": "\"", "close": "\"" },
-            { "open": "`", "close": "`" }
+            { "open": "`", "close": "`" },
         ],
         "folding": {
             "markers": {
                 "start": new RegExp("^\\s*//\\s*#?region\\b"),
-                "end": new RegExp("^\\s*//\\s*#?endregion\\b")
-            }
-        }
+                "end": new RegExp("^\\s*//\\s*#?endregion\\b"),
+            },
+        },
     };
 }
 

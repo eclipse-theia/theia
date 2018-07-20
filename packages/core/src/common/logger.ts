@@ -26,7 +26,7 @@ export enum LogLevel {
     WARN = 40,
     INFO = 30,
     DEBUG = 20,
-    TRACE = 10
+    TRACE = 10,
 }
 
 export namespace LogLevel {
@@ -36,7 +36,7 @@ export namespace LogLevel {
         [LogLevel.WARN, 'warn'],
         [LogLevel.INFO, 'info'],
         [LogLevel.DEBUG, 'debug'],
-        [LogLevel.TRACE, 'trace']
+        [LogLevel.TRACE, 'trace'],
     ]);
 
     export function toString(level: LogLevel): string | undefined {
@@ -347,7 +347,7 @@ export class Logger implements ILogger {
 
     isEnabled(logLevel: number): Promise<boolean> {
         return this._logLevel.then(level =>
-            logLevel >= level
+            logLevel >= level,
         );
     }
     ifEnabled(logLevel: number): Promise<void> {
@@ -356,7 +356,7 @@ export class Logger implements ILogger {
                 if (enabled) {
                     resolve();
                 }
-            })
+            }),
         );
     }
     log(logLevel: number, arg2: any | Loggable, ...params: any[]): Promise<void> {
@@ -373,8 +373,8 @@ export class Logger implements ILogger {
         return this.ifEnabled(logLevel).then(() =>
             this.created.then(() =>
                 (message: any, ...params: any[]) =>
-                    this.server.log(this.name, logLevel, this.format(message), params.map(p => this.format(p)))
-            )
+                    this.server.log(this.name, logLevel, this.format(message), params.map(p => this.format(p))),
+            ),
         );
     }
     protected format(value: any): any {

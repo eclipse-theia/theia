@@ -15,5 +15,5 @@
  ********************************************************************************/
 
 export type QueryParameters = {
-    [key: string]: string | string[]
+    [key: string]: string | string[],
 };

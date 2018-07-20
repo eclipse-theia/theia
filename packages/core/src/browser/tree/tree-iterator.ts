@@ -29,7 +29,7 @@ export namespace TreeIterator {
 
     export const DEFAULT_OPTIONS: Options = {
         pruneCollapsed: false,
-        pruneSiblings: false
+        pruneSiblings: false,
     };
 
 }
@@ -42,7 +42,7 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
     constructor(protected readonly root: TreeNode, options?: Partial<TreeIterator.Options>) {
         this.options = {
             ...TreeIterator.DEFAULT_OPTIONS,
-            ...options
+            ...options,
         };
         this.delegate = this.iterator(this.root);
     }

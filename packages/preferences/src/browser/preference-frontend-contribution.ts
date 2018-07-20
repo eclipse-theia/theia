@@ -25,11 +25,11 @@ import { UserStorageService } from "@theia/userstorage/lib/browser";
 export namespace PreferenceCommands {
     export const OPEN_USER_PREFERENCES: Command = {
         id: 'preferences:open_user',
-        label: 'Open User Preferences'
+        label: 'Open User Preferences',
     };
     export const OPEN_WORKSPACE_PREFERENCES: Command = {
         id: 'preferences:open_workspace',
-        label: 'Open Workspace Preferences'
+        label: 'Open Workspace Preferences',
     };
 }
 
@@ -45,21 +45,21 @@ export class PreferenceFrontendContribution implements CommandContribution, Menu
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(PreferenceCommands.OPEN_USER_PREFERENCES, {
             isEnabled: () => true,
-            execute: () => this.openUserPreferences()
+            execute: () => this.openUserPreferences(),
         });
 
         commands.registerCommand(PreferenceCommands.OPEN_WORKSPACE_PREFERENCES, {
             isEnabled: () => true,
-            execute: () => this.openWorkspacePreferences()
+            execute: () => this.openWorkspacePreferences(),
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: PreferenceCommands.OPEN_USER_PREFERENCES.id
+            commandId: PreferenceCommands.OPEN_USER_PREFERENCES.id,
         });
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: PreferenceCommands.OPEN_WORKSPACE_PREFERENCES.id
+            commandId: PreferenceCommands.OPEN_WORKSPACE_PREFERENCES.id,
         });
     }
 

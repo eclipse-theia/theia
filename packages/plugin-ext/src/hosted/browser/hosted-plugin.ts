@@ -42,7 +42,7 @@ export class HostedPluginSupport {
     private frontendApiInitialized = false;
 
     constructor(
-        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl
+        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
     ) {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
     }
@@ -84,7 +84,7 @@ export class HostedPluginSupport {
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
                     model: pluginModel,
-                    lifecycle: pluginLifecycle
+                    lifecycle: pluginLifecycle,
                 };
                 let frontendInitPath = pluginLifecycle.frontendInitPath;
                 if (frontendInitPath) {
@@ -109,7 +109,7 @@ export class HostedPluginSupport {
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.backend!,
                     model: pluginModel,
-                    lifecycle: pluginLifecycle
+                    lifecycle: pluginLifecycle,
                 };
                 let backendInitPath = pluginLifecycle.backendInitPath;
                 if (backendInitPath) {
@@ -130,7 +130,7 @@ export class HostedPluginSupport {
     private createServerRpc(): RPCProtocol {
         return new RPCProtocolImpl({
             onMessage: this.watcher.onPostMessageEvent,
-            send: message => { this.server.onMessage(JSON.stringify(message)); }
+            send: message => { this.server.onMessage(JSON.stringify(message)); },
         });
     }
 }

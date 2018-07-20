@@ -59,13 +59,13 @@ describe('variable api', () => {
             {
                 name: 'workspaceRoot',
                 description: 'workspace root URI',
-                resolve: () => Promise.resolve('')
+                resolve: () => Promise.resolve(''),
             },
             {
                 name: 'workspaceRoot',
                 description: 'workspace root URI 2',
-                resolve: () => Promise.resolve('')
-            }
+                resolve: () => Promise.resolve(''),
+            },
         ];
         variables.forEach(v => variableRegistry.registerVariable(v));
 
@@ -98,7 +98,7 @@ describe('variable api', () => {
 
 const TEST_VARIABLE: Variable = {
     name: 'workspaceRoot',
-    resolve: () => Promise.resolve('')
+    resolve: () => Promise.resolve(''),
 };
 
 function registerTestVariable(): Disposable {

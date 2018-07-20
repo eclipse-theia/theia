@@ -28,7 +28,7 @@ export class MetricsCliContribution implements CliContribution {
     configure(conf: yargs.Argv): void {
         conf.option(metricsProjectPath, {
             description: "Sets the application project directory (used in metrics extension)",
-            default: process.cwd()
+            default: process.cwd(),
         });
     }
 

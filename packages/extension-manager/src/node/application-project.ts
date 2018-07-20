@@ -22,7 +22,7 @@ import { ApplicationPackageOptions, NpmRegistry } from '@theia/application-packa
 import { ApplicationPackageManager } from '@theia/application-manager';
 import {
     Disposable, DisposableCollection, Event, Emitter, ILogger,
-    CancellationTokenSource, CancellationToken, isCancelled, checkCancelled
+    CancellationTokenSource, CancellationToken, isCancelled, checkCancelled,
 } from "@theia/core";
 import { FileUri, ServerProcess } from "@theia/core/lib/node";
 import { FileSystemWatcherServer, DidFilesChangedParams } from "@theia/filesystem/lib/common/filesystem-watcher-protocol";
@@ -50,22 +50,22 @@ export class ApplicationProject implements Disposable {
         @inject(FileSystemWatcherServer) protected readonly fileSystemWatcher: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(NpmClient) protected readonly npmClient: NpmClient,
-        @inject(ServerProcess) protected readonly serverProcess: ServerProcess
+        @inject(ServerProcess) protected readonly serverProcess: ServerProcess,
     ) {
         logger.debug('AppProjectOptions', options);
         this.registry = new NpmRegistry({
-            watchChanges: this.options.watchRegistry
+            watchChanges: this.options.watchRegistry,
         });
         this.backup();
         this.packageUri = FileUri.create(this.packagePath).toString();
         this.toDispose.push(this.fileSystemWatcher);
         this.fileSystemWatcher.setClient({
-            onDidFilesChanged: changes => this.onDidFilesChanged(changes)
+            onDidFilesChanged: changes => this.onDidFilesChanged(changes),
         });
         this.fileSystemWatcher.watchFileChanges(this.packageUri).then(watcher =>
             this.toDispose.push(Disposable.create(() =>
-                this.fileSystemWatcher.unwatchFileChanges(watcher)
-            ))
+                this.fileSystemWatcher.unwatchFileChanges(watcher),
+            )),
         );
         this.toDispose.push(this.onWillInstallEmitter);
         this.toDispose.push(this.onDidInstallEmitter);
@@ -95,7 +95,7 @@ export class ApplicationProject implements Disposable {
         return new ApplicationPackageManager(Object.assign({
             log: this.logger.info.bind(this.logger),
             error: this.logger.error.bind(this.logger),
-            registry: this.registry
+            registry: this.registry,
         }, this.options));
     }
 
@@ -144,7 +144,7 @@ export class ApplicationProject implements Disposable {
             this.logger.info('The app installation is finished');
             this.fireDidInstall({
                 reverting,
-                failed: false
+                failed: false,
             });
 
             this.serverProcess.kill();
@@ -156,7 +156,7 @@ export class ApplicationProject implements Disposable {
             this.logger.error('The app installation is failed' + os.EOL, error);
             this.fireDidInstall({
                 reverting,
-                failed: true
+                failed: true,
             });
             await this.revert(token);
         }

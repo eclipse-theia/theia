@@ -34,7 +34,7 @@ export async function createGit(bindingOptions: GitBindingOptions = GitBindingOp
     bindGit(bind, {
         bindManager(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
             return binding.to(NoSyncRepositoryManager).inSingletonScope();
-        }
+        },
     });
     return container.get(DugiteGit);
 }

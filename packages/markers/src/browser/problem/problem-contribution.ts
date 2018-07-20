@@ -33,10 +33,10 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             widgetId: PROBLEM_KIND,
             widgetName: 'Problems',
             defaultWidgetOptions: {
-                area: 'bottom'
+                area: 'bottom',
             },
             toggleCommandId: 'problemsView:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+m'
+            toggleKeybinding: 'ctrlcmd+shift+m',
         });
     }
 
@@ -56,7 +56,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             text: `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,
-            command: this.toggleCommand ? this.toggleCommand.id : undefined
+            command: this.toggleCommand ? this.toggleCommand.id : undefined,
         });
     }
 }

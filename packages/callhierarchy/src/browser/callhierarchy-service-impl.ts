@@ -41,7 +41,7 @@ export class CallHierarchyContext {
             return cachedSymbols;
         }
         const symbols = await this.languageClient.sendRequest(DocumentSymbolRequest.type, <DocumentSymbolParams>{
-            textDocument: TextDocumentIdentifier.create(uri)
+            textDocument: TextDocumentIdentifier.create(uri),
         });
         this.symbolCache.set(uri, symbols);
         return symbols;
@@ -60,7 +60,7 @@ export class CallHierarchyContext {
         try {
             locations = await this.languageClient.sendRequest(DefinitionRequest.type, <TextDocumentPositionParams>{
                 position: Position.create(line, character),
-                textDocument: { uri }
+                textDocument: { uri },
             });
         } catch (error) {
             this.logger.error(`Error from definitions request: ${uri}#${line}/${character}`, error);
@@ -75,15 +75,15 @@ export class CallHierarchyContext {
         try {
             const references = await this.languageClient.sendRequest(ReferencesRequest.type, <ReferenceParams>{
                 context: {
-                    includeDeclaration: false // TODO find out, why definitions are still contained
+                    includeDeclaration: false, // TODO find out, why definitions are still contained
                 },
                 position: {
                     line: definition.range.start.line,
-                    character: definition.range.start.character
+                    character: definition.range.start.character,
                 },
                 textDocument: {
-                    uri: definition.uri
-                }
+                    uri: definition.uri,
+                },
             });
             const uniqueReferences = utils.filterUnique(references);
             const filteredReferences = utils.filterSame(uniqueReferences, definition);
@@ -263,11 +263,11 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
         const model = await context.getEditorModelReference(symbol.location.uri);
         let position = new monaco.Position(
             symbol.location.range.start.line + 1,
-            symbol.location.range.start.character + 1
+            symbol.location.range.start.character + 1,
         );
         const endPosition = new monaco.Position(
             symbol.location.range.end.line + 1,
-            symbol.location.range.end.character + 1
+            symbol.location.range.end.character + 1,
         );
         do {
             const word = model.object.textEditorModel.getWordAtPosition(position);

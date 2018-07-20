@@ -53,13 +53,13 @@ describe('variable-resolver-service', () => {
             {
                 name: 'file',
                 description: 'current file',
-                resolve: () => Promise.resolve('package.json')
+                resolve: () => Promise.resolve('package.json'),
             },
             {
                 name: 'lineNumber',
                 description: 'current line number',
-                resolve: () => Promise.resolve('6')
-            }
+                resolve: () => Promise.resolve('6'),
+            },
         ];
         variables.forEach(v => variableRegistry.registerVariable(v));
     });

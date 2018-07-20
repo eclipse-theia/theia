@@ -58,7 +58,7 @@ export class VariableRegistry implements Disposable {
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
     ) { }
 
     dispose(): void {
@@ -76,7 +76,7 @@ export class VariableRegistry implements Disposable {
         }
         this.variables.set(variable.name, variable);
         const disposable = {
-            dispose: () => this.variables.delete(variable.name)
+            dispose: () => this.variables.delete(variable.name),
         };
         this.toDispose.push(disposable);
         return disposable;

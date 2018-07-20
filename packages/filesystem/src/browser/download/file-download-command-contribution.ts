@@ -79,7 +79,7 @@ export class FileDownloadCommandContribution implements CommandContribution {
 export namespace FileDownloadCommands {
 
     export const DOWNLOAD: Command = {
-        id: 'file.download'
+        id: 'file.download',
     };
 
 }

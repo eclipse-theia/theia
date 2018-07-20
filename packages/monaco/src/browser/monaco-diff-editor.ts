@@ -76,7 +76,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     protected create(options?: IDiffEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
         this._diffEditor = monaco.editor.createDiffEditor(this.node, <IDiffEditorConstructionOptions>{
             ...options,
-            fixedOverflowWidgets: true
+            fixedOverflowWidgets: true,
         }, override);
         this.editor = this._diffEditor.getModifiedEditor();
         return this._diffEditor;

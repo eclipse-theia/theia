@@ -35,7 +35,7 @@ export class MarkerCollection<T> {
 
     constructor(
         public readonly uri: URI,
-        public readonly kind: string
+        public readonly kind: string,
     ) { }
 
     getOwners(): string[] {
@@ -61,7 +61,7 @@ export class MarkerCollection<T> {
             uri: this.uri.toString(),
             kind: this.kind,
             owner: owner,
-            data
+            data,
         });
     }
 

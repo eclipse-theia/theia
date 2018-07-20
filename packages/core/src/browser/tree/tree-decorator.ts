@@ -117,8 +117,8 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         this.toDispose.push(this.onDidChangeDecorationsEmitter);
         this.toDispose.pushAll(this.decorators.map(decorator =>
             decorator.onDidChangeDecorations(data =>
-                this.onDidChangeDecorationsEmitter.fire(undefined)
-            ))
+                this.onDidChangeDecorationsEmitter.fire(undefined),
+            )),
         );
     }
 
@@ -268,7 +268,7 @@ export namespace TreeDecoration {
         /**
          * Occupies the top left quarter of the original icon.
          */
-        TOP_LEFT
+        TOP_LEFT,
 
     }
 

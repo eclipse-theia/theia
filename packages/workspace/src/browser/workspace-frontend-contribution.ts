@@ -32,26 +32,26 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(StorageService) protected readonly workspaceStorage: StorageService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(WorkspaceCommands.OPEN, {
             isEnabled: () => true,
-            execute: () => this.showFileDialog()
+            execute: () => this.showFileDialog(),
         });
         commands.registerCommand(WorkspaceCommands.CLOSE, {
             isEnabled: () => this.workspaceService.opened,
-            execute: () => this.closeWorkspace()
+            execute: () => this.closeWorkspace(),
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: WorkspaceCommands.OPEN.id
+            commandId: WorkspaceCommands.OPEN.id,
         });
         menus.registerMenuAction(CommonMenus.FILE_CLOSE, {
-            commandId: WorkspaceCommands.CLOSE.id
+            commandId: WorkspaceCommands.CLOSE.id,
         });
     }
 
@@ -88,7 +88,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
     protected async closeWorkspace(): Promise<void> {
         const dialog = new ConfirmDialog({
             title: 'Close Workspace',
-            msg: 'Do you really want to close the workspace?'
+            msg: 'Do you really want to close the workspace?',
         });
         if (await dialog.open()) {
             this.workspaceService.close();

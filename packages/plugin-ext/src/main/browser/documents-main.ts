@@ -35,7 +35,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         editorsAndDocuments: EditorsAndDocumentsMain,
         modelService: EditorModelService,
         rpc: RPCProtocol,
-        private editorManger: EditorManager
+        private editorManger: EditorManager,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -78,8 +78,8 @@ export class DocumentsMainImpl implements DocumentsMain {
                         text: c.text,
                         range: c.range,
                         rangeLength: c.rangeLength,
-                        rangeOffset: 0
-                    }))
+                        rangeOffset: 0,
+                    })),
             }, model.dirty);
         }));
 

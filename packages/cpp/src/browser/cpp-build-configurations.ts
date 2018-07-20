@@ -164,7 +164,7 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
  */
 export const CPP_CHANGE_BUILD_CONFIGURATION: Command = {
     id: 'cpp.change-build-configuration',
-    label: 'C/C++: Change Build Configuration'
+    label: 'C/C++: Change Build Configuration',
 };
 
 @injectable()
@@ -175,7 +175,7 @@ export class CppBuildConfigurationsContributions implements CommandContribution 
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CPP_CHANGE_BUILD_CONFIGURATION, {
-            execute: () => this.cppChangeBuildConfiguration.open()
+            execute: () => this.cppChangeBuildConfiguration.open(),
         });
     }
 }

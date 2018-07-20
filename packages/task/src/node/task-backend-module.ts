@@ -40,7 +40,7 @@ export default new ContainerModule(bind => {
                 taskServer.disconnectClient(client);
             });
             return taskServer;
-        })
+        }),
     ).inSingletonScope();
 
     createCommonBindings(bind);

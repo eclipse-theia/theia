@@ -52,8 +52,8 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ApplicationServer).toService(ApplicationServerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(applicationPath, () =>
-            ctx.container.get(ApplicationServer)
-        )
+            ctx.container.get(ApplicationServer),
+        ),
     ).inSingletonScope();
 
     bind(EnvVariablesServer).to(EnvVariablesServerImpl).inSingletonScope();
@@ -61,6 +61,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
         new JsonRpcConnectionHandler(envVariablesPath, () => {
             const envVariablesServer = ctx.container.get<EnvVariablesServer>(EnvVariablesServer);
             return envVariablesServer;
-        })
+        }),
     ).inSingletonScope();
 });

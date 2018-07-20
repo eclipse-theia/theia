@@ -257,7 +257,7 @@ export class PreviewWidget extends BaseWidget {
         }
         this.onDidDoubleClickEmitter.fire({
             uri: this.resource.uri.toString(),
-            range: Range.create({ line, character: 0 }, { line, character: 0 })
+            range: Range.create({ line, character: 0 }, { line, character: 0 }),
         });
     }
 

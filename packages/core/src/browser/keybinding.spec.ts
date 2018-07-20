@@ -58,14 +58,14 @@ before(async () => {
 
         bind(TestContribution).toSelf().inSingletonScope();
         [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
-            bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(TestContribution)).inSingletonScope()
+            bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(TestContribution)).inSingletonScope(),
         );
 
         bind(KeybindingContext).toConstantValue({
             id: 'testContext',
             isEnabled(arg?: Keybinding): boolean {
                 return true;
-            }
+            },
         });
 
         bind(StatusBarImpl).toSelf().inSingletonScope();
@@ -115,7 +115,7 @@ describe('keybindings', () => {
     it("should set a keymap", () => {
         const keybindings: Keybinding[] = [{
             command: TEST_COMMAND.id,
-            keybinding: "ctrl+c"
+            keybinding: "ctrl+c",
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
@@ -132,7 +132,7 @@ describe('keybindings', () => {
     it("should reset to default in case of invalid keybinding", () => {
         const keybindings: Keybinding[] = [{
             command: TEST_COMMAND.id,
-            keybinding: "ctrl+invalid"
+            keybinding: "ctrl+invalid",
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
@@ -148,7 +148,7 @@ describe('keybindings', () => {
     it("should remove all keybindings from a command that has multiple keybindings", () => {
         const keybindings: Keybinding[] = [{
             command: TEST_COMMAND2.id,
-            keybinding: "F3"
+            keybinding: "F3",
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
@@ -165,7 +165,7 @@ describe('keybindings', () => {
     it("should register a correct keybinding, then default back to the original for a wrong one after", () => {
         let keybindings: Keybinding[] = [{
             command: TEST_COMMAND.id,
-            keybinding: "ctrl+c"
+            keybinding: "ctrl+c",
         }];
 
         // Get default binding
@@ -183,7 +183,7 @@ describe('keybindings', () => {
         // Set invalid binding
         keybindings = [{
             command: TEST_COMMAND.id,
-            keybinding: "ControlLeft+Invalid"
+            keybinding: "ControlLeft+Invalid",
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
@@ -201,14 +201,14 @@ describe('keybindings', () => {
     it("should only return the more specific keybindings when a keystroke is entered", () => {
         const keybindingsUser: Keybinding[] = [{
             command: TEST_COMMAND.id,
-            keybinding: "ctrl+b"
+            keybinding: "ctrl+b",
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindingsUser);
 
         const keybindingsSpecific: Keybinding[] = [{
             command: TEST_COMMAND.id,
-            keybinding: "ctrl+c"
+            keybinding: "ctrl+c",
         }];
 
         const validKeyCode = KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] });
@@ -229,7 +229,7 @@ describe('keybindings', () => {
     it("should return partial keybinding matches", () => {
         const keybindingsUser: Keybinding[] = [{
             command: TEST_COMMAND.id,
-            keybinding: "ctrlcmd+x t"
+            keybinding: "ctrlcmd+x t",
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindingsUser);
@@ -248,12 +248,12 @@ describe('keybindings', () => {
         const keybindingShadowing: Keybinding[] = [
             {
                 command,
-                keybinding: validKeyBinding
+                keybinding: validKeyBinding,
             },
             {
                 command,
-                keybinding: "ctrlcmd+b"
-            }
+                keybinding: "ctrlcmd+b",
+            },
         ];
 
         keybindingRegistry.registerKeybindings(...keybindingShadowing);
@@ -269,22 +269,22 @@ describe('keybindings', () => {
 
         const ignoredDefaultBinding: Keybinding = {
             keybinding: keyCode.toString(),
-            command: "test.ignored-command"
+            command: "test.ignored-command",
         };
 
         const defaultBinding: Keybinding = {
             keybinding: keyCode.toString(),
-            command: "test.workspace-command"
+            command: "test.workspace-command",
         };
 
         const userBinding: Keybinding = {
             keybinding: keyCode.toString(),
-            command: "test.workspace-command"
+            command: "test.workspace-command",
         };
 
         const workspaceBinding: Keybinding = {
             keybinding: keyCode.toString(),
-            command: "test.workspace-command"
+            command: "test.workspace-command",
         };
 
         keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [defaultBinding, ignoredDefaultBinding]);
@@ -512,15 +512,15 @@ describe("keys api", () => {
 });
 
 const TEST_COMMAND: Command = {
-    id: 'test.command'
+    id: 'test.command',
 };
 
 const TEST_COMMAND2: Command = {
-    id: 'test.command2'
+    id: 'test.command2',
 };
 
 const TEST_COMMAND_SHADOW: Command = {
-    id: 'test.command-shadow'
+    id: 'test.command-shadow',
 };
 
 @injectable()
@@ -536,17 +536,17 @@ export class TestContribution implements CommandContribution, KeybindingContribu
         [{
             command: TEST_COMMAND.id,
             context: 'testContext',
-            keybinding: 'ctrl+a'
+            keybinding: 'ctrl+a',
         },
         {
             command: TEST_COMMAND2.id,
             context: 'testContext',
-            keybinding: 'ctrl+f1'
+            keybinding: 'ctrl+f1',
         },
         {
             command: TEST_COMMAND2.id,
             context: 'testContext',
-            keybinding: 'ctrl+f2'
+            keybinding: 'ctrl+f2',
         },
         ].forEach(binding => {
             keybindings.registerKeybinding(binding);

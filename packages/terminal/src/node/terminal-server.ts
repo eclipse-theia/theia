@@ -18,7 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import {
     ITerminalServer,
-    ITerminalServerOptions
+    ITerminalServerOptions,
 } from '../common/terminal-protocol';
 import { BaseTerminalServer } from './base-terminal-server';
 import { TerminalProcessFactory, ProcessManager } from '@theia/process/lib/node';

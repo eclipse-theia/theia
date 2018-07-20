@@ -25,7 +25,7 @@ export class ExtensionPackageCollector {
 
     constructor(
         protected readonly extensionPackageFactory: (raw: PublishedNodePackage) => ExtensionPackage,
-        protected readonly resolveModule: (modulePath: string) => string
+        protected readonly resolveModule: (modulePath: string) => string,
     ) { }
 
     protected root: NodePackage;

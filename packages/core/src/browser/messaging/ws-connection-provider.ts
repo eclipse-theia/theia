@@ -76,7 +76,7 @@ export class WebSocketConnectionProvider {
         const factory = new JsonRpcProxyFactory<T>(target);
         this.listen({
             path,
-            onConnection: c => factory.listen(c)
+            onConnection: c => factory.listen(c),
         });
         return factory.createProxy();
     }
@@ -145,7 +145,7 @@ export class WebSocketConnectionProvider {
             reconnectionDelayGrowFactor: 1.3,
             connectionTimeout: 10000,
             maxRetries: Infinity,
-            debug: false
+            debug: false,
         });
     }
 

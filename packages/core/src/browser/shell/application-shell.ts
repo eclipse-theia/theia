@@ -19,7 +19,7 @@ import { ArrayExt, find, toArray } from '@phosphor/algorithm';
 import { Signal } from '@phosphor/signaling';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
-    SplitPanel, TabBar, Widget, Title
+    SplitPanel, TabBar, Widget, Title,
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
@@ -56,7 +56,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     readonly tabBarClasses: string[] = [];
 
     constructor(
-        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer
+        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
     ) { }
 
     createTabBar(): TabBar<Widget> {
@@ -67,7 +67,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
             useBothWheelAxes: true,
             scrollXMarginOffset: 4,
-            suppressScrollY: true
+            suppressScrollY: true,
         });
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
@@ -145,7 +145,7 @@ export class ApplicationShell extends Widget {
     protected readonly bottomPanelState: SidePanel.State = {
         empty: true,
         expansion: SidePanel.ExpansionState.collapsed,
-        pendingUpdate: Promise.resolve()
+        pendingUpdate: Promise.resolve(),
     };
 
     private readonly tracker = new FocusTracker<Widget>();
@@ -160,7 +160,7 @@ export class ApplicationShell extends Widget {
         @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
-        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {}
+        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
     ) {
         super(options as Widget.IOptions);
         this.addClass(APPLICATION_SHELL_CLASS);
@@ -170,16 +170,16 @@ export class ApplicationShell extends Widget {
         this.options = {
             bottomPanel: {
                 ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
-                ...options.bottomPanel || {}
+                ...options.bottomPanel || {},
             },
             leftPanel: {
                 ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
-                ...options.leftPanel || {}
+                ...options.leftPanel || {},
             },
             rightPanel: {
                 ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
-                ...options.rightPanel || {}
-            }
+                ...options.rightPanel || {},
+            },
         };
 
         this.mainPanel = this.createMainPanel();
@@ -234,7 +234,7 @@ export class ApplicationShell extends Widget {
                     startTime: performance.now(),
                     leftExpanded: false,
                     rightExpanded: false,
-                    bottomExpanded: false
+                    bottomExpanded: false,
                 };
             }
         }
@@ -361,7 +361,7 @@ export class ApplicationShell extends Widget {
         const dockPanel = new TheiaDockPanel({
             mode: 'multiple-document',
             renderer,
-            spacing: 0
+            spacing: 0,
         });
         dockPanel.id = 'theia-main-content-panel';
         return dockPanel;
@@ -377,7 +377,7 @@ export class ApplicationShell extends Widget {
         const dockPanel = new TheiaDockPanel({
             mode: 'multiple-document',
             renderer,
-            spacing: 0
+            spacing: 0,
         });
         dockPanel.id = 'theia-bottom-content-panel';
         dockPanel.widgetAdded.connect((sender, widget) => {
@@ -446,7 +446,7 @@ export class ApplicationShell extends Widget {
         const bottomSplitLayout = this.createSplitLayout(
             [this.mainPanel, this.bottomPanel],
             [1, 0],
-            { orientation: 'vertical', spacing: 0 }
+            { orientation: 'vertical', spacing: 0 },
         );
         const panelForBottomArea = new SplitPanel({ layout: bottomSplitLayout });
         panelForBottomArea.id = 'theia-bottom-split-panel';
@@ -454,7 +454,7 @@ export class ApplicationShell extends Widget {
         const leftRightSplitLayout = this.createSplitLayout(
             [this.leftPanelHandler.container, panelForBottomArea, this.rightPanelHandler.container],
             [0, 1, 0],
-            { orientation: 'horizontal', spacing: 0 }
+            { orientation: 'horizontal', spacing: 0 },
         );
         const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
@@ -462,7 +462,7 @@ export class ApplicationShell extends Widget {
         return this.createBoxLayout(
             [this.topPanel, panelForSideAreas, this.statusBar],
             [0, 1, 0],
-            { direction: 'top-to-bottom', spacing: 0 }
+            { direction: 'top-to-bottom', spacing: 0 },
         );
     }
 
@@ -477,11 +477,11 @@ export class ApplicationShell extends Widget {
             bottomPanel: {
                 config: this.bottomPanel.saveLayout(),
                 size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.bottomPanelState.lastPanelSize,
-                expanded: this.isExpanded('bottom')
+                expanded: this.isExpanded('bottom'),
             },
             leftPanel: this.leftPanelHandler.getLayoutData(),
             rightPanel: this.rightPanelHandler.getLayoutData(),
-            activeWidgetId: this.activeWidget ? this.activeWidget.id : undefined
+            activeWidgetId: this.activeWidget ? this.activeWidget.id : undefined,
         };
     }
 
@@ -570,7 +570,7 @@ export class ApplicationShell extends Widget {
         const options: SplitPositionOptions = {
             side: 'bottom',
             duration: enableAnimation ? this.options.bottomPanel.expandDuration : 0,
-            referenceWidget: this.bottomPanel
+            referenceWidget: this.bottomPanel,
         };
         const promise = this.splitPositionHandler.setSidePanelSize(this.bottomPanel, size, options);
         const result = new Promise<void>(resolve => {
@@ -588,7 +588,7 @@ export class ApplicationShell extends Widget {
         return Promise.all([
             this.bottomPanelState.pendingUpdate,
             this.leftPanelHandler.state.pendingUpdate,
-            this.rightPanelHandler.state.pendingUpdate
+            this.rightPanelHandler.state.pendingUpdate,
             // tslint:disable-next-line:no-any
         ]) as Promise<any>;
     }
@@ -977,7 +977,7 @@ export class ApplicationShell extends Widget {
                 alignment: StatusBarAlignment.RIGHT,
                 tooltip: 'Toggle Bottom Panel',
                 command: 'core.toggle.bottom.panel',
-                priority: 0
+                priority: 0,
             };
             this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
         }
@@ -1285,20 +1285,20 @@ export namespace ApplicationShell {
             emptySize: 140,
             expandThreshold: 160,
             expandDuration: 150,
-            initialSizeRatio: 0.382
+            initialSizeRatio: 0.382,
         }),
         leftPanel: Object.freeze(<SidePanel.Options>{
             emptySize: 140,
             expandThreshold: 140,
             expandDuration: 150,
-            initialSizeRatio: 0.191
+            initialSizeRatio: 0.191,
         }),
         rightPanel: Object.freeze(<SidePanel.Options>{
             emptySize: 140,
             expandThreshold: 140,
             expandDuration: 150,
-            initialSizeRatio: 0.191
-        })
+            initialSizeRatio: 0.191,
+        }),
     });
 
     /**

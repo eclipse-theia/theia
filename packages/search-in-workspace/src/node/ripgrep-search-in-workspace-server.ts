@@ -101,7 +101,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         }
         const processOptions: RawProcessOptions = {
             command: rgPath,
-            args: [...args, what, ...globs, root]
+            args: [...args, what, ...globs, root],
         };
         const process: RawProcess = this.rawProcessFactory(processOptions);
         this.ongoingSearches.set(searchId, process);

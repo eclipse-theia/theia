@@ -47,7 +47,7 @@ export class SearchBox extends BaseWidget {
 
     private static SPECIAL_KEYS = [
         Key.ESCAPE,
-        Key.BACKSPACE
+        Key.BACKSPACE,
     ];
 
     protected readonly nextEmitter = new Emitter<void>();
@@ -66,7 +66,7 @@ export class SearchBox extends BaseWidget {
             this.closeEmitter,
             this.textChangeEmitter,
             this.debounce,
-            this.debounce.onChanged(data => this.fireTextChange(data))
+            this.debounce.onChanged(data => this.fireTextChange(data)),
         ]);
         this.hide();
         this.update();
@@ -165,7 +165,7 @@ export class SearchBox extends BaseWidget {
         input: HTMLInputElement,
         previous: HTMLElement | undefined,
         next: HTMLElement | undefined,
-        close: HTMLElement | undefined
+        close: HTMLElement | undefined,
     } {
 
         this.addClass(SearchBox.Styles.SEARCH_BOX);
@@ -176,7 +176,7 @@ export class SearchBox extends BaseWidget {
         input.type = 'text';
         input.classList.add(
             SearchBox.Styles.SEARCH_INPUT,
-            SearchBox.Styles.NON_SELECTABLE
+            SearchBox.Styles.NON_SELECTABLE,
         );
         this.node.appendChild(input);
 
@@ -188,7 +188,7 @@ export class SearchBox extends BaseWidget {
             previous = document.createElement('div');
             previous.classList.add(
                 SearchBox.Styles.BUTTON,
-                SearchBox.Styles.BUTTON_PREVIOUS
+                SearchBox.Styles.BUTTON_PREVIOUS,
             );
             previous.title = 'Previous (Up)';
             this.node.appendChild(previous);
@@ -197,7 +197,7 @@ export class SearchBox extends BaseWidget {
             next = document.createElement('div');
             next.classList.add(
                 SearchBox.Styles.BUTTON,
-                SearchBox.Styles.BUTTON_NEXT
+                SearchBox.Styles.BUTTON_NEXT,
             );
             next.title = 'Next (Down)';
             this.node.appendChild(next);
@@ -206,7 +206,7 @@ export class SearchBox extends BaseWidget {
             close = document.createElement('div');
             close.classList.add(
                 SearchBox.Styles.BUTTON,
-                SearchBox.Styles.BUTTON_CLOSE
+                SearchBox.Styles.BUTTON_CLOSE,
             );
             close.title = 'Close (Escape)';
             this.node.appendChild(close);
@@ -218,7 +218,7 @@ export class SearchBox extends BaseWidget {
             input,
             previous,
             next,
-            close
+            close,
         };
 
     }

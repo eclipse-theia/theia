@@ -30,23 +30,23 @@ describe('menu-model-registry', () => {
                 registerMenus(menuRegistry: MenuModelRegistry): void {
                     menuRegistry.registerSubmenu(fileMenu, "File");
                     menuRegistry.registerMenuAction(fileOpenMenu, {
-                        commandId: 'open'
+                        commandId: 'open',
                     });
                     menuRegistry.registerMenuAction(fileOpenMenu, {
-                        commandId: 'open.with'
+                        commandId: 'open.with',
                     });
-                }
+                },
             }, {
                     registerCommands(reg: CommandRegistry) {
                         reg.registerCommand({
                             id: 'open',
-                            label: "A"
+                            label: "A",
                         });
                         reg.registerCommand({
                             id: 'open.with',
-                            label: "B"
+                            label: "B",
                         });
-                    }
+                    },
                 });
             const all = service.getMenu();
             const main = all.children[0] as CompositeMenuNode;

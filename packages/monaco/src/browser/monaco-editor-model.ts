@@ -21,7 +21,7 @@ import { DisposableCollection, Disposable, Emitter, Event, Resource, Cancellatio
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
-    TextDocumentSaveReason
+    TextDocumentSaveReason,
 };
 
 export interface WillSaveMonacoModelEvent {
@@ -58,7 +58,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     constructor(
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
-        protected readonly p2m: ProtocolToMonacoConverter
+        protected readonly p2m: ProtocolToMonacoConverter,
     ) {
         this.toDispose.push(resource);
         this.toDispose.push(this.toDisposeOnAutoSave);
@@ -196,7 +196,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         const range = this.m2p.asRange(this.model.getFullModelRange());
         this.applyEdits([this.p2m.asTextEdit({ range, newText }) as monaco.editor.IIdentifiedSingleEditOperation], {
             ignoreDirty: true,
-            ignoreContentChanges: true
+            ignoreContentChanges: true,
         });
     }
 
@@ -218,7 +218,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
                 this.scheduleSave(TextDocumentSaveReason.AfterDelay, token);
             }, this.autoSaveDelay);
             this.toDisposeOnAutoSave.push(Disposable.create(() =>
-                window.clearTimeout(handle))
+                window.clearTimeout(handle)),
             );
         }
     }
@@ -268,12 +268,12 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected applyEdits(
         operations: monaco.editor.IIdentifiedSingleEditOperation[],
-        options?: Partial<MonacoEditorModel.ApplyEditsOptions>
+        options?: Partial<MonacoEditorModel.ApplyEditsOptions>,
     ): monaco.editor.IIdentifiedSingleEditOperation[] {
         const resolvedOptions: MonacoEditorModel.ApplyEditsOptions = {
             ignoreDirty: false,
             ignoreContentChanges: false,
-            ...options
+            ...options,
         };
         const { ignoreDirtyEdits, ignoreContentChanges } = this;
         this.ignoreDirtyEdits = resolvedOptions.ignoreDirty;
@@ -322,10 +322,10 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
                             resolve();
                         }
                         this.applyEdits(operations, {
-                            ignoreDirty: true
+                            ignoreDirty: true,
                         });
                         resolve();
-                    })
+                    }),
             });
         });
     }

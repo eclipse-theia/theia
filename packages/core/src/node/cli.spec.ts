@@ -25,7 +25,7 @@ class TestCliManager extends CliManager {
 
     constructor(...contribs: CliContribution[]) {
         super({
-            getContributions() { return contribs; }
+            getContributions() { return contribs; },
         });
     }
 
@@ -52,7 +52,7 @@ describe('CliManager', () => {
             },
             setArguments(args: yargs.Arguments) {
                 value.resolve(args['foo']);
-            }
+            },
         });
         mnr.setArgs('-f', "bla");
         await mnr.initializeCli();
@@ -68,7 +68,7 @@ describe('CliManager', () => {
             },
             setArguments(args: yargs.Arguments) {
                 value.resolve(args['bar']);
-            }
+            },
         });
         mnr.setArgs('--foo');
         await mnr.initializeCli();
@@ -80,7 +80,7 @@ describe('CliManager', () => {
             const mnr = new TestCliManager();
             mnr.setArgs('--help');
             await mnr.initializeCli();
-        })
+        }),
     );
 });
 

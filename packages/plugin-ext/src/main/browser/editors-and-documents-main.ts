@@ -130,7 +130,7 @@ export class EditorsAndDocumentsMain {
             lines: model.textEditorModel.getLinesContent(),
             EOL: model.textEditorModel.getEOL(),
             modeId: model.languageId,
-            isDirty: model.dirty
+            isDirty: model.dirty,
         };
     }
 
@@ -142,7 +142,7 @@ export class EditorsAndDocumentsMain {
             options: properties!.options,
             selections: properties!.selections,
             visibleRanges: properties!.visibleRanges,
-            editorPosition: this.findEditorPosition(textEditor)
+            editorPosition: this.findEditorPosition(textEditor),
         };
 
     }
@@ -193,7 +193,7 @@ class EditorAndDocumentStateComputer {
             [],
             [],
             undefined,
-            undefined
+            undefined,
         ));
     }
 
@@ -269,7 +269,7 @@ class EditorAndDocumentStateDelta {
         readonly removedEditors: EditorSnapshot[],
         readonly addedEditors: EditorSnapshot[],
         readonly oldActiveEditor: string | undefined,
-        readonly newActiveEditor: string | undefined
+        readonly newActiveEditor: string | undefined,
     ) {
         this.isEmpty = this.removedDocuments.length === 0
             && this.addedDocuments.length === 0
@@ -295,7 +295,7 @@ class EditorAndDocumentState {
                 [],
                 Array.from(after.editors.values()),
                 undefined,
-                after.activeEditor
+                after.activeEditor,
             );
         }
 
@@ -309,7 +309,7 @@ class EditorAndDocumentState {
             editorDelta.removed,
             editorDelta.added,
             oldActiveEditor,
-            newActiveEditor
+            newActiveEditor,
         );
     }
 }

@@ -38,7 +38,7 @@ export namespace NavigationLocation {
         /**
          * Content change type.
          */
-        CONTENT_CHANGE
+        CONTENT_CHANGE,
 
     }
 
@@ -112,7 +112,7 @@ export namespace NavigationLocation {
         return {
             uri: uri.toString(),
             type,
-            context
+            context,
         };
     }
 
@@ -133,7 +133,7 @@ export namespace NavigationLocation {
                 return {
                     uri: toUri(uri),
                     context,
-                    type
+                    type,
                 };
             }
         }
@@ -179,7 +179,7 @@ export namespace NavigationLocation {
         return {
             uri: toUri(uri),
             type,
-            context
+            context,
         };
     }
 
@@ -228,7 +228,7 @@ export namespace CursorLocation {
         const { line, character } = context;
         return {
             line,
-            character
+            character,
         };
     }
 
@@ -240,7 +240,7 @@ export namespace CursorLocation {
             const { line, character } = object;
             return {
                 line,
-                character
+                character,
             };
         }
         return undefined;
@@ -281,7 +281,7 @@ export namespace SelectionLocation {
         const { start, end } = context;
         return {
             start: CursorLocation.toObject(start),
-            end: CursorLocation.toObject(end)
+            end: CursorLocation.toObject(end),
         };
     }
 
@@ -295,7 +295,7 @@ export namespace SelectionLocation {
             if (start && end) {
                 return {
                     start,
-                    end
+                    end,
                 };
             }
         }
@@ -336,7 +336,7 @@ export namespace ContentChangeLocation {
         return {
             range: SelectionLocation.toObject(context.range),
             rangeLength: context.rangeLength,
-            text: context.text
+            text: context.text,
         };
     }
 
@@ -352,7 +352,7 @@ export namespace ContentChangeLocation {
                 return {
                     range,
                     rangeLength: rangeLength!,
-                    text: text!
+                    text: text!,
                 };
             }
         } else {

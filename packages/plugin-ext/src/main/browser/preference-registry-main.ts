@@ -17,7 +17,7 @@
 import {
     PreferenceService,
     PreferenceServiceImpl,
-    PreferenceScope
+    PreferenceScope,
 } from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
 import {

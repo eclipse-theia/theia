@@ -17,7 +17,7 @@
 import { injectable, inject } from "inversify";
 import {
     ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, TreeNode,
-    TreeModel, DockPanel
+    TreeModel, DockPanel,
 } from "@theia/core/lib/browser";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { DefinitionNode, CallerNode } from "./callhierarchy-tree";
@@ -40,7 +40,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         @inject(CallHierarchyTreeModel) readonly model: CallHierarchyTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(EditorManager) readonly editorManager: EditorManager
+        @inject(EditorManager) readonly editorManager: EditorManager,
     ) {
         super(props, model, contextMenuRenderer);
 
@@ -167,8 +167,8 @@ export class CallHierarchyTreeWidget extends TreeWidget {
             this.editorManager.open(
                 new URI(location.uri), {
                     mode: keepFocus ? 'reveal' : 'activate',
-                    selection: Range.create(location.range.start, location.range.end)
-                }
+                    selection: Range.create(location.range.start, location.range.end),
+                },
             ).then(editorWidget => {
                 if (editorWidget.parent instanceof DockPanel) {
                     editorWidget.parent.selectWidget(editorWidget);

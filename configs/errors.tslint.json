@@ -52,7 +52,10 @@
       "ignore-interfaces"
     ],
     "trailing-comma": [
-      false
+      true,
+      {
+        "multiline": "always"
+      }
     ],
     "triple-equals": [
       true,

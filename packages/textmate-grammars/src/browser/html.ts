@@ -36,14 +36,14 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
             wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\$\^\&\*\(\)\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\s]+)/g,
 
             comments: {
-                blockComment: ['<!--', '-->']
+                blockComment: ['<!--', '-->'],
             },
 
             brackets: [
                 ['<!--', '-->'],
                 ['<', '>'],
                 ['{', '}'],
-                ['(', ')']
+                ['(', ')'],
             ],
 
             autoClosingPairs: [
@@ -51,7 +51,7 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
                 { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
+                { open: '\'', close: '\'' },
             ],
 
             surroundingPairs: [
@@ -67,20 +67,20 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
                 {
                     beforeText: new RegExp(`<(?!(?:${EMPTY_ELEMENTS.join('|')}))([_:\\w][_:\\w-.\\d]*)([^/>]*(?!/)>)[^<]*$`, 'i'),
                     afterText: /^<\/([_:\w][_:\w-.\d]*)\s*>$/i,
-                    action: { indentAction: monaco.languages.IndentAction.IndentOutdent }
+                    action: { indentAction: monaco.languages.IndentAction.IndentOutdent },
                 },
                 {
                     beforeText: new RegExp(`<(?!(?:${EMPTY_ELEMENTS.join('|')}))(\\w[\\w\\d]*)([^/>]*(?!/)>)[^<]*$`, 'i'),
-                    action: { indentAction: monaco.languages.IndentAction.Indent }
-                }
+                    action: { indentAction: monaco.languages.IndentAction.Indent },
+                },
             ],
 
             folding: {
                 markers: {
                     start: new RegExp("^\\s*<!--\\s*#region\\b.*-->"),
-                    end: new RegExp("^\\s*<!--\\s*#endregion\\b.*-->")
-                }
-            }
+                    end: new RegExp("^\\s*<!--\\s*#endregion\\b.*-->"),
+                },
+            },
         });
 
         const grammar = require('../../data/html.tmLanguage.json');
@@ -88,9 +88,9 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

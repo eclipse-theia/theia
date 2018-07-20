@@ -44,14 +44,14 @@ export class MonacoWorkspace implements lang.Workspace {
     readonly capabilities = {
         applyEdit: true,
         workspaceEdit: {
-            documentChanges: true
-        }
+            documentChanges: true,
+        },
     };
 
     readonly synchronization = {
         didSave: true,
         willSave: true,
-        willSaveWaitUntil: true
+        willSaveWaitUntil: true,
     };
 
     protected resolveReady: () => void;
@@ -143,26 +143,26 @@ export class MonacoWorkspace implements lang.Workspace {
         const { model, contentChanges } = event;
         this.onDidChangeTextDocumentEmitter.fire({
             textDocument: model,
-            contentChanges
+            contentChanges,
         });
     }
 
     protected fireWillSave(event: WillSaveMonacoModelEvent): void {
         const { reason } = event;
         const timeout = new Promise<TextEdit[]>(resolve =>
-            setTimeout(() => resolve([]), 1000)
+            setTimeout(() => resolve([]), 1000),
         );
         const resolveEdits = new Promise<TextEdit[]>(resolve =>
             this.onWillSaveTextDocumentEmitter.fire({
                 textDocument: event.model,
                 reason,
-                waitUntil: thenable => thenable.then(resolve)
-            })
+                waitUntil: thenable => thenable.then(resolve),
+            }),
         );
         event.waitUntil(
             Promise.race([resolveEdits, timeout]).then(edits =>
-                this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation)
-            )
+                this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation),
+            ),
         );
     }
 
@@ -208,7 +208,7 @@ export class MonacoWorkspace implements lang.Workspace {
         const onFileEvent = onFileEventEmitter.event;
         return {
             onFileEvent,
-            dispose: () => disposables.dispose()
+            dispose: () => disposables.dispose(),
         };
     }
 
@@ -235,7 +235,7 @@ export class MonacoWorkspace implements lang.Workspace {
                     identifier: undefined!,
                     forceMoveMarkers: false,
                     range: new monaco.Range(edit.range.startLineNumber, edit.range.startColumn, edit.range.endLineNumber, edit.range.endColumn),
-                    text: edit.text
+                    text: edit.text,
                 }));
                 // start a fresh operation
                 model.pushStackElement();

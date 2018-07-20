@@ -26,7 +26,7 @@ export default new ContainerModule(bind => {
     bind(ContextMenuRenderer).to(ElectronContextMenuRenderer).inSingletonScope();
     bind(KeybindingContext).toConstantValue({
         id: "theia.context",
-        isEnabled: true
+        isEnabled: true,
     });
 
     bind(ElectronMenuContribution).toSelf().inSingletonScope();

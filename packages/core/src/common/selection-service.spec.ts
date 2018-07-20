@@ -26,7 +26,7 @@ describe('selection-service', () => {
             const service = createSelectionService();
             const events: any[] = [];
             const disposable = service.onSelectionChanged(
-                e => events.push(e)
+                e => events.push(e),
             );
             service.selection = "foo";
             disposable.dispose();

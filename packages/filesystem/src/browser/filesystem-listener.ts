@@ -32,7 +32,7 @@ export class FileSystemListener implements FileSystemClient {
             title: `The file '${file.uri}' has been changed on the file system.`,
             msg: 'Do you want to overwrite the changes made on the file system?',
             ok: 'Yes',
-            cancel: 'No'
+            cancel: 'No',
         });
         return dialog.open();
     }

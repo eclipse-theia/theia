@@ -34,7 +34,7 @@ export class PluginWorker {
             onMessage: emmitter.event,
             send: (m: {}) => {
                 this.worker.postMessage(m);
-            }
+            },
         });
 
     }

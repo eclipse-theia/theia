@@ -51,7 +51,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         }
         for (const handler of this.handlers.getContributions()) {
             this.listen(handler.path, (params, connection) =>
-                handler.onConnection(connection)
+                handler.onConnection(connection),
             );
         }
     }
@@ -78,7 +78,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     onStart(server: http.Server | https.Server): void {
         const wss = new ws.Server({
             server,
-            perMessageDeflate: false
+            perMessageDeflate: false,
         });
         interface CheckAliveWS extends ws {
             alive: boolean;

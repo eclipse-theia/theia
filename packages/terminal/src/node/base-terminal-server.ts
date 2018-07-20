@@ -88,7 +88,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                 this.client.onTerminalError(
                     {
                         'terminalId': term.id,
-                        'error': error
+                        'error': error,
                     });
             }
         }));
@@ -99,7 +99,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                     {
                         'terminalId': term.id,
                         'code': event.code,
-                        'signal': event.signal
+                        'signal': event.signal,
                     });
             }
         }));

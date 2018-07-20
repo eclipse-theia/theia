@@ -56,14 +56,14 @@ describe("nsfw-filesystem-watcher", function () {
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams) {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
-            }
+            },
         };
         watcherServer.setClient(watcherClient);
 
         const expectedUris = [
             root.resolve("foo").toString(),
             root.withPath(root.path.join('foo', 'bar')).toString(),
-            root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString()
+            root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString(),
         ];
 
         fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
@@ -91,7 +91,7 @@ describe("nsfw-filesystem-watcher", function () {
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams) {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
-            }
+            },
         };
         watcherServer.setClient(watcherClient);
 
@@ -115,7 +115,7 @@ describe("nsfw-filesystem-watcher", function () {
 
     function createNsfwFileSystemWatcherServer() {
         return new NsfwFileSystemWatcherServer({
-            verbose: true
+            verbose: true,
         });
     }
 

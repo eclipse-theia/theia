@@ -108,7 +108,7 @@ export class DirtyDiffManager {
                     return this.git.lsFiles(repository, fileUri.toString(), { errorUnmatch: true });
                 }
                 return false;
-            }
+            },
         };
     }
 
@@ -143,7 +143,7 @@ export class DirtyDiffModel implements Disposable {
     constructor(
         readonly editor: TextEditor,
         readonly preferences: GitPreferences,
-        protected readonly previousRevision: DirtyDiffModel.PreviousFileRevision
+        protected readonly previousRevision: DirtyDiffModel.PreviousFileRevision,
     ) {
         this.toDispose.push(this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e)));
     }

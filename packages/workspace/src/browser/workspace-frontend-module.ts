@@ -43,13 +43,13 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, MenuContribution]) {
         bind(identifier).toDynamicValue(ctx =>
-            ctx.container.get(WorkspaceFrontendContribution)
+            ctx.container.get(WorkspaceFrontendContribution),
         ).inSingletonScope();
     }
 
     bind(FileDialogFactory).toFactory(ctx =>
         (props: FileDialogProps) =>
-            createFileDialog(ctx.container, props)
+            createFileDialog(ctx.container, props),
     );
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();

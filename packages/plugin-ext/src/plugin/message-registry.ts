@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import {
-    PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain
+    PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain,
 } from '../api/plugin-api';
 import {RPCProtocol} from '../api/rpc-protocol';
 import {MessageItem, MessageOptions} from "@theia/plugin";

@@ -30,7 +30,7 @@ export class TaskWatcher {
             },
             onTaskExit(event: TaskExitedEvent) {
                 exitEmitter.fire(event);
-            }
+            },
         };
     }
 

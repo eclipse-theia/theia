@@ -30,7 +30,7 @@ export class MonacoEditorService implements IEditorService {
 
     constructor(
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter
+        @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
     ) { }
 
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<IEditorReference | undefined> {
@@ -53,7 +53,7 @@ export class MonacoEditorService implements IEditorService {
         const options = {
             preserveFocus: false,
             revealIfVisible: true,
-            ...input.options
+            ...input.options,
         };
         if (options.preserveFocus) {
             return 'reveal';

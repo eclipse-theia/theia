@@ -27,6 +27,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             dispatching.clients.add(client);
             client.onDidCloseConnection(() => dispatching.clients.delete(client));
             return dispatching;
-        })
+        }),
     ).inSingletonScope();
 });

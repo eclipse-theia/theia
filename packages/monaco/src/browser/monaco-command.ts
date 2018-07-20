@@ -34,7 +34,7 @@ export namespace MonacoCommands {
     export const REDO = 'redo';
     export const COMMON_KEYBOARD_ACTIONS = new Set([UNDO, REDO]);
     export const COMMON_ACTIONS: {
-        [action: string]: string
+        [action: string]: string,
     } = {};
     COMMON_ACTIONS[UNDO] = CommonCommands.UNDO.id;
     COMMON_ACTIONS[REDO] = CommonCommands.REDO.id;
@@ -58,7 +58,7 @@ export namespace MonacoCommands {
     export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
 
     export const ACTIONS: MonacoCommand[] = [
-        { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' }
+        { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' },
     ];
     export const EXCLUDE_ACTIONS = new Set([
         ...Object.keys(COMMON_ACTIONS),
@@ -131,9 +131,9 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                     'editor.action.showReferences',
                     monaco.Uri.parse(uri),
                     this.p2m.asPosition(position),
-                    locations.map(l => this.p2m.asLocation(l))
+                    locations.map(l => this.p2m.asLocation(l)),
                 );
-            }
+            },
         };
     }
     protected newConfigIndentationHandler(): MonacoEditorCommandHandler {
@@ -147,16 +147,16 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                                 this.configTabSize(editor, useSpaces);
                             }
                             return false;
-                        }
-                    })
+                        },
+                    }),
                 );
                 this.open(options, 'Select Action');
-            }
+            },
         };
     }
     protected newConfigTabSizeHandler(useSpaces: boolean): MonacoEditorCommandHandler {
         return {
-            execute: (editor: MonacoEditor) => this.configTabSize(editor, useSpaces)
+            execute: (editor: MonacoEditor) => this.configTabSize(editor, useSpaces),
         };
     }
     private configTabSize(editor: MonacoEditor, useSpaces: boolean) {
@@ -174,11 +174,11 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         }
                         editorModel.textEditorModel.updateOptions({
                             tabSize: size || tabSize,
-                            insertSpaces: useSpaces
+                            insertSpaces: useSpaces,
                         });
                         return true;
-                    }
-                })
+                    },
+                }),
             );
             this.open(tabSizeOptions,
                 'Select Tab Size for Current File',
@@ -195,14 +195,14 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             placeholder,
             fuzzyMatchLabel: true,
             fuzzySort: false,
-            selectIndex
+            selectIndex,
         });
     }
     private getQuickOpenModel(items: QuickOpenItem[]): QuickOpenModel {
         return {
             onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                 acceptor(items);
-            }
+            },
         };
     }
 
@@ -219,18 +219,18 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
         return {
-            execute: (editor, ...args) => editor.getControl().cursor.trigger('keyboard', action, args)
+            execute: (editor, ...args) => editor.getControl().cursor.trigger('keyboard', action, args),
         };
     }
     protected newCommandHandler(action: string): MonacoEditorCommandHandler {
         return {
-            execute: (editor, ...args) => editor.commandService.executeCommand(action, ...args)
+            execute: (editor, ...args) => editor.commandService.executeCommand(action, ...args),
         };
     }
     protected newActionHandler(action: string): MonacoEditorCommandHandler {
         return {
             execute: editor => editor.runAction(action),
-            isEnabled: editor => editor.isActionSupported(action)
+            isEnabled: editor => editor.isActionSupported(action),
         };
     }
 

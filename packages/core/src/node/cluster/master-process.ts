@@ -32,7 +32,7 @@ export class MasterProcess extends EventEmitter {
         const success = worker.initialized.then(() => true);
 
         const failure = Promise.race(
-            [worker.failed, worker.disconnect, worker.exit, this.timeout(5000)]
+            [worker.failed, worker.disconnect, worker.exit, this.timeout(5000)],
         ).then(() => false);
         const started = await Promise.race([success, failure]);
 

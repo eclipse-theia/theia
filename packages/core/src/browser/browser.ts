@@ -98,7 +98,7 @@ function getMonacoEditorScroll(elem: HTMLElement): ElementScroll | undefined {
         left: -parseCssMagnitude(linesContentStyle.left, 0),
         top: -parseCssMagnitude(linesContentStyle.top, 0),
         maxLeft: parseCssMagnitude(viewLinesStyle.width, 0) - parseCssMagnitude(elemStyle.width, 0),
-        maxTop: parseCssMagnitude(viewLinesStyle.height, 0) - parseCssMagnitude(elemStyle.height, 0)
+        maxTop: parseCssMagnitude(viewLinesStyle.height, 0) - parseCssMagnitude(elemStyle.height, 0),
     };
 }
 
@@ -120,7 +120,7 @@ export function preventNavigation(event: WheelEvent): void {
                 left: elem.scrollLeft,
                 top: elem.scrollTop,
                 maxLeft: elem.scrollWidth - elem.clientWidth,
-                maxTop: elem.scrollHeight - elem.clientHeight
+                maxTop: elem.scrollHeight - elem.clientHeight,
             };
         }
         if (scroll) {

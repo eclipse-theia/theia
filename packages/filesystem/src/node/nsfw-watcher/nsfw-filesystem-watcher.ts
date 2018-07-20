@@ -25,7 +25,7 @@ import {
     FileChangeType,
     FileSystemWatcherClient,
     FileSystemWatcherServer,
-    WatchOptions
+    WatchOptions,
 } from '../../common/filesystem-watcher-protocol';
 import { setInterval, clearInterval } from "timers";
 
@@ -52,19 +52,19 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
     protected readonly options: {
         verbose: boolean
         info: (message: string, ...args: any[]) => void
-        error: (message: string, ...args: any[]) => void
+        error: (message: string, ...args: any[]) => void,
     };
 
     constructor(options?: {
         verbose?: boolean,
         info?: (message: string, ...args: any[]) => void
-        error?: (message: string, ...args: any[]) => void
+        error?: (message: string, ...args: any[]) => void,
     }) {
         this.options = {
             verbose: false,
             info: (message, ...args) => console.info(message, ...args),
             error: (message, ...args) => console.error(message, ...args),
-            ...options
+            ...options,
         };
     }
 
@@ -100,7 +100,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
     protected async start(watcherId: number, basePath: string, rawOptions?: WatchOptions): Promise<void> {
         const options: WatchOptions = {
             ignored: [],
-            ...rawOptions
+            ...rawOptions,
         };
         if (options.ignored.length > 0) {
             this.debug('Files ignored for watching', options.ignored);
@@ -133,7 +133,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             this.options.info('Stopped watching.');
         });
         this.watcherOptions.set(watcherId, {
-            ignored: options.ignored.map(pattern => new Minimatch(pattern))
+            ignored: options.ignored.map(pattern => new Minimatch(pattern)),
         });
         this.watchers.set(watcherId, disposable);
         this.toDispose.push(disposable);

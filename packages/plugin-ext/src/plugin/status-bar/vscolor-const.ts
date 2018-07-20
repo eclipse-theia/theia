@@ -17,5 +17,5 @@ export const VS_COLORS: {[vsColorId: string]: string} = {
     'statusBar.foreground': '--theia-layout-color4',
     'editorOverviewRuler.errorForeground': '--theia-error-color0',
     'editorOverviewRuler.warningForeground': '--theia-warn-color0',
-    'editorOverviewRuler.infoForeground': '--theia-info-color0'
+    'editorOverviewRuler.infoForeground': '--theia-info-color0',
 };

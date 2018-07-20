@@ -27,14 +27,14 @@ import { JavaKeybindingContexts } from "./java-keybinding-contexts";
  * Show Java references
  */
 export const SHOW_JAVA_REFERENCES: Command = {
-    id: 'java.show.references'
+    id: 'java.show.references',
 };
 
 /**
  * Apply Workspace Edit
  */
 export const APPLY_WORKSPACE_EDIT: Command = {
-    id: 'java.apply.workspaceEdit'
+    id: 'java.apply.workspaceEdit',
 };
 
 /**
@@ -42,7 +42,7 @@ export const APPLY_WORKSPACE_EDIT: Command = {
  */
 export const JAVA_ORGANIZE_IMPORTS: Command = {
     label: 'Java: Organize Imports',
-    id: 'java.edit.organizeImports'
+    id: 'java.edit.organizeImports',
 };
 
 @injectable()
@@ -60,11 +60,11 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SHOW_JAVA_REFERENCES, {
             execute: (uri: string, position: Position, locations: Location[]) =>
-                commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, uri, position, locations)
+                commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, uri, position, locations),
         });
         commands.registerCommand(APPLY_WORKSPACE_EDIT, {
             execute: (changes: WorkspaceEdit) =>
-                !!this.workspace.applyEdit && this.workspace.applyEdit(changes)
+                !!this.workspace.applyEdit && this.workspace.applyEdit(changes),
         });
         commands.registerCommand(JAVA_ORGANIZE_IMPORTS, {
             execute: async (changes: WorkspaceEdit) => {
@@ -77,8 +77,8 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                 const result = await client.sendRequest(ExecuteCommandRequest.type, {
                     command: JAVA_ORGANIZE_IMPORTS.id,
                     arguments: [
-                        uri
-                    ]
+                        uri,
+                    ],
                 });
                 if (isWorkspaceEdit(result) && this.workspace.applyEdit) {
                     return await this.workspace.applyEdit(result);
@@ -87,14 +87,14 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                 }
             },
             isVisible: () => !!this.editorManager.currentEditor,
-            isEnabled: () => !!this.editorManager.currentEditor
+            isEnabled: () => !!this.editorManager.currentEditor,
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...EDITOR_CONTEXT_MENU, '1_modification'], {
             commandId: JAVA_ORGANIZE_IMPORTS.id,
-            label: 'Organize Imports'
+            label: 'Organize Imports',
         });
     }
 
@@ -102,7 +102,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
         keybindings.registerKeybinding({
             command: JAVA_ORGANIZE_IMPORTS.id,
             context: JavaKeybindingContexts.javaEditorTextFocus,
-            keybinding: 'ctrlcmd+shift+o'
+            keybinding: 'ctrlcmd+shift+o',
         });
     }
 }

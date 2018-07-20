@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {inject, injectable} from "inversify";
-import {CommandContribution, CommandRegistry, Command} from "@theia/core/lib/common";
-import {CommonCommands, PreferenceService} from "@theia/core/lib/browser";
+import { inject, injectable } from "inversify";
+import { CommandContribution, CommandRegistry, Command } from "@theia/core/lib/common";
+import { CommonCommands, PreferenceService } from "@theia/core/lib/browser";
 
 export namespace EditorCommands {
 
@@ -24,21 +24,21 @@ export namespace EditorCommands {
      * Show editor references
      */
     export const SHOW_REFERENCES: Command = {
-        id: 'textEditor.commands.showReferences'
+        id: 'textEditor.commands.showReferences',
     };
     /**
      * Change indentation configuration (i.e., indent using tabs / spaces, and how many spaces per tab)
      */
     export const CONFIG_INDENTATION: Command = {
-        id: 'textEditor.commands.configIndentation'
+        id: 'textEditor.commands.configIndentation',
     };
     export const INDENT_USING_SPACES: Command = {
         id: 'textEditor.commands.indentUsingSpaces',
-        label: 'Indent Using Spaces'
+        label: 'Indent Using Spaces',
     };
     export const INDENT_USING_TABS: Command = {
         id: 'textEditor.commands.indentUsingTabs',
-        label: 'Indent Using Tabs'
+        label: 'Indent Using Tabs',
     };
 
     /**
@@ -46,21 +46,21 @@ export namespace EditorCommands {
      */
     export const GO_BACK: Command = {
         id: 'textEditor.commands.go.back',
-        label: 'Go Back'
+        label: 'Go Back',
     };
     /**
      * Command for going to the forthcoming editor navigation location.
      */
     export const GO_FORWARD: Command = {
         id: 'textEditor.commands.go.forward',
-        label: 'Go Forward'
+        label: 'Go Forward',
     };
     /**
      * Command that reveals the last text edit location, if any.
      */
     export const GO_LAST_EDIT: Command = {
         id: 'textEditor.commands.go.lastEdit',
-        label: 'Go to Last Edit Location'
+        label: 'Go to Last Edit Location',
     };
 }
 
@@ -84,7 +84,7 @@ export class EditorCommandContribution implements CommandContribution {
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),
-            execute: () => this.toggleAutoSave()
+            execute: () => this.toggleAutoSave(),
         });
     }
 

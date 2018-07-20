@@ -34,14 +34,14 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) protected readonly logger: ILogger,
 
     ) {
         this.userStorageFolder = this.fileSystem.getCurrentUserHome().then(home => {
             if (home) {
                 const userStorageFolderUri = new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);
                 watcher.watchFileChanges(userStorageFolderUri).then(disposable =>
-                    this.toDispose.push(disposable)
+                    this.toDispose.push(disposable),
                 );
                 this.toDispose.push(this.watcher.onFilesChanged(changes => this.onDidFilesChanged(changes)));
                 return new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);

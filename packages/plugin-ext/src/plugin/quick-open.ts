@@ -56,7 +56,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             autoFocus: { autoFocusFirstEntry: true },
             matchOnDescription: options && options.machOnDescription,
             matchOnDetail: options && options.machOnDetail,
-            ignoreFocusLost: options && options.ignoreFocusOut
+            ignoreFocusLost: options && options.ignoreFocusOut,
         });
 
         const promise = anyPromise(<PromiseLike<number | Item[]>[]>[widgetPromise, itemPromise]).then(values => {
@@ -81,7 +81,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
                         description,
                         handle,
                         detail,
-                        picked
+                        picked,
                     });
                 }
 

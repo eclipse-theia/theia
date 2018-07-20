@@ -47,7 +47,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
                 console.error(err);
                 process.exit(1);
             }
-        }
+        },
     };
 }
 
@@ -67,7 +67,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
                     console.error(err);
                     process.exit(1);
                 }
-            }
+            },
         })
         .command({
             command: 'clean',
@@ -79,7 +79,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
                     console.error(err);
                     process.exit(1);
                 }
-            }
+            },
         })
         .command({
             command: 'copy',
@@ -90,7 +90,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
                     console.error(err);
                     process.exit(1);
                 }
-            }
+            },
         })
         .command({
             command: 'generate',
@@ -101,7 +101,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
                     console.error(err);
                     process.exit(1);
                 }
-            }
+            },
         })
         .command({
             command: 'build',
@@ -113,7 +113,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
                     console.error(err);
                     process.exit(1);
                 }
-            }
+            },
         })
         .command(rebuildCommand('rebuild', target))
         .command(rebuildCommand('rebuild:browser', 'browser'))

@@ -27,14 +27,14 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {
             execute: () => this.quickFileOpenService.open(),
-            isEnabled: () => this.quickFileOpenService.isEnabled()
+            isEnabled: () => this.quickFileOpenService.isEnabled(),
         });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: quickFileOpen.id,
-            keybinding: "ctrlcmd+p"
+            keybinding: "ctrlcmd+p",
         });
     }
 

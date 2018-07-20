@@ -50,7 +50,7 @@ export namespace QuickOpenOptions {
 
         onClose: () => { /* no-op*/ },
 
-        selectIndex: () => -1
+        selectIndex: () => -1,
     });
     export function resolve(options: QuickOpenOptions = {}, source: Resolved = defaultOptions): Resolved {
         return Object.assign({}, source, options);

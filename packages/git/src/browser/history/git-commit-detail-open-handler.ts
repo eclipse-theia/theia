@@ -59,7 +59,7 @@ export class GitCommitDetailOpenHandler extends WidgetOpenHandler<GitCommitDetai
     getCommitDetailWidgetOptions(commit: GitCommitDetails): GitCommitDetailWidgetOptions {
         const range = {
             fromRevision: commit.commitSha + "~1",
-            toRevision: commit.commitSha
+            toRevision: commit.commitSha,
         };
         return {
             range,
@@ -71,7 +71,7 @@ export class GitCommitDetailOpenHandler extends WidgetOpenHandler<GitCommitDetai
             commitMessage: commit.commitMessage,
             fileChangeNodes: commit.fileChangeNodes,
             messageBody: commit.messageBody,
-            commitSha: commit.commitSha
+            commitSha: commit.commitSha,
         };
     }
 

@@ -46,7 +46,7 @@ export class DocumentsExtImpl implements DocumentsExt {
                 for (const document of documents) {
                     this._onDidAddDocument.fire(document.document);
                 }
-            })
+            }),
         );
 
         this.toDispose.push(
@@ -54,7 +54,7 @@ export class DocumentsExtImpl implements DocumentsExt {
                 for (const data of documents) {
                     this._onDidRemoveDocument.fire(data.document);
                 }
-            })
+            }),
         );
     }
     $acceptModelModeChanged(startUrl: UriComponents, oldModeId: string, newModeId: string): void {
@@ -85,7 +85,7 @@ export class DocumentsExtImpl implements DocumentsExt {
             data.acceptIsDirty(isDirty);
             this._onDidChangeDocument.fire({
                 document: data.document,
-                contentChanges: []
+                contentChanges: [],
             });
         }
     }
@@ -103,8 +103,8 @@ export class DocumentsExtImpl implements DocumentsExt {
                         range: Converter.toRange(change.range),
                         rangeOffset: change.rangeOffset,
                         rangeLength: change.rangeLength,
-                        text: change.text
-                    }))
+                        text: change.text,
+                    })),
             });
         }
     }

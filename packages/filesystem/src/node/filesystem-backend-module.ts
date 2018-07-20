@@ -34,13 +34,13 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
             const logger = ctx.container.get<ILogger>(ILogger);
             return new NsfwFileSystemWatcherServer({
                 info: (message, ...args) => logger.info(message, ...args),
-                error: (message, ...args) => logger.error(message, ...args)
+                error: (message, ...args) => logger.error(message, ...args),
             });
         });
     } else {
         bind(FileSystemWatcherServerClient).toSelf();
         bind(FileSystemWatcherServer).toDynamicValue(ctx =>
-            ctx.container.get(FileSystemWatcherServerClient)
+            ctx.container.get(FileSystemWatcherServerClient),
         );
     }
 }
@@ -53,7 +53,7 @@ export default new ContainerModule(bind => {
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        })
+        }),
     ).inSingletonScope();
 
     bindFileSystemWatcherServer(bind);
@@ -63,6 +63,6 @@ export default new ContainerModule(bind => {
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        })
+        }),
     ).inSingletonScope();
 });

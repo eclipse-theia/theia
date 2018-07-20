@@ -50,7 +50,7 @@ export class TaskResolverRegistry {
     register(type: string, resolver: TaskResolver): Disposable {
         this.resolvers.set(type, resolver);
         return {
-            dispose: () => this.resolvers.delete(type)
+            dispose: () => this.resolvers.delete(type),
         };
     }
 
@@ -73,7 +73,7 @@ export class TaskProviderRegistry {
     register(type: string, resolver: TaskProvider): Disposable {
         this.providers.set(type, resolver);
         return {
-            dispose: () => this.providers.delete(type)
+            dispose: () => this.providers.delete(type),
         };
     }
 

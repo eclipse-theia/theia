@@ -62,7 +62,7 @@ export class TreeSelectionState {
     nextState(selection: FocusableTreeSelection): TreeSelectionState {
         const { node, type } = {
             type: TreeSelection.SelectionType.DEFAULT,
-            ...selection
+            ...selection,
         };
         switch (type) {
             case TreeSelection.SelectionType.DEFAULT: return this.handleDefault(this, node);
@@ -101,7 +101,7 @@ export class TreeSelectionState {
         return new TreeSelectionState(tree, [{
             node,
             type: TreeSelection.SelectionType.TOGGLE,
-            focus: node
+            focus: node,
         }]);
     }
 
@@ -127,7 +127,7 @@ export class TreeSelectionState {
         return new TreeSelectionState(tree, [...copy, {
             node,
             type: TreeSelection.SelectionType.TOGGLE,
-            focus
+            focus,
         }]);
     }
 
@@ -152,7 +152,7 @@ export class TreeSelectionState {
         return new TreeSelectionState(tree, [...copy, {
             node,
             type: TreeSelection.SelectionType.RANGE,
-            focus
+            focus,
         }]);
     }
 

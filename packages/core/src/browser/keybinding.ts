@@ -26,7 +26,7 @@ export enum KeybindingScope {
     DEFAULT,
     USER,
     WORKSPACE,
-    END
+    END,
 }
 export namespace KeybindingScope {
     export const length = KeybindingScope.END - KeybindingScope.DEFAULT;
@@ -45,7 +45,7 @@ export namespace Keybinding {
         const copy: Keybinding = {
             command: binding.command,
             keybinding: binding.keybinding,
-            context: binding.context
+            context: binding.context,
         };
         return JSON.stringify(copy);
     }
@@ -88,12 +88,12 @@ export namespace KeybindingContexts {
 
     export const NOOP_CONTEXT: KeybindingContext = {
         id: 'noop.keybinding.context',
-        isEnabled: () => true
+        isEnabled: () => true,
     };
 
     export const DEFAULT_CONTEXT: KeybindingContext = {
         id: 'default.keybinding.context',
-        isEnabled: () => false
+        isEnabled: () => false,
     };
 }
 
@@ -190,7 +190,7 @@ export class KeybindingRegistry {
      */
     containsKeybinding(bindings: Keybinding[], binding: Keybinding): boolean {
         const collisions = this.getKeySequenceCollisions(bindings, KeySequence.parse(
-            this.getCurrentPlatformKeybinding(binding.keybinding))
+            this.getCurrentPlatformKeybinding(binding.keybinding)),
         ).filter(b => b.context === binding.context);
 
         if (collisions.full.length > 0) {
@@ -469,7 +469,7 @@ export class KeybindingRegistry {
             this.statusBar.setElement('keybinding-status', {
                 text: `(${KeySequence.acceleratorFor(this.keySequence, "+")}) was pressed, waiting for more keys`,
                 alignment: StatusBarAlignment.LEFT,
-                priority: 2
+                priority: 2,
             });
 
         } else {

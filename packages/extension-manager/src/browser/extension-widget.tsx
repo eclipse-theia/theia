@@ -35,7 +35,7 @@ export class ExtensionWidget extends ReactWidget {
 
     constructor(
         @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
     ) {
         super();
         this.id = 'extensions';

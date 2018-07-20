@@ -58,7 +58,7 @@ export interface FileChange {
 export enum FileChangeType {
     UPDATED = 0,
     ADDED = 1,
-    DELETED = 2
+    DELETED = 2,
 }
 
 export const FileSystemWatcherServerProxy = Symbol('FileSystemWatcherServerProxy');
@@ -75,7 +75,7 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
     protected readonly localToRemoteWatcher = new Map<number, number>();
 
     constructor(
-        @inject(FileSystemWatcherServerProxy) protected readonly proxy: FileSystemWatcherServerProxy
+        @inject(FileSystemWatcherServerProxy) protected readonly proxy: FileSystemWatcherServerProxy,
     ) {
         const onInitialized = this.proxy.onDidOpenConnection(() => {
             // skip reconnection on the first connection

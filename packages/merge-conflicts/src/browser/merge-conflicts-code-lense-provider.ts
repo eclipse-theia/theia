@@ -42,9 +42,9 @@ export class MergeConflictsCodeLensProvider implements CodeLensProvider {
                 command: {
                     command: cmd.id,
                     title: cmd.label || '',
-                    arguments: [<MergeConflictCommandArgument>{ uri, conflict }]
+                    arguments: [<MergeConflictCommandArgument>{ uri, conflict }],
                 },
-                range: conflict.current.marker!
+                range: conflict.current.marker!,
             });
         }
         return result;

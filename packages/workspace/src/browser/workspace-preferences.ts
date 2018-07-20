@@ -20,7 +20,7 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
+    PreferenceContribution,
 } from '@theia/core/lib/browser/preferences';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
@@ -29,11 +29,11 @@ export const workspacePreferenceSchema: PreferenceSchema = {
         "workspace.preserveWindow": {
             "description": "Enable opening workspaces in current window",
             "additionalProperties": {
-                "type": "boolean"
+                "type": "boolean",
             },
-            "default": false
-        }
-    }
+            "default": false,
+        },
+    },
 };
 
 export interface WorkspaceConfiguration {

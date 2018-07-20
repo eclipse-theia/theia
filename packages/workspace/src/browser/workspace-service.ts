@@ -104,7 +104,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             // Option passed as parameter has the highest priority (for api developers), then the preference, then the default.
             const { preserveWindow } = {
                 preserveWindow: this.preferences['workspace.preserveWindow'] || !(await this.root),
-                ...options
+                ...options,
             };
             await this.server.setRoot(rootUri);
             if (preserveWindow) {

@@ -83,18 +83,18 @@ export class XmlContribution implements LanguageGrammarDefinitionContribution {
                 ".xliff",
                 ".xpdl",
                 ".xul",
-                ".xoml"
+                ".xoml",
             ],
             firstLine: "(\\<\\?xml.*)|(\\<svg)|(\\<\\!doctype\\s+svg)",
             aliases: ["XML", "xml"],
-            mimetypes: ['text/xml', 'application/xml', 'application/xaml+xml', 'application/xml-dtd']
+            mimetypes: ['text/xml', 'application/xml', 'application/xaml+xml', 'application/xml-dtd'],
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
                 blockComment: ['<!--', '-->'],
             },
             brackets: [
-                ['<', '>']
+                ['<', '>'],
             ],
             autoClosingPairs: [
                 { open: '<', close: '>' },
@@ -105,7 +105,7 @@ export class XmlContribution implements LanguageGrammarDefinitionContribution {
                 { open: '<', close: '>' },
                 { open: '\'', close: '\'' },
                 { open: '"', close: '"' },
-            ]
+            ],
         });
 
         const grammar = require('../../data/xml.tmLanguage.json');
@@ -113,9 +113,9 @@ export class XmlContribution implements LanguageGrammarDefinitionContribution {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

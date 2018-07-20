@@ -21,7 +21,7 @@ import { FrontendApplication } from '@theia/core/lib/browser';
 import {
     LanguageContribution, ILanguageClient, LanguageClientOptions,
     DocumentSelector, TextDocument, FileSystemWatcher,
-    Workspace, Languages, Commands
+    Workspace, Languages, Commands,
 } from '../common';
 import { LanguageClientFactory } from "./language-client-factory";
 import { WorkspaceService } from "@theia/workspace/lib/browser";
@@ -51,7 +51,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
     ) {
         this.waitForReady();
     }
@@ -80,7 +80,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                     } catch (e) {
                         console.error(e);
                     }
-                })))
+                }))),
             ]);
         }
         return this.workspace.ready;
@@ -104,7 +104,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     protected waitForReady(): void {
         this.ready = new Promise<ILanguageClient>(resolve =>
-            this.resolveReady = resolve
+            this.resolveReady = resolve,
         );
     }
 
@@ -169,7 +169,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     // FIXME move it to the workspace
     protected waitForOpenTextDocument(selector: DocumentSelector): Promise<TextDocument> {
         const document = this.workspace.textDocuments.filter(doc =>
-            this.languages.match(selector, doc)
+            this.languages.match(selector, doc),
         )[0];
         if (document !== undefined) {
             return Promise.resolve(document);

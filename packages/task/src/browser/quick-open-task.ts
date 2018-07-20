@@ -28,7 +28,7 @@ export class QuickOpenTask implements QuickOpenModel {
     constructor(
         @inject(TaskService) protected readonly taskService: TaskService,
         @inject(TaskConfigurations) protected readonly taskConfigurations: TaskConfigurations,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
+        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
     ) { }
 
     async open(): Promise<void> {
@@ -47,7 +47,7 @@ export class QuickOpenTask implements QuickOpenModel {
         this.quickOpenService.open(this, {
             placeholder: 'Type the name of a task you want to execute',
             fuzzyMatchLabel: true,
-            fuzzySort: true
+            fuzzySort: true,
         });
     }
 
@@ -62,15 +62,15 @@ export class QuickOpenTask implements QuickOpenModel {
                         new TaskAttachQuickOpenItem(
                             task,
                             this.getRunningTaskLabel(task),
-                            this.taskService
-                        )
+                            this.taskService,
+                        ),
                     );
                 }
             }
             this.quickOpenService.open(this, {
                 placeholder: 'Choose task to open',
                 fuzzyMatchLabel: true,
-                fuzzySort: true
+                fuzzySort: true,
             });
         });
     }
@@ -94,7 +94,7 @@ export class TaskRunQuickOpenItem extends QuickOpenItem {
     constructor(
         protected readonly task: TaskConfiguration,
         protected taskService: TaskService,
-        protected readonly provided: boolean
+        protected readonly provided: boolean,
     ) {
         super();
     }
@@ -122,7 +122,7 @@ export class TaskAttachQuickOpenItem extends QuickOpenItem {
     constructor(
         protected readonly task: TaskInfo,
         protected readonly taskLabel: string,
-        protected taskService: TaskService
+        protected taskService: TaskService,
     ) {
         super();
     }

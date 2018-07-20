@@ -25,7 +25,7 @@ export interface Highlight {
 export enum QuickOpenMode {
     PREVIEW,
     OPEN,
-    OPEN_IN_BACKGROUND
+    OPEN_IN_BACKGROUND,
 }
 
 export interface QuickOpenItemOptions {

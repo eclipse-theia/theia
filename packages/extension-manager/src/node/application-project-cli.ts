@@ -38,21 +38,21 @@ export class ApplicationProjectCliContribution implements CliContribution {
     configure(conf: yargs.Argv): void {
         conf.option(appProjectPath, {
             description: "Sets the application project directory",
-            default: process.cwd()
+            default: process.cwd(),
         });
         conf.option(appNpmClient, {
             description: "Sets the application npm client",
             choices: ["npm", "yarn"],
-            default: "yarn"
+            default: "yarn",
         });
         conf.option(appAutoInstall, {
             description: "Sets whether the application should be build on package.json changes",
             type: "boolean",
-            default: true
+            default: true,
         });
         conf.option(appWatchRegistry, {
             type: "boolean",
-            default: true
+            default: true,
         });
     }
 
@@ -61,7 +61,7 @@ export class ApplicationProjectCliContribution implements CliContribution {
             projectPath: args[appProjectPath],
             npmClient: args[appNpmClient],
             autoInstall: args[appAutoInstall],
-            watchRegistry: args[appWatchRegistry]
+            watchRegistry: args[appWatchRegistry],
         };
     }
 

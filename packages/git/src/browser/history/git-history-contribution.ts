@@ -27,10 +27,10 @@ import { GitRepositoryTracker } from '../git-repository-tracker';
 export namespace GitHistoryCommands {
     export const OPEN_FILE_HISTORY: Command = {
         id: 'git-history:open-file-history',
-        label: 'Git History'
+        label: 'Git History',
     };
     export const OPEN_BRANCH_HISTORY: Command = {
-        id: 'git-history:open-branch-history'
+        id: 'git-history:open-branch-history',
     };
 }
 
@@ -50,17 +50,17 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
             widgetName: 'Git History',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 400
+                rank: 400,
             },
             toggleCommandId: GitHistoryCommands.OPEN_BRANCH_HISTORY.id,
-            toggleKeybinding: 'alt+h'
+            toggleKeybinding: 'alt+h',
         });
     }
 
     @postConstruct()
     protected init() {
         this.repositoryTracker.onDidChangeRepository(async repository =>
-            this.refreshWidget(repository ? repository.localUri : undefined)
+            this.refreshWidget(repository ? repository.localUri : undefined),
         );
         this.repositoryTracker.onGitEvent(event => {
             const { source, status, oldStatus } = event;
@@ -78,7 +78,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '5_history'], {
-            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id
+            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id,
         });
 
         super.registerMenus(menus);
@@ -86,16 +86,16 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
-            execute: async uri => this.showWidget(uri.toString())
+            execute: async uri => this.showWidget(uri.toString()),
         }));
         commands.registerCommand(GitHistoryCommands.OPEN_BRANCH_HISTORY, {
-            execute: () => this.showWidget(undefined)
+            execute: () => this.showWidget(undefined),
         });
     }
 
     async showWidget(uri: string | undefined) {
         await this.openView({
-            activate: true
+            activate: true,
         });
         this.refreshWidget(uri);
     }
@@ -109,7 +109,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         const options: Git.Options.Log = {
             uri,
             maxCount: GIT_HISTORY_MAX_COUNT,
-            shortSha: true
+            shortSha: true,
         };
         await widget.setContent(options);
     }

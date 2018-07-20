@@ -29,7 +29,7 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         brackets: [
             ['{', '}'],
             ['[', ']'],
-            ['(', ')']
+            ['(', ')'],
         ],
         autoClosingPairs: [
             { open: '[', close: ']' },
@@ -48,16 +48,16 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         folding: {
             markers: {
                 start: new RegExp("^\\s*#pragma\\s+region\\b"),
-                end: new RegExp("^\\s*#pragma\\s+endregion\\b")
-            }
-        }
+                end: new RegExp("^\\s*#pragma\\s+endregion\\b"),
+            },
+        },
     };
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: C_LANGUAGE_ID,
             extensions: ['.c'],
-            aliases: ['C', 'c']
+            aliases: ['C', 'c'],
         });
 
         monaco.languages.setLanguageConfiguration(C_LANGUAGE_ID, this.config);
@@ -67,9 +67,9 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: platformGrammar
+                    content: platformGrammar,
                 };
-            }
+            },
         });
 
         const cGrammar = require('../../data/c.tmLanguage.json');
@@ -77,9 +77,9 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: cGrammar
+                    content: cGrammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(C_LANGUAGE_ID, 'source.c');
 
@@ -97,9 +97,9 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: cppGrammar
+                    content: cppGrammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(CPP_LANGUAGE_ID, 'source.cpp');
     }

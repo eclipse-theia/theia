@@ -23,7 +23,7 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
 
     constructor(
         readonly editor: TextEditor,
-        protected readonly selectionService: SelectionService
+        protected readonly selectionService: SelectionService,
     ) {
         super(editor);
         this.toDispose.push(this.editor);

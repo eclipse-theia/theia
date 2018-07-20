@@ -27,23 +27,23 @@ export const keymapsSchema = {
         type: "object",
         properties: {
             keybinding: {
-                type: "string"
+                type: "string",
             },
             command: {
-                type: "string"
+                type: "string",
             },
             context: {
-                type: "string"
+                type: "string",
             },
         },
         required: ["command", "keybinding"],
         optional: ["context"],
         additionalProperties: false,
-    }
+    },
 };
 
 export const keymapsValidator = new ajv({ // https://github.com/epoberezkin/ajv#options
-    jsonPointers: true
+    jsonPointers: true,
 }).compile(keymapsSchema);
 
 /**

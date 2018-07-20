@@ -71,7 +71,7 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
                     data.EOL,
                     data.modeId,
                     data.versionId,
-                    data.isDirty
+                    data.isDirty,
                 );
                 this.documents.set(resource.toString(), documentData);
                 addedDocuments.push(documentData);
@@ -102,7 +102,7 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
                     data.selections.map(Converter.toSelection),
                     data.options,
                     data.visibleRanges.map(Converter.toRange),
-                    Converter.toViewColumn(data.editorPosition)
+                    Converter.toViewColumn(data.editorPosition),
                 );
                 this.editors.set(data.id, editor);
             }

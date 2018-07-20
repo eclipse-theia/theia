@@ -27,14 +27,14 @@ export class PythonClientContribution extends BaseLanguageClientContribution {
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
     ) {
         super(workspace, languages, languageClientFactory);
     }
 
     protected get globPatterns() {
         return [
-            '**/*.py'
+            '**/*.py',
         ];
     }
 

@@ -19,7 +19,7 @@ import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath,
 } from "../../common";
 import { KeybindingRegistry, Keybinding } from "../keybinding";
 import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
@@ -30,7 +30,7 @@ export class BrowserMainMenuFactory {
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry,
-        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry
+        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
     ) { }
 
     createMenuBar(): MenuBarWidget {
@@ -85,7 +85,7 @@ export class BrowserMainMenuFactory {
             icon: command.iconClass,
             isEnabled: () => this.commandRegistry.isEnabled(command.id),
             isVisible: () => this.commandRegistry.isVisible(command.id),
-            isToggled: () => this.commandRegistry.isToggled(command.id)
+            isToggled: () => this.commandRegistry.isToggled(command.id),
         });
 
         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);
@@ -97,7 +97,7 @@ export class BrowserMainMenuFactory {
             commands.addKeyBinding({
                 command: command.id,
                 keys,
-                selector: '.p-Widget' // We have the Phosphor.JS dependency anyway.
+                selector: '.p-Widget', // We have the Phosphor.JS dependency anyway.
             });
         }
     }
@@ -152,13 +152,13 @@ class DynamicMenuWidget extends MenuWidget {
                 if (item.label) {
                     parent.addItem({
                         type: 'submenu',
-                        submenu: new DynamicMenuWidget(item, this.options)
+                        submenu: new DynamicMenuWidget(item, this.options),
                     });
                 } else {
                     if (item.children.length > 0) {
                         if (parent.items.length > 0) {
                             parent.addItem({
-                                type: 'separator'
+                                type: 'separator',
                             });
                         }
                         this.updateSubMenus(parent, item, commands);
@@ -167,7 +167,7 @@ class DynamicMenuWidget extends MenuWidget {
             } else if (item instanceof ActionMenuNode) {
                 parent.addItem({
                     command: item.action.commandId,
-                    type: 'command'
+                    type: 'command',
                 });
             }
         }
@@ -178,7 +178,7 @@ class DynamicMenuWidget extends MenuWidget {
 export class BrowserMenuBarContribution implements FrontendApplicationContribution {
 
     constructor(
-        @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
+        @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory,
     ) { }
 
     onStart(app: FrontendApplication): void {

@@ -33,7 +33,7 @@ export class MonacoCommandService implements ICommandService {
     protected readonly delegateListeners = new DisposableCollection();
 
     constructor(
-        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
+        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
     ) { }
 
     get onWillExecuteCommand(): monaco.IEvent<ICommandEvent> {
@@ -45,7 +45,7 @@ export class MonacoCommandService implements ICommandService {
         this.delegate = delegate;
         if (this.delegate) {
             this.delegateListeners.push(this.delegate.onWillExecuteCommand(event =>
-                this.onWillExecuteCommandEmitter.fire(event)
+                this.onWillExecuteCommandEmitter.fire(event),
             ));
         }
     }

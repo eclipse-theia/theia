@@ -33,7 +33,7 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
 
     private static HEADERS = {
         'Content-Type': 'application/json',
-        'Accept': 'application/json;api-version=3.0-preview.1'
+        'Accept': 'application/json;api-version=3.0-preview.1',
     };
 
     private unpackedFolder: string;
@@ -64,16 +64,16 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
             const json = {
                 "filters": [{
                     "criteria": [{ "filterType": 7, "value": extensionName }], "pageNumber": 1,
-                    "pageSize": 1, "sortBy": 0, "sortOrder": 0
+                    "pageSize": 1, "sortBy": 0, "sortOrder": 0,
                 }], "assetTypes": ["Microsoft.VisualStudio.Services.VSIXPackage"],
-                "flags": 131
+                "flags": 131,
             };
 
             const options = {
                 url: VsCodePluginDeployerResolver.MARKET_PLACE_ENDPOINT,
                 headers: VsCodePluginDeployerResolver.HEADERS,
                 method: 'POST',
-                json: json
+                json: json,
             };
 
             request(options, (error, response, body) => {

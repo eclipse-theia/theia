@@ -68,7 +68,7 @@ describe('log-level-cli-contribution', function() {
             levels: {
                 'hello': 'debug',
                 'world': 'fatal',
-            }
+            },
         }));
         fs.fsyncSync(file.fd);
         fs.closeSync(file.fd);
@@ -98,7 +98,7 @@ describe('log-level-cli-contribution', function() {
             levels: {
                 'hello': 'debug',
                 'world': 'fatal',
-            }
+            },
         }));
 
         const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
@@ -113,7 +113,7 @@ describe('log-level-cli-contribution', function() {
             levels: {
                 'hello': 'potato',
                 'world': 'fatal',
-            }
+            },
         }));
 
         const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
@@ -134,7 +134,7 @@ describe('log-level-cli-contribution', function() {
             levels: {
                 'hello': 'potato',
                 'world': 'fatal',
-            }
+            },
         });
         fs.writeFileSync(file.fd, '{' + text);
 
@@ -158,7 +158,7 @@ describe('log-level-cli-contribution', function() {
                 levels: {
                     'hello': 'debug',
                     'world': 'fatal',
-                }
+                },
             }));
             fs.fsyncSync(file.fd);
             fs.closeSync(file.fd);
@@ -184,7 +184,7 @@ describe('log-level-cli-contribution', function() {
                 levels: {
                     'bonjour': 'debug',
                     'world': 'trace',
-                }
+                },
             }));
             fs.fsyncSync(fd);
             fs.closeSync(fd);
@@ -208,7 +208,7 @@ describe('log-level-cli-contribution', function() {
             levels: {
                 'hello': 'debug',
                 'world': 'fatal',
-            }
+            },
         }));
         fs.fsyncSync(file.fd);
 
@@ -228,7 +228,7 @@ describe('log-level-cli-contribution', function() {
                 levels: {
                     'bonjour': 'debug',
                     'world': 'trace',
-                }
+                },
             });
             fs.writeFileSync(file.fd, text);
             fs.fsyncSync(file.fd);

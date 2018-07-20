@@ -34,7 +34,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
     constructor(
         @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
         @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter,
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager
+        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
     ) {
         super(p2m, m2p);
     }
@@ -55,7 +55,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
                 for (const uri of uris) {
                     this.problemManager.setMarkers(new URI(uri), owner, []);
                 }
-            }
+            },
         };
     }
 
@@ -65,7 +65,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
             dispose: () => {
                 const index = this.workspaceSymbolProviders.indexOf(provider);
                 this.workspaceSymbolProviders = this.workspaceSymbolProviders.splice(index, 1);
-            }
+            },
         };
     }
 
@@ -73,7 +73,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
         const monacoLanguages: monaco.languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages();
         return monacoLanguages.map((monacoLang: monaco.languages.ILanguageExtensionPoint) => ({
             id: monacoLang.id,
-            name: monacoLang.aliases && monacoLang.aliases.length > 0 ? monacoLang.aliases[0] : monacoLang.id
+            name: monacoLang.aliases && monacoLang.aliases.length > 0 ? monacoLang.aliases[0] : monacoLang.id,
         }));
     }
 

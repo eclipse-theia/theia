@@ -26,7 +26,7 @@ import {
     ApplyEditsOptions,
     UndoStopOptions,
     DecorationRenderOptions,
-    DecorationOptions
+    DecorationOptions,
 } from "../../api/plugin-api";
 import { EditorsAndDocumentsMain } from "./editors-and-documents-main";
 import { RPCProtocol } from "../../api/rpc-protocol";

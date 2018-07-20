@@ -25,7 +25,7 @@ export class JavaResource implements Resource {
 
     constructor(
         public uri: URI,
-        protected readonly clientContribution: JavaClientContribution
+        protected readonly clientContribution: JavaClientContribution,
     ) { }
 
     dispose(): void {
@@ -35,8 +35,8 @@ export class JavaResource implements Resource {
         const uri = this.uri.toString();
         return this.clientContribution.languageClient.then(languageClient =>
             languageClient.sendRequest(ClassFileContentsRequest.type, { uri }).then(content =>
-                content || ''
-            )
+                content || '',
+            ),
         );
     }
 
@@ -47,7 +47,7 @@ export class JavaResourceResolver implements ResourceResolver {
 
     constructor(
         @inject(JavaClientContribution)
-        protected readonly clientContribution: JavaClientContribution
+        protected readonly clientContribution: JavaClientContribution,
     ) { }
 
     resolve(uri: URI): JavaResource {

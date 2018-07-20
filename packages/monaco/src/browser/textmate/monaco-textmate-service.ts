@@ -67,9 +67,9 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
                 }
                 return {
                     format: 'json',
-                    content: '{}'
+                    content: '{}',
                 };
-            }
+            },
         });
 
         this.toDispose.push(this.monacoModelService.onDidCreate(model => {
@@ -96,7 +96,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         await this.onigasmPromise;
         try {
             monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(
-                await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration)
+                await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration),
             ));
         } catch (err) {
             this.logger.warn('No grammar for this language id', languageId);

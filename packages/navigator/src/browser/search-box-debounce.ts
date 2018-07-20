@@ -37,7 +37,7 @@ export namespace SearchBoxDebounceOptions {
      * The default debounce option.
      */
     export const DEFAULT: SearchBoxDebounceOptions = {
-        delay: 200
+        delay: 200,
     };
 
 }

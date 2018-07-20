@@ -27,19 +27,19 @@ describe('types', () => {
                     assert.deepStrictEqual([
                         {
                             priority: 4,
-                            value: -4
+                            value: -4,
                         },
                         {
                             priority: 3,
-                            value: -3
+                            value: -3,
                         }, {
                             priority: 2,
-                            value: -2
+                            value: -2,
                         }, {
                             priority: 1,
-                            value: -1
-                        }
-                    ], values)
+                            value: -1,
+                        },
+                    ], values),
                 );
         });
 
@@ -50,19 +50,19 @@ describe('types', () => {
                     assert.deepStrictEqual([
                         {
                             priority: 4,
-                            value: -4
+                            value: -4,
                         },
                         {
                             priority: 3,
-                            value: -3
+                            value: -3,
                         }, {
                             priority: 2,
-                            value: -2
+                            value: -2,
                         }, {
                             priority: 1,
-                            value: -1
-                        }
-                    ], values)
+                            value: -1,
+                        },
+                    ], values),
                 );
         });
     });

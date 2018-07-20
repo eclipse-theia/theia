@@ -33,6 +33,6 @@ export type CMD = [string, string[]];
 export function cmd(command: string, ...args: string[]): CMD {
     return [
         isWindows ? 'cmd' : command,
-        isWindows ? ['/c', command, ...args] : args
+        isWindows ? ['/c', command, ...args] : args,
     ];
 }

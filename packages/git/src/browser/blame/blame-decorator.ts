@@ -67,7 +67,7 @@ export class BlameDecorator implements HoverProvider {
 
         const hover = {
             contents: [message],
-            range: Range.create(Position.create(line, 0), Position.create(line, 10 ^ 10))
+            range: Range.create(Position.create(line, 0), Position.create(line, 10 ^ 10)),
         };
         return hover;
     }

@@ -38,7 +38,7 @@ export class FileSystemNodeOptions {
         encoding: 'utf8',
         overwrite: false,
         recursive: true,
-        moveToTrash: true
+        moveToTrash: true,
     };
 
 }
@@ -47,7 +47,7 @@ export class FileSystemNodeOptions {
 export class FileSystemNode implements FileSystem {
 
     constructor(
-        @inject(FileSystemNodeOptions) @optional() protected readonly options: FileSystemNodeOptions = FileSystemNodeOptions.DEFAULT
+        @inject(FileSystemNodeOptions) @optional() protected readonly options: FileSystemNodeOptions = FileSystemNodeOptions.DEFAULT,
     ) { }
 
     protected client: FileSystemClient | undefined;
@@ -210,7 +210,7 @@ Actual: ${JSON.stringify(file)}.`);
             this.doGetStat(_sourceUri, 0),
             this.doGetStat(_targetUri, 0),
             this.doGetOverwrite(options),
-            this.doGetRecursive(options)
+            this.doGetRecursive(options),
         ]);
         if (!sourceStat) {
             throw new Error(`File does not exist under ${sourceUri}.`);
@@ -347,7 +347,7 @@ Actual: ${JSON.stringify(file)}.`);
             uri: uri.toString(),
             lastModification: stat.mtime.getTime(),
             isDirectory: false,
-            size: stat.size
+            size: stat.size,
         };
     }
 
@@ -357,7 +357,7 @@ Actual: ${JSON.stringify(file)}.`);
             uri: uri.toString(),
             lastModification: stat.mtime.getTime(),
             isDirectory: true,
-            children
+            children,
         };
     }
 

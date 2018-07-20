@@ -39,12 +39,12 @@ export class PreviewHandlerProvider {
 
     constructor(
         @inject(ContributionProvider) @named(PreviewHandler)
-        protected readonly previewHandlerContributions: ContributionProvider<PreviewHandler>
+        protected readonly previewHandlerContributions: ContributionProvider<PreviewHandler>,
     ) { }
 
     findContribution(uri: URI): PreviewHandler[] {
         const prioritized = Prioritizeable.prioritizeAllSync(this.previewHandlerContributions.getContributions(), contrib =>
-            contrib.canHandle(uri)
+            contrib.canHandle(uri),
         );
         return prioritized.map(c => c.value);
     }

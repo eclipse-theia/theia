@@ -28,16 +28,16 @@ export const cppPreferencesSchema: PreferenceSchema = {
                 type: "object",
                 properties: {
                     "name": {
-                        type: "string"
+                        type: "string",
                     },
                     "directory": {
-                        type: "string"
-                    }
+                        type: "string",
+                    },
                 },
                 required: ["name", "directory"],
-            }
-        }
-    }
+            },
+        },
+    },
 };
 
 export class CppConfiguration {

@@ -178,7 +178,7 @@ export class TextEditorExt implements theia.TextEditor {
                 return this.proxy.$trySetDecorations(
                     this.id,
                     decorationType.key,
-                    Converter.fromRangeOrRangeWithMessage(rangesOrOptions)
+                    Converter.fromRangeOrRangeWithMessage(rangesOrOptions),
                 );
             } else {
                 const ranges: number[] = new Array<number>(4 * rangesOrOptions.length);
@@ -193,7 +193,7 @@ export class TextEditorExt implements theia.TextEditor {
                 return this.proxy.$trySetDecorationsFast(
                     this.id,
                     decorationType.key,
-                    ranges
+                    ranges,
                 );
             }
         });
@@ -228,7 +228,7 @@ export class TextEditorExt implements theia.TextEditor {
 
             if (nextRangeStart.isBefore(rangeEnd)) {
                 return Promise.reject(
-                    new Error('Overlapping ranges are not allowed!')
+                    new Error('Overlapping ranges are not allowed!'),
                 );
             }
         }
@@ -238,13 +238,13 @@ export class TextEditorExt implements theia.TextEditor {
             ({
                 range: Converter.fromRange(e.range)!,
                 text: e.text,
-                forceMoveMarkers: e.forceMoveMarkers
+                forceMoveMarkers: e.forceMoveMarkers,
             }));
 
         return this.proxy.$tryApplyEdits(this.id, editData.documentVersionId, edits, {
             setEndOfLine: editData.setEndOfLine,
             undoStopBefore: editData.undoStopBefore,
-            undoStopAfter: editData.undoStopAfter
+            undoStopAfter: editData.undoStopAfter,
         });
     }
 
@@ -299,7 +299,7 @@ export class TextEditorOptionsExt implements theia.TextEditorOptions {
             this.tabSize = tabSize;
         }
         warnOnError(this.proxy.$trySetOptions(this.id, {
-            tabSize
+            tabSize,
         }));
     }
 
@@ -452,7 +452,7 @@ export class TextEditorEdit {
             edits: this.collectedEdits,
             setEndOfLine: this.eol,
             undoStopAfter: this.undoStopAfter,
-            undoStopBefore: this.undoStopBefore
+            undoStopBefore: this.undoStopBefore,
         };
     }
 
@@ -497,7 +497,7 @@ export class TextEditorEdit {
         this.collectedEdits.push({
             range: validatedRange,
             forceMoveMarkers: moveMarkers,
-            text: text
+            text: text,
         });
     }
 }

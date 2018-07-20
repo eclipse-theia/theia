@@ -64,7 +64,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
                         text: `$(cube) ${HostedPluginInformer.DEVELOPMENT_HOST_TITLE}`,
                         tooltip: `Hosted Plugin '${pluginMetadata.model.name}'`,
                         alignment: StatusBarAlignment.LEFT,
-                        priority: 100
+                        priority: 100,
                     };
 
                     this.frontendApplicationStateService.reachedState('ready').then(() => {

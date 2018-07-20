@@ -67,7 +67,7 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
     constructor(
         protected readonly selectionService: SelectionService,
         protected readonly handler: UriCommandHandler<T>,
-        protected readonly options?: UriAwareCommandHandler.Options
+        protected readonly options?: UriAwareCommandHandler.Options,
     ) { }
 
     // tslint:disable-next-line:no-any

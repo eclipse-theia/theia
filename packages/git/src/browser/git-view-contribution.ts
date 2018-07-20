@@ -31,49 +31,49 @@ export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 export namespace GIT_COMMANDS {
     export const FETCH = {
         id: 'git.fetch',
-        label: 'Git: Fetch...'
+        label: 'Git: Fetch...',
     };
     export const PULL = {
         id: 'git.pull',
-        label: 'Git: Pull...'
+        label: 'Git: Pull...',
     };
     export const PUSH = {
         id: 'git.push',
-        label: 'Git: Push...'
+        label: 'Git: Push...',
     };
     export const MERGE = {
         id: 'git.merge',
-        label: 'Git: Merge...'
+        label: 'Git: Merge...',
     };
     export const CHECKOUT = {
         id: 'git.checkout',
-        label: 'Git: Checkout'
+        label: 'Git: Checkout',
     };
     export const COMMIT_AMEND = {
-        id: 'git.commit.amend'
+        id: 'git.commit.amend',
     };
     export const COMMIT_SIGN_OFF = {
-        id: 'git.commit.signOff'
+        id: 'git.commit.signOff',
     };
     export const CHANGE_REPOSITORY = {
         id: 'git.change.repository',
-        label: 'Git: Change Repository...'
+        label: 'Git: Change Repository...',
     };
     export const OPEN_FILE = {
         id: 'git.open.file',
-        label: 'Git: Open File'
+        label: 'Git: Open File',
     };
     export const OPEN_CHANGES = {
         id: 'git.open.changes',
-        label: 'Git: Open Changes'
+        label: 'Git: Open Changes',
     };
     export const SYNC = {
         id: 'git.sync',
-        label: 'Git: Sync'
+        label: 'Git: Sync',
     };
     export const PUBLISH = {
         id: 'git.publish',
-        label: 'Git: Publish Branch'
+        label: 'Git: Publish Branch',
     };
 }
 
@@ -98,10 +98,10 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
             widgetName: 'Git',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 200
+                rank: 200,
             },
             toggleCommandId: 'gitView:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+g'
+            toggleKeybinding: 'ctrlcmd+shift+g',
         });
     }
 
@@ -118,7 +118,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
                     alignment: StatusBarAlignment.LEFT,
                     priority: 102,
                     command: GIT_COMMANDS.CHANGE_REPOSITORY.id,
-                    tooltip: path.toString()
+                    tooltip: path.toString(),
                 });
             } else {
                 this.statusBar.removeElement(GitViewContribution.GIT_SELECTED_REPOSITORY);
@@ -145,7 +145,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
                 text: `$(code-fork) ${branch}${dirty}`,
                 alignment: StatusBarAlignment.LEFT,
                 priority: 101,
-                command: GIT_COMMANDS.CHECKOUT.id
+                command: GIT_COMMANDS.CHECKOUT.id,
             });
             this.updateSyncStatusBarEntry();
         });
@@ -157,22 +157,22 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
         [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE].forEach(command =>
             menus.registerMenuAction(GitWidget.ContextMenu.OTHER_GROUP, {
                 commandId: command.id,
-                label: command.label.slice('Git: '.length)
-            })
+                label: command.label.slice('Git: '.length),
+            }),
         );
         menus.registerMenuAction(GitWidget.ContextMenu.COMMIT_GROUP, {
             commandId: GIT_COMMANDS.COMMIT_AMEND.id,
-            label: 'Commit (Amend)'
+            label: 'Commit (Amend)',
         });
         menus.registerMenuAction(GitWidget.ContextMenu.COMMIT_GROUP, {
             commandId: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
-            label: 'Commit (Signed Off)'
+            label: 'Commit (Signed Off)',
         });
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
-            commandId: GIT_COMMANDS.OPEN_FILE.id
+            commandId: GIT_COMMANDS.OPEN_FILE.id,
         });
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
-            commandId: GIT_COMMANDS.OPEN_CHANGES.id
+            commandId: GIT_COMMANDS.OPEN_CHANGES.id,
         });
     }
 
@@ -180,27 +180,27 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
         super.registerCommands(registry);
         registry.registerCommand(GIT_COMMANDS.FETCH, {
             execute: () => this.quickOpenService.fetch(),
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.PULL, {
             execute: () => this.quickOpenService.pull(),
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.PUSH, {
             execute: () => this.quickOpenService.push(),
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.MERGE, {
             execute: () => this.quickOpenService.merge(),
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.CHECKOUT, {
             execute: () => this.quickOpenService.checkout(),
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_SIGN_OFF, {
             execute: () => this.tryGetWidget()!.doCommit(this.repositoryTracker.selectedRepository, 'sign-off'),
-            isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
             execute: async () => {
@@ -217,31 +217,31 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
                     }
                 }
             },
-            isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository,
         });
         registry.registerCommand(GIT_COMMANDS.CHANGE_REPOSITORY, {
             execute: () => this.quickOpenService.changeRepository(),
-            isEnabled: () => this.hasMultipleRepositories()
+            isEnabled: () => this.hasMultipleRepositories(),
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_FILE, {
             execute: () => this.openFile(),
             isEnabled: () => !!this.openFileOptions,
-            isVisible: () => !!this.openFileOptions
+            isVisible: () => !!this.openFileOptions,
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGES, {
             execute: () => this.openChanges(),
             isEnabled: () => !!this.openChangesOptions,
-            isVisible: () => !!this.openChangesOptions
+            isVisible: () => !!this.openChangesOptions,
         });
         registry.registerCommand(GIT_COMMANDS.SYNC, {
             execute: () => this.syncService.sync(),
             isEnabled: () => this.syncService.canSync(),
-            isVisible: () => this.syncService.canSync()
+            isVisible: () => this.syncService.canSync(),
         });
         registry.registerCommand(GIT_COMMANDS.PUBLISH, {
             execute: () => this.syncService.publish(),
             isEnabled: () => this.syncService.canPublish(),
-            isVisible: () => this.syncService.canPublish()
+            isVisible: () => this.syncService.canPublish(),
         });
     }
 
@@ -305,7 +305,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
             this.statusBar.setElement(GitViewContribution.GIT_SYNC_STATUS, {
                 alignment: StatusBarAlignment.LEFT,
                 priority: 100,
-                ...entry
+                ...entry,
             });
         } else {
             this.statusBar.removeElement(GitViewContribution.GIT_SYNC_STATUS);
@@ -319,7 +319,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
         if (this.syncService.isSyncing()) {
             return {
                 text: '$(refresh~spin)',
-                tooltip: 'Synchronizing Changes...'
+                tooltip: 'Synchronizing Changes...',
             };
         }
         const { upstreamBranch, aheadBehind } = status;
@@ -327,13 +327,13 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
             return {
                 text: '$(refresh)' + (aheadBehind ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
-                tooltip: 'Synchronize Changes'
+                tooltip: 'Synchronize Changes',
             };
         }
         return {
             text: '$(cloud-upload)',
             command: GIT_COMMANDS.PUBLISH.id,
-            tooltip: 'Publish Changes'
+            tooltip: 'Publish Changes',
         };
     }
 }

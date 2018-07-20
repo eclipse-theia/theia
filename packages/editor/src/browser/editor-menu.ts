@@ -45,25 +45,25 @@ export class EditorMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
         registry.registerMenuAction(EditorContextMenu.UNDO_REDO, {
-            commandId: CommonCommands.UNDO.id
+            commandId: CommonCommands.UNDO.id,
         });
         registry.registerMenuAction(EditorContextMenu.UNDO_REDO, {
-            commandId: CommonCommands.REDO.id
+            commandId: CommonCommands.REDO.id,
         });
 
         // Editor navigation. Go > Back and Go > Forward.
         registry.registerSubmenu(EditorMainMenu.GO, 'Go');
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_BACK.id,
-            label: 'Back'
+            label: 'Back',
         });
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_FORWARD.id,
-            label: 'Forward'
+            label: 'Forward',
         });
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_LAST_EDIT.id,
-            label: 'Last Edit Location'
+            label: 'Last Edit Location',
         });
     }
 

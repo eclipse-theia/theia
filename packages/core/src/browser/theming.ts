@@ -50,7 +50,7 @@ export class ThemeService {
     }
 
     protected constructor(
-        public defaultTheme: string = 'dark'
+        public defaultTheme: string = 'dark',
     ) {
         const global = window as any; // tslint:disable-line
         global[ThemeServiceSymbol] = this;
@@ -96,7 +96,7 @@ export class ThemeService {
         this.activeTheme = newTheme;
         window.localStorage.setItem('theme', themeId);
         this.themeChange.fire({
-            newTheme, oldTheme
+            newTheme, oldTheme,
         });
     }
 
@@ -134,7 +134,7 @@ export class ThemingCommandContribution implements CommandContribution, CommandH
                 if (this.resetTo) {
                     this.themeService.setCurrentTheme(this.resetTo);
                 }
-            }
+            },
         });
     }
 
@@ -155,7 +155,7 @@ export class ThemingCommandContribution implements CommandContribution, CommandH
                     }
                     this.themeService.setCurrentTheme(t.id);
                     return true;
-                }
+                },
             }));
         acceptor(items);
     }
@@ -177,7 +177,7 @@ export class BuiltinThemeProvider {
         },
         deactivate() {
             BuiltinThemeProvider.darkCss.unuse();
-        }
+        },
     };
 
     static readonly lightTheme = {
@@ -190,7 +190,7 @@ export class BuiltinThemeProvider {
         },
         deactivate() {
             BuiltinThemeProvider.lightCss.unuse();
-        }
+        },
     };
 
     static readonly themes = [

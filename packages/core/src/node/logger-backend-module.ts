@@ -38,7 +38,7 @@ export function bindLogger(bind: interfaces.Bind): void {
             child.bind(ILogger).to(Logger).inTransientScope();
             child.bind(LoggerName).toConstantValue(name);
             return child.get(ILogger);
-        }
+        },
     );
 }
 
@@ -50,7 +50,7 @@ export const loggerBackendModule = new ContainerModule(bind => {
         ({
             initialize() {
                 setRootLogger(ctx.container.get<ILogger>(ILogger));
-            }
+            },
         }));
 
     bindLogger(bind);
@@ -60,6 +60,6 @@ export const loggerBackendModule = new ContainerModule(bind => {
             const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
             loggerServer.setClient(client);
             return loggerServer;
-        })
+        }),
     ).inSingletonScope();
 });

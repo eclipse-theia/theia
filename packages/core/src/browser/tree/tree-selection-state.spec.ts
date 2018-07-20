@@ -54,11 +54,11 @@ describe('tree-selection-state', () => {
         newState()
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: ['1']
+                selection: ['1'],
             })
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: []
+                selection: [],
             });
     });
 
@@ -67,7 +67,7 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '1')
             .nextState('range', '3', {
                 focus: '1',
-                selection: ['1', '2', '3']
+                selection: ['1', '2', '3'],
             });
     });
 
@@ -77,11 +77,11 @@ describe('tree-selection-state', () => {
             .nextState('range', '3')
             .nextState('toggle', '2', {
                 focus: '1',
-                selection: ['1', '3']
+                selection: ['1', '3'],
             })
             .nextState('toggle', '2', {
                 focus: '1',
-                selection: ['1', '2', '3']
+                selection: ['1', '2', '3'],
             });
     });
 
@@ -90,15 +90,15 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '5')
             .nextState('range', '2', {
                 focus: '5',
-                selection: ['2', '3', '4', '5']
+                selection: ['2', '3', '4', '5'],
             })
             .nextState('toggle', '3', {
                 focus: '5',
-                selection: ['2', '4', '5']
+                selection: ['2', '4', '5'],
             })
             .nextState('range', '7', {
                 focus: '5',
-                selection: ['2', '4', '5', '6', '7']
+                selection: ['2', '4', '5', '6', '7'],
             });
     });
 
@@ -108,7 +108,7 @@ describe('tree-selection-state', () => {
             .nextState('range', '1')
             .nextState('range', '6', {
                 focus: '4',
-                selection: ['4', '5', '6']
+                selection: ['4', '5', '6'],
             });
     });
 
@@ -118,7 +118,7 @@ describe('tree-selection-state', () => {
             .nextState('range', '6')
             .nextState('range', '8', {
                 focus: '4',
-                selection: ['4', '5', '6', '7', '8']
+                selection: ['4', '5', '6', '7', '8'],
             });
     });
 
@@ -127,7 +127,7 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '4')
             .nextState('toggle', '5', {
                 focus: '5',
-                selection: ['4', '5']
+                selection: ['4', '5'],
             });
     });
 
@@ -136,7 +136,7 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '4')
             .nextState('range', '2', {
                 focus: '4',
-                selection: ['4', '3', '2']
+                selection: ['4', '3', '2'],
             });
     });
 
@@ -145,11 +145,11 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '3')
             .nextState('range', '5', {
                 focus: '3',
-                selection: ['3', '4', '5']
+                selection: ['3', '4', '5'],
             })
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: ['3', '4', '5', '1']
+                selection: ['3', '4', '5', '1'],
             });
     });
 
@@ -158,15 +158,15 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '3')
             .nextState('range', '5', {
                 focus: '3',
-                selection: ['5', '4', '3']
+                selection: ['5', '4', '3'],
             })
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: ['1', '5', '4', '3']
+                selection: ['1', '5', '4', '3'],
             })
             .nextState('toggle', '4', {
                 focus: '1',
-                selection: ['1', '5', '3']
+                selection: ['1', '5', '3'],
             });
     });
 
@@ -176,15 +176,15 @@ describe('tree-selection-state', () => {
             .nextState('range', '2')
             .nextState('toggle', '3', {
                 focus: '5',
-                selection: ['5', '4', '2']
+                selection: ['5', '4', '2'],
             })
             .nextState('range', '1', {
                 focus: '5',
-                selection: ['5', '4', '3', '2', '1']
+                selection: ['5', '4', '3', '2', '1'],
             })
             .nextState('range', '7', {
                 focus: '5',
-                selection: ['5', '6', '7']
+                selection: ['5', '6', '7'],
             });
     });
 
@@ -195,15 +195,15 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '3')
             .nextState('range', '2', {
                 focus: '3',
-                selection: ['2', '3', '4', '5']
+                selection: ['2', '3', '4', '5'],
             })
             .nextState('range', '5', {
                 focus: '3',
-                selection: ['5', '4', '3']
+                selection: ['5', '4', '3'],
             })
             .nextState('toggle', '4', {
                 focus: '3',
-                selection: ['5', '3']
+                selection: ['5', '3'],
             });
     });
 
@@ -212,11 +212,11 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '2')
             .nextState('range', '3', {
                 focus: '2', // In VSCode this is 3.
-                selection: ['2', '3']
+                selection: ['2', '3'],
             })
             .nextState('range', '4', {
                 focus: '2', // In VSCode this is 4. They distinguish between `Shift + Up Arrow` and `Shift + Click`.
-                selection: ['2', '3', '4']
+                selection: ['2', '3', '4'],
             });
     });
 
@@ -225,19 +225,19 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '2')
             .nextState('range', '3', {
                 focus: '2',
-                selection: ['2', '3']
+                selection: ['2', '3'],
             })
             .nextState('toggle', '5', {
                 focus: '5',
-                selection: ['2', '3', '5']
+                selection: ['2', '3', '5'],
             })
             .nextState('range', '6', {
                 focus: '5',
-                selection: ['2', '3', '5', '6']
+                selection: ['2', '3', '5', '6'],
             })
             .nextState('toggle', '3', {
                 focus: '5',
-                selection: ['2', '5', '6']
+                selection: ['2', '5', '6'],
             });
     });
 
@@ -249,7 +249,7 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '2')
             .nextState('range', '7', {
                 focus: '2',
-                selection: ['1', '2', '3', '4', '5', '6', '7']
+                selection: ['1', '2', '3', '4', '5', '6', '7'],
             });
     });
 
@@ -258,35 +258,35 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '9')
             .nextState('range', '6', {
                 focus: '9',
-                selection: ['9', '8', '7', '6']
+                selection: ['9', '8', '7', '6'],
             })
             .nextState('range', '10', {
                 focus: '9',
-                selection: ['9', '10']
+                selection: ['9', '10'],
             })
             .nextState('range', '2', {
                 focus: '9',
-                selection: ['9', '8', '7', '6', '5', '4', '3', '2']
+                selection: ['9', '8', '7', '6', '5', '4', '3', '2'],
             })
             .nextState('toggle', '4', {
                 focus: '9',
-                selection: ['9', '8', '7', '6', '5', '3', '2']
+                selection: ['9', '8', '7', '6', '5', '3', '2'],
             })
             .nextState('toggle', '5', {
                 focus: '9',
-                selection: ['9', '8', '7', '6', '3', '2']
+                selection: ['9', '8', '7', '6', '3', '2'],
             })
             .nextState('toggle', '6', {
                 focus: '9',
-                selection: ['9', '8', '7', '3', '2']
+                selection: ['9', '8', '7', '3', '2'],
             })
             .nextState('toggle', '7', {
                 focus: '9',
-                selection: ['9', '8', '3', '2']
+                selection: ['9', '8', '3', '2'],
             })
             .nextState('range', '5', {
                 focus: '9',
-                selection: ['9', '8', '7', '6', '5', '3', '2']
+                selection: ['9', '8', '7', '6', '5', '3', '2'],
             });
     });
 
@@ -295,15 +295,15 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '9')
             .nextState('range', '3', {
                 focus: '9',
-                selection: ['9', '8', '7', '6', '5', '4', '3']
+                selection: ['9', '8', '7', '6', '5', '4', '3'],
             })
             .nextState('toggle', '4', {
                 focus: '9',
-                selection: ['9', '8', '7', '6', '5', '3']
+                selection: ['9', '8', '7', '6', '5', '3'],
             })
             .nextState('range', '10', {
                 focus: '9',
-                selection: ['10', '9', '8', '7', '6', '5', '3']
+                selection: ['10', '9', '8', '7', '6', '5', '3'],
             });
     });
 
@@ -312,19 +312,19 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '1')
             .nextState('toggle', '2', {
                 focus: '2',
-                selection: ['1', '2']
+                selection: ['1', '2'],
             })
             .nextState('default', '2', {
                 focus: '2',
-                selection: ['2']
+                selection: ['2'],
             })
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: ['1', '2']
+                selection: ['1', '2'],
             })
             .nextState('default', '2', {
                 focus: '2',
-                selection: ['2']
+                selection: ['2'],
             });
     });
 
@@ -332,11 +332,11 @@ describe('tree-selection-state', () => {
         newState()
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: ['1']
+                selection: ['1'],
             })
             .nextState('toggle', '1', {
                 focus: '1',
-                selection: []
+                selection: [],
             });
     });
 
@@ -345,23 +345,23 @@ describe('tree-selection-state', () => {
             .nextState('toggle', '2')
             .nextState('range', '1', {
                 focus: '2',
-                selection: ['1', '2']
+                selection: ['1', '2'],
             })
             .nextState('range', '2', {
                 focus: '2',
-                selection: ['2']
+                selection: ['2'],
             })
             .nextState('range', '3', {
                 focus: '2',
-                selection: ['2', '3']
+                selection: ['2', '3'],
             })
             .nextState('range', '2', {
                 focus: '2',
-                selection: ['2']
+                selection: ['2'],
             })
             .nextState('range', '1', {
                 focus: '2',
-                selection: ['1', '2']
+                selection: ['1', '2'],
             });
     });
 
@@ -369,31 +369,31 @@ describe('tree-selection-state', () => {
         newState()
             .nextState('toggle', '10', {
                 focus: '10',
-                selection: ['10']
+                selection: ['10'],
             })
             .nextState('range', '3', {
                 focus: '10',
-                selection: ['3', '4', '5', '6', '7', '8', '9', '10']
+                selection: ['3', '4', '5', '6', '7', '8', '9', '10'],
             })
             .nextState('toggle', '7', {
                 focus: '10',
-                selection: ['3', '4', '5', '6', '8', '9', '10']
+                selection: ['3', '4', '5', '6', '8', '9', '10'],
             })
             .nextState('toggle', '8', {
                 focus: '10',
-                selection: ['3', '4', '5', '6', '9', '10']
+                selection: ['3', '4', '5', '6', '9', '10'],
             })
             .nextState('toggle', '6', {
                 focus: '10',
-                selection: ['3', '4', '5', '9', '10']
+                selection: ['3', '4', '5', '9', '10'],
             })
             .nextState('toggle', '5', {
                 focus: '10',
-                selection: ['3', '4', '9', '10']
+                selection: ['3', '4', '9', '10'],
             })
             .nextState('range', '2', {
                 focus: '10',
-                selection: ['2', '3', '4', '5', '6', '7', '8', '9', '10']
+                selection: ['2', '3', '4', '5', '6', '7', '8', '9', '10'],
             });
     });
 
@@ -430,7 +430,7 @@ describe('tree-selection-state', () => {
                     }
                 }
                 return nextState(next);
-            }
+            },
         };
     }
 

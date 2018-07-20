@@ -157,7 +157,7 @@ export interface WorkspaceExt {
 export enum EditorPosition {
     ONE = 0,
     TWO = 1,
-    THREE = 2
+    THREE = 2,
 }
 
 export interface Position {
@@ -221,7 +221,7 @@ export enum TextEditorRevealType {
     Default = 0,
     InCenter = 1,
     InCenterIfOutsideViewport = 2,
-    AtTop = 3
+    AtTop = 3,
 }
 
 export interface SelectionChangeEvent {
@@ -438,12 +438,12 @@ export interface PreferenceRegistryMain {
         target: boolean | ConfigurationTarget | undefined,
         key: string,
         value: any,
-        resource: any | undefined
+        resource: any | undefined,
     ): PromiseLike<void>;
     $removeConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
-        resource: any | undefined
+        resource: any | undefined,
     ): PromiseLike<void>;
 }
 export interface PreferenceRegistryExt {
@@ -468,7 +468,7 @@ export const PLUGIN_RPC_CONTEXT = {
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
     PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
-    OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain')
+    OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -482,5 +482,5 @@ export const MAIN_RPC_CONTEXT = {
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
-    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt')
+    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
 };

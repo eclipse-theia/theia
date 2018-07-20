@@ -44,10 +44,10 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             if (open) {
                 this.toDisposeOnClose.push(this.toDisposeOnEditor);
                 this.toDisposeOnClose.push(DocumentSymbolProviderRegistry.onDidChange(
-                    debounce(() => this.updateOutline())
+                    debounce(() => this.updateOutline()),
                 ));
                 this.toDisposeOnClose.push(this.editorManager.onCurrentEditorChanged(
-                    debounce(() => this.handleCurrentEditorChanged(), 50)
+                    debounce(() => this.handleCurrentEditorChanged(), 50),
                 ));
                 this.handleCurrentEditorChanged();
             } else {
@@ -59,7 +59,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                 const uri = new URI(node.uri);
                 await this.editorManager.open(uri, {
                     mode: 'reveal',
-                    selection: node.range
+                    selection: node.range,
                 });
             }
         });
@@ -67,8 +67,8 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             if (MonacoOutlineSymbolInformationNode.is(node)) {
                 this.editorManager.open(new URI(node.uri), {
                     selection: <Range>{
-                        start: node.range.start
-                    }
+                        start: node.range.start,
+                    },
                 });
             }
         });
@@ -184,12 +184,12 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         return {
             end: {
                 character: symbolInformation.location.range.endColumn - 1,
-                line: symbolInformation.location.range.endLineNumber - 1
+                line: symbolInformation.location.range.endLineNumber - 1,
             },
             start: {
                 character: symbolInformation.location.range.startColumn - 1,
-                line: symbolInformation.location.range.startLineNumber - 1
-            }
+                line: symbolInformation.location.range.startLineNumber - 1,
+            },
         };
     }
 
@@ -204,7 +204,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             uri: symbol.location.uri.toString(),
             range: this.getRangeFromSymbolInformation(symbol),
             selected: false,
-            expanded: this.shouldExpand(symbol)
+            expanded: this.shouldExpand(symbol),
         };
     }
 

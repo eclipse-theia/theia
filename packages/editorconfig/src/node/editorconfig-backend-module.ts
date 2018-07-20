@@ -23,7 +23,7 @@ export default new ContainerModule(bind => {
     bind(EditorconfigService).to(EditorconfigServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(editorconfigServicePath, () =>
-            ctx.container.get(EditorconfigService)
-        )
+            ctx.container.get(EditorconfigService),
+        ),
     ).inSingletonScope();
 });

@@ -27,7 +27,7 @@ export const PreferenceSchema = Symbol("PreferenceSchema");
 export interface PreferenceSchema {
     [name: string]: Object,
     properties: {
-        [name: string]: PreferenceProperty
+        [name: string]: PreferenceProperty,
     }
 }
 
@@ -52,7 +52,7 @@ export class PreferenceSchemaProvider {
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(ContributionProvider) @named(PreferenceContribution)
-        protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
+        protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>,
     ) {
         this.preferenceContributions.getContributions().forEach(contrib => {
             for (const property in contrib.schema) {

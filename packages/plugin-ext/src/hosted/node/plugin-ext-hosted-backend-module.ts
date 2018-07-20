@@ -43,7 +43,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
             /*
             client.onDidCloseConnection(() => server.dispose());*/
             return server;
-        })
+        }),
     ).inSingletonScope();
 }
 

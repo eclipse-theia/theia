@@ -38,7 +38,7 @@ import { ILogger } from '@theia/core';
 import * as strings from '@theia/core/lib/common/strings';
 import {
     Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit,
-    CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine
+    CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine,
 } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
@@ -85,14 +85,14 @@ export class NameStatusParser extends OutputParser<GitFileChange> {
                 changes.push({
                     status,
                     uri,
-                    oldUri
+                    oldUri,
                 });
                 index = index + 3;
             } else {
                 const uri = this.toUri(repositoryUri, items[index + 1]);
                 changes.push({
                     status,
-                    uri
+                    uri,
                 });
                 index = index + 2;
             }
@@ -113,7 +113,7 @@ export enum CommitPlaceholders {
     AUTHOR_DATE = '%ad',
     AUTHOR_RELATIVE_DATE = '%ar',
     SUBJECT = '%s',
-    BODY = '%b'
+    BODY = '%b',
 }
 
 /**
@@ -146,12 +146,12 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
             changes.push({
                 sha,
                 author: {
-                    timestamp, email, name
+                    timestamp, email, name,
                 },
                 authorDateRelative,
                 summary,
                 body,
-                fileChanges
+                fileChanges,
             });
         }
         return changes;
@@ -205,7 +205,7 @@ export class GitBlameParser {
                         tzOffset: entry.authorTz,
                     },
                     summary: entry.summary,
-                    body: await commitBody(sha)
+                    body: await commitBody(sha),
                 };
                 commits.set(sha, commit);
             }
@@ -213,7 +213,7 @@ export class GitBlameParser {
             for (let lineOffset = 0; lineOffset < lineCount; lineOffset++) {
                 const line = <CommitLine>{
                     sha,
-                    line: entry.line! + lineOffset
+                    line: entry.line! + lineOffset,
                 };
                 lines[line.line] = line;
             }
@@ -323,7 +323,7 @@ export class DugiteGit implements Git {
         const containingPath = await this.resolveContainingPath(workspaceRootPath);
         if (containingPath) {
             repositories.push({
-                localUri: this.getUri(containingPath)
+                localUri: this.getUri(containingPath),
             });
         }
         const maxCount = typeof options.maxCount === 'number' ? options.maxCount - repositories.length : undefined;
@@ -331,11 +331,11 @@ export class DugiteGit implements Git {
             return repositories;
         }
         for (const repositoryPath of await this.locator.locate(workspaceRootPath, {
-            maxCount
+            maxCount,
         })) {
             if (containingPath !== repositoryPath) {
                 repositories.push({
-                    localUri: this.getUri(repositoryPath)
+                    localUri: this.getUri(repositoryPath),
                 });
             }
         }
@@ -351,7 +351,7 @@ export class DugiteGit implements Git {
     async add(repository: Repository, uri: string | string[]): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
         return this.manager.run(repository, () =>
-            stage(this.getFsPath(repository), paths)
+            stage(this.getFsPath(repository), paths),
         );
     }
 
@@ -360,7 +360,7 @@ export class DugiteGit implements Git {
         const treeish = options && options.treeish ? options.treeish : undefined;
         const where = options && options.reset ? options.reset : undefined;
         return this.manager.run(repository, () =>
-            unstage(this.getFsPath(repository), paths, treeish, where)
+            unstage(this.getFsPath(repository), paths, treeish, where),
         );
     }
 
@@ -410,7 +410,7 @@ export class DugiteGit implements Git {
         const signOff = options && options.signOff;
         const amend = options && options.amend;
         return this.manager.run(repository, () =>
-            createCommit(this.getFsPath(repository), message || '', signOff, amend)
+            createCommit(this.getFsPath(repository), message || '', signOff, amend),
         );
     }
 
@@ -421,7 +421,7 @@ export class DugiteGit implements Git {
             this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
         }
         return this.manager.run(repository, () =>
-            fetch(repositoryPath, r!)
+            fetch(repositoryPath, r!),
         );
     }
 
@@ -448,7 +448,7 @@ export class DugiteGit implements Git {
             await this.exec(repository, args);
         } else {
             return this.manager.run(repository, () =>
-                push(repositoryPath, currentRemote!, branchName, remoteBranch)
+                push(repositoryPath, currentRemote!, branchName, remoteBranch),
             );
         }
     }
@@ -485,14 +485,14 @@ export class DugiteGit implements Git {
         const repositoryPath = this.getFsPath(repository);
         const mode = this.getResetMode(options.mode);
         return this.manager.run(repository, () =>
-            reset(repositoryPath, mode, options.mode ? options.mode : 'HEAD')
+            reset(repositoryPath, mode, options.mode ? options.mode : 'HEAD'),
         );
     }
 
     merge(repository: Repository, options: Git.Options.Merge): Promise<void> {
         const repositoryPath = this.getFsPath(repository);
         return this.manager.run(repository, () =>
-            merge(repositoryPath, options.branch)
+            merge(repositoryPath, options.branch),
         );
     }
 
@@ -674,7 +674,7 @@ export class DugiteGit implements Git {
             type: toMap.type,
             upstream: toMap.upstream,
             upstreamWithoutRemote: toMap.upstreamWithoutRemote,
-            tip
+            tip,
         };
     }
 
@@ -685,7 +685,7 @@ export class DugiteGit implements Git {
             body: toMap.body,
             parentSHAs: [...toMap.parentSHAs],
             sha: toMap.sha,
-            summary: toMap.summary
+            summary: toMap.summary,
         };
     }
 
@@ -694,7 +694,7 @@ export class DugiteGit implements Git {
             timestamp: toMap.date.getTime(),
             email: toMap.email,
             name: toMap.name,
-            tzOffset: toMap.tzOffset
+            tzOffset: toMap.tzOffset,
         };
     }
 
@@ -710,7 +710,7 @@ export class DugiteGit implements Git {
             upstreamBranch: toMap.currentUpstreamBranch,
             aheadBehind,
             changes,
-            currentHead: toMap.currentTip
+            currentHead: toMap.currentTip,
         };
     }
 
@@ -733,7 +733,7 @@ export class DugiteGit implements Git {
             uri,
             status,
             oldUri,
-            staged: toMap.staged
+            staged: toMap.staged,
         };
     }
 

@@ -45,7 +45,7 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
         this.disposables.pushAll([
             this.decorationEmitter,
             this.filteredNodesEmitter,
-            this.tree.onChanged(() => this.filter(undefined))
+            this.tree.onChanged(() => this.filter(undefined)),
         ]);
     }
 
@@ -70,7 +70,7 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
         this._filterResult = await this.fuzzySearch.filter({
             items,
             pattern,
-            transform
+            transform,
         });
         this._filteredNodes = this._filterResult.map(match => match.item);
         this.fireDidChangeDecorations(() => new Map(this._filterResult.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data])));
@@ -111,8 +111,8 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
     protected toDecorator(match: FuzzySearch.Match<TreeNode>): TreeDecoration.Data {
         return {
             highlight: {
-                ranges: match.ranges.map(this.mapRange.bind(this))
-            }
+                ranges: match.ranges.map(this.mapRange.bind(this)),
+            },
         };
     }
 
@@ -120,7 +120,7 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
         const { offset, length } = range;
         return {
             offset,
-            length
+            length,
         };
     }
 

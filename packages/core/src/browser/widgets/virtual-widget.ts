@@ -29,7 +29,7 @@ export class VirtualWidget extends BaseWidget {
     protected readonly onRender = new DisposableCollection();
     protected childContainer?: HTMLElement;
     protected scrollOptions = {
-        suppressScrollX: true
+        suppressScrollX: true,
     };
 
     protected onUpdateRequest(msg: Message): void {

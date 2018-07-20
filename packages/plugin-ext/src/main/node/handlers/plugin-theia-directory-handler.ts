@@ -17,7 +17,7 @@
 import {
     PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
-    PluginDeployerEntryType
+    PluginDeployerEntryType,
 } from "../../../common/plugin-protocol";
 import { injectable } from "inversify";
 import * as fs from "fs";

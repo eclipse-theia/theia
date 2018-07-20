@@ -25,7 +25,7 @@ import { MonacoEditorModel } from "./monaco-editor-model";
 export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     protected readonly _models = new ReferenceCollection<string, MonacoEditorModel>(
-        uri => this.loadModel(new URI(uri))
+        uri => this.loadModel(new URI(uri)),
     );
 
     @inject(ResourceProvider)
@@ -69,10 +69,10 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     protected readonly modelOptions: {
-        [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined)
+        [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined),
     } = {
             'editor.tabSize': 'tabSize',
-            'editor.insertSpaces': 'insertSpaces'
+            'editor.insertSpaces': 'insertSpaces',
         };
 
     protected updateModel(model: MonacoEditorModel, change: EditorPreferenceChange): void {
@@ -94,7 +94,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
         return {
             tabSize: this.editorPreferences['editor.tabSize'],
-            insertSpaces: this.editorPreferences['editor.insertSpaces']
+            insertSpaces: this.editorPreferences['editor.insertSpaces'],
         };
     }
 
@@ -102,7 +102,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return {
             dispose(): void {
                 // no-op
-            }
+            },
         };
     }
 }

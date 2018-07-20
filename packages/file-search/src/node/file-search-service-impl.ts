@@ -37,9 +37,9 @@ export class FileSearchServiceImpl implements FileSearchService {
             limit: Number.MAX_SAFE_INTEGER,
             useGitIgnore: true,
             defaultIgnorePatterns: [
-                '^.git$'
+                '^.git$',
             ],
-            ...options
+            ...options,
         };
         const args: string[] = [
             '--files',
@@ -52,8 +52,8 @@ export class FileSearchServiceImpl implements FileSearchService {
             command: rgPath,
             args,
             options: {
-                cwd: FileUri.fsPath(opts.rootUri)
-            }
+                cwd: FileUri.fsPath(opts.rootUri),
+            },
         });
         const result: string[] = [];
         const fuzzyMatches: string[] = [];
@@ -72,7 +72,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         }
         const lineReader = readline.createInterface({
             input: process.output,
-            output: process.input
+            output: process.input,
         });
         lineReader.on('line', line => {
             if (result.length >= opts.limit) {

@@ -30,7 +30,7 @@ export class TaskBackendApplicationContribution implements BackendApplicationCon
 
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib =>
-            contrib.registerRunner(this.taskRunnerRegistry)
+            contrib.registerRunner(this.taskRunnerRegistry),
         );
     }
 }

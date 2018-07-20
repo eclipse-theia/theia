@@ -23,11 +23,11 @@ import { PROBLEM_KIND } from '../../common/problem-marker';
 
 export const PROBLEM_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,
-    contextMenuPath: [PROBLEM_KIND]
+    contextMenuPath: [PROBLEM_KIND],
 };
 
 export const PROBLEM_OPTIONS = <MarkerOptions>{
-    kind: 'problem'
+    kind: 'problem',
 };
 
 export function createProblemTreeContainer(parent: interfaces.Container): Container {

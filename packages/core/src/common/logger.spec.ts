@@ -41,7 +41,7 @@ describe('logger', () => {
             } finally {
                 unsetRootLogger();
             }
-        }
+        },
         ).to.not.throw(ReferenceError);
     });
 

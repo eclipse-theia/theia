@@ -95,7 +95,7 @@ export enum OverviewRulerLane {
     Left = 1,
     Center = 2,
     Right = 4,
-    Full = 7
+    Full = 7,
 }
 
 export enum TrackedRangeStickiness {

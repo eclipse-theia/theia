@@ -64,13 +64,13 @@ export class ShellLayoutRestorer implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({
             id: 'reset.layout',
-            label: 'Reset Workbench Layout'
+            label: 'Reset Workbench Layout',
         }, {
                 execute: () => {
                     this.shouldStoreLayout = false;
                     this.storageService.setData(this.storageKey, undefined)
                         .then(() => window.location.reload(true));
-                }
+                },
             });
     }
 
@@ -138,7 +138,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             }
             return {
                 constructionOptions: desc,
-                innerWidgetState: innerState
+                innerWidgetState: innerState,
             };
         }
     }

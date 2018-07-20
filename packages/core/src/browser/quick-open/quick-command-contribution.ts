@@ -21,7 +21,7 @@ import { KeybindingRegistry, KeybindingContribution } from "../keybinding";
 
 export const quickCommand: Command = {
     id: 'quickCommand',
-    label: 'Open Quick Command'
+    label: 'Open Quick Command',
 };
 
 @injectable()
@@ -32,18 +32,18 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
-            execute: () => this.quickCommandService.open()
+            execute: () => this.quickCommandService.open(),
         });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: quickCommand.id,
-            keybinding: "f1"
+            keybinding: "f1",
         });
         keybindings.registerKeybinding({
             command: quickCommand.id,
-            keybinding: "ctrlcmd+shift+p"
+            keybinding: "ctrlcmd+shift+p",
         });
     }
 

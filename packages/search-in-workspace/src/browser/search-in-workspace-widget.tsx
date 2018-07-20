@@ -72,22 +72,22 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.matchCaseState = {
             className: "match-case",
             enabled: false,
-            title: "Match Case"
+            title: "Match Case",
         };
         this.wholeWordState = {
             className: "whole-word",
             enabled: false,
-            title: "Match Whole Word"
+            title: "Match Whole Word",
         };
         this.regExpState = {
             className: "use-regexp",
             enabled: false,
-            title: "Use Regular Expression"
+            title: "Use Regular Expression",
         };
         this.includeIgnoredState = {
             className: "include-ignored fa fa-eye",
             enabled: false,
-            title: "Include Ignored Files"
+            title: "Include Ignored Files",
         };
         this.searchInWorkspaceOptions = {
             matchCase: false,
@@ -96,7 +96,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             includeIgnored: false,
             include: [],
             exclude: [],
-            maxResults: 2000
+            maxResults: 2000,
         };
         this.toDispose.push(this.resultTreeWidget.onChange(r => {
             this.hasResults = r.size > 0;
@@ -121,7 +121,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             searchInWorkspaceOptions: this.searchInWorkspaceOptions,
             searchTerm: this.searchTerm,
             replaceTerm: this.replaceTerm,
-            showReplaceField: this.showReplaceField
+            showReplaceField: this.showReplaceField,
         };
     }
 

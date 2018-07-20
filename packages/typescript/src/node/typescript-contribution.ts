@@ -28,7 +28,7 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         const command = "node";
         const args: string[] = [
             __dirname + "/startserver.js",
-            '--stdio'
+            '--stdio',
         ];
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);

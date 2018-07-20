@@ -22,7 +22,7 @@ import '../../../../src/main/browser/dialogs/style/modal-notification.css';
 export enum MessageType {
     Error = 'error',
     Warning = 'warning',
-    Info = 'info'
+    Info = 'info',
 }
 
 const NOTIFICATION = 'theia-Notification';

@@ -38,7 +38,7 @@ const jobs: { [id: string]: (() => Promise<void>) | undefined } = {
     restarted: async () => {
         const server = new ServerProcess(clusterRemoteMasterProcessFactory);
         await server.kill();
-    }
+    },
 };
 
 const id = process.argv[process.argv.length - 1];
@@ -49,6 +49,6 @@ if (job) {
         reason => {
             console.error(`Test worker: '${id}' failed`, reason);
             process.exit(1);
-        }
+        },
     );
 }

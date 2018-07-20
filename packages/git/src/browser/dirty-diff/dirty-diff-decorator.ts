@@ -30,7 +30,7 @@ const AddedLineDecoration = <EditorDecorationOptions>{
     overviewRuler: {
         color: 'rgba(0, 255, 0, 0.8)',
         position: OverviewRulerLane.Left,
-    }
+    },
 };
 
 const RemovedLineDecoration = <EditorDecorationOptions>{
@@ -38,7 +38,7 @@ const RemovedLineDecoration = <EditorDecorationOptions>{
     overviewRuler: {
         color: 'rgba(230, 0, 0, 0.8)',
         position: OverviewRulerLane.Left,
-    }
+    },
 };
 
 const ModifiedLineDecoration = <EditorDecorationOptions>{
@@ -46,7 +46,7 @@ const ModifiedLineDecoration = <EditorDecorationOptions>{
     overviewRuler: {
         color: 'rgba(0, 100, 150, 0.8)',
         position: OverviewRulerLane.Left,
-    }
+    },
 };
 
 @injectable()

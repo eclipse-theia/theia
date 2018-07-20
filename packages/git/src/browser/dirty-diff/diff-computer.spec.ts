@@ -36,11 +36,11 @@ describe("dirty-diff-computer", () => {
             [
                 "FIRST",
                 "SECOND TO-BE-REMOVED",
-                "THIRD"
+                "THIRD",
             ],
             [
                 "FIRST",
-                "THIRD"
+                "THIRD",
             ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
@@ -68,7 +68,7 @@ describe("dirty-diff-computer", () => {
     it("remove all lines", () => {
         const dirtyDiff = computeDirtyDiff(
             sequenceOfN(10, () => "TO-BE-REMOVED"),
-            [""]
+            [""],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             added: [],
@@ -110,7 +110,7 @@ describe("dirty-diff-computer", () => {
             const dirtyDiff = computeDirtyDiff(
                 sequenceOfN(2),
                 sequenceOfN(lines, () => "ADDED LINE")
-                    .concat(sequenceOfN(2))
+                    .concat(sequenceOfN(2)),
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
                 modified: [],
@@ -124,7 +124,7 @@ describe("dirty-diff-computer", () => {
         const numberOfLines = 3;
         const dirtyDiff = computeDirtyDiff(
             [""],
-            sequenceOfN(numberOfLines, () => "ADDED LINE")
+            sequenceOfN(numberOfLines, () => "ADDED LINE"),
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             modified: [],
@@ -137,14 +137,14 @@ describe("dirty-diff-computer", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "1",
-                "2"
+                "2",
             ],
             [
                 "1",
                 "",
                 "",
-                "2"
-            ]
+                "2",
+            ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             modified: [],
@@ -156,12 +156,12 @@ describe("dirty-diff-computer", () => {
     it("add empty line after single line", () => {
         const dirtyDiff = computeDirtyDiff(
             [
-                "1"
+                "1",
             ],
             [
                 "1",
-                ""
-            ]
+                "",
+            ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             modified: [],
@@ -175,7 +175,7 @@ describe("dirty-diff-computer", () => {
             const dirtyDiff = computeDirtyDiff(
                 sequenceOfN(2),
                 sequenceOfN(2)
-                    .concat(new Array(lines).map(() => ""))
+                    .concat(new Array(lines).map(() => "")),
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
                 modified: [],
@@ -189,7 +189,7 @@ describe("dirty-diff-computer", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "FIRST",
-                "LAST"
+                "LAST",
             ],
             [
                 "FIRST",
@@ -198,8 +198,8 @@ describe("dirty-diff-computer", () => {
                 "3. ADDED",
                 "4. ADDED",
                 "5. ADDED",
-                "LAST"
-            ]
+                "LAST",
+            ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             modified: [],
@@ -212,7 +212,7 @@ describe("dirty-diff-computer", () => {
         it(`add ${formatLines(lines)} after single line`, () => {
             const dirtyDiff = computeDirtyDiff(
                 ["0"],
-                ["0"].concat(sequenceOfN(lines, () => "ADDED LINE"))
+                ["0"].concat(sequenceOfN(lines, () => "ADDED LINE")),
             );
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
                 modified: [],
@@ -227,13 +227,13 @@ describe("dirty-diff-computer", () => {
             [
                 "FIRST",
                 "TO-BE-MODIFIED",
-                "LAST"
+                "LAST",
             ],
             [
                 "FIRST",
                 "MODIFIED",
-                "LAST"
-            ]
+                "LAST",
+            ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             removed: [],
@@ -246,7 +246,7 @@ describe("dirty-diff-computer", () => {
         const numberOfLines = 10;
         const dirtyDiff = computeDirtyDiff(
             sequenceOfN(numberOfLines, () => "TO-BE-MODIFIED"),
-            sequenceOfN(numberOfLines, () => "MODIFIED")
+            sequenceOfN(numberOfLines, () => "MODIFIED"),
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             removed: [],
@@ -261,13 +261,13 @@ describe("dirty-diff-computer", () => {
                 "1",
                 "2",
                 "3",
-                "4"
+                "4",
             ],
             [
                 "1",
                 "2-changed",
-                "3-changed"
-            ]
+                "3-changed",
+            ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             removed: [],
@@ -289,7 +289,7 @@ describe("dirty-diff-computer", () => {
                 "6",
                 "7",
                 "8",
-                "9"
+                "9",
             ],
             [
                 "CHANGED",
@@ -303,8 +303,8 @@ describe("dirty-diff-computer", () => {
                 "8",
                 "9",
                 "ADDED",
-                ""
-            ]
+                "",
+            ],
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             removed: [3],
@@ -325,7 +325,7 @@ describe("dirty-diff-computer", () => {
                 "",
                 "",
                 "",
-                "last line"
+                "last line",
             ],
             [
                 "first line",
@@ -339,7 +339,7 @@ describe("dirty-diff-computer", () => {
                 "",
                 "last line",
                 "",
-                ""
+                "",
             ]);
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             removed: [11],

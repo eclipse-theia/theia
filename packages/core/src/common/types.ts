@@ -35,7 +35,7 @@ export namespace Prioritizeable {
     export async function toPrioritizeable<T>(rawValue: MaybeArray<MaybePromise<T>>, getPriority: GetPriority<T>): Promise<MaybeArray<Prioritizeable<T>>> {
         if (rawValue instanceof Array) {
             return Promise.all(
-                rawValue.map(v => toPrioritizeable(v, getPriority))
+                rawValue.map(v => toPrioritizeable(v, getPriority)),
             );
         }
         const value = await rawValue;
@@ -45,7 +45,7 @@ export namespace Prioritizeable {
     export function toPrioritizeableSync<T>(rawValue: T[], getPriority: GetPrioritySync<T>): Prioritizeable<T>[] {
         return rawValue.map(v => ({
             value: v,
-            priority: getPriority(v)
+            priority: getPriority(v),
         }));
     }
     export function prioritizeAllSync<T>(values: T[], getPriority: GetPrioritySync<T>): Prioritizeable<T>[] {

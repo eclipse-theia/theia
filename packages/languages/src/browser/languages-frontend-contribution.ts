@@ -24,13 +24,13 @@ export class LanguagesFrontendContribution implements FrontendApplicationContrib
 
     constructor(
         @inject(ContributionProvider) @named(LanguageClientContribution)
-        protected readonly contributions: ContributionProvider<LanguageClientContribution>
+        protected readonly contributions: ContributionProvider<LanguageClientContribution>,
     ) { }
 
     onStart(app: FrontendApplication): void {
         for (const contribution of this.contributions.getContributions()) {
             contribution.waitForActivation(app).then(() =>
-                contribution.activate(app)
+                contribution.activate(app),
             );
         }
     }

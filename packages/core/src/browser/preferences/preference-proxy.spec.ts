@@ -23,7 +23,7 @@ describe('preference proxy', function() {
     it('.ready should return a promise', function() {
 
         const proxy = createPreferenceProxy(new MockPreferenceService(), {
-            properties: {}
+            properties: {},
         });
         const proto = Object.getPrototypeOf(proxy.ready);
         expect(proto).to.equal(Promise.prototype);

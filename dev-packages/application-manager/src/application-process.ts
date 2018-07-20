@@ -23,12 +23,12 @@ export class ApplicationProcess {
 
     protected readonly defaultOptions = {
         cwd: this.pck.projectPath,
-        env: process.env
+        env: process.env,
     };
 
     constructor(
         protected readonly pck: ApplicationPackage,
-        protected readonly binProjectPath: string
+        protected readonly binProjectPath: string,
     ) { }
 
     spawn(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {

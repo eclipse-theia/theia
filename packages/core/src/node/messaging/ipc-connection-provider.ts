@@ -30,7 +30,7 @@ export interface ResolvedIPCConnectionOptions {
 }
 export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
     readonly serverName: string
-    readonly entryPoint: string
+    readonly entryPoint: string,
 };
 
 @injectable()
@@ -43,7 +43,7 @@ export class IPCConnectionProvider {
         return this.doListen({
             logger: this.logger,
             args: [],
-            ...options
+            ...options,
         }, acceptor);
     }
 
@@ -80,10 +80,10 @@ export class IPCConnectionProvider {
             error: (message: string) => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${message}`),
             warn: (message: string) => this.logger.warn(`[${options.serverName}: ${childProcess.pid}] ${message}`),
             info: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`),
-            log: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`)
+            log: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`),
         });
         connection.trace(Trace.Off, {
-            log: (message, data) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message} ${data}`)
+            log: (message, data) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message} ${data}`),
         });
         return connection;
     }
@@ -92,7 +92,7 @@ export class IPCConnectionProvider {
         const forkOptions: cp.ForkOptions = {
             silent: true,
             env: createIpcEnv(options),
-            execArgv: []
+            execArgv: [],
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));

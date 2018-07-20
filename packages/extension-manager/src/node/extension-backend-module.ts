@@ -33,10 +33,10 @@ export function bindNodeExtensionServer(bind: interfaces.Bind, args?: Applicatio
         bind(ApplicationProjectCliContribution).toSelf().inSingletonScope();
         bind(CliContribution).toDynamicValue(ctx => ctx.container.get(ApplicationProjectCliContribution)).inSingletonScope();
         bind(NpmClientOptions).toDynamicValue(ctx =>
-            ctx.container.get(ApplicationProjectCliContribution).args
+            ctx.container.get(ApplicationProjectCliContribution).args,
         ).inSingletonScope();
         bind(ApplicationProjectOptions).toDynamicValue(ctx =>
-            ctx.container.get(ApplicationProjectCliContribution).args
+            ctx.container.get(ApplicationProjectCliContribution).args,
         ).inSingletonScope();
     }
     bind(NpmClient).toSelf().inSingletonScope();
@@ -45,7 +45,7 @@ export function bindNodeExtensionServer(bind: interfaces.Bind, args?: Applicatio
     bind(ExtensionKeywords).toConstantValue([extensionKeyword]);
     bind(NodeExtensionServer).toSelf().inSingletonScope();
     bind(ExtensionServer).toDynamicValue(ctx =>
-        ctx.container.get(NodeExtensionServer)
+        ctx.container.get(NodeExtensionServer),
     ).inSingletonScope();
 }
 
@@ -56,7 +56,7 @@ export default new ContainerModule(bind => {
     const dispatchingClient: ExtensionClient = {
         onDidChange: change => clients.forEach(client => client.onDidChange(change)),
         onDidStopInstallation: result => clients.forEach(client => client.onDidStopInstallation(result)),
-        onWillStartInstallation: param => clients.forEach(client => client.onWillStartInstallation(param))
+        onWillStartInstallation: param => clients.forEach(client => client.onWillStartInstallation(param)),
     };
     bind(ConnectionHandler).toDynamicValue(ctx => {
         const server = ctx.container.get<ExtensionServer>(ExtensionServer);

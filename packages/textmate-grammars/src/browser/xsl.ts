@@ -28,18 +28,18 @@ export class XslContribution implements LanguageGrammarDefinitionContribution {
             id: this.id,
             extensions: [
                 ".xsl",
-                ".xslt"
+                ".xslt",
             ],
-            aliases: ["XSL", "xsl"]
+            aliases: ["XSL", "xsl"],
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
                 lineComment: "",
-                blockComment: ["<!--", "-->"]
+                blockComment: ["<!--", "-->"],
             },
             brackets: [
-                ["<", ">"]
-            ]
+                ["<", ">"],
+            ],
         });
 
         const grammar = require('../../data/xsl.tmLanguage.json');
@@ -47,9 +47,9 @@ export class XslContribution implements LanguageGrammarDefinitionContribution {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

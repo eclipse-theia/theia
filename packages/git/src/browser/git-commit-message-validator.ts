@@ -43,14 +43,14 @@ export class GitCommitMessageValidator {
         if (index === 1 && line.length !== 0) {
             return {
                 status: 'warning',
-                message: 'The second line should be empty to separate the commit message from the body'
+                message: 'The second line should be empty to separate the commit message from the body',
             };
         }
         const diff = line.length - this.maxCharsPerLine();
         if (diff > 0) {
             return {
                 status: 'warning',
-                message: `${diff} characters over ${this.maxCharsPerLine()} in current line`
+                message: `${diff} characters over ${this.maxCharsPerLine()} in current line`,
             };
         }
         return undefined;

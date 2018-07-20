@@ -37,7 +37,7 @@ export class ExtensionOpenHandler extends WidgetOpenHandler<ExtensionDetailWidge
 
     protected createWidgetOptions(uri: URI): ExtensionWidgetOptions {
         return {
-            name: ExtensionUri.toExtensionName(uri)
+            name: ExtensionUri.toExtensionName(uri),
         };
     }
 

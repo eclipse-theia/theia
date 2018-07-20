@@ -22,7 +22,7 @@ export class MetadataScanner {
     private scanners: Map<string, PluginScanner> = new Map();
 
     constructor(
-        @multiInject(PluginScanner) scanners: PluginScanner[]
+        @multiInject(PluginScanner) scanners: PluginScanner[],
     ) {
         scanners.forEach((scanner: PluginScanner) => {
             this.scanners.set(scanner.apiType, scanner);
@@ -34,7 +34,7 @@ export class MetadataScanner {
         return {
             source: plugin,
             model: scanner.getModel(plugin),
-            lifecycle: scanner.getLifecycle(plugin)
+            lifecycle: scanner.getLifecycle(plugin),
         };
     }
 

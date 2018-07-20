@@ -27,7 +27,7 @@ export class FileDialogWidget extends FileTreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileDialogModel) readonly model: FileDialogModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
         this.addClass(FILE_DIALOG_CLASS);

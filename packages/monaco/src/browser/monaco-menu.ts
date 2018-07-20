@@ -34,8 +34,8 @@ export namespace MonacoMenus {
         actions: [
             MonacoCommands.SELECTION_SELECT_ALL,
             MonacoCommands.SELECTION_EXPAND_SELECTION,
-            MonacoCommands.SELECTION_SHRINK_SELECTION
-        ]
+            MonacoCommands.SELECTION_SHRINK_SELECTION,
+        ],
     };
 
     export const SELECTION_MOVE_GROUP: MonacoActionGroup = {
@@ -44,8 +44,8 @@ export namespace MonacoMenus {
             MonacoCommands.SELECTION_COPY_LINE_UP,
             MonacoCommands.SELECTION_COPY_LINE_DOWN,
             MonacoCommands.SELECTION_MOVE_LINE_UP,
-            MonacoCommands.SELECTION_MOVE_LINE_DOWN
-        ]
+            MonacoCommands.SELECTION_MOVE_LINE_DOWN,
+        ],
     };
 
     export const SELECTION_CURSOR_GROUP: MonacoActionGroup = {
@@ -56,14 +56,14 @@ export namespace MonacoMenus {
             MonacoCommands.SELECTION_ADD_CURSOR_TO_LINE_END,
             MonacoCommands.SELECTION_ADD_NEXT_OCCURRENCE,
             MonacoCommands.SELECTION_ADD_PREVIOUS_OCCURRENCE,
-            MonacoCommands.SELECTION_SELECT_ALL_OCCURRENCES
-        ]
+            MonacoCommands.SELECTION_SELECT_ALL_OCCURRENCES,
+        ],
     };
 
     export const SELECTION_GROUPS = [
         SELECTION_GROUP,
         SELECTION_MOVE_GROUP,
-        SELECTION_CURSOR_GROUP
+        SELECTION_CURSOR_GROUP,
     ];
 }
 
@@ -71,7 +71,7 @@ export namespace MonacoMenus {
 export class MonacoEditorMenuContribution implements MenuContribution {
 
     constructor(
-        @inject(MonacoCommandRegistry) protected readonly commands: MonacoCommandRegistry
+        @inject(MonacoCommandRegistry) protected readonly commands: MonacoCommandRegistry,
     ) { }
 
     registerMenus(registry: MenuModelRegistry) {

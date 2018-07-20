@@ -70,7 +70,7 @@ export class TextEditorsExtImpl implements TextEditorsExt {
         if (props.options) {
             this._onDidChangeTextEditorOptions.fire({
                 textEditor,
-                options: props.options
+                options: props.options,
             });
         }
 
@@ -80,7 +80,7 @@ export class TextEditorsExtImpl implements TextEditorsExt {
             this._onDidChangeTextEditorSelection.fire({
                 textEditor,
                 selections,
-                kind
+                kind,
             });
         }
 
@@ -88,7 +88,7 @@ export class TextEditorsExtImpl implements TextEditorsExt {
             const visibleRanges = props.visibleRanges.map(Converters.toRange);
             this._onDidChangeTextEditorVisibleRanges.fire({
                 textEditor,
-                visibleRanges
+                visibleRanges,
             });
         }
     }

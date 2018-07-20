@@ -81,7 +81,7 @@ export class FileNavigatorFilter {
     protected interceptExclusions(exclusions: FileNavigatorFilter.Exclusions): FileNavigatorFilter.Exclusions {
         return {
             ...exclusions,
-            '**/.*': this.showHiddenFiles
+            '**/.*': this.showHiddenFiles,
         };
     }
 
@@ -111,7 +111,7 @@ export namespace FileNavigatorFilter {
          */
         export function and(...predicates: Predicate[]): Predicate {
             return {
-                filter: id => predicates.every(predicate => predicate.filter(id))
+                filter: id => predicates.every(predicate => predicate.filter(id)),
             };
         }
 
@@ -145,7 +145,7 @@ export class FileNavigatorFilterPredicate implements FileNavigatorFilter.Predica
     protected createDelegate(pattern: string): FileNavigatorFilter.Predicate {
         const delegate = new Minimatch(pattern, { matchBase: true });
         return {
-            filter: item => !delegate.match(item.id)
+            filter: item => !delegate.match(item.id),
         };
     }
 

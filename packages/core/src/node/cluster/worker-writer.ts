@@ -23,7 +23,7 @@ export class WorkerMessageWriter extends AbstractMessageWriter implements Messag
     protected errorCount = 0;
 
     constructor(
-        protected readonly worker: Worker
+        protected readonly worker: Worker,
     ) {
         super();
     }

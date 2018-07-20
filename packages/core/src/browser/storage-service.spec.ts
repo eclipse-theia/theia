@@ -44,25 +44,25 @@ describe("storage-service", () => {
 
     it("stores data", async () => {
         storageService.setData('foo', {
-            test: 'foo'
+            test: 'foo',
         });
         expect(await storageService.getData('bar', 'bar')).equals('bar');
         expect((await storageService.getData('foo', {
-            test: 'bar'
+            test: 'bar',
         })).test).equals('foo');
     });
 
     it("removes data", async () => {
         storageService.setData('foo', {
-            test: 'foo'
+            test: 'foo',
         });
         expect((await storageService.getData('foo', {
-            test: 'bar'
+            test: 'bar',
         })).test).equals('foo');
 
         storageService.setData('foo', undefined);
         expect((await storageService.getData('foo', {
-            test: 'bar'
+            test: 'bar',
         })).test).equals('bar');
     });
 

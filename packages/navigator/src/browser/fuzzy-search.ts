@@ -30,7 +30,7 @@ export class FuzzySearch {
         return fuzzy.filter(input.pattern, input.items.slice(), {
             pre: FuzzySearch.PRE,
             post: FuzzySearch.POST,
-            extract: input.transform
+            extract: input.transform,
         }).sort(this.sortResults.bind(this)).map(this.mapResult.bind(this));
     }
 
@@ -41,7 +41,7 @@ export class FuzzySearch {
     protected mapResult<T>(result: fuzzy.FilterResult<T>): FuzzySearch.Match<T> {
         return {
             item: result.original,
-            ranges: this.mapRanges(result.string)
+            ranges: this.mapRanges(result.string),
         };
     }
 
@@ -59,7 +59,7 @@ export class FuzzySearch {
         while (preIndex !== -1 && postIndex !== -1) {
             ranges.push({
                 offset: preIndex,
-                length: postIndex - preIndex - 1
+                length: postIndex - preIndex - 1,
             });
             copy.splice(postIndex, 1);
             copy.splice(preIndex, 1);

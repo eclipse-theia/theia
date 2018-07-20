@@ -20,7 +20,7 @@ import { injectable, inject } from 'inversify';
 import { DisposableCollection } from '@theia/core';
 import { PublishedNodePackage, ExtensionPackage } from '@theia/application-package';
 import {
-    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam, ExtensionChange
+    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam, ExtensionChange,
 } from '../common/extension-protocol';
 import * as npms from './npms';
 import { ApplicationProject } from './application-project';
@@ -38,7 +38,7 @@ export class NodeExtensionServer implements ExtensionServer {
 
     constructor(
         @inject(ApplicationProject) protected readonly project: ApplicationProject,
-        @inject(ExtensionKeywords) protected readonly extensionKeywords: ExtensionKeywords
+        @inject(ExtensionKeywords) protected readonly extensionKeywords: ExtensionKeywords,
     ) {
         this.toDispose.push(project.onWillInstall(param => this.notification('onWillStartInstallation')(param)));
         this.toDispose.push(project.onDidInstall(result => this.notification('onDidStopInstallation')(result)));
@@ -106,7 +106,7 @@ export class NodeExtensionServer implements ExtensionServer {
             if (manager.pck.setDependency(extension, `^${latestVersion}`)) {
                 this.notifyDidChange({
                     name: extension,
-                    installed: true
+                    installed: true,
                 });
                 await manager.pck.save();
             }
@@ -123,7 +123,7 @@ export class NodeExtensionServer implements ExtensionServer {
                 this.notifyDidChange({
                     name: extension,
                     installed: false,
-                    outdated: false
+                    outdated: false,
                 });
                 await manager.pck.save();
             }
@@ -165,7 +165,7 @@ export class NodeExtensionServer implements ExtensionServer {
             if (manager.pck.setDependency(extension, `^${latestVersion}`)) {
                 this.notifyDidChange({
                     name: extension,
-                    outdated: false
+                    outdated: false,
                 });
                 await manager.pck.save();
             }
@@ -186,7 +186,7 @@ export class NodeExtensionServer implements ExtensionServer {
                 return Object.assign(raw, {
                     busy: this.isBusy(raw.name),
                     installed: false,
-                    outdated: false
+                    outdated: false,
                 });
             }));
         }
@@ -211,7 +211,7 @@ export class NodeExtensionServer implements ExtensionServer {
         const rawExtension = this.toRawExtension(extensionPackage);
         const documentation = await this.compileDocumentation(extensionPackage);
         return Object.assign(rawExtension, {
-            documentation
+            documentation,
         });
     }
 
@@ -219,12 +219,12 @@ export class NodeExtensionServer implements ExtensionServer {
         const markdownConverter = new showdown.Converter({
             noHeaderId: true,
             strikethrough: true,
-            headerLevelStart: 2
+            headerLevelStart: 2,
         });
         const readme = await extensionPackage.getReadme();
         const readmeHtml = markdownConverter.makeHtml(readme);
         return sanitize(readmeHtml, {
-            allowedTags: sanitize.defaults.allowedTags.concat(['h1', 'h2', 'img'])
+            allowedTags: sanitize.defaults.allowedTags.concat(['h1', 'h2', 'img']),
         });
     }
 
@@ -238,7 +238,7 @@ export class NodeExtensionServer implements ExtensionServer {
             installed: extensionPackage.installed,
             outdated: await extensionPackage.isOutdated(),
             busy: this.isBusy(extensionPackage.name),
-            dependent: extensionPackage.dependent
+            dependent: extensionPackage.dependent,
         });
     }
 
@@ -247,7 +247,7 @@ export class NodeExtensionServer implements ExtensionServer {
             name: extensionPackage.name,
             version: extensionPackage.version,
             description: extensionPackage.description,
-            author: extensionPackage.getAuthor()
+            author: extensionPackage.getAuthor(),
         };
     }
 
@@ -263,7 +263,7 @@ export class NodeExtensionServer implements ExtensionServer {
         }
         this.notifyDidChange({
             name: extension,
-            busy
+            busy,
         });
     }
 

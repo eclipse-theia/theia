@@ -21,7 +21,7 @@ import {
     PluginPackage,
     PluginScanner,
     PluginLifecycle,
-    buildFrontendModuleName
+    buildFrontendModuleName,
 } from '../../../common/plugin-protocol';
 
 @injectable()
@@ -41,12 +41,12 @@ export class TheiaPluginScanner implements PluginScanner {
             description: plugin.description,
             engine: {
                 type: this._apiType,
-                version: plugin.engines[this._apiType]
+                version: plugin.engines[this._apiType],
             },
             entryPoint: {
                 frontend: plugin.theiaPlugin!.frontend,
-                backend: plugin.theiaPlugin!.backend
-            }
+                backend: plugin.theiaPlugin!.backend,
+            },
         };
     }
 
@@ -56,7 +56,7 @@ export class TheiaPluginScanner implements PluginScanner {
             stopMethod: 'stop',
             frontendModuleName: buildFrontendModuleName(plugin),
 
-            backendInitPath: __dirname + '/backend-init-theia.js'
+            backendInitPath: __dirname + '/backend-init-theia.js',
         };
     }
 }

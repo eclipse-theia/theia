@@ -30,17 +30,17 @@ export class GitLocatorImpl implements GitLocator {
 
     protected readonly options: {
         info: (message: string, ...args: any[]) => void
-        error: (message: string, ...args: any[]) => void
+        error: (message: string, ...args: any[]) => void,
     };
 
     constructor(options?: {
         info?: (message: string, ...args: any[]) => void
-        error?: (message: string, ...args: any[]) => void
+        error?: (message: string, ...args: any[]) => void,
     }) {
         this.options = {
             info: (message, ...args) => console.info(message, ...args),
             error: (message, ...args) => console.error(message, ...args),
-            ...options
+            ...options,
         };
     }
 
@@ -50,7 +50,7 @@ export class GitLocatorImpl implements GitLocator {
     async locate(basePath: string, options: GitLocateOptions): Promise<string[]> {
         return await this.doLocate(basePath, {
             maxCount: typeof options.maxCount === 'number' ? options.maxCount : -1,
-            visited: new Map<string, boolean>()
+            visited: new Map<string, boolean>(),
         });
     }
 
@@ -78,7 +78,7 @@ export class GitLocatorImpl implements GitLocator {
                     resolve(this.locateFrom(
                         newContext => this.generateNested(repositoryPaths, newContext),
                         context,
-                        repositoryPaths
+                        repositoryPaths,
                     ));
                 }
             }, () => []);
@@ -99,7 +99,7 @@ export class GitLocatorImpl implements GitLocator {
                 } else {
                     resolve(this.locateFrom(
                         newContext => this.generateRepositories(repositoryPath, files, newContext),
-                        context
+                        context,
                     ));
                 }
             });
@@ -110,14 +110,14 @@ export class GitLocatorImpl implements GitLocator {
         for (const file of files) {
             if (file !== '.git') {
                 yield this.doLocate(path.join(repositoryPath, file), {
-                    ...context
+                    ...context,
                 });
             }
         }
     }
 
     protected async locateFrom(
-        generator: (context: GitLocateContext) => IterableIterator<Promise<string[]>>, parentContext: GitLocateContext, initial?: string[]
+        generator: (context: GitLocateContext) => IterableIterator<Promise<string[]>>, parentContext: GitLocateContext, initial?: string[],
     ): Promise<string[]> {
         const result: string[] = [];
         if (initial) {
@@ -125,7 +125,7 @@ export class GitLocatorImpl implements GitLocator {
         }
         const context = {
             ...parentContext,
-            maxCount: parentContext.maxCount - result.length
+            maxCount: parentContext.maxCount - result.length,
         };
         for (const locateRepositories of generator(context)) {
             const repositories = await locateRepositories;

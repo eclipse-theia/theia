@@ -20,7 +20,7 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { FileSystem, fileSystemPath } from "../common";
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
-    FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
+    FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer,
 } from '../common/filesystem-watcher-protocol';
 import { FileResourceResolver } from './file-resource';
 import { FileSystemListener } from './filesystem-listener';
@@ -33,7 +33,7 @@ export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
 
     bind(FileSystemWatcherServerProxy).toDynamicValue(ctx =>
-        WebSocketConnectionProvider.createProxy(ctx.container, fileSystemWatcherPath)
+        WebSocketConnectionProvider.createProxy(ctx.container, fileSystemWatcherPath),
     );
     bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer);
     bind(FileSystemWatcher).toSelf().inSingletonScope();

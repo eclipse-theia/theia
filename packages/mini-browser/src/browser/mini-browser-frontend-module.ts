@@ -39,7 +39,7 @@ export default new ContainerModule(bind => {
             const child = container.createChild();
             child.bind(MiniBrowserProps).toConstantValue(props);
             return child.get(MiniBrowser);
-        }
+        },
     })).inSingletonScope();
 
     bind(MiniBrowserOpenHandler).toSelf().inSingletonScope();

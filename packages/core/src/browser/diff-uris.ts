@@ -25,7 +25,7 @@ export namespace DiffUris {
     export function encode(left: URI, right: URI, name?: string): URI {
         const diffUris = [
             left.toString(),
-            right.toString()
+            right.toString(),
         ];
 
         const diffUriStr = JSON.stringify(diffUris);

@@ -27,16 +27,16 @@ export class BatContribution implements LanguageGrammarDefinitionContribution {
         monaco.languages.register({
             id: this.id,
             extensions: ['.bat', '.cmd'],
-            aliases: ['Batch', 'bat']
+            aliases: ['Batch', 'bat'],
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: 'REM'
+                lineComment: 'REM',
             },
             brackets: [
                 ['{', '}'],
                 ['[', ']'],
-                ['(', ')']
+                ['(', ')'],
             ],
             autoClosingPairs: [
                 { open: '{', close: '}' },
@@ -52,18 +52,18 @@ export class BatContribution implements LanguageGrammarDefinitionContribution {
             folding: {
                 markers: {
                     start: new RegExp("^\\s*(::\\s*|REM\\s+)#region"),
-                    end: new RegExp("^\\s*(::\\s*|REM\\s+)#endregion")
-                }
-            }
+                    end: new RegExp("^\\s*(::\\s*|REM\\s+)#endregion"),
+                },
+            },
         });
         const grammar = require('../../data/bat.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

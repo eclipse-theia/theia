@@ -83,7 +83,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         if (this.options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>
-                this.term.destroy()
+                this.term.destroy(),
             ));
         }
 
@@ -101,7 +101,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 foreground: cssProps.foreground,
                 background: cssProps.background,
                 cursor: cssProps.foreground,
-                selection: cssProps.selection
+                selection: cssProps.selection,
             },
         });
 
@@ -111,7 +111,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 foreground: changedProps.foreground,
                 background: changedProps.background,
                 cursor: changedProps.foreground,
-                selection: cssProps.selection
+                selection: cssProps.selection,
             });
         }));
 
@@ -208,7 +208,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             fontFamily,
             foreground,
             background,
-            selection
+            selection,
         };
     }
 
@@ -250,7 +250,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             env: this.options.env,
             rootURI,
             cols,
-            rows
+            rows,
         });
         if (IBaseTerminalServer.validateId(terminalId)) {
             return terminalId;
@@ -330,7 +330,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.toDisposeOnConnect.push(connection);
                 connection.listen();
                 this.waitForConnection.resolve(connection);
-            }
+            },
         }, { reconnecting: false });
     }
     protected async reconnectTerminalProcess(): Promise<void> {

@@ -38,7 +38,7 @@ export class GitQuickOpenService {
         @inject(Git) protected readonly git: Git,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
-        @inject(MessageService) protected readonly messageService: MessageService
+        @inject(MessageService) protected readonly messageService: MessageService,
     ) { }
 
     async fetch(): Promise<void> {
@@ -173,11 +173,11 @@ export class GitQuickOpenService {
                                     } catch (error) {
                                         __this.gitErrorHandler.handleError(error);
                                     }
-                                }
+                                },
                             ));
                         }
                         acceptor(dynamicItems);
-                    }
+                    },
                 };
                 this.quickOpenService.open(createBranchModel, this.getOptions('The name of the branch:', false));
             };
@@ -257,7 +257,7 @@ export class GitQuickOpenService {
             placeholder,
             fuzzyMatchLabel,
             fuzzySort: false,
-            onClose
+            onClose,
         });
     }
 
@@ -265,7 +265,7 @@ export class GitQuickOpenService {
         return {
             onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                 acceptor(Array.isArray(items) ? items : [items]);
-            }
+            },
         };
     }
 
@@ -300,7 +300,7 @@ export class GitQuickOpenService {
         try {
             const [local, remote] = await Promise.all([
                 this.git.branch(repository, { type: 'local' }),
-                this.git.branch(repository, { type: 'remote' })
+                this.git.branch(repository, { type: 'remote' }),
             ]);
             return [...local, ...remote];
         } catch (error) {

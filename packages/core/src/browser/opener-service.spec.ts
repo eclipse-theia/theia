@@ -26,10 +26,10 @@ const openHandler: OpenHandler = {
     },
     open() {
         return Promise.resolve(undefined);
-    }
+    },
 };
 const openerService = new DefaultOpenerService({
-    getContributions: () => [openHandler]
+    getContributions: () => [openHandler],
 });
 
 describe("opener-service", () => {

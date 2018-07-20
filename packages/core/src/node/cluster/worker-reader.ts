@@ -21,7 +21,7 @@ import { MessageReader, AbstractMessageReader } from 'vscode-jsonrpc/lib/message
 export class WorkerMessageReader extends AbstractMessageReader implements MessageReader {
 
     constructor(
-        protected readonly worker: Worker
+        protected readonly worker: Worker,
     ) {
         super();
     }
@@ -31,14 +31,14 @@ export class WorkerMessageReader extends AbstractMessageReader implements Messag
             if (code !== 0) {
                 const error: Error = {
                     name: '' + code,
-                    message: `Worker exited with '${code}' error code and '${signal}' signal`
+                    message: `Worker exited with '${code}' error code and '${signal}' signal`,
                 };
                 this.fireError(error);
             }
             this.fireClose();
         });
         this.worker.on('error', e =>
-            this.fireError(e)
+            this.fireError(e),
         );
         this.worker.on('message', callback);
     }

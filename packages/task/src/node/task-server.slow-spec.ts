@@ -318,10 +318,10 @@ function createTaskConfig(taskType: string, command: string, args: string[]): Ta
                 "/c",
                 command
                 ,
-                (args[0] !== undefined) ? args[0] : ''
-            ]
+                (args[0] !== undefined) ? args[0] : '',
+            ],
         },
-        cwd: wsRoot
+        cwd: wsRoot,
     };
     return options;
 }
@@ -338,10 +338,10 @@ function createProcessTaskConfig(processType: ProcessType, command: string, args
                 "/c",
                 command
                 ,
-                (args[0] !== undefined) ? args[0] : ''
-            ]
+                (args[0] !== undefined) ? args[0] : '',
+            ],
         },
-        cwd: wsRoot
+        cwd: wsRoot,
     };
     return options;
 }
@@ -352,7 +352,7 @@ function createProcessTaskConfig2(processType: ProcessType, command: string, arg
         type: processType,
         command: command,
         args: args,
-        cwd: wsRoot
+        cwd: wsRoot,
     };
 }
 
@@ -367,9 +367,9 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
             command: "cmd.exe",
             args: [
                 "/c",
-                commandLongRunningWindows
-            ]
-        }
+                commandLongRunningWindows,
+            ],
+        },
     };
 }
 

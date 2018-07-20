@@ -52,7 +52,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
-                        context: EditorKeybindingContexts.editorTextFocus
+                        context: EditorKeybindingContexts.editorTextFocus,
                     });
                 } else {
                     // FIXME support chord keybindings properly, KeyCode does not allow it right now
@@ -66,7 +66,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             registry.registerKeybinding({
                 command: selectAllCommand,
                 keybinding: "ctrlcmd+a",
-                context: EditorKeybindingContexts.editorTextFocus
+                context: EditorKeybindingContexts.editorTextFocus,
             });
         }
     }
@@ -83,7 +83,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         const keyCode = keybinding.keyCode;
         const sequence: Keystroke = {
             first: Key.getKey(monaco2BrowserKeyCode(keyCode & 255)),
-            modifiers: []
+            modifiers: [],
         };
         if (keybinding.ctrlKey) {
             sequence.modifiers!.push(KeyModifier.CtrlCmd);

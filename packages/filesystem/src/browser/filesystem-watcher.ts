@@ -21,7 +21,7 @@ import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOp
 import { FileSystemPreferences } from "./filesystem-preferences";
 
 export {
-    FileChangeType
+    FileChangeType,
 };
 
 export interface FileChange {
@@ -48,7 +48,7 @@ export class FileSystemWatcher implements Disposable {
 
         this.toDispose.push(this.server);
         this.server.setClient({
-            onDidFilesChanged: e => this.onDidFilesChanged(e)
+            onDidFilesChanged: e => this.onDidFilesChanged(e),
         });
 
         this.toDispose.push(this.preferences.onPreferenceChanged(e => {
@@ -68,7 +68,7 @@ export class FileSystemWatcher implements Disposable {
     protected onDidFilesChanged(event: DidFilesChangedParams): void {
         const changes = event.changes.map(change => <FileChange>{
             uri: new URI(change.uri),
-            type: change.type
+            type: change.type,
         });
         this.onFileChangedEmitter.fire(changes);
     }
@@ -82,19 +82,19 @@ export class FileSystemWatcher implements Disposable {
     watchFileChanges(uri: URI): Promise<Disposable> {
         return this.createWatchOptions()
             .then(options =>
-                this.server.watchFileChanges(uri.toString(), options)
+                this.server.watchFileChanges(uri.toString(), options),
             )
             .then(watcher => {
                 const toDispose = new DisposableCollection();
                 const toStop = Disposable.create(() =>
-                    this.server.unwatchFileChanges(watcher)
+                    this.server.unwatchFileChanges(watcher),
                 );
                 const toRestart = toDispose.push(toStop);
                 this.toRestartAll.push(Disposable.create(() => {
                     toRestart.dispose();
                     toStop.dispose();
                     this.watchFileChanges(uri).then(disposable =>
-                        toDispose.push(disposable)
+                        toDispose.push(disposable),
                     );
                 }));
                 return toDispose;
@@ -110,7 +110,7 @@ export class FileSystemWatcher implements Disposable {
 
     protected createWatchOptions(): Promise<WatchOptions> {
         return this.getIgnored().then(ignored => ({
-            ignored
+            ignored,
         }));
     }
 

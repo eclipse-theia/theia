@@ -32,7 +32,7 @@ export class EditorVariableContribution implements VariableContribution {
             resolve: () => {
                 const editor = this.getCurrentEditor();
                 return editor ? `${editor.cursor.line + 1}` : undefined;
-            }
+            },
         });
     }
 

@@ -111,6 +111,6 @@ function getSetup() {
         client,
         clientProxy,
         server,
-        serverProxy
+        serverProxy,
     };
 }

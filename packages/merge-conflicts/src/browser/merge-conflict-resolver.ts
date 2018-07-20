@@ -28,15 +28,15 @@ export class MergeConflictResolver {
     protected readonly editorManager: EditorManager;
 
     readonly acceptCurrent: CommandHandler = {
-        execute: args => this.doAcceptCurrent(args)
+        execute: args => this.doAcceptCurrent(args),
     };
 
     readonly acceptIncoming: CommandHandler = {
-        execute: args => this.doAcceptIncoming(args)
+        execute: args => this.doAcceptIncoming(args),
     };
 
     readonly acceptBoth: CommandHandler = {
-        execute: args => this.doAcceptBoth(args)
+        execute: args => this.doAcceptBoth(args),
     };
 
     protected doAcceptCurrent(argument: MergeConflictCommandArgument) {

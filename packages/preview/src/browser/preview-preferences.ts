@@ -20,7 +20,7 @@ import {
   PreferenceProxy,
   PreferenceService,
   PreferenceContribution,
-  PreferenceSchema
+  PreferenceSchema,
 } from "@theia/core/lib/browser";
 
 export const PreviewConfigSchema: PreferenceSchema = {
@@ -29,9 +29,9 @@ export const PreviewConfigSchema: PreferenceSchema = {
     "preview.openByDefault": {
       type: "boolean",
       description: "Open the preview instead of the editor by default.",
-      default: true
-    }
-  }
+      default: true,
+    },
+  },
 };
 
 export interface PreviewConfiguration {
@@ -42,7 +42,7 @@ export const PreviewPreferences = Symbol("PreviewPreferences");
 export type PreviewPreferences = PreferenceProxy<PreviewConfiguration>;
 
 export function createPreviewPreferences(
-  preferences: PreferenceService
+  preferences: PreferenceService,
 ): PreviewPreferences {
   return createPreferenceProxy(preferences, PreviewConfigSchema);
 }

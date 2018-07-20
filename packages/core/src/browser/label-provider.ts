@@ -87,7 +87,7 @@ export class LabelProvider {
 
     constructor(
         @inject(ContributionProvider) @named(LabelProviderContribution)
-        protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>
+        protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>,
     ) { }
 
     async getIcon(element: object): Promise<string> {
@@ -119,7 +119,7 @@ export class LabelProvider {
 
     protected findContribution(element: object): LabelProviderContribution[] {
         const prioritized = Prioritizeable.prioritizeAllSync(this.contributionProvider.getContributions(), contrib =>
-            contrib.canHandle(element)
+            contrib.canHandle(element),
         );
         return prioritized.map(c => c.value);
     }

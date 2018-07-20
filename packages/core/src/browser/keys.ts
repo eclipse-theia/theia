@@ -47,7 +47,7 @@ export namespace KeySequence {
         NONE = 0,
         PARTIAL,
         SHADOW,
-        FULL
+        FULL,
     }
 
     /* Compares two KeySequences, returns:
@@ -480,7 +480,7 @@ export enum KeyModifier {
     /**
      * M4 is the CTRL key on MacOS X, and is undefined on other platforms.
      */
-    MacCtrl = "M4"
+    MacCtrl = "M4",
 }
 
 export namespace KeyModifier {

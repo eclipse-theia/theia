@@ -37,7 +37,7 @@ export type JsonRpcProxy<T> = T & JsonRpcConnectionEventEmitter;
 export class JsonRpcConnectionHandler<T extends object> implements ConnectionHandler {
     constructor(
         readonly path: string,
-        readonly targetFactory: (proxy: JsonRpcProxy<T>) => any
+        readonly targetFactory: (proxy: JsonRpcProxy<T>) => any,
     ) { }
 
     onConnection(connection: MessageConnection): void {
@@ -110,11 +110,11 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
 
     protected waitForConnection(): void {
         this.connectionPromise = new Promise(resolve =>
-            this.connectionPromiseResolve = resolve
+            this.connectionPromiseResolve = resolve,
         );
         this.connectionPromise.then(connection => {
             connection.onClose(() =>
-                this.onDidCloseConnectionEmitter.fire(undefined)
+                this.onDidCloseConnectionEmitter.fire(undefined),
             );
             this.onDidOpenConnectionEmitter.fire(undefined);
         });
@@ -239,7 +239,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
                     } catch (err) {
                         reject(err);
                     }
-                })
+                }),
             );
     }
 

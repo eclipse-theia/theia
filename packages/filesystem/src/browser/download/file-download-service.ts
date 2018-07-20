@@ -52,7 +52,7 @@ export class FileDownloadService {
                     alignment: StatusBarAlignment.RIGHT,
                     text: '$(spinner~spin) Preparing download...',
                     tooltip: 'Preparing download...',
-                    priority: 1
+                    priority: 1,
                 });
             }
             this.downloadQueue.push(downloadId);
@@ -127,7 +127,7 @@ export class FileDownloadService {
         if (uris.length === 1) {
             return {
                 body: undefined,
-                method: 'GET'
+                method: 'GET',
             };
         }
         return {
@@ -139,7 +139,7 @@ export class FileDownloadService {
 
     protected body(uris: URI[]): FileDownloadData {
         return {
-            uris: uris.map(u => u.toString(true))
+            uris: uris.map(u => u.toString(true)),
         };
     }
 

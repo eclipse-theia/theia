@@ -110,21 +110,21 @@ See <a href="https://github.com/theia-ide/theia">here</a>.</p>
 function mockOffsetProperties() {
     Object.defineProperties(HTMLElement.prototype, {
         offsetLeft: {
-            get: () => 0
+            get: () => 0,
         },
         offsetTop: {
             get: function () {
                 const element = this as HTMLElement;
                 const line = Number.parseInt(element.getAttribute('data-line') || '0');
                 return offsetForLine(line);
-            }
+            },
         },
         offsetHeight: {
-            get: () => 0
+            get: () => 0,
         },
         offsetWidth: {
-            get: () => 0
-        }
+            get: () => 0,
+        },
     });
 }
 

@@ -36,7 +36,7 @@ export class ServerWorker {
 
         console.log('Starting server worker...');
         this.worker = cluster.fork(createIpcEnv({
-            env: process.env
+            env: process.env,
         }));
         this.server = createRemoteServer(this.worker, { onDidInitialize, restart });
 

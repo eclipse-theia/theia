@@ -27,22 +27,22 @@ export class MarkdownContribution implements LanguageGrammarDefinitionContributi
         monaco.languages.register({
             id: this.id,
             extensions: ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext'],
-            aliases: ['Markdown', 'markdown']
+            aliases: ['Markdown', 'markdown'],
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                blockComment: ['<!--', '-->']
+                blockComment: ['<!--', '-->'],
             },
             brackets: [
                 ['{', '}'],
                 ['[', ']'],
-                ['(', ')']
+                ['(', ')'],
             ],
             autoClosingPairs: [
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '<', close: '>', notIn: ['string'] }
+                { open: '<', close: '>', notIn: ['string'] },
             ],
             surroundingPairs: [
                 { open: '(', close: ')' },
@@ -52,9 +52,9 @@ export class MarkdownContribution implements LanguageGrammarDefinitionContributi
             folding: {
                 markers: {
                     start: new RegExp("^\\s*<!--\\s*#?region\\b.*-->"),
-                    end: new RegExp("^\\s*<!--\\s*#?endregion\\b.*-->")
-                }
-            }
+                    end: new RegExp("^\\s*<!--\\s*#?endregion\\b.*-->"),
+                },
+            },
         });
 
         const grammar = require('../../data/markdown.tmLanguage.json');
@@ -62,9 +62,9 @@ export class MarkdownContribution implements LanguageGrammarDefinitionContributi
             async getGrammarDefinition() {
                 return {
                     format: 'json',
-                    content: grammar
+                    content: grammar,
                 };
-            }
+            },
         });
         registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
     }

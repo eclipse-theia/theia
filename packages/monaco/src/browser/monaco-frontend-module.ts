@@ -67,11 +67,11 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoCommandService).toSelf().inTransientScope();
     bind(MonacoCommandServiceFactory).toAutoFactory(MonacoCommandService);
     bind(TextEditorProvider).toProvider(context =>
-        uri => context.container.get(MonacoEditorProvider).get(uri)
+        uri => context.container.get(MonacoEditorProvider).get(uri),
     );
     bind(MonacoDiffNavigatorFactory).toSelf().inSingletonScope();
     bind(DiffNavigatorProvider).toFactory(context =>
-        editor => context.container.get(MonacoEditorProvider).getDiffNavigator(editor)
+        editor => context.container.get(MonacoEditorProvider).getDiffNavigator(editor),
     );
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
@@ -88,7 +88,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoQuickOpenService).toSelf().inSingletonScope();
     rebind(QuickOpenService).toDynamicValue(ctx =>
-        ctx.container.get(MonacoQuickOpenService)
+        ctx.container.get(MonacoQuickOpenService),
     ).inSingletonScope();
 
     MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);

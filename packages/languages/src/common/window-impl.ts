@@ -58,7 +58,7 @@ export class WindowImpl implements Window {
             appendLine: outputChannel.appendLine.bind(outputChannel),
             show: function (preserveFocus?: boolean): void {
                 // no-op
-            }
+            },
         };
     }
 }

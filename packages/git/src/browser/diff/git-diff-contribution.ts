@@ -32,7 +32,7 @@ import { Git } from "../../common";
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
         id: 'git-diff:open-file-diff',
-        label: 'Diff: Compare With...'
+        label: 'Diff: Compare With...',
     };
 }
 
@@ -46,21 +46,21 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(OpenerService) protected openerService: OpenerService,
-        @inject(MessageService) protected readonly notifications: MessageService
+        @inject(MessageService) protected readonly notifications: MessageService,
     ) {
         super({
             widgetId: GIT_DIFF,
             widgetName: 'Git diff',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 400
-            }
+                rank: 400,
+            },
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '5_diff'], {
-            commandId: GitDiffCommands.OPEN_FILE_DIFF.id
+            commandId: GitDiffCommands.OPEN_FILE_DIFF.id,
         });
     }
 
@@ -74,8 +74,8 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                         const options: Git.Options.Diff = {
                             uri,
                             range: {
-                                fromRevision
-                            }
+                                fromRevision,
+                            },
                         };
                         if (fileStat) {
                             if (fileStat.isDirectory) {
@@ -92,7 +92,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                             }
                         }
                     });
-            }
+            },
         }));
     }
 
@@ -100,7 +100,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         const widget = await this.widget;
         await widget.setContent(options);
         return this.openView({
-            activate: true
+            activate: true,
         });
     }
 

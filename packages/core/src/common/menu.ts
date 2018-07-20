@@ -42,7 +42,7 @@ export class MenuModelRegistry {
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
         protected readonly contributions: ContributionProvider<MenuContribution>,
-        @inject(CommandRegistry) protected readonly commands: CommandRegistry
+        @inject(CommandRegistry) protected readonly commands: CommandRegistry,
     ) { }
 
     onStart(): void {
@@ -119,7 +119,7 @@ export class CompositeMenuNode implements MenuNode {
     protected readonly _children: MenuNode[] = [];
     constructor(
         public readonly id: string,
-        public label?: string
+        public label?: string,
     ) { }
 
     get children(): ReadonlyArray<MenuNode> {
@@ -143,7 +143,7 @@ export class CompositeMenuNode implements MenuNode {
                 if (idx >= 0) {
                     this._children.splice(idx, 1);
                 }
-            }
+            },
         };
     }
 
@@ -159,7 +159,7 @@ export class CompositeMenuNode implements MenuNode {
 export class ActionMenuNode implements MenuNode {
     constructor(
         public readonly action: MenuAction,
-        protected readonly commands: CommandRegistry
+        protected readonly commands: CommandRegistry,
     ) { }
 
     get id(): string {

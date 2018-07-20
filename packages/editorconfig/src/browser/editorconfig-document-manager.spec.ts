@@ -53,7 +53,7 @@ describe('Editorconfig document manager', function () {
             tab_width: 4,
             end_of_line: 'crlf',
             trim_trailing_whitespace: true,
-            insert_final_newline: true
+            insert_final_newline: true,
         } as KnownProps;
 
         documentManager.applyProperties(properties, {} as MonacoEditor);
@@ -73,7 +73,7 @@ describe('Editorconfig document manager', function () {
 
         const properties = {
             indent_size: 'tab',
-            tab_width: 4
+            tab_width: 4,
         } as KnownProps;
 
         documentManager.applyProperties(properties, {} as MonacoEditor);
@@ -89,7 +89,7 @@ describe('Editorconfig document manager', function () {
         const stubTabWidth = sinon.stub(documentManager, 'ensureTabWidth');
 
         const properties = {
-            indent_size: 'tab'
+            indent_size: 'tab',
         } as KnownProps;
 
         documentManager.applyProperties(properties, {} as MonacoEditor);

@@ -116,7 +116,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                     return NodeFilter.FILTER_SKIP;
                 }
                 return NodeFilter.FILTER_SKIP;
-            }
+            },
         };
         const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
         while (treeWalker.nextNode()) {
@@ -184,7 +184,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                     return NodeFilter.FILTER_SKIP;
                 }
                 return NodeFilter.FILTER_REJECT;
-            }
+            },
         };
         const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
         const lineElements: HTMLElement[] = [];
@@ -213,7 +213,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         } catch { }
                     }
                     return '<pre class="hljs"><code><div>' + engine.utils.escapeHtml(str) + '</div></code></pre>';
-                }
+                },
             });
             const renderers = ['heading_open', 'paragraph_open', 'list_item_open', 'blockquote_open', 'code_block', 'image'];
             for (const renderer of renderers) {

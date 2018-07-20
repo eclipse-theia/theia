@@ -33,7 +33,7 @@ export class FileResource implements Resource {
     constructor(
         readonly uri: URI,
         protected readonly fileSystem: FileSystem,
-        protected readonly fileSystemWatcher: FileSystemWatcher
+        protected readonly fileSystemWatcher: FileSystemWatcher,
     ) {
         this.uriString = this.uri.toString();
         this.toDispose.push(this.onDidChangeContentsEmitter);

@@ -42,14 +42,14 @@ export default new ContainerModule(bind => {
         (options: SearchBoxProps) => {
             const debounce = new SearchBoxDebounce(options);
             return new SearchBox(options, debounce);
-        }
+        },
     );
 
     bind(FileNavigatorWidget).toDynamicValue(ctx =>
-        createFileNavigatorWidget(ctx.container)
+        createFileNavigatorWidget(ctx.container),
     );
     bind(WidgetFactory).toDynamicValue(context => ({
         id: FILE_NAVIGATOR_ID,
-        createWidget: () => context.container.get<FileNavigatorWidget>(FileNavigatorWidget)
+        createWidget: () => context.container.get<FileNavigatorWidget>(FileNavigatorWidget),
     }));
 });

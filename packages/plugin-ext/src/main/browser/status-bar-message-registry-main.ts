@@ -44,7 +44,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color,
             tooltip,
-            command
+            command,
         };
 
         return this.delegate.setElement(id, entry).then(() => Promise.resolve(id));
