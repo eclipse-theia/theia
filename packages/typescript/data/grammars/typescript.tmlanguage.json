@@ -1,12 +1,12 @@
 {
 	"information_for_contributors": [
-		"This file has been converted from https://github.com/Microsoft/TypeScript-TmLanguage/blob/master/TypeScriptReact.tmLanguage",
+		"This file has been converted from https://github.com/Microsoft/TypeScript-TmLanguage/blob/master/TypeScript.tmLanguage",
 		"If you want to provide a fix or improvement, please create a pull request against the original repository.",
 		"Once accepted there, we are happy to receive an update request."
 	],
-	"version": "https://github.com/Microsoft/TypeScript-TmLanguage/commit/88217b1c7d36ed5d35adc3099ba7978aabe2531b",
-	"name": "JavaScript (with React support)",
-	"scopeName": "source.js",
+	"version": "https://github.com/Microsoft/TypeScript-TmLanguage/commit/d7df3e324468b6535af67573d2956f9a852aa586",
+	"name": "TypeScript",
+	"scopeName": "source.ts",
 	"patterns": [
 		{
 			"include": "#directives"
@@ -105,46 +105,50 @@
 					"include": "#for-loop"
 				},
 				{
-					"name": "keyword.control.trycatch.js",
+					"name": "keyword.control.trycatch.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(catch|finally|throw|try)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(break|continue|goto)\\s+([_$[:alpha:]][_$[:alnum:]]*)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 					"captures": {
 						"1": {
-							"name": "keyword.control.loop.js"
+							"name": "keyword.control.loop.ts"
 						},
 						"2": {
-							"name": "entity.name.label.js"
+							"name": "entity.name.label.ts"
 						}
 					}
 				},
 				{
-					"name": "keyword.control.loop.js",
+					"name": "keyword.control.loop.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(break|continue|do|goto|while)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.control.flow.js",
+					"name": "keyword.control.flow.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(return)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.control.switch.js",
+					"name": "keyword.control.switch.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(case|default|switch)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.control.conditional.js",
+					"name": "keyword.control.conditional.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(else|if)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.control.with.js",
+					"name": "keyword.control.with.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(with)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.other.debugger.js",
+					"name": "keyword.control.ts",
+					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(package)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
+				},
+				{
+					"name": "keyword.other.debugger.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(debugger)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "storage.modifier.js",
+					"name": "storage.modifier.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(declare)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				}
 			]
@@ -155,10 +159,10 @@
 					"begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(:)(?=\\s*\\{)",
 					"beginCaptures": {
 						"1": {
-							"name": "entity.name.label.js"
+							"name": "entity.name.label.ts"
 						},
 						"2": {
-							"name": "punctuation.separator.label.js"
+							"name": "punctuation.separator.label.ts"
 						}
 					},
 					"end": "(?<=\\})",
@@ -172,10 +176,10 @@
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(:)",
 					"captures": {
 						"1": {
-							"name": "entity.name.label.js"
+							"name": "entity.name.label.ts"
 						},
 						"2": {
-							"name": "punctuation.separator.label.js"
+							"name": "punctuation.separator.label.ts"
 						}
 					}
 				}
@@ -196,9 +200,6 @@
 		},
 		"expressionWithoutIdentifiers": {
 			"patterns": [
-				{
-					"include": "#jsx"
-				},
 				{
 					"include": "#string"
 				},
@@ -266,11 +267,11 @@
 			]
 		},
 		"decorator": {
-			"name": "meta.decorator.js",
+			"name": "meta.decorator.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))\\@",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.decorator.js"
+					"name": "punctuation.decorator.ts"
 				}
 			},
 			"end": "(?=\\s)",
@@ -281,14 +282,14 @@
 			]
 		},
 		"var-expr": {
-			"name": "meta.var.expr.js",
+			"name": "meta.var.expr.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?\\b(var|let|const(?!\\s+enum\\b))(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.type.js"
+					"name": "storage.type.ts"
 				}
 			},
 			"end": "(?=$|^|;|}|(\\s+(of|in)\\s+))",
@@ -309,10 +310,10 @@
 					"begin": "(,)\\s*(?!\\S)",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.separator.comma.js"
+							"name": "punctuation.separator.comma.ts"
 						}
 					},
-					"end": "(?<!,)((?==|;|}|(\\s+(of|in)\\s+)|^\\s*$))|((?<=\\S)(?=\\s*$))",
+					"end": "(?<!,)(((?==|;|}|(\\s+(of|in)\\s+)|^\\s*$))|((?<=\\S)(?=\\s*$)))",
 					"patterns": [
 						{
 							"include": "#comment"
@@ -336,11 +337,11 @@
 		"var-single-variable": {
 			"patterns": [
 				{
-					"name": "meta.var-single-variable.expr.js",
-					"begin": "(?x)([_$[:alpha:]][_$[:alnum:]]*)(?=\\s*\n# function assignment |\n(=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)) |\n# typeannotation is fn type: < | () | (... | (param: | (param, | (param? | (param= | (param) =>\n(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*([\\(]\\s*([\\{\\[]\\s*)?$)) |\n(:\\s*(=>|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(<[^<>]*>)|[^<>(),=])+=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
+					"name": "meta.var-single-variable.expr.ts",
+					"begin": "(?x)([_$[:alpha:]][_$[:alnum:]]*)(?=\\s*\n# function assignment |\n(=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)) |\n# typeannotation is fn type: < | () | (... | (param: | (param, | (param? | (param= | (param) =>\n(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$)) |\n(:\\s*(=>|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(<[^<>]*>)|[^<>(),=])+=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
 					"beginCaptures": {
 						"1": {
-							"name": "meta.definition.variable.js entity.name.function.js"
+							"name": "meta.definition.variable.ts entity.name.function.ts"
 						}
 					},
 					"end": "(?=$|^|[;,=}]|(\\s+(of|in)\\s+))",
@@ -351,11 +352,11 @@
 					]
 				},
 				{
-					"name": "meta.var-single-variable.expr.js",
+					"name": "meta.var-single-variable.expr.ts",
 					"begin": "([[:upper:]][_$[:digit:][:upper:]]*)(?![_$[:alnum:]])",
 					"beginCaptures": {
 						"1": {
-							"name": "meta.definition.variable.js variable.other.constant.js"
+							"name": "meta.definition.variable.ts variable.other.constant.ts"
 						}
 					},
 					"end": "(?=$|^|[;,=}]|(\\s+(of|in)\\s+))",
@@ -366,11 +367,11 @@
 					]
 				},
 				{
-					"name": "meta.var-single-variable.expr.js",
+					"name": "meta.var-single-variable.expr.ts",
 					"begin": "([_$[:alpha:]][_$[:alnum:]]*)",
 					"beginCaptures": {
 						"1": {
-							"name": "meta.definition.variable.js variable.other.readwrite.js"
+							"name": "meta.definition.variable.ts variable.other.readwrite.ts"
 						}
 					},
 					"end": "(?=$|^|[;,=}]|(\\s+(of|in)\\s+))",
@@ -398,7 +399,7 @@
 		"destructuring-variable": {
 			"patterns": [
 				{
-					"name": "meta.object-binding-pattern-variable.js",
+					"name": "meta.object-binding-pattern-variable.ts",
 					"begin": "(?<!=|:|^of|[^\\._$[:alnum:]]of|^in|[^\\._$[:alnum:]]in)\\s*(?=\\{)",
 					"end": "(?=$|^|[;,=}]|(\\s+(of|in)\\s+))",
 					"patterns": [
@@ -414,7 +415,7 @@
 					]
 				},
 				{
-					"name": "meta.array-binding-pattern-variable.js",
+					"name": "meta.array-binding-pattern-variable.ts",
 					"begin": "(?<!=|:|^of|[^\\._$[:alnum:]]of|^in|[^\\._$[:alnum:]]in)\\s*(?=\\[)",
 					"end": "(?=$|^|[;,=}]|(\\s+(of|in)\\s+))",
 					"patterns": [
@@ -467,7 +468,7 @@
 			"end": "(:)",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.destructuring.js"
+					"name": "punctuation.destructuring.ts"
 				}
 			},
 			"patterns": [
@@ -481,7 +482,7 @@
 					"include": "#numeric-literal"
 				},
 				{
-					"name": "variable.object.property.js",
+					"name": "variable.object.property.ts",
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)"
 				}
 			]
@@ -512,10 +513,10 @@
 			"match": "(?:(\\.\\.\\.)\\s*)?([_$[:alpha:]][_$[:alnum:]]*)",
 			"captures": {
 				"1": {
-					"name": "keyword.operator.rest.js"
+					"name": "keyword.operator.rest.ts"
 				},
 				"2": {
-					"name": "meta.definition.variable.js variable.other.readwrite.js"
+					"name": "meta.definition.variable.ts variable.other.readwrite.ts"
 				}
 			}
 		},
@@ -523,16 +524,16 @@
 			"begin": "(?:(\\.\\.\\.)\\s*)?(\\{)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.rest.js"
+					"name": "keyword.operator.rest.ts"
 				},
 				"2": {
-					"name": "punctuation.definition.binding-pattern.object.js"
+					"name": "punctuation.definition.binding-pattern.object.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.binding-pattern.object.js"
+					"name": "punctuation.definition.binding-pattern.object.ts"
 				}
 			},
 			"patterns": [
@@ -545,16 +546,16 @@
 			"begin": "(?:(\\.\\.\\.)\\s*)?(\\[)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.rest.js"
+					"name": "keyword.operator.rest.ts"
 				},
 				"2": {
-					"name": "punctuation.definition.binding-pattern.array.js"
+					"name": "punctuation.definition.binding-pattern.array.ts"
 				}
 			},
 			"end": "\\]",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.binding-pattern.array.js"
+					"name": "punctuation.definition.binding-pattern.array.ts"
 				}
 			},
 			"patterns": [
@@ -572,27 +573,27 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|protected|private|readonly)\\s+(?=(public|protected|private|readonly)\\s+)",
 					"captures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						}
 					}
 				},
 				{
-					"match": "(?x)(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|private|protected|readonly)\\s+)?(?:(\\.\\.\\.)\\s*)?(?<!=|:)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))\\s*(\\??)(?=\\s*\n# function assignment |\n(=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)) |\n# typeannotation is fn type: < | () | (... | (param: | (param, | (param? | (param= | (param) =>\n(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*([\\(]\\s*([\\{\\[]\\s*)?$)) |\n(:\\s*(=>|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(<[^<>]*>)|[^<>(),=])+=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
+					"match": "(?x)(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|private|protected|readonly)\\s+)?(?:(\\.\\.\\.)\\s*)?(?<!=|:)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))\\s*(\\??)(?=\\s*\n# function assignment |\n(=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)) |\n# typeannotation is fn type: < | () | (... | (param: | (param, | (param? | (param= | (param) =>\n(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$)) |\n(:\\s*(=>|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(<[^<>]*>)|[^<>(),=])+=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
 					"captures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "keyword.operator.rest.js"
+							"name": "keyword.operator.rest.ts"
 						},
 						"3": {
-							"name": "entity.name.function.js variable.language.this.js"
+							"name": "entity.name.function.ts variable.language.this.ts"
 						},
 						"4": {
-							"name": "entity.name.function.js"
+							"name": "entity.name.function.ts"
 						},
 						"5": {
-							"name": "keyword.operator.optional.js"
+							"name": "keyword.operator.optional.ts"
 						}
 					}
 				},
@@ -600,19 +601,19 @@
 					"match": "(?x)(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|private|protected|readonly)\\s+)?(?:(\\.\\.\\.)\\s*)?(?<!=|:)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))\\s*(\\??)",
 					"captures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "keyword.operator.rest.js"
+							"name": "keyword.operator.rest.ts"
 						},
 						"3": {
-							"name": "variable.parameter.js variable.language.this.js"
+							"name": "variable.parameter.ts variable.language.this.ts"
 						},
 						"4": {
-							"name": "variable.parameter.js"
+							"name": "variable.parameter.ts"
 						},
 						"5": {
-							"name": "keyword.operator.optional.js"
+							"name": "keyword.operator.optional.ts"
 						}
 					}
 				}
@@ -621,17 +622,17 @@
 		"destructuring-parameter": {
 			"patterns": [
 				{
-					"name": "meta.parameter.object-binding-pattern.js",
+					"name": "meta.parameter.object-binding-pattern.ts",
 					"begin": "(?<!=|:)\\s*(\\{)",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.definition.binding-pattern.object.js"
+							"name": "punctuation.definition.binding-pattern.object.ts"
 						}
 					},
 					"end": "\\}",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.binding-pattern.object.js"
+							"name": "punctuation.definition.binding-pattern.object.ts"
 						}
 					},
 					"patterns": [
@@ -641,17 +642,17 @@
 					]
 				},
 				{
-					"name": "meta.paramter.array-binding-pattern.js",
+					"name": "meta.paramter.array-binding-pattern.ts",
 					"begin": "(?<!=|:)\\s*(\\[)",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.definition.binding-pattern.array.js"
+							"name": "punctuation.definition.binding-pattern.array.ts"
 						}
 					},
 					"end": "\\]",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.binding-pattern.array.js"
+							"name": "punctuation.definition.binding-pattern.array.ts"
 						}
 					},
 					"patterns": [
@@ -722,10 +723,10 @@
 			"match": "(?:(\\.\\.\\.)\\s*)?([_$[:alpha:]][_$[:alnum:]]*)",
 			"captures": {
 				"1": {
-					"name": "keyword.operator.rest.js"
+					"name": "keyword.operator.rest.ts"
 				},
 				"2": {
-					"name": "variable.parameter.js"
+					"name": "variable.parameter.ts"
 				}
 			}
 		},
@@ -733,16 +734,16 @@
 			"begin": "(?:(\\.\\.\\.)\\s*)?(\\{)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.rest.js"
+					"name": "keyword.operator.rest.ts"
 				},
 				"2": {
-					"name": "punctuation.definition.binding-pattern.object.js"
+					"name": "punctuation.definition.binding-pattern.object.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.binding-pattern.object.js"
+					"name": "punctuation.definition.binding-pattern.object.ts"
 				}
 			},
 			"patterns": [
@@ -755,16 +756,16 @@
 			"begin": "(?:(\\.\\.\\.)\\s*)?(\\[)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.rest.js"
+					"name": "keyword.operator.rest.ts"
 				},
 				"2": {
-					"name": "punctuation.definition.binding-pattern.array.js"
+					"name": "punctuation.definition.binding-pattern.array.ts"
 				}
 			},
 			"end": "\\]",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.binding-pattern.array.js"
+					"name": "punctuation.definition.binding-pattern.array.ts"
 				}
 			},
 			"patterns": [
@@ -777,11 +778,11 @@
 			]
 		},
 		"field-declaration": {
-			"name": "meta.field.declaration.js",
+			"name": "meta.field.declaration.ts",
 			"begin": "(?x)(?<!\\()(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(readonly)\\s+)?(?=\\s*((\\b(?<!\\$)0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\\b(?!\\$))|(\\b(?<!\\$)0(b|B)[01][01_]*\\b(?!\\$))|(\\b(?<!\\$)0(o|O)?[0-7][0-7_]*\\b(?!\\$))|((?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*\\b(?!\\.))                                 # 1\n)(?!\\$))|([_$[:alpha:]][_$[:alnum:]]*)|(\\'([^\\'\\\\]|\\\\\\'|\\\\)*\\')|(\\\"([^\\\"\\\\]|\\\\\\\"|\\\\)*\\\")|(\\[([^\\[\\]]|\\[[^\\[\\]]*\\])+\\]))\\s*(\\?\\s*)?(=|:))",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				}
 			},
 			"end": "(?x)(?=\\}|;|,|$|(^(?!\\s*((\\b(?<!\\$)0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\\b(?!\\$))|(\\b(?<!\\$)0(b|B)[01][01_]*\\b(?!\\$))|(\\b(?<!\\$)0(o|O)?[0-7][0-7_]*\\b(?!\\$))|((?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*\\b(?!\\.))                                 # 1\n)(?!\\$))|([_$[:alpha:]][_$[:alnum:]]*)|(\\'([^\\'\\\\]|\\\\\\'|\\\\)*\\')|(\\\"([^\\\"\\\\]|\\\\\\\"|\\\\)*\\\")|(\\[([^\\[\\]]|\\[[^\\[\\]]*\\])+\\]))\\s*(\\?\\s*)?(=|:))))|(?<=\\})",
@@ -809,22 +810,22 @@
 							"include": "#comment"
 						},
 						{
-							"match": "(?x)([_$[:alpha:]][_$[:alnum:]]*)(\\?)?(?=(\\?\\s*)?\\s*\n# function assignment |\n(=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)) |\n# typeannotation is fn type: < | () | (... | (param: | (param, | (param? | (param= | (param) =>\n(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*([\\(]\\s*([\\{\\[]\\s*)?$)) |\n(:\\s*(=>|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(<[^<>]*>)|[^<>(),=])+=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
+							"match": "(?x)([_$[:alpha:]][_$[:alnum:]]*)(\\?)?(?=(\\?\\s*)?\\s*\n# function assignment |\n(=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)) |\n# typeannotation is fn type: < | () | (... | (param: | (param, | (param? | (param= | (param) =>\n(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$)) |\n(:\\s*(=>|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(<[^<>]*>)|[^<>(),=])+=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
 							"captures": {
 								"1": {
-									"name": "meta.definition.property.js entity.name.function.js"
+									"name": "meta.definition.property.ts entity.name.function.ts"
 								},
 								"2": {
-									"name": "keyword.operator.optional.js"
+									"name": "keyword.operator.optional.ts"
 								}
 							}
 						},
 						{
-							"name": "meta.definition.property.js variable.object.property.js",
+							"name": "meta.definition.property.ts variable.object.property.ts",
 							"match": "[_$[:alpha:]][_$[:alnum:]]*"
 						},
 						{
-							"name": "keyword.operator.optional.js",
+							"name": "keyword.operator.optional.ts",
 							"match": "\\?"
 						}
 					]
@@ -837,7 +838,7 @@
 					"begin": "(?<!=|!)(=)(?!=)(?=\\s*\\S)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						}
 					},
 					"end": "(?=$|^|[,);}\\]])",
@@ -851,7 +852,7 @@
 					"begin": "(?<!=|!)(=)(?!=)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						}
 					},
 					"end": "(?=[,);}\\]])|(?=^\\s*$)|(?<=\\S)(?<!=)(?=\\s*$)",
@@ -864,23 +865,23 @@
 			]
 		},
 		"function-declaration": {
-			"name": "meta.function.js",
+			"name": "meta.function.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(export)\\s+)?(?:(async)\\s+)?(function\\b)(?:\\s*(\\*))?(?:(?:\\s+|(?<=\\*))([_$[:alpha:]][_$[:alnum:]]*))?\\s*",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.modifier.async.js"
+					"name": "storage.modifier.async.ts"
 				},
 				"3": {
-					"name": "storage.type.function.js"
+					"name": "storage.type.function.ts"
 				},
 				"4": {
-					"name": "keyword.generator.asterisk.js"
+					"name": "keyword.generator.asterisk.ts"
 				},
 				"5": {
-					"name": "meta.definition.function.js entity.name.function.js"
+					"name": "meta.definition.function.ts entity.name.function.ts"
 				}
 			},
 			"end": "(?=$|^|;)|(?<=\\})",
@@ -894,20 +895,20 @@
 			]
 		},
 		"function-expression": {
-			"name": "meta.function.expression.js",
+			"name": "meta.function.expression.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(async)\\s+)?(function\\b)(?:\\s*(\\*))?(?:(?:\\s+|(?<=\\*))([_$[:alpha:]][_$[:alnum:]]*))?\\s*",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.modifier.async.js"
+					"name": "storage.modifier.async.ts"
 				},
 				"2": {
-					"name": "storage.type.function.js"
+					"name": "storage.type.function.ts"
 				},
 				"3": {
-					"name": "keyword.generator.asterisk.js"
+					"name": "keyword.generator.asterisk.ts"
 				},
 				"4": {
-					"name": "meta.definition.function.js entity.name.function.js"
+					"name": "meta.definition.function.ts entity.name.function.ts"
 				}
 			},
 			"end": "(?<=\\})",
@@ -921,7 +922,7 @@
 			]
 		},
 		"function-name": {
-			"name": "meta.definition.function.js entity.name.function.js",
+			"name": "meta.definition.function.ts entity.name.function.ts",
 			"match": "[_$[:alpha:]][_$[:alnum:]]*"
 		},
 		"function-body": {
@@ -942,7 +943,7 @@
 					"include": "#decl-block"
 				},
 				{
-					"name": "keyword.generator.asterisk.js",
+					"name": "keyword.generator.asterisk.ts",
 					"match": "\\*"
 				}
 			]
@@ -950,20 +951,20 @@
 		"method-declaration": {
 			"patterns": [
 				{
-					"name": "meta.method.declaration.js",
+					"name": "meta.method.declaration.ts",
 					"begin": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:\\b(public|private|protected)\\s+)?(?:\\b(abstract)\\s+)?(?:\\b(async)\\s+)?\\s*\\b(constructor)\\b(?!:)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"3": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						},
 						"4": {
-							"name": "storage.type.js"
+							"name": "storage.type.ts"
 						}
 					},
 					"end": "(?=\\}|;|,|$)|(?<=\\})",
@@ -977,23 +978,23 @@
 					]
 				},
 				{
-					"name": "meta.method.declaration.js",
+					"name": "meta.method.declaration.ts",
 					"begin": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:\\b(public|private|protected)\\s+)?(?:\\b(abstract)\\s+)?(?:\\b(async)\\s+)?(?:(?:\\s*\\b(new)\\b(?!:)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.)))|(?:(\\*)\\s*)?)(?=\\s*[\\(\\<])",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"3": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						},
 						"4": {
-							"name": "keyword.operator.new.js"
+							"name": "keyword.operator.new.ts"
 						},
 						"5": {
-							"name": "keyword.generator.asterisk.js"
+							"name": "keyword.generator.asterisk.ts"
 						}
 					},
 					"end": "(?=\\}|;|,|$)|(?<=\\})",
@@ -1007,23 +1008,23 @@
 					]
 				},
 				{
-					"name": "meta.method.declaration.js",
+					"name": "meta.method.declaration.ts",
 					"begin": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:\\b(public|private|protected)\\s+)?(?:\\b(abstract)\\s+)?(?:\\b(async)\\s+)?(?:\\b(get|set)\\s+)?(?:(\\*)\\s*)?(?=\\s*(((\\b(?<!\\$)0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\\b(?!\\$))|(\\b(?<!\\$)0(b|B)[01][01_]*\\b(?!\\$))|(\\b(?<!\\$)0(o|O)?[0-7][0-7_]*\\b(?!\\$))|((?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*\\b(?!\\.))                                 # 1\n)(?!\\$))|([_$[:alpha:]][_$[:alnum:]]*)|(\\'([^\\'\\\\]|\\\\\\'|\\\\)*\\')|(\\\"([^\\\"\\\\]|\\\\\\\"|\\\\)*\\\")|(\\[([^\\[\\]]|\\[[^\\[\\]]*\\])+\\]))\\s*(\\??))\\s*[\\(\\<])",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"3": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						},
 						"4": {
-							"name": "storage.type.property.js"
+							"name": "storage.type.property.ts"
 						},
 						"5": {
-							"name": "keyword.generator.asterisk.js"
+							"name": "keyword.generator.asterisk.ts"
 						}
 					},
 					"end": "(?=\\}|;|,|$)|(?<=\\})",
@@ -1039,17 +1040,17 @@
 			]
 		},
 		"object-literal-method-declaration": {
-			"name": "meta.method.declaration.js",
+			"name": "meta.method.declaration.ts",
 			"begin": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:\\b(async)\\s+)?(?:\\b(get|set)\\s+)?(?:(\\*)\\s*)?(?=\\s*(((\\b(?<!\\$)0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\\b(?!\\$))|(\\b(?<!\\$)0(b|B)[01][01_]*\\b(?!\\$))|(\\b(?<!\\$)0(o|O)?[0-7][0-7_]*\\b(?!\\$))|((?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*\\b(?!\\.))                                 # 1\n)(?!\\$))|([_$[:alpha:]][_$[:alnum:]]*)|(\\'([^\\'\\\\]|\\\\\\'|\\\\)*\\')|(\\\"([^\\\"\\\\]|\\\\\\\"|\\\\)*\\\")|(\\[([^\\[\\]]|\\[[^\\[\\]]*\\])+\\]))\\s*(\\??))\\s*[\\(\\<])",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.modifier.async.js"
+					"name": "storage.modifier.async.ts"
 				},
 				"2": {
-					"name": "storage.type.property.js"
+					"name": "storage.type.property.ts"
 				},
 				"3": {
-					"name": "keyword.generator.asterisk.js"
+					"name": "keyword.generator.asterisk.ts"
 				}
 			},
 			"end": "(?=\\}|;|,)|(?<=\\})",
@@ -1064,13 +1065,13 @@
 					"begin": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:\\b(async)\\s+)?(?:\\b(get|set)\\s+)?(?:(\\*)\\s*)?(?=\\s*(((\\b(?<!\\$)0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\\b(?!\\$))|(\\b(?<!\\$)0(b|B)[01][01_]*\\b(?!\\$))|(\\b(?<!\\$)0(o|O)?[0-7][0-7_]*\\b(?!\\$))|((?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*\\b(?!\\.))                                 # 1\n)(?!\\$))|([_$[:alpha:]][_$[:alnum:]]*)|(\\'([^\\'\\\\]|\\\\\\'|\\\\)*\\')|(\\\"([^\\\"\\\\]|\\\\\\\"|\\\\)*\\\")|(\\[([^\\[\\]]|\\[[^\\[\\]]*\\])+\\]))\\s*(\\??))\\s*[\\(\\<])",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						},
 						"2": {
-							"name": "storage.type.property.js"
+							"name": "storage.type.property.ts"
 						},
 						"3": {
-							"name": "keyword.generator.asterisk.js"
+							"name": "keyword.generator.asterisk.ts"
 						}
 					},
 					"end": "(?=\\(|\\<)",
@@ -1096,11 +1097,11 @@
 					"include": "#numeric-literal"
 				},
 				{
-					"name": "meta.definition.method.js entity.name.function.js",
+					"name": "meta.definition.method.ts entity.name.function.ts",
 					"match": "[_$[:alpha:]][_$[:alnum:]]*"
 				},
 				{
-					"name": "keyword.operator.optional.js",
+					"name": "keyword.operator.optional.ts",
 					"match": "\\?"
 				}
 			]
@@ -1108,23 +1109,23 @@
 		"arrow-function": {
 			"patterns": [
 				{
-					"name": "meta.arrow.js",
+					"name": "meta.arrow.ts",
 					"match": "(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(\\basync)\\s+)?([_$[:alpha:]][_$[:alnum:]]*)\\s*(?==>)",
 					"captures": {
 						"1": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						},
 						"2": {
-							"name": "variable.parameter.js"
+							"name": "variable.parameter.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.arrow.js",
+					"name": "meta.arrow.ts",
 					"begin": "(?x) (?:\n  (?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(\\basync)\n)? ((?<![})!\\]])\\s*\n  (?=\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  )\n)",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						}
 					},
 					"end": "(?==>|\\{|(^\\s*(export|function|class|interface|let|var|const|import|enum|namespace|module|type|abstract|declare)\\s+))",
@@ -1144,11 +1145,11 @@
 					]
 				},
 				{
-					"name": "meta.arrow.js",
+					"name": "meta.arrow.ts",
 					"begin": "=>",
 					"beginCaptures": {
 						"0": {
-							"name": "storage.type.function.arrow.js"
+							"name": "storage.type.function.arrow.ts"
 						}
 					},
 					"end": "(?<=\\}|\\S)(?<!=>)|((?!\\{)(?=\\S))",
@@ -1164,26 +1165,26 @@
 			]
 		},
 		"indexer-declaration": {
-			"name": "meta.indexer.declaration.js",
+			"name": "meta.indexer.declaration.ts",
 			"begin": "(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(readonly)\\s*)?\\s*(\\[)\\s*([_$[:alpha:]][_$[:alnum:]]*)\\s*(?=:)",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				},
 				"2": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				},
 				"3": {
-					"name": "variable.parameter.js"
+					"name": "variable.parameter.ts"
 				}
 			},
 			"end": "(\\])\\s*(\\?\\s*)?|$",
 			"endCaptures": {
 				"1": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				},
 				"2": {
-					"name": "keyword.operator.optional.js"
+					"name": "keyword.operator.optional.ts"
 				}
 			},
 			"patterns": [
@@ -1193,35 +1194,35 @@
 			]
 		},
 		"indexer-mapped-type-declaration": {
-			"name": "meta.indexer.mappedtype.declaration.js",
+			"name": "meta.indexer.mappedtype.declaration.ts",
 			"begin": "(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))([+-])?(readonly)\\s*)?\\s*(\\[)\\s*([_$[:alpha:]][_$[:alnum:]]*)\\s+(in)\\s+",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.type.modifier.js"
+					"name": "keyword.operator.type.modifier.ts"
 				},
 				"2": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				},
 				"3": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				},
 				"4": {
-					"name": "entity.name.type.js"
+					"name": "entity.name.type.ts"
 				},
 				"5": {
-					"name": "keyword.operator.expression.in.js"
+					"name": "keyword.operator.expression.in.ts"
 				}
 			},
 			"end": "(\\])([+-])?\\s*(\\?\\s*)?|$",
 			"endCaptures": {
 				"1": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				},
 				"2": {
-					"name": "keyword.operator.type.modifier.js"
+					"name": "keyword.operator.type.modifier.ts"
 				},
 				"3": {
-					"name": "keyword.operator.optional.js"
+					"name": "keyword.operator.optional.ts"
 				}
 			},
 			"patterns": [
@@ -1231,17 +1232,17 @@
 			]
 		},
 		"function-parameters": {
-			"name": "meta.parameters.js",
+			"name": "meta.parameters.ts",
 			"begin": "\\(",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.parameters.begin.js"
+					"name": "punctuation.definition.parameters.begin.ts"
 				}
 			},
 			"end": "\\)",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.parameters.end.js"
+					"name": "punctuation.definition.parameters.end.ts"
 				}
 			},
 			"patterns": [
@@ -1271,23 +1272,23 @@
 					"include": "#variable-initializer"
 				},
 				{
-					"name": "punctuation.separator.parameter.js",
+					"name": "punctuation.separator.parameter.ts",
 					"match": ","
 				}
 			]
 		},
 		"class-declaration": {
-			"name": "meta.class.js",
+			"name": "meta.class.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(export)\\s+)?\\b(?:(abstract)\\s+)?\\b(class)\\b(?=\\s+|/[/*])",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				},
 				"3": {
-					"name": "storage.type.class.js"
+					"name": "storage.type.class.ts"
 				}
 			},
 			"end": "(?<=\\})",
@@ -1298,11 +1299,11 @@
 			]
 		},
 		"class-expression": {
-			"name": "meta.class.js",
+			"name": "meta.class.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(class)\\b(?=\\s+|[<{]|\\/[\\/*])",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.type.class.js"
+					"name": "storage.type.class.ts"
 				}
 			},
 			"end": "(?<=\\})",
@@ -1324,7 +1325,7 @@
 					"match": "[_$[:alpha:]][_$[:alnum:]]*",
 					"captures": {
 						"0": {
-							"name": "entity.name.type.class.js"
+							"name": "entity.name.type.class.ts"
 						}
 					}
 				},
@@ -1337,17 +1338,17 @@
 			]
 		},
 		"interface-declaration": {
-			"name": "meta.interface.js",
+			"name": "meta.interface.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(export)\\s+)?\\b(?:(abstract)\\s+)?\\b(interface)\\b(?=\\s+|/[/*])",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				},
 				"3": {
-					"name": "storage.type.interface.js"
+					"name": "storage.type.interface.ts"
 				}
 			},
 			"end": "(?<=\\})",
@@ -1362,7 +1363,7 @@
 					"match": "[_$[:alpha:]][_$[:alnum:]]*",
 					"captures": {
 						"0": {
-							"name": "entity.name.type.interface.js"
+							"name": "entity.name.type.interface.ts"
 						}
 					}
 				},
@@ -1378,7 +1379,7 @@
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:\\b(extends|implements)\\b)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				}
 			},
 			"end": "(?=\\{)",
@@ -1399,13 +1400,13 @@
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))(?=\\s*[_$[:alpha:]][_$[:alnum:]]*(\\s*\\??\\.\\s*[_$[:alpha:]][_$[:alnum:]]*)*\\s*)",
 					"captures": {
 						"1": {
-							"name": "entity.name.type.module.js"
+							"name": "entity.name.type.module.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						}
 					}
 				},
@@ -1413,7 +1414,7 @@
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)",
 					"captures": {
 						"1": {
-							"name": "entity.other.inherited-class.js"
+							"name": "entity.other.inherited-class.ts"
 						}
 					}
 				},
@@ -1426,13 +1427,13 @@
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
@@ -1487,32 +1488,32 @@
 			]
 		},
 		"access-modifier": {
-			"name": "storage.modifier.js",
+			"name": "storage.modifier.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(abstract|public|protected|private|readonly|static)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"property-accessor": {
-			"name": "storage.type.property.js",
+			"name": "storage.type.property.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(get|set)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"async-modifier": {
-			"name": "storage.modifier.async.js",
+			"name": "storage.modifier.async.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(async)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"enum-declaration": {
-			"name": "meta.enum.declaration.js",
+			"name": "meta.enum.declaration.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?(?:\\b(const)\\s+)?\\b(enum)\\s+([_$[:alpha:]][_$[:alnum:]]*)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.modifier.js"
+					"name": "storage.modifier.ts"
 				},
 				"3": {
-					"name": "storage.type.enum.js"
+					"name": "storage.type.enum.ts"
 				},
 				"4": {
-					"name": "entity.name.type.enum.js"
+					"name": "entity.name.type.enum.ts"
 				}
 			},
 			"end": "(?<=\\})",
@@ -1524,13 +1525,13 @@
 					"begin": "\\{",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.block.js"
+							"name": "punctuation.definition.block.ts"
 						}
 					},
 					"end": "\\}",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.block.js"
+							"name": "punctuation.definition.block.ts"
 						}
 					},
 					"patterns": [
@@ -1541,7 +1542,7 @@
 							"begin": "([_$[:alpha:]][_$[:alnum:]]*)",
 							"beginCaptures": {
 								"0": {
-									"name": "variable.other.enummember.js"
+									"name": "variable.other.enummember.ts"
 								}
 							},
 							"end": "(?=,|\\}|$)",
@@ -1580,14 +1581,14 @@
 			]
 		},
 		"namespace-declaration": {
-			"name": "meta.namespace.declaration.js",
+			"name": "meta.namespace.declaration.ts",
 			"begin": "(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?\\b(namespace|module)\\s+(?=[_$[:alpha:]\"'`]))",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.type.namespace.js"
+					"name": "storage.type.namespace.ts"
 				}
 			},
 			"end": "(?<=\\})|(?=;|\\babstract\\b|\\basync\\b|\\bclass\\b|\\bconst\\b|\\bdeclare\\b|\\benum\\b|\\bexport\\b|\\bfunction\\b|\\bimport\\b|\\binterface\\b|\\blet\\b|\\bmodule\\b|\\bnamespace\\b|\\breturn\\b|\\btype\\b|\\bvar\\b)",
@@ -1599,7 +1600,7 @@
 					"include": "#string"
 				},
 				{
-					"name": "entity.name.type.module.js",
+					"name": "entity.name.type.module.ts",
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)"
 				},
 				{
@@ -1611,17 +1612,17 @@
 			]
 		},
 		"type-alias-declaration": {
-			"name": "meta.type.declaration.js",
+			"name": "meta.type.declaration.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?\\b(type)\\b\\s+([_$[:alpha:]][_$[:alnum:]]*)\\s*",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "storage.type.type.js"
+					"name": "storage.type.type.ts"
 				},
 				"3": {
-					"name": "entity.name.type.alias.js"
+					"name": "entity.name.type.alias.ts"
 				}
 			},
 			"end": "(?=\\}|;|\\babstract\\b|\\basync\\b|\\bclass\\b|\\bconst\\b|\\bdeclare\\b|\\benum\\b|\\bexport\\b|\\bfunction\\b|\\bimport\\b|\\binterface\\b|\\blet\\b|\\bmodule\\b|\\bnamespace\\b|\\breturn\\b|\\btype\\b|\\bvar\\b)",
@@ -1636,7 +1637,7 @@
 					"begin": "(=)\\s*",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						}
 					},
 					"end": "(?=\\}|;|\\babstract\\b|\\basync\\b|\\bclass\\b|\\bconst\\b|\\bdeclare\\b|\\benum\\b|\\bexport\\b|\\bfunction\\b|\\bimport\\b|\\binterface\\b|\\blet\\b|\\bmodule\\b|\\bnamespace\\b|\\breturn\\b|\\btype\\b|\\bvar\\b)",
@@ -1651,32 +1652,32 @@
 		"import-equals-declaration": {
 			"patterns": [
 				{
-					"name": "meta.import-equals.external.js",
+					"name": "meta.import-equals.external.ts",
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?\\b(import)\\s+([_$[:alpha:]][_$[:alnum:]]*)\\s*(=)\\s*(require)\\s*(\\()",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.export.js"
+							"name": "keyword.control.export.ts"
 						},
 						"2": {
-							"name": "keyword.control.import.js"
+							"name": "keyword.control.import.ts"
 						},
 						"3": {
-							"name": "variable.other.readwrite.alias.js"
+							"name": "variable.other.readwrite.alias.ts"
 						},
 						"4": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						},
 						"5": {
-							"name": "keyword.control.require.js"
+							"name": "keyword.control.require.ts"
 						},
 						"6": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"patterns": [
@@ -1689,20 +1690,20 @@
 					]
 				},
 				{
-					"name": "meta.import-equals.internal.js",
+					"name": "meta.import-equals.internal.ts",
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?\\b(import)\\s+([_$[:alpha:]][_$[:alnum:]]*)\\s*(=)\\s*(?!require\\b)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.export.js"
+							"name": "keyword.control.export.ts"
 						},
 						"2": {
-							"name": "keyword.control.import.js"
+							"name": "keyword.control.import.ts"
 						},
 						"3": {
-							"name": "variable.other.readwrite.alias.js"
+							"name": "variable.other.readwrite.alias.ts"
 						},
 						"4": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						}
 					},
 					"end": "(?=;|$|^)",
@@ -1714,18 +1715,18 @@
 							"match": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))",
 							"captures": {
 								"1": {
-									"name": "entity.name.type.module.js"
+									"name": "entity.name.type.module.ts"
 								},
 								"2": {
-									"name": "punctuation.accessor.js"
+									"name": "punctuation.accessor.ts"
 								},
 								"3": {
-									"name": "punctuation.accessor.optional.js"
+									"name": "punctuation.accessor.optional.ts"
 								}
 							}
 						},
 						{
-							"name": "variable.other.readwrite.js",
+							"name": "variable.other.readwrite.ts",
 							"match": "([_$[:alpha:]][_$[:alnum:]]*)"
 						}
 					]
@@ -1733,14 +1734,14 @@
 			]
 		},
 		"import-declaration": {
-			"name": "meta.import.js",
+			"name": "meta.import.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bexport)\\s+)?\\b(import)(?!\\s*[:\\(])(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.export.js"
+					"name": "keyword.control.export.ts"
 				},
 				"2": {
-					"name": "keyword.control.import.js"
+					"name": "keyword.control.import.ts"
 				}
 			},
 			"end": "(?<!^import|[^\\._$[:alnum:]]import)(?=;|$|^)",
@@ -1756,7 +1757,7 @@
 					"end": "\\bfrom\\b",
 					"endCaptures": {
 						"0": {
-							"name": "keyword.control.from.js"
+							"name": "keyword.control.from.ts"
 						}
 					},
 					"patterns": [
@@ -1776,31 +1777,31 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(export)\\s+(as)\\s+(namespace)\\s+([_$[:alpha:]][_$[:alnum:]]*)",
 					"captures": {
 						"1": {
-							"name": "keyword.control.export.js"
+							"name": "keyword.control.export.ts"
 						},
 						"2": {
-							"name": "keyword.control.as.js"
+							"name": "keyword.control.as.ts"
 						},
 						"3": {
-							"name": "storage.type.namespace.js"
+							"name": "storage.type.namespace.ts"
 						},
 						"4": {
-							"name": "entity.name.type.module.js"
+							"name": "entity.name.type.module.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.export.default.js",
+					"name": "meta.export.default.ts",
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(export)(?:(?:\\s*(=))|(?:\\s+(default)(?=\\s+)))",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.export.js"
+							"name": "keyword.control.export.ts"
 						},
 						"2": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						},
 						"3": {
-							"name": "keyword.control.default.js"
+							"name": "keyword.control.default.ts"
 						}
 					},
 					"end": "(?=$|;|\\babstract\\b|\\basync\\b|\\bclass\\b|\\bconst\\b|\\bdeclare\\b|\\benum\\b|\\bexport\\b|\\bfunction\\b|\\bimport\\b|\\binterface\\b|\\blet\\b|\\bmodule\\b|\\bnamespace\\b|\\breturn\\b|\\btype\\b|\\bvar\\b)",
@@ -1811,11 +1812,11 @@
 					]
 				},
 				{
-					"name": "meta.export.js",
+					"name": "meta.export.ts",
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(export)(?!\\s*:)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 					"beginCaptures": {
 						"0": {
-							"name": "keyword.control.export.js"
+							"name": "keyword.control.export.ts"
 						}
 					},
 					"end": "(?=$|;|\\babstract\\b|\\basync\\b|\\bclass\\b|\\bconst\\b|\\bdeclare\\b|\\benum\\b|\\bexport\\b|\\bfunction\\b|\\bimport\\b|\\binterface\\b|\\blet\\b|\\bmodule\\b|\\bnamespace\\b|\\breturn\\b|\\btype\\b|\\bvar\\b)",
@@ -1839,7 +1840,7 @@
 					"include": "#import-export-block"
 				},
 				{
-					"name": "keyword.control.from.js",
+					"name": "keyword.control.from.ts",
 					"match": "\\bfrom\\b"
 				},
 				{
@@ -1848,17 +1849,17 @@
 			]
 		},
 		"import-export-block": {
-			"name": "meta.block.js",
+			"name": "meta.block.ts",
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
@@ -1876,22 +1877,22 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(\\bdefault)|(\\*)|(\\b[_$[:alpha:]][_$[:alnum:]]*))\\s+(as)\\s+(?:(\\bdefault(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.)))|(\\b[_$[:alpha:]][_$[:alnum:]]*))",
 					"captures": {
 						"1": {
-							"name": "keyword.control.default.js"
+							"name": "keyword.control.default.ts"
 						},
 						"2": {
-							"name": "constant.language.import-export-all.js"
+							"name": "constant.language.import-export-all.ts"
 						},
 						"3": {
-							"name": "variable.other.readwrite.js"
+							"name": "variable.other.readwrite.ts"
 						},
 						"4": {
-							"name": "keyword.control.as.js"
+							"name": "keyword.control.as.ts"
 						},
 						"5": {
-							"name": "keyword.control.default.js"
+							"name": "keyword.control.default.ts"
 						},
 						"6": {
-							"name": "variable.other.readwrite.alias.js"
+							"name": "variable.other.readwrite.alias.ts"
 						}
 					}
 				},
@@ -1899,44 +1900,44 @@
 					"include": "#punctuation-comma"
 				},
 				{
-					"name": "constant.language.import-export-all.js",
+					"name": "constant.language.import-export-all.ts",
 					"match": "\\*"
 				},
 				{
-					"name": "keyword.control.default.js",
+					"name": "keyword.control.default.ts",
 					"match": "\\b(default)\\b"
 				},
 				{
-					"name": "variable.other.readwrite.alias.js",
+					"name": "variable.other.readwrite.alias.ts",
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)"
 				}
 			]
 		},
 		"switch-statement": {
-			"name": "switch-statement.expr.js",
+			"name": "switch-statement.expr.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?=\\bswitch\\s*\\()",
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
 				{
-					"name": "switch-expression.expr.js",
+					"name": "switch-expression.expr.ts",
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(switch)\\s*(\\()",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.switch.js"
+							"name": "keyword.control.switch.ts"
 						},
 						"2": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"patterns": [
@@ -1946,21 +1947,21 @@
 					]
 				},
 				{
-					"name": "switch-block.expr.js",
+					"name": "switch-block.expr.ts",
 					"begin": "\\{",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.block.js"
+							"name": "punctuation.definition.block.ts"
 						}
 					},
 					"end": "(?=\\})",
 					"patterns": [
 						{
-							"name": "case-clause.expr.js",
+							"name": "case-clause.expr.ts",
 							"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(case|default(?=:))(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 							"beginCaptures": {
 								"1": {
-									"name": "keyword.control.switch.js"
+									"name": "keyword.control.switch.ts"
 								}
 							},
 							"end": "(?=:)",
@@ -1974,19 +1975,19 @@
 							"begin": "(:)\\s*(\\{)",
 							"beginCaptures": {
 								"1": {
-									"name": "case-clause.expr.js punctuation.definition.section.case-statement.js"
+									"name": "case-clause.expr.ts punctuation.definition.section.case-statement.ts"
 								},
 								"2": {
-									"name": "meta.block.js punctuation.definition.block.js"
+									"name": "meta.block.ts punctuation.definition.block.ts"
 								}
 							},
 							"end": "\\}",
 							"endCaptures": {
 								"0": {
-									"name": "meta.block.js punctuation.definition.block.js"
+									"name": "meta.block.ts punctuation.definition.block.ts"
 								}
 							},
-							"contentName": "meta.block.js",
+							"contentName": "meta.block.ts",
 							"patterns": [
 								{
 									"include": "#statements"
@@ -1997,7 +1998,7 @@
 							"match": "(:)",
 							"captures": {
 								"0": {
-									"name": "case-clause.expr.js punctuation.definition.section.case-statement.js"
+									"name": "case-clause.expr.ts punctuation.definition.section.case-statement.ts"
 								}
 							}
 						},
@@ -2012,7 +2013,7 @@
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))for(?=((\\s+|(\\s*\\/\\*([^\\*]|(\\*[^\\/]))*\\*\\/\\s*))await)?\\s*(\\/\\*([^\\*]|(\\*[^\\/]))*\\*\\/\\s*)?(\\())",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.control.loop.js"
+					"name": "keyword.control.loop.ts"
 				}
 			},
 			"end": "(?<=\\))",
@@ -2021,20 +2022,20 @@
 					"include": "#comment"
 				},
 				{
-					"name": "keyword.control.loop.js",
+					"name": "keyword.control.loop.ts",
 					"match": "await"
 				},
 				{
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"patterns": [
@@ -2052,17 +2053,17 @@
 			]
 		},
 		"decl-block": {
-			"name": "meta.block.js",
+			"name": "meta.block.ts",
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
@@ -2072,17 +2073,17 @@
 			]
 		},
 		"after-operator-block-as-object-literal": {
-			"name": "meta.objectliteral.js",
+			"name": "meta.objectliteral.ts",
 			"begin": "(?<!\\+\\+|--)(?<=[:=(,\\[?+!>]|^await|[^\\._$[:alnum:]]await|^return|[^\\._$[:alnum:]]return|^yield|[^\\._$[:alnum:]]yield|^throw|[^\\._$[:alnum:]]throw|^in|[^\\._$[:alnum:]]in|^of|[^\\._$[:alnum:]]of|^typeof|[^\\._$[:alnum:]]typeof|&&|\\|\\||\\*)\\s*(\\{)",
 			"beginCaptures": {
 				"1": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
@@ -2092,17 +2093,17 @@
 			]
 		},
 		"object-literal": {
-			"name": "meta.objectliteral.js",
+			"name": "meta.objectliteral.ts",
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
@@ -2120,7 +2121,7 @@
 					"include": "#object-literal-method-declaration"
 				},
 				{
-					"name": "meta.object.member.js meta.object-literal.key.js",
+					"name": "meta.object.member.ts meta.object-literal.key.ts",
 					"begin": "(?=\\[)",
 					"end": "(?=:)|((?<=[\\]])(?=\\s*[\\(\\<]))",
 					"patterns": [
@@ -2130,7 +2131,7 @@
 					]
 				},
 				{
-					"name": "meta.object.member.js meta.object-literal.key.js",
+					"name": "meta.object.member.ts meta.object-literal.key.ts",
 					"begin": "(?=[\\'\\\"])",
 					"end": "(?=:)|((?<=[\\'\\\"])(?=\\s*[\\(\\<]))",
 					"patterns": [
@@ -2140,7 +2141,7 @@
 					]
 				},
 				{
-					"name": "meta.method.declaration.js",
+					"name": "meta.method.declaration.ts",
 					"begin": "(?<=[\\]\\'\\\"])(?=\\s*[\\(\\<])",
 					"end": "(?=\\}|;|,)|(?<=\\})",
 					"patterns": [
@@ -2150,44 +2151,44 @@
 					]
 				},
 				{
-					"name": "meta.object.member.js",
+					"name": "meta.object.member.ts",
 					"match": "(?![_$[:alpha:]])([[:digit:]]+)\\s*(?=:)",
 					"captures": {
 						"0": {
-							"name": "meta.object-literal.key.js"
+							"name": "meta.object-literal.key.ts"
 						},
 						"1": {
-							"name": "constant.numeric.decimal.js"
+							"name": "constant.numeric.decimal.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.object.member.js",
-					"match": "(?x)(?:([_$[:alpha:]][_$[:alnum:]]*)\\s*(?=:\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
+					"name": "meta.object.member.ts",
+					"match": "(?x)(?:([_$[:alpha:]][_$[:alnum:]]*)\\s*(?=:\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n)))",
 					"captures": {
 						"0": {
-							"name": "meta.object-literal.key.js"
+							"name": "meta.object-literal.key.ts"
 						},
 						"1": {
-							"name": "entity.name.function.js"
+							"name": "entity.name.function.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.object.member.js",
+					"name": "meta.object.member.ts",
 					"match": "(?:[_$[:alpha:]][_$[:alnum:]]*)\\s*(?=:)",
 					"captures": {
 						"0": {
-							"name": "meta.object-literal.key.js"
+							"name": "meta.object-literal.key.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.object.member.js",
+					"name": "meta.object.member.ts",
 					"begin": "\\.\\.\\.",
 					"beginCaptures": {
 						"0": {
-							"name": "keyword.operator.spread.js"
+							"name": "keyword.operator.spread.ts"
 						}
 					},
 					"end": "(?=,|\\})",
@@ -2198,16 +2199,16 @@
 					]
 				},
 				{
-					"name": "meta.object.member.js",
+					"name": "meta.object.member.ts",
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(?=,|\\}|$)",
 					"captures": {
 						"1": {
-							"name": "variable.other.readwrite.js"
+							"name": "variable.other.readwrite.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.object.member.js",
+					"name": "meta.object.member.ts",
 					"begin": "(?=[_$[:alpha:]][_$[:alnum:]]*\\s*=)",
 					"end": "(?=,|\\}|$)",
 					"patterns": [
@@ -2217,11 +2218,11 @@
 					]
 				},
 				{
-					"name": "meta.object.member.js",
+					"name": "meta.object.member.ts",
 					"begin": ":",
 					"beginCaptures": {
 						"0": {
-							"name": "meta.object-literal.key.js punctuation.separator.key-value.js"
+							"name": "meta.object-literal.key.ts punctuation.separator.key-value.ts"
 						}
 					},
 					"end": "(?=,|\\})",
@@ -2230,7 +2231,7 @@
 							"begin": "(?<=:)\\s*(async)?(?=\\s*(<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)\\(\\s*([\\{\\[]\\s*)?$)",
 							"beginCaptures": {
 								"1": {
-									"name": "storage.modifier.async.js"
+									"name": "storage.modifier.async.ts"
 								}
 							},
 							"end": "(?<=\\))",
@@ -2242,13 +2243,13 @@
 									"begin": "\\(",
 									"beginCaptures": {
 										"0": {
-											"name": "meta.brace.round.js"
+											"name": "meta.brace.round.ts"
 										}
 									},
 									"end": "\\)",
 									"endCaptures": {
 										"0": {
-											"name": "meta.brace.round.js"
+											"name": "meta.brace.round.ts"
 										}
 									},
 									"patterns": [
@@ -2263,16 +2264,16 @@
 							"begin": "(?<=:)\\s*(async)?\\s*(\\()(?=\\s*([\\{\\[]\\s*)?$)",
 							"beginCaptures": {
 								"1": {
-									"name": "storage.modifier.async.js"
+									"name": "storage.modifier.async.ts"
 								},
 								"2": {
-									"name": "meta.brace.round.js"
+									"name": "meta.brace.round.ts"
 								}
 							},
 							"end": "\\)",
 							"endCaptures": {
 								"0": {
-									"name": "meta.brace.round.js"
+									"name": "meta.brace.round.ts"
 								}
 							},
 							"patterns": [
@@ -2295,13 +2296,13 @@
 			"begin": "(?!\\?\\.\\s*[^[:digit:]])(\\?)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.ternary.js"
+					"name": "keyword.operator.ternary.ts"
 				}
 			},
 			"end": "\\s*(:)",
 			"endCaptures": {
 				"1": {
-					"name": "keyword.operator.ternary.js"
+					"name": "keyword.operator.ternary.ts"
 				}
 			},
 			"patterns": [
@@ -2315,7 +2316,7 @@
 			"end": "(?<=\\))(?!(([_$[:alpha:]][_$[:alnum:]]*\\s*\\??\\.\\s*)*|(\\??\\.\\s*)?)([_$[:alpha:]][_$[:alnum:]]*)\\s*(\\?\\.\\s*)?(<\\s*(((keyof|infer)\\s+)|(([_$[:alpha:]][_$[:alnum:]]*|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\'[^\\']*\\')|(\\\"[^\\\"]*\\\")|(\\`[^\\`]*\\`))(?=\\s*([\\<\\>\\,\\.\\[=]|&(?!&)|\\|(?!\\|)))))([^<>\\(]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(?<==)\\>|\\<\\s*(((keyof|infer)\\s+)|(([_$[:alpha:]][_$[:alnum:]]*|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\'[^\\']*\\')|(\\\"[^\\\"]*\\\")|(\\`[^\\`]*\\`))(?=\\s*([\\<\\>\\,\\.\\[=]|&(?!&)|\\|(?!\\|)))))([^<>\\(]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(?<==)\\>)*(?!=)\\>)*(?!=)>\\s*)?\\()",
 			"patterns": [
 				{
-					"name": "meta.function-call.js",
+					"name": "meta.function-call.ts",
 					"begin": "(?=(([_$[:alpha:]][_$[:alnum:]]*\\s*\\??\\.\\s*)*|(\\??\\.\\s*)?)([_$[:alpha:]][_$[:alnum:]]*))",
 					"end": "(?=\\s*(\\?\\.\\s*)?(<\\s*(((keyof|infer)\\s+)|(([_$[:alpha:]][_$[:alnum:]]*|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\'[^\\']*\\')|(\\\"[^\\\"]*\\\")|(\\`[^\\`]*\\`))(?=\\s*([\\<\\>\\,\\.\\[=]|&(?!&)|\\|(?!\\|)))))([^<>\\(]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(?<==)\\>|\\<\\s*(((keyof|infer)\\s+)|(([_$[:alpha:]][_$[:alnum:]]*|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\'[^\\']*\\')|(\\\"[^\\\"]*\\\")|(\\`[^\\`]*\\`))(?=\\s*([\\<\\>\\,\\.\\[=]|&(?!&)|\\|(?!\\|)))))([^<>\\(]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(?<==)\\>)*(?!=)\\>)*(?!=)>\\s*)?\\()",
 					"patterns": [
@@ -2332,11 +2333,11 @@
 							"include": "#punctuation-accessor"
 						},
 						{
-							"name": "keyword.operator.expression.import.js",
+							"name": "keyword.operator.expression.import.ts",
 							"match": "(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))import(?=\\s*[\\(]\\s*[\\\"\\'\\`]))"
 						},
 						{
-							"name": "entity.name.function.js",
+							"name": "entity.name.function.ts",
 							"match": "([_$[:alpha:]][_$[:alnum:]]*)"
 						}
 					]
@@ -2345,7 +2346,7 @@
 					"include": "#comment"
 				},
 				{
-					"name": "meta.function-call.js punctuation.accessor.optional.js",
+					"name": "meta.function-call.ts punctuation.accessor.optional.ts",
 					"match": "\\?\\."
 				},
 				{
@@ -2357,11 +2358,11 @@
 			]
 		},
 		"new-expr": {
-			"name": "new.expr.js",
+			"name": "new.expr.ts",
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(new)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.new.js"
+					"name": "keyword.operator.new.ts"
 				}
 			},
 			"end": "(?<=\\))|(?=[;),}\\]:]|\\|\\||\\&\\&|$|((?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))new(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.)))|((?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))function((\\s+[_$[:alpha:]][_$[:alnum:]]*)|(\\s*[\\(]))))",
@@ -2381,7 +2382,7 @@
 			"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(instanceof)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.expression.instanceof.js"
+					"name": "keyword.operator.expression.instanceof.ts"
 				}
 			},
 			"end": "(?<=\\))|(?=[;),}\\]:?]|\\|\\||\\&\\&|$|((?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))function((\\s+[_$[:alpha:]][_$[:alnum:]]*)|(\\s*[\\(]))))",
@@ -2397,7 +2398,7 @@
 					"begin": "(?<=[(=,])\\s*(async)?(?=\\s*((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*))?\\(\\s*[\\{\\[]\\s*$)",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						}
 					},
 					"end": "(?<=\\))",
@@ -2411,7 +2412,7 @@
 					"begin": "(?<=[(=,]|=>)\\s*(async)?(?=\\s*((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*))?\\(\\s*$)",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.async.js"
+							"name": "storage.modifier.async.ts"
 						}
 					},
 					"end": "(?<=\\))",
@@ -2435,13 +2436,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "meta.brace.round.js"
+							"name": "meta.brace.round.ts"
 						}
 					},
 					"patterns": [
@@ -2472,13 +2473,13 @@
 			"begin": "\\(",
 			"beginCaptures": {
 				"0": {
-					"name": "meta.brace.round.js"
+					"name": "meta.brace.round.ts"
 				}
 			},
 			"end": "\\)",
 			"endCaptures": {
 				"0": {
-					"name": "meta.brace.round.js"
+					"name": "meta.brace.round.ts"
 				}
 			},
 			"patterns": [
@@ -2490,27 +2491,64 @@
 		"cast": {
 			"patterns": [
 				{
-					"include": "#jsx"
+					"name": "cast.expr.ts",
+					"begin": "(?:(?<!\\+\\+|--)(?<=^return|[^\\._$[:alnum:]]return|^throw|[^\\._$[:alnum:]]throw|^yield|[^\\._$[:alnum:]]yield|^await|[^\\._$[:alnum:]]await|^default|[^\\._$[:alnum:]]default|[=(,:>*?\\&\\|\\^]|[^_$[:alnum:]](?:\\+\\+|\\-\\-)|[^\\+]\\+|[^\\-]\\-))\\s*(<)(?!<?\\=)",
+					"beginCaptures": {
+						"1": {
+							"name": "meta.brace.angle.ts"
+						}
+					},
+					"end": "(\\>)\\s*",
+					"endCaptures": {
+						"1": {
+							"name": "meta.brace.angle.ts"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#type"
+						}
+					]
+				},
+				{
+					"name": "cast.expr.ts",
+					"begin": "(?:(?<=^))\\s*(<)(?=[_$[:alpha:]][_$[:alnum:]]*\\s*>)",
+					"beginCaptures": {
+						"1": {
+							"name": "meta.brace.angle.ts"
+						}
+					},
+					"end": "(\\>)\\s*",
+					"endCaptures": {
+						"1": {
+							"name": "meta.brace.angle.ts"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#type"
+						}
+					]
 				}
 			]
 		},
 		"expression-operators": {
 			"patterns": [
 				{
-					"name": "keyword.control.flow.js",
+					"name": "keyword.control.flow.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(await)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(yield)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))(?=\\s*\\/\\*([^\\*]|(\\*[^\\/]))*\\*\\/\\s*\\*)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.flow.js"
+							"name": "keyword.control.flow.ts"
 						}
 					},
 					"end": "\\*",
 					"endCaptures": {
 						"0": {
-							"name": "keyword.generator.asterisk.js"
+							"name": "keyword.generator.asterisk.ts"
 						}
 					},
 					"patterns": [
@@ -2523,45 +2561,45 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(yield)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))(?:\\s*(\\*))?",
 					"captures": {
 						"1": {
-							"name": "keyword.control.flow.js"
+							"name": "keyword.control.flow.ts"
 						},
 						"2": {
-							"name": "keyword.generator.asterisk.js"
+							"name": "keyword.generator.asterisk.ts"
 						}
 					}
 				},
 				{
-					"name": "keyword.operator.expression.delete.js",
+					"name": "keyword.operator.expression.delete.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))delete(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.operator.expression.in.js",
+					"name": "keyword.operator.expression.in.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))in(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))(?!\\()"
 				},
 				{
-					"name": "keyword.operator.expression.of.js",
+					"name": "keyword.operator.expression.of.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))of(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))(?!\\()"
 				},
 				{
-					"name": "keyword.operator.expression.instanceof.js",
+					"name": "keyword.operator.expression.instanceof.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))instanceof(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.operator.new.js",
+					"name": "keyword.operator.new.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))new(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
 					"include": "#typeof-operator"
 				},
 				{
-					"name": "keyword.operator.expression.void.js",
+					"name": "keyword.operator.expression.void.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))void(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(as)\\s+",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.as.js"
+							"name": "keyword.control.as.ts"
 						}
 					},
 					"end": "(?=$|^|[;,:})\\]]|((?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(as)\\s+))",
@@ -2572,65 +2610,65 @@
 					]
 				},
 				{
-					"name": "keyword.operator.spread.js",
+					"name": "keyword.operator.spread.ts",
 					"match": "\\.\\.\\."
 				},
 				{
-					"name": "keyword.operator.assignment.compound.js",
+					"name": "keyword.operator.assignment.compound.ts",
 					"match": "\\*=|(?<!\\()/=|%=|\\+=|\\-="
 				},
 				{
-					"name": "keyword.operator.assignment.compound.bitwise.js",
+					"name": "keyword.operator.assignment.compound.bitwise.ts",
 					"match": "\\&=|\\^=|<<=|>>=|>>>=|\\|="
 				},
 				{
-					"name": "keyword.operator.bitwise.shift.js",
+					"name": "keyword.operator.bitwise.shift.ts",
 					"match": "<<|>>>|>>"
 				},
 				{
-					"name": "keyword.operator.comparison.js",
+					"name": "keyword.operator.comparison.ts",
 					"match": "===|!==|==|!="
 				},
 				{
-					"name": "keyword.operator.relational.js",
+					"name": "keyword.operator.relational.ts",
 					"match": "<=|>=|<>|<|>"
 				},
 				{
-					"name": "keyword.operator.logical.js",
+					"name": "keyword.operator.logical.ts",
 					"match": "\\!|&&|\\|\\|"
 				},
 				{
-					"name": "keyword.operator.bitwise.js",
+					"name": "keyword.operator.bitwise.ts",
 					"match": "\\&|~|\\^|\\|"
 				},
 				{
-					"name": "keyword.operator.assignment.js",
+					"name": "keyword.operator.assignment.ts",
 					"match": "\\="
 				},
 				{
-					"name": "keyword.operator.decrement.js",
+					"name": "keyword.operator.decrement.ts",
 					"match": "--"
 				},
 				{
-					"name": "keyword.operator.increment.js",
+					"name": "keyword.operator.increment.ts",
 					"match": "\\+\\+"
 				},
 				{
-					"name": "keyword.operator.arithmetic.js",
+					"name": "keyword.operator.arithmetic.ts",
 					"match": "%|\\*|/|-|\\+"
 				},
 				{
 					"match": "(?<=[_$[:alnum:])\\]])\\s*(/)(?![/*])",
 					"captures": {
 						"1": {
-							"name": "keyword.operator.arithmetic.js"
+							"name": "keyword.operator.arithmetic.ts"
 						}
 					}
 				}
 			]
 		},
 		"typeof-operator": {
-			"name": "keyword.operator.expression.typeof.js",
+			"name": "keyword.operator.expression.typeof.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))typeof(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"literal": {
@@ -2662,17 +2700,17 @@
 			]
 		},
 		"array-literal": {
-			"name": "meta.array.literal.js",
+			"name": "meta.array.literal.ts",
 			"begin": "\\s*(\\[)",
 			"beginCaptures": {
 				"1": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				}
 			},
 			"end": "\\]",
 			"endCaptures": {
 				"0": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				}
 			},
 			"patterns": [
@@ -2687,40 +2725,40 @@
 		"numeric-literal": {
 			"patterns": [
 				{
-					"name": "constant.numeric.hex.js",
+					"name": "constant.numeric.hex.ts",
 					"match": "\\b(?<!\\$)0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\\b(?!\\$)"
 				},
 				{
-					"name": "constant.numeric.binary.js",
+					"name": "constant.numeric.binary.ts",
 					"match": "\\b(?<!\\$)0(b|B)[01][01_]*\\b(?!\\$)"
 				},
 				{
-					"name": "constant.numeric.octal.js",
+					"name": "constant.numeric.octal.ts",
 					"match": "\\b(?<!\\$)0(o|O)?[0-7][0-7_]*\\b(?!\\$)"
 				},
 				{
 					"match": "(?x)\n(?<!\\$)(?:\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)| # 1.1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[eE][+-]?[0-9][0-9_]*\\b)|             # 1.E+3\n  (?:\\B(\\.)[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|             # .1E+3\n  (?:\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b)|                 # 1E+3\n  (?:\\b[0-9][0-9_]*(\\.)[0-9][0-9_]*\\b)|                      # 1.1\n  (?:\\b[0-9][0-9_]*(\\.)\\B)|                                  # 1.\n  (?:\\B(\\.)[0-9][0-9_]*\\b)|                                  # .1\n  (?:\\b[0-9][0-9_]*\\b(?!\\.))                                 # 1\n)(?!\\$)",
 					"captures": {
 						"0": {
-							"name": "constant.numeric.decimal.js"
+							"name": "constant.numeric.decimal.ts"
 						},
 						"1": {
-							"name": "meta.delimiter.decimal.period.js"
+							"name": "meta.delimiter.decimal.period.ts"
 						},
 						"2": {
-							"name": "meta.delimiter.decimal.period.js"
+							"name": "meta.delimiter.decimal.period.ts"
 						},
 						"3": {
-							"name": "meta.delimiter.decimal.period.js"
+							"name": "meta.delimiter.decimal.period.ts"
 						},
 						"4": {
-							"name": "meta.delimiter.decimal.period.js"
+							"name": "meta.delimiter.decimal.period.ts"
 						},
 						"5": {
-							"name": "meta.delimiter.decimal.period.js"
+							"name": "meta.delimiter.decimal.period.ts"
 						},
 						"6": {
-							"name": "meta.delimiter.decimal.period.js"
+							"name": "meta.delimiter.decimal.period.ts"
 						}
 					}
 				}
@@ -2729,39 +2767,39 @@
 		"boolean-literal": {
 			"patterns": [
 				{
-					"name": "constant.language.boolean.true.js",
+					"name": "constant.language.boolean.true.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))true(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "constant.language.boolean.false.js",
+					"name": "constant.language.boolean.false.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))false(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				}
 			]
 		},
 		"null-literal": {
-			"name": "constant.language.null.js",
+			"name": "constant.language.null.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))null(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"this-literal": {
-			"name": "variable.language.this.js",
+			"name": "variable.language.this.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))this\\b(?!\\$)"
 		},
 		"super-literal": {
-			"name": "variable.language.super.js",
+			"name": "variable.language.super.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))super\\b(?!\\$)"
 		},
 		"undefined-literal": {
-			"name": "constant.language.undefined.js",
+			"name": "constant.language.undefined.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))undefined(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"numericConstant-literal": {
 			"patterns": [
 				{
-					"name": "constant.language.nan.js",
+					"name": "constant.language.nan.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))NaN(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "constant.language.infinity.js",
+					"name": "constant.language.infinity.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))Infinity(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				}
 			]
@@ -2769,42 +2807,42 @@
 		"support-objects": {
 			"patterns": [
 				{
-					"name": "variable.language.arguments.js",
+					"name": "variable.language.arguments.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(arguments)\\b(?!\\$)"
 				},
 				{
-					"name": "support.class.builtin.js",
+					"name": "support.class.builtin.ts",
 					"match": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(Array|ArrayBuffer|Atomics|Boolean|DataView|Date|Float32Array|Float64Array|Function|Generator\n  |GeneratorFunction|Int8Array|Int16Array|Int32Array|Intl|Map|Number|Object|Proxy\n  |Reflect|RegExp|Set|SharedArrayBuffer|SIMD|String|Symbol|TypedArray\n  |Uint8Array|Uint16Array|Uint32Array|Uint8ClampedArray|WeakMap|WeakSet)\\b(?!\\$)"
 				},
 				{
-					"name": "support.class.error.js",
+					"name": "support.class.error.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))((Eval|Internal|Range|Reference|Syntax|Type|URI)?Error)\\b(?!\\$)"
 				},
 				{
-					"name": "support.class.promise.js",
+					"name": "support.class.promise.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(Promise)\\b(?!\\$)"
 				},
 				{
-					"name": "support.function.js",
+					"name": "support.function.ts",
 					"match": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(clear(Interval|Timeout)|decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|eval|\n  isFinite|isNaN|parseFloat|parseInt|require|set(Interval|Timeout)|super|unescape|uneval)(?=\\s*\\()"
 				},
 				{
 					"match": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(Math)(?:\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*(?:\n  (abs|acos|acosh|asin|asinh|atan|atan2|atanh|cbrt|ceil|clz32|cos|cosh|exp|\n  expm1|floor|fround|hypot|imul|log|log10|log1p|log2|max|min|pow|random|\n  round|sign|sin|sinh|sqrt|tan|tanh|trunc)\n  |\n  (E|LN10|LN2|LOG10E|LOG2E|PI|SQRT1_2|SQRT2)))?\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "support.constant.math.js"
+							"name": "support.constant.math.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"4": {
-							"name": "support.function.math.js"
+							"name": "support.function.math.ts"
 						},
 						"5": {
-							"name": "support.constant.property.math.js"
+							"name": "support.constant.property.math.ts"
 						}
 					}
 				},
@@ -2812,16 +2850,16 @@
 					"match": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(console)(?:\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*(\n  assert|clear|count|debug|dir|error|group|groupCollapsed|groupEnd|info|log\n  |profile|profileEnd|table|time|timeEnd|timeStamp|trace|warn))?\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "support.class.console.js"
+							"name": "support.class.console.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"4": {
-							"name": "support.function.console.js"
+							"name": "support.function.console.ts"
 						}
 					}
 				},
@@ -2829,16 +2867,16 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(JSON)(?:\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*(parse|stringify))?\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "support.constant.json.js"
+							"name": "support.constant.json.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"4": {
-							"name": "support.function.json.js"
+							"name": "support.function.json.ts"
 						}
 					}
 				},
@@ -2846,16 +2884,16 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(import)\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*(meta)\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "keyword.control.import.js"
+							"name": "keyword.control.import.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"4": {
-							"name": "support.variable.property.importmeta.js"
+							"name": "support.variable.property.importmeta.ts"
 						}
 					}
 				},
@@ -2863,16 +2901,16 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(new)\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*(target)\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "keyword.operator.new.js"
+							"name": "keyword.operator.new.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"4": {
-							"name": "support.variable.property.target.js"
+							"name": "support.variable.property.target.ts"
 						}
 					}
 				},
@@ -2880,16 +2918,16 @@
 					"match": "(?x) (?:(\\.)|(\\?\\.(?!\\s*[[:digit:]]))) \\s* (?:\n  (constructor|length|prototype|__proto__)\n  |\n  (EPSILON|MAX_SAFE_INTEGER|MAX_VALUE|MIN_SAFE_INTEGER|MIN_VALUE|NEGATIVE_INFINITY|POSITIVE_INFINITY))\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "support.variable.property.js"
+							"name": "support.variable.property.ts"
 						},
 						"4": {
-							"name": "support.constant.js"
+							"name": "support.constant.ts"
 						}
 					}
 				},
@@ -2897,10 +2935,10 @@
 					"match": "(?x) (?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.)) \\b (?:\n  (document|event|navigator|performance|screen|window)\n  |\n  (AnalyserNode|ArrayBufferView|Attr|AudioBuffer|AudioBufferSourceNode|AudioContext|AudioDestinationNode|AudioListener\n  |AudioNode|AudioParam|BatteryManager|BeforeUnloadEvent|BiquadFilterNode|Blob|BufferSource|ByteString|CSS|CSSConditionRule\n  |CSSCounterStyleRule|CSSGroupingRule|CSSMatrix|CSSMediaRule|CSSPageRule|CSSPrimitiveValue|CSSRule|CSSRuleList|CSSStyleDeclaration\n  |CSSStyleRule|CSSStyleSheet|CSSSupportsRule|CSSValue|CSSValueList|CanvasGradient|CanvasImageSource|CanvasPattern\n  |CanvasRenderingContext2D|ChannelMergerNode|ChannelSplitterNode|CharacterData|ChromeWorker|CloseEvent|Comment|CompositionEvent\n  |Console|ConvolverNode|Coordinates|Credential|CredentialsContainer|Crypto|CryptoKey|CustomEvent|DOMError|DOMException\n  |DOMHighResTimeStamp|DOMImplementation|DOMString|DOMStringList|DOMStringMap|DOMTimeStamp|DOMTokenList|DataTransfer\n  |DataTransferItem|DataTransferItemList|DedicatedWorkerGlobalScope|DelayNode|DeviceProximityEvent|DirectoryEntry\n  |DirectoryEntrySync|DirectoryReader|DirectoryReaderSync|Document|DocumentFragment|DocumentTouch|DocumentType|DragEvent\n  |DynamicsCompressorNode|Element|Entry|EntrySync|ErrorEvent|Event|EventListener|EventSource|EventTarget|FederatedCredential\n  |FetchEvent|File|FileEntry|FileEntrySync|FileException|FileList|FileReader|FileReaderSync|FileSystem|FileSystemSync\n  |FontFace|FormData|GainNode|Gamepad|GamepadButton|GamepadEvent|Geolocation|GlobalEventHandlers|HTMLAnchorElement\n  |HTMLAreaElement|HTMLAudioElement|HTMLBRElement|HTMLBaseElement|HTMLBodyElement|HTMLButtonElement|HTMLCanvasElement\n  |HTMLCollection|HTMLContentElement|HTMLDListElement|HTMLDataElement|HTMLDataListElement|HTMLDialogElement|HTMLDivElement\n  |HTMLDocument|HTMLElement|HTMLEmbedElement|HTMLFieldSetElement|HTMLFontElement|HTMLFormControlsCollection|HTMLFormElement\n  |HTMLHRElement|HTMLHeadElement|HTMLHeadingElement|HTMLHtmlElement|HTMLIFrameElement|HTMLImageElement|HTMLInputElement\n  |HTMLKeygenElement|HTMLLIElement|HTMLLabelElement|HTMLLegendElement|HTMLLinkElement|HTMLMapElement|HTMLMediaElement\n  |HTMLMetaElement|HTMLMeterElement|HTMLModElement|HTMLOListElement|HTMLObjectElement|HTMLOptGroupElement|HTMLOptionElement\n  |HTMLOptionsCollection|HTMLOutputElement|HTMLParagraphElement|HTMLParamElement|HTMLPreElement|HTMLProgressElement\n  |HTMLQuoteElement|HTMLScriptElement|HTMLSelectElement|HTMLShadowElement|HTMLSourceElement|HTMLSpanElement|HTMLStyleElement\n  |HTMLTableCaptionElement|HTMLTableCellElement|HTMLTableColElement|HTMLTableDataCellElement|HTMLTableElement|HTMLTableHeaderCellElement\n  |HTMLTableRowElement|HTMLTableSectionElement|HTMLTextAreaElement|HTMLTimeElement|HTMLTitleElement|HTMLTrackElement\n  |HTMLUListElement|HTMLUnknownElement|HTMLVideoElement|HashChangeEvent|History|IDBCursor|IDBCursorWithValue|IDBDatabase\n  |IDBEnvironment|IDBFactory|IDBIndex|IDBKeyRange|IDBMutableFile|IDBObjectStore|IDBOpenDBRequest|IDBRequest|IDBTransaction\n  |IDBVersionChangeEvent|IIRFilterNode|IdentityManager|ImageBitmap|ImageBitmapFactories|ImageData|Index|InputDeviceCapabilities\n  |InputEvent|InstallEvent|InstallTrigger|KeyboardEvent|LinkStyle|LocalFileSystem|LocalFileSystemSync|Location|MIDIAccess\n  |MIDIConnectionEvent|MIDIInput|MIDIInputMap|MIDIOutputMap|MediaElementAudioSourceNode|MediaError|MediaKeyMessageEvent\n  |MediaKeySession|MediaKeyStatusMap|MediaKeySystemAccess|MediaKeySystemConfiguration|MediaKeys|MediaRecorder|MediaStream\n  |MediaStreamAudioDestinationNode|MediaStreamAudioSourceNode|MessageChannel|MessageEvent|MessagePort|MouseEvent\n  |MutationObserver|MutationRecord|NamedNodeMap|Navigator|NavigatorConcurrentHardware|NavigatorGeolocation|NavigatorID\n  |NavigatorLanguage|NavigatorOnLine|Node|NodeFilter|NodeIterator|NodeList|NonDocumentTypeChildNode|Notification\n  |OfflineAudioCompletionEvent|OfflineAudioContext|OscillatorNode|PageTransitionEvent|PannerNode|ParentNode|PasswordCredential\n  |Path2D|PaymentAddress|PaymentRequest|PaymentResponse|Performance|PerformanceEntry|PerformanceFrameTiming|PerformanceMark\n  |PerformanceMeasure|PerformanceNavigation|PerformanceNavigationTiming|PerformanceObserver|PerformanceObserverEntryList\n  |PerformanceResourceTiming|PerformanceTiming|PeriodicSyncEvent|PeriodicWave|Plugin|Point|PointerEvent|PopStateEvent\n  |PortCollection|Position|PositionError|PositionOptions|PresentationConnectionClosedEvent|PresentationConnectionList\n  |PresentationReceiver|ProcessingInstruction|ProgressEvent|PromiseRejectionEvent|PushEvent|PushRegistrationManager\n  |RTCCertificate|RTCConfiguration|RTCPeerConnection|RTCSessionDescriptionCallback|RTCStatsReport|RadioNodeList|RandomSource\n  |Range|ReadableByteStream|RenderingContext|SVGAElement|SVGAngle|SVGAnimateColorElement|SVGAnimateElement|SVGAnimateMotionElement\n  |SVGAnimateTransformElement|SVGAnimatedAngle|SVGAnimatedBoolean|SVGAnimatedEnumeration|SVGAnimatedInteger|SVGAnimatedLength\n  |SVGAnimatedLengthList|SVGAnimatedNumber|SVGAnimatedNumberList|SVGAnimatedPoints|SVGAnimatedPreserveAspectRatio\n  |SVGAnimatedRect|SVGAnimatedString|SVGAnimatedTransformList|SVGAnimationElement|SVGCircleElement|SVGClipPathElement\n  |SVGCursorElement|SVGDefsElement|SVGDescElement|SVGElement|SVGEllipseElement|SVGEvent|SVGFilterElement|SVGFontElement\n  |SVGFontFaceElement|SVGFontFaceFormatElement|SVGFontFaceNameElement|SVGFontFaceSrcElement|SVGFontFaceUriElement\n  |SVGForeignObjectElement|SVGGElement|SVGGlyphElement|SVGGradientElement|SVGHKernElement|SVGImageElement|SVGLength\n  |SVGLengthList|SVGLineElement|SVGLinearGradientElement|SVGMPathElement|SVGMaskElement|SVGMatrix|SVGMissingGlyphElement\n  |SVGNumber|SVGNumberList|SVGPathElement|SVGPatternElement|SVGPoint|SVGPolygonElement|SVGPolylineElement|SVGPreserveAspectRatio\n  |SVGRadialGradientElement|SVGRect|SVGRectElement|SVGSVGElement|SVGScriptElement|SVGSetElement|SVGStopElement|SVGStringList\n  |SVGStylable|SVGStyleElement|SVGSwitchElement|SVGSymbolElement|SVGTRefElement|SVGTSpanElement|SVGTests|SVGTextElement\n  |SVGTextPositioningElement|SVGTitleElement|SVGTransform|SVGTransformList|SVGTransformable|SVGUseElement|SVGVKernElement\n  |SVGViewElement|ServiceWorker|ServiceWorkerContainer|ServiceWorkerGlobalScope|ServiceWorkerRegistration|ServiceWorkerState\n  |ShadowRoot|SharedWorker|SharedWorkerGlobalScope|SourceBufferList|StereoPannerNode|Storage|StorageEvent|StyleSheet\n  |StyleSheetList|SubtleCrypto|SyncEvent|Text|TextMetrics|TimeEvent|TimeRanges|Touch|TouchEvent|TouchList|Transferable\n  |TreeWalker|UIEvent|USVString|VRDisplayCapabilities|ValidityState|WaveShaperNode|WebGL|WebGLActiveInfo|WebGLBuffer\n  |WebGLContextEvent|WebGLFramebuffer|WebGLProgram|WebGLRenderbuffer|WebGLRenderingContext|WebGLShader|WebGLShaderPrecisionFormat\n  |WebGLTexture|WebGLTimerQueryEXT|WebGLTransformFeedback|WebGLUniformLocation|WebGLVertexArrayObject|WebGLVertexArrayObjectOES\n  |WebSocket|WebSockets|WebVTT|WheelEvent|Window|WindowBase64|WindowEventHandlers|WindowTimers|Worker|WorkerGlobalScope\n  |WorkerLocation|WorkerNavigator|XMLHttpRequest|XMLHttpRequestEventTarget|XMLSerializer|XPathExpression|XPathResult\n  |XSLTProcessor))\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "support.variable.dom.js"
+							"name": "support.variable.dom.ts"
 						},
 						"2": {
-							"name": "support.class.dom.js"
+							"name": "support.class.dom.ts"
 						}
 					}
 				},
@@ -2908,40 +2946,40 @@
 					"match": "(?x) (?:(\\.)|(\\?\\.(?!\\s*[[:digit:]]))) \\s* (?:\n  (ATTRIBUTE_NODE|CDATA_SECTION_NODE|COMMENT_NODE|DOCUMENT_FRAGMENT_NODE|DOCUMENT_NODE|DOCUMENT_TYPE_NODE\n  |DOMSTRING_SIZE_ERR|ELEMENT_NODE|ENTITY_NODE|ENTITY_REFERENCE_NODE|HIERARCHY_REQUEST_ERR|INDEX_SIZE_ERR\n  |INUSE_ATTRIBUTE_ERR|INVALID_CHARACTER_ERR|NO_DATA_ALLOWED_ERR|NO_MODIFICATION_ALLOWED_ERR|NOT_FOUND_ERR\n  |NOT_SUPPORTED_ERR|NOTATION_NODE|PROCESSING_INSTRUCTION_NODE|TEXT_NODE|WRONG_DOCUMENT_ERR)\n  |\n  (_content|[xyz]|abbr|above|accept|acceptCharset|accessKey|action|align|[av]Link(?:color)?|all|alt|anchors|appCodeName\n  |appCore|applets|appMinorVersion|appName|appVersion|archive|areas|arguments|attributes|availHeight|availLeft|availTop\n  |availWidth|axis|background|backgroundColor|backgroundImage|below|bgColor|body|border|borderBottomWidth|borderColor\n  |borderLeftWidth|borderRightWidth|borderStyle|borderTopWidth|borderWidth|bottom|bufferDepth|callee|caller|caption\n  |cellPadding|cells|cellSpacing|ch|characterSet|charset|checked|childNodes|chOff|cite|classes|className|clear\n  |clientInformation|clip|clipBoardData|closed|code|codeBase|codeType|color|colorDepth|cols|colSpan|compact|complete\n  |components|content|controllers|cookie|cookieEnabled|cords|cpuClass|crypto|current|data|dateTime|declare|defaultCharset\n  |defaultChecked|defaultSelected|defaultStatus|defaultValue|defaultView|defer|description|dialogArguments|dialogHeight\n  |dialogLeft|dialogTop|dialogWidth|dir|directories|disabled|display|docmain|doctype|documentElement|elements|embeds\n  |enabledPlugin|encoding|enctype|entities|event|expando|external|face|fgColor|filename|firstChild|fontFamily|fontSize\n  |fontWeight|form|formName|forms|frame|frameBorder|frameElement|frames|hasFocus|hash|headers|height|history|host\n  |hostname|href|hreflang|hspace|htmlFor|httpEquiv|id|ids|ignoreCase|images|implementation|index|innerHeight|innerWidth\n  |input|isMap|label|lang|language|lastChild|lastIndex|lastMatch|lastModified|lastParen|layer[sXY]|left|leftContext\n  |lineHeight|link|linkColor|links|listStyleType|localName|location|locationbar|longDesc|lowsrc|lowSrc|marginBottom\n  |marginHeight|marginLeft|marginRight|marginTop|marginWidth|maxLength|media|menubar|method|mimeTypes|multiline|multiple\n  |name|nameProp|namespaces|namespaceURI|next|nextSibling|nodeName|nodeType|nodeValue|noHref|noResize|noShade|notationName\n  |notations|noWrap|object|offscreenBuffering|onLine|onreadystatechange|opener|opsProfile|options|oscpu|outerHeight\n  |outerWidth|ownerDocument|paddingBottom|paddingLeft|paddingRight|paddingTop|page[XY]|page[XY]Offset|parent|parentLayer\n  |parentNode|parentWindow|pathname|personalbar|pixelDepth|pkcs11|platform|plugins|port|prefix|previous|previousDibling\n  |product|productSub|profile|profileend|prompt|prompter|protocol|publicId|readOnly|readyState|referrer|rel|responseText\n  |responseXML|rev|right|rightContext|rowIndex|rows|rowSpan|rules|scheme|scope|screen[XY]|screenLeft|screenTop|scripts\n  |scrollbars|scrolling|sectionRowIndex|security|securityPolicy|selected|selectedIndex|selection|self|shape|siblingAbove\n  |siblingBelow|size|source|specified|standby|start|status|statusbar|statusText|style|styleSheets|suffixes|summary\n  |systemId|systemLanguage|tagName|tags|target|tBodies|text|textAlign|textDecoration|textIndent|textTransform|tFoot|tHead\n  |title|toolbar|top|type|undefined|uniqueID|updateInterval|URL|URLUnencoded|useMap|userAgent|userLanguage|userProfile\n  |vAlign|value|valueType|vendor|vendorSub|version|visibility|vspace|whiteSpace|width|X[MS]LDocument|zIndex))\\b(?!\\$|\\s*(<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\\()",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "support.constant.dom.js"
+							"name": "support.constant.dom.ts"
 						},
 						"4": {
-							"name": "support.variable.property.dom.js"
+							"name": "support.variable.property.dom.ts"
 						}
 					}
 				},
 				{
-					"name": "support.class.node.js",
+					"name": "support.class.node.ts",
 					"match": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(Buffer|EventEmitter|Server|Pipe|Socket|REPLServer|ReadStream|WriteStream|Stream\n  |Inflate|Deflate|InflateRaw|DeflateRaw|GZip|GUnzip|Unzip|Zip)\\b(?!\\$)"
 				},
 				{
 					"match": "(?x)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(process)(?:(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))(?:\n  (arch|argv|config|connected|env|execArgv|execPath|exitCode|mainModule|pid|platform|release|stderr|stdin|stdout|title|version|versions)\n  |\n  (abort|chdir|cwd|disconnect|exit|[sg]ete?[gu]id|send|[sg]etgroups|initgroups|kill|memoryUsage|nextTick|umask|uptime|hrtime)\n))?\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "support.variable.object.process.js"
+							"name": "support.variable.object.process.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"4": {
-							"name": "support.variable.property.process.js"
+							"name": "support.variable.property.process.ts"
 						},
 						"5": {
-							"name": "support.function.process.js"
+							"name": "support.function.process.ts"
 						}
 					}
 				},
@@ -2949,46 +2987,46 @@
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(exports)|(module)(?:(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))(exports|id|filename|loaded|parent|children))?)\\b(?!\\$)",
 					"captures": {
 						"1": {
-							"name": "support.type.object.module.js"
+							"name": "support.type.object.module.ts"
 						},
 						"2": {
-							"name": "support.type.object.module.js"
+							"name": "support.type.object.module.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"4": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"5": {
-							"name": "support.type.object.module.js"
+							"name": "support.type.object.module.ts"
 						}
 					}
 				},
 				{
-					"name": "support.variable.object.node.js",
+					"name": "support.variable.object.node.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(global|GLOBAL|root|__dirname|__filename)\\b(?!\\$)"
 				},
 				{
 					"match": "(?x) (?:(\\.)|(\\?\\.(?!\\s*[[:digit:]]))) \\s*\n(?:\n (on(?:Rowsinserted|Rowsdelete|Rowenter|Rowexit|Resize|Resizestart|Resizeend|Reset|\n   Readystatechange|Mouseout|Mouseover|Mousedown|Mouseup|Mousemove|\n   Before(?:cut|deactivate|unload|update|paste|print|editfocus|activate)|\n   Blur|Scrolltop|Submit|Select|Selectstart|Selectionchange|Hover|Help|\n   Change|Contextmenu|Controlselect|Cut|Cellchange|Clock|Close|Deactivate|\n   Datasetchanged|Datasetcomplete|Dataavailable|Drop|Drag|Dragstart|Dragover|\n   Dragdrop|Dragenter|Dragend|Dragleave|Dblclick|Unload|Paste|Propertychange|Error|\n   Errorupdate|Keydown|Keyup|Keypress|Focus|Load|Activate|Afterupdate|Afterprint|Abort)\n ) |\n (shift|showModelessDialog|showModalDialog|showHelp|scroll|scrollX|scrollByPages|\n   scrollByLines|scrollY|scrollTo|stop|strike|sizeToContent|sidebar|signText|sort|\n   sup|sub|substr|substring|splice|split|send|set(?:Milliseconds|Seconds|Minutes|Hours|\n   Month|Year|FullYear|Date|UTC(?:Milliseconds|Seconds|Minutes|Hours|Month|FullYear|Date)|\n   Time|Hotkeys|Cursor|ZOptions|Active|Resizable|RequestHeader)|search|slice|\n   savePreferences|small|home|handleEvent|navigate|char|charCodeAt|charAt|concat|\n   contextual|confirm|compile|clear|captureEvents|call|createStyleSheet|createPopup|\n   createEventObject|to(?:GMTString|UTCString|String|Source|UpperCase|LowerCase|LocaleString)|\n   test|taint|taintEnabled|indexOf|italics|disableExternalCapture|dump|detachEvent|unshift|\n   untaint|unwatch|updateCommands|join|javaEnabled|pop|push|plugins.refresh|paddings|parse|\n   print|prompt|preference|enableExternalCapture|exec|execScript|valueOf|UTC|find|file|\n   fileModifiedDate|fileSize|fileCreatedDate|fileUpdatedDate|fixed|fontsize|fontcolor|\n   forward|fromCharCode|watch|link|load|lastIndexOf|anchor|attachEvent|atob|apply|alert|\n   abort|routeEvents|resize|resizeBy|resizeTo|recalc|returnValue|replace|reverse|reload|\n   releaseCapture|releaseEvents|go|get(?:Milliseconds|Seconds|Minutes|Hours|Month|Day|Year|FullYear|\n   Time|Date|TimezoneOffset|UTC(?:Milliseconds|Seconds|Minutes|Hours|Day|Month|FullYear|Date)|\n   Attention|Selection|ResponseHeader|AllResponseHeaders)|moveBy|moveBelow|moveTo|\n   moveToAbsolute|moveAbove|mergeAttributes|match|margins|btoa|big|bold|borderWidths|blink|back\n ) |\n (acceptNode|add|addEventListener|addTextTrack|adoptNode|after|animate|append|\n   appendChild|appendData|before|blur|canPlayType|captureStream|\n   caretPositionFromPoint|caretRangeFromPoint|checkValidity|clear|click|\n   cloneContents|cloneNode|cloneRange|close|closest|collapse|\n   compareBoundaryPoints|compareDocumentPosition|comparePoint|contains|\n   convertPointFromNode|convertQuadFromNode|convertRectFromNode|createAttribute|\n   createAttributeNS|createCaption|createCDATASection|createComment|\n   createContextualFragment|createDocument|createDocumentFragment|\n   createDocumentType|createElement|createElementNS|createEntityReference|\n   createEvent|createExpression|createHTMLDocument|createNodeIterator|\n   createNSResolver|createProcessingInstruction|createRange|createShadowRoot|\n   createTBody|createTextNode|createTFoot|createTHead|createTreeWalker|delete|\n   deleteCaption|deleteCell|deleteContents|deleteData|deleteRow|deleteTFoot|\n   deleteTHead|detach|disconnect|dispatchEvent|elementFromPoint|elementsFromPoint|\n   enableStyleSheetsForSet|entries|evaluate|execCommand|exitFullscreen|\n   exitPointerLock|expand|extractContents|fastSeek|firstChild|focus|forEach|get|\n   getAll|getAnimations|getAttribute|getAttributeNames|getAttributeNode|\n   getAttributeNodeNS|getAttributeNS|getBoundingClientRect|getBoxQuads|\n   getClientRects|getContext|getDestinationInsertionPoints|getElementById|\n   getElementsByClassName|getElementsByName|getElementsByTagName|\n   getElementsByTagNameNS|getItem|getNamedItem|getSelection|getStartDate|\n   getVideoPlaybackQuality|has|hasAttribute|hasAttributeNS|hasAttributes|\n   hasChildNodes|hasFeature|hasFocus|importNode|initEvent|insertAdjacentElement|\n   insertAdjacentHTML|insertAdjacentText|insertBefore|insertCell|insertData|\n   insertNode|insertRow|intersectsNode|isDefaultNamespace|isEqualNode|\n   isPointInRange|isSameNode|item|key|keys|lastChild|load|lookupNamespaceURI|\n   lookupPrefix|matches|move|moveAttribute|moveAttributeNode|moveChild|\n   moveNamedItem|namedItem|nextNode|nextSibling|normalize|observe|open|\n   parentNode|pause|play|postMessage|prepend|preventDefault|previousNode|\n   previousSibling|probablySupportsContext|queryCommandEnabled|\n   queryCommandIndeterm|queryCommandState|queryCommandSupported|queryCommandValue|\n   querySelector|querySelectorAll|registerContentHandler|registerElement|\n   registerProtocolHandler|releaseCapture|releaseEvents|remove|removeAttribute|\n   removeAttributeNode|removeAttributeNS|removeChild|removeEventListener|\n   removeItem|replace|replaceChild|replaceData|replaceWith|reportValidity|\n   requestFullscreen|requestPointerLock|reset|scroll|scrollBy|scrollIntoView|\n   scrollTo|seekToNextFrame|select|selectNode|selectNodeContents|set|setAttribute|\n   setAttributeNode|setAttributeNodeNS|setAttributeNS|setCapture|\n   setCustomValidity|setEnd|setEndAfter|setEndBefore|setItem|setNamedItem|\n   setRangeText|setSelectionRange|setSinkId|setStart|setStartAfter|setStartBefore|\n   slice|splitText|stepDown|stepUp|stopImmediatePropagation|stopPropagation|\n   submit|substringData|supports|surroundContents|takeRecords|terminate|toBlob|\n   toDataURL|toggle|toString|values|write|writeln\n ) |\n (all|catch|finally|race|reject|resolve|then\n )\n)(?=\\s*\\()",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "support.function.event-handler.js"
+							"name": "support.function.event-handler.ts"
 						},
 						"4": {
-							"name": "support.function.js"
+							"name": "support.function.ts"
 						},
 						"5": {
-							"name": "support.function.dom.js"
+							"name": "support.function.dom.ts"
 						},
 						"6": {
-							"name": "support.function.promise.js"
+							"name": "support.function.promise.ts"
 						}
 					}
 				}
@@ -3000,16 +3038,16 @@
 					"include": "#object-identifiers"
 				},
 				{
-					"match": "(?x)(?:(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*)?([_$[:alpha:]][_$[:alnum:]]*)(?=\\s*=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ([\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n))",
+					"match": "(?x)(?:(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*)?([_$[:alpha:]][_$[:alnum:]]*)(?=\\s*=\\s*(\n  ((async\\s+)?(\n    (function\\s*[(<*]) |\n    (function\\s+) |\n    ([_$[:alpha:]][_$[:alnum:]]*\\s*=>)\n  )) |\n  ((async\\s*)?(\n    ((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$) |\n    # sure shot arrow functions even if => is on new line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?\n  [(]\\s*\n  (\n    ([)]\\s*:) |                                                                                       # ():\n    ((\\.\\.\\.\\s*)?[_$[:alpha:]][_$[:alnum:]]*\\s*:)                                                                  # [(]param: | [(]...param:\n  )\n) |\n(\n  [<]\\s*[_$[:alpha:]][_$[:alnum:]]*\\s+extends\\s*[^=>]                                                              # < typeparam extends\n) |\n# arrow function possible to detect only with => on same line\n(\n  (<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?                                                                                 # typeparameters\n  \\(\\s*(([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\.\\.\\.\\s*[_$[:alpha:]]))([^()]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\)))*)?\\)   # parameters\n  (\\s*:\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+)?                                                                        # return type\n  \\s*=>                                                                                               # arrow operator\n)\n  ))\n))",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "entity.name.function.js"
+							"name": "entity.name.function.ts"
 						}
 					}
 				},
@@ -3017,13 +3055,13 @@
 					"match": "(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*([[:upper:]][_$[:digit:][:upper:]]*)(?![_$[:alnum:]])",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "variable.other.constant.property.js"
+							"name": "variable.other.constant.property.ts"
 						}
 					}
 				},
@@ -3031,22 +3069,22 @@
 					"match": "(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*([_$[:alpha:]][_$[:alnum:]]*)",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "variable.other.property.js"
+							"name": "variable.other.property.ts"
 						}
 					}
 				},
 				{
-					"name": "variable.other.constant.js",
+					"name": "variable.other.constant.ts",
 					"match": "([[:upper:]][_$[:digit:][:upper:]]*)(?![_$[:alnum:]])"
 				},
 				{
-					"name": "variable.other.readwrite.js",
+					"name": "variable.other.readwrite.ts",
 					"match": "[_$[:alpha:]][_$[:alnum:]]*"
 				}
 			]
@@ -3054,23 +3092,23 @@
 		"object-identifiers": {
 			"patterns": [
 				{
-					"name": "support.class.js",
+					"name": "support.class.ts",
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)(?=\\s*\\??\\.\\s*prototype\\b(?!\\$))"
 				},
 				{
 					"match": "(?x)(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))\\s*(?:\n  ([[:upper:]][_$[:digit:][:upper:]]*) |\n  ([_$[:alpha:]][_$[:alnum:]]*)\n)(?=\\s*\\??\\.\\s*[_$[:alpha:]][_$[:alnum:]]*)",
 					"captures": {
 						"1": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						},
 						"3": {
-							"name": "variable.other.constant.object.property.js"
+							"name": "variable.other.constant.object.property.ts"
 						},
 						"4": {
-							"name": "variable.other.object.property.js"
+							"name": "variable.other.object.property.ts"
 						}
 					}
 				},
@@ -3078,10 +3116,10 @@
 					"match": "(?x)(?:\n  ([[:upper:]][_$[:digit:][:upper:]]*) |\n  ([_$[:alpha:]][_$[:alnum:]]*)\n)(?=\\s*\\??\\.\\s*[_$[:alpha:]][_$[:alnum:]]*)",
 					"captures": {
 						"1": {
-							"name": "variable.other.constant.object.js"
+							"name": "variable.other.constant.object.ts"
 						},
 						"2": {
-							"name": "variable.other.object.js"
+							"name": "variable.other.object.ts"
 						}
 					}
 				}
@@ -3090,11 +3128,11 @@
 		"type-annotation": {
 			"patterns": [
 				{
-					"name": "meta.type.annotation.js",
+					"name": "meta.type.annotation.ts",
 					"begin": "(:)(?=\\s*\\S)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.type.annotation.js"
+							"name": "keyword.operator.type.annotation.ts"
 						}
 					},
 					"end": "(?<![:|&])((?=$|^|[,);\\}\\]]|//)|(?==[^>])|((?<=[\\}>\\]\\)]|[_$[:alpha:]])\\s*(?=\\{)))",
@@ -3105,11 +3143,11 @@
 					]
 				},
 				{
-					"name": "meta.type.annotation.js",
+					"name": "meta.type.annotation.ts",
 					"begin": "(:)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.type.annotation.js"
+							"name": "keyword.operator.type.annotation.ts"
 						}
 					},
 					"end": "(?<![:|&])((?=[,);\\}\\]]|//)|(?==[^>])|(?=^\\s*$)|((?<=\\S)(?=\\s*$))|((?<=[\\}>\\]\\)]|[_$[:alpha:]])\\s*(?=\\{)))",
@@ -3124,11 +3162,11 @@
 		"return-type": {
 			"patterns": [
 				{
-					"name": "meta.return.type.js",
+					"name": "meta.return.type.ts",
 					"begin": "(?<=\\))\\s*(:)(?=\\s*\\S)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.type.annotation.js"
+							"name": "keyword.operator.type.annotation.ts"
 						}
 					},
 					"end": "(?<![:|&])(?=$|^|[{};,]|//)",
@@ -3139,11 +3177,11 @@
 					]
 				},
 				{
-					"name": "meta.return.type.js",
+					"name": "meta.return.type.ts",
 					"begin": "(?<=\\))\\s*(:)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.type.annotation.js"
+							"name": "keyword.operator.type.annotation.ts"
 						}
 					},
 					"end": "(?<![:|&])((?=[{};,]|//|^\\s*$)|((?<=\\S)(?=\\s*$)))",
@@ -3178,11 +3216,11 @@
 			]
 		},
 		"arrow-return-type": {
-			"name": "meta.return.type.arrow.js",
+			"name": "meta.return.type.arrow.ts",
 			"begin": "(?<=\\))\\s*(:)",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.operator.type.annotation.js"
+					"name": "keyword.operator.type.annotation.ts"
 				}
 			},
 			"end": "(?==>|\\{|(^\\s*(export|function|class|interface|let|var|const|import|enum|namespace|module|type|abstract|declare)\\s+))",
@@ -3196,11 +3234,11 @@
 			"begin": "(?<=\\))\\s*(:)(?=\\s*([^<>\\(\\)]|\\<[^<>]+\\>|\\([^\\(\\)]+\\))+\\s*=>)",
 			"beginCaptures": {
 				"1": {
-					"name": "meta.arrow.js meta.return.type.arrow.js keyword.operator.type.annotation.js"
+					"name": "meta.arrow.ts meta.return.type.arrow.ts keyword.operator.type.annotation.ts"
 				}
 			},
 			"end": "(?==>|\\{|(^\\s*(export|function|class|interface|let|var|const|import|enum|namespace|module|type|abstract|declare)\\s+))",
-			"contentName": "meta.arrow.js meta.return.type.arrow.js",
+			"contentName": "meta.arrow.ts meta.return.type.arrow.ts",
 			"patterns": [
 				{
 					"include": "#arrow-return-type-body"
@@ -3227,17 +3265,17 @@
 			]
 		},
 		"type-parameters": {
-			"name": "meta.type.parameters.js",
+			"name": "meta.type.parameters.ts",
 			"begin": "(<)",
 			"beginCaptures": {
 				"1": {
-					"name": "punctuation.definition.typeparameters.begin.js"
+					"name": "punctuation.definition.typeparameters.begin.ts"
 				}
 			},
 			"end": "(>)",
 			"endCaptures": {
 				"1": {
-					"name": "punctuation.definition.typeparameters.end.js"
+					"name": "punctuation.definition.typeparameters.end.ts"
 				}
 			},
 			"patterns": [
@@ -3245,7 +3283,7 @@
 					"include": "#comment"
 				},
 				{
-					"name": "storage.modifier.js",
+					"name": "storage.modifier.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(extends)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
@@ -3257,17 +3295,17 @@
 			]
 		},
 		"type-arguments": {
-			"name": "meta.type.parameters.js",
+			"name": "meta.type.parameters.ts",
 			"begin": "\\<",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.typeparameters.begin.js"
+					"name": "punctuation.definition.typeparameters.begin.ts"
 				}
 			},
 			"end": "\\>",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.typeparameters.end.js"
+					"name": "punctuation.definition.typeparameters.end.ts"
 				}
 			},
 			"patterns": [
@@ -3326,25 +3364,25 @@
 			]
 		},
 		"type-primitive": {
-			"name": "support.type.primitive.js",
+			"name": "support.type.primitive.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(string|number|boolean|symbol|any|void|never)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"type-builtin-literals": {
-			"name": "support.type.builtin.js",
+			"name": "support.type.builtin.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(this|true|false|undefined|null|object)(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"type-tuple": {
-			"name": "meta.type.tuple.js",
+			"name": "meta.type.tuple.ts",
 			"begin": "\\[",
 			"beginCaptures": {
 				"0": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				}
 			},
 			"end": "\\]",
 			"endCaptures": {
 				"0": {
-					"name": "meta.brace.square.js"
+					"name": "meta.brace.square.ts"
 				}
 			},
 			"patterns": [
@@ -3357,17 +3395,17 @@
 			]
 		},
 		"type-object": {
-			"name": "meta.object.type.js",
+			"name": "meta.object.type.ts",
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.block.js"
+					"name": "punctuation.definition.block.ts"
 				}
 			},
 			"patterns": [
@@ -3393,7 +3431,7 @@
 					"begin": "\\.\\.\\.",
 					"beginCaptures": {
 						"0": {
-							"name": "keyword.operator.spread.js"
+							"name": "keyword.operator.spread.ts"
 						}
 					},
 					"end": "(?=\\}|;|,|$)|(?<=\\})",
@@ -3420,7 +3458,7 @@
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(extends)\\s+",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						}
 					},
 					"end": "(?<=:)",
@@ -3429,13 +3467,13 @@
 							"begin": "\\?",
 							"beginCaptures": {
 								"0": {
-									"name": "keyword.operator.ternary.js"
+									"name": "keyword.operator.ternary.ts"
 								}
 							},
 							"end": ":",
 							"endCaptures": {
 								"0": {
-									"name": "keyword.operator.ternary.js"
+									"name": "keyword.operator.ternary.ts"
 								}
 							},
 							"patterns": [
@@ -3452,17 +3490,17 @@
 			]
 		},
 		"type-paren-or-function-parameters": {
-			"name": "meta.type.paren.cover.js",
+			"name": "meta.type.paren.cover.ts",
 			"begin": "\\(",
 			"beginCaptures": {
 				"0": {
-					"name": "meta.brace.round.js"
+					"name": "meta.brace.round.ts"
 				}
 			},
 			"end": "\\)",
 			"endCaptures": {
 				"0": {
-					"name": "meta.brace.round.js"
+					"name": "meta.brace.round.ts"
 				}
 			},
 			"patterns": [
@@ -3470,22 +3508,22 @@
 					"include": "#destructuring-parameter"
 				},
 				{
-					"match": "(?x)(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|private|protected|readonly)\\s+)?(?:(\\.\\.\\.)\\s*)?(?<!=|:)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))\\s*(\\??)(?=\\s*(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*([\\(]\\s*([\\{\\[]\\s*)?$)))",
+					"match": "(?x)(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|private|protected|readonly)\\s+)?(?:(\\.\\.\\.)\\s*)?(?<!=|:)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))\\s*(\\??)(?=\\s*(:\\s*(\n  (<) |\n  ([(]\\s*(\n    ([)]) |\n    (\\.\\.\\.) |\n    ([_$[:alnum:]]+\\s*(\n      ([:,?=])|\n      ([)]\\s*=>)\n    ))\n  ))\n)) |\n(:\\s*((<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<]|\\<\\s*([_$[:alpha:]]|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\]))([^=<>]|=[^<])*\\>)*>\\s*)?[\\(]\\s*([\\{\\[]\\s*)?$)))",
 					"captures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "keyword.operator.rest.js"
+							"name": "keyword.operator.rest.ts"
 						},
 						"3": {
-							"name": "entity.name.function.js variable.language.this.js"
+							"name": "entity.name.function.ts variable.language.this.ts"
 						},
 						"4": {
-							"name": "entity.name.function.js"
+							"name": "entity.name.function.ts"
 						},
 						"5": {
-							"name": "keyword.operator.optional.js"
+							"name": "keyword.operator.optional.ts"
 						}
 					}
 				},
@@ -3493,19 +3531,19 @@
 					"match": "(?x)(?:(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(public|private|protected|readonly)\\s+)?(?:(\\.\\.\\.)\\s*)?(?<!=|:)(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(?:(this)|([_$[:alpha:]][_$[:alnum:]]*))\\s*(\\??)(?=:)",
 					"captures": {
 						"1": {
-							"name": "storage.modifier.js"
+							"name": "storage.modifier.ts"
 						},
 						"2": {
-							"name": "keyword.operator.rest.js"
+							"name": "keyword.operator.rest.ts"
 						},
 						"3": {
-							"name": "variable.parameter.js variable.language.this.js"
+							"name": "variable.parameter.ts variable.language.this.ts"
 						},
 						"4": {
-							"name": "variable.parameter.js"
+							"name": "variable.parameter.ts"
 						},
 						"5": {
-							"name": "keyword.operator.optional.js"
+							"name": "keyword.operator.optional.ts"
 						}
 					}
 				},
@@ -3513,7 +3551,7 @@
 					"include": "#type-annotation"
 				},
 				{
-					"name": "punctuation.separator.parameter.js",
+					"name": "punctuation.separator.parameter.ts",
 					"match": ","
 				},
 				{
@@ -3524,20 +3562,20 @@
 		"type-fn-type-parameters": {
 			"patterns": [
 				{
-					"name": "meta.type.constructor.js",
+					"name": "meta.type.constructor.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(new)\\b(?=\\s*\\<)",
 					"captures": {
 						"1": {
-							"name": "keyword.control.new.js"
+							"name": "keyword.control.new.ts"
 						}
 					}
 				},
 				{
-					"name": "meta.type.constructor.js",
+					"name": "meta.type.constructor.ts",
 					"begin": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))(new)\\b\\s*(?=\\()",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.new.js"
+							"name": "keyword.control.new.ts"
 						}
 					},
 					"end": "(?<=\\))",
@@ -3548,7 +3586,7 @@
 					]
 				},
 				{
-					"name": "meta.type.function.js",
+					"name": "meta.type.function.ts",
 					"begin": "(?x)(\n  (?=\n    [(]\\s*(\n      ([)]) |\n      (\\.\\.\\.) |\n      ([_$[:alnum:]]+\\s*(\n        ([:,?=])|\n        ([)]\\s*=>)\n      ))\n    )\n  )\n)",
 					"end": "(?<=\\))",
 					"patterns": [
@@ -3562,11 +3600,11 @@
 		"type-function-return-type": {
 			"patterns": [
 				{
-					"name": "meta.type.function.return.js",
+					"name": "meta.type.function.return.ts",
 					"begin": "(=>)(?=\\s*\\S)",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.type.function.arrow.js"
+							"name": "storage.type.function.arrow.ts"
 						}
 					},
 					"end": "(?<!=>)(?<![|&])(?=[,\\]\\)\\{\\}=;>:\\?]|//|$)",
@@ -3577,11 +3615,11 @@
 					]
 				},
 				{
-					"name": "meta.type.function.return.js",
+					"name": "meta.type.function.return.ts",
 					"begin": "=>",
 					"beginCaptures": {
 						"0": {
-							"name": "storage.type.function.arrow.js"
+							"name": "storage.type.function.arrow.ts"
 						}
 					},
 					"end": "(?<!=>)(?<![|&])((?=[,\\]\\)\\{\\}=;:\\?>]|//|^\\s*$)|((?<=\\S)(?=\\s*$)))",
@@ -3624,10 +3662,10 @@
 					"begin": "(?:([&|])|(=(?!>)))(?=\\s*\\{)",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.type.js"
+							"name": "keyword.operator.type.ts"
 						},
 						"2": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						}
 					},
 					"end": "(?<=\\})",
@@ -3641,34 +3679,34 @@
 					"begin": "([&|])|(=(?!>))",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.operator.type.js"
+							"name": "keyword.operator.type.ts"
 						},
 						"2": {
-							"name": "keyword.operator.assignment.js"
+							"name": "keyword.operator.assignment.ts"
 						}
 					},
 					"end": "(?=\\S)"
 				},
 				{
-					"name": "keyword.operator.expression.keyof.js",
+					"name": "keyword.operator.expression.keyof.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))keyof(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 				},
 				{
-					"name": "keyword.operator.ternary.js",
+					"name": "keyword.operator.ternary.ts",
 					"match": "(\\?|\\:)"
 				},
 				{
-					"name": "keyword.operator.expression.infer.js",
+					"name": "keyword.operator.expression.infer.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))infer(?=\\s+[_$[:alpha:]])"
 				},
 				{
-					"name": "keyword.operator.expression.import.js",
+					"name": "keyword.operator.expression.import.ts",
 					"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))import(?=\\s*\\()"
 				}
 			]
 		},
 		"type-predicate-operator": {
-			"name": "keyword.operator.expression.is.js",
+			"name": "keyword.operator.expression.is.ts",
 			"match": "(?<![_$[:alnum:]])(?:(?<=\\.\\.\\.)|(?<!\\.))is(?![_$[:alnum:]])(?:(?=\\.\\.\\.)|(?!\\.))"
 		},
 		"type-name": {
@@ -3677,38 +3715,38 @@
 					"match": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))",
 					"captures": {
 						"1": {
-							"name": "entity.name.type.module.js"
+							"name": "entity.name.type.module.ts"
 						},
 						"2": {
-							"name": "punctuation.accessor.js"
+							"name": "punctuation.accessor.ts"
 						},
 						"3": {
-							"name": "punctuation.accessor.optional.js"
+							"name": "punctuation.accessor.optional.ts"
 						}
 					}
 				},
 				{
-					"name": "entity.name.type.js",
+					"name": "entity.name.type.ts",
 					"match": "[_$[:alpha:]][_$[:alnum:]]*"
 				}
 			]
 		},
 		"punctuation-comma": {
-			"name": "punctuation.separator.comma.js",
+			"name": "punctuation.separator.comma.ts",
 			"match": ","
 		},
 		"punctuation-semicolon": {
-			"name": "punctuation.terminator.statement.js",
+			"name": "punctuation.terminator.statement.ts",
 			"match": ";"
 		},
 		"punctuation-accessor": {
 			"match": "(?:(\\.)|(\\?\\.(?!\\s*[[:digit:]])))",
 			"captures": {
 				"1": {
-					"name": "punctuation.accessor.js"
+					"name": "punctuation.accessor.ts"
 				},
 				"2": {
-					"name": "punctuation.accessor.optional.js"
+					"name": "punctuation.accessor.optional.ts"
 				}
 			}
 		},
@@ -3723,20 +3761,20 @@
 			]
 		},
 		"qstring-double": {
-			"name": "string.quoted.double.js",
+			"name": "string.quoted.double.ts",
 			"begin": "\"",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.js"
+					"name": "punctuation.definition.string.begin.ts"
 				}
 			},
 			"end": "(\")|((?:[^\\\\\\n])$)",
 			"endCaptures": {
 				"1": {
-					"name": "punctuation.definition.string.end.js"
+					"name": "punctuation.definition.string.end.ts"
 				},
 				"2": {
-					"name": "invalid.illegal.newline.js"
+					"name": "invalid.illegal.newline.ts"
 				}
 			},
 			"patterns": [
@@ -3746,20 +3784,20 @@
 			]
 		},
 		"qstring-single": {
-			"name": "string.quoted.single.js",
+			"name": "string.quoted.single.ts",
 			"begin": "'",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.js"
+					"name": "punctuation.definition.string.begin.ts"
 				}
 			},
 			"end": "(\\')|((?:[^\\\\\\n])$)",
 			"endCaptures": {
 				"1": {
-					"name": "punctuation.definition.string.end.js"
+					"name": "punctuation.definition.string.end.ts"
 				},
 				"2": {
-					"name": "invalid.illegal.newline.js"
+					"name": "invalid.illegal.newline.ts"
 				}
 			},
 			"patterns": [
@@ -3769,17 +3807,17 @@
 			]
 		},
 		"string-character-escape": {
-			"name": "constant.character.escape.js",
+			"name": "constant.character.escape.ts",
 			"match": "\\\\(x[0-9A-Fa-f]{2}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)"
 		},
 		"template": {
 			"patterns": [
 				{
-					"name": "string.template.js",
+					"name": "string.template.ts",
 					"begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(?=(<\\s*(((keyof|infer)\\s+)|(([_$[:alpha:]][_$[:alnum:]]*|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\'[^\\']*\\')|(\\\"[^\\\"]*\\\")|(\\`[^\\`]*\\`))(?=\\s*([\\<\\>\\,\\.\\[=]|&(?!&)|\\|(?!\\|)))))([^<>\\(]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(?<==)\\>|\\<\\s*(((keyof|infer)\\s+)|(([_$[:alpha:]][_$[:alnum:]]*|(\\{([^\\{\\}]|(\\{[^\\{\\}]*\\}))*\\})|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(\\[([^\\[\\]]|(\\[[^\\[\\]]*\\]))*\\])|(\\'[^\\']*\\')|(\\\"[^\\\"]*\\\")|(\\`[^\\`]*\\`))(?=\\s*([\\<\\>\\,\\.\\[=]|&(?!&)|\\|(?!\\|)))))([^<>\\(]|(\\(([^\\(\\)]|(\\([^\\(\\)]*\\)))*\\))|(?<==)\\>)*(?!=)\\>)*(?!=)>\\s*)`)",
 					"beginCaptures": {
 						"1": {
-							"name": "entity.name.function.tagged-template.js"
+							"name": "entity.name.function.tagged-template.ts"
 						}
 					},
 					"end": "(?=`)",
@@ -3790,20 +3828,20 @@
 					]
 				},
 				{
-					"name": "string.template.js",
+					"name": "string.template.ts",
 					"begin": "([_$[:alpha:]][_$[:alnum:]]*)?(`)",
 					"beginCaptures": {
 						"1": {
-							"name": "entity.name.function.tagged-template.js"
+							"name": "entity.name.function.tagged-template.ts"
 						},
 						"2": {
-							"name": "punctuation.definition.string.template.begin.js"
+							"name": "punctuation.definition.string.template.begin.ts"
 						}
 					},
 					"end": "`",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.string.template.end.js"
+							"name": "punctuation.definition.string.template.end.ts"
 						}
 					},
 					"patterns": [
@@ -3818,17 +3856,17 @@
 			]
 		},
 		"template-substitution-element": {
-			"name": "meta.template.expression.js",
+			"name": "meta.template.expression.ts",
 			"begin": "\\$\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.template-expression.begin.js"
+					"name": "punctuation.definition.template-expression.begin.ts"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.template-expression.end.js"
+					"name": "punctuation.definition.template-expression.end.ts"
 				}
 			},
 			"patterns": [
@@ -3836,25 +3874,25 @@
 					"include": "#expression"
 				}
 			],
-			"contentName": "meta.embedded.line.js"
+			"contentName": "meta.embedded.line.ts"
 		},
 		"regex": {
 			"patterns": [
 				{
-					"name": "string.regexp.js",
+					"name": "string.regexp.ts",
 					"begin": "(?<!\\+\\+|--)(?<=[=(:,\\[?+!]|^return|[^\\._$[:alnum:]]return|^case|[^\\._$[:alnum:]]case|=>|&&|\\|\\||\\*\\/)\\s*(\\/)(?![\\/*])(?=(?:[^\\/\\\\\\[]|\\\\.|\\[([^\\]\\\\]|\\\\.)+\\])+\\/[gimsuy]*(?!\\s*[a-zA-Z0-9_$]))",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.definition.string.begin.js"
+							"name": "punctuation.definition.string.begin.ts"
 						}
 					},
 					"end": "(/)([gimsuy]*)",
 					"endCaptures": {
 						"1": {
-							"name": "punctuation.definition.string.end.js"
+							"name": "punctuation.definition.string.end.ts"
 						},
 						"2": {
-							"name": "keyword.other.js"
+							"name": "keyword.other.ts"
 						}
 					},
 					"patterns": [
@@ -3864,20 +3902,20 @@
 					]
 				},
 				{
-					"name": "string.regexp.js",
+					"name": "string.regexp.ts",
 					"begin": "(?<![_$[:alnum:])\\]]|\\+\\+|--)\\/(?![\\/*])(?=(?:[^\\/\\\\\\[]|\\\\.|\\[([^\\]\\\\]|\\\\.)+\\])+\\/[gimsuy]*(?!\\s*[a-zA-Z0-9_$]))",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.string.begin.js"
+							"name": "punctuation.definition.string.begin.ts"
 						}
 					},
 					"end": "(/)([gimsuy]*)",
 					"endCaptures": {
 						"1": {
-							"name": "punctuation.definition.string.end.js"
+							"name": "punctuation.definition.string.end.ts"
 						},
 						"2": {
-							"name": "keyword.other.js"
+							"name": "keyword.other.ts"
 						}
 					},
 					"patterns": [
@@ -4049,17 +4087,17 @@
 		"comment": {
 			"patterns": [
 				{
-					"name": "comment.block.documentation.js",
+					"name": "comment.block.documentation.ts",
 					"begin": "/\\*\\*(?!/)",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.js"
+							"name": "punctuation.definition.comment.ts"
 						}
 					},
 					"end": "\\*/",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.js"
+							"name": "punctuation.definition.comment.ts"
 						}
 					},
 					"patterns": [
@@ -4069,23 +4107,23 @@
 					]
 				},
 				{
-					"name": "comment.block.js",
+					"name": "comment.block.ts",
 					"begin": "(/\\*)(?:\\s*((@)internal)(?=\\s|(\\*/)))?",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.definition.comment.js"
+							"name": "punctuation.definition.comment.ts"
 						},
 						"2": {
-							"name": "storage.type.internaldeclaration.js"
+							"name": "storage.type.internaldeclaration.ts"
 						},
 						"3": {
-							"name": "punctuation.decorator.internaldeclaration.js"
+							"name": "punctuation.decorator.internaldeclaration.ts"
 						}
 					},
 					"end": "\\*/",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.js"
+							"name": "punctuation.definition.comment.ts"
 						}
 					}
 				},
@@ -4093,60 +4131,60 @@
 					"begin": "(^[ \\t]+)?((//)(?:\\s*((@)internal)(?=\\s|$))?)",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.whitespace.comment.leading.js"
+							"name": "punctuation.whitespace.comment.leading.ts"
 						},
 						"2": {
-							"name": "comment.line.double-slash.js"
+							"name": "comment.line.double-slash.ts"
 						},
 						"3": {
-							"name": "punctuation.definition.comment.js"
+							"name": "punctuation.definition.comment.ts"
 						},
 						"4": {
-							"name": "storage.type.internaldeclaration.js"
+							"name": "storage.type.internaldeclaration.ts"
 						},
 						"5": {
-							"name": "punctuation.decorator.internaldeclaration.js"
+							"name": "punctuation.decorator.internaldeclaration.ts"
 						}
 					},
 					"end": "(?=^)",
-					"contentName": "comment.line.double-slash.js"
+					"contentName": "comment.line.double-slash.ts"
 				}
 			]
 		},
 		"directives": {
-			"name": "comment.line.triple-slash.directive.js",
+			"name": "comment.line.triple-slash.directive.ts",
 			"begin": "^(///)\\s*(?=<(reference|amd-dependency|amd-module)(\\s+(path|types|no-default-lib|lib|name)\\s*=\\s*((\\'([^\\'\\\\]|\\\\\\'|\\\\)*\\')|(\\\"([^\\\"\\\\]|\\\\\\\"|\\\\)*\\\")))+\\s*/>\\s*$)",
 			"beginCaptures": {
 				"1": {
-					"name": "punctuation.definition.comment.js"
+					"name": "punctuation.definition.comment.ts"
 				}
 			},
 			"end": "(?=^)",
 			"patterns": [
 				{
-					"name": "meta.tag.js",
+					"name": "meta.tag.ts",
 					"begin": "(<)(reference|amd-dependency|amd-module)",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.definition.tag.directive.js"
+							"name": "punctuation.definition.tag.directive.ts"
 						},
 						"2": {
-							"name": "entity.name.tag.directive.js"
+							"name": "entity.name.tag.directive.ts"
 						}
 					},
 					"end": "/>",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.tag.directive.js"
+							"name": "punctuation.definition.tag.directive.ts"
 						}
 					},
 					"patterns": [
 						{
-							"name": "entity.other.attribute-name.directive.js",
+							"name": "entity.other.attribute-name.directive.ts",
 							"match": "path|types|no-default-lib|lib|name"
 						},
 						{
-							"name": "keyword.operator.assignment.js",
+							"name": "keyword.operator.assignment.ts",
 							"match": "="
 						},
 						{
@@ -4262,7 +4300,7 @@
 							"match": "[^\\s@*](?:[^*]|\\*[^/])*",
 							"captures": {
 								"0": {
-									"name": "source.embedded.js"
+									"name": "source.embedded.ts"
 								}
 							}
 						}
@@ -4378,7 +4416,7 @@
 									"name": "keyword.operator.assignment.jsdoc"
 								},
 								"3": {
-									"name": "source.embedded.js"
+									"name": "source.embedded.ts"
 								},
 								"4": {
 									"name": "punctuation.definition.optional-value.end.bracket.square.jsdoc"
@@ -4592,308 +4630,6 @@
 					]
 				}
 			]
-		},
-		"jsx": {
-			"patterns": [
-				{
-					"include": "#jsx-tag-without-attributes-in-expression"
-				},
-				{
-					"include": "#jsx-tag-in-expression"
-				}
-			]
-		},
-		"jsx-tag-without-attributes-in-expression": {
-			"begin": "(?<!\\+\\+|--)(?<=[({\\[,?=>:*]|&&|\\|\\||\\?|^return|[^\\._$[:alnum:]]return|^default|[^\\._$[:alnum:]]default|^)\\s*(?=(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))?\\s*(>))",
-			"end": "(?!(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))?\\s*(>))",
-			"patterns": [
-				{
-					"include": "#jsx-tag-without-attributes"
-				}
-			]
-		},
-		"jsx-tag-without-attributes": {
-			"name": "meta.tag.without-attributes.js",
-			"begin": "(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))?\\s*(>)",
-			"end": "(</)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))?\\s*(>)",
-			"beginCaptures": {
-				"1": {
-					"name": "punctuation.definition.tag.begin.js"
-				},
-				"2": {
-					"name": "entity.name.tag.namespace.js"
-				},
-				"3": {
-					"name": "punctuation.separator.namespace.js"
-				},
-				"4": {
-					"name": "entity.name.tag.js"
-				},
-				"5": {
-					"name": "support.class.component.js"
-				},
-				"6": {
-					"name": "punctuation.definition.tag.end.js"
-				}
-			},
-			"endCaptures": {
-				"1": {
-					"name": "punctuation.definition.tag.begin.js"
-				},
-				"2": {
-					"name": "entity.name.tag.namespace.js"
-				},
-				"3": {
-					"name": "punctuation.separator.namespace.js"
-				},
-				"4": {
-					"name": "entity.name.tag.js"
-				},
-				"5": {
-					"name": "support.class.component.js"
-				},
-				"6": {
-					"name": "punctuation.definition.tag.end.js"
-				}
-			},
-			"contentName": "meta.jsx.children.js",
-			"patterns": [
-				{
-					"include": "#jsx-children"
-				}
-			]
-		},
-		"jsx-tag-in-expression": {
-			"begin": "(?x)\n  (?<!\\+\\+|--)(?<=[({\\[,?=>:*]|&&|\\|\\||\\?|^return|[^\\._$[:alnum:]]return|^default|[^\\._$[:alnum:]]default|^)\\s*\n  (?!<\\s*[_$[:alpha:]][_$[:alnum:]]*((\\s+extends\\s+[^=>])|,)) # look ahead is not type parameter of arrow\n  (?=(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))(?=((<\\s*)|(\\s+))(?!\\?)|\\/?>))",
-			"end": "(?!(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))(?=((<\\s*)|(\\s+))(?!\\?)|\\/?>))",
-			"patterns": [
-				{
-					"include": "#jsx-tag"
-				}
-			]
-		},
-		"jsx-tag": {
-			"name": "meta.tag.js",
-			"begin": "(?=(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))(?=((<\\s*)|(\\s+))(?!\\?)|\\/?>))",
-			"end": "(/>)|(?:(</)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))?\\s*(>))",
-			"endCaptures": {
-				"1": {
-					"name": "punctuation.definition.tag.end.js"
-				},
-				"2": {
-					"name": "punctuation.definition.tag.begin.js"
-				},
-				"3": {
-					"name": "entity.name.tag.namespace.js"
-				},
-				"4": {
-					"name": "punctuation.separator.namespace.js"
-				},
-				"5": {
-					"name": "entity.name.tag.js"
-				},
-				"6": {
-					"name": "support.class.component.js"
-				},
-				"7": {
-					"name": "punctuation.definition.tag.end.js"
-				}
-			},
-			"patterns": [
-				{
-					"begin": "(<)\\s*(?:([_$a-zA-Z][-$\\w.]*)(?<!\\.|-)(:))?((?:[a-z][a-z0-9]*|([_$a-zA-Z][-$\\w.]*))(?<!\\.|-))(?=((<\\s*)|(\\s+))(?!\\?)|\\/?>)",
-					"beginCaptures": {
-						"1": {
-							"name": "punctuation.definition.tag.begin.js"
-						},
-						"2": {
-							"name": "entity.name.tag.namespace.js"
-						},
-						"3": {
-							"name": "punctuation.separator.namespace.js"
-						},
-						"4": {
-							"name": "entity.name.tag.js"
-						},
-						"5": {
-							"name": "support.class.component.js"
-						}
-					},
-					"end": "(?=[/]?>)",
-					"patterns": [
-						{
-							"include": "#comment"
-						},
-						{
-							"include": "#type-arguments"
-						},
-						{
-							"include": "#jsx-tag-attributes"
-						}
-					]
-				},
-				{
-					"begin": "(>)",
-					"beginCaptures": {
-						"1": {
-							"name": "punctuation.definition.tag.end.js"
-						}
-					},
-					"end": "(?=</)",
-					"contentName": "meta.jsx.children.js",
-					"patterns": [
-						{
-							"include": "#jsx-children"
-						}
-					]
-				}
-			]
-		},
-		"jsx-children": {
-			"patterns": [
-				{
-					"include": "#jsx-tag-without-attributes"
-				},
-				{
-					"include": "#jsx-tag"
-				},
-				{
-					"include": "#jsx-evaluated-code"
-				},
-				{
-					"include": "#jsx-entities"
-				}
-			]
-		},
-		"jsx-evaluated-code": {
-			"name": "meta.embedded.expression.js",
-			"begin": "\\{",
-			"end": "\\}",
-			"beginCaptures": {
-				"0": {
-					"name": "punctuation.section.embedded.begin.js"
-				}
-			},
-			"endCaptures": {
-				"0": {
-					"name": "punctuation.section.embedded.end.js"
-				}
-			},
-			"patterns": [
-				{
-					"include": "#expression"
-				}
-			]
-		},
-		"jsx-entities": {
-			"patterns": [
-				{
-					"name": "constant.character.entity.js",
-					"match": "(&)([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+)(;)",
-					"captures": {
-						"1": {
-							"name": "punctuation.definition.entity.js"
-						},
-						"3": {
-							"name": "punctuation.definition.entity.js"
-						}
-					}
-				},
-				{
-					"name": "invalid.illegal.bad-ampersand.js",
-					"match": "&"
-				}
-			]
-		},
-		"jsx-tag-attributes": {
-			"name": "meta.tag.attributes.js",
-			"begin": "\\s+",
-			"end": "(?=[/]?>)",
-			"patterns": [
-				{
-					"include": "#comment"
-				},
-				{
-					"include": "#jsx-tag-attribute-name"
-				},
-				{
-					"include": "#jsx-tag-attribute-assignment"
-				},
-				{
-					"include": "#jsx-string-double-quoted"
-				},
-				{
-					"include": "#jsx-string-single-quoted"
-				},
-				{
-					"include": "#jsx-evaluated-code"
-				},
-				{
-					"include": "#jsx-tag-attributes-illegal"
-				}
-			]
-		},
-		"jsx-tag-attribute-name": {
-			"match": "(?x)\n  \\s*\n  (?:([_$a-zA-Z][-$\\w.]*)(:))?\n  ([_$a-zA-Z][-$\\w]*)\n  (?=\\s|=|/?>|/\\*|//)",
-			"captures": {
-				"1": {
-					"name": "entity.other.attribute-name.namespace.js"
-				},
-				"2": {
-					"name": "punctuation.separator.namespace.js"
-				},
-				"3": {
-					"name": "entity.other.attribute-name.js"
-				}
-			}
-		},
-		"jsx-tag-attribute-assignment": {
-			"name": "keyword.operator.assignment.js",
-			"match": "=(?=\\s*(?:'|\"|{|/\\*|//|\\n))"
-		},
-		"jsx-string-double-quoted": {
-			"name": "string.quoted.double.js",
-			"begin": "\"",
-			"end": "\"",
-			"beginCaptures": {
-				"0": {
-					"name": "punctuation.definition.string.begin.js"
-				}
-			},
-			"endCaptures": {
-				"0": {
-					"name": "punctuation.definition.string.end.js"
-				}
-			},
-			"patterns": [
-				{
-					"include": "#jsx-entities"
-				}
-			]
-		},
-		"jsx-string-single-quoted": {
-			"name": "string.quoted.single.js",
-			"begin": "'",
-			"end": "'",
-			"beginCaptures": {
-				"0": {
-					"name": "punctuation.definition.string.begin.js"
-				}
-			},
-			"endCaptures": {
-				"0": {
-					"name": "punctuation.definition.string.end.js"
-				}
-			},
-			"patterns": [
-				{
-					"include": "#jsx-entities"
-				}
-			]
-		},
-		"jsx-tag-attributes-illegal": {
-			"name": "invalid.illegal.attribute.js",
-			"match": "\\S+"
 		}
 	}
 }
