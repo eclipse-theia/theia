@@ -444,7 +444,6 @@ export class ConfigurationChange { // todo rename to the workspace Config change
     value?: any; // todo
 }
 
-// todo rename to configuration
 export interface ConfigurationRegistryMain {
     $updateConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
@@ -458,7 +457,7 @@ export interface ConfigurationRegistryMain {
         resource: any | undefined
     ): PromiseLike<void>;
 }
-// rename to configuration
+
 export interface ConfigurationRegistryExt {
     // todo change format of the data?
     $acceptConfigurationChanged(data: { [key: string]: any }, configChange: ConfigurationChange): void;

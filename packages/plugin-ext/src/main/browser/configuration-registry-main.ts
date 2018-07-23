@@ -27,7 +27,6 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
 
-// todo rename
 export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain {
     private proxy: ConfigurationRegistryExt;
     private consolidateConfRegistry: ConsolidatedConfigurationRegistry;
@@ -43,30 +42,12 @@ export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain 
     }
 
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
-        const scope = this.parseConfigurationTarget(target);
-        // return this.preferenceService.set(key, value, scope); // todo
+        // todo implement
         return Promise.resolve();
     }
 
     $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
-        const scope = this.parseConfigurationTarget(target);
-        // return this.preferenceService.set(key, undefined, scope); // todo
+        // todo implement
         return Promise.resolve();
     }
-
-    private parseConfigurationTarget(arg?: boolean | ConfigurationTarget): PreferenceScope {
-        if (arg === void 0 || arg === null) {
-            return PreferenceScope.Workspace;
-        }
-        if (typeof arg === 'boolean') {
-            return arg ? PreferenceScope.User : PreferenceScope.Workspace;
-        }
-
-        if (arg === ConfigurationTarget.User) {
-            return PreferenceScope.User;
-        } else {
-            return PreferenceScope.Workspace;
-        }
-    }
-
 }

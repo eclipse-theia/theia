@@ -557,7 +557,11 @@ export enum OverviewRulerLane {
     Full = 7
 }
 
-export enum ConfigurationTarget { // todo
-    User = 0,
-    Workspace = 1 // todo
+/**
+ * The configuration target
+ */
+export enum ConfigurationTarget {
+    Global = 1,
+    Workspace = 2,
+    WorkspaceFolder = 3
 }

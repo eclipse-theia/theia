@@ -32,6 +32,7 @@ export class ConsolidatedConfigurationRegistry {
     constructor(
         @inject(PreferenceServiceImpl) private prefService: PreferenceServiceImpl, // it's bad to use implementation
         @inject(PluginConfigurationProvider) private pluginConfProvider: PluginConfigurationProvider,
+        // todo implement returning default configuration
         // @inject(PreferenceSchemaProvider) private readonly prefChemaProvider: PreferenceSchemaProvider,
     ) {
         console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
@@ -53,8 +54,6 @@ export class ConsolidatedConfigurationRegistry {
                 ...this.consolidatedConf.properties,
                 ...e.properties
             };
-            // this.consolidatedConf.properties.forEach(element => {
-            // });
             for (const confName in this.consolidatedConf.properties) {
                 // todo don't throw event twice. If conf was changed to the same value
                 if (this.consolidatedConf.properties.hasOwnProperty(confName)) {
@@ -72,7 +71,7 @@ export class ConsolidatedConfigurationRegistry {
         this.toDispose.push(this.onConfigurationChangedEmitter);
     }
 
-    // private applyPreferencesToConfiguration(prefs: {[key: string]: any}) {
+    // private updateConfiguration(prefs: {[key: string]: any}) {
 
     // }
 

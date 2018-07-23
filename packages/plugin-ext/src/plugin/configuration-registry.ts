@@ -27,6 +27,7 @@ import { isObject } from '../common/types';
 import { ConfigurationTarget } from './types-impl';
 
 import cloneDeep = require('lodash.clonedeep');
+import { ConfigurationModel } from '../api/plugin-api';
 
 interface ConfigurationInspect<T> {
     key: string;
@@ -51,7 +52,7 @@ function lookUp(tree: any, key: string): any {
 
 export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
     private proxy: ConfigurationRegistryMain;
-    private _preferences: any;
+    private _properties: any;
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
     readonly onDidChangeConfiguration: Event<theia.ConfigurationChangeEvent> = this._onDidChangeConfiguration.event;
@@ -60,15 +61,15 @@ export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    $acceptConfigurationChanged(data: { [key: string]: any }, confChange: ConfigurationChange): void {
-        this._preferences = this.parse(data);
+    $acceptConfigurationChanged(data: ConfigurationModel, confChange: ConfigurationChange): void {
+        this._properties = this.parse(data.properties);
         this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(confChange));
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
         const preferences = this.toReadonlyValue(section
-            ? lookUp(this._preferences, section)
-            : this._preferences);
+            ? lookUp(this._properties, section)
+            : this._properties);
 
         const configuration: theia.WorkspaceConfiguration = {
             has(key: string): boolean {
@@ -126,7 +127,10 @@ export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
                     return cloneOnWriteProxy(result, key);
                 }
             },
-            update: (key: string, value: any, arg?: ConfigurationTarget | boolean): PromiseLike<void> => {
+            update: (key: string, value: any, arg?: theia.ConfigurationTarget | boolean): PromiseLike<void> => {
+                if (arg === ConfigurationTarget.WorkspaceFolder) {
+                    throw new Error('Update configuration for workspace folder is not implemented yet.');
+                }
                 key = section ? `${section}.${key}` : key;
                 if (typeof value !== 'undefined') {
                     return this.proxy.$updateConfigurationOption(arg, key, value, resource);

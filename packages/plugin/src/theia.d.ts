@@ -2214,11 +2214,17 @@ declare module '@theia/plugin' {
         /**
          * Global configuration
          */
-        User = 0,
+        Global = 1,
+
         /**
          * Workspace configuration
          */
-        Workspace = 1
+        Workspace = 2,
+
+        /**
+		 * Workspace folder configuration
+		 */
+		WorkspaceFolder = 3
     }
 
     /**
