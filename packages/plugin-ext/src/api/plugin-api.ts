@@ -412,6 +412,16 @@ export interface ModelChangedEvent {
     readonly versionId: number;
 }
 
+export class ConfigurationModel { // configurations of the differents levels...
+    properties: { [key: string]: any };
+}
+
+export class ConfigurationChange { // todo rename to the workspace Config change ?
+    section: string;
+    resource?: theia.Uri;
+    value?: any; // todo
+}
+
 export interface DocumentsExt {
     $acceptModelModeChanged(startUrl: UriComponents, oldModeId: string, newModeId: string): void;
     $acceptModelSaved(strUrl: UriComponents): void;
@@ -433,6 +443,7 @@ export interface EnvExt {
     $setQueryParameters(queryParams: QueryParameters): void;
 }
 
+// todo rename to configuration
 export interface PreferenceRegistryMain {
     $updateConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
@@ -446,9 +457,10 @@ export interface PreferenceRegistryMain {
         resource: any | undefined
     ): PromiseLike<void>;
 }
+// rename to configuration
 export interface PreferenceRegistryExt {
     // todo change format of the data?
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void;
+    $acceptConfigurationChanged(data: { [key: string]: any }, configChange: ConfigurationChange): void;
 }
 
 export interface OutputChannelRegistryMain {

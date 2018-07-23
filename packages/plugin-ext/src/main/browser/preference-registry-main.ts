@@ -15,9 +15,7 @@
  ********************************************************************************/
 
 import {
-    PreferenceService,
-    PreferenceServiceImpl,
-    PreferenceScope
+    PreferenceScope // todo use configuration scope
 } from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
 import {
@@ -29,21 +27,18 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
 
+// todo rename
 export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
     private proxy: PreferenceRegistryExt;
     private consolidateConfRegistry: ConsolidatedConfigurationRegistry;
-    // private preferenceService: PreferenceService;
 
     constructor(prc: RPCProtocol, container: interfaces.Container) {
         this.proxy = prc.getProxy(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT);
 
         this.consolidateConfRegistry = container.get(ConsolidatedConfigurationRegistry);
-        // this.preferenceService = container.get(PreferenceService);
-        // const preferenceServiceImpl = container.get(PreferenceServiceImpl);
 
-        // preferenceServiceImpl.onPreferenceChanged(e => {
-
-        //     this.proxy.$acceptConfigurationChanged(preferenceServiceImpl.getPreferences(), e);
+        // this.consolidateConfRegistry.onConfigurationChanged((confChange) => {
+        //     this.proxy.$acceptConfigurationChanged(this.consolidateConfRegistry.getConsolidatedConfig(), confChange);
         // });
     }
 

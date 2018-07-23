@@ -17,6 +17,7 @@
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
 import {
+    ConfigurationChange,
     PLUGIN_RPC_CONTEXT,
     PreferenceRegistryExt,
     PreferenceRegistryMain
@@ -60,9 +61,9 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void {
-        this._preferences = this.parse(data);
-        this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
+    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: ConfigurationChange): void {
+        // this._preferences = this.parse(data);
+        // this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
