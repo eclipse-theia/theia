@@ -131,9 +131,10 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
         const items: QuickOpenItem[] = [];
         const active: CppBuildConfiguration | undefined = this.cppBuildConfigurations.getActiveConfig();
+        const configurations = Array.from(this.cppBuildConfigurations.getConfigs()).sort();
 
         // Add one item per build config.
-        this.cppBuildConfigurations.getConfigs().forEach(config => {
+        configurations.forEach(config => {
             items.push(new QuickOpenItem({
                 label: config.name,
                 description: config === active ? 'active' : '',
