@@ -37,9 +37,9 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
 
         this.consolidateConfRegistry = container.get(ConsolidatedConfigurationRegistry);
 
-        // this.consolidateConfRegistry.onConfigurationChanged((confChange) => {
-        //     this.proxy.$acceptConfigurationChanged(this.consolidateConfRegistry.getConsolidatedConfig(), confChange);
-        // });
+        this.consolidateConfRegistry.onConfigurationChanged((confChange) => {
+            this.proxy.$acceptConfigurationChanged(this.consolidateConfRegistry.getConsolidatedConfig(), confChange);
+        });
     }
 
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {

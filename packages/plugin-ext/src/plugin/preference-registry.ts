@@ -24,7 +24,6 @@ import {
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { isObject } from '../common/types';
-import { PreferenceChange } from '@theia/core/lib/browser';
 import { ConfigurationTarget } from './types-impl';
 
 import cloneDeep = require('lodash.clonedeep');
@@ -61,9 +60,9 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: ConfigurationChange): void {
-        // this._preferences = this.parse(data);
-        // this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
+    $acceptConfigurationChanged(data: { [key: string]: any }, confChange: ConfigurationChange): void {
+        this._preferences = this.parse(data);
+        this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(confChange));
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
@@ -183,16 +182,15 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         }, {});
     }
 
-    private toConfigurationChangeEvent(eventData: PreferenceChange): theia.ConfigurationChangeEvent {
+    private toConfigurationChangeEvent(eventData: ConfigurationChange): theia.ConfigurationChangeEvent {
         return Object.freeze({
             affectsConfiguration: (section: string, uri?: theia.Uri): boolean => {
-                const tree = eventData.preferenceName
+                const tree = eventData.section
                     .split('.')
                     .reverse()
-                    .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), eventData.newValue);
+                    .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), eventData.value);
                 return !!lookUp(tree, section);
             }
         });
     }
-
 }
