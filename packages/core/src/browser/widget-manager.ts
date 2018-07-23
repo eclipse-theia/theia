@@ -66,6 +66,7 @@ export class WidgetManager {
     protected _cachedFactories: Map<string, WidgetFactory>;
     protected readonly widgets = new Map<string, Widget>();
     protected readonly widgetPromises = new Map<string, MaybePromise<Widget>>();
+    protected readonly pendingWidgetPromises = new Map<string, MaybePromise<Widget>>();
 
     @inject(ContributionProvider) @named(WidgetFactory)
     protected readonly factoryProvider: ContributionProvider<WidgetFactory>;
@@ -104,7 +105,7 @@ export class WidgetManager {
     }
 
     protected async doGetWidget<T extends Widget>(key: string): Promise<T | undefined> {
-        const existingWidgetPromise = this.widgetPromises.get(key);
+        const existingWidgetPromise = this.widgetPromises.get(key) || this.pendingWidgetPromises.get(key);
         if (existingWidgetPromise) {
             const existingWidget = await existingWidgetPromise;
             return existingWidget as T;
@@ -125,18 +126,23 @@ export class WidgetManager {
         if (!factory) {
             throw Error("No widget factory '" + factoryId + "' has been registered.");
         }
-        const widgetPromise = factory.createWidget(options);
-        this.widgetPromises.set(key, widgetPromise);
-        const widget = await widgetPromise;
-        this.widgets.set(key, widget);
-        widget.disposed.connect(() => {
-            this.widgets.delete(key);
-            this.widgetPromises.delete(key);
-        });
-        this.onDidCreateWidgetEmitter.fire({
-            factoryId, widget
-        });
-        return widget as T;
+        try {
+            const widgetPromise = factory.createWidget(options);
+            this.pendingWidgetPromises.set(key, widgetPromise);
+            const widget = await widgetPromise;
+            this.widgetPromises.set(key, widgetPromise);
+            this.widgets.set(key, widget);
+            widget.disposed.connect(() => {
+                this.widgets.delete(key);
+                this.widgetPromises.delete(key);
+            });
+            this.onDidCreateWidgetEmitter.fire({
+                factoryId, widget
+            });
+            return widget as T;
+        } finally {
+            this.pendingWidgetPromises.delete(key);
+        }
     }
 
     /*
@@ -166,7 +172,7 @@ export class WidgetManager {
                 if (factory.id) {
                     this._cachedFactories.set(factory.id, factory);
                 } else {
-                    this.logger.error("Factory id cannot be undefined : " + factory);
+                    this.logger.error("Invalid ID for factory: " + factory + ". ID was: '" + factory.id + "'.");
                 }
             }
         }
