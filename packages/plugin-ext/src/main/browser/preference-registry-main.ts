@@ -44,13 +44,13 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
 
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        // return this.preferenceService.set(key, value, scope);
+        // return this.preferenceService.set(key, value, scope); // todo
         return Promise.resolve();
     }
 
     $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        // return this.preferenceService.set(key, undefined, scope);
+        // return this.preferenceService.set(key, undefined, scope); // todo
         return Promise.resolve();
     }
 

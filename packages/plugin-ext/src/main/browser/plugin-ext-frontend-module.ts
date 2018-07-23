@@ -39,7 +39,7 @@ import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
-import { ConsolidatedPluginConfigurationProvider } from '../../hosted/browser/consolidated-plugin-configuration';
+import { PluginConfigurationProvider } from '../../hosted/browser/consolidated-plugin-configuration';
 import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
 
 export default new ContainerModule(bind => {
@@ -50,7 +50,7 @@ export default new ContainerModule(bind => {
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
 
-    bind(ConsolidatedPluginConfigurationProvider).toSelf().inSingletonScope();
+    bind(PluginConfigurationProvider).toSelf().inSingletonScope();
     bind(ConsolidatedConfigurationRegistry).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();

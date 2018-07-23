@@ -557,7 +557,7 @@ export enum OverviewRulerLane {
     Full = 7
 }
 
-export enum ConfigurationTarget {
+export enum ConfigurationTarget { // todo
     User = 0,
     Workspace = 1 // todo
 }

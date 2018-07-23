@@ -183,6 +183,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     private toConfigurationChangeEvent(eventData: ConfigurationChange): theia.ConfigurationChangeEvent {
+        console.log(eventData);
         return Object.freeze({
             affectsConfiguration: (section: string, uri?: theia.Uri): boolean => {
                 const tree = eventData.section

@@ -14,15 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { IConfiguration } from "../node/cotributions/contributions";
-import { ILogger } from "@theia/core";
+import { injectable, inject } from 'inversify';
+import { IConfiguration } from '../node/cotributions/contributions';
+import { Emitter, DisposableCollection, ILogger } from "@theia/core/lib/common";
+
 
  @injectable()
- export class ConsolidatedPluginConfigurationProvider {
+ export class PluginConfigurationProvider {
 
     private pluginConfigs: Map<String, IConfiguration>;
     private combinedPluginSchema: IConfiguration = {properties: {}};
+    
+    protected readonly toDispose = new DisposableCollection();
+    protected readonly onPluginConfigurationChangedEmmiter = new Emitter<IConfiguration>();
+    readonly onPluginConfigurationChanged = this.onPluginConfigurationChangedEmmiter.event;
 
     // todo subscript to stop plugin.... to clean up
     constructor(
@@ -63,6 +68,8 @@ import { ILogger } from "@theia/core";
                 }
             }
         });
+
+        this.onPluginConfigurationChangedEmmiter.fire(this.combinedPluginSchema);
     }
 
     // Return consolidated plugins config.

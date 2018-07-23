@@ -13,11 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject } from "inversify";
-import { PreferenceServiceImpl } from "@theia/core/lib/browser";
-import { Emitter, DisposableCollection } from "@theia/core/lib/common";
-import { ConfigurationChange, ConfigurationModel } from "../../../api/plugin-api";
-// import { ConsolidatedPluginConfigurationProvider } from "../consolidated-plugin-configuration";
+import { injectable, inject } from 'inversify';
+import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { Emitter, DisposableCollection } from '@theia/core/lib/common';
+import { ConfigurationChange, ConfigurationModel } from '../../../api/plugin-api';
+import { PluginConfigurationProvider } from '../consolidated-plugin-configuration';
 
 // create default configuration the same like in the vscode....? in the separated file
 @injectable()
@@ -31,11 +31,10 @@ export class ConsolidatedConfigurationRegistry {
 
     constructor(
         @inject(PreferenceServiceImpl) private prefService: PreferenceServiceImpl, // it's bad to use implementation
+        @inject(PluginConfigurationProvider) private pluginConfProvider: PluginConfigurationProvider,
         // @inject(PreferenceSchemaProvider) private readonly prefChemaProvider: PreferenceSchemaProvider,
-        // @inject(ConsolidatedPluginConfigurationProvider) private readonly pluginConfProvider: ConsolidatedPluginConfigurationProvider
     ) {
         console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-        // todo apply on pref changed handler
         // todo apply handler for add new plugin
         this.prefService.onPreferenceChanged(e => {
             console.log('pref changed!!!');
@@ -49,7 +48,20 @@ export class ConsolidatedConfigurationRegistry {
             this.onConfigurationChangedEmitter.fire(confChange);
         });
 
-        // todo fire configuration changed event for another cases...
+        this.pluginConfProvider.onPluginConfigurationChanged(e => {
+            this.consolidatedConf.properties = {
+                ...this.consolidatedConf.properties,
+                ...e.properties
+            }
+            for (const confName in this.consolidatedConf.properties) {
+                const confChange: ConfigurationChange = {section: confName, value: this.consolidatedConf.properties[confName]};
+                 this.onConfigurationChangedEmitter.fire(confChange);
+            }
+        })
+
+        // todo fire configuration changed event for another cases... workspace folder, or workspace... in memory conf...
+
+        console.log("Consolidated configuration.... ", this.consolidatedConf);
 
         this.toDispose.push(this.onConfigurationChangedEmitter);
     }
@@ -64,6 +76,7 @@ export class ConsolidatedConfigurationRegistry {
     // }
 
     // updateOption(scope: ) {}
+
     // removeOption(scope: ) {}
 
     getConsolidatedConfig(): ConfigurationModel {
