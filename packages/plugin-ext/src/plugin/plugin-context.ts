@@ -50,7 +50,7 @@ import { TextEditorsExtImpl } from './text-editors';
 import { DocumentsExtImpl } from './documents';
 import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
-import { ConfigurationRegistryExtImpl } from './preference-registry';
+import { ConfigurationRegistryExtImpl } from './configuration-registry';
 import URI from 'vscode-uri';
 import { OutputChannelRegistryExt } from './output-channel-registry';
 import { TerminalServiceExtImpl } from './terminal-ext';

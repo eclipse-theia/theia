@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { interfaces } from 'inversify';
 import { CommandRegistryMainImpl } from './command-registry-main';
-import { ConfigurationRegistryMainImpl } from './preference-registry-main';
+import { ConfigurationRegistryMainImpl } from './configuration-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT } from '../../api/plugin-api';
