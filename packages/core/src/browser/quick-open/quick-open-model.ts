@@ -42,14 +42,16 @@ export interface QuickOpenItemOptions {
     keybinding?: Keybinding;
     run?(mode: QuickOpenMode): boolean;
 }
+export interface QuickOpenGroupItemOptions extends QuickOpenItemOptions {
+    groupLabel?: string;
+    showBorder?: boolean;
+}
 
-export class QuickOpenItem {
+export class QuickOpenItem<T extends QuickOpenItemOptions = QuickOpenItemOptions> {
 
-    private options: QuickOpenItemOptions;
-
-    constructor(options?: QuickOpenItemOptions) {
-        this.options = options || {};
-    }
+    constructor(
+        protected options: T = {} as T
+    ) { }
 
     getTooltip(): string | undefined {
         return this.options.tooltip || this.getLabel();
@@ -92,12 +94,13 @@ export class QuickOpenItem {
     }
 }
 
-export class QuickOpenGroupItem extends QuickOpenItem {
+export class QuickOpenGroupItem<T extends QuickOpenGroupItemOptions = QuickOpenGroupItemOptions> extends QuickOpenItem<T> {
+
     getGroupLabel(): string | undefined {
-        return undefined;
+        return this.options.groupLabel;
     }
     showBorder(): boolean {
-        return false;
+        return this.options.showBorder || false;
     }
 }
 
