@@ -18,13 +18,12 @@ import { injectable, inject } from 'inversify';
 import { IConfiguration } from '../node/cotributions/contributions';
 import { Emitter, DisposableCollection, ILogger } from "@theia/core/lib/common";
 
-
  @injectable()
  export class PluginConfigurationProvider {
 
     private pluginConfigs: Map<String, IConfiguration>;
     private combinedPluginSchema: IConfiguration = {properties: {}};
-    
+
     protected readonly toDispose = new DisposableCollection();
     protected readonly onPluginConfigurationChangedEmmiter = new Emitter<IConfiguration>();
     readonly onPluginConfigurationChanged = this.onPluginConfigurationChangedEmmiter.event;

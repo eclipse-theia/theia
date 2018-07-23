@@ -20,16 +20,16 @@ import {
 import { interfaces } from 'inversify';
 import {
     MAIN_RPC_CONTEXT,
-    PreferenceRegistryExt,
-    PreferenceRegistryMain,
+    ConfigurationRegistryExt,
+    ConfigurationRegistryMain,
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
 
 // todo rename
-export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
-    private proxy: PreferenceRegistryExt;
+export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain {
+    private proxy: ConfigurationRegistryExt;
     private consolidateConfRegistry: ConsolidatedConfigurationRegistry;
 
     constructor(prc: RPCProtocol, container: interfaces.Container) {

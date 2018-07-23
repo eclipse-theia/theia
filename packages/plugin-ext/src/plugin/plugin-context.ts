@@ -50,7 +50,7 @@ import { TextEditorsExtImpl } from './text-editors';
 import { DocumentsExtImpl } from './documents';
 import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
-import { PreferenceRegistryExtImpl } from './preference-registry';
+import { ConfigurationRegistryExtImpl } from './preference-registry';
 import URI from 'vscode-uri';
 import { OutputChannelRegistryExt } from './output-channel-registry';
 import { TerminalServiceExtImpl } from './terminal-ext';
@@ -67,7 +67,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
-    const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
+    const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new ConfigurationRegistryExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
 
     const commands: typeof theia.commands = {

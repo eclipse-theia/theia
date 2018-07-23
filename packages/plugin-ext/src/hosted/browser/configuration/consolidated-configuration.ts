@@ -23,11 +23,11 @@ import { PluginConfigurationProvider } from '../consolidated-plugin-configuratio
 @injectable()
 export class ConsolidatedConfigurationRegistry {
 
+    private readonly consolidatedConf: ConfigurationModel = {properties: {}};
     protected readonly toDispose = new DisposableCollection();
     protected readonly onConfigurationChangedEmitter = new Emitter<ConfigurationChange>();
-    readonly onConfigurationChanged = this.onConfigurationChangedEmitter.event;
 
-    private readonly consolidatedConf: ConfigurationModel = {properties: {}}; // todo inject ?
+    readonly onConfigurationChanged = this.onConfigurationChangedEmitter.event;
 
     constructor(
         @inject(PreferenceServiceImpl) private prefService: PreferenceServiceImpl, // it's bad to use implementation
@@ -52,12 +52,18 @@ export class ConsolidatedConfigurationRegistry {
             this.consolidatedConf.properties = {
                 ...this.consolidatedConf.properties,
                 ...e.properties
-            }
+            };
+            // this.consolidatedConf.properties.forEach(element => {
+            // });
             for (const confName in this.consolidatedConf.properties) {
-                const confChange: ConfigurationChange = {section: confName, value: this.consolidatedConf.properties[confName]};
-                 this.onConfigurationChangedEmitter.fire(confChange);
+                // todo don't throw event twice. If conf was changed to the same value
+                if (this.consolidatedConf.properties.hasOwnProperty(confName)) {
+                    const confChange: ConfigurationChange = {section: confName, value: this.consolidatedConf.properties[confName]};
+                    // event should throw few properties, not only single props
+                    this.onConfigurationChangedEmitter.fire(confChange);
+                }
             }
-        })
+        });
 
         // todo fire configuration changed event for another cases... workspace folder, or workspace... in memory conf...
 

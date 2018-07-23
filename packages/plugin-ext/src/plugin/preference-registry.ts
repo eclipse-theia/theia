@@ -19,8 +19,8 @@ import * as theia from '@theia/plugin';
 import {
     ConfigurationChange,
     PLUGIN_RPC_CONTEXT,
-    PreferenceRegistryExt,
-    PreferenceRegistryMain
+    ConfigurationRegistryExt,
+    ConfigurationRegistryMain
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { isObject } from '../common/types';
@@ -49,8 +49,8 @@ function lookUp(tree: any, key: string): any {
     return node;
 }
 
-export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
-    private proxy: PreferenceRegistryMain;
+export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
+    private proxy: ConfigurationRegistryMain;
     private _preferences: any;
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 

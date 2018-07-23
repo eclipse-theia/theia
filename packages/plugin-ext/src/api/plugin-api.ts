@@ -412,16 +412,6 @@ export interface ModelChangedEvent {
     readonly versionId: number;
 }
 
-export class ConfigurationModel { // configurations of the differents levels...
-    properties: { [key: string]: any };
-}
-
-export class ConfigurationChange { // todo rename to the workspace Config change ?
-    section: string;
-    resource?: theia.Uri;
-    value?: any; // todo
-}
-
 export interface DocumentsExt {
     $acceptModelModeChanged(startUrl: UriComponents, oldModeId: string, newModeId: string): void;
     $acceptModelSaved(strUrl: UriComponents): void;
@@ -443,8 +433,19 @@ export interface EnvExt {
     $setQueryParameters(queryParams: QueryParameters): void;
 }
 
+// IDE configuration
+export class ConfigurationModel { // configurations of the differents levels...
+    properties: { [key: string]: any };
+}
+
+export class ConfigurationChange { // todo rename to the workspace Config change ?
+    section: string;
+    resource?: theia.Uri;
+    value?: any; // todo
+}
+
 // todo rename to configuration
-export interface PreferenceRegistryMain {
+export interface ConfigurationRegistryMain {
     $updateConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
@@ -458,7 +459,7 @@ export interface PreferenceRegistryMain {
     ): PromiseLike<void>;
 }
 // rename to configuration
-export interface PreferenceRegistryExt {
+export interface ConfigurationRegistryExt {
     // todo change format of the data?
     $acceptConfigurationChanged(data: { [key: string]: any }, configChange: ConfigurationChange): void;
 }
@@ -480,7 +481,7 @@ export const PLUGIN_RPC_CONTEXT = {
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
-    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
+    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<ConfigurationRegistryMain>('PreferenceRegistryMain'),
     OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain')
 };
 
@@ -495,5 +496,5 @@ export const MAIN_RPC_CONTEXT = {
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
-    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt')
+    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<ConfigurationRegistryExt>('PreferenceRegistryExt')
 };
