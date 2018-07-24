@@ -13,11 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import {interfaces} from 'inversify';
-import {OutputWidget} from '@theia/output/lib/browser/output-widget';
-import {OutputContribution} from '@theia/output/lib/browser/output-contribution';
-import {OutputChannel, OutputChannelManager} from '@theia/output/lib/common/output-channel';
-import {OutputChannelRegistryMain} from '../../api/plugin-api';
+
+import { interfaces } from 'inversify';
+import { OutputWidget } from '@theia/output/lib/browser/output-widget';
+import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
+import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputChannelRegistryMain } from '../../api/plugin-api';
 
 export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
     private outputChannelManager: OutputChannelManager;
@@ -62,7 +63,7 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
         const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
             outputChannel.setVisibility(true);
-            return this.outputContribution.openView({activate: !preserveFocus}).then((outputWidget: OutputWidget) => {
+            return this.outputContribution.openView({ activate: !preserveFocus }).then((outputWidget: OutputWidget) => {
                 this.commonOutputWidget = outputWidget;
                 return Promise.resolve();
             });

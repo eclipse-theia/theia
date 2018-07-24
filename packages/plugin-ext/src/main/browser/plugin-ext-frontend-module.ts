@@ -23,6 +23,7 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { PluginWorker } from './plugin-worker';
 import { HostedPluginSupport } from "../../hosted/browser/hosted-plugin";
 import { HostedPluginWatcher } from "../../hosted/browser/hosted-plugin-watcher";
+import { HostedPluginLogViewer } from "../../hosted/browser/hosted-plugin-log-viewer";
 import { HostedPluginManagerClient } from "./plugin-manager-client";
 import { PluginApiFrontendContribution } from "./plugin-frontend-contribution";
 import { setUpPluginApi } from "./main-context";
@@ -46,6 +47,7 @@ export default new ContainerModule(bind => {
     bind(PluginWorker).toSelf().inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
+    bind(HostedPluginLogViewer).toSelf().inSingletonScope();
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
