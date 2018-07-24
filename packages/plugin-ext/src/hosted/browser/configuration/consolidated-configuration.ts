@@ -14,10 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject } from 'inversify';
-import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { PreferenceServiceImpl, PreferenceScope } from '@theia/core/lib/browser';
 import { Emitter, DisposableCollection } from '@theia/core/lib/common';
 import { ConfigurationChange, ConfigurationModel } from '../../../api/plugin-api';
 import { PluginConfigurationProvider } from '../plugin-configuration';
+import { ConfigurationTarget } from '@theia/plugin';
+import { retro } from '@phosphor/algorithm';
+import { Exception } from 'handlebars';
 
 // create default configuration the same like in the vscode....? in the separated file
 @injectable()
@@ -65,26 +68,47 @@ export class ConsolidatedConfigurationRegistry {
         });
 
         // todo fire configuration changed event for another cases... workspace folder, or workspace... in memory conf...
-
         console.log("Consolidated configuration.... ", this.consolidatedConf);
 
         this.toDispose.push(this.onConfigurationChangedEmitter);
     }
-
-    // private updateConfiguration(prefs: {[key: string]: any}) {
-
-    // }
 
     // todo in memory configs to change to change properties for plugins
 
     // getValue(section: string) {
     // }
 
-    // updateOption(scope: ) {}
+    updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
+        const scope = this.parseConfigurationTarget(target);
+        return this.preferenceService.set(key, value, scope);
+    }
 
-    // removeOption(scope: ) {}
+    removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
+        const scope = this.parseConfigurationTarget(target);
+        return this.preferenceService.set(key, undefined, scope);
+    }
 
     getConsolidatedConfig(): ConfigurationModel {
         return this.consolidatedConf;
+    }
+
+    /**
+     * Convert configuration target to the Preferences scope.
+     */
+    private parseConfigurationTarget(confTarget: boolean | ConfigurationTarget | undefined): PreferenceScope {
+        switch(confTarget) {
+            case void 0: // undefined case
+            case null: 
+            case false: // Todo improve logic when preference scope for "workspace folder" will be implemented.
+            case ConfigurationTarget.Workspace:
+                return PreferenceScope.Workspace;
+
+            case true:
+            case ConfigurationTarget.Global:
+                return PreferenceScope.User;
+
+            default:
+                throw new Exception("Unexpected value.");
+        }
     }
 }

@@ -26,6 +26,7 @@ import {
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
+import { valid } from 'semver';
 
 export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain {
     private proxy: ConfigurationRegistryExt;
@@ -42,12 +43,10 @@ export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain 
     }
 
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
-        // todo implement
-        return Promise.resolve();
+        return this.consolidateConfRegistry.updateConfigurationOption(target, key, value);
     }
 
     $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
-        // todo implement
-        return Promise.resolve();
+        return this.consolidateConfRegistry.removeConfigurationOption(target, key);
     }
 }
