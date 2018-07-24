@@ -43,4 +43,10 @@ export class MockStorageService implements StorageService {
         }
         return Promise.resolve(defaultValue);
     }
+
+    verifyLocalStorage(): Promise<string[] | undefined> {
+        return Promise.resolve([]);
+    }
+
+    cleanLocalStorage(path: string): void { }
 }

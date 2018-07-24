@@ -18,6 +18,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { WorkspaceService } from './workspace-service';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 /*
  * Prefixes any stored data with the current workspace path.
@@ -30,6 +31,8 @@ export class WorkspaceStorageService implements StorageService {
 
     @inject(LocalStorageService) protected storageService: StorageService;
     @inject(WorkspaceService) protected workspaceService: WorkspaceService;
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
 
     @postConstruct()
     protected init() {
@@ -39,6 +42,13 @@ export class WorkspaceStorageService implements StorageService {
             } else {
                 this.prefix = '_global_';
             }
+            this.verifyLocalStorage().then(pathsToVerify => {
+                if (pathsToVerify) {
+                    pathsToVerify.forEach(element => {
+                        this.stillExist(element);
+                    });
+                }
+            });
         });
     }
 
@@ -59,4 +69,22 @@ export class WorkspaceStorageService implements StorageService {
     protected prefixWorkspaceURI(originalKey: string): string {
         return this.prefix + ':' + originalKey;
     }
+
+    async verifyLocalStorage(): Promise<string[] | undefined> {
+        const filesPathToCheck = await this.storageService.verifyLocalStorage();
+        return filesPathToCheck;
+    }
+
+    cleanLocalStorage(path: string) {
+        this.storageService.cleanLocalStorage(path);
+    }
+
+    protected stillExist(path: string): void {
+        this.fileSystem.exists(path).then(exist => {
+            if (!exist) {
+                this.cleanLocalStorage(path);
+            }
+        });
+    }
+
 }

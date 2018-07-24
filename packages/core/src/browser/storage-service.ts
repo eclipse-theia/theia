@@ -16,6 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { ILogger } from '../common/logger';
+import URI from '../common/uri';
 
 export const StorageService = Symbol('IStorageService');
 /**
@@ -33,6 +34,12 @@ export interface StorageService {
      */
     getData<T>(key: string, defaultValue: T): Promise<T>;
     getData<T>(key: string): Promise<T | undefined>;
+
+    /**
+     * Verify if the data stored in local storage is still valid
+     */
+    verifyLocalStorage(): Promise<string[] | undefined>;
+    cleanLocalStorage(path: string): void
 }
 
 interface LocalStorage {
@@ -76,4 +83,49 @@ export class LocalStorageService implements StorageService {
         const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
         return `theia:${pathname}:${key}`;
     }
+
+    verifyLocalStorage(): Promise<string[] | undefined> {
+
+        const list = new Set();
+        for (let count = 0; count < this.storage.length; count++) {
+            const key = this.storage.key(count);
+            const shortKey = this.removePrefix(key);
+            const fileToCheck = this.getFilePath(shortKey);
+            if (fileToCheck) {
+                list.add(fileToCheck);
+            }
+        }
+        return Promise.resolve(Array.from(list));
+    }
+
+    cleanLocalStorage(path: string): void {
+        for (let count = 0; count < this.storage.length; count++) {
+            const key = this.storage.key(count);
+            if (key.indexOf(`${path}:`) !== -1) {
+                this.storage.removeItem(key);
+                count--;
+            }
+        }
+    }
+
+    protected removePrefix(key: string): string {
+        const prefix = this.prefix('').trim();
+        const shortKey = key.replace(prefix, '');
+        return shortKey;
+    }
+
+    protected getFilePath(value: string): string | undefined {
+        const prefix = 'file:/';
+        const lastSep = value.lastIndexOf(':');
+        let uri: URI | undefined;
+        if (value.startsWith(prefix)) {
+            const file = value.slice(0, lastSep);
+            uri = new URI(file);
+        }
+        if (!!uri) {
+            return uri.path.toString();
+        }
+        return uri;
+    }
+
 }
