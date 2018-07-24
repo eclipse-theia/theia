@@ -48,8 +48,9 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 }
 
 export function bindHostedBackend(bind: interfaces.Bind): void {
+    bindCommonHostedBackend(bind);
+
     bind(HostedPluginManager).to(NodeHostedPluginRunner).inSingletonScope();
     bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
     bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
-    bindCommonHostedBackend(bind);
 }

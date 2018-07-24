@@ -21,7 +21,8 @@ import { PluginScanner } from '../../common/plugin-protocol';
 import { TheiaPluginScannerElectron } from './scanner-theia-electron';
 
 export function bindElectronBackend(bind: interfaces.Bind): void {
+    bindCommonHostedBackend(bind);
+
     bind(HostedPluginManager).to(ElectronNodeHostedPluginRunner);
     bind(PluginScanner).to(TheiaPluginScannerElectron).inSingletonScope();
-    bindCommonHostedBackend(bind);
 }

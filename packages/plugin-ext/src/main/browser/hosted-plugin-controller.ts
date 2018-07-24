@@ -24,6 +24,7 @@ import { Menu } from '@phosphor/widgets';
 import { setTimeout } from 'timers';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
+import { HostedPluginLogViewer } from '../../hosted/browser/hosted-plugin-log-viewer';
 
 /**
  * Adds a status bar element displaying the state of secondary Theia instance with hosted plugin and
@@ -50,6 +51,9 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
     @inject(ConnectionStatusService)
     protected readonly connectionStatusService: ConnectionStatusService;
+
+    @inject(HostedPluginLogViewer)
+    protected readonly hostedPluginLogViewer: HostedPluginLogViewer;
 
     private pluginState: HostedPluginState = HostedPluginState.Stopped;
 
@@ -107,6 +111,8 @@ export class HostedPluginController implements FrontendApplicationContribution {
      */
     protected async onHostedPluginStarting(): Promise<void> {
         this.pluginState = HostedPluginState.Starting;
+
+        this.hostedPluginLogViewer.showLogConsole();
 
         this.entry = {
             text: `$(cog~spin) Hosted Plugin: Starting`,
