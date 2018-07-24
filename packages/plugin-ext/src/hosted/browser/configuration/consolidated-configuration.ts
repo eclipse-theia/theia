@@ -18,9 +18,9 @@ import { PreferenceServiceImpl, PreferenceScope } from '@theia/core/lib/browser'
 import { Emitter, DisposableCollection } from '@theia/core/lib/common';
 import { ConfigurationChange, ConfigurationModel } from '../../../api/plugin-api';
 import { PluginConfigurationProvider } from '../plugin-configuration';
-import { ConfigurationTarget } from '@theia/plugin';
 import { retro } from '@phosphor/algorithm';
 import { Exception } from 'handlebars';
+import { ConfigurationTarget } from '../../../plugin/types-impl';
 
 // create default configuration the same like in the vscode....? in the separated file
 @injectable()
@@ -80,12 +80,12 @@ export class ConsolidatedConfigurationRegistry {
 
     updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, value, scope);
+        return this.prefService.set(key, value, scope);
     }
 
     removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, undefined, scope);
+        return this.prefService.set(key, undefined, scope);
     }
 
     getConsolidatedConfig(): ConfigurationModel {
@@ -96,9 +96,9 @@ export class ConsolidatedConfigurationRegistry {
      * Convert configuration target to the Preferences scope.
      */
     private parseConfigurationTarget(confTarget: boolean | ConfigurationTarget | undefined): PreferenceScope {
-        switch(confTarget) {
+        switch (confTarget) {
             case void 0: // undefined case
-            case null: 
+            case null:
             case false: // Todo improve logic when preference scope for "workspace folder" will be implemented.
             case ConfigurationTarget.Workspace:
                 return PreferenceScope.Workspace;
@@ -108,7 +108,7 @@ export class ConsolidatedConfigurationRegistry {
                 return PreferenceScope.User;
 
             default:
-                throw new Exception("Unexpected value.");
+                throw new Error("Unexpected value.");
         }
     }
 }
