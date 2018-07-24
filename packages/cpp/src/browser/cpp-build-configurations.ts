@@ -136,8 +136,8 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         // Add one item per build config.
         configurations.forEach(config => {
             items.push(new QuickOpenItem({
-                label: config.name,
-                description: config === active ? 'active' : '',
+                label: config.name + (config === active ? ' ✔' : ''),
+                detail: config.directory,
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
@@ -155,6 +155,8 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     open() {
         this.quickOpenService.open(this, {
             placeholder: 'Choose a build configuration...',
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
         });
     }
 }
