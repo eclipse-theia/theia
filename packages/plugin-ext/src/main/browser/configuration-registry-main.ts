@@ -26,7 +26,6 @@ import {
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
-import { valid } from 'semver';
 
 export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain {
     private proxy: ConfigurationRegistryExt;
