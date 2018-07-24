@@ -17,7 +17,7 @@ import { injectable, inject } from 'inversify';
 import { PreferenceServiceImpl } from '@theia/core/lib/browser';
 import { Emitter, DisposableCollection } from '@theia/core/lib/common';
 import { ConfigurationChange, ConfigurationModel } from '../../../api/plugin-api';
-import { PluginConfigurationProvider } from '../consolidated-plugin-configuration';
+import { PluginConfigurationProvider } from '../plugin-configuration';
 
 // create default configuration the same like in the vscode....? in the separated file
 @injectable()

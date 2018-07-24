@@ -22,7 +22,7 @@ import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
-import { PluginConfigurationProvider } from './consolidated-plugin-configuration';
+import { PluginConfigurationProvider } from './plugin-configuration';
 
 @injectable()
 export class HostedPluginSupport {
