@@ -15,15 +15,15 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from "inversify";
-import { h } from "@phosphor/virtualdom";
 import URI from "@theia/core/lib/common/uri";
-import { VirtualRenderer, StatefulWidget, SELECTED_CLASS, DiffUris } from "@theia/core/lib/browser";
+import { StatefulWidget, SELECTED_CLASS, DiffUris } from "@theia/core/lib/browser";
 import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser";
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
 import { GitWatcher } from "../../common";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { GitNavigableListWidget } from "../git-navigable-list-widget";
 import { GitFileChangeNode } from "../git-widget";
+import * as React from "react";
 
 // tslint:disable:no-null-keyword
 
@@ -109,40 +109,43 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         this.update();
     }
 
-    protected render(): h.Child {
+    protected render(): React.ReactNode {
         this.gitNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
-        return h.div({ className: "git-diff-container" }, VirtualRenderer.flatten([commitishBar, fileChangeList]));
+        return <div className="git-diff-container">{commitishBar}{fileChangeList}</div>;
     }
 
-    protected renderDiffListHeader(): h.Child {
+    protected renderDiffListHeader(): React.ReactNode {
         return this.doRenderDiffListHeader(
             this.renderPathHeader(),
             this.renderRevisionHeader(),
             this.renderToolbar()
         );
     }
-    protected doRenderDiffListHeader(...children: h.Child[]): h.Child {
-        return h.div({ className: "diff-header" }, ...children);
+
+    protected doRenderDiffListHeader(...children: React.ReactNode[]): React.ReactNode {
+        return <div className="diff-header">{...children}</div>;
     }
-    protected renderHeaderRow({ name, value, classNames }: { name: h.Child, value: h.Child, classNames?: string[] }): h.Child {
+
+    protected renderHeaderRow({ name, value, classNames }: { name: string, value: React.ReactNode, classNames?: string[] }): React.ReactNode {
         if (value === null) {
             return null;
         }
         const className = ['header-row', ...(classNames || [])].join(' ');
-        return h.div({ className },
-            h.div({ className: 'theia-header' }, name),
-            h.div({ className: 'header-value' }, value));
+        return <div key={name} className={className}>
+            <div className='theia-header'>{name}</div>
+            <div className='header-value'>{value}</div>
+        </div>;
     }
 
-    protected renderPathHeader(): h.Child {
+    protected renderPathHeader(): React.ReactNode {
         return this.renderHeaderRow({
             name: 'path',
             value: this.renderPath()
         });
     }
-    protected renderPath(): h.Child {
+    protected renderPath(): React.ReactNode {
         if (this.options.uri) {
             const path = this.relativePath(this.options.uri);
             if (path.length > 0) {
@@ -152,13 +155,13 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         return null;
     }
 
-    protected renderRevisionHeader(): h.Child {
+    protected renderRevisionHeader(): React.ReactNode {
         return this.renderHeaderRow({
             name: 'revision: ',
             value: this.renderRevision()
         });
     }
-    protected renderRevision(): h.Child {
+    protected renderRevision(): React.ReactNode {
         if (!this.fromRevision) {
             return null;
         }
@@ -168,70 +171,74 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         return (this.toRevision || 'HEAD') + '~' + this.fromRevision;
     }
 
-    protected renderToolbar(): h.Child {
+    protected renderToolbar(): React.ReactNode {
         return this.doRenderToolbar(
             this.renderNavigationLeft(),
             this.renderNavigationRight()
         );
     }
-    protected doRenderToolbar(...children: h.Child[]) {
+    protected doRenderToolbar(...children: React.ReactNode[]) {
         return this.renderHeaderRow({
             classNames: ['space-between'],
             name: 'Files changed',
-            value: h.div({ className: 'lrBtns' }, ...children)
+            value: <div className='lrBtns'>{...children}</div>
         });
     }
 
-    protected renderNavigationLeft(): h.Child {
-        return h.span({
-            className: "fa fa-arrow-left",
-            title: "Previous Change",
-            onclick: () => this.navigateLeft()
-        });
-    }
-    protected renderNavigationRight(): h.Child {
-        return h.span({
-            className: "fa fa-arrow-right",
-            title: "Next Change",
-            onclick: () => this.navigateRight()
-        });
+    protected readonly showPreviousChange = () => this.doShowPreviousChange();
+    protected doShowPreviousChange() {
+        this.navigateLeft();
     }
 
-    protected renderFileChangeList(): h.Child {
-        const files: h.Child[] = [];
+    protected renderNavigationLeft(): React.ReactNode {
+        return <span key="lnav" className="fa fa-arrow-left" title="Previous Change" onClick={this.showPreviousChange}></span>;
+    }
+
+    protected readonly showNextChange = () => this.doShowNextChange();
+    protected doShowNextChange() {
+        this.navigateRight();
+    }
+
+    protected renderNavigationRight(): React.ReactNode {
+        return <span key="rnav" className="fa fa-arrow-right" title="Next Change" onClick={this.showNextChange}></span>;
+    }
+
+    protected renderFileChangeList(): React.ReactNode {
+        const files: React.ReactNode[] = [];
         for (const fileChange of this.fileChangeNodes) {
-            const fileChangeElement: h.Child = this.renderGitItem(fileChange);
+            const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
-        return h.div({ className: "listContainer", id: this.scrollContainer }, ...files);
+        return <div className="listContainer" id={this.scrollContainer}>{...files}</div>;
     }
 
-    protected renderGitItem(change: GitFileChangeNode): h.Child {
-        const iconSpan = h.span({ className: change.icon + ' file-icon' });
-        const nameSpan = h.span({ className: 'name' }, change.label + ' ');
-        const pathSpan = h.span({ className: 'path' }, change.description);
-        const elements = [];
-        elements.push(h.div({
-            title: change.caption,
-            className: 'noWrapInfo',
-            onclick: () => {
-                this.selectNode(change);
-            },
-            ondblclick: () => {
-                this.revealChange(change);
+    protected renderGitItem(change: GitFileChangeNode): React.ReactNode {
+        return <div key={change.uri.toString()} className={`gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
+            <div
+                title={change.caption}
+                className='noWrapInfo'
+                onDoubleClick={() => {
+                    this.revealChange(change);
+                }}
+                onClick={() => {
+                    this.selectNode(change);
+                }}>
+                <span className={change.icon + ' file-icon'}></span>
+                <span className='name'>{change.label + ' '}</span>
+                <span className='path'>{change.description}</span>
+            </div>
+            {
+                change.extraIconClassName ? <div
+                    title={change.caption}
+                    className={change.extraIconClassName}></div>
+                    : ''
             }
-        }, iconSpan, nameSpan, pathSpan));
-        if (change.extraIconClassName) {
-            elements.push(h.div({
-                title: change.caption,
-                className: change.extraIconClassName
-            }));
-        }
-        elements.push(h.div({
-            title: change.caption,
-            className: 'status staged ' + GitFileStatus[change.status].toLowerCase()
-        }, this.getStatusCaption(change.status, true).charAt(0)));
-        return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
+            <div
+                title={change.caption}
+                className={'status staged ' + GitFileStatus[change.status].toLowerCase()}>
+                {this.getStatusCaption(change.status, true).charAt(0)}
+            </div>
+        </div>;
     }
 
     protected navigateRight(): void {

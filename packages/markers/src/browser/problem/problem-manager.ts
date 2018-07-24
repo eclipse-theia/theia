@@ -14,12 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { MarkerManager } from '../marker-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { Marker } from '../../common/marker';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import URI from '@theia/core/lib/common/uri';
 import { Diagnostic } from "vscode-languageserver-types";
 
@@ -33,12 +31,6 @@ export class ProblemManager extends MarkerManager<Diagnostic> {
 
     public getKind() {
         return PROBLEM_KIND;
-    }
-
-    constructor(
-        @inject(StorageService) storageService: StorageService,
-        @inject(FileSystemWatcher) protected fileWatcher?: FileSystemWatcher) {
-        super(storageService, fileWatcher);
     }
 
     getProblemStat(): ProblemStat {

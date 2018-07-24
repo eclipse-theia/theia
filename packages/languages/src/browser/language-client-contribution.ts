@@ -24,6 +24,7 @@ import {
     Workspace, Languages, Commands
 } from '../common';
 import { LanguageClientFactory } from "./language-client-factory";
+import { WorkspaceService } from "@theia/workspace/lib/browser";
 
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution extends LanguageContribution {
@@ -45,6 +46,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(CommandRegistry) protected readonly registry: CommandRegistry;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -59,11 +61,26 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     waitForActivation(app: FrontendApplication): Promise<any> {
+        const activationPromises: Promise<any>[] = [];
+        const workspaceContains = this.workspaceContains;
+        if (workspaceContains.length !== 0) {
+            activationPromises.push(this.waitForItemInWorkspace());
+        }
         const documentSelector = this.documentSelector;
         if (documentSelector) {
+            activationPromises.push(this.waitForOpenTextDocument(documentSelector));
+        }
+        if (activationPromises.length !== 0) {
             return Promise.all([
                 this.workspace.ready,
-                this.waitForOpenTextDocument(documentSelector)
+                Promise.race(activationPromises.map(p => new Promise(async resolve => {
+                    try {
+                        await p;
+                        resolve();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                })))
             ]);
         }
         return this.workspace.ready;
@@ -116,6 +133,10 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         };
     }
 
+    protected get workspaceContains(): string[] {
+        return [];
+    }
+
     protected get documentSelector(): DocumentSelector | undefined {
         return [this.id];
     }
@@ -132,6 +153,17 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     protected get globPatterns(): string[] {
         return [];
+    }
+
+    /**
+     * Check to see if one of the paths is in the current workspace.
+     */
+    protected async waitForItemInWorkspace(): Promise<any> {
+        const doesContain = await this.workspaceService.containsSome(this.workspaceContains);
+        if (!doesContain) {
+            return new Promise(resolve => { });
+        }
+        return doesContain;
     }
 
     // FIXME move it to the workspace

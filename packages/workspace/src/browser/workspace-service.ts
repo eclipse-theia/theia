@@ -179,6 +179,25 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return options !== undefined && !!options.preserveWindow;
     }
 
+    /**
+     * Return true if one of the paths in paths array is present in the workspace
+     * NOTE: You should always explicitly use `/` as the separator between the path segments.
+     */
+    async containsSome(paths: string[]): Promise<boolean> {
+        const workspaceRoot = await this.root;
+        if (workspaceRoot) {
+            const uri = new URI(workspaceRoot.uri);
+            for (const path of paths) {
+                const fileUri = uri.resolve(path).toString();
+                const exists = await this.fileSystem.exists(fileUri);
+                if (exists) {
+                    return exists;
+                }
+            }
+        }
+        return false;
+    }
+
 }
 
 export interface WorkspaceInput {

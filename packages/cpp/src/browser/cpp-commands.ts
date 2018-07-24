@@ -22,7 +22,7 @@ import { open, OpenerService } from '@theia/core/lib/browser';
 import { CppLanguageClientContribution } from "./cpp-language-client-contribution";
 import { SwitchSourceHeaderRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
-import { EditorManager } from "@theia/editor/lib/browser";
+import { EditorCommands, EditorManager } from "@theia/editor/lib/browser";
 import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 
 /**
@@ -30,7 +30,14 @@ import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
  */
 export const SWITCH_SOURCE_HEADER: Command = {
     id: 'switch_source_header',
-    label: 'C++: Switch between source/header file'
+    label: 'C/C++: Switch between source/header file',
+};
+
+/**
+ * A command that is used to show the references from a CodeLens.
+ */
+export const SHOW_CLANGD_REFERENCES: Command = {
+    id: 'clangd.references'
 };
 
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
@@ -60,6 +67,10 @@ export class CppCommandContribution implements CommandContribution {
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
             isEnabled: () => editorContainsCppFiles(this.editorService),
             execute: () => this.switchSourceHeader()
+        });
+        commands.registerCommand(SHOW_CLANGD_REFERENCES, {
+            execute: (doc: TextDocumentIdentifier, pos: Position, locs: Location[]) =>
+                commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, doc.uri, pos, locs)
         });
     }
 

@@ -20,7 +20,7 @@ import { bindContributionProvider } from '@theia/core';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { BuiltinTextmateThemeProvider } from './monaco-textmate-builtin-theme-provider';
 import { BuiltinMonacoThemeProvider } from './monaco-builtin-theme-provider';
-import { TextmateRegistry, TextmateRegistryImpl } from './textmate-registry';
+import { TextmateRegistry } from './textmate-registry';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
 import { MonacoTextmateService, OnigasmPromise } from './monaco-textmate-service';
 import { loadWASM } from 'onigasm';
@@ -53,7 +53,7 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bind(MonacoTextmateService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
-    bind(TextmateRegistry).to(TextmateRegistryImpl).inSingletonScope();
+    bind(TextmateRegistry).toSelf().inSingletonScope();
 
     const themeService = ThemeService.get();
     BuiltinMonacoThemeProvider.compileMonacoThemes();

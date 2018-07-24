@@ -85,6 +85,14 @@ export interface TreeNode {
      * Undefined if this node is root.
      */
     readonly parent: Readonly<CompositeTreeNode> | undefined;
+    /**
+     * A previous sibling of this tree node.
+     */
+    readonly previousSibling?: TreeNode;
+    /**
+     * A next sibling of this tree node.
+     */
+    readonly nextSibling?: TreeNode;
 }
 
 export namespace TreeNode {
@@ -94,24 +102,6 @@ export namespace TreeNode {
 
     export function isVisible(node: TreeNode | undefined): boolean {
         return !!node && (node.visible === undefined || node.visible);
-    }
-
-    export function getPrevSibling(node: TreeNode | undefined): TreeNode | undefined {
-        if (!node || !node.parent) {
-            return undefined;
-        }
-        const parent = node.parent;
-        const index = CompositeTreeNode.indexOf(parent, node);
-        return parent.children[index - 1];
-    }
-
-    export function getNextSibling(node: TreeNode | undefined): TreeNode | undefined {
-        if (!node || !node.parent) {
-            return undefined;
-        }
-        const parent = node.parent;
-        const index = CompositeTreeNode.indexOf(parent, node);
-        return parent.children[index + 1];
     }
 }
 
@@ -236,7 +226,6 @@ export class TreeImpl implements Tree {
     protected setChildren(parent: CompositeTreeNode, children: TreeNode[]): void {
         this.removeNode(parent);
         parent.children = children;
-        children.forEach(child => Object.assign(child, { parent }));
         this.addNode(parent);
         this.fireNodeRefreshed(parent);
     }
@@ -255,7 +244,35 @@ export class TreeImpl implements Tree {
             this.nodes[node.id] = node;
         }
         if (CompositeTreeNode.is(node)) {
-            node.children.forEach(child => this.addNode(child));
+            const { children } = node;
+            children.forEach((child, index) => {
+                this.setParent(child, index, node);
+                this.addNode(child);
+            });
+        }
+    }
+
+    protected setParent(child: TreeNode, index: number, parent: CompositeTreeNode): void {
+        const previousSibling = parent.children[index - 1];
+        const nextSibling = parent.children[index + 1];
+        Object.assign(child, { parent, previousSibling, nextSibling });
+    }
+
+    protected addChild(parent: CompositeTreeNode, child: TreeNode): void {
+        const index = parent.children.findIndex(value => value.id === child.id);
+        if (index !== -1) {
+            (parent.children as TreeNode[]).splice(index, 1, child);
+            this.setParent(child, index, parent);
+        } else {
+            (parent.children as TreeNode[]).push(child);
+            this.setParent(child, parent.children.length - 1, parent);
+        }
+    }
+
+    protected removeChild(parent: CompositeTreeNode, child: TreeNode): void {
+        const index = parent.children.findIndex(value => value.id === child.id);
+        if (index !== -1) {
+            (parent.children as TreeNode[]).splice(index, 1);
         }
     }
 

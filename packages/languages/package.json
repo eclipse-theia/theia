@@ -6,6 +6,7 @@
     "@theia/core": "^0.3.12",
     "@theia/output": "^0.3.12",
     "@theia/process": "^0.3.12",
+    "@theia/workspace": "^0.3.12",
     "vscode-base-languageclient": "^0.0.1-alpha.5",
     "vscode-languageserver-protocol": "^3.6.0"
   },
@@ -49,3 +50,4 @@
     "extends": "../../configs/nyc.json"
   }
 }
+

@@ -16,22 +16,24 @@
 
 import { injectable, inject, postConstruct } from "inversify";
 import { Message } from "@phosphor/messaging";
-import { ElementExt } from "@phosphor/domutils";
 import { Disposable, MenuPath } from "../../common";
 import { Key, KeyCode, KeyModifier } from "../keys";
 import { ContextMenuRenderer } from "../context-menu-renderer";
 import { StatefulWidget } from '../shell';
-import { SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS } from "../widgets";
+import { SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget } from "../widgets";
 import { TreeNode, CompositeTreeNode } from "./tree";
 import { TreeModel } from "./tree-model";
 import { ExpandableTreeNode } from "./tree-expansion";
 import { SelectableTreeNode, TreeSelection } from "./tree-selection";
 import { TreeDecoration, TreeDecoratorService } from "./tree-decorator";
 import { notEmpty } from '../../common/objects';
-import { MaybePromise } from '../../common/types';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from "../widgets/react-widget";
 import * as React from 'react';
+import { List, ListRowRenderer } from 'react-virtualized';
+import { TopDownTreeIterator } from "./tree-iterator";
+
+const debounce = require("lodash.debounce");
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';
@@ -72,13 +74,6 @@ export interface NodeProps {
      * A root relative number representing the hierarchical depth of the actual node. Root is `0`, its children have `1` and so on.
      */
     readonly depth: number;
-
-    /**
-     * Tests whether the node should be rendered as hidden.
-     *
-     * It is different from visibility of a node: an invisible node is not rendered at all.
-     */
-    readonly visible: boolean;
 
 }
 
@@ -121,20 +116,73 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.toDispose.pushAll([
             this.model,
-            this.model.onChanged(() => this.update()),
-            this.model.onNodeRefreshed(() => this.updateDecorations(this.decoratorService.getDecorations(this.model))),
-            this.model.onExpansionChanged(() => this.updateDecorations(this.decoratorService.getDecorations(this.model))),
+            this.model.onChanged(() => this.updateRows()),
+            this.model.onSelectionChanged(() => this.updateScrollToRow()),
+            this.model.onNodeRefreshed(() => this.updateDecorations()),
+            this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
-            this.decoratorService.onDidChangeDecorations(op => this.updateDecorations(op(this.model)))
+            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations())
         ]);
-        setTimeout(() => this.updateDecorations(this.decoratorService.getDecorations(this.model)), 0);
+        setTimeout(() => {
+            this.updateRows();
+            this.updateDecorations();
+        });
     }
 
-    protected async updateDecorations(decorations: MaybePromise<Map<string, TreeDecoration.Data[]>>): Promise<void> {
-        this.decorations = await decorations;
+    protected rows = new Map<string, TreeWidget.NodeRow>();
+    protected updateRows = debounce(() => this.doUpdateRows(), 10);
+    protected doUpdateRows(): void {
+        const root = this.model.root;
+        if (root) {
+            const depths = new Map<CompositeTreeNode | undefined, number>();
+            const rows = Array.from(new TopDownTreeIterator(root, {
+                pruneCollapsed: true,
+                pruneSiblings: true
+            }), (node, index) => {
+                const parentDepth = depths.get(node.parent);
+                const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+                if (CompositeTreeNode.is(node)) {
+                    depths.set(node, depth);
+                }
+                return [node.id, {
+                    index,
+                    node,
+                    depth
+                }] as [string, TreeWidget.NodeRow];
+            });
+            this.rows = new Map(rows);
+        } else {
+            this.rows = new Map();
+        }
+        this.updateScrollToRow();
+    }
+
+    protected scrollToRow: number | undefined;
+    protected updateScrollToRow(): void {
+        const selected = this.model.selectedNodes;
+        const node: TreeNode | undefined = selected.find(SelectableTreeNode.hasFocus) || selected[0];
+        const row = node && this.rows.get(node.id);
+        this.scrollToRow = row && row.index;
+        this.forceUpdate();
+    }
+
+    protected readonly updateDecorations = debounce(() => this.doUpdateDecorations(), 150);
+    protected async doUpdateDecorations(): Promise<void> {
+        this.decorations = await this.decoratorService.getDecorations(this.model);
+        this.forceUpdate();
+    }
+
+    /**
+     * Force deep rendering of rows.
+     * https://github.com/bvaughn/react-virtualized/blob/master/docs/List.md#forceupdategrid
+     */
+    protected forceUpdate(): void {
+        if (this.view && this.view.list) {
+            this.view.list.forceUpdateGrid();
+        }
         this.update();
     }
 
@@ -155,17 +203,15 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
-
-        const focus = this.node.getElementsByClassName(FOCUS_CLASS)[0];
-        if (focus) {
-            ElementExt.scrollIntoViewIfNeeded(this.node, focus);
-        } else {
-            const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-            if (selected) {
-                ElementExt.scrollIntoViewIfNeeded(this.node, selected);
-            }
+        if (!this.isAttached || !this.isVisible) {
+            return;
         }
+        super.onUpdateRequest(msg);
+    }
+
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        this.update();
     }
 
     protected render(): React.ReactNode {
@@ -179,29 +225,31 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         };
     }
 
+    protected view: TreeWidget.View | undefined;
     protected renderTree(model: TreeModel): React.ReactNode {
         if (model.root) {
-            const props = this.createRootProps(model.root);
-            return this.renderSubTree(model.root, props);
+            return <TreeWidget.View
+                ref={view => this.view = (view || undefined)}
+                width={this.node.offsetWidth}
+                height={this.node.offsetHeight}
+                rows={Array.from(this.rows.values())}
+                getNodeRowHeight={this.getNodeRowHeight}
+                renderNodeRow={this.renderNodeRow}
+                scrollToRow={this.scrollToRow}
+            />;
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
     }
 
-    protected createRootProps(node: TreeNode): NodeProps {
-        return {
-            depth: 0,
-            visible: true
-        };
+    protected readonly renderNodeRow = (row: TreeWidget.NodeRow) => this.doRenderNodeRow(row);
+    protected doRenderNodeRow({ index, node, depth }: TreeWidget.NodeRow): React.ReactNode {
+        return this.renderNode(node, { depth });
     }
 
-    protected renderSubTree(node: TreeNode, props: NodeProps): React.ReactNode {
-        const children = this.renderNodeChildren(node, props);
-        if (!TreeNode.isVisible(node)) {
-            return children;
-        }
-        const parent = this.renderNode(node, props);
-        return <React.Fragment key={node.id}>{parent}{children}</React.Fragment>;
+    protected readonly getNodeRowHeight = (row: TreeWidget.NodeRow) => this.doGetNodeRowHeight(row);
+    protected doGetNodeRowHeight({ index, node, depth }: TreeWidget.NodeRow): number {
+        return TreeNode.isVisible(node) ? 20 : 0;
     }
 
     protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
@@ -414,6 +462,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
+        if (!TreeNode.isVisible(node)) {
+            return null;
+        }
         const attributes = this.createNodeAttributes(node, props);
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
             {this.renderExpansionToggle(node, props)}
@@ -458,16 +509,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         // If the node is a composite, a toggle will be rendered. Otherwise we need to add the width and the left, right padding => 18px
         const paddingLeft = `${props.depth * this.props.leftPadding + (this.isExpandable(node) ? 0 : 18)}px`;
-        let style: React.CSSProperties = {
+        return {
             paddingLeft
         };
-        if (!props.visible) {
-            style = {
-                ...style,
-                display: 'none'
-            };
-        }
-        return style;
     }
 
     protected createNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
@@ -487,39 +531,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected isExpandable(node: TreeNode): node is ExpandableTreeNode {
         return ExpandableTreeNode.is(node);
-    }
-
-    protected renderNodeChildren(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (CompositeTreeNode.is(node) && !ExpandableTreeNode.isCollapsed(node)) {
-            return this.renderCompositeChildren(node, props);
-        }
-        // tslint:disable-next-line:no-null-keyword
-        return null;
-    }
-
-    protected renderCompositeChildren(parent: CompositeTreeNode, props: NodeProps): React.ReactNode {
-        return <React.Fragment>{parent.children.map(child => this.renderChild(child, parent, props))}</React.Fragment>;
-    }
-
-    protected renderChild(child: TreeNode, parent: CompositeTreeNode, props: NodeProps): React.ReactNode {
-        const childProps = this.createChildProps(child, parent, props);
-        return this.renderSubTree(child, childProps);
-    }
-
-    protected createChildProps(child: TreeNode, parent: CompositeTreeNode, props: NodeProps): NodeProps {
-        if (this.isExpandable(parent)) {
-            return this.createExpandableChildProps(child, parent, props);
-        }
-        return props;
-    }
-
-    protected createExpandableChildProps(child: TreeNode, parent: ExpandableTreeNode, props: NodeProps): NodeProps {
-        if (!props.visible) {
-            return props;
-        }
-        const visible = parent.expanded;
-        const depth = props.depth + 1;
-        return { ...props, visible, depth };
     }
 
     protected getDecorations(node: TreeNode): TreeDecoration.Data[] {
@@ -664,6 +675,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (copy.parent) {
             delete copy.parent;
         }
+        if ('previousSibling' in copy) {
+            delete copy.previousSibling;
+        }
+        if ('nextSibling' in copy) {
+            delete copy.nextSibling;
+        }
         if (CompositeTreeNode.is(node)) {
             copy.children = [];
             for (const child of node.children) {
@@ -710,8 +727,50 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.root = this.inflateFromStorage(root);
         }
         if (decorations) {
-            this.updateDecorations(this.decoratorService.inflateDecorators(decorations));
+            this.decorations = this.decoratorService.inflateDecorators(decorations);
         }
     }
 
+}
+export namespace TreeWidget {
+    export interface NodeRow {
+        index: number
+        node: TreeNode
+        /**
+         * A root relative number representing the hierarchical depth of the actual node. Root is `0`, its children have `1` and so on.
+         */
+        depth: number
+    }
+    export interface ViewProps {
+        width: number
+        height: number
+        scrollToRow?: number
+        rows: NodeRow[]
+        getNodeRowHeight: (row: NodeRow) => number
+        renderNodeRow: (row: NodeRow) => React.ReactNode
+    }
+    export class View extends React.Component<ViewProps> {
+        list: List | undefined;
+        render(): React.ReactNode {
+            const { rows, width, height, scrollToRow } = this.props;
+            return <List
+                ref={list => this.list = (list || undefined)}
+                width={width}
+                height={height}
+                rowCount={rows.length}
+                rowHeight={this.getNodeRowHeight}
+                rowRenderer={this.renderTreeRow}
+                scrollToIndex={scrollToRow}
+                tabIndex={-1}
+            />;
+        }
+        protected renderTreeRow: ListRowRenderer = ({ key, index, style }) => {
+            const row = this.props.rows[index]!;
+            return <div key={key} style={style}>{this.props.renderNodeRow(row)}</div>;
+        }
+        protected getNodeRowHeight = ({ index }: { index: number }) => {
+            const row = this.props.rows[index]!;
+            return this.props.getNodeRowHeight(row);
+        }
+    }
 }

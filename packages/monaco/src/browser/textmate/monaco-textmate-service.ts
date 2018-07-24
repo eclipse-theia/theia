@@ -19,7 +19,7 @@ import { Registry } from 'monaco-textmate';
 import { ILogger, DisposableCollection, ContributionProvider } from "@theia/core";
 import { FrontendApplicationContribution, isBasicWasmSupported } from "@theia/core/lib/browser";
 import { MonacoTextModelService } from "../monaco-text-model-service";
-import { LanguageGrammarDefinitionContribution } from "./textmate-contribution";
+import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from "./textmate-contribution";
 import { createTextmateTokenizer } from "./textmate-tokenizer";
 import { TextmateRegistry } from "./textmate-registry";
 
@@ -61,8 +61,8 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
         this.grammarRegistry = new Registry({
             getGrammarDefinition: async (scopeName: string, dependentScope: string) => {
-                if (this.textmateRegistry.hasProvider(scopeName)) {
-                    const provider = this.textmateRegistry.getProvider(scopeName);
+                const provider = this.textmateRegistry.getProvider(scopeName);
+                if (provider) {
                     return await provider!.getGrammarDefinition(scopeName, dependentScope);
                 }
                 return {
@@ -90,10 +90,13 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             return;
         }
 
+        const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
+        const initialLanguage = getEncodedLanguageId(languageId);
+
         await this.onigasmPromise;
         try {
             monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(
-                await this.grammarRegistry.loadGrammar(scopeName)
+                await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration)
             ));
         } catch (err) {
             this.logger.warn('No grammar for this language id', languageId);

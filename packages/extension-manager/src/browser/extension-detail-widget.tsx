@@ -16,10 +16,11 @@
 
 import { Extension, ResolvedExtension } from '../common/extension-manager';
 import { Message } from '@phosphor/messaging/lib';
-import { VirtualWidget, VirtualRenderer, DISABLED_CLASS } from '@theia/core/lib/browser';
-import { h } from '@phosphor/virtualdom/lib';
+import { DISABLED_CLASS } from '@theia/core/lib/browser';
+import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
+import * as React from 'react';
 
-export class ExtensionDetailWidget extends VirtualWidget {
+export class ExtensionDetailWidget extends ReactWidget {
 
     constructor(
         protected readonly resolvedExtension: ResolvedExtension
@@ -51,28 +52,24 @@ export class ExtensionDetailWidget extends VirtualWidget {
         }
     }
 
-    protected render(): h.Child {
+    protected render(): React.ReactNode {
         const r = this.resolvedExtension;
-
-        const name = h.h2({ className: 'extensionName' }, r.name);
-        const extversion = h.div({ className: 'extensionVersion' }, r.version);
-        const author = h.div({ className: 'extensionAuthor' }, r.author);
-        const titleInfo = h.div({ className: 'extensionSubtitle' }, author, extversion);
-        const titleContainer = h.div({ className: 'extensionTitleContainer' },
-            name, titleInfo);
-
-        const description = h.div({ className: 'extensionDescription' }, r.description);
-
-        const buttonContainer = this.createButtonContainer();
-
-        const headerContainer = h.div({
-            className: this.createExtensionClassName()
-        }, titleContainer, description, buttonContainer);
-
-        const documentation = h.div({ className: 'extensionDocumentation', id: this.id + 'Doc' }, '');
-        const docContainer = h.div({ className: 'extensionDocContainer flexcontainer' }, documentation);
-
-        return [headerContainer, docContainer];
+        return <React.Fragment>
+            <div className={this.createExtensionClassName()}>
+                <div className='extensionTitleContainer'>
+                    <h2 className='extensionName'>{r.name}</h2>
+                    <div className='extensionSubtitle'>
+                        <div className='extensionAuthor'>{r.author}</div>
+                        <div className='extensionVersion'>{r.version}</div>
+                    </div>
+                </div>
+                <div className='extensionDescription'>{r.description}</div>
+                {this.createButtonContainer()}
+            </div>
+            <div className='extensionDocContainer flexcontainer'>
+                <div className='extensionDocumentation' id={this.id + 'Doc'}></div>
+            </div>
+        </React.Fragment>;
     }
 
     protected createExtensionClassName(): string {
@@ -83,31 +80,33 @@ export class ExtensionDetailWidget extends VirtualWidget {
         return classNames.join(' ');
     }
 
-    protected createButtonContainer(): h.Child {
+    protected createButtonContainer(): React.ReactNode {
         if (this.resolvedExtension.dependent) {
             return 'installed via ' + this.resolvedExtension.dependent;
         }
-        const buttonRow = h.div({ className: 'extensionButtonRow' },
-            VirtualRenderer.flatten(this.createButtons(this.resolvedExtension)));
-        return h.div({ className: 'extensionButtonContainer' }, buttonRow);
+        return <div className='extensionButtonContainer'>
+            <div className='extensionButtonRow'>
+                {this.createButtons(this.resolvedExtension)}
+            </div>
+        </div>;
     }
 
-    protected createButtons(extension: Extension): h.Child[] {
+    protected createButtons(extension: Extension): React.ReactNode[] {
         const buttonArr = [];
         let btnLabel = 'Install';
         if (extension.installed) {
             btnLabel = 'Uninstall';
         }
 
-        const faEl = h.i({ className: 'fa fa-spinner fa-pulse fa-fw' });
+        const faEl = <i className='fa fa-spinner fa-pulse fa-fw'></i>;
         const content = extension.busy ? faEl : btnLabel;
 
-        buttonArr.push(h.div({
-            className: 'theia-button extensionButton' +
+        buttonArr.push(<div
+            className={'theia-button extensionButton' +
                 (extension.busy ? ' working' : '') + ' ' +
                 (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
-                (extension.outdated && !extension.busy ? ' outdated' : ''),
-            onclick: event => {
+                (extension.outdated && !extension.busy ? ' outdated' : '')}
+            onClick={event => {
                 if (!extension.busy) {
                     if (extension.installed) {
                         extension.uninstall();
@@ -116,18 +115,16 @@ export class ExtensionDetailWidget extends VirtualWidget {
                     }
                     event.stopPropagation();
                 }
-            }
-        }, content));
+            }}
+        >{content}</div>);
 
         if (extension.outdated) {
-            buttonArr.push(h.div({
-                className: (extension.busy ? ' working' : '') + ' ' + 'theia-button extensionButton' + (extension.outdated && !extension.busy ? ' outdated' : ''),
-                onclick: event => {
+            buttonArr.push(<div className={(extension.busy ? ' working' : '') + ' ' + 'theia-button extensionButton' + (extension.outdated && !extension.busy ? ' outdated' : '')}
+                onClick={event => {
                     if (!extension.busy) {
                         extension.update();
                     }
-                }
-            }, extension.busy ? faEl : 'Update'));
+                }}>{extension.busy ? faEl : 'Update'}</div>);
         }
         return buttonArr;
     }

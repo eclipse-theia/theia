@@ -18,12 +18,9 @@ import { injectable, inject } from 'inversify';
 import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
-import { MarkerInfoNode, MarkerNode } from '../marker-tree';
-import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel, SelectableTreeNode } from "@theia/core/lib/browser";
+import { MarkerInfoNode, MarkerNode, MarkerRootNode } from '../marker-tree';
+import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel } from "@theia/core/lib/browser";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { Message } from '@phosphor/messaging';
-import URI from '@theia/core/lib/common/uri';
-import { UriSelection } from '@theia/core/lib/common/selection';
 import * as React from "react";
 
 @injectable()
@@ -46,22 +43,18 @@ export class ProblemWidget extends TreeWidget {
         this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
     }
 
-    protected deflateForStorage(node: TreeNode): object {
-        const result = super.deflateForStorage(node) as any;
-        if (UriSelection.is(node) && node.uri) {
-            result.uri = node.uri.toString();
-        }
-        return result;
+    storeState(): object {
+        // no-op
+        return {};
     }
-
-    protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
-        if (node.uri) {
-            node.uri = new URI(node.uri);
-        }
-        if (node.selected) {
-            node.selected = false;
-        }
-        return super.inflateFromStorage(node);
+    protected superStoreState(): object {
+        return super.storeState();
+    }
+    restoreState(state: object): void {
+        // no-op
+    }
+    protected superRestoreState(state: object): void {
+        return super.restoreState(state);
     }
 
     protected handleCopy(event: ClipboardEvent) {
@@ -72,15 +65,11 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected onUpdateRequest(msg: Message) {
-        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
-            this.model.selectNode(this.model.root);
-        }
-        super.onUpdateRequest(msg);
-    }
-
     protected renderTree(model: TreeModel): React.ReactNode {
-        return super.renderTree(model) || <div className='noMarkers'>No problems have been detected in the workspace so far.</div>;
+        if (MarkerRootNode.is(model.root) && model.root.children.length > 0) {
+            return super.renderTree(model);
+        }
+        return <div className='noMarkers'>No problems have been detected in the workspace so far.</div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

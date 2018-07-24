@@ -27,6 +27,7 @@ export class FileDialogModel extends FileTreeModel {
 
     @postConstruct()
     protected init(): void {
+        super.init();
         this.toDispose.push(this.onDidOpenFileEmitter);
     }
 

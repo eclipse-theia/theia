@@ -22,14 +22,6 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 export class JavaTextmateContribution implements LanguageGrammarDefinitionContribution {
 
     registerTextmateLanguage(registry: TextmateRegistry) {
-        registry.registerTextMateGrammarScope('text.html.basic', {
-            async getGrammarDefinition() {
-                return {
-                    format: 'json',
-                    content: '{}'
-                };
-            }
-        });
         const javaDocGrammar = require('../../../data/javadoc.tmlanguage.json');
         registry.registerTextMateGrammarScope('text.html.javadoc', {
             async getGrammarDefinition() {

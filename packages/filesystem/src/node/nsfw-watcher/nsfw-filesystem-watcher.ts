@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2017-2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -21,13 +21,15 @@ import { IMinimatch, Minimatch } from "minimatch";
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileUri } from "@theia/core/lib/node/file-uri";
 import {
-    FileChange,
     FileChangeType,
     FileSystemWatcherClient,
     FileSystemWatcherServer,
     WatchOptions
 } from '../../common/filesystem-watcher-protocol';
+import { FileChangeCollection } from "../file-change-collection";
 import { setInterval, clearInterval } from "timers";
+
+const debounce = require("lodash.debounce");
 
 // tslint:disable:no-any
 
@@ -45,9 +47,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected changes: FileChange[] = [];
-    protected readonly fireDidFilesChangedTimeout = 50;
-    protected readonly toDisposeOnFileChange = new DisposableCollection();
+    protected changes = new FileChangeCollection();
 
     protected readonly options: {
         verbose: boolean
@@ -175,14 +175,17 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         const uri = FileUri.create(path).toString();
         this.changes.push({ uri, type });
 
-        this.toDisposeOnFileChange.dispose();
-        const timer = setTimeout(() => this.fireDidFilesChanged(), this.fireDidFilesChangedTimeout);
-        this.toDisposeOnFileChange.push(Disposable.create(() => clearTimeout(timer)));
+        this.fireDidFilesChanged();
     }
 
-    protected fireDidFilesChanged(): void {
-        const changes = this.changes;
-        this.changes = [];
+    /**
+     * Fires file changes to clients.
+     * It is debounced in the case if the filesystem is spamming to avoid overwhelming clients with events.
+     */
+    protected readonly fireDidFilesChanged: () => void = debounce(() => this.doFireDidFilesChanged(), 50);
+    protected doFireDidFilesChanged(): void {
+        const changes = this.changes.values();
+        this.changes = new FileChangeCollection();
         const event = { changes };
         if (this.client) {
             this.client.onDidFilesChanged(event);

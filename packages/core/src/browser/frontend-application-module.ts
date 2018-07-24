@@ -124,7 +124,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope()
     );
 
-    bind(StorageService).to(LocalStorageService).inSingletonScope();
+    bind(LocalStorageService).toSelf().inSingletonScope();
+    bind(StorageService).toService(LocalStorageService);
 
     bind(StatusBarImpl).toSelf().inSingletonScope();
     bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();

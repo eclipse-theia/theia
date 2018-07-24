@@ -18,8 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
-import * as pty from 'node-pty';
-import { ITerminal } from 'node-pty/lib/interfaces';
+import { IPty, spawn } from 'node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 
 export const TerminalProcessOptions = Symbol("TerminalProcessOptions");
@@ -34,7 +33,7 @@ export interface TerminalProcessFactory {
 @injectable()
 export class TerminalProcess extends Process {
 
-    protected readonly terminal: ITerminal;
+    protected readonly terminal: IPty;
 
     constructor(
         @inject(TerminalProcessOptions) options: TerminalProcessOptions,
@@ -47,10 +46,10 @@ export class TerminalProcess extends Process {
             + ` with args : ${options.args}, `
             + ` options ${JSON.stringify(options.options)}`);
 
-        this.terminal = pty.spawn(
+        this.terminal = spawn(
             options.command,
-            options.args,
-            options.options);
+            options.args || [],
+            options.options || {});
 
         this.terminal.on('exit', (code: number, signal?: number) => {
             this.emitOnExit(code, signal ? signal.toString() : undefined);

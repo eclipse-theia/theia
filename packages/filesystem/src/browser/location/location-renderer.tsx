@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { h } from '@phosphor/virtualdom';
-import { VirtualRenderer } from "@theia/core/lib/browser";
 import URI from "@theia/core/lib/common/uri";
 import { LocationService } from "./location-service";
+import { ReactRenderer } from "@theia/core/lib/browser/widgets/react-renderer";
+import * as React from 'react';
 
 export const LOCATION_LIST_CLASS = 'theia-LocationList';
 
-export class LocationListRenderer extends VirtualRenderer {
+export class LocationListRenderer extends ReactRenderer {
 
     constructor(
         readonly service: LocationService,
@@ -39,24 +39,20 @@ export class LocationListRenderer extends VirtualRenderer {
         }
     }
 
-    protected doRender(): h.Child {
+    protected readonly handleLocationChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onLocationChanged(e);
+    protected doRender(): React.ReactNode {
         const location = this.service.location;
         const locations = !!location ? location.allLocations : [];
         const options = locations.map(value => this.renderLocation(value));
-        return h.select({
-            className: LOCATION_LIST_CLASS,
-            onchange: e => this.onLocationChanged(e)
-        }, ...options);
+        return <select className={LOCATION_LIST_CLASS} onChange={this.handleLocationChanged}>{...options}</select>;
     }
 
-    protected renderLocation(uri: URI): h.Child {
+    protected renderLocation(uri: URI): React.ReactNode {
         const value = uri.toString();
-        return h.option({
-            value
-        }, uri.displayName);
+        return <option value={value} key={uri.toString()}>{uri.displayName}</option>;
     }
 
-    protected onLocationChanged(e: Event): void {
+    protected onLocationChanged(e: React.ChangeEvent<HTMLSelectElement>): void {
         const locationList = this.locationList;
         if (locationList) {
             const value = locationList.value;

@@ -324,10 +324,55 @@ declare module monaco.services {
         get(overrides?: monaco.editor.IEditorOverrideServices): T;
     }
 
-    export interface IStandaloneThemeService extends monaco.theme.IThemeService { }
+    export interface IStandaloneThemeService extends monaco.theme.IThemeService {
+        getTheme(): IStandaloneTheme;
+    }
+
+    export interface IStandaloneTheme {
+        tokenTheme: TokenTheme;
+    }
+
+    export interface TokenTheme {
+        match(languageId: string | undefined, scope: string): number;
+        getColorMap(): Color[];
+    }
+
+    export interface Color {
+        rgba: RGBA;
+    }
+
+    export interface RGBA {
+        r: number;
+        g: number;
+        b: number;
+        a: number;
+    }
+
+    export enum LanguageId {
+        Null = 0,
+        PlainText = 1
+    }
+
+    export class LanguageIdentifier {
+        /**
+         * A string identifier. Unique across languages. e.g. 'javascript'.
+         */
+        readonly language: string;
+
+        /**
+         * A numeric identifier. Unique across languages. e.g. 5
+         * Will vary at runtime based on registration order, etc.
+         */
+        readonly id: LanguageId;
+    }
+
+    export interface IModeService {
+        getLanguageIdentifier(modeId: string | LanguageId): LanguageIdentifier;
+    }
 
     export module StaticServices {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
+        export const modeService: LazyStaticService<IModeService>;
     }
 }
 
@@ -585,6 +630,22 @@ declare module monaco.editorExtensions {
     }
 }
 declare module monaco.modes {
+
+    export class TokenMetadata {
+
+        public static getLanguageId(metadata: number): number;
+
+        public static getFontStyle(metadata: number): number;
+
+        public static getForeground(metadata: number): number;
+
+        public static getBackground(metadata: number): number;
+
+        public static getClassNameFromMetadata(metadata: number): string;
+
+        public static getInlineStyleFromMetadata(metadata: number, colorMap: string[]): string;
+    }
+
     export interface LanguageFeatureRegistry<T> {
         has(model: monaco.editor.IReadOnlyModel): boolean;
         all(model: monaco.editor.IReadOnlyModel): T[];

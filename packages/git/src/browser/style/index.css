@@ -285,18 +285,22 @@
 
 .theia-git-validation-message-info {
     background-color: var(--theia-info-color0) !important;
+    color: var(--theia-info-font-color0);
 }
 
 .theia-git-validation-message-success {
     background-color: var(--theia-success-color0) !important;
+    color: var(--theia-success-font-color0);
 }
 
 .theia-git-validation-message-warning {
     background-color: var(--theia-warn-color0) !important;
+    color: var(--theia-warn-font-color0);
 }
 
 .theia-git-validation-message-error {
     background-color: var(--theia-error-color0) !important;
+    color: var(--theia-error-font-color0);
 }
 
 .no-select {

@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { FrontendApplicationContribution, FrontendApplication, KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser";
+import { KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser";
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { BlameDecorator } from './blame-decorator';
-import { EditorManager, EditorKeybindingContexts, EditorWidget } from '@theia/editor/lib/browser';
+import { EditorManager, EditorKeybindingContexts, EditorWidget, EditorTextFocusContext, StrictEditorTextFocusContext } from '@theia/editor/lib/browser';
 import { BlameManager } from './blame-manager';
 import URI from '@theia/core/lib/common/uri';
 import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
@@ -26,9 +26,9 @@ import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
 import debounce = require('lodash.debounce');
 
 export namespace BlameCommands {
-    export const SHOW_GIT_ANNOTATIONS: Command = {
-        id: 'git.editor.show.annotations',
-        label: 'Git: Show Blame Annotations'
+    export const TOGGLE_GIT_ANNOTATIONS: Command = {
+        id: 'git.editor.toggle.annotations',
+        label: 'Git: Toggle Blame Annotations'
     };
     export const CLEAR_GIT_ANNOTATIONS: Command = {
         id: 'git.editor.clear.annotations'
@@ -36,7 +36,7 @@ export namespace BlameCommands {
 }
 
 @injectable()
-export class BlameContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
+export class BlameContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -47,15 +47,16 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
     @inject(BlameManager)
     protected readonly blameManager: BlameManager;
 
-    onStart(app: FrontendApplication): void {
-    }
-
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(BlameCommands.SHOW_GIT_ANNOTATIONS, {
+        commands.registerCommand(BlameCommands.TOGGLE_GIT_ANNOTATIONS, {
             execute: () => {
                 const editorWidget = this.currentFileEditorWidget;
                 if (editorWidget) {
-                    this.showBlame(editorWidget);
+                    if (this.showsBlameAnnotations(editorWidget.editor.uri)) {
+                        this.clearBlame(editorWidget.editor.uri);
+                    } else {
+                        this.showBlame(editorWidget);
+                    }
                 }
             },
             isVisible: () =>
@@ -76,10 +77,14 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
                 !!this.currentFileEditorWidget,
             isEnabled: () => {
                 const editorWidget = this.currentFileEditorWidget;
-                const enabled = !!editorWidget && this.appliedDecorations.has(editorWidget.editor.uri.toString());
+                const enabled = !!editorWidget && this.showsBlameAnnotations(editorWidget.editor.uri);
                 return enabled;
             }
         });
+    }
+
+    showsBlameAnnotations(uri: string | URI): boolean {
+        return this.appliedDecorations.has(uri.toString());
     }
 
     protected get currentFileEditorWidget(): EditorWidget | undefined {
@@ -112,7 +117,7 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
             this.appliedDecorations.set(uri, toDispose);
             toDispose.push(this.decorator.decorate(blame, editor, editor.cursor.line));
             toDispose.push(editor.onDocumentContentChanged(() => this.clearBlame(uri)));
-            toDispose.push(editor.onCursorPositionChanged(debounce(position => {
+            toDispose.push(editor.onCursorPositionChanged(debounce(_position => {
                 if (!toDispose.disposed) {
                     this.decorator.decorate(blame, editor, editor.cursor.line);
                 }
@@ -131,22 +136,42 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EDITOR_CONTEXT_MENU_GIT, {
-            commandId: BlameCommands.SHOW_GIT_ANNOTATIONS.id,
-            label: BlameCommands.SHOW_GIT_ANNOTATIONS.label!.slice('Git: '.length)
+            commandId: BlameCommands.TOGGLE_GIT_ANNOTATIONS.id,
+            label: BlameCommands.TOGGLE_GIT_ANNOTATIONS.label!.slice('Git: '.length)
         });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
-            command: BlameCommands.SHOW_GIT_ANNOTATIONS.id,
+            command: BlameCommands.TOGGLE_GIT_ANNOTATIONS.id,
             context: EditorKeybindingContexts.editorTextFocus,
             keybinding: 'alt+b'
         });
         keybindings.registerKeybinding({
             command: BlameCommands.CLEAR_GIT_ANNOTATIONS.id,
-            context: EditorKeybindingContexts.strictEditorTextFocus,
+            context: BlameAnnotationsKeybindingContext.showsBlameAnnotations,
             keybinding: 'esc'
         });
     }
 
+}
+
+@injectable()
+export class BlameAnnotationsKeybindingContext extends EditorTextFocusContext {
+
+    @inject(BlameContribution)
+    protected readonly blameContribution: BlameContribution;
+
+    @inject(StrictEditorTextFocusContext)
+    protected readonly base: StrictEditorTextFocusContext;
+
+    id = BlameAnnotationsKeybindingContext.showsBlameAnnotations;
+
+    protected canHandle(widget: EditorWidget): boolean {
+        return this.base.isEnabled() && this.blameContribution.showsBlameAnnotations(widget.editor.uri);
+    }
+}
+
+export namespace BlameAnnotationsKeybindingContext {
+    export const showsBlameAnnotations = 'showsBlameAnnotations';
 }

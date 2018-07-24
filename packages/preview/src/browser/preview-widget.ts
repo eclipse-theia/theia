@@ -16,14 +16,15 @@
 
 import { inject, injectable } from "inversify";
 import { Resource, MaybePromise } from '@theia/core';
-import { BaseWidget, Message } from '@theia/core/lib/browser';
+import { BaseWidget, Message, addEventListener} from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { Workspace, Location, Range } from "@theia/languages/lib/common";
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
-import { throttle } from 'throttle-debounce';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from "@theia/editor/lib/browser";
+
+import throttle = require('lodash.throttle');
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 
@@ -105,23 +106,23 @@ export class PreviewWidget extends BaseWidget {
 
     protected onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
-        this.startScrollSync();
-        this.startDoubleClickListener();
+        this.toDispose.push(this.startScrollSync());
+        this.toDispose.push(this.startDoubleClickListener());
     }
 
     protected preventScrollNotification: boolean = false;
-    protected startScrollSync(): void {
-        this.addEventListener(this.node, 'scroll', throttle(50, (event: UIEvent) => {
+    protected startScrollSync() {
+        return addEventListener(this.node, 'scroll', throttle((event: UIEvent) => {
             if (this.preventScrollNotification) {
                 return;
             }
             const scrollTop = this.node.scrollTop;
             this.didScroll(scrollTop);
-        }));
+        }, 50));
     }
 
-    protected startDoubleClickListener(): void {
-        this.addEventListener(this.node, 'dblclick', (event: MouseEvent) => {
+    protected startDoubleClickListener() {
+        return addEventListener(this.node, 'dblclick', (event: MouseEvent) => {
             if (!(event.target instanceof HTMLElement)) {
                 return;
             }
@@ -213,7 +214,7 @@ export class PreviewWidget extends BaseWidget {
     revealForSourceLine(sourceLine: number): void {
         this.internalRevealForSourceLine(sourceLine);
     }
-    protected readonly internalRevealForSourceLine: (sourceLine: number) => void = throttle(50, (sourceLine: number) => {
+    protected readonly internalRevealForSourceLine: (sourceLine: number) => void = throttle((sourceLine: number) => {
         if (!this.previewHandler || !this.previewHandler.findElementForSourceLine) {
             return;
         }
@@ -225,7 +226,7 @@ export class PreviewWidget extends BaseWidget {
                 this.preventScrollNotification = false;
             }, 50);
         }
-    });
+    }, 50);
 
     get onDidScroll(): Event<number> {
         return this.onDidScrollEmitter.event;
@@ -264,10 +265,8 @@ export class PreviewWidget extends BaseWidget {
         if (!this.previewHandler || !this.previewHandler.getSourceLineForOffset) {
             return;
         }
-        const line = this.previewHandler.getSourceLineForOffset(this.node, offsetTop);
-        if (line) {
-            this.fireDidDoubleClickToSourceLine(line);
-        }
+        const line = this.previewHandler.getSourceLineForOffset(this.node, offsetTop) || 0;
+        this.fireDidDoubleClickToSourceLine(line);
     }
 
 }

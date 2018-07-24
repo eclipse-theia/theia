@@ -97,7 +97,7 @@ See [here](https://github.com/theia-ide/theia).
 `;
 
 const exampleHtml1 = //
-    `<h1 id="theia-preview-extension" class="line" data-line="0">Theia - Preview Extension</h1>
+    `<h1 id="theia---preview-extension" class="line" data-line="0">Theia - Preview Extension</h1>
 <p class="line" data-line="1">Shows a preview of supported resources.
 See <a href="https://github.com/theia-ide/theia">here</a>.</p>
 <h2 id="license" class="line" data-line="4">License</h2>

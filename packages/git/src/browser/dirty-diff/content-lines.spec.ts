@@ -21,8 +21,17 @@ chai.use(require('chai-string'));
 
 describe("content-lines", () => {
 
-    it("array like access of lines without splitting", () => {
+    it("array-like access of lines without splitting", () => {
         const raw = "abc\ndef\n123\n456";
+        const linesArray = ContentLines.arrayLike(ContentLines.fromString(raw));
+        expect(linesArray[0]).to.be.equal('abc');
+        expect(linesArray[1]).to.be.equal('def');
+        expect(linesArray[2]).to.be.equal('123');
+        expect(linesArray[3]).to.be.equal('456');
+    });
+
+    it("works with CRLF", () => {
+        const raw = "abc\ndef\r\n123\r456";
         const linesArray = ContentLines.arrayLike(ContentLines.fromString(raw));
         expect(linesArray[0]).to.be.equal('abc');
         expect(linesArray[1]).to.be.equal('def');

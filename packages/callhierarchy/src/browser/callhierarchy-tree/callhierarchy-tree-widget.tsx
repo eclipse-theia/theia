@@ -15,10 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { Message } from "@phosphor/messaging";
 import {
     ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, TreeNode,
-    SelectableTreeNode, TreeModel, DockPanel
+    TreeModel, DockPanel
 } from "@theia/core/lib/browser";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { DefinitionNode, CallerNode } from "./callhierarchy-tree";
@@ -71,13 +70,6 @@ export class CallHierarchyTreeWidget extends TreeWidget {
             classNames.push(DEFINITION_NODE_CLASS);
         }
         return classNames;
-    }
-
-    protected onUpdateRequest(msg: Message) {
-        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
-            this.model.selectNode(this.model.root);
-        }
-        super.onUpdateRequest(msg);
     }
 
     protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
