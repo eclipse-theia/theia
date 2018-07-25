@@ -119,10 +119,12 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name => {
-                        const fileUri = parentUri.resolve(name);
-                        this.fileSystem.createFile(fileUri.toString()).then(() => {
-                            open(this.openerService, fileUri);
-                        });
+                        if (name) {
+                            const fileUri = parentUri.resolve(name);
+                            this.fileSystem.createFile(fileUri.toString()).then(() => {
+                                open(this.openerService, fileUri);
+                            });
+                        }
                     });
                 }
             })
@@ -137,9 +139,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     });
-                    dialog.open().then(name =>
-                        this.fileSystem.createFolder(parentUri.resolve(name).toString())
-                    );
+                    dialog.open().then(name => {
+                        if (name) {
+                            this.fileSystem.createFolder(parentUri.resolve(name).toString());
+                        }
+                    });
                 }
             })
         }));
@@ -151,9 +155,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         initialValue: uri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     });
-                    dialog.open().then(name =>
-                        this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
-                    );
+                    dialog.open().then(name => {
+                        if (name) {
+                            this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString());
+                        }
+                    });
                 }
             })
         }));
@@ -189,6 +195,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     title: `Delete File${uris.length === 1 ? '' : 's'}`,
                     msg,
                 });
+
                 if (await dialog.open()) {
                     // Make sure we delete the longest paths first, they might be nested. Longer paths come first.
                     uris.sort((left, right) => right.toString().length - left.toString().length);

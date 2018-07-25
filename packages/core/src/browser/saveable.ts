@@ -16,7 +16,7 @@
 
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
-import { Event, MaybePromise, isCancelled, cancelled } from '../common';
+import { Event, MaybePromise } from '../common';
 import { Key } from './keys';
 import { AbstractDialog } from './dialogs';
 
@@ -76,13 +76,12 @@ export namespace Saveable {
                 }
                 closing = true;
                 try {
-                    if (await shouldSave(saveable, widget)) {
-                        await Saveable.save(widget);
-                    }
-                    close();
-                } catch (e) {
-                    if (!isCancelled(e)) {
-                        throw e;
+                    const result = await shouldSave(saveable, widget);
+                    if (typeof result === 'boolean') {
+                        if (result) {
+                            await Saveable.save(widget);
+                        }
+                        close();
                     }
                 } finally {
                     closing = false;
@@ -90,15 +89,16 @@ export namespace Saveable {
             };
         }
     }
-    export async function shouldSave(saveable: Saveable, widget: Widget): Promise<boolean> {
+    export async function shouldSave(saveable: Saveable, widget: Widget): Promise<boolean | undefined> {
         if (!saveable.dirty) {
             return false;
         }
+
         if (saveable.autoSave === 'on') {
             return true;
         }
-        const dialog = new ShouldSaveDialog(widget);
-        return dialog.open();
+
+        return new ShouldSaveDialog(widget).open();
     }
 }
 
@@ -117,6 +117,7 @@ export function setDirty(widget: Widget, dirty: boolean): void {
 export class ShouldSaveDialog extends AbstractDialog<boolean> {
 
     protected shouldSave = true;
+
     protected readonly dontSaveButton: HTMLButtonElement;
 
     constructor(widget: Widget) {
@@ -150,13 +151,6 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
 
     get value(): boolean {
         return this.shouldSave;
-    }
-
-    close(): void {
-        if (this.reject) {
-            this.reject(cancelled());
-        }
-        super.close();
     }
 
 }

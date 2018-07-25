@@ -125,6 +125,7 @@ export class FileSystemNode implements FileSystem {
         }
         throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
     }
+
     protected applyContentChanges(content: string, contentChanges: TextDocumentContentChangeEvent[]): string {
         let document = TextDocument.create('', '', 1, content);
         for (const change of contentChanges) {
@@ -143,15 +144,17 @@ export class FileSystemNode implements FileSystem {
         if (this.checkInSync(file, stat)) {
             return true;
         }
-        return this.client ? this.client.shouldOverwrite(file, stat) : false;
+        return this.client ? await this.client.shouldOverwrite(file, stat) : false;
     }
+
     protected checkInSync(file: FileStat, stat: FileStat): boolean {
         return stat.lastModification === file.lastModification && stat.size === file.size;
     }
+
     protected createOutOfSyncError(file: FileStat, stat: FileStat): Error {
         return new Error(`File is out of sync. URI: ${file.uri}.
-Expected: ${JSON.stringify(stat)}.
-Actual: ${JSON.stringify(file)}.`);
+            Expected: ${JSON.stringify(stat)}.
+            Actual: ${JSON.stringify(file)}.`);
     }
 
     async move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
