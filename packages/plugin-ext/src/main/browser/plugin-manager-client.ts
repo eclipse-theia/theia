@@ -242,6 +242,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
         this.openButton.onclick = () => {
             this.windowService.openNewWindow(uri);
         };
+
         this.open();
     }
 }

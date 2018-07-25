@@ -145,7 +145,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             ok: 'Yes',
             cancel: 'No'
         });
-        return dialog.open();
+        return await dialog.open() ? true : false;
     }
 
     upload(node: DirNode, items: DataTransferItemList): void {
