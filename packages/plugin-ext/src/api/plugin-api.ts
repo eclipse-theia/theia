@@ -435,7 +435,7 @@ export interface EnvExt {
 
 // IDE configuration
 export class ConfigurationModel { // configurations of the differents levels...
-    properties: { [key: string]: any };
+    [key: string]: any;
 }
 
 export class ConfigurationChange { // todo rename to the workspace Config change ?
@@ -459,8 +459,7 @@ export interface ConfigurationRegistryMain {
 }
 
 export interface ConfigurationRegistryExt {
-    // todo change format of the data?
-    $acceptConfigurationChanged(data: { [key: string]: any }, configChange: ConfigurationChange): void;
+    $acceptConfigurationChanged(data: { [key: string]: any }, configChange: ConfigurationChange[]): void;
 }
 
 export interface OutputChannelRegistryMain {

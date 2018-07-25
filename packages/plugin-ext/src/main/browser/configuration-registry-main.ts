@@ -14,9 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {
-    PreferenceScope // todo use configuration scope
-} from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
 import {
     MAIN_RPC_CONTEXT,
@@ -36,7 +33,7 @@ export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain 
 
         this.consolidateConfRegistry = container.get(ConsolidatedConfigurationRegistry);
 
-        this.consolidateConfRegistry.onConfigurationChanged((confChange) => {
+        this.consolidateConfRegistry.onConfigurationChanged(confChange => {
             this.proxy.$acceptConfigurationChanged(this.consolidateConfRegistry.getConsolidatedConfig(), confChange);
         });
     }

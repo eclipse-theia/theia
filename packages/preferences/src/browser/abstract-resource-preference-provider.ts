@@ -72,6 +72,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             const result = jsoncparser.applyEdits(content, edits);
 
             await resource.saveContents(result);
+            this.preferences = jsoncparser.parse(result);
             this.onDidPreferencesChangedEmitter.fire(undefined);
         }
     }

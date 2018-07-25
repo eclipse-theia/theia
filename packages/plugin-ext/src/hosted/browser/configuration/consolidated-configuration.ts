@@ -14,82 +14,98 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject } from 'inversify';
-import { PreferenceServiceImpl, PreferenceScope } from '@theia/core/lib/browser';
-import { Emitter, DisposableCollection } from '@theia/core/lib/common';
+import { PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { Emitter, DisposableCollection, ILogger } from '@theia/core/lib/common';
 import { ConfigurationChange, ConfigurationModel } from '../../../api/plugin-api';
 import { PluginConfigurationProvider } from '../plugin-configuration';
-import { retro } from '@phosphor/algorithm';
-import { Exception } from 'handlebars';
 import { ConfigurationTarget } from '../../../plugin/types-impl';
 
-// create default configuration the same like in the vscode....? in the separated file
 @injectable()
 export class ConsolidatedConfigurationRegistry {
 
-    private readonly consolidatedConf: ConfigurationModel = {properties: {}};
+    // todo move follow fields to the separate object with own logic ?
+    private prefs: ConfigurationModel = { };
+    // temproray it's monolit for all plugins...
+    private consolidatePluginsPrefs: ConfigurationModel = { };
+    // extension chema shoud be stored too...
+    private extensionPrefs: ConfigurationModel = {};
+
     protected readonly toDispose = new DisposableCollection();
-    protected readonly onConfigurationChangedEmitter = new Emitter<ConfigurationChange>();
+    protected readonly onConfigurationChangedEmitter = new Emitter<ConfigurationChange[]>();
 
     readonly onConfigurationChanged = this.onConfigurationChangedEmitter.event;
 
     constructor(
         @inject(PreferenceServiceImpl) private prefService: PreferenceServiceImpl, // it's bad to use implementation
         @inject(PluginConfigurationProvider) private pluginConfProvider: PluginConfigurationProvider,
+        @inject(ILogger) private readonly logger: ILogger,
         // todo implement returning default configuration
-        // @inject(PreferenceSchemaProvider) private readonly prefChemaProvider: PreferenceSchemaProvider,
+        @inject(PreferenceSchemaProvider) private readonly prefChemaProvider: PreferenceSchemaProvider,
     ) {
-        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-        // todo apply handler for add new plugin
-        this.prefService.onPreferenceChanged(e => {
-            console.log('pref changed!!!');
-            this.prefService.getPreferences();
+        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>3');
 
-            this.consolidatedConf.properties = {
-                ...this.consolidatedConf.properties,
-                ...this.prefService.getPreferences()
-            };
-            const confChange: ConfigurationChange = {section: e.preferenceName, value: e.newValue};
-            this.onConfigurationChangedEmitter.fire(confChange);
+        prefService.ready.then(() => {
+            this.prefs = this.prefService.getPreferences();
+            this.extensionPrefs = this.prefChemaProvider.getSchema().properties;
+            console.log("Consolidated configuration.... ", this.getConsolidatedConfig());
+
+            this.prefService.onPreferenceChanged(prefChange => {
+                console.log('pref changed!!!');
+                this.prefs = this.prefService.getPreferences(); // !!!
+
+                const confChange: ConfigurationChange = { section: prefChange.preferenceName, value: prefChange.newValue };
+                this.onConfigurationChangedEmitter.fire([confChange]);
+            });
         });
 
-        this.pluginConfProvider.onPluginConfigurationChanged(e => {
-            this.consolidatedConf.properties = {
-                ...this.consolidatedConf.properties,
-                ...e.properties
-            };
-            for (const confName in this.consolidatedConf.properties) {
+        this.pluginConfProvider.onPluginConfigurationChanged(pluginPref => {
+            const confChanges: ConfigurationChange[] = [];
+            for (const prefName in pluginPref.properties) {
                 // todo don't throw event twice. If conf was changed to the same value
-                if (this.consolidatedConf.properties.hasOwnProperty(confName)) {
-                    const confChange: ConfigurationChange = {section: confName, value: this.consolidatedConf.properties[confName]};
-                    // event should throw few properties, not only single props
-                    this.onConfigurationChangedEmitter.fire(confChange);
+                if (this.validatePrefKey(prefName)) {
+                    (this.consolidatePluginsPrefs as any)[prefName] = pluginPref.properties[prefName];
+                    const confChange: ConfigurationChange = { section: prefName, value: pluginPref.properties[prefName] };
+                    confChanges.push(confChange);
+                } else {
+                    logger.warn(`Configuration key: is already registered ${prefName}`);
                 }
             }
+            this.onConfigurationChangedEmitter.fire(confChanges);
         });
 
         // todo fire configuration changed event for another cases... workspace folder, or workspace... in memory conf...
-        console.log("Consolidated configuration.... ", this.consolidatedConf);
-
         this.toDispose.push(this.onConfigurationChangedEmitter);
     }
 
-    // todo in memory configs to change to change properties for plugins
-
-    // getValue(section: string) {
-    // }
-
-    updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
-        const scope = this.parseConfigurationTarget(target);
-        return this.prefService.set(key, value, scope);
+    // todo validate more deeply...
+    private validatePrefKey(prefKey: string): boolean {
+        const prefValue = (this.prefs as any)[prefKey] || (this.consolidatePluginsPrefs as any)[prefKey];
+        return !prefValue ? true : false;
     }
 
-    removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
+    async updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any) {
         const scope = this.parseConfigurationTarget(target);
-        return this.prefService.set(key, undefined, scope);
+        await this.prefService.set(key, value, scope);
+
+        this.prefs = this.prefService.getPreferences();
+        return Promise.resolve();
+    }
+
+    async removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string) {
+        const scope = this.parseConfigurationTarget(target);
+        await this.prefService.set(key, undefined, scope);
+
+        this.prefs = this.prefService.getPreferences();
+        return Promise.resolve();
     }
 
     getConsolidatedConfig(): ConfigurationModel {
-        return this.consolidatedConf;
+        const consolidatedConf: ConfigurationModel = {
+            ...this.consolidatePluginsPrefs,
+            ...this.extensionPrefs,
+            ...this.prefs,
+        };
+        return consolidatedConf;
     }
 
     /**

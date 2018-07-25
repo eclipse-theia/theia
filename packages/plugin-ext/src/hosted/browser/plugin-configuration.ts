@@ -73,7 +73,6 @@ import { Emitter, DisposableCollection, ILogger } from "@theia/core/lib/common";
 
     // Return consolidated plugins config.
     getConsolidatedConfig(): IConfiguration {
-        console.log(this.combinedPluginSchema);
         return this.combinedPluginSchema;
     }
  }

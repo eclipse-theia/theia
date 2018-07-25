@@ -52,7 +52,7 @@ function lookUp(tree: any, key: string): any {
 
 export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
     private proxy: ConfigurationRegistryMain;
-    private _properties: any;
+    private _properties: any; // todo improve configuration should be here like defined object...
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
     readonly onDidChangeConfiguration: Event<theia.ConfigurationChangeEvent> = this._onDidChangeConfiguration.event;
@@ -61,9 +61,12 @@ export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    $acceptConfigurationChanged(data: ConfigurationModel, confChange: ConfigurationChange): void {
-        this._properties = this.parse(data.properties);
-        this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(confChange));
+    $acceptConfigurationChanged(data: ConfigurationModel, confChanges: ConfigurationChange[]): void {
+        this._properties = this.parse(data);
+        console.log("Update configuration!!!!", data);
+        confChanges.forEach(confChange => {
+            this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(confChange));
+        });
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
