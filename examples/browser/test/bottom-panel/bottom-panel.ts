@@ -54,6 +54,26 @@ export class BottomPanel {
         this.driver.pause(300);
     }
 
+    isCallHierarchyViewVisible(): boolean {
+        return this.driver.isExisting('#callhierarchy');
+    }
+
+    waitForCallHierarchyView() {
+        this.driver.waitForExist('#callhierarchy');
+        // Wait for animations to finish
+        this.driver.pause(300);
+    }
+
+    isOutputViewVisible(): boolean {
+        return this.driver.isExisting('.p-Widget div.theia-output');
+    }
+
+    waitForOutputView() {
+        this.driver.waitForExist('.p-Widget div.theia-output');
+        // Wait for animations to finish
+        this.driver.pause(300);
+    }
+
     closeCurrentView() {
         this.driver.click('#theia-bottom-content-panel .p-TabBar-tab.p-mod-current .p-TabBar-tabCloseIcon');
     }

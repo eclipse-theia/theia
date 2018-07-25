@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2017-2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,9 +18,13 @@
 import { expect } from "chai";
 import { TopPanel } from "./top-panel";
 import { BottomPanel } from "../bottom-panel/bottom-panel";
+import { RightPanel } from "../right-panel/right-panel";
+import { LeftPanel } from "../left-panel/left-panel";
 import { MainPage } from '../main-page/main-page';
 let topPanel: TopPanel;
 let bottomPanel: BottomPanel;
+let rightPanel: RightPanel;
+let leftPanel: LeftPanel;
 let mainPage: MainPage;
 
 before(() => {
@@ -32,6 +36,8 @@ before(() => {
     driver.refresh();
     topPanel = new TopPanel(driver);
     bottomPanel = new BottomPanel(driver);
+    rightPanel = new RightPanel(driver);
+    leftPanel = new LeftPanel(driver);
     mainPage = new MainPage(driver);
     // Make sure that the application shell is loaded
     mainPage.waitForStartup();
@@ -93,6 +99,138 @@ describe('theia top panel (menubar)', () => {
         });
     });
 
+    describe('call hierarchy view UI', () => {
+        it('should start with call hierarchy view not visible', () => {
+            expect(bottomPanel.isCallHierarchyViewVisible()).to.be.false;
+        });
+        it('call hierarchy view should toggle-on then toggle-off', () => {
+            if (!bottomPanel.isCallHierarchyViewVisible()) {
+                topPanel.toggleCallHierarchyView();
+                bottomPanel.waitForCallHierarchyView();
+            }
+            expect(bottomPanel.isCallHierarchyViewVisible()).to.be.true;
+            topPanel.toggleCallHierarchyView();
+            expect(bottomPanel.isCallHierarchyViewVisible()).to.be.false;
+        });
+    });
+
+    describe('extensions view UI', () => {
+        it('should start with extensions view not visible', () => {
+            expect(leftPanel.isExtensionsContainerVisible()).to.be.false;
+        });
+        it('extensions view should toggle-on then toggle-off', () => {
+            if (!leftPanel.isExtensionsContainerVisible()) {
+                topPanel.toggleExtensionsView();
+                leftPanel.waitForExtensionsView();
+            }
+            expect(leftPanel.isExtensionsContainerVisible()).to.be.true;
+            topPanel.toggleExtensionsView();
+            expect(leftPanel.isExtensionsContainerVisible()).to.be.false;
+        });
+    });
+
+    describe('files view UI', () => {
+        it('should start with files view not visible', () => {
+            expect(leftPanel.isFileTreeVisible()).to.be.false;
+        });
+        it('files view should toggle-on then toggle-off', () => {
+            if (!leftPanel.isFileTreeVisible()) {
+                topPanel.toggleFilesView();
+                leftPanel.waitForFilesView();
+            }
+            expect(leftPanel.isFileTreeVisible()).to.be.true;
+            topPanel.toggleFilesView();
+            expect(leftPanel.isFileTreeVisible()).to.be.false;
+        });
+    });
+
+    describe('git view UI', () => {
+        // re-enable if/when we reset workbench layout between tests
+        // it('should start with git view not visible', () => {
+        //     expect(leftPanel.isGitContainerVisible()).to.be.false;
+        // });
+        it('git view should toggle-on then toggle-off', () => {
+            if (!leftPanel.isGitContainerVisible()) {
+                topPanel.toggleGitView();
+                leftPanel.waitForGitView();
+            }
+            expect(leftPanel.isGitContainerVisible()).to.be.true;
+            topPanel.toggleGitView();
+            expect(leftPanel.isGitContainerVisible()).to.be.false;
+        });
+    });
+
+    describe('git history view UI', () => {
+        it('should start with git history view not visible', () => {
+            expect(leftPanel.isGitHistoryContainerVisible()).to.be.false;
+        });
+
+        // note: skipping since git history view does not toggle ATM
+        // see: https://github.com/theia-ide/theia/issues/1727
+        it.skip('git history view should toggle-on then toggle-off', () => {
+            if (!leftPanel.isGitHistoryContainerVisible()) {
+                topPanel.toggleGitHistoryView();
+                leftPanel.waitForGitHistoryView();
+            }
+            expect(leftPanel.isGitHistoryContainerVisible()).to.be.true;
+            topPanel.toggleGitHistoryView();
+            expect(leftPanel.isGitHistoryContainerVisible()).to.be.false;
+        });
+    });
+
+    describe('outline view UI', () => {
+        const tabName = "Outline";
+        it('should start with outline view tab already created', () => {
+            expect(rightPanel.doesTabExist(tabName)).to.be.true;
+        });
+        it('should start with outline view not visible', () => {
+            expect(rightPanel.isOutlineViewVisible()).to.be.false;
+        });
+        it('should start with outline view tab not active', () => {
+            expect(rightPanel.isTabActive(tabName)).to.be.false;
+        });
+        it('outline view should toggle-on then toggle-off', () => {
+            if (!rightPanel.isOutlineViewVisible()) {
+                topPanel.toggleOutlineView();
+                rightPanel.waitForOutlineView();
+            }
+            expect(rightPanel.isOutlineViewVisible()).to.be.true;
+
+            topPanel.toggleOutlineView();
+            expect(rightPanel.isOutlineViewVisible()).to.be.false;
+        });
+    });
+
+    describe('output view UI', () => {
+        it('should start with output view not visible', () => {
+            expect(leftPanel.isFileTreeVisible()).to.be.false;
+        });
+        it('output view should toggle-on then toggle-off', () => {
+            if (!bottomPanel.isOutputViewVisible()) {
+                topPanel.toggleOutputView();
+                bottomPanel.waitForOutputView();
+            }
+            expect(bottomPanel.isOutputViewVisible()).to.be.true;
+            topPanel.toggleOutputView();
+            expect(bottomPanel.isOutputViewVisible()).to.be.false;
+        });
+    });
+
+    describe('plugins view UI', () => {
+        it('should start with plugins view not visible', () => {
+            expect(leftPanel.isFileTreeVisible()).to.be.false;
+        });
+        it('plugins view should toggle-on then toggle-off', () => {
+            if (!bottomPanel.isOutputViewVisible()) {
+                topPanel.toggleOutputView();
+                bottomPanel.waitForOutputView();
+            }
+            expect(bottomPanel.isOutputViewVisible()).to.be.true;
+            topPanel.toggleOutputView();
+            expect(bottomPanel.isOutputViewVisible()).to.be.false;
+        });
+    });
+
     describe('problems view UI', () => {
         it('should open a new problems view and then close it', () => {
             if (!bottomPanel.isProblemsViewVisible()) {
@@ -105,4 +243,20 @@ describe('theia top panel (menubar)', () => {
             expect(bottomPanel.isProblemsViewVisible()).to.be.false;
         });
     });
+
+    describe('search view UI', () => {
+        it('should start with search view not visible', () => {
+            expect(leftPanel.isSearchViewVisible()).to.be.false;
+        });
+        it('search view should toggle-on then toggle-off', () => {
+            if (!leftPanel.isSearchViewVisible()) {
+                topPanel.toggleSearchView();
+                leftPanel.waitForSearchView();
+            }
+            expect(leftPanel.isSearchViewVisible()).to.be.true;
+            topPanel.toggleSearchView();
+            expect(leftPanel.isSearchViewVisible()).to.be.false;
+        });
+    });
+
 });

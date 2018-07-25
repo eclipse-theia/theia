@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2017-2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -42,13 +42,66 @@ export class LeftPanel {
     }
 
     isFileTreeVisible(): boolean {
-        return (this.driver.element('#files').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
-            && this.isPanelVisible();
+        return (this.driver.isExisting('#files') && this.driver.element('#files').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
+            && this.isPanelVisible());
+    }
+
+    waitForFilesView(): void {
+        this.driver.waitForExist('#files');
+        // Wait for animations to finish
+        this.driver.pause(300);
     }
 
     isGitContainerVisible(): boolean {
-        return (this.driver.element('#theia-gitContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
-            && this.isPanelVisible();
+        return (this.driver.isExisting('#theia-gitContainer') && this.driver.element('#theia-gitContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
+            && this.isPanelVisible());
+    }
+
+    waitForGitView(): void {
+        this.driver.waitForExist('#theia-gitContainer');
+        // Wait for animations to finish
+        this.driver.pause(300);
+    }
+
+    isExtensionsContainerVisible(): boolean {
+        return this.driver.isExisting('#extensions') && (this.driver.element('#extensions').getAttribute('class').split(' ').indexOf('theia-extensions') !== -1);
+    }
+
+    waitForExtensionsView(): void {
+        this.driver.waitForExist('#extensions');
+        // Wait for animations to finish
+        this.driver.pause(300);
+    }
+
+    isGitHistoryContainerVisible(): boolean {
+        return (this.driver.isExisting('#git-history') && this.driver.element('#git-history').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
+            && this.isPanelVisible());
+    }
+
+    waitForGitHistoryView(): void {
+        this.driver.waitForExist('#git-history');
+        // Wait for animations to finish
+        this.driver.pause(300);
+    }
+
+    isPluginsViewVisible(): boolean {
+        return this.driver.isExisting('.p-Widget div.theia-output') && this.driver.element('#plugins').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
+    }
+
+    waitForPluginsView(): void {
+        this.driver.waitForExist('#plugins');
+        // Wait for animations to finish
+        this.driver.pause(300);
+    }
+
+    isSearchViewVisible(): boolean {
+        return this.driver.isExisting('#search-in-workspace') && this.driver.element('#search-in-workspace').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
+    }
+
+    waitForSearchView(): void {
+        this.driver.waitForExist('#search-in-workspace');
+        // Wait for animations to finish
+        this.driver.pause(300);
     }
 
     protected isPanelVisible(): boolean {

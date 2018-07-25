@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2017-2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -29,9 +29,54 @@ export class TopPanel {
         this.clickSubMenu('Open New Terminal');
     }
 
+    toggleCallHierarchyView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Call Hierarchy');
+    }
+
+    toggleExtensionsView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Extensions');
+    }
+
+    toggleFilesView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Files');
+    }
+
+    toggleGitView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Git');
+    }
+
+    toggleGitHistoryView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Git History');
+    }
+
+    toggleOutlineView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Outline');
+    }
+
+    toggleOutputView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Output');
+    }
+
+    openPluginsView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Plugins');
+    }
+
     openProblemsView() {
         this.clickMenuTab('View');
         this.clickSubMenu('Problems');
+    }
+
+    toggleSearchView() {
+        this.clickMenuTab('View');
+        this.clickSubMenu('Search');
     }
 
     waitForSubMenu(): void {
