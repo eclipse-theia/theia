@@ -25,7 +25,7 @@ export enum MessageType {
     Info = 'info'
 }
 
-const NOTIFICATION = 'theia-Notification';
+const NOTIFICATION = 'modal-Notification';
 const ICON = 'icon';
 const TEXT = 'text';
 
