@@ -65,7 +65,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
         const interfaceParams: DidChangeConfigurationParams = {
             settings: {
-                compilationDatabasePath: config ? config.directory : undefined,
+                compilationDatabasePath: config ? config.directory : "",
             },
         };
 
