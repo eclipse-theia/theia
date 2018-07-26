@@ -1,3 +1,4 @@
+--require ignore-styles
 --require ts-node/register
 --require reflect-metadata/Reflect
 --reporter spec

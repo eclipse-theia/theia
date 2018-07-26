@@ -23,6 +23,7 @@
     "chai-string": "^1.4.0",
     "concurrently": "^3.5.0",
     "electron-mocha": "~3.5.0",
+    "ignore-styles": "^5.0.1",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.0",
     "jsdom": "^11.5.1",
