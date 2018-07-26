@@ -16,27 +16,41 @@
 
 import { injectable, inject } from "inversify";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
-import { ErrorAction } from "vscode-base-languageclient/lib/base";
+import { CommandRegistry, Disposable } from "@theia/core/lib/common";
+import { ErrorAction } from "monaco-languageclient";
 import {
-    Workspace, Languages, Window,
-    ILanguageClient, LanguageClientOptions, BaseLanguageClient,
+    Workspace, Languages, Window, Services,
+    ILanguageClient, LanguageClientOptions, MonacoLanguageClient,
     createConnection, ConnectionErrorHandler, ConnectionCloseHandler, LanguageContribution
-} from '../common';
+} from './language-client-services';
 
 @injectable()
 export class LanguageClientFactory {
+
+    @inject(CommandRegistry) protected readonly registry: CommandRegistry;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
         @inject(Window) protected readonly window: Window,
         @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider
-    ) { }
+    ) {
+        Services.install({
+            workspace,
+            languages,
+            window,
+            commands: {
+                registerCommand: this.registerCommand.bind(this)
+            }
+        });
+    }
+
+    protected registerCommand(id: string, callback: (...args: any[]) => any, thisArg?: any): Disposable {
+        const execute = callback.bind(thisArg);
+        return this.registry.registerCommand({ id }, { execute });
+    }
 
     get(contribution: LanguageContribution, clientOptions: LanguageClientOptions): ILanguageClient {
-        const { workspace, languages, window } = this;
-        const commands = clientOptions.commands;
-        const services = { workspace, languages, commands, window };
         if (!clientOptions.errorHandler) {
             clientOptions.errorHandler = {
                 // ignore connection errors
@@ -44,10 +58,9 @@ export class LanguageClientFactory {
                 closed: () => defaultErrorHandler.closed()
             };
         }
-        const client = new BaseLanguageClient({
+        const client = new MonacoLanguageClient({
             name: contribution.name,
             clientOptions,
-            services,
             connectionProvider: {
                 get: (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) =>
                     new Promise(resolve => {

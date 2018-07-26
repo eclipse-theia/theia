@@ -17,7 +17,8 @@
 import { ContainerModule } from "inversify";
 import { bindContributionProvider, CommandContribution } from '@theia/core/lib/common';
 import { FrontendApplicationContribution, KeybindingContribution } from "@theia/core/lib/browser";
-import { Window, WindowImpl } from '../common';
+import { Window } from './language-client-services';
+import { WindowImpl } from './window-impl';
 import { LanguageClientFactory } from './language-client-factory';
 import { LanguagesFrontendContribution } from './languages-frontend-contribution';
 import { LanguageClientContribution } from "./language-client-contribution";

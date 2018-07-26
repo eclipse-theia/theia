@@ -46,3 +46,13 @@ export function notEmpty<T>(arg: T | undefined | null): arg is T {
 export function isEmpty(arg: Object): boolean {
     return Object.keys(arg).length === 0 && arg.constructor === Object;
 }
+
+export function* getAllOwnPropertyNames(arg: Object): IterableIterator<string> {
+    let obj = arg;
+    while (obj) {
+        for (const prop of Object.getOwnPropertyNames(obj)) {
+            yield prop;
+        }
+        obj = Object.getPrototypeOf(obj);
+    }
+}

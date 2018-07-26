@@ -7,8 +7,7 @@
     "@theia/output": "^0.3.12",
     "@theia/process": "^0.3.12",
     "@theia/workspace": "^0.3.12",
-    "vscode-base-languageclient": "^0.0.1-alpha.5",
-    "vscode-languageserver-protocol": "^3.6.0"
+    "monaco-languageclient": "0.7.0-next.3"
   },
   "publishConfig": {
     "access": "public"
@@ -50,4 +49,3 @@
     "extends": "../../configs/nyc.json"
   }
 }
-

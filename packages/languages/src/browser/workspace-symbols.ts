@@ -15,12 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { Languages } from '../common';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
     QuickOpenMode, KeybindingContribution, KeybindingRegistry
 } from '@theia/core/lib/browser';
-import { WorkspaceSymbolParams, SymbolInformation } from 'vscode-base-languageclient/lib/base';
+import { Languages, WorkspaceSymbolParams, SymbolInformation } from './language-client-services';
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { CommandContribution } from '@theia/core/lib/common';

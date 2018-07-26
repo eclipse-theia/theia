@@ -63,9 +63,15 @@
     "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --skip-git --force-publish",
     "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes"
   },
-  "workspaces": [
-    "dev-packages/*",
-    "packages/*",
-    "examples/*"
-  ]
+  "workspaces": {
+    "packages": [
+      "dev-packages/*",
+      "packages/*",
+      "examples/*"
+    ],
+    "nohoist": [
+      "**/vscode-languageserver/**/vscode-languageserver-protocol",
+      "**/vscode-languageserver/**/vscode-languageserver-types"
+    ]
+  }
 }

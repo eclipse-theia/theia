@@ -16,6 +16,7 @@
 
 import { MessageConnection, ResponseError } from "vscode-jsonrpc";
 import { Event, Emitter } from "../event";
+import { getAllOwnPropertyNames } from "../objects";
 import { Disposable } from "../disposable";
 import { ConnectionHandler } from './handler';
 
@@ -128,7 +129,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      */
     listen(connection: MessageConnection) {
         if (this.target) {
-            for (const prop in this.target) {
+            for (const prop of getAllOwnPropertyNames(this.target)) {
                 if (typeof this.target[prop] === 'function') {
                     connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
                     connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));

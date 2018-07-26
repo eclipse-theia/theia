@@ -20,7 +20,7 @@ import {
     LanguageClientOptions,
     ILanguageClient
 } from '@theia/languages/lib/browser';
-import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from "@theia/languages/lib/common";
+import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from "@theia/languages/lib/browser";
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';

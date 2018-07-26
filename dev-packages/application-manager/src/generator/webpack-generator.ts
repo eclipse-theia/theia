@@ -125,7 +125,8 @@ module.exports = {
     resolve: {
         extensions: ['.js']${this.ifMonaco(() => `,
         alias: {
-            'vs': path.resolve(outputPath, monacoEditorCorePath)
+            'vs': path.resolve(outputPath, monacoEditorCorePath),
+            'vscode': require.resolve('monaco-languageclient/lib/vscode-compatibility')
         }`)}
     },
     devtool: 'source-map',

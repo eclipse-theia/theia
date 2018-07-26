@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { CodeLensProvider, CodeLensParams, CodeLens, CancellationToken } from '@theia/languages/lib/common';
+import { CodeLensProvider, CodeLensParams, CodeLens, CancellationToken } from '@theia/languages/lib/browser';
 import { MergeConflictsProvider } from './merge-conflicts-provider';
 import { MergeConflict, MergeConflictsCommands as Commands, MergeConflictCommandArgument } from './merge-conflict';
 

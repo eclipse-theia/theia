@@ -24,7 +24,7 @@ import { bindOutputPreferences } from "../common/output-preferences";
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindOutputPreferences(bind);
     bind(OutputWidget).toSelf();
-    bind(OutputChannelManager).to(OutputChannelManager).inSingletonScope();
+    bind(OutputChannelManager).toSelf().inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(context => ({
         id: OUTPUT_WIDGET_KIND,
