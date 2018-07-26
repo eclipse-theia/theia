@@ -44,9 +44,8 @@ export class ActiveLineDecorator extends EditorDecorator {
         super();
     }
 
-    applyDecorations(editor?: TextEditor): void {
-        const editors = editor ? [editor] : this.editorManager.all.map(widget => widget.editor);
-        editors.forEach(e => this.setDecorations(e, []));
+    applyDecorations(): void {
+        this.editorManager.all.map(widget => this.setDecorations(widget.editor, []));
 
         const session = this.debugSessionManager.getActiveDebugSession();
         if (!session) {
@@ -61,18 +60,11 @@ export class ActiveLineDecorator extends EditorDecorator {
                 }
 
                 const uri = DebugUtils.toUri(frame.source);
-
-                if (editor) {
-                    if (editor.uri.toString() === uri.toString()) {
-                        this.doShow(editor, frame);
+                this.editorManager.getByUri(uri).then(widget => {
+                    if (widget) {
+                        this.doShow(widget.editor, frame);
                     }
-                } else {
-                    this.editorManager.getByUri(uri).then(widget => {
-                        if (widget) {
-                            this.doShow(widget.editor, frame);
-                        }
-                    });
-                }
+                });
             });
         }
     }

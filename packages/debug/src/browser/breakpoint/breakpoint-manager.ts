@@ -75,7 +75,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
         const id = DebugUtils.makeBreakpointId(srcBreakpoint);
 
         return this.storage.exists(id)
-            .then(exists => exists ? this.storage.delete(srcBreakpoint) : this.storage.set(srcBreakpoint))
+            .then(exists => exists ? this.storage.delete(srcBreakpoint) : this.storage.add(srcBreakpoint))
             .then(() => {
                 if (debugSession) {
                     const source = DebugUtils.toSource(editor.uri, debugSession);
@@ -137,7 +137,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 b.created = undefined;
                 return b;
             }))
-            .then(breakpoints => this.storage.set(breakpoints))
+            .then(breakpoints => this.storage.update(breakpoints))
             .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
     }
 
@@ -156,7 +156,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 b.sessionId = undefined;
                 return b;
             }))
-            .then(breakpoints => this.storage.set(breakpoints))
+            .then(breakpoints => this.storage.update(breakpoints))
             .then(() => {
                 this.breakpointDecorator.applyDecorations();
                 this.onDidChangeBreakpointsEmitter.fire(undefined);
@@ -194,9 +194,9 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                     case 'changed': {
                         if (sourceBreakpoint) {
                             sourceBreakpoint.created = breakpoint;
-                            return this.storage.set(sourceBreakpoint);
+                            return this.storage.update(sourceBreakpoint);
                         } else {
-                            return this.storage.set({
+                            return this.storage.update({
                                 sessionId: debugSession.sessionId,
                                 source: breakpoint.source,
                                 created: breakpoint,
@@ -241,7 +241,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                         debugSession.stacks(args).then(response => {
                             const frame = response.body.stackFrames[0];
                             if (frame) {
-                                this.sourceOpener.open(frame).then(widget => this.lineDecorator.applyDecorations(widget.editor));
+                                this.sourceOpener.open(frame).then(widget => this.lineDecorator.applyDecorations());
                             }
                         });
                     }
@@ -252,7 +252,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     }
 
     private async onEditorCreated(editor: TextEditor): Promise<void> {
-        this.lineDecorator.applyDecorations(editor);
+        this.lineDecorator.applyDecorations();
         this.breakpointDecorator.applyDecorations(editor);
 
         editor.onMouseDown(event => {

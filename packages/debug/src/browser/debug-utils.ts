@@ -32,7 +32,8 @@ export class SourceOpener {
         }
 
         const uri = DebugUtils.toUri(frame.source);
-        return this.editorManager.getByUri(uri).then(widget => widget ? widget : this.editorManager.open(uri, this.toEditorOpenerOption(frame)));
+        return this.editorManager.open(uri, this.toEditorOpenerOption(frame));
+        // return this.editorManager.getByUri(uri).then(widget => widget ? widget : this.editorManager.open(uri, this.toEditorOpenerOption(frame)));
     }
 
     private toEditorOpenerOption(frame: DebugProtocol.StackFrame): EditorOpenerOptions {
@@ -120,13 +121,13 @@ export namespace DebugUtils {
      * @returns an [uri](#URI) referring to the source
      */
     export function toUri(source: DebugProtocol.Source): URI {
-        if (source.path) {
-            return new URI().withScheme('file').withPath(source.path);
-        }
-
         if (source.sourceReference && source.sourceReference > 0) {
             // Every source returned from the debug adapter has a name
             return new URI().withScheme('dap').withPath(source.name!).withQuery(source.sourceReference.toString());
+        }
+
+        if (source.path) {
+            return new URI().withScheme('file').withPath(source.path);
         }
 
         throw new Error('Unrecognized source type: ' + JSON.stringify(source));
