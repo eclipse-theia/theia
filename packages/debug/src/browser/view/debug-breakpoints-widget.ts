@@ -20,7 +20,7 @@ import {
 import { DebugSession } from "../debug-model";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event, Disposable } from "@theia/core";
+import { Emitter, Event } from "@theia/core";
 import { injectable, inject, postConstruct } from "inversify";
 import { BreakpointsManager } from "../breakpoint/breakpoint-manager";
 import { ExtDebugProtocol } from "../../common/debug-common";
@@ -136,11 +136,12 @@ export class BreakpointsDialog extends AbstractDialog<void> {
 
     protected onAfterAttach(msg: Message): void {
         Widget.attach(this.breakpointsWidget, this.contentNode);
-        this.toDisposeOnDetach.push(Disposable.create(() => {
-            Widget.detach(this.breakpointsWidget);
-        }));
-
         super.onAfterAttach(msg);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        super.onBeforeDetach(msg);
+        Widget.detach(this.breakpointsWidget);
     }
 
     protected onUpdateRequest(msg: Message): void {

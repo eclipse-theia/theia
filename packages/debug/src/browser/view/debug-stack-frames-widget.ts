@@ -59,8 +59,9 @@ export class DebugStackFramesWidget extends VirtualWidget {
         const header = h.div({ className: "theia-header" }, "Call stack");
         const items: h.Child = [];
 
+        const selectedFrame = this.debugSelection.frame;
         for (const frame of this._frames) {
-            const className = Styles.FRAME + (DebugUtils.isEqual(this.debugSelection.frame, frame) ? ` ${SELECTED_CLASS}` : '');
+            const className = Styles.FRAME + (DebugUtils.isEqual(selectedFrame, frame) ? ` ${SELECTED_CLASS}` : '');
             const id = this.createId(frame);
 
             const item =
@@ -118,8 +119,8 @@ export class DebugStackFramesWidget extends VirtualWidget {
         const currentThread = this.debugSelection.thread;
         if (currentThread) {
             if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsContinued) {
-                this.frames = [];
                 this.selectFrame(undefined);
+                this.frames = [];
             }
         }
     }
@@ -134,15 +135,15 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     private updateFrames(threadId: number | undefined) {
-        this.frames = [];
         this.selectFrame(undefined);
+        this.frames = [];
 
         if (threadId) {
             const args: DebugProtocol.StackTraceArguments = { threadId };
             this.debugSession.stacks(args).then(response => {
                 if (DebugUtils.isEqual(this.debugSelection.thread, threadId)) { // still the same thread remains selected
+                    this.selectFrame(response.body.stackFrames[0]);
                     this.frames = response.body.stackFrames;
-                    this.selectFrame(this.frames[0]);
                 }
             });
         }

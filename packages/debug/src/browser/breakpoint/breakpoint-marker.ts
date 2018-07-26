@@ -14,12 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import { ExtDebugProtocol } from "../../common/debug-common";
 import { DebugUtils } from "../debug-utils";
 import { MarkerManager } from "@theia/markers/lib/browser/marker-manager";
-import { FileSystemWatcher } from "@theia/filesystem/lib/browser/filesystem-watcher";
-import { StorageService } from "@theia/core/lib/browser/storage-service";
 import URI from '@theia/core/lib/common/uri';
 import { Marker } from "@theia/markers/lib/common/marker";
 
@@ -38,29 +36,40 @@ export namespace BreakpointMarker {
 
 @injectable()
 export class BreakpointStorage extends MarkerManager<ExtDebugProtocol.AggregatedBreakpoint> {
-    constructor(
-        @inject(StorageService) protected readonly storageService: StorageService,
-        @inject(FileSystemWatcher) protected fileWatcher?: FileSystemWatcher) {
-        super(storageService, fileWatcher);
-    }
 
     public getKind(): string {
-        throw BREAKPOINT_KIND;
+        return BREAKPOINT_KIND;
     }
 
     /**
      * Updates an existed breakpoint.
      * @param breakpoint the breakpoint to update
      */
-    set(data: ExtDebugProtocol.AggregatedBreakpoint | ExtDebugProtocol.AggregatedBreakpoint[]): Promise<void> {
+    update(data: ExtDebugProtocol.AggregatedBreakpoint | ExtDebugProtocol.AggregatedBreakpoint[]): Promise<void> {
         const breakpoints = Array.isArray(data) ? data : [data];
 
-        return Promise.all(breakpoints.map(b => {
-            const uri = this.toUri(b);
-            const newBreakpoints = super.findMarkers({ uri }).map(m => m.data);
-            newBreakpoints.push(b);
-            return super.setMarkers(uri, BREAKPOINT_OWNER, newBreakpoints).then(() => { });
-        })).then(() => { });
+        breakpoints.map(breakpoint => {
+            const uri = this.toUri(breakpoint);
+            const id = DebugUtils.makeBreakpointId(breakpoint);
+
+            const newBreakpoints = super.findMarkers({ uri }).map(m => DebugUtils.makeBreakpointId(m.data) === id ? breakpoint : m.data);
+            super.setMarkers(uri, BREAKPOINT_OWNER, newBreakpoints);
+        });
+
+        return Promise.resolve();
+    }
+
+    /**
+     * Adds a given breakpoint.
+     * @param breakpoint the breakpoint to add
+     */
+    add(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): Promise<void> {
+        const uri = this.toUri(breakpoint);
+        const existedBreakpoints = super.findMarkers({ uri }).map(m => m.data);
+        existedBreakpoints.push(breakpoint);
+        super.setMarkers(uri, BREAKPOINT_OWNER, existedBreakpoints);
+
+        return Promise.resolve();
     }
 
     /**
@@ -73,7 +82,8 @@ export class BreakpointStorage extends MarkerManager<ExtDebugProtocol.Aggregated
         const id = DebugUtils.makeBreakpointId(breakpoint);
         const breakpoints = super.findMarkers({ uri, dataFilter: b => DebugUtils.makeBreakpointId(b) !== id }).map(m => m.data);
 
-        return super.setMarkers(uri, BREAKPOINT_OWNER, breakpoints).then(() => { });
+        super.setMarkers(uri, BREAKPOINT_OWNER, breakpoints);
+        return Promise.resolve();
     }
 
     /**

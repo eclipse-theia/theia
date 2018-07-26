@@ -52,7 +52,7 @@ export class BreakpointsApplier {
                                 }
                             }
                             return breakpointsBySource;
-                        }).then(result => this.storage.set(result)));
+                        }).then(result => this.storage.update(result)));
                 }
 
                 return Promise.all(promises);

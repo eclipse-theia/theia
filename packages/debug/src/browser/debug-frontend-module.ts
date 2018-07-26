@@ -51,9 +51,7 @@ import {
     DebugResourceResolver
 } from './debug-session';
 import {
-    DebugVariablesTree,
-    DebugVariablesWidget,
-    DebugVariableModel
+    DebugVariablesWidget, DebugVariableModel, DebugVariablesTree,
 } from './view/debug-variables-widget';
 import '../../src/browser/style/index.css';
 import { DebugThreadsWidget } from './view/debug-threads-widget';
@@ -145,8 +143,8 @@ function createDebugTargetContainer(context: interfaces.Context, debugSession: D
     child.bind(DebugVariablesTree).toSelf();
     child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(DebugVariablesTree));
 
+    child.unbind(TreeWidget);
     child.bind(DebugVariablesWidget).toSelf();
-    child.rebind(TreeWidget).toDynamicValue(ctx => ctx.container.get(DebugVariablesWidget));
 
     return child;
 }

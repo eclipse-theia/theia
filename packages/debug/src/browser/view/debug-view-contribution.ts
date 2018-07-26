@@ -23,7 +23,8 @@ import {
     SideTabBar,
     LEFT_RIGHT_AREA_CLASS,
     Widget,
-    Message
+    Message,
+    VirtualWidget,
 } from "@theia/core/lib/browser";
 import { DebugSessionManager } from "../debug-session";
 import { DebugSession } from "../debug-model";
@@ -73,21 +74,61 @@ export class DebugWidget extends Panel {
         });
     }
 
+    protected onAfterAttach(msg: Message): void {
+        Widget.attach(this.tabBar, this.node);
+        this.tabBar.titles.forEach(title => Widget.attach(title.owner, this.node));
+        super.onAfterAttach(msg);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        this.tabBar.titles.forEach(title => Widget.detach(title.owner));
+        Widget.detach(this.tabBar);
+        super.onBeforeDetach(msg);
+    }
+
     protected onActivateRequest(msg: Message) {
         super.onActivateRequest(msg);
+        const currentTitle = this.tabBar.currentTitle;
+        this.tabBar.update(); // to redraw to tab
+        if (currentTitle) {
+            currentTitle.owner.activate();
+        }
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
         this.tabBar.update();
+        const currentTitle = this.tabBar.currentTitle;
+        if (currentTitle) {
+            currentTitle.owner.update();
+        }
+    }
+
+    protected onTabCloseRequested(sender: SideTabBar, { title }: TabBar.ITabCloseRequestedArgs<DebugTargetWidget>): void {
+        const session = this.debugSessionManager.find(title.owner.sessionId);
+        if (session) {
+            session.disconnect();
+        }
+    }
+
+    protected onCurrentTabChanged(sender: SideTabBar, { previousTitle, currentTitle }: TabBar.ICurrentChangedArgs<DebugTargetWidget>): void {
+        if (previousTitle) {
+            previousTitle.owner.hide();
+        }
+
+        if (currentTitle) {
+            currentTitle.owner.show();
+            this.debugSessionManager.setActiveDebugSession(currentTitle.owner.sessionId);
+        }
     }
 
     private onDebugSessionCreated(debugSession: DebugSession): void {
-        const currentTitle = this.tabBar.currentTitle;
-        if (currentTitle) {
-            currentTitle.owner.hide();
-        }
-
         const widget = this.debugTargetWidgetFactory(debugSession);
+        if (this.isAttached) {
+            Widget.attach(widget, this.node);
+        }
         this.tabBar.addTab(widget.title);
         this.tabBar.currentTitle = widget.title;
-        this.node.appendChild(widget.node);
 
         debugSession.on("connected", () => {
             this.tabBar.titles
@@ -100,7 +141,7 @@ export class DebugWidget extends Panel {
         this.tabBar.titles
             .filter(title => (title.owner as DebugTargetWidget).sessionId === debugSession.sessionId)
             .forEach(title => {
-                this.node.removeChild(title.owner.node);
+                Widget.detach(title.owner);
                 this.tabBar.removeTab(title);
             });
     }
@@ -125,26 +166,7 @@ export class DebugWidget extends Panel {
         tabBar.addClass(LEFT_RIGHT_AREA_CLASS);
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         tabBar.tabCloseRequested.connect(this.onTabCloseRequested, this);
-        this.addWidget(tabBar);
         return tabBar;
-    }
-
-    protected onTabCloseRequested(sender: SideTabBar, { title }: TabBar.ITabCloseRequestedArgs<DebugTargetWidget>): void {
-        const session = this.debugSessionManager.find(title.owner.sessionId);
-        if (session) {
-            session.disconnect();
-        }
-    }
-
-    protected onCurrentTabChanged(sender: SideTabBar, { previousTitle, currentTitle }: TabBar.ICurrentChangedArgs<DebugTargetWidget>): void {
-        if (previousTitle) {
-            previousTitle.owner.hide();
-        }
-
-        if (currentTitle) {
-            currentTitle.owner.show();
-            this.debugSessionManager.setActiveDebugSession(currentTitle.owner.sessionId);
-        }
     }
 }
 
@@ -153,34 +175,44 @@ export class DebugWidget extends Panel {
  * for the rest of widgets for the specific debug target.
  */
 @injectable()
-export class DebugTargetWidget extends Widget {
+export class DebugTargetWidget extends VirtualWidget {
     readonly sessionId: string;
+    private readonly widgets: Widget[];
 
     constructor(
         @inject(DebugSession) protected readonly debugSession: DebugSession,
         @inject(DebugThreadsWidget) protected readonly threads: DebugThreadsWidget,
         @inject(DebugStackFramesWidget) protected readonly frames: DebugStackFramesWidget,
         @inject(DebugBreakpointsWidget) protected readonly breakpoints: DebugBreakpointsWidget,
-        @inject(DebugVariablesWidget) protected readonly variables: DebugVariablesWidget) {
+        @inject(DebugVariablesWidget) protected readonly variables: DebugVariablesWidget
+    ) {
         super();
 
         this.title.label = debugSession.configuration.name;
         this.title.closable = true;
         this.addClass(Styles.DEBUG_TARGET);
         this.sessionId = debugSession.sessionId;
-
-        this.node.appendChild(this.breakpoints.node);
-        this.node.appendChild(this.threads.node);
-        this.node.appendChild(this.frames.node);
-        this.node.appendChild(this.variables.node);
+        this.widgets = [this.breakpoints, this.threads, this.frames, this.variables];
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        this.threads.update();
-        this.frames.update();
-        this.breakpoints.update();
-        this.variables.update();
+        this.widgets.forEach(w => w.update());
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        this.widgets.forEach(w => Widget.attach(w, this.node));
+        super.onAfterAttach(msg);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        super.onBeforeDetach(msg);
+        this.widgets.forEach(w => Widget.detach(w));
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.widgets.forEach(w => w.activate());
     }
 }
 

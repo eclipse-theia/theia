@@ -16,26 +16,25 @@
 
 import {
     TreeWidget,
-    TreeImpl,
     ContextMenuRenderer,
     TreeModel,
-    CompositeTreeNode,
-    SelectableTreeNode,
-    ExpandableTreeNode,
     TreeNode,
     NodeProps,
     TreeProps,
-    TreeModelImpl
+    SelectableTreeNode,
+    ExpandableTreeNode,
+    CompositeTreeNode,
+    TreeModelImpl,
+    TreeImpl,
 } from "@theia/core/lib/browser";
-import { h } from '@phosphor/virtualdom';
 import { injectable, inject, postConstruct } from "inversify";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { MenuModelRegistry } from "@theia/core/lib/common/menu";
 import { CommandRegistry } from "@theia/core";
 import { DebugSession } from "../debug-model";
-import { DebugSelection } from "./debug-selection-service";
+import { DebugSelection } from "../view/debug-selection-service";
 import { ExtDebugProtocol } from "../../common/debug-common";
-import React = require("react");
+import * as React from "react";
 
 /**
  * Is it used to display variables.
@@ -73,26 +72,25 @@ export class DebugVariablesWidget extends TreeWidget {
         this.model.refresh(variableNode);
     }
 
-    protected render(): React.ReactNode {
-        const header = h.div({ className: "theia-header" }, "Variables");
-        return React.createElement('div', [header, super.render()]);
+    protected renderTree(model: TreeModel): React.ReactNode {
+        return <div><div className='theia-header'>Variables</div>{super.renderTree(model)}</div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (VariableNode.is(node)) {
-            return this.decorateVariableCaption(node.extVariable);
+            return this.decorateVariableCaption(node);
         } else if (ScopeNode.is(node)) {
-            return this.decorateScopeCaption(node.scope);
+            return this.decorateScopeCaption(node);
         }
         return super.renderCaption(node, props);
     }
 
-    protected decorateVariableCaption(variable: DebugProtocol.Variable): h.Child {
-        return h.div(`${variable.name} = ${variable.value}`);
+    protected decorateVariableCaption(node: VariableNode): React.ReactNode {
+        return <div>{node.extVariable.name} = {node.extVariable.value}</div>;
     }
 
-    protected decorateScopeCaption(scope: DebugProtocol.Scope): h.Child {
-        return h.div(scope.name);
+    protected decorateScopeCaption(node: ScopeNode): React.ReactNode {
+        return <div>{node.scope.name}</div>;
     }
 }
 
@@ -165,6 +163,7 @@ export class DebugVariablesTree extends TreeImpl {
         }
 
         return super.resolveChildren(parent);
+
     }
 }
 
@@ -176,7 +175,7 @@ export interface ScopeNode extends SelectableTreeNode, ExpandableTreeNode, Compo
     scope: DebugProtocol.Scope;
 }
 
-export interface FrameNode extends ExpandableTreeNode, CompositeTreeNode {
+export interface FrameNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode {
     frameId: number | undefined;
 }
 
@@ -185,10 +184,10 @@ namespace VariableNode {
         return !!node && 'extVariable' in node;
     }
 
-    export function create(sessionId: string, extVariable: ExtDebugProtocol.Variable, parent?: TreeNode): VariableNode {
+    export function create(sessionId: string, extVariable: ExtDebugProtocol.Variable, parent: CompositeTreeNode | undefined): VariableNode {
         const name = extVariable.name;
         const id = createId(sessionId, extVariable.name, extVariable.parentVariablesReference);
-        return <VariableNode>{
+        return {
             id, extVariable, name, parent,
             visible: true,
             expanded: false,
@@ -207,11 +206,11 @@ namespace ScopeNode {
         return !!node && 'scope' in node;
     }
 
-    export function create(sessionId: string, scope: DebugProtocol.Scope, parent?: TreeNode): ScopeNode {
+    export function create(sessionId: string, scope: DebugProtocol.Scope, parent: CompositeTreeNode | undefined): ScopeNode {
         const name = scope.name;
         const id = getId(sessionId, scope.name);
-        return <ScopeNode>{
-            id, scope, name, parent,
+        return {
+            id, name, parent, scope,
             visible: true,
             expanded: false,
             selected: false,
@@ -229,10 +228,11 @@ namespace FrameNode {
         return !!node && 'frameId' in node;
     }
 
-    export function create(sessionId: string, frameId: number, parent?: TreeNode): FrameNode {
+    export function create(sessionId: string, frameId: number): FrameNode {
         const id = createId(sessionId, `frame-${frameId}`);
-        return <FrameNode>{
-            id, frameId, parent,
+        return {
+            id, frameId,
+            parent: undefined,
             name: 'Debug variable',
             visible: false,
             expanded: true,
