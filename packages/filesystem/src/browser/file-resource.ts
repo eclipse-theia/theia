@@ -16,7 +16,7 @@
 
 import { injectable, inject } from "inversify";
 import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
-import { Resource, ResourceResolver, Emitter, Event, DisposableCollection } from "@theia/core";
+import { Resource, ResourceResolver, Emitter, Event, DisposableCollection, ResourceContentOptions } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
 import { FileSystem, FileStat } from "../common/filesystem";
 import { FileSystemWatcher } from "./filesystem-watcher";
@@ -57,13 +57,13 @@ export class FileResource implements Resource {
         this.toDispose.dispose();
     }
 
-    async readContents(options?: { encoding?: string }): Promise<string> {
+    async readContents(options?: ResourceContentOptions): Promise<string> {
         const { stat, content } = await this.fileSystem.resolveContent(this.uriString, options);
         this.stat = stat;
         return content;
     }
 
-    async saveContents(content: string, options?: { encoding?: string }): Promise<void> {
+    async saveContents(content: string, options?: ResourceContentOptions): Promise<void> {
         this.stat = await this.doSaveContents(content, options);
     }
     protected async doSaveContents(content: string, options?: { encoding?: string }): Promise<FileStat> {
@@ -74,7 +74,7 @@ export class FileResource implements Resource {
         return this.fileSystem.createFile(this.uriString, { content, ...options });
     }
 
-    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<void> {
+    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: ResourceContentOptions): Promise<void> {
         if (!this.stat) {
             throw new Error(this.uriString + ' has not been read yet');
         }

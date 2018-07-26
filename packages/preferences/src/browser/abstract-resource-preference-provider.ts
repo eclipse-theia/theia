@@ -66,7 +66,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     async setPreference(key: string, value: any): Promise<void> {
         const resource = await this.resource;
         if (resource.saveContents) {
-            const content = await resource.readContents();
+            const content = await resource.readContents({ silent: true });
             const formattingOptions = { tabSize: 3, insertSpaces: true, eol: '' };
             const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
             const result = jsoncparser.applyEdits(content, edits);
@@ -86,7 +86,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async readContents(): Promise<string> {
         try {
             const resource = await this.resource;
-            return await resource.readContents();
+            return await resource.readContents({ silent: true });
         } catch {
             return '';
         }

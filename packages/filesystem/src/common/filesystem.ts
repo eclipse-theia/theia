@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
-import { JsonRpcServer } from '@theia/core/lib/common';
+import { JsonRpcServer, ResourceContentOptions } from '@theia/core/lib/common';
 
 export const fileSystemPath = '/services/filesystem';
 
@@ -40,17 +40,17 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
     /**
      * Resolve the contents of a file identified by the resource.
      */
-    resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }>;
+    resolveContent(uri: string, options?: ResourceContentOptions): Promise<{ stat: FileStat, content: string }>;
 
     /**
      * Updates the content replacing its previous value.
      */
-    setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat>;
+    setContent(file: FileStat, content: string, options?: ResourceContentOptions): Promise<FileStat>;
 
     /**
      * Updates the content replacing its previous value.
      */
-    updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat>;
+    updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: ResourceContentOptions): Promise<FileStat>;
 
     /**
      * Moves the file to a new path identified by the resource.

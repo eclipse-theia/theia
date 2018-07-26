@@ -159,9 +159,11 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
             if (e instanceof ResponseError) {
                 throw e;
             }
-            const reason = e.message || '';
-            const stack = e.stack || '';
-            console.error(`Request ${method} failed with error: ${reason}`, stack);
+            if (!e.silent) {
+                const reason = e.message || '';
+                const stack = e.stack || '';
+                console.error(`Request ${method} failed with error: ${reason}`, stack);
+            }
             throw e;
         }
     }

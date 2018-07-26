@@ -24,6 +24,7 @@ import { injectable, inject, optional } from 'inversify';
 import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { SilenceableError, ResourceContentOptions } from '@theia/core/lib/common';
 import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
 
 @injectable()
@@ -65,28 +66,28 @@ export class FileSystemNode implements FileSystem {
         return fs.pathExists(FileUri.fsPath(new URI(uri)));
     }
 
-    async resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }> {
+    async resolveContent(uri: string, options?: ResourceContentOptions): Promise<{ stat: FileStat, content: string }> {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${uri}.`);
+            throw new FileSystemError(`Cannot find file under the given URI. URI: ${uri}.`, options);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot resolve the content of a directory. URI: ${uri}.`);
+            throw new FileSystemError(`Cannot resolve the content of a directory. URI: ${uri}.`, options);
         }
         const encoding = await this.doGetEncoding(options);
         const content = await fs.readFile(FileUri.fsPath(_uri), { encoding });
         return { stat, content };
     }
 
-    async setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat> {
+    async setContent(file: FileStat, content: string, options?: ResourceContentOptions): Promise<FileStat> {
         const _uri = new URI(file.uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${file.uri}.`);
+            throw new FileSystemError(`Cannot find file under the given URI. URI: ${file.uri}.`, options);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
+            throw new FileSystemError(`Cannot set the content of a directory. URI: ${file.uri}.`, options);
         }
         if (!(await this.isInSync(file, stat))) {
             throw this.createOutOfSyncError(file, stat);
@@ -97,17 +98,17 @@ export class FileSystemNode implements FileSystem {
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
+        throw new FileSystemError(`Error occurred while writing file content. The file does not exist under ${file.uri}.`, options);
     }
 
-    async updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat> {
+    async updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: ResourceContentOptions): Promise<FileStat> {
         const _uri = new URI(file.uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${file.uri}.`);
+            throw new FileSystemError(`Cannot find file under the given URI. URI: ${file.uri}.`, options);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
+            throw new FileSystemError(`Cannot set the content of a directory. URI: ${file.uri}.`, options);
         }
         if (!this.checkInSync(file, stat)) {
             throw this.createOutOfSyncError(file, stat);
@@ -123,7 +124,7 @@ export class FileSystemNode implements FileSystem {
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
+        throw new FileSystemError(`Error occurred while writing file content. The file does not exist under ${file.uri}.`, options);
     }
     protected applyContentChanges(content: string, contentChanges: TextDocumentContentChangeEvent[]): string {
         let document = TextDocument.create('', '', 1, content);
@@ -436,4 +437,11 @@ function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.E
 
 function notEmpty<T>(value: T | undefined): value is T {
     return value !== undefined;
+}
+
+class FileSystemError extends SilenceableError {
+    constructor(
+        message?: string,
+        options?: ResourceContentOptions,
+    ) { super(message, options && options.silent); }
 }
