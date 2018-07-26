@@ -58,6 +58,10 @@ export class FileResource implements Resource {
     }
 
     async readContents(options?: { encoding?: string }): Promise<string> {
+        const fileStat = await this.getFileStat();
+        if (!fileStat) {
+            throw new Error(`Resource for URI ${this.uriString} does not exist`);
+        }
         const { stat, content } = await this.fileSystem.resolveContent(this.uriString, options);
         this.stat = stat;
         return content;
