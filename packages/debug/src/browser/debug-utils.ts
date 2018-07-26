@@ -33,7 +33,6 @@ export class SourceOpener {
 
         const uri = DebugUtils.toUri(frame.source);
         return this.editorManager.open(uri, this.toEditorOpenerOption(frame));
-        // return this.editorManager.getByUri(uri).then(widget => widget ? widget : this.editorManager.open(uri, this.toEditorOpenerOption(frame)));
     }
 
     private toEditorOpenerOption(frame: DebugProtocol.StackFrame): EditorOpenerOptions {
