@@ -31,7 +31,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     }
 
     protected changeTheme(editorTheme: string | undefined) {
-        const monacoTheme = editorTheme || this.themeService.defaultTheme;
+        const monacoTheme = editorTheme || this.themeService.defaultTheme.id;
         monaco.editor.setTheme(monacoTheme);
         document.body.classList.add(monacoTheme);
     }

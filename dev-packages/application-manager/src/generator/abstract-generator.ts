@@ -76,4 +76,9 @@ export abstract class AbstractGenerator {
         return (this.pck.extensionPackages.some(e => e.name === '@theia/monaco') ? value : defaultValue)();
     }
 
+    protected prettyStringify(object: object): string {
+        // tslint:disable-next-line:no-null-keyword
+        return JSON.stringify(object, null, 4);
+    }
+
 }

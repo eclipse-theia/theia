@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as yargs from 'yargs';
-import { ApplicationPackageTarget } from '@theia/application-package';
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
+import { ApplicationProps } from '@theia/application-package';
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
@@ -35,7 +35,7 @@ function commandArgs(arg: string): string[] {
     return restIndex !== -1 ? process.argv.slice(restIndex + 1) : [];
 }
 
-function rebuildCommand(command: string, target: ApplicationPackageTarget): yargs.CommandModule {
+function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule {
     return {
         command,
         describe: 'rebuild native node modules for the ' + target,
@@ -51,7 +51,7 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
     };
 }
 
-(function() {
+(function () {
     const projectPath = process.cwd();
     const manager = new ApplicationPackageManager({ projectPath });
     const target = manager.pck.target;

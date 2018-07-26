@@ -17,6 +17,7 @@
 // tslint:disable:no-any
 import * as request from 'request';
 const ChangesStream = require('changes-stream');
+import { NpmRegistryProps } from './application-props';
 
 export interface IChangeStream {
     on(event: 'data', cb: (change: { id: string }) => void): void;
@@ -77,17 +78,6 @@ export function sortByKey(object: { [key: string]: any }) {
     }, {} as { [key: string]: any });
 }
 
-export class NpmRegistryConfig {
-    /**
-     * Default: 'false'
-     */
-    readonly next: boolean;
-    /**
-     * Default: https://registry.npmjs.org/.
-     */
-    readonly registry: string;
-}
-
 export class NpmRegistryOptions {
     /**
      * Default: false.
@@ -97,12 +87,7 @@ export class NpmRegistryOptions {
 
 export class NpmRegistry {
 
-    static defaultConfig: NpmRegistryConfig = {
-        next: false,
-        registry: 'https://registry.npmjs.org/'
-    };
-
-    readonly config: NpmRegistryConfig = { ...NpmRegistry.defaultConfig };
+    readonly props: NpmRegistryProps = { ...NpmRegistryProps.DEFAULT };
     protected readonly options: NpmRegistryOptions;
 
     protected changes: undefined | IChangeStream;
@@ -116,17 +101,17 @@ export class NpmRegistry {
         this.resetIndex();
     }
 
-    updateConfig(config?: Partial<NpmRegistryConfig>) {
-        const oldRegistry = this.config.registry;
-        Object.assign(this.config, config);
-        const newRegistry = this.config.registry;
+    updateProps(props?: Partial<NpmRegistryProps>) {
+        const oldRegistry = this.props.registry;
+        Object.assign(this.props, props);
+        const newRegistry = this.props.registry;
         if (oldRegistry !== newRegistry) {
             this.resetIndex();
         }
     }
     protected resetIndex(): void {
         this.index.clear();
-        if (this.options.watchChanges && this.config.registry === NpmRegistry.defaultConfig.registry) {
+        if (this.options.watchChanges && this.props.registry === NpmRegistryProps.DEFAULT.registry) {
             if (this.changes) {
                 this.changes.destroy();
             }
@@ -155,7 +140,7 @@ export class NpmRegistry {
     }
 
     protected doView(name: string): Promise<ViewResult> {
-        let url = this.config.registry;
+        let url = this.props.registry;
         if (name[0] === '@') {
             url += '@' + encodeURIComponent(name.substr(1));
         } else {

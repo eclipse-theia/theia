@@ -17,15 +17,12 @@
 import * as fs from 'fs-extra';
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
-import { NpmRegistry, NpmRegistryConfig, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
+import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
+import { ApplicationProps } from './application-props';
 
-export type ApplicationPackageTarget = 'browser' | 'electron';
-export class ApplicationPackageConfig extends NpmRegistryConfig {
-    readonly target: ApplicationPackageTarget;
-}
-
+// tslint:disable-next-line:no-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
 export class ApplicationPackageOptions {
     readonly projectPath: string;
@@ -37,11 +34,6 @@ export class ApplicationPackageOptions {
 export type ApplicationModuleResolver = (modulePath: string) => string;
 
 export class ApplicationPackage {
-
-    static defaultConfig: ApplicationPackageConfig = {
-        ...NpmRegistry.defaultConfig,
-        target: 'browser'
-    };
 
     readonly projectPath: string;
     readonly log: ApplicationLog;
@@ -61,21 +53,21 @@ export class ApplicationPackage {
             return this._registry;
         }
         this._registry = this.options.registry || new NpmRegistry();
-        this._registry.updateConfig(this.config);
+        this._registry.updateProps(this.props);
         return this._registry;
     }
 
-    get target(): ApplicationPackageTarget {
-        return this.config.target;
+    get target(): ApplicationProps.Target {
+        return this.props.target;
     }
 
-    protected _config: ApplicationPackageConfig | undefined;
-    get config(): ApplicationPackageConfig {
-        if (this._config) {
-            return this._config;
+    protected _props: ApplicationProps | undefined;
+    get props(): ApplicationProps {
+        if (this._props) {
+            return this._props;
         }
         const theia = this.pck.theia || {};
-        return this._config = { ...ApplicationPackage.defaultConfig, ...theia };
+        return this._props = { ...ApplicationProps.DEFAULT, ...theia };
     }
 
     protected _pck: NodePackage | undefined;

@@ -195,14 +195,14 @@ export namespace RawExtensionPackage {
         ) { }
         get latestVersion(): string | undefined {
             if (this.tags) {
-                if (this.registry.config.next) {
+                if (this.registry.props.next) {
                     const next = this.tags['next'];
                     if (next !== undefined) {
                         return next;
                     }
                 }
                 const latest = this.tags['latest'];
-                if (this.registry.config.next || !semver.prerelease(latest)) {
+                if (this.registry.props.next || !semver.prerelease(latest)) {
                     return latest;
                 }
                 return undefined;
@@ -220,7 +220,7 @@ export namespace RawExtensionPackage {
         }
         const tags = result['dist-tags'];
         const versions = [tags['latest']];
-        if (registry.config.next) {
+        if (registry.props.next) {
             versions.push(tags['next']);
         }
         if (version) {
