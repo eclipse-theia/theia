@@ -36,6 +36,10 @@ export namespace DebugSessionContextMenu {
 export namespace DebugThreadContextMenu {
     export const RESUME_THREAD = [...DEBUG_SESSION_THREAD_CONTEXT_MENU, '2_resume'];
     export const SUSPEND_THREAD = [...RESUME_THREAD, '1_suspend'];
+
+    export const STEPOUT_THREAD = [...DEBUG_SESSION_THREAD_CONTEXT_MENU, '5_stepout'];
+    export const STEPIN_THREAD = [...STEPOUT_THREAD, '4_stepin'];
+    export const STEP_THREAD = [...STEPIN_THREAD, '3_next'];
 }
 
 export namespace DebugVariableContextMenu {
@@ -46,11 +50,17 @@ export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
     export const DEBUG_STOP = [...DEBUG, '2_stop'];
     export const DEBUG_START = [...DEBUG_STOP, '1_start'];
-    export const SUSPEND_ALL_THREADS = [...DEBUG, '6_suspend_all_threads'];
-    export const RESUME_ALL_THREADS = [...SUSPEND_ALL_THREADS, '5_resume_all_threads'];
-    export const SHOW_BREAKPOINTS = [...DEBUG, '7_breakpoinst'];
-    export const ADD_CONFIGURATION = [...DEBUG, '4_add_configuration'];
-    export const OPEN_CONFIGURATION = [...ADD_CONFIGURATION, '3_open_configuration'];
+
+    export const SUSPEND_ALL_THREADS = [...DEBUG, '4_suspend_all_threads'];
+    export const RESUME_ALL_THREADS = [...SUSPEND_ALL_THREADS, '3_resume_all_threads'];
+
+    export const STEPOUT_THREAD = [...DEBUG, '7_stepout'];
+    export const STEPIN_THREAD = [...STEPOUT_THREAD, '6_stepin'];
+    export const STEP_THREAD = [...STEPIN_THREAD, '5_next'];
+
+    export const ADD_CONFIGURATION = [...DEBUG, '9_add_configuration'];
+    export const OPEN_CONFIGURATION = [...ADD_CONFIGURATION, '8_open_configuration'];
+    export const SHOW_BREAKPOINTS = [...OPEN_CONFIGURATION, '10_breakpoinst'];
 }
 
 export namespace DEBUG_COMMANDS {
@@ -102,6 +112,21 @@ export namespace DEBUG_COMMANDS {
         id: 'debug.breakpoints.show',
         label: 'Breakpoints'
     };
+
+    export const STEP = {
+        id: 'debug.thread.next',
+        label: 'Step'
+    };
+
+    export const STEPIN = {
+        id: 'debug.thread.stepin',
+        label: 'Step in'
+    };
+
+    export const STEPOUT = {
+        id: 'debug.thread.stepout',
+        label: 'Step out'
+    };
 }
 
 @injectable()
@@ -130,6 +155,15 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         menus.registerMenuAction(DebugSessionContextMenu.STOP, {
             commandId: DEBUG_COMMANDS.STOP.id
         });
+        menus.registerMenuAction(DebugMenus.STEP_THREAD, {
+            commandId: DEBUG_COMMANDS.STEP.id
+        });
+        menus.registerMenuAction(DebugMenus.STEPIN_THREAD, {
+            commandId: DEBUG_COMMANDS.STEPIN.id
+        });
+        menus.registerMenuAction(DebugMenus.STEPOUT_THREAD, {
+            commandId: DEBUG_COMMANDS.STEPOUT.id
+        });
         menus.registerMenuAction(DebugMenus.SUSPEND_ALL_THREADS, {
             commandId: DEBUG_COMMANDS.SUSPEND_ALL_THREADS.id
         });
@@ -144,6 +178,15 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         });
         menus.registerMenuAction(DebugThreadContextMenu.RESUME_THREAD, {
             commandId: DEBUG_COMMANDS.RESUME_THREAD.id
+        });
+        menus.registerMenuAction(DebugThreadContextMenu.STEP_THREAD, {
+            commandId: DEBUG_COMMANDS.STEP.id
+        });
+        menus.registerMenuAction(DebugThreadContextMenu.STEPIN_THREAD, {
+            commandId: DEBUG_COMMANDS.STEPIN.id
+        });
+        menus.registerMenuAction(DebugThreadContextMenu.STEPOUT_THREAD, {
+            commandId: DEBUG_COMMANDS.STEPOUT.id
         });
         menus.registerMenuAction(DebugVariableContextMenu.MODIFY, {
             commandId: DEBUG_COMMANDS.MODIFY_VARIABLE.id
@@ -237,27 +280,64 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isVisible: () => true
         });
 
+        registry.registerCommand(DEBUG_COMMANDS.STEP);
+        registry.registerHandler(DEBUG_COMMANDS.STEP.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const threadId = this.getSelectedThreadId(debugSession.sessionId);
+                    if (threadId) {
+                        debugSession.next({ threadId });
+                    }
+                }
+            },
+            isEnabled: () => this.isSelectedThreadSuspended(),
+            isVisible: () => true
+        });
+
+        registry.registerCommand(DEBUG_COMMANDS.STEPIN);
+        registry.registerHandler(DEBUG_COMMANDS.STEPIN.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const threadId = this.getSelectedThreadId(debugSession.sessionId);
+                    if (threadId) {
+                        debugSession.stepIn({ threadId });
+                    }
+                }
+            },
+            isEnabled: () => this.isSelectedThreadSuspended(),
+            isVisible: () => true
+        });
+
+        registry.registerCommand(DEBUG_COMMANDS.STEPOUT);
+        registry.registerHandler(DEBUG_COMMANDS.STEPOUT.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const threadId = this.getSelectedThreadId(debugSession.sessionId);
+                    if (threadId) {
+                        debugSession.stepOut({ threadId });
+                    }
+                }
+            },
+            isEnabled: () => this.isSelectedThreadSuspended(),
+            isVisible: () => true
+        });
+
         registry.registerCommand(DEBUG_COMMANDS.SUSPEND_THREAD);
         registry.registerHandler(DEBUG_COMMANDS.SUSPEND_THREAD.id, {
             execute: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
                 if (debugSession) {
-                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    if (!!selection && !!selection.thread) {
-                        debugSession.pause({ threadId: selection.thread.id });
+                    const threadId = this.getSelectedThreadId(debugSession.sessionId);
+                    if (threadId) {
+                        debugSession.pause({ threadId });
                     }
                 }
             },
             isEnabled: () => true,
-            isVisible: () => {
-                const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (!debugSession) {
-                    return false;
-                }
-
-                const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return !!selection && !!selection.thread && !debugSession.state.stoppedThreadIds.has(selection.thread.id);
-            }
+            isVisible: () => this.isSelectedThreadResumed()
         });
 
         registry.registerCommand(DEBUG_COMMANDS.RESUME_THREAD);
@@ -265,22 +345,14 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             execute: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
                 if (debugSession) {
-                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    if (!!selection && !!selection.thread) {
-                        debugSession.resume({ threadId: selection.thread.id });
+                    const threadId = this.getSelectedThreadId(debugSession.sessionId);
+                    if (threadId) {
+                        debugSession.resume({ threadId });
                     }
                 }
             },
             isEnabled: () => true,
-            isVisible: () => {
-                const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (!debugSession) {
-                    return false;
-                }
-
-                const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return !!selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.has(selection.thread.id);
-            }
+            isVisible: () => this.isSelectedThreadSuspended()
         });
 
         registry.registerCommand(DEBUG_COMMANDS.MODIFY_VARIABLE);
@@ -318,5 +390,32 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 return !!selection && !!selection.variable;
             }
         });
+    }
+
+    private isSelectedThreadSuspended(): boolean {
+        const debugSession = this.debugSessionManager.getActiveDebugSession();
+        if (!debugSession) {
+            return false;
+        }
+
+        const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+        return !!selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.has(selection.thread.id);
+    }
+
+    private isSelectedThreadResumed(): boolean {
+        const debugSession = this.debugSessionManager.getActiveDebugSession();
+        if (!debugSession) {
+            return false;
+        }
+
+        const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+        return !!selection && !!selection.thread && !debugSession.state.stoppedThreadIds.has(selection.thread.id);
+    }
+
+    private getSelectedThreadId(sessionId: string): number | undefined {
+        const selection = this.debugSelectionHandler.get(sessionId);
+        if (!!selection && !!selection.thread) {
+            return selection.thread.id;
+        }
     }
 }

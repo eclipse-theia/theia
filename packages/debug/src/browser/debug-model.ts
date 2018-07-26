@@ -48,6 +48,9 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     evaluate(args: DebugProtocol.EvaluateArguments): Promise<DebugProtocol.EvaluateResponse>;
     source(args: DebugProtocol.SourceArguments): Promise<DebugProtocol.SourceResponse>;
     setBreakpoints(args: DebugProtocol.SetBreakpointsArguments): Promise<DebugProtocol.SetBreakpointsResponse>;
+    next(args: DebugProtocol.NextArguments): Promise<DebugProtocol.NextResponse>;
+    stepIn(args: DebugProtocol.StepInArguments): Promise<DebugProtocol.StepInResponse>;
+    stepOut(args: DebugProtocol.StepOutArguments): Promise<DebugProtocol.StepOutResponse>;
 }
 
 /**

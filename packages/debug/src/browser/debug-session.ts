@@ -167,6 +167,18 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest('setBreakpoints', args);
     }
 
+    next(args: DebugProtocol.NextArguments): Promise<DebugProtocol.NextResponse> {
+        return this.proceedRequest('next', args);
+    }
+
+    stepIn(args: DebugProtocol.StepInArguments): Promise<DebugProtocol.StepInResponse> {
+        return this.proceedRequest('stepIn', args);
+    }
+
+    stepOut(args: DebugProtocol.StepOutArguments): Promise<DebugProtocol.StepOutResponse> {
+        return this.proceedRequest('stepOut', args);
+    }
+
     protected handleMessage(event: MessageEvent) {
         const message: DebugProtocol.ProtocolMessage = JSON.parse(event.data);
         if (message.type === 'response') {
