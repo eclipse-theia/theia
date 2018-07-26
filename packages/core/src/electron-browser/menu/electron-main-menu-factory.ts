@@ -26,13 +26,21 @@ import { PreferenceService, KeybindingRegistry, Keybinding, KeyCode, Key } from 
 export class ElectronMainMenuFactory {
 
     protected _menu: Electron.Menu;
+    protected _toggledCommands: Set<string> = new Set();
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(PreferenceService) protected readonly preferencesService: PreferenceService,
         @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
-    ) { }
+    ) {
+        this.preferencesService.onPreferenceChanged(() => {
+            for (const item of this._toggledCommands) {
+                this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+                electron.remote.getCurrentWindow().setMenu(this._menu);
+            }
+        });
+    }
 
     createMenuBar(): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
@@ -53,7 +61,6 @@ export class ElectronMainMenuFactory {
     }
 
     protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[], menuModel: CompositeMenuNode): Electron.MenuItemConstructorOptions[] {
-        const toggledCommands: string[] = [];
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 if (menu.label) {
@@ -99,16 +106,10 @@ export class ElectronMainMenuFactory {
                     accelerator
                 });
                 if (this.commandRegistry.getToggledHandler(commandId)) {
-                    toggledCommands.push(commandId);
+                    this._toggledCommands.add(commandId);
                 }
             }
         }
-        this.preferencesService.onPreferenceChanged(() => {
-            for (const item of toggledCommands) {
-                this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
-                electron.remote.getCurrentWindow().setMenu(this._menu);
-            }
-        });
         return items;
     }
 
