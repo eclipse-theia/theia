@@ -16,13 +16,16 @@
 
 import { MockLogger } from '../../common/test/mock-logger';
 import { AbstractConnectionStatusService } from '../connection-status-service';
+import { ILogger } from '@theia/core/src/common';
 
 export class MockConnectionStatusService extends AbstractConnectionStatusService {
+
+    protected readonly logger: ILogger = new MockLogger();
 
     constructor() {
         super({
             offlineTimeout: 10
-        }, new MockLogger());
+        });
     }
 
     public set alive(alive: boolean) {
