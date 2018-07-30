@@ -48,7 +48,10 @@ export function filterSame(locations: Location[], definition: Location): Locatio
     );
 }
 
-export function filterUnique(locations: Location[]): Location[] {
+export function filterUnique(locations: Location[] | null): Location[] {
+    if (!locations) {
+        return [];
+    }
     const result: Location[] = [];
     const set = new Set<string>();
     for (const location of locations) {

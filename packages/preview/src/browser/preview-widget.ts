@@ -16,10 +16,10 @@
 
 import { inject, injectable } from "inversify";
 import { Resource, MaybePromise } from '@theia/core';
-import { BaseWidget, Message, addEventListener} from '@theia/core/lib/browser';
+import { BaseWidget, Message, addEventListener } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter } from '@theia/core/lib/common';
-import { Workspace, Location, Range } from "@theia/languages/lib/common";
+import { Workspace, Location, Range } from "@theia/languages/lib/browser";
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from "@theia/editor/lib/browser";

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { RequestType, NotificationType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/common";
+import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/browser";
 
 export interface StatusReport {
     message: string;

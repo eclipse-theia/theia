@@ -20,7 +20,7 @@ import { injectable, inject } from 'inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { Position } from 'vscode-languageserver-types';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { Languages } from '@theia/languages/lib/common';
+import { Languages } from '@theia/languages/lib/browser';
 import { DisposableCollection } from '@theia/core';
 
 @injectable()

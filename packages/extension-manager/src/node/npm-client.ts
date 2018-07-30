@@ -65,7 +65,7 @@ export class NpmClient {
 
     spawn(projectPath: string, command: string, args?: string[]): cp.ChildProcess {
         const npmCommand = this.npmCommand(command);
-        return this.doSpawn(projectPath, cmd(this.options.npmClient, npmCommand, ...args));
+        return this.doSpawn(projectPath, cmd(this.options.npmClient, npmCommand, ...(args || [])));
     }
 
     protected npmCommand(command: string): string {

@@ -19,7 +19,7 @@ import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, R
 import { GitFileBlame, Commit } from '../../common';
 import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
-import { HoverProvider, TextDocumentPositionParams, Hover, CancellationToken, Languages } from '@theia/languages/lib/common';
+import { HoverProvider, TextDocumentPositionParams, Hover, CancellationToken, Languages } from '@theia/languages/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()

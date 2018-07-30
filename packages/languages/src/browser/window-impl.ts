@@ -16,16 +16,16 @@
 
 import { injectable, inject } from 'inversify';
 import { MessageService } from '@theia/core/lib/common';
-import { MessageActionItem, MessageType } from 'vscode-base-languageclient/lib/protocol';
-import { Window, OutputChannel } from 'vscode-base-languageclient/lib/services';
+import { Window, OutputChannel, MessageActionItem, MessageType } from 'monaco-languageclient/lib/services';
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
 
 @injectable()
 export class WindowImpl implements Window {
-    constructor(
-        @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager) {
-    }
+
+    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager;
+    @inject(OutputContribution) protected readonly outputContribution: OutputContribution;
 
     showMessage<T extends MessageActionItem>(type: MessageType, message: string, ...actions: T[]): Thenable<T | undefined> {
         const originalActions = new Map((actions || []).map(action => [action.title, action] as [string, T]));
@@ -56,8 +56,17 @@ export class WindowImpl implements Window {
         return {
             append: outputChannel.append.bind(outputChannel),
             appendLine: outputChannel.appendLine.bind(outputChannel),
-            show: function (preserveFocus?: boolean): void {
-                // no-op
+            show: async (preserveFocus?: boolean) => {
+                outputChannel.setVisibility(true);
+                const options = Object.assign({
+                    preserveFocus: false,
+                }, { preserveFocus });
+                const activate = !options.preserveFocus;
+                const reveal = options.preserveFocus;
+                this.outputContribution.openView({ activate, reveal });
+            },
+            dispose: () => {
+                this.outputChannelManager.deleteChannel(outputChannel.name);
             }
         };
     }

@@ -37,7 +37,9 @@ export function enableJSDOM(): () => void {
     if (typeof (global as any)['_disableJSDOM'] === 'function') {
         return (global as any)['_disableJSDOM'];
     }
-    const dom = new JSDOM('<!doctype html><html><body></body></html>');
+    const dom = new JSDOM('<!doctype html><html><body></body></html>', {
+        url: 'http://localhost/'
+    });
     (global as any)['document'] = dom.window.document;
     (global as any)['window'] = dom.window;
     (global as any)['navigator'] = { userAgent: 'node.js', platform: 'Mac' };

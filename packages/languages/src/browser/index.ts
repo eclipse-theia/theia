@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from '../common';
+export * from './language-client-services';
 export * from './language-client-factory';
 export * from './language-client-contribution';
 export * from './languages-frontend-contribution';

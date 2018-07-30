@@ -93,24 +93,22 @@ export class OutputWidget extends ReactWidget {
     private readonly OUTPUT_CONTENTS_ID = 'outputContents';
 
     protected renderChannelContents(): React.ReactNode {
-        if (this.selectedChannel) {
-            return <div id={this.OUTPUT_CONTENTS_ID}>
-                {this.selectedChannel.getLines().map(line => this.toHtmlText(line))}
-            </div>;
-        } else {
-            return <div id={this.OUTPUT_CONTENTS_ID}></div>;
-        }
+        return <div id={this.OUTPUT_CONTENTS_ID}>{this.renderLines()}</div>;
     }
 
-    protected toHtmlText(text: string): React.ReactNode[] {
-        const result: React.ReactNode[] = [];
-        if (text) {
-            const lines = text.split(/([\n\r]+)/);
-            for (const line of lines) {
-                result.push(<div>{line}</div>);
+    protected renderLines(): React.ReactNode[] {
+        let id = 0;
+        const result = [];
+        if (this.selectedChannel) {
+            for (const text of this.selectedChannel.getLines()) {
+                const lines = text.split(/([\n\r]+)/);
+                for (const line of lines) {
+                    result.push(<div key={id++}>{line}</div>);
+                }
             }
-        } else {
-            result.push(<div>{'<no output yet>'}</div>);
+        }
+        if (result.length === 0) {
+            result.push(<div key={id++}>{'<no output yet>'}</div>);
         }
         return result;
     }

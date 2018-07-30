@@ -12,7 +12,6 @@
     "@theia/workspace": "^0.3.13",
     "monaco-css": "^2.0.1",
     "monaco-html": "^2.0.2",
-    "monaco-languageclient": "0.6.3",
     "monaco-textmate": "^3.0.0",
     "onigasm": "^2.1.0"
   },

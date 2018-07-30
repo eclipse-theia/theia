@@ -24,8 +24,8 @@ import { FileSystem, } from '@theia/filesystem/lib/common';
 import { FileChangeType, FileSystemWatcher } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { EditorManager } from "@theia/editor/lib/browser";
-import * as lang from "@theia/languages/lib/common";
-import { Emitter, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
+import * as lang from "@theia/languages/lib/browser";
+import { Emitter, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/browser";
 import { MonacoTextModelService } from "./monaco-text-model-service";
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from "./monaco-editor-model";
 import { MonacoEditor } from "./monaco-editor";
@@ -184,8 +184,12 @@ export class MonacoWorkspace implements lang.Workspace {
 
     createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): lang.FileSystemWatcher {
         const disposables = new DisposableCollection();
-        const onFileEventEmitter = new lang.Emitter<lang.FileEvent>();
-        disposables.push(onFileEventEmitter);
+        const onDidCreateEmitter = new lang.Emitter<monaco.Uri>();
+        disposables.push(onDidCreateEmitter);
+        const onDidChangeEmitter = new lang.Emitter<monaco.Uri>();
+        disposables.push(onDidChangeEmitter);
+        const onDidDeleteEmitter = new lang.Emitter<monaco.Uri>();
+        disposables.push(onDidDeleteEmitter);
         disposables.push(this.fileSystemWatcher.onFilesChanged(changes => {
             for (const change of changes) {
                 const fileChangeType = change.type;
@@ -199,26 +203,26 @@ export class MonacoWorkspace implements lang.Workspace {
                     continue;
                 }
                 const uri = change.uri.toString();
+                const { codeUri } = (change.uri as any);
                 if (testGlob(globPattern, uri)) {
-                    const type = this.mapChangeType(fileChangeType);
-                    onFileEventEmitter.fire({ uri, type });
+                    if (fileChangeType === FileChangeType.ADDED) {
+                        onDidCreateEmitter.fire(codeUri);
+                    } else if (fileChangeType === FileChangeType.UPDATED) {
+                        onDidChangeEmitter.fire(codeUri);
+                    } else if (fileChangeType === FileChangeType.DELETED) {
+                        onDidDeleteEmitter.fire(codeUri);
+                    } else {
+                        throw new Error(`Unexpected file change type: ${fileChangeType}.`);
+                    }
                 }
             }
         }));
-        const onFileEvent = onFileEventEmitter.event;
         return {
-            onFileEvent,
+            onDidCreate: onDidCreateEmitter.event,
+            onDidChange: onDidChangeEmitter.event,
+            onDidDelete: onDidDeleteEmitter.event,
             dispose: () => disposables.dispose()
         };
-    }
-
-    protected mapChangeType(type: FileChangeType): lang.FileChangeType {
-        switch (type) {
-            case FileChangeType.ADDED: return lang.FileChangeType.Created;
-            case FileChangeType.UPDATED: return lang.FileChangeType.Changed;
-            case FileChangeType.DELETED: return lang.FileChangeType.Deleted;
-            default: throw new Error(`Unexpected file change type: ${type}.`);
-        }
     }
 
     async applyEdit(changes: lang.WorkspaceEdit): Promise<boolean> {
