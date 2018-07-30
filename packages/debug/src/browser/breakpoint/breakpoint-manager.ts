@@ -29,7 +29,7 @@ import {
     TextEditor,
     MouseTargetType
 } from "@theia/editor/lib/browser";
-import { ExtDebugProtocol } from "../../common/debug-common";
+import { ExtDebugProtocol, DebugService } from "../../common/debug-common";
 import { Emitter, Event } from "@theia/core";
 import { BreakpointsApplier } from "./breakpoint-applier";
 
@@ -38,14 +38,16 @@ import { BreakpointsApplier } from "./breakpoint-applier";
  */
 @injectable()
 export class BreakpointsManager implements FrontendApplicationContribution {
+    protected readonly supportedFilePatterns: string[] = [];
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<void>();
 
     constructor(
+        @inject(DebugService) protected readonly debugService: DebugService,
         @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
         @inject(SourceOpener) protected readonly sourceOpener: SourceOpener,
         @inject(ActiveLineDecorator) protected readonly lineDecorator: ActiveLineDecorator,
         @inject(BreakpointDecorator) protected readonly breakpointDecorator: BreakpointDecorator,
-        @inject(BreakpointStorage) protected readonly storage: BreakpointStorage,
+        @inject(BreakpointStorage) protected readonly breakpointStorage: BreakpointStorage,
         @inject(BreakpointsApplier) protected readonly breakpointApplier: BreakpointsApplier,
         @inject(EditorManager) protected readonly editorManager: EditorManager
     ) { }
@@ -57,6 +59,14 @@ export class BreakpointsManager implements FrontendApplicationContribution {
         this.editorManager.onCreated(widget => this.onEditorCreated(widget.editor));
         this.editorManager.onActiveEditorChanged(widget => this.onActiveEditorChanged(widget));
         this.editorManager.onCurrentEditorChanged(widget => this.onCurrentEditorChanged(widget));
+
+        this.debugService.debugTypes()
+            .then(debugTypes => debugTypes.forEach(debugType =>
+                this.debugService.provideDebugConfigurations(debugType).then(configs =>
+                    configs.forEach(config => config.breakpoints.filePatterns.forEach(pattern =>
+                        this.supportedFilePatterns.push(pattern)))
+                )
+            ));
     }
 
     get onDidChangeBreakpoints(): Event<void> {
@@ -68,37 +78,40 @@ export class BreakpointsManager implements FrontendApplicationContribution {
      * @param editor the active text editor
      * @param position the mouse position in the editor
      */
-    async toggleBreakpoint(editor: TextEditor, position: Position): Promise<void> {
+    toggleBreakpoint(editor: TextEditor, position: Position): void {
         const debugSession = this.debugSessionManager.getActiveDebugSession();
 
         const srcBreakpoint = this.createSourceBreakpoint(debugSession, editor, position);
         const id = DebugUtils.makeBreakpointId(srcBreakpoint);
 
-        return this.storage.exists(id)
-            .then(exists => exists ? this.storage.delete(srcBreakpoint) : this.storage.add(srcBreakpoint))
-            .then(() => {
-                if (debugSession) {
-                    const source = DebugUtils.toSource(editor.uri, debugSession);
-                    return this.breakpointApplier.applySessionBreakpoints(debugSession, source);
-                }
-            })
-            .then(() => this.breakpointDecorator.applyDecorations(editor))
-            .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
+        if (this.breakpointStorage.exists(id)) {
+            this.breakpointStorage.delete(srcBreakpoint);
+        } else {
+            this.breakpointStorage.add(srcBreakpoint);
+        }
+
+        if (debugSession) {
+            const source = DebugUtils.toSource(editor.uri, debugSession);
+            this.breakpointApplier.applySessionBreakpoints(debugSession, source);
+        }
+
+        this.breakpointDecorator.applyDecorations(editor);
+        this.onDidChangeBreakpointsEmitter.fire(undefined);
     }
 
     /**
      * Returns all breakpoints for the given debug session.
      * @param sessionId the debug session identifier
      */
-    async get(sessionId: string | undefined): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
-        return this.storage.get().then(breakpoints => breakpoints.filter(b => b.sessionId === sessionId));
+    get(sessionId: string | undefined): ExtDebugProtocol.AggregatedBreakpoint[] {
+        return this.breakpointStorage.get().filter(b => b.sessionId === sessionId);
     }
 
     /**
      * Returns all breakpoints.
      */
-    async getAll(): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
-        return this.storage.get();
+    getAll(): ExtDebugProtocol.AggregatedBreakpoint[] {
+        return this.breakpointStorage.get();
     }
 
     /**
@@ -129,16 +142,17 @@ export class BreakpointsManager implements FrontendApplicationContribution {
         debugSession.on('configurationDone', event => this.onConfigurationDone(debugSession, event));
         debugSession.on('breakpoint', event => this.onBreakpoint(debugSession, event));
 
-        this.storage.get(DebugUtils.isSourceBreakpoint)
-            .then(breakpoints => breakpoints.filter(b => b.sessionId === undefined))
-            .then(breakpoints => breakpoints.filter(b => DebugUtils.checkPattern(b.source!, debugSession.configuration.breakpoints.filePatterns)))
-            .then(breakpoints => breakpoints.map(b => {
+        const breakpoints = this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
+            .filter(b => b.sessionId === undefined)
+            .filter(b => DebugUtils.checkPattern(b.source!, debugSession.configuration.breakpoints.filePatterns))
+            .map(b => {
                 b.sessionId = debugSession.sessionId;
                 b.created = undefined;
                 return b;
-            }))
-            .then(breakpoints => this.storage.update(breakpoints))
-            .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
+            });
+
+        this.breakpointStorage.update(breakpoints);
+        this.onDidChangeBreakpointsEmitter.fire(undefined);
     }
 
     private onConfigurationDone(debugSession: DebugSession, event: ExtDebugProtocol.ConfigurationDoneEvent): void {
@@ -149,18 +163,17 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     private onTerminated(debugSession: DebugSession, event: DebugProtocol.TerminatedEvent): void {
         this.lineDecorator.applyDecorations();
 
-        this.storage.get(DebugUtils.isSourceBreakpoint)
-            .then(breakpoints => breakpoints.filter(b => b.sessionId === debugSession.sessionId))
-            .then(breakpoints => breakpoints.map(b => {
+        const breakpoints = this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
+            .filter(b => b.sessionId === debugSession.sessionId)
+            .map(b => {
                 b.created = undefined;
                 b.sessionId = undefined;
                 return b;
-            }))
-            .then(breakpoints => this.storage.update(breakpoints))
-            .then(() => {
-                this.breakpointDecorator.applyDecorations();
-                this.onDidChangeBreakpointsEmitter.fire(undefined);
             });
+
+        this.breakpointStorage.update(breakpoints);
+        this.breakpointDecorator.applyDecorations();
+        this.onDidChangeBreakpointsEmitter.fire(undefined);
     }
 
     private onActiveDebugSessionChanged(oldDebugSession: DebugSession | undefined, newDebugSession: DebugSession | undefined) {
@@ -171,9 +184,9 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     private onBreakpoint(debugSession: DebugSession, event: DebugProtocol.BreakpointEvent): void {
         const breakpoint = event.body.breakpoint;
 
-        this.storage.get(DebugUtils.isSourceBreakpoint)
-            .then(breakpoints => breakpoints.filter(b => b.sessionId === debugSession.sessionId))
-            .then(breakpoints => breakpoints.filter(b => {
+        const breakpoints = this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
+            .filter(b => b.sessionId === debugSession.sessionId)
+            .filter(b => {
                 if (breakpoint.id && b.created && b.created.id === breakpoint.id) {
                     return true;
                 }
@@ -182,40 +195,40 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                     return false;
                 }
 
-                const sourceBreakpoint = b.origin as DebugProtocol.SourceBreakpoint;
+                const srcBrk = b.origin as DebugProtocol.SourceBreakpoint;
                 return DebugUtils.checkUri(b, DebugUtils.toUri(breakpoint.source))
-                    && sourceBreakpoint.line === breakpoint.line
-                    && sourceBreakpoint.column === breakpoint.column;
-            }))
-            .then(breakpoints => {
-                const sourceBreakpoint = breakpoints[0];
-                switch (event.body.reason) {
-                    case 'new':
-                    case 'changed': {
-                        if (sourceBreakpoint) {
-                            sourceBreakpoint.created = breakpoint;
-                            return this.storage.update(sourceBreakpoint);
-                        } else {
-                            return this.storage.update({
-                                sessionId: debugSession.sessionId,
-                                source: breakpoint.source,
-                                created: breakpoint,
-                                origin: {
-                                    line: breakpoint.line!,
-                                    column: breakpoint.column
-                                }
-                            });
+                    && srcBrk.line === breakpoint.line
+                    && srcBrk.column === breakpoint.column;
+            });
+
+        const sourceBreakpoint = breakpoints[0];
+        switch (event.body.reason) {
+            case 'new':
+            case 'changed': {
+                if (sourceBreakpoint) {
+                    sourceBreakpoint.created = breakpoint;
+                    return this.breakpointStorage.update(sourceBreakpoint);
+                } else {
+                    return this.breakpointStorage.update({
+                        sessionId: debugSession.sessionId,
+                        source: breakpoint.source,
+                        created: breakpoint,
+                        origin: {
+                            line: breakpoint.line!,
+                            column: breakpoint.column
                         }
-                    }
-                    case 'removed': {
-                        if (sourceBreakpoint) {
-                            return this.storage.delete(sourceBreakpoint);
-                        }
-                    }
+                    });
                 }
-            })
-            .then(() => this.breakpointDecorator.applyDecorations())
-            .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
+            }
+            case 'removed': {
+                if (sourceBreakpoint) {
+                    return this.breakpointStorage.delete(sourceBreakpoint);
+                }
+            }
+        }
+
+        this.breakpointDecorator.applyDecorations();
+        this.onDidChangeBreakpointsEmitter.fire(undefined);
     }
 
     private onThreadContinued(debugSession: DebugSession, event: DebugProtocol.ContinuedEvent): void {
@@ -259,7 +272,10 @@ export class BreakpointsManager implements FrontendApplicationContribution {
             switch (event.target.type) {
                 case MouseTargetType.GUTTER_GLYPH_MARGIN:
                 case MouseTargetType.GUTTER_VIEW_ZONE: {
-                    this.toggleBreakpoint(editor, event.target.position);
+                    const source = DebugUtils.toSource(editor.uri, undefined);
+                    if (DebugUtils.checkPattern(source, this.supportedFilePatterns)) {
+                        this.toggleBreakpoint(editor, event.target.position);
+                    }
                     break;
                 }
             }

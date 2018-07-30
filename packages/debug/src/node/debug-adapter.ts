@@ -134,7 +134,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 
         const path = DebugAdapterPath + "/" + this.id;
 
-        this.messagingServiceContainer.getService().then(service => {
+        return this.messagingServiceContainer.getService().then(service => {
             service.ws(path, (params: MessagingService.PathParams, ws: WebSocket) => {
                 this.ws = ws;
                 this.toDispose.push(Disposable.create(() => this.ws.close()));
@@ -147,8 +147,6 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
                 this.ws.on('message', (data: string) => this.proceedRequest(data));
             });
         });
-
-        return Promise.resolve();
     }
 
     protected onDebugAdapterClosed(): void {
@@ -213,7 +211,9 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         this.logger.debug(`DAP event: ${rawData}`);
 
         this.emit(event.event, event);
-        this.ws.send(rawData);
+        if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(rawData);
+        }
     }
 
     protected proceedResponse(rawData: string, response: DebugProtocol.Response): void {
@@ -222,7 +222,9 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         const request = this.pendingRequests.get(response.request_seq);
 
         this.pendingRequests.delete(response.request_seq);
-        this.ws.send(rawData);
+        if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(rawData);
+        }
 
         if (response.success) {
             switch (response.command) {
@@ -306,8 +308,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
     }
 
     stop(): Promise<void> {
-        this.toDispose.dispose();
-        return Promise.resolve();
+        return Promise.resolve(this.toDispose.dispose());
     }
 }
 

@@ -113,13 +113,13 @@ export class BreakpointDecorator extends EditorDecorator {
         const editors = editor ? [editor] : this.editorManager.all.map(widget => widget.editor);
 
         editors.forEach(e => {
-            this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
-                .then(breakpoints => breakpoints.filter(b => DebugUtils.checkUri(b, e.uri)))
-                .then(breakpoints => breakpoints.map(b => ({
+            const decorations = this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
+                .filter(b => DebugUtils.checkUri(b, e.uri))
+                .map(b => ({
                     range: this.toRange(b.origin as DebugProtocol.SourceBreakpoint),
                     options: !!b.created && !!b.created.verified ? ActiveBreakpointDecoration : InactiveBreakpointDecoration
-                })))
-                .then(decorations => this.setDecorations(e, decorations));
+                }));
+            this.setDecorations(e, decorations);
         });
     }
 

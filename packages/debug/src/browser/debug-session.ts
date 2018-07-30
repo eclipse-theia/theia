@@ -321,7 +321,6 @@ export class DebugSessionManager {
             })
             .then(() => this.breakpointApplier.applySessionBreakpoints(session))
             .then(() => session.configurationDone())
-            .then(() => this.setActiveDebugSession(sessionId))
             .then(() => session);
     }
 

@@ -28,35 +28,33 @@ export class BreakpointsApplier {
     constructor(@inject(BreakpointStorage) protected readonly storage: BreakpointStorage) { }
 
     applySessionBreakpoints(debugSession: DebugSession, source?: DebugProtocol.Source): Promise<void> {
-        return this.storage.get(DebugUtils.isSourceBreakpoint)
-            .then(breakpoints => breakpoints.filter(b => b.sessionId === debugSession.sessionId))
-            .then(breakpoints => breakpoints.filter(b => source ? DebugUtils.checkUri(b, DebugUtils.toUri(source)) : true))
-            .then(breakpoints => {
-                const promises: Promise<void>[] = [];
+        const promises: Promise<void>[] = [];
 
-                for (const breakpointsBySource of DebugUtils.groupBySource(breakpoints).values()) {
-                    const args: DebugProtocol.SetBreakpointsArguments = {
-                        source: breakpointsBySource[0].source!,
-                        breakpoints: breakpointsBySource.map(b => b.origin as DebugProtocol.SourceBreakpoint)
-                    };
+        const breakpoints = this.storage.get(DebugUtils.isSourceBreakpoint)
+            .filter(b => b.sessionId === debugSession.sessionId)
+            .filter(b => source ? DebugUtils.checkUri(b, DebugUtils.toUri(source)) : true);
 
-                    // The array elements are in the same order as the elements
-                    // of the 'breakpoints' in the SetBreakpointsArguments.
-                    promises.push(debugSession.setBreakpoints(args)
-                        .then(response => {
-                            for (const i in breakpointsBySource) {
-                                if (breakpointsBySource) {
-                                    if (response.body.breakpoints) {
-                                        breakpointsBySource[i].created = response.body.breakpoints[i];
-                                    }
-                                }
+        for (const breakpointsBySource of DebugUtils.groupBySource(breakpoints).values()) {
+            const args: DebugProtocol.SetBreakpointsArguments = {
+                source: breakpointsBySource[0].source!,
+                breakpoints: breakpointsBySource.map(b => b.origin as DebugProtocol.SourceBreakpoint)
+            };
+
+            // The array elements are in the same order as the elements
+            // of the 'breakpoints' in the SetBreakpointsArguments.
+            promises.push(debugSession.setBreakpoints(args)
+                .then(response => {
+                    for (const i in breakpointsBySource) {
+                        if (breakpointsBySource) {
+                            if (response.body.breakpoints) {
+                                breakpointsBySource[i].created = response.body.breakpoints[i];
                             }
-                            return breakpointsBySource;
-                        }).then(result => this.storage.update(result)));
-                }
+                        }
+                    }
+                    return breakpointsBySource;
+                }).then(result => this.storage.update(result)));
+        }
 
-                return Promise.all(promises);
-            })
-            .then(() => { });
+        return Promise.all(promises).then(() => { });
     }
 }

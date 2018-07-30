@@ -369,12 +369,14 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                         });
 
                         dialog.open().then(newValue => {
-                            const args: DebugProtocol.SetVariableArguments = {
-                                variablesReference: variable.parentVariablesReference,
-                                name: variable.name,
-                                value: newValue
-                            };
-                            debugSession.setVariable(args);
+                            if (newValue) {
+                                const args: DebugProtocol.SetVariableArguments = {
+                                    variablesReference: variable.parentVariablesReference,
+                                    name: variable.name,
+                                    value: newValue
+                                };
+                                debugSession.setVariable(args);
+                            }
                         });
                     }
                 }

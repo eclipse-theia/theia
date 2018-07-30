@@ -45,7 +45,7 @@ export class BreakpointStorage extends MarkerManager<ExtDebugProtocol.Aggregated
      * Updates an existed breakpoint.
      * @param breakpoint the breakpoint to update
      */
-    update(data: ExtDebugProtocol.AggregatedBreakpoint | ExtDebugProtocol.AggregatedBreakpoint[]): Promise<void> {
+    update(data: ExtDebugProtocol.AggregatedBreakpoint | ExtDebugProtocol.AggregatedBreakpoint[]): void {
         const breakpoints = Array.isArray(data) ? data : [data];
 
         breakpoints.map(breakpoint => {
@@ -55,35 +55,30 @@ export class BreakpointStorage extends MarkerManager<ExtDebugProtocol.Aggregated
             const newBreakpoints = super.findMarkers({ uri }).map(m => DebugUtils.makeBreakpointId(m.data) === id ? breakpoint : m.data);
             super.setMarkers(uri, BREAKPOINT_OWNER, newBreakpoints);
         });
-
-        return Promise.resolve();
     }
 
     /**
      * Adds a given breakpoint.
      * @param breakpoint the breakpoint to add
      */
-    add(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): Promise<void> {
+    add(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): void {
         const uri = this.toUri(breakpoint);
         const existedBreakpoints = super.findMarkers({ uri }).map(m => m.data);
         existedBreakpoints.push(breakpoint);
         super.setMarkers(uri, BREAKPOINT_OWNER, existedBreakpoints);
-
-        return Promise.resolve();
     }
 
     /**
      * Deletes a given breakpoint.
      * @param breakpoint the breakpoint to delete
      */
-    delete(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): Promise<void> {
+    delete(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): void {
         const uri = this.toUri(breakpoint);
 
         const id = DebugUtils.makeBreakpointId(breakpoint);
         const breakpoints = super.findMarkers({ uri, dataFilter: b => DebugUtils.makeBreakpointId(b) !== id }).map(m => m.data);
 
         super.setMarkers(uri, BREAKPOINT_OWNER, breakpoints);
-        return Promise.resolve();
     }
 
     /**
@@ -91,8 +86,8 @@ export class BreakpointStorage extends MarkerManager<ExtDebugProtocol.Aggregated
      * @param dataFilter the filter
      * @returns the list of breakpoints
      */
-    get(dataFilter?: (breakpoint: ExtDebugProtocol.AggregatedBreakpoint) => boolean): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
-        return Promise.resolve(super.findMarkers({ dataFilter }).map(m => m.data));
+    get(dataFilter?: (breakpoint: ExtDebugProtocol.AggregatedBreakpoint) => boolean): ExtDebugProtocol.AggregatedBreakpoint[] {
+        return super.findMarkers({ dataFilter }).map(m => m.data);
     }
 
     /**
@@ -100,8 +95,8 @@ export class BreakpointStorage extends MarkerManager<ExtDebugProtocol.Aggregated
      * @param id the breakpoint id
      * @returns true if breakpoint exists and false otherwise
      */
-    exists(id: string): Promise<boolean> {
-        return Promise.resolve(super.findMarkers().some(m => DebugUtils.makeBreakpointId(m.data) === id));
+    exists(id: string): boolean {
+        return super.findMarkers().some(m => DebugUtils.makeBreakpointId(m.data) === id);
     }
 
     private toUri(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): URI {

@@ -43,7 +43,15 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         this.id = 'debug-breakpoints' + (debugSession ? `-${debugSession.sessionId}` : '');
         this.addClass(Styles.BREAKPOINTS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
+
+    }
+
+    @postConstruct()
+    protected init() {
         this.breakpointManager.onDidChangeBreakpoints(() => this.refreshBreakpoints());
+        if (this.debugSession) {
+            this.debugSession.on('configurationDone', () => this.refreshBreakpoints());
+        }
     }
 
     get onDidClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
@@ -54,18 +62,13 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         return this.onDidDblClickBreakpointEmitter.event;
     }
 
-    public refreshBreakpoints(): void {
+    refreshBreakpoints(): void {
         if (this.debugSession) {
-            this.breakpointManager.get(this.debugSession.sessionId).then(breakpoints => {
-                this.breakpoints = breakpoints;
-                super.update();
-            });
+            this.breakpoints = this.breakpointManager.get(this.debugSession.sessionId);
         } else {
-            this.breakpointManager.getAll().then(breakpoints => {
-                this.breakpoints = breakpoints;
-                super.update();
-            });
+            this.breakpoints = this.breakpointManager.getAll();
         }
+        super.update();
     }
 
     protected render(): h.Child {
