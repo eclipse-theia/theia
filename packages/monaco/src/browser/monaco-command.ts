@@ -16,7 +16,7 @@
 
 import { injectable, inject } from "inversify";
 import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
-import { Position, Location } from "@theia/languages/lib/common";
+import { Position, Location } from "@theia/languages/lib/browser";
 import { Command, CommandContribution } from '@theia/core';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';

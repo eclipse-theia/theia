@@ -16,10 +16,10 @@
 
 import { injectable, inject, decorate } from "inversify";
 import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
-import { Languages, DiagnosticCollection, Language } from "@theia/languages/lib/common";
+import { Languages, DiagnosticCollection, Language } from "@theia/languages/lib/browser";
 import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-manager";
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceSymbolProvider } from 'vscode-base-languageclient/lib/services';
+import { WorkspaceSymbolProvider } from 'monaco-languageclient/lib/services';
 import { Disposable } from 'vscode-jsonrpc';
 
 decorate(injectable(), BaseMonacoLanguages);
@@ -29,7 +29,7 @@ decorate(inject(MonacoToProtocolConverter), BaseMonacoLanguages, 1);
 @injectable()
 export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
 
-    workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
+    readonly workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
     constructor(
         @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
@@ -61,12 +61,12 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
 
     registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable {
         this.workspaceSymbolProviders.push(provider);
-        return {
-            dispose: () => {
-                const index = this.workspaceSymbolProviders.indexOf(provider);
-                this.workspaceSymbolProviders = this.workspaceSymbolProviders.splice(index, 1);
+        return Disposable.create(() => {
+            const index = this.workspaceSymbolProviders.indexOf(provider);
+            if (index !== -1) {
+                this.workspaceSymbolProviders.splice(index, 1);
             }
-        };
+        });
     }
 
     get languages(): Language[] {

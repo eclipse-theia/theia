@@ -7,8 +7,7 @@
     "@theia/output": "^0.3.13",
     "@theia/process": "^0.3.13",
     "@theia/workspace": "^0.3.13",
-    "vscode-base-languageclient": "^0.0.1-alpha.5",
-    "vscode-languageserver-protocol": "^3.6.0"
+    "monaco-languageclient": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

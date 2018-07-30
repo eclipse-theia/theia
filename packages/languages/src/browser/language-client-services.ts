@@ -14,13 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as base from 'vscode-base-languageclient/lib/base';
-import * as services from 'vscode-base-languageclient/lib/services';
-import * as connection from 'vscode-base-languageclient/lib/connection';
-import { WorkspaceSymbolProvider } from 'vscode-base-languageclient/lib/services';
-export * from 'vscode-base-languageclient/lib/services';
-export * from 'vscode-base-languageclient/lib/connection';
-export { BaseLanguageClient } from 'vscode-base-languageclient/lib/base';
+import * as services from 'monaco-languageclient/lib/services';
+import * as connection from 'monaco-languageclient/lib/connection';
+import * as base from 'monaco-languageclient/lib/monaco-language-client';
+export * from 'monaco-languageclient';
+export * from '../common';
 
 export interface Language {
     readonly id: string;
@@ -29,7 +27,7 @@ export interface Language {
 
 export const Languages = Symbol('Languages');
 export interface Languages extends services.Languages {
-    readonly workspaceSymbolProviders?: WorkspaceSymbolProvider[];
+    readonly workspaceSymbolProviders?: services.WorkspaceSymbolProvider[];
     readonly languages?: Language[]
 }
 
@@ -48,8 +46,6 @@ export const IConnectionProvider = Symbol('IConnectionProvider');
 export interface IConnectionProvider extends connection.IConnectionProvider { }
 
 export const ILanguageClient = Symbol('ILanguageClient');
-export interface ILanguageClient extends base.BaseLanguageClient { }
+export interface ILanguageClient extends base.MonacoLanguageClient { }
 
-export interface LanguageClientOptions extends base.BaseLanguageClientOptions {
-    commands: Commands | undefined
-}
+export interface LanguageClientOptions extends base.LanguageClientOptions { }

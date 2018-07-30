@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { RequestType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/common";
+import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/browser";
 export interface ActionableMessage {
     severity: MessageType;
     message: string;
