@@ -37,7 +37,9 @@ export class BreakpointsApplier {
                 for (const breakpointsBySource of DebugUtils.groupBySource(breakpoints).values()) {
                     const args: DebugProtocol.SetBreakpointsArguments = {
                         source: breakpointsBySource[0].source!,
-                        breakpoints: breakpointsBySource.map(b => b.origin as DebugProtocol.SourceBreakpoint)
+                        breakpoints: breakpointsBySource.map(b => b.origin as DebugProtocol.SourceBreakpoint),
+                        // Although marked as deprecated, some debug adapters still use lines
+                        lines: breakpointsBySource.map(b => (b.origin as DebugProtocol.SourceBreakpoint).line)
                     };
 
                     // The array elements are in the same order as the elements
