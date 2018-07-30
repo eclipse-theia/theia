@@ -227,6 +227,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
 
         if (body.threadId) {
             switch (body.reason) {
+                case 'exception':
                 case 'breakpoint':
                 case 'entry':
                 case 'step': {
