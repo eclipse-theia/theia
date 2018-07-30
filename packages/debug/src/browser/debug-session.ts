@@ -316,6 +316,10 @@ export class DebugSessionManager {
                         const attachArgs: DebugProtocol.AttachRequestArguments = Object.assign(debugConfiguration, { __restart: false });
                         return session.attach(attachArgs);
                     }
+                    case "launch": {
+                        const launchArgs: DebugProtocol.LaunchRequestArguments = Object.assign(debugConfiguration, { __restart: false, noDebug: false });
+                        return session.launch(launchArgs);
+                    }
                     default: return Promise.reject(`Unsupported request '${request}' type.`);
                 }
             })
