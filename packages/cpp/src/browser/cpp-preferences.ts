@@ -36,12 +36,17 @@ export const cppPreferencesSchema: PreferenceSchema = {
                 },
                 required: ["name", "directory"],
             }
+        },
+        "cpp.experimentalCommands": {
+            description: "Enable experimental commands mostly intended for Clangd developers.",
+            type: "boolean"
         }
     }
 };
 
 export class CppConfiguration {
     "cpp.buildConfigurations": CppBuildConfiguration[];
+    "cpp.experimentalCommands": boolean;
 }
 
 export const CppPreferences = Symbol("CppPreferences");

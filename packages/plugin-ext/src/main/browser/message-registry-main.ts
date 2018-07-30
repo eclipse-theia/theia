@@ -13,11 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import {interfaces} from 'inversify';
+import { interfaces } from 'inversify';
 import * as theia from '@theia/plugin';
-import {MessageService} from '@theia/core/lib/common/message-service';
-import {MessageRegistryMain} from '../../api/plugin-api';
-import {ModalNotification, MessageType} from './dialogs/modal-notification';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { MessageRegistryMain } from '../../api/plugin-api';
+import { ModalNotification, MessageType } from './dialogs/modal-notification';
 
 export class MessageRegistryMainImpl implements MessageRegistryMain {
     private messageService: MessageService;
@@ -27,27 +27,27 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
     }
 
     $showInformationMessage(message: string,
-                            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                            items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined> {
+        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined> {
         return this.showMessage(MessageType.Info, message, optionsOrFirstItem, ...items);
     }
 
     $showWarningMessage(message: string,
-                        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined> {
+        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined> {
         return this.showMessage(MessageType.Warning, message, optionsOrFirstItem, ...items);
     }
 
     $showErrorMessage(message: string,
-                      optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                      items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined> {
+        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined> {
         return this.showMessage(MessageType.Error, message, optionsOrFirstItem, ...items);
     }
 
     protected showMessage(type: MessageType, message: string, ...args: any[]): PromiseLike<string | theia.MessageItem | undefined> {
         const actionsMap = new Map<string, any>();
         const actionTitles: string[] = [];
-        const options: theia.MessageOptions = {modal: false};
+        const options: theia.MessageOptions = { modal: false };
 
         let onCloseAction: string;
         if (!!args && args.length > 0) {
@@ -80,9 +80,10 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
         try {
             if (options.modal) {
                 const modalNotification = new ModalNotification();
-                promise = modalNotification.showDialog(type, message, actionTitles).then(result => {
-                    return result !== undefined ? result : onCloseAction;
-                });
+                promise = modalNotification.showDialog(type, message, actionTitles)
+                    .then(result => {
+                        return result !== undefined ? result : onCloseAction;
+                    });
             } else {
                 switch (type) {
                     case MessageType.Info:

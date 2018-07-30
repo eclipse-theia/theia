@@ -29,6 +29,7 @@ import { WorkspaceVariableContribution } from './workspace-variable-contribution
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
 import { bindWorkspacePreferences } from './workspace-preferences';
+import { QuickOpenWorkspace } from './quick-open-workspace';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -59,4 +60,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
     bind(VariableContribution).to(WorkspaceVariableContribution).inSingletonScope();
+
+    bind(QuickOpenWorkspace).toSelf().inSingletonScope();
 });

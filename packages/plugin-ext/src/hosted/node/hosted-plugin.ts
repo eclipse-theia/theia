@@ -22,6 +22,7 @@ import { createIpcEnv } from "@theia/core/lib/node/messaging/ipc-protocol";
 import { HostedPluginClient, PluginModel } from '../../common/plugin-protocol';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { LogPart } from '../../common/types';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -97,6 +98,10 @@ export class HostedPluginSupport {
             }
         });
 
+    }
+
+    public sendLog(logPart: LogPart): void {
+        this.client.log(logPart);
     }
 
     private fork(options: IPCConnectionOptions): cp.ChildProcess {
