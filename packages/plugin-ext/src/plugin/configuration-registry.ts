@@ -27,7 +27,8 @@ import { isObject } from '../common/types';
 import { ConfigurationTarget } from './types-impl';
 
 import cloneDeep = require('lodash.clonedeep');
-import { ConfigurationModel } from '../api/plugin-api';
+import { ConfigurationModel } from '../hosted/browser/configuration/configuration-model';
+// import { ConfigurationModel } from '../api/plugin-api';
 
 interface ConfigurationInspect<T> {
     key: string;
@@ -52,7 +53,7 @@ function lookUp(tree: any, key: string): any {
 
 export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
     private proxy: ConfigurationRegistryMain;
-    private _properties: any; // todo improve configuration should be here like defined object...
+    private _configuration: ConfigurationModel; // todo improve configuration should be here like defined object...
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
     readonly onDidChangeConfiguration: Event<theia.ConfigurationChangeEvent> = this._onDidChangeConfiguration.event;
@@ -61,18 +62,23 @@ export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    $acceptConfigurationChanged(data: ConfigurationModel, confChanges: ConfigurationChange[]): void {
-        this._properties = this.parse(data);
-        console.log("Update configuration!!!!", data);
-        confChanges.forEach(confChange => {
-            this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(confChange));
-        });
+    $acceptConfigurationChanged(conf: ConfigurationModel): void {
+        this._configuration = this.copyConfiguration(conf);
+        // console.log("Update configuration!!!!", data);
+        // todo
+        // confChanges.forEach(confChange => {
+        //     this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(confChange));
+        // });
+    }
+
+    private copyConfiguration(conf: ConfigurationModel): ConfigurationModel {
+        return new ConfigurationModel(conf.contents, conf.keys).freeze();
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
         const preferences = this.toReadonlyValue(section
-            ? lookUp(this._properties, section)
-            : this._properties);
+            ? lookUp(this._configuration.getValue(section), section)
+            : this._configuration.getValue(""));
 
         const configuration: theia.WorkspaceConfiguration = {
             has(key: string): boolean {
@@ -151,7 +157,13 @@ export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
     private toReadonlyValue(data: any): any {
         const readonlyProxy = (target: any): any => isObject(target)
             ? new Proxy(target, {
-                get: (targ: any, prop: string) => readonlyProxy(targ[prop]),
+                // get: (targ: any, prop: string) => readonlyProxy(targ[prop]),
+                get: (targ: any, prop: string) => {
+                    const value = { "type": "string" }; //  targ[prop];
+                    const result = readonlyProxy(value);
+                    console.log(" RESULT ", result);
+                    return result;
+                },
                 set: (targ: any, prop: string, val: any) => {
                     throw new Error(`TypeError: Cannot assign to read only property '${prop}' of object`);
                 },
@@ -171,34 +183,34 @@ export class ConfigurationRegistryExtImpl implements ConfigurationRegistryExt {
         return readonlyProxy(data);
     }
 
-    private parse(data: any): any {
-        return Object.keys(data).reduce((result: any, key: string) => {
-            const parts = key.split('.');
-            let branch = result;
-            for (let i = 0; i < parts.length; i++) {
-                if (i === parts.length - 1) {
-                    branch[parts[i]] = data[key];
-                    continue;
-                }
-                if (!branch[parts[i]]) {
-                    branch[parts[i]] = {};
-                }
-                branch = branch[parts[i]];
-            }
-            return result;
-        }, {});
-    }
+    // private parse(data: any): any {
+    //     return Object.keys(data).reduce((result: any, key: string) => {
+    //         const parts = key.split('.');
+    //         let branch = result;
+    //         for (let i = 0; i < parts.length; i++) {
+    //             if (i === parts.length - 1) {
+    //                 branch[parts[i]] = data[key];
+    //                 continue;
+    //             }
+    //             if (!branch[parts[i]]) {
+    //                 branch[parts[i]] = {};
+    //             }
+    //             branch = branch[parts[i]];
+    //         }
+    //         return result;
+    //     }, {});
+    // }
 
-    private toConfigurationChangeEvent(eventData: ConfigurationChange): theia.ConfigurationChangeEvent {
-        console.log(eventData);
-        return Object.freeze({
-            affectsConfiguration: (section: string, uri?: theia.Uri): boolean => {
-                const tree = eventData.section
-                    .split('.')
-                    .reverse()
-                    .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), eventData.value);
-                return !!lookUp(tree, section);
-            }
-        });
-    }
+    // private toConfigurationChangeEvent(eventData: ConfigurationChange): theia.ConfigurationChangeEvent {
+    //     console.log(eventData);
+    //     return Object.freeze({
+    //         affectsConfiguration: (section: string, uri?: theia.Uri): boolean => {
+    //             const tree = eventData.section
+    //                 .split('.')
+    //                 .reverse()
+    //                 .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), eventData.value);
+    //             return !!lookUp(tree, section);
+    //         }
+    //     });
+    // }
 }

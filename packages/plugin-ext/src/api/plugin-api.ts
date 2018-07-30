@@ -459,7 +459,7 @@ export interface ConfigurationRegistryMain {
 }
 
 export interface ConfigurationRegistryExt {
-    $acceptConfigurationChanged(data: { [key: string]: any }, configChange: ConfigurationChange[]): void;
+    $acceptConfigurationChanged(data: { [key: string]: any }): void; // todo apply config change....
 }
 
 export interface OutputChannelRegistryMain {

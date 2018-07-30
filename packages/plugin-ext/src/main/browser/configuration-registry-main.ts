@@ -33,8 +33,8 @@ export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain 
 
         this.consolidateConfRegistry = container.get(ConsolidatedConfigurationRegistry);
 
-        this.consolidateConfRegistry.onConfigurationChanged(confChange => {
-            this.proxy.$acceptConfigurationChanged(this.consolidateConfRegistry.getConsolidatedConfig(), confChange);
+        this.consolidateConfRegistry.onConfigurationChanged(model => {
+            this.proxy.$acceptConfigurationChanged(model);
         });
     }
 
