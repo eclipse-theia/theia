@@ -20,7 +20,9 @@ import * as fs from "fs";
 import * as net from "net";
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from "@theia/core/lib/common/contribution-provider";
+import { LogType } from "./../../common/types";
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from "./hosted-plugin-uri-postprocessor";
+import { HostedPluginSupport } from "./hosted-plugin";
 const processTree = require('ps-tree');
 
 export const HostedPluginManager = Symbol('HostedPluginManager');
@@ -64,7 +66,7 @@ export interface HostedPluginManager {
 }
 
 const HOSTED_INSTANCE_START_TIMEOUT_MS = 30000;
-const THEIA_INSTANCE_REGEX = /.*Theia app listening on (.*)\. \[\].*/;
+const THEIA_INSTANCE_REGEX = /.*Theia app listening on (.*).*\./;
 const PROCESS_OPTIONS = {
     cwd: process.cwd(),
     env: { ...process.env }
@@ -73,15 +75,13 @@ delete PROCESS_OPTIONS.env.ELECTRON_RUN_AS_NODE;
 
 @injectable()
 export abstract class AbstractHostedPluginManager implements HostedPluginManager {
-
     protected hostedInstanceProcess: cp.ChildProcess;
     protected processOptions: cp.SpawnOptions;
     protected isPluginRunnig: boolean = false;
     protected instanceUri: URI;
 
-    constructor() {
-        this.isPluginRunnig = false;
-    }
+    @inject(HostedPluginSupport)
+    protected readonly hostedPluginSupport: HostedPluginSupport;
 
     isRunning(): boolean {
         return this.isPluginRunnig;
@@ -89,7 +89,8 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
 
     async run(pluginUri: URI, port?: number): Promise<URI> {
         if (this.isPluginRunnig) {
-            throw new Error('Hosted plugin instance is already running.');
+            this.hostedPluginSupport.sendLog({ data: 'Hosted plugin instance is already running.', type: LogType.Info });
+            throw new Error('Hosted instance is already running.');
         }
 
         let command: string[];
@@ -116,6 +117,7 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
                 const args = ['-SIGTERM', this.hostedInstanceProcess.pid.toString()].concat(children.map((p: any) => p.PID));
                 cp.spawn('kill', args);
             });
+            this.hostedPluginSupport.sendLog({ data: 'Hosted instance has been terminated', type: LogType.Info });
         } else {
             throw new Error('Hosted plugin instance is not running.');
         }
@@ -174,6 +176,13 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
             this.hostedInstanceProcess.on('error', () => { this.isPluginRunnig = false; });
             this.hostedInstanceProcess.on('exit', () => { this.isPluginRunnig = false; });
             this.hostedInstanceProcess.stdout.addListener('data', outputListener);
+
+            this.hostedInstanceProcess.stdout.addListener('data', data => {
+                this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Info });
+            });
+            this.hostedInstanceProcess.stderr.addListener('data', data => {
+                this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Error });
+            });
 
             setTimeout(() => {
                 if (!started) {

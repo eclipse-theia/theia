@@ -17,8 +17,12 @@
 import { HostedPluginManager, ElectronNodeHostedPluginRunner } from '../node/hosted-plugin-manager';
 import { interfaces } from 'inversify';
 import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module';
+import { PluginScanner } from '../../common/plugin-protocol';
+import { TheiaPluginScannerElectron } from './scanner-theia-electron';
 
 export function bindElectronBackend(bind: interfaces.Bind): void {
-    bind(HostedPluginManager).to(ElectronNodeHostedPluginRunner);
     bindCommonHostedBackend(bind);
+
+    bind(HostedPluginManager).to(ElectronNodeHostedPluginRunner);
+    bind(PluginScanner).to(TheiaPluginScannerElectron).inSingletonScope();
 }

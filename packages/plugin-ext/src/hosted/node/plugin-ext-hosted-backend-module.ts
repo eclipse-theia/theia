@@ -31,7 +31,6 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
     bind(HostedPluginServer).to(HostedPluginServerImpl).inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
-    bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
     bind(MetadataScanner).toSelf().inSingletonScope();
 
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(HostedPluginReader)).inSingletonScope();
@@ -49,7 +48,9 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 }
 
 export function bindHostedBackend(bind: interfaces.Bind): void {
-    bind(HostedPluginManager).to(NodeHostedPluginRunner).inSingletonScope();
-    bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
     bindCommonHostedBackend(bind);
+
+    bind(HostedPluginManager).to(NodeHostedPluginRunner).inSingletonScope();
+    bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
+    bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
 }

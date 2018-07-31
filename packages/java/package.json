@@ -1,12 +1,12 @@
 {
   "name": "@theia/java",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "description": "Theia - Java Extension",
   "dependencies": {
-    "@theia/core": "^0.3.12",
-    "@theia/editor": "^0.3.12",
-    "@theia/languages": "^0.3.12",
-    "@theia/monaco": "^0.3.12",
+    "@theia/core": "^0.3.13",
+    "@theia/editor": "^0.3.13",
+    "@theia/languages": "^0.3.13",
+    "@theia/monaco": "^0.3.13",
     "@types/glob": "^5.0.30",
     "@types/tar": "4.0.0",
     "glob": "^7.1.2",
@@ -14,7 +14,7 @@
     "tar": "^4.0.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.12"
+    "@theia/ext-scripts": "^0.3.13"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
@@ -23,7 +23,8 @@
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "docs": "theiaext docs"
+    "docs": "theiaext docs",
+    "dev-server": "node ./scripts/get-dev-server.js"
   },
   "publishConfig": {
     "access": "public"
@@ -49,10 +50,14 @@
   "files": [
     "lib",
     "scripts",
-    "src"
+    "src",
+    "data"
   ],
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "jdt.ls.download.path": "/jdtls/milestones/0.18.0/jdt-language-server-0.18.0-201805010001.tar.gz"
+  "ls": {
+    "download.base": "https://www.eclipse.org/downloads/download.php?file=",
+    "download.path": "/che/che-ls-jdt/snapshots/che-jdt-language-server-latest.tar.gz"
+  }
 }

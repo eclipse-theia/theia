@@ -14,59 +14,46 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceChangeEvent } from '@theia/core/lib/browser/preferences/preference-proxy';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { Git } from '../common/git';
-import { GitWatcher } from '../common/git-watcher';
 import { WorkingDirectoryStatus } from '../common/git-model';
-import { GitRepositoryProvider } from './git-repository-provider';
 import { GitFileChange, GitFileStatus } from '../common/git-model';
 import { GitPreferences, GitConfiguration } from './git-preferences';
+import { GitRepositoryTracker } from './git-repository-tracker';
 
 @injectable()
 export class GitDecorator implements TreeDecorator {
 
     readonly id = 'theia-git-decorator';
 
-    protected readonly toDisposeOnRepositoryChange: DisposableCollection;
-    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>;
+    @inject(Git) protected readonly git: Git;
+    @inject(GitRepositoryTracker) protected readonly repositories: GitRepositoryTracker;
+    @inject(GitPreferences) protected readonly preferences: GitPreferences;
+    @inject(ILogger) protected readonly logger: ILogger;
+
+    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
 
     protected enabled: boolean;
     protected showColors: boolean;
 
-    constructor(
-        @inject(Git) protected readonly git: Git,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
-        @inject(GitWatcher) protected readonly watcher: GitWatcher,
-        @inject(GitPreferences) protected readonly preferences: GitPreferences,
-        @inject(ILogger) protected readonly logger: ILogger) {
-        this.emitter = new Emitter();
-        this.toDisposeOnRepositoryChange = new DisposableCollection();
-        this.repositoryProvider.onDidChangeRepository(async repository => {
-            this.toDisposeOnRepositoryChange.dispose();
-            if (repository) {
-                this.toDisposeOnRepositoryChange.pushAll([
-                    await this.watcher.watchGitChanges(repository),
-                    this.watcher.onGitEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event.status)))
-                ]);
-            }
-        });
+    @postConstruct()
+    protected init(): void {
+        this.repositories.onGitEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event.status)));
         this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event));
         this.enabled = this.preferences['git.decorations.enabled'];
         this.showColors = this.preferences['git.decorations.colors'];
     }
 
     async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
-        const { selectedRepository } = this.repositoryProvider;
-        if (selectedRepository) {
-            const status = await this.git.status(selectedRepository);
+        const status = this.repositories.selectedRepositoryStatus;
+        if (status) {
             return this.collectDecorators(tree, status);
         }
         return new Map();
@@ -180,9 +167,8 @@ export class GitDecorator implements TreeDecorator {
                 refresh = true;
             }
         }
-        const repository = this.repositoryProvider.selectedRepository;
-        if (refresh && repository) {
-            const status = await this.git.status(repository);
+        const status = this.repositories.selectedRepositoryStatus;
+        if (refresh && status) {
             this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, status));
         }
     }

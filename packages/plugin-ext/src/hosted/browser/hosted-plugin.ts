@@ -38,6 +38,9 @@ export class HostedPluginSupport {
 
     private theiaReadyPromise: Promise<any>;
 
+    private backendApiInitialized = false;
+    private frontendApiInitialized = false;
+
     constructor(
         @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl
     ) {
@@ -75,7 +78,6 @@ export class HostedPluginSupport {
         if (pluginModel.entryPoint!.frontend) {
             this.logger.info(`Loading frontend hosted plugin: ${pluginModel.name}`);
             this.worker = new PluginWorker();
-            setUpPluginApi(this.worker.rpc, container);
 
             this.theiaReadyPromise.then(() => {
                 const hostedExtManager = this.worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
@@ -84,19 +86,23 @@ export class HostedPluginSupport {
                     model: pluginModel,
                     lifecycle: pluginLifecycle
                 };
-                const frontendInitPath = pluginLifecycle.frontendInitPath;
+                let frontendInitPath = pluginLifecycle.frontendInitPath;
                 if (frontendInitPath) {
                     hostedExtManager.$initialize(frontendInitPath, pluginMetadata);
-                    hostedExtManager.$loadPlugin(frontendInitPath, plugin);
                 } else {
-                    hostedExtManager.$loadPlugin('', plugin);
+                    frontendInitPath = '';
                 }
+                // we should create only one instance of the plugin api per connection
+                if (!this.frontendApiInitialized) {
+                    setUpPluginApi(this.worker.rpc, container);
+                    this.frontendApiInitialized = true;
+                }
+                hostedExtManager.$loadPlugin(frontendInitPath, plugin);
             });
         }
         if (pluginModel.entryPoint!.backend) {
             this.logger.info(`Loading backend hosted plugin: ${pluginModel.name}`);
             const rpc = this.createServerRpc();
-            setUpPluginApi(rpc, container);
 
             this.theiaReadyPromise.then(() => {
                 const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
@@ -105,13 +111,18 @@ export class HostedPluginSupport {
                     model: pluginModel,
                     lifecycle: pluginLifecycle
                 };
-                const backendInitPath = pluginLifecycle.backendInitPath;
+                let backendInitPath = pluginLifecycle.backendInitPath;
                 if (backendInitPath) {
                     hostedExtManager.$initialize(backendInitPath, pluginMetadata);
-                    hostedExtManager.$loadPlugin(backendInitPath, plugin);
                 } else {
-                    hostedExtManager.$loadPlugin('', plugin);
+                    backendInitPath = '';
                 }
+                // we should create only one instance of the plugin api per connection
+                if (!this.backendApiInitialized) {
+                    setUpPluginApi(rpc, container);
+                    this.backendApiInitialized = true;
+                }
+                hostedExtManager.$loadPlugin(backendInitPath, plugin);
             });
         }
     }
@@ -119,7 +130,7 @@ export class HostedPluginSupport {
     private createServerRpc(): RPCProtocol {
         return new RPCProtocolImpl({
             onMessage: this.watcher.onPostMessageEvent,
-            send: message => { this.logger.info('sending to ', this.server, 'the message', message); this.server.onMessage(JSON.stringify(message)); }
+            send: message => { this.server.onMessage(JSON.stringify(message)); }
         });
     }
 }

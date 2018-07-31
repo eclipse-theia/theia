@@ -21,8 +21,8 @@ export function loadVsRequire(context: any): Promise<any> {
     // Keep a reference to an original require so we can restore it after executing the amd loader file.
     const originalRequire = context.require;
 
-    return new Promise<any>(resolve => {
-        window.onload = () => {
+    return new Promise<any>(resolve =>
+        window.addEventListener('load', () => {
             const vsLoader = document.createElement('script');
             vsLoader.type = 'text/javascript';
             vsLoader.src = './vs/loader.js';
@@ -36,18 +36,16 @@ export function loadVsRequire(context: any): Promise<any> {
                 resolve(amdRequire);
             });
             document.body.appendChild(vsLoader);
-        };
-    });
+        }, { once: true })
+    );
 }
 
 export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
         vsRequire(["vs/editor/editor.main"], () => {
             vsRequire([
-                'vs/basic-languages/monaco.contribution',
                 'vs/language/css/monaco.contribution',
                 'vs/language/html/monaco.contribution',
-                'vs/language/json/monaco.contribution',
                 'vs/platform/commands/common/commands',
                 'vs/platform/actions/common/actions',
                 'vs/platform/keybinding/common/keybindingsRegistry',
@@ -68,7 +66,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/contrib/suggest/suggestController',
                 'vs/editor/contrib/find/findController',
                 'vs/editor/contrib/rename/rename',
-            ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
+            ], (css: any, html: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any) => {
                     const global: any = self;

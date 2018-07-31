@@ -122,7 +122,7 @@ export class FrontendApplication {
             return Promise.resolve(document.body);
         }
         return new Promise<HTMLElement>(resolve =>
-            window.onload = () => resolve(document.body)
+            window.addEventListener('load', () => resolve(document.body), { once: true })
         );
     }
 

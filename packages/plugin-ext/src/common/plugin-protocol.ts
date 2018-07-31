@@ -16,6 +16,7 @@
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { LogPart } from './types';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -42,6 +43,7 @@ export interface PluginPackage {
     displayName: string;
     description: string;
     contributes: {};
+    packagePath: string;
 }
 
 export const PluginScanner = Symbol('PluginScanner');
@@ -276,6 +278,8 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
     postMessage(message: string): Promise<void>;
+
+    log(logPart: LogPart): void;
 }
 
 export const HostedPluginServer = Symbol('HostedPluginServer');

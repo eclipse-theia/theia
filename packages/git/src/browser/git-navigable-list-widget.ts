@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { VirtualWidget, SELECTED_CLASS, Key } from "@theia/core/lib/browser";
+import { SELECTED_CLASS, Key } from "@theia/core/lib/browser";
 import { GitFileStatus, Repository, GitFileChange } from '../common';
 import URI from "@theia/core/lib/common/uri";
 import { GitRepositoryProvider } from "./git-repository-provider";
@@ -22,9 +22,10 @@ import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { inject, injectable } from "inversify";
+import { ReactWidget } from "@theia/core/lib/browser/widgets/react-widget";
 
 @injectable()
-export class GitNavigableListWidget<T extends { selected?: boolean }> extends VirtualWidget {
+export abstract class GitNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
 
     protected gitNodes: T[];
     private _scrollContainer: string;
@@ -51,13 +52,14 @@ export class GitNavigableListWidget<T extends { selected?: boolean }> extends Vi
     }
 
     protected onUpdateRequest(msg: Message): void {
+        if (!this.isAttached || !this.isVisible) {
+            return;
+        }
         super.onUpdateRequest(msg);
-
         (async () => {
             const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-            const scrollArea = await this.getScrollContainer();
-            if (selected && scrollArea) {
-                ElementExt.scrollIntoViewIfNeeded(scrollArea, selected);
+            if (selected) {
+                ElementExt.scrollIntoViewIfNeeded(this.node, selected);
             }
         })();
     }
@@ -95,7 +97,6 @@ export class GitNavigableListWidget<T extends { selected?: boolean }> extends Vi
         this.addKeyListener(this.node, Key.ARROW_UP, () => this.navigateUp());
         this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.navigateDown());
         this.addKeyListener(this.node, Key.ENTER, () => this.handleListEnter());
-
     }
 
     protected navigateLeft(): void {

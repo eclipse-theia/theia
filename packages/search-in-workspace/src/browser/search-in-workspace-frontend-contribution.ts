@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, KeybindingRegistry, LabelProvider } from "@theia/core/lib/browser";
+import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus } from "@theia/core/lib/browser";
 import { SearchInWorkspaceWidget } from "./search-in-workspace-widget";
 import { injectable, inject } from "inversify";
 import { CommandRegistry, MenuModelRegistry, SelectionService } from "@theia/core";
@@ -85,6 +85,9 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         super.registerMenus(menus);
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '6_find'], {
             commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id
+        });
+        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
+            commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id
         });
     }
 

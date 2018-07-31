@@ -42,6 +42,9 @@ export function bindLogger(bind: interfaces.Bind): void {
     );
 }
 
+/**
+ * IMPORTANT: don't use in tests, since it overrides console
+ */
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).toDynamicValue(ctx =>
         ({

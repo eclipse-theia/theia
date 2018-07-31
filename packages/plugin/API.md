@@ -178,6 +178,92 @@ theia.env.getQueryParameters();
 
 Note, that it is possible to have an array of values for single name, because it could be specified more than one time (for example `localhost:3000?foo=bar&foo=baz`).
 
+### Terminal
+
+Function to create new terminal with specific arguments:
+
+```typescript
+const terminal = theia.window.createTerminal("Bash terminal", "/bin/bash", shellArgs: ["-l"]);
+```
+
+Where are:
+ - first argument - terminal's name.
+ - second argument - path to the executable shell.
+ - third argument - arguments to configure executable shell.
+
+You can create terminal with specific options:
+
+```typescript
+const options: theia.TerminalOptions {
+    name: "Bash terminal",
+    shellPath: "/bin/bash";
+    shellArgs: ["-l"];
+    cwd: "/projects";
+    env: { "TERM": "screen" };
+};
+```
+
+Where are:
+ - "shellPath" - path to the executable shell, for example "/bin/bash", "bash", "sh" or so on.
+ - "shellArgs" - shell command arguments, for example without login: "-l". If you defined shell command "/bin/bash" and set up shell arguments "-l" than will be created terminal process with command "/bin/bash -l". And client side will connect to stdin/stdout of this process to interaction with user.
+ - "cwd" - current working directory;
+ - "env"- enviroment variables for terminal process, for example TERM - identifier terminal window capabilities.
+
+Function to create new terminal with defined theia.TerminalOptions described above:
+
+```typescript
+const terminal = theia.window.createTerminal(options);
+```
+
+Created terminal is not attached to the panel. To apply created terminal to the panel use method "show":
+
+```typescript
+terminal.show();
+```
+
+To hide panel with created terminal use method "hide";
+
+```typescript
+terminal.hide();
+```
+
+Send text to the terminal:
+
+```typescript
+terminal.sendText("Hello, Theia!", false);
+```
+
+Where are:
+- first argument - text content.
+- second argument - in case true, terminal will apply new line after the text, otherwise will send only the text.
+
+Distroy terminal:
+
+```typescript
+terminal.dispose();
+```
+
+Subscribe to close terminal event:
+
+```typescript
+theia.window.onDidCloseTerminal((term) => {
+    console.log("Terminal closed.");
+});
+```
+
+Detect destroying terminal by Id:
+
+```typescript
+terminal.processId.then(id => {
+    theia.window.onDidCloseTerminal(async (term) => {
+        const currentId = await term.processId;
+        if (currentId === id) {
+            console.log("Terminal closed.", id);
+        }
+    }, id);
+});
+```
+
 #### Preference API
 
 Preference API allows one to read or update User's and Workspace's preferences.

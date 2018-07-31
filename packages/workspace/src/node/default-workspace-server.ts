@@ -23,7 +23,9 @@ import { injectable, inject, postConstruct } from "inversify";
 import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MessageService, ILogger } from '@theia/core';
 import { WorkspaceServer } from "../common";
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -62,9 +64,15 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected async init() {
-        let root = await this.getRootURIFromCli();
+        let root = await this.getWorkspaceURIFromCli();
         if (!root) {
             const data = await this.readFromUserHome();
             if (data && data.recentRoots) {
@@ -74,19 +82,52 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         this.root.resolve(root);
     }
 
-    getRoot(): Promise<string | undefined> {
+    getWorkspace(): Promise<string | undefined> {
         return this.root.promise;
     }
 
-    async setRoot(uri: string): Promise<void> {
+    async setWorkspace(uri: string): Promise<void> {
         this.root = new Deferred();
+        const listUri: string[] = [];
+        const oldListUri = await this.getRecentWorkspaces();
+        listUri.push(uri);
+        if (oldListUri) {
+            oldListUri.forEach(element => {
+                if (element !== uri && element.length > 0) {
+                    listUri.push(element);
+                }
+            });
+        }
         this.root.resolve(uri);
         this.writeToUserHome({
-            recentRoots: [uri]
+            recentRoots: listUri
         });
     }
 
-    protected async getRootURIFromCli(): Promise<string | undefined> {
+    async getRecentWorkspaces(): Promise<string[]> {
+        const listUri: string[] = [];
+        const data = await this.readFromUserHome();
+        if (data && data.recentRoots) {
+            data.recentRoots.forEach(element => {
+                if (element.length > 0) {
+                    if (this.workspaceStillExist(element)) {
+                        listUri.push(element);
+                    }
+                }
+            });
+        }
+        return listUri;
+    }
+
+    private workspaceStillExist(wspath: string): boolean {
+        const uri = new URI(wspath);
+        if (fs.pathExistsSync(uri.path.toString())) {
+            return true;
+        }
+        return false;
+    }
+
+    protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
         const arg = await this.cliParams.workspaceRoot.promise;
         return arg !== undefined ? FileUri.create(arg).toString() : undefined;
     }
@@ -109,11 +150,27 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     private async readFromUserHome(): Promise<WorkspaceData | undefined> {
         const file = this.getUserStoragePath();
         if (await fs.pathExists(file)) {
-            const config = await fs.readJson(file);
+            const rawContent = await fs.readFile(file, 'utf-8');
+            const content = rawContent.trim();
+            if (!content) {
+                return undefined;
+            }
+
+            let config;
+            try {
+                config = JSON.parse(content);
+            } catch (error) {
+                this.messageService.warn(`Parse error in '${file}':\nFile will be ignored...`);
+                error.message = `${file}:\n${error.message}`;
+                this.logger.warn('[CAUGHT]', error);
+                return undefined;
+            }
+
             if (WorkspaceData.is(config)) {
                 return config;
             }
         }
+
         return undefined;
     }
 

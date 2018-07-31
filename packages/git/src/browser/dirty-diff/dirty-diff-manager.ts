@@ -222,7 +222,7 @@ export class DirtyDiffModel implements Disposable {
         };
         if (isModified || isNewAndStaged) {
             this.staged = isNewAndStaged || modifiedChange!.staged || false;
-            readPreviousRevisionContent();
+            await readPreviousRevisionContent();
         }
         if (isNewAndUnstaged && !isNewAndStaged) {
             this.previousContent = undefined;
@@ -230,7 +230,7 @@ export class DirtyDiffModel implements Disposable {
         if (noRelevantChanges) {
             const inGitRepository = await this.isInGitRepository(repository);
             if (inGitRepository) {
-                readPreviousRevisionContent();
+                await readPreviousRevisionContent();
             }
         }
         this.update();

@@ -23,10 +23,16 @@
     position: relative;
 }
 
-.theia-Tree:focus {
+.theia-Tree:focus,
+.theia-TreeContainer .ReactVirtualized__List:focus {
     outline: 0;
     box-shadow: none;
+    border: none;
 }
+
+.theia-TreeContainer {
+    height: 100%;
+}   
 
 .theia-TreeNode {
     line-height: var(--theia-private-horizontal-tab-height);

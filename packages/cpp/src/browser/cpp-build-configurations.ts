@@ -131,12 +131,37 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
         const items: QuickOpenItem[] = [];
         const active: CppBuildConfiguration | undefined = this.cppBuildConfigurations.getActiveConfig();
+        const configurations = Array.from(this.cppBuildConfigurations.getConfigs()).sort();
+
+        // Add feedback item when no configurations are present
+        if (!configurations.length) {
+            items.push(new QuickOpenItem({
+                label: 'No build configurations available',
+                run: () => false,
+            }));
+            return acceptor(items);
+        }
+
+        // Item to de-select any active build config
+        if (active) {
+            items.push(new QuickOpenItem({
+                label: 'None',
+                detail: 'Reset active build configuration',
+                run: (mode: QuickOpenMode): boolean => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    this.cppBuildConfigurations.setActiveConfig(undefined);
+                    return true;
+                },
+            }));
+        }
 
         // Add one item per build config.
-        this.cppBuildConfigurations.getConfigs().forEach(config => {
+        configurations.forEach(config => {
             items.push(new QuickOpenItem({
-                label: config.name,
-                description: config === active ? 'active' : '',
+                label: config.name + (config === active ? ' ✔' : ''),
+                detail: config.directory,
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
@@ -154,6 +179,8 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     open() {
         this.quickOpenService.open(this, {
             placeholder: 'Choose a build configuration...',
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
         });
     }
 }

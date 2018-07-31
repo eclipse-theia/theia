@@ -22,6 +22,7 @@ import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from "./workspace-commands";
+import { QuickOpenWorkspace } from "./quick-open-workspace";
 
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, MenuContribution {
@@ -32,7 +33,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(StorageService) protected readonly workspaceStorage: StorageService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace,
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -44,6 +46,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
             isEnabled: () => this.workspaceService.opened,
             execute: () => this.closeWorkspace()
         });
+        commands.registerCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE, {
+            isEnabled: () => this.workspaceService.hasHistory,
+            execute: () => this.quickOpenWorkspace.select()
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -52,6 +58,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         });
         menus.registerMenuAction(CommonMenus.FILE_CLOSE, {
             commandId: WorkspaceCommands.CLOSE.id
+        });
+        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
+            commandId: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id
         });
     }
 

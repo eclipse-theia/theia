@@ -25,6 +25,7 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 import { CppBuildConfigurationManager, CppBuildConfiguration } from "./cpp-build-configurations";
+import { CppBuildConfigurationsStatusBarElement } from "./cpp-build-configurations-statusbar-element";
 
 @injectable()
 export class CppLanguageClientContribution extends BaseLanguageClientContribution {
@@ -34,6 +35,9 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     @inject(CppBuildConfigurationManager)
     protected readonly cppBuildConfigurations: CppBuildConfigurationManager;
+
+    @inject(CppBuildConfigurationsStatusBarElement)
+    protected readonly cppBuildConfigurationsStatusBarElement: CppBuildConfigurationsStatusBarElement;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -53,12 +57,15 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         // (e.g. compile_commands.json).
         this.onActiveBuildConfigChanged(this.cppBuildConfigurations.getActiveConfig());
         this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
+
+        // Display the C/C++ build configurations status bar element to select active build config
+        this.cppBuildConfigurationsStatusBarElement.show();
     }
 
     async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
         const interfaceParams: DidChangeConfigurationParams = {
             settings: {
-                compilationDatabasePath: config ? config.directory : undefined,
+                compilationDatabasePath: config ? config.directory : "",
             },
         };
 
@@ -67,12 +74,17 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     }
 
     protected get documentSelector() {
+        // This is used (at least) to determine which files, when they are open,
+        // trigger the launch of the C/C++ language server.
         return HEADER_AND_SOURCE_FILE_EXTENSIONS;
     }
 
     protected get globPatterns() {
+        // This is used (at least) to determine which files we watch.  Change
+        // notifications are forwarded to the language server.
         return [
-            '**/*.{' + HEADER_AND_SOURCE_FILE_EXTENSIONS.join() + '}'
+            '**/*.{' + HEADER_AND_SOURCE_FILE_EXTENSIONS.join() + '}',
+            '**/compile_commands.json',
         ];
     }
 

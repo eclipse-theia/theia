@@ -1,0 +1,126 @@
+/********************************************************************************
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+import { injectable, inject } from 'inversify';
+import { ProblemManager } from './problem-manager';
+import { ProblemMarker } from '../../common/problem-marker';
+import { ProblemTreeModel } from './problem-tree-model';
+import { MarkerInfoNode, MarkerNode, MarkerRootNode } from '../marker-tree';
+import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel } from "@theia/core/lib/browser";
+import { DiagnosticSeverity } from 'vscode-languageserver-types';
+import * as React from "react";
+
+@injectable()
+export class ProblemWidget extends TreeWidget {
+
+    constructor(
+        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
+        @inject(TreeProps) readonly treeProps: TreeProps,
+        @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
+        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
+    ) {
+        super(treeProps, model, contextMenuRenderer);
+
+        this.id = 'problems';
+        this.title.label = 'Problems';
+        this.title.iconClass = 'fa fa-exclamation-circle';
+        this.title.closable = true;
+        this.addClass('theia-marker-container');
+
+        this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
+    }
+
+    storeState(): object {
+        // no-op
+        return {};
+    }
+    protected superStoreState(): object {
+        return super.storeState();
+    }
+    restoreState(state: object): void {
+        // no-op
+    }
+    protected superRestoreState(state: object): void {
+        return super.restoreState(state);
+    }
+
+    protected handleCopy(event: ClipboardEvent) {
+        const uris = this.model.selectedNodes.filter(MarkerNode.is).map(node => node.uri.toString());
+        if (uris.length > 0) {
+            event.clipboardData.setData('text/plain', uris.join('\n'));
+            event.preventDefault();
+        }
+    }
+
+    protected renderTree(model: TreeModel): React.ReactNode {
+        if (MarkerRootNode.is(model.root) && model.root.children.length > 0) {
+            return super.renderTree(model);
+        }
+        return <div className='noMarkers'>No problems have been detected in the workspace so far.</div>;
+    }
+
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+        if (MarkerInfoNode.is(node)) {
+            return this.decorateMarkerFileNode(node);
+        } else if (MarkerNode.is(node)) {
+            return this.decorateMarkerNode(node);
+        }
+        return 'caption';
+    }
+
+    protected decorateMarkerNode(node: MarkerNode): React.ReactNode {
+        if (ProblemMarker.is(node.marker)) {
+            let severityClass: string = '';
+            const problemMarker = node.marker;
+            if (problemMarker.data.severity) {
+                severityClass = this.getSeverityClass(problemMarker.data.severity);
+            }
+            return <div className='markerNode'>
+                <div>
+                    <i className={severityClass}></i>
+                </div>
+                <div className='owner'>
+                    {'[' + problemMarker.owner + ']'}
+                </div>
+                <div className='message'>{problemMarker.data.message}
+                    <span className='position'>
+                        {'(' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ')'}
+                    </span>
+                </div>
+            </div>;
+        }
+        return '';
+    }
+
+    protected getSeverityClass(severity: DiagnosticSeverity): string {
+        switch (severity) {
+            case 1: return 'fa fa-times-circle error';
+            case 2: return 'fa fa-exclamation-circle warning';
+            case 3: return 'fa fa-info-circle information';
+            default: return 'fa fa-hand-o-up hint';
+        }
+    }
+
+    protected decorateMarkerFileNode(node: MarkerInfoNode): React.ReactNode {
+        return <div className='markerFileNode'>
+            <div className={(node.icon || '') + ' file-icon'}></div>
+            <div>{node.name}</div>
+            <div className='path'>{node.description || ''}</div>
+            <div className='counter'>{node.numberOfMarkers.toString()}</div>
+        </div>;
+    }
+
+}

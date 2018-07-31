@@ -24,3 +24,13 @@ export function isObject(obj: any): boolean {
         && !(obj instanceof RegExp)
         && !(obj instanceof Date);
 }
+
+export enum LogType {
+    Info,
+    Error
+}
+
+export interface LogPart {
+    data: string;
+    type: LogType;
+}

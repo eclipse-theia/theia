@@ -53,6 +53,7 @@ import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import URI from 'vscode-uri';
 import { OutputChannelRegistryExt } from './output-channel-registry';
+import { TerminalServiceExtImpl } from './terminal-ext';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -64,6 +65,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
     const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl());
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
+    const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
     const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
@@ -166,6 +168,17 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
             return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
         },
+
+        createTerminal(nameOrOptions: theia.TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): theia.Terminal {
+            return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
+        },
+        get onDidCloseTerminal(): theia.Event<theia.Terminal> {
+            return terminalExt.onDidCloseTerminal;
+        },
+        set onDidCloseTerminal(event: theia.Event<theia.Terminal>) {
+            terminalExt.onDidCloseTerminal = event;
+        },
+
         createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
             return editors.createTextEditorDecorationType(options);
         }
@@ -265,7 +278,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
 // tslint:disable-next-line:no-any
 export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string, () => void>): void {
     if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
-        pluginMain[plugin.lifecycle.startMethod].apply(global, []);
+        pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), []);
     } else {
         console.log('there is no doStart method on plugin');
     }
@@ -274,4 +287,10 @@ export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string
         const pluginId = getPluginId(plugin.model);
         plugins.set(pluginId, pluginMain[plugin.lifecycle.stopMethod]);
     }
+}
+
+// for electron
+function getGlobal() {
+    // tslint:disable-next-line:no-null-keyword
+    return typeof self === "undefined" ? typeof global === "undefined" ? null : global : self;
 }

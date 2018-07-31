@@ -23,3 +23,7 @@ export const LanguageGrammarDefinitionContribution = Symbol('LanguageGrammarDefi
 export interface LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry): void;
 }
+export function getEncodedLanguageId(languageId: string): number {
+    const identifier = monaco.services.StaticServices.modeService.get().getLanguageIdentifier(languageId);
+    return identifier && identifier.id;
+}

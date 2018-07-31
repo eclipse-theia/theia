@@ -69,6 +69,7 @@ export class MergeConflictsParser {
         start.to(start, any);
         currentMarker.to(currentMarker, startsWithLt);
         currentMarker.to(separator, startsWithEq);
+        currentMarker.to(baseMarker, startsWithPp);
         currentMarker.to(currentContent, any);
         currentContent.to(currentMarker, startsWithLt);
         currentContent.to(separator, startsWithEq);
@@ -85,6 +86,7 @@ export class MergeConflictsParser {
         baseContent.to(baseContent, any);
         separator.to(currentMarker, startsWithLt);
         separator.to(start, startsWithEq);
+        separator.to(incomingMarker, startsWithGt);
         separator.to(incomingContent, any);
         incomingContent.to(start, startsWithEq);
         incomingContent.to(currentMarker, startsWithLt);

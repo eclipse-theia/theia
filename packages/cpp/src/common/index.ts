@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+export const C_LANGUAGE_ID = 'c';
 export const CPP_LANGUAGE_ID = 'cpp';
 export const CPP_LANGUAGE_NAME = 'C/C++';
 // These should become preferences eventually and be forwarded to the server.

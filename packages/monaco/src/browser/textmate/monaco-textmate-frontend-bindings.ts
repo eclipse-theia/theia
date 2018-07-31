@@ -20,19 +20,40 @@ import { bindContributionProvider } from '@theia/core';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { BuiltinTextmateThemeProvider } from './monaco-textmate-builtin-theme-provider';
 import { BuiltinMonacoThemeProvider } from './monaco-builtin-theme-provider';
-import { TextmateRegistry, TextmateRegistryImpl } from './textmate-registry';
+import { TextmateRegistry } from './textmate-registry';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
 import { MonacoTextmateService, OnigasmPromise } from './monaco-textmate-service';
 import { loadWASM } from 'onigasm';
 
+export function fetchOnigasm(): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+        const onigasmPath = require('onigasm/lib/onigasm.wasm'); // webpack doing its magic here
+        const request = new XMLHttpRequest();
+
+        request.onreadystatechange = function () {
+            if (this.readyState === XMLHttpRequest.DONE) {
+                if (this.status === 200) {
+                    resolve(this.response);
+                } else {
+                    reject(new Error('Could not fetch onigasm'));
+                }
+            }
+        };
+
+        request.open('GET', onigasmPath, true);
+        request.responseType = 'arraybuffer';
+        request.send();
+    });
+}
+
 export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-    const onigasmPromise = isBasicWasmSupported ? loadWASM(require('onigasm/lib/onigasm.wasm')) : Promise.reject(new Error('wasm not supported'));
+    const onigasmPromise = isBasicWasmSupported ? fetchOnigasm().then(buffer => loadWASM(buffer)) : Promise.reject(new Error('wasm not supported'));
     bind(OnigasmPromise).toConstantValue(onigasmPromise);
 
     bind(MonacoTextmateService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
-    bind(TextmateRegistry).to(TextmateRegistryImpl).inSingletonScope();
+    bind(TextmateRegistry).toSelf().inSingletonScope();
 
     const themeService = ThemeService.get();
     BuiltinMonacoThemeProvider.compileMonacoThemes();

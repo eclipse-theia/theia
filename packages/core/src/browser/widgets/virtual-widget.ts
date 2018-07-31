@@ -21,7 +21,7 @@ import { BaseWidget, Message } from "./widget";
 import { VirtualRenderer } from "./virtual-renderer";
 
 /*
- * @deprecated use ReactWidget instead.
+ * @deprecated use ReactWidget instead. VirtualWidget will be removed with the next major release.
  */
 @injectable()
 export class VirtualWidget extends BaseWidget {

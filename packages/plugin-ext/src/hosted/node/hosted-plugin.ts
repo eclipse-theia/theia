@@ -22,6 +22,7 @@ import { createIpcEnv } from "@theia/core/lib/node/messaging/ipc-protocol";
 import { HostedPluginClient, PluginModel } from '../../common/plugin-protocol';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { LogPart } from '../../common/types';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -77,6 +78,7 @@ export class HostedPluginSupport {
         });
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
         hostedPluginManager.$stopPlugin('').then(() => {
+            emitter.dispose();
             childProcess.kill();
         });
     }
@@ -98,10 +100,19 @@ export class HostedPluginSupport {
 
     }
 
+    public sendLog(logPart: LogPart): void {
+        this.client.log(logPart);
+    }
+
     private fork(options: IPCConnectionOptions): cp.ChildProcess {
+
+        // create env and add PATH to it so any executable from root process is available
+        const env = createIpcEnv();
+        env.PATH = process.env.PATH;
+
         const forkOptions: cp.ForkOptions = {
             silent: true,
-            env: createIpcEnv(),
+            env: env,
             execArgv: [],
             stdio: ['pipe', 'pipe', 'pipe', 'ipc']
         };

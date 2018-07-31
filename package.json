@@ -6,6 +6,9 @@
     "yarn": "1.0.x || >=1.2.1",
     "node": ">=7.9.0"
   },
+  "resolution": {
+    "**/@types/node": "8.10.20"
+  },
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/chai-as-promised": "0.0.31",
@@ -15,6 +18,7 @@
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
     "@types/webdriverio": "^4.7.0",
+    "@types/node": "8.10.20",
     "chai": "^4.1.0",
     "chai-string": "^1.4.0",
     "concurrently": "^3.5.0",
@@ -29,7 +33,7 @@
     "rimraf": "^2.6.1",
     "sinon": "^3.3.0",
     "temp": "^0.8.3",
-    "ts-node": "^3.2.0",
+    "ts-node": "<7.0.0",
     "tslint": "^5.10.0",
     "tslint-language-service": "^0.9.9",
     "typedoc": "^0.8",

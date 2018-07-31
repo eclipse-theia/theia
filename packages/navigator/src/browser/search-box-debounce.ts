@@ -16,7 +16,8 @@
 
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { debounce } from 'throttle-debounce';
+
+import debounce = require('lodash.debounce');
 
 /**
  * Options for the search term debounce.
@@ -54,7 +55,7 @@ export class SearchBoxDebounce implements Disposable {
 
     constructor(protected readonly options: SearchBoxDebounceOptions) {
         this.disposables.push(this.emitter);
-        this.handler = debounce(this.options.delay, () => this.fireChanged(this.state)).bind(this);
+        this.handler = debounce(() => this.fireChanged(this.state), this.options.delay).bind(this);
     }
 
     append(input: string | undefined): string | undefined {

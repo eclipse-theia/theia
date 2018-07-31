@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../../common';
-import { configuration, monarchLanguage } from "./java-monaco-language";
+import { configuration } from "./java-monaco-language";
 
 monaco.languages.register({
     id: JAVA_LANGUAGE_ID,
@@ -26,5 +26,4 @@ monaco.languages.register({
 
 monaco.languages.onLanguage(JAVA_LANGUAGE_ID, () => {
     monaco.languages.setLanguageConfiguration(JAVA_LANGUAGE_ID, configuration);
-    monaco.languages.setMonarchTokensProvider(JAVA_LANGUAGE_ID, monarchLanguage);
 });

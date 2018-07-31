@@ -43,7 +43,12 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
         ctx.importScripts('/context/' + contextPath);
     },
     loadPlugin(contextPath: string, plugin: Plugin): void {
-        ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+        if (isElectron()) {
+            ctx.importScripts(plugin.pluginPath);
+        } else {
+            ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+        }
+
         if (plugin.lifecycle.frontendModuleName) {
             if (!ctx[plugin.lifecycle.frontendModuleName]) {
                 console.error(`WebWorker: Cannot start plugin "${plugin.model.name}". Frontend plugin not found: "${plugin.lifecycle.frontendModuleName}"`);
@@ -62,3 +67,11 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
         });
     }
 }));
+
+function isElectron() {
+    if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
+        return true;
+    }
+
+    return false;
+}
