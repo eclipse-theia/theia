@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { MessageConnection, ResponseError } from "vscode-jsonrpc";
+import { ApplicationError } from "../application-error";
 import { Event, Emitter } from "../event";
 import { Disposable } from "../disposable";
 import { ConnectionHandler } from './handler';
@@ -155,7 +156,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected async onRequest(method: string, ...args: any[]): Promise<any> {
         try {
             return await this.target[method](...args);
-        } catch (e) {
+        } catch (error) {
+            const e = this.serializeError(error);
             if (e instanceof ResponseError) {
                 throw e;
             }
@@ -223,17 +225,19 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
             return this.onDidCloseConnectionEmitter.event;
         }
         const isNotify = this.isNotification(p);
-        return (...args: any[]) =>
-            this.connectionPromise.then(connection =>
+        return (...args: any[]) => {
+            const method = p.toString();
+            const capturedError = new Error(`Request '${method}' failed`);
+            return this.connectionPromise.then(connection =>
                 new Promise((resolve, reject) => {
                     try {
                         if (isNotify) {
-                            connection.sendNotification(p.toString(), ...args);
+                            connection.sendNotification(method, ...args);
                             resolve();
                         } else {
-                            const resultPromise = connection.sendRequest(p.toString(), ...args) as Promise<any>;
+                            const resultPromise = connection.sendRequest(method, ...args) as Promise<any>;
                             resultPromise
-                                .catch((err: any) => reject(err))
+                                .catch((err: any) => reject(this.deserializeError(capturedError, err)))
                                 .then((result: any) => resolve(result));
                         }
                     } catch (err) {
@@ -241,6 +245,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
                     }
                 })
             );
+        };
     }
 
     /**
@@ -255,4 +260,29 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected isNotification(p: PropertyKey): boolean {
         return p.toString().startsWith("notify") || p.toString().startsWith("on");
     }
+
+    protected serializeError(e: any): any {
+        if (ApplicationError.is(e)) {
+            return new ResponseError(e.code, '',
+                Object.assign({ kind: 'application' }, e.toJson())
+            );
+        }
+        return e;
+    }
+    protected deserializeError(capturedError: Error, e: any): any {
+        if (e instanceof ResponseError) {
+            const capturedStack = capturedError.stack || '';
+            if (e.data && e.data.kind === 'application') {
+                const { stack, data } = e.data;
+                return ApplicationError.fromJson(e.code, {
+                    message: capturedError.message,
+                    data,
+                    stack: `${capturedStack}\nCaused by: ${stack}`
+                });
+            }
+            e.stack = capturedStack;
+        }
+        return e;
+    }
+
 }
