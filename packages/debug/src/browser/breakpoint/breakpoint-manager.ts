@@ -78,7 +78,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
      * @param editor the active text editor
      * @param position the mouse position in the editor
      */
-    toggleBreakpoint(editor: TextEditor, position: Position): void {
+    async toggleBreakpoint(editor: TextEditor, position: Position): Promise<void> {
         const debugSession = this.debugSessionManager.getActiveDebugSession();
 
         const srcBreakpoint = this.createSourceBreakpoint(debugSession, editor, position);
@@ -92,7 +92,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
 
         if (debugSession) {
             const source = DebugUtils.toSource(editor.uri, debugSession);
-            this.breakpointApplier.applySessionBreakpoints(debugSession, source);
+            await this.breakpointApplier.applySessionBreakpoints(debugSession, source);
         }
 
         this.breakpointDecorator.applyDecorations(editor);
@@ -103,14 +103,14 @@ export class BreakpointsManager implements FrontendApplicationContribution {
      * Returns all breakpoints for the given debug session.
      * @param sessionId the debug session identifier
      */
-    get(sessionId: string | undefined): ExtDebugProtocol.AggregatedBreakpoint[] {
+    async get(sessionId: string | undefined): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
         return this.breakpointStorage.get().filter(b => b.sessionId === sessionId);
     }
 
     /**
      * Returns all breakpoints.
      */
-    getAll(): ExtDebugProtocol.AggregatedBreakpoint[] {
+    async getAll(): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
         return this.breakpointStorage.get();
     }
 
@@ -255,7 +255,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                         debugSession.stacks(args).then(response => {
                             const frame = response.body.stackFrames[0];
                             if (frame) {
-                                this.sourceOpener.open(frame).then(widget => this.lineDecorator.applyDecorations());
+                                this.sourceOpener.open(frame).then(() => this.lineDecorator.applyDecorations());
                             }
                         });
                     }

@@ -62,11 +62,11 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         return this.onDidDblClickBreakpointEmitter.event;
     }
 
-    refreshBreakpoints(): void {
+    async refreshBreakpoints(): Promise<void> {
         if (this.debugSession) {
-            this.breakpoints = this.breakpointManager.get(this.debugSession.sessionId);
+            this.breakpoints = await this.breakpointManager.get(this.debugSession.sessionId);
         } else {
-            this.breakpoints = this.breakpointManager.getAll();
+            this.breakpoints = await this.breakpointManager.getAll();
         }
         super.update();
     }

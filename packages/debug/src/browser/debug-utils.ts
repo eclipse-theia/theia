@@ -26,7 +26,7 @@ import { DebugSession } from './debug-model';
 export class SourceOpener {
     constructor(@inject(EditorManager) protected readonly editorManager: EditorManager) { }
 
-    async open(frame: DebugProtocol.StackFrame): Promise<EditorWidget> {
+    open(frame: DebugProtocol.StackFrame): Promise<EditorWidget> {
         if (!frame.source) {
             return Promise.reject(`The source '${frame.name}' to open is not specified.`);
         }
