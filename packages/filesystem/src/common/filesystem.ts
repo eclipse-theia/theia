@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
-import { JsonRpcServer } from '@theia/core/lib/common';
-
+import { JsonRpcServer, ApplicationError } from '@theia/core/lib/common';
 export const fileSystemPath = '/services/filesystem';
 
 export const FileSystem = Symbol("FileSystem");
@@ -167,4 +166,27 @@ export namespace FileStat {
             && candidate.hasOwnProperty('lastModification')
             && candidate.hasOwnProperty('isDirectory');
     }
+}
+
+export namespace FileSystemError {
+    export const FileNotFound = ApplicationError.declare(-33000, (uri: string, prefix?: string) => ({
+        message: `${prefix ? prefix + ' ' : ''}'${uri}' has not been found.`,
+        data: { uri }
+    }));
+    export const FileExists = ApplicationError.declare(-33001, (uri: string, prefix?: string) => ({
+        message: `${prefix ? prefix + ' ' : ''}'${uri}' already exists.`,
+        data: { uri }
+    }));
+    export const FileIsDirectory = ApplicationError.declare(-33002, (uri: string, prefix?: string) => ({
+        message: `${prefix ? prefix + ' ' : ''}'${uri}' is a directory.`,
+        data: { uri }
+    }));
+    export const FileNotDirectory = ApplicationError.declare(-33003, (uri: string, prefix?: string) => ({
+        message: `${prefix ? prefix + ' ' : ''}'${uri}' is not a directory.`,
+        data: { uri }
+    }));
+    export const FileIsOutOfSync = ApplicationError.declare(-33004, (file: FileStat, stat: FileStat) => ({
+        message: `'${file.uri}' is out of sync.`,
+        data: { file, stat }
+    }));
 }

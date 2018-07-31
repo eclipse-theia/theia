@@ -24,7 +24,7 @@ import { injectable, inject, optional } from 'inversify';
 import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
+import { FileStat, FileSystem, FileSystemClient, FileSystemError } from '../common/filesystem';
 
 @injectable()
 export class FileSystemNodeOptions {
@@ -69,10 +69,10 @@ export class FileSystemNode implements FileSystem {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${uri}.`);
+            throw FileSystemError.FileNotFound(uri);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot resolve the content of a directory. URI: ${uri}.`);
+            throw FileSystemError.FileIsDirectory(uri, 'Cannot resolve the content.');
         }
         const encoding = await this.doGetEncoding(options);
         const content = await fs.readFile(FileUri.fsPath(_uri), { encoding });
@@ -83,10 +83,10 @@ export class FileSystemNode implements FileSystem {
         const _uri = new URI(file.uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${file.uri}.`);
+            throw FileSystemError.FileNotFound(file.uri);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
+            throw FileSystemError.FileIsDirectory(file.uri, 'Cannot set the content.');
         }
         if (!(await this.isInSync(file, stat))) {
             throw this.createOutOfSyncError(file, stat);
@@ -97,17 +97,17 @@ export class FileSystemNode implements FileSystem {
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
+        throw FileSystemError.FileNotFound(file.uri, 'Error occurred while writing file content.');
     }
 
     async updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat> {
         const _uri = new URI(file.uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${file.uri}.`);
+            throw FileSystemError.FileNotFound(file.uri);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
+            throw FileSystemError.FileIsDirectory(file.uri, 'Cannot set the content.');
         }
         if (!this.checkInSync(file, stat)) {
             throw this.createOutOfSyncError(file, stat);
@@ -123,7 +123,7 @@ export class FileSystemNode implements FileSystem {
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
+        throw FileSystemError.FileNotFound(file.uri, 'Error occurred while writing file content.');
     }
 
     protected applyContentChanges(content: string, contentChanges: TextDocumentContentChangeEvent[]): string {
@@ -152,9 +152,7 @@ export class FileSystemNode implements FileSystem {
     }
 
     protected createOutOfSyncError(file: FileStat, stat: FileStat): Error {
-        return new Error(`File is out of sync. URI: ${file.uri}.
-            Expected: ${JSON.stringify(stat)}.
-            Actual: ${JSON.stringify(file)}.`);
+        return FileSystemError.FileIsOutOfSync(file, stat);
     }
 
     async move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
@@ -162,17 +160,18 @@ export class FileSystemNode implements FileSystem {
         const _targetUri = new URI(targetUri);
         const [sourceStat, targetStat, overwrite] = await Promise.all([this.doGetStat(_sourceUri, 1), this.doGetStat(_targetUri, 1), this.doGetOverwrite(options)]);
         if (!sourceStat) {
-            throw new Error(`File does not exist under ${sourceUri}.`);
+            throw FileSystemError.FileNotFound(sourceUri);
         }
         if (targetStat && !overwrite) {
-            throw new Error(`File already exists under the '${targetUri}' target location. Did you set the 'overwrite' flag to true?`);
+            throw FileSystemError.FileExists(targetUri, "Did you set the 'overwrite' flag to true?");
         }
 
         // Different types. Files <-> Directory.
         if (targetStat && sourceStat.isDirectory !== targetStat.isDirectory) {
-            const label: (stat: FileStat) => string = stat => stat.isDirectory ? 'directory' : 'file';
-            const message = `Cannot move a ${label(sourceStat)} to an existing ${label(targetStat)} location. Source URI: ${sourceUri}. Target URI: ${targetUri}.`;
-            throw new Error(message);
+            if (targetStat.isDirectory) {
+                throw FileSystemError.FileIsDirectory(targetStat.uri, `Cannot move '${sourceStat.uri}' file to an existing location.`);
+            }
+            throw FileSystemError.FileNotDirectory(targetStat.uri, `Cannot move '${sourceStat.uri}' directory to an existing location.`);
         }
 
         const [sourceMightHaveChildren, targetMightHaveChildren] = await Promise.all([this.mayHaveChildren(_sourceUri), this.mayHaveChildren(_targetUri)]);
@@ -188,7 +187,7 @@ export class FileSystemNode implements FileSystem {
             if (newStat) {
                 return newStat;
             }
-            throw new Error(`Error occurred when moving resource from ${sourceUri} to ${targetUri}. Resource does not exist at ${targetUri}.`);
+            throw FileSystemError.FileNotFound(targetUri, `Error occurred when moving resource from '${sourceUri}' to '${targetUri}'.`);
         } else if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetMightHaveChildren && sourceMightHaveChildren) {
             // Copy source to target, since target is empty. Then wipe the source content.
             const newStat = await this.copy(sourceUri, targetUri, { overwrite });
@@ -216,17 +215,17 @@ export class FileSystemNode implements FileSystem {
             this.doGetRecursive(options)
         ]);
         if (!sourceStat) {
-            throw new Error(`File does not exist under ${sourceUri}.`);
+            throw FileSystemError.FileNotFound(sourceUri);
         }
         if (targetStat && !overwrite) {
-            throw new Error(`File already exist under the '${targetUri}' target location. Did you set the 'overwrite' flag to true?`);
+            throw FileSystemError.FileExists(targetUri, `Did you set the 'overwrite' flag to true?`);
         }
         await fs.copy(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { overwrite, recursive });
         const newStat = await this.doGetStat(_targetUri, 1);
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while copying ${sourceUri} to ${targetUri}. The file does not exist at ${targetUri}.`);
+        throw FileSystemError.FileNotFound(targetUri, `Error occurred while copying ${sourceUri} to ${targetUri}.`);
     }
 
     async createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat> {
@@ -234,7 +233,7 @@ export class FileSystemNode implements FileSystem {
         const parentUri = _uri.parent;
         const [stat, parentStat] = await Promise.all([this.doGetStat(_uri, 0), this.doGetStat(parentUri, 0)]);
         if (stat) {
-            throw new Error(`Error occurred while creating the file. File already exists at ${uri}.`);
+            throw FileSystemError.FileExists(uri, `Error occurred while creating the file.`);
         }
         if (!parentStat) {
             await fs.mkdirs(FileUri.fsPath(parentUri));
@@ -246,21 +245,21 @@ export class FileSystemNode implements FileSystem {
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while creating new file. The file does not exist at ${uri}.`);
+        throw FileSystemError.FileNotFound(uri, `Error occurred while creating the file.`);
     }
 
     async createFolder(uri: string): Promise<FileStat> {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (stat) {
-            throw new Error(`Error occurred while creating the directory. File already exists at ${uri}.`);
+            throw FileSystemError.FileExists(uri, `Error occurred while creating the directory.`);
         }
         await fs.mkdirs(FileUri.fsPath(_uri));
         const newStat = await this.doGetStat(_uri, 1);
         if (newStat) {
             return newStat;
         }
-        throw new Error(`Error occurred while creating the directory. The directory does not exist at ${uri}.`);
+        throw FileSystemError.FileNotFound(uri, `Error occurred while creating the directory.`);
     }
 
     async touchFile(uri: string): Promise<FileStat> {
@@ -285,7 +284,7 @@ export class FileSystemNode implements FileSystem {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`File does not exist under ${uri}.`);
+            throw FileSystemError.FileNotFound(uri);
         }
         // Windows 10.
         // Deleting an empty directory throws `EPERM error` instead of `unlinkDir`.
@@ -302,10 +301,10 @@ export class FileSystemNode implements FileSystem {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
-            throw new Error(`File does not exist under ${uri}.`);
+            throw FileSystemError.FileNotFound(uri);
         }
         if (stat.isDirectory) {
-            throw new Error(`Cannot get the encoding of a director. URI: ${uri}.`);
+            throw FileSystemError.FileIsDirectory(uri, '`Cannot get the encoding.');
         }
         return this.options.encoding;
     }
