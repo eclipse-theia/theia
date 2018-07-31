@@ -1,6 +1,7 @@
 {
   "extends": "../../configs/base.tsconfig",
   "compilerOptions": {
+    "strictNullChecks": false,
     "rootDir": "src",
     "outDir": "lib",
     "lib": [

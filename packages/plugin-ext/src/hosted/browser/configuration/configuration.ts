@@ -17,31 +17,11 @@
 import * as objects from './objects';
 import * as types from './types';
 
-// export interface IConfigurationModel {
-//     contents: any;
-//     keys: string[];
-//     // overrides: IOverrides[];
-// }
-
-// export interface IConfigurationData {
-//     defaults: IConfigurationModel;
-//     user: IConfigurationModel;
-//     workspace: IConfigurationModel;
-//     folders: { [folder: string]: IConfigurationModel };
-//     isComplete: boolean;
-// }
-
 export interface IConfigurationModel {
     contents: any;
     keys: string[];
     // overrides: IOverrides[];
 }
-
-// export interface ConfigurationData {
-//     preferences: ConfigurationModel,
-//     extensions: {[extensionName: string]: ConfigurationModel},
-//     plugins: { [pluginName: string]: ConfigurationModel }
-// }
 
 export class Configuration {
 // private baseWorkspaceConsolidatedConfiguration: ConfigurationModel = null;
@@ -64,26 +44,6 @@ export function compare(from: IConfigurationModel, to: IConfigurationModel): { a
 
     return { added, removed, updated };
 }
-
-// export function toOverrides(raw: any, conflictReporter: (message: string) => void): IOverrides[] {
-//     const overrides: IOverrides[] = [];
-//     const configurationProperties = Registry.as<IConfigurationRegistry>(Extensions.Configuration).getConfigurationProperties();
-//     for (const key of Object.keys(raw)) {
-//         if (OVERRIDE_PROPERTY_PATTERN.test(key)) {
-//             const overrideRaw = {};
-//             for (const keyInOverrideRaw in raw[key]) {
-//                 if (configurationProperties[keyInOverrideRaw] && configurationProperties[keyInOverrideRaw].overridable) {
-//                     overrideRaw[keyInOverrideRaw] = raw[key][keyInOverrideRaw];
-//                 }
-//             }
-//             overrides.push({
-//                 identifiers: [overrideIdentifierFromKey(key).trim()],
-//                 contents: toValuesTree(overrideRaw, conflictReporter)
-//             });
-//         }
-//     }
-//     return overrides;
-// }
 
 export function toValuesTree(properties: { [qualifiedKey: string]: any }, conflictReporter: (message: string) => void): any {
     const root = Object.create(null);
@@ -186,23 +146,6 @@ export function merge(base: any, add: any, overwrite: boolean): void {
         }
     });
 }
-
-// export function getConfigurationKeys(): string[] {
-//     const properties = Registry.as<IConfigurationRegistry>(Extensions.Configuration).getConfigurationProperties();
-//     return Object.keys(properties);
-// }
-
-// export function getDefaultValues(): any {
-//     const valueTreeRoot: any = Object.create(null);
-//     const properties = Registry.as<IConfigurationRegistry>(Extensions.Configuration).getConfigurationProperties();
-
-//     for (let key in properties) {
-//         let value = properties[key].default;
-//         addToValueTree(valueTreeRoot, key, value, message => console.error(`Conflict in default settings: ${message}`));
-//     }
-
-//     return valueTreeRoot;
-// }
 
 export function overrideIdentifierFromKey(key: string): string {
     return key.substring(1, key.length - 1);

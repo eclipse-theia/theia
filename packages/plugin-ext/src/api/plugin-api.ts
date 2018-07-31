@@ -444,7 +444,7 @@ export class ConfigurationChange { // todo rename to the workspace Config change
     value?: any; // todo
 }
 
-export interface ConfigurationRegistryMain {
+export interface ConfigurationManagerMain {
     $updateConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
@@ -458,8 +458,8 @@ export interface ConfigurationRegistryMain {
     ): PromiseLike<void>;
 }
 
-export interface ConfigurationRegistryExt {
-    $acceptConfigurationChanged(data: { [key: string]: any }): void; // todo apply config change....
+export interface ConfigurationManagerExt {
+    $acceptConfigurationChanged(conf: ConfigurationModel, confChanges: ConfigurationChange[]): void; // todo apply config change....
 }
 
 export interface OutputChannelRegistryMain {
@@ -479,7 +479,7 @@ export const PLUGIN_RPC_CONTEXT = {
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
-    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<ConfigurationRegistryMain>('PreferenceRegistryMain'),
+    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<ConfigurationManagerMain>('PreferenceRegistryMain'),
     OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain')
 };
 
@@ -494,5 +494,5 @@ export const MAIN_RPC_CONTEXT = {
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
-    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<ConfigurationRegistryExt>('PreferenceRegistryExt')
+    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<ConfigurationManagerExt>('PreferenceRegistryExt')
 };

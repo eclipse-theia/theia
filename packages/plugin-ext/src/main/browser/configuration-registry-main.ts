@@ -17,32 +17,32 @@
 import { interfaces } from 'inversify';
 import {
     MAIN_RPC_CONTEXT,
-    ConfigurationRegistryExt,
-    ConfigurationRegistryMain,
+    ConfigurationManagerExt,
+    ConfigurationManagerMain,
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
-import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
+import { ConfigurationService } from '../../hosted/browser/configuration/configuration-service';
 
-export class ConfigurationRegistryMainImpl implements ConfigurationRegistryMain {
-    private proxy: ConfigurationRegistryExt;
-    private consolidateConfRegistry: ConsolidatedConfigurationRegistry;
+export class ConfigurationManagerMainImpl implements ConfigurationManagerMain {
+    private proxy: ConfigurationManagerExt;
+    private confService: ConfigurationService;
 
     constructor(prc: RPCProtocol, container: interfaces.Container) {
         this.proxy = prc.getProxy(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT);
 
-        this.consolidateConfRegistry = container.get(ConsolidatedConfigurationRegistry);
+        this.confService = container.get(ConfigurationService);
 
-        this.consolidateConfRegistry.onConfigurationChanged(model => {
-            this.proxy.$acceptConfigurationChanged(model);
+        this.confService.onConfigurationChanged(confChanges => {
+            this.proxy.$acceptConfigurationChanged(this.confService.getConfiguration(), confChanges);
         });
     }
 
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
-        return this.consolidateConfRegistry.updateConfigurationOption(target, key, value);
+        return this.confService.updateConfigurationOption(target, key, value);
     }
 
     $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
-        return this.consolidateConfRegistry.removeConfigurationOption(target, key);
+        return this.confService.removeConfigurationOption(target, key);
     }
 }

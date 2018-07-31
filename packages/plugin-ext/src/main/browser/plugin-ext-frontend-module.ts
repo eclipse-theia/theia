@@ -41,7 +41,9 @@ import { TextEditorService, TextEditorServiceImpl } from './text-editor-service'
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
 import { PluginConfigurationProvider } from '../../hosted/browser/plugin-configuration';
-import { ConsolidatedConfigurationRegistry } from '../../hosted/browser/configuration/consolidated-configuration';
+import { ExtensionsAndPluginsConfigurationRegistry } from '../../hosted/browser/configuration/plugin-extension-configuration-registry';
+import { UserConfigurationRegistry } from '../../hosted/browser/configuration/user-configuration-registry';
+import { ConfigurationService } from '../../hosted/browser/configuration/configuration-service';
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -53,7 +55,9 @@ export default new ContainerModule(bind => {
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
 
     bind(PluginConfigurationProvider).toSelf().inSingletonScope();
-    bind(ConsolidatedConfigurationRegistry).toSelf().inSingletonScope();
+    bind(ExtensionsAndPluginsConfigurationRegistry).toSelf().inSingletonScope();
+    bind(UserConfigurationRegistry).toSelf().inSingletonScope();
+    bind(ConfigurationService).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
