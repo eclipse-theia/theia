@@ -22,12 +22,14 @@ import { Event } from "./event";
 import { Disposable } from "./disposable";
 import { MaybePromise } from "./types";
 import { CancellationToken } from "./cancellation";
+import { Silenceable } from './silenceable';
 
+export type ResourceContentOptions = { encoding?: string } & Silenceable;
 export interface Resource extends Disposable {
     readonly uri: URI;
-    readContents(options?: { encoding?: string }): Promise<string>;
-    saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
-    saveContentChanges?(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<void>;
+    readContents(options?: ResourceContentOptions): Promise<string>;
+    saveContents?(content: string, options?: ResourceContentOptions): Promise<void>;
+    saveContentChanges?(changes: TextDocumentContentChangeEvent[], options?: ResourceContentOptions): Promise<void>;
     readonly onDidChangeContents?: Event<void>;
 }
 export namespace Resource {
