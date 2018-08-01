@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
+import { injectable, inject, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
-import { FileSystemPreferences } from "./filesystem-preferences";
+import { FileSystemPreferences } from './filesystem-preferences';
 
 export {
     FileChangeType

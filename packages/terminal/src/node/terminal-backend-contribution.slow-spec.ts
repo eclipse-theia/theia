@@ -42,7 +42,7 @@ describe('Terminal Backend Contribution', function () {
         s.close();
     });
 
-    it("is data received from the terminal ws server", async () => {
+    it('is data received from the terminal ws server', async () => {
         const terminalId = await shellTerminalServer.create({});
         await new Promise((resolve, reject) => {
             const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });

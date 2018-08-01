@@ -13,11 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Event, Emitter } from "@theia/core";
-import { MonacoEditorModel } from "@theia/monaco/lib/browser/monaco-editor-model";
-import { injectable, inject } from "inversify";
-import { MonacoTextModelService } from "@theia/monaco/lib/browser/monaco-text-model-service";
-import { MonacoWorkspace } from "@theia/monaco/lib/browser/monaco-workspace";
+import { Event, Emitter } from '@theia/core';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { injectable, inject } from 'inversify';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 
 export const EditorModelService = Symbol('EditorModelService');
 export interface EditorModelService {

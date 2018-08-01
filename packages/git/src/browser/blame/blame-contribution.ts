@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser";
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { BlameDecorator } from './blame-decorator';
 import { EditorManager, EditorKeybindingContexts, EditorWidget, EditorTextFocusContext, StrictEditorTextFocusContext } from '@theia/editor/lib/browser';

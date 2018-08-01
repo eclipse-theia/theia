@@ -176,30 +176,30 @@ export class BlameDecorator implements HoverProvider {
     protected getHeatColor(commitTime: moment.Moment): string {
         const daysFromNow = this.now.diff(commitTime, 'days');
         if (daysFromNow <= 2) {
-            return `var(--md-orange-50)`;
+            return 'var(--md-orange-50)';
         }
         if (daysFromNow <= 5) {
-            return `var(--md-orange-100)`;
+            return 'var(--md-orange-100)';
         }
         if (daysFromNow <= 10) {
-            return `var(--md-orange-200)`;
+            return 'var(--md-orange-200)';
         }
         if (daysFromNow <= 15) {
-            return `var(--md-orange-300)`;
+            return 'var(--md-orange-300)';
         }
         if (daysFromNow <= 60) {
-            return `var(--md-orange-400)`;
+            return 'var(--md-orange-400)';
         }
         if (daysFromNow <= 180) {
-            return `var(--md-deep-orange-600)`;
+            return 'var(--md-deep-orange-600)';
         }
         if (daysFromNow <= 365) {
-            return `var(--md-deep-orange-700)`;
+            return 'var(--md-deep-orange-700)';
         }
         if (daysFromNow <= 720) {
-            return `var(--md-deep-orange-800)`;
+            return 'var(--md-deep-orange-800)';
         }
-        return `var(--md-deep-orange-900)`;
+        return 'var(--md-deep-orange-900)';
     }
 
 }
@@ -215,11 +215,11 @@ export namespace BlameDecorator {
         height: '100%',
         margin: '0 26px -1px 0',
         display: 'inline-block',
-        borderRight: `2px solid`,
+        borderRight: '2px solid',
     };
 
     export const continuationStyle = new EditorDecorationStyle('git-blame-continuation-line::before', style => {
-        style.content = `'\u2007'`; // blank
+        style.content = "'\u2007'"; // blank
     });
 
     export const highlightStyle = new EditorDecorationStyle('git-blame-highlight::before', style => {

@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TheiaPluginScanner } from "../node/scanners/scanner-theia";
-import { injectable } from "inversify";
-import { PluginPackage, PluginModel } from "../../common/plugin-protocol";
+import { TheiaPluginScanner } from '../node/scanners/scanner-theia';
+import { injectable } from 'inversify';
+import { PluginPackage, PluginModel } from '../../common/plugin-protocol';
 @injectable()
 export class TheiaPluginScannerElectron extends TheiaPluginScanner {
     getModel(plugin: PluginPackage): PluginModel {

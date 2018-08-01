@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
-import { Emitter, Event, Disposable } from "../../common";
-import { CompositeTreeNode, TreeNode, Tree } from "./tree";
+import { injectable, inject, postConstruct } from 'inversify';
+import { Emitter, Event, Disposable } from '../../common';
+import { CompositeTreeNode, TreeNode, Tree } from './tree';
 
-export const TreeExpansionService = Symbol("TreeExpansionService");
+export const TreeExpansionService = Symbol('TreeExpansionService');
 
 /**
  * The tree expandable service.

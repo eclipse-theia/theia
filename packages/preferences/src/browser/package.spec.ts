@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("preferences package", () => {
+describe('preferences package', () => {
 
-    it("should support code coverage statistics", () => true);
+    it('should support code coverage statistics', () => true);
 });

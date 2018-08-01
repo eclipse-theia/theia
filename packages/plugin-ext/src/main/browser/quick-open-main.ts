@@ -91,7 +91,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
     }
     // tslint:disable-next-line:no-any
     $setError(error: Error): Promise<any> {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
 
     $input(options: InputBoxOptions, validateInput: boolean): Promise<string | undefined> {

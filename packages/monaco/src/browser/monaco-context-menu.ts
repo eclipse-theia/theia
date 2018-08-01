@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { EDITOR_CONTEXT_MENU } from "@theia/editor/lib/browser";
-import { ContextMenuRenderer, toAnchor } from "@theia/core/lib/browser";
+import { injectable, inject } from 'inversify';
+import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
+import { ContextMenuRenderer, toAnchor } from '@theia/core/lib/browser';
 import IContextMenuService = monaco.editor.IContextMenuService;
 import IContextMenuDelegate = monaco.editor.IContextMenuDelegate;
-import { Menu } from "@phosphor/widgets";
-import { CommandRegistry } from "@phosphor/commands";
+import { Menu } from '@phosphor/widgets';
+import { CommandRegistry } from '@phosphor/commands';
 
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {
@@ -32,7 +32,7 @@ export class MonacoContextMenuService implements IContextMenuService {
         const anchor = toAnchor(delegate.getAnchor());
         // If it is the general context menu, we want to delegate to our menu registry entirely and ignore the actually passed actions.
         // Unfortunately checking the existence of certain properties seems to be the best way to tell, what kind of context menu is requested.
-        if (delegate.hasOwnProperty("getKeyBinding")) {
+        if (delegate.hasOwnProperty('getKeyBinding')) {
             this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU, anchor, () => delegate.onHide(false));
         } else {
             delegate.getActions().then(actions => {

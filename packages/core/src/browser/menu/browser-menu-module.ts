@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
-import { FrontendApplicationContribution } from "../frontend-application";
-import { ContextMenuRenderer } from "../context-menu-renderer";
-import { BrowserMenuBarContribution, BrowserMainMenuFactory } from "./browser-menu-plugin";
-import { BrowserContextMenuRenderer } from "./browser-context-menu-renderer";
+import { ContainerModule } from 'inversify';
+import { FrontendApplicationContribution } from '../frontend-application';
+import { ContextMenuRenderer } from '../context-menu-renderer';
+import { BrowserMenuBarContribution, BrowserMainMenuFactory } from './browser-menu-plugin';
+import { BrowserContextMenuRenderer } from './browser-context-menu-renderer';
 
 export default new ContainerModule(bind => {
     bind(BrowserMainMenuFactory).toSelf().inSingletonScope();

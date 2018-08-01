@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import { Path } from "./path";
+import { Path } from './path';
 
-describe("Path", () => {
+describe('Path', () => {
 
-    it("new from /foo/bar/file.txt", () => {
+    it('new from /foo/bar/file.txt', () => {
         const path = new Path('/foo/bar/file.txt');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, true);
@@ -30,7 +30,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '.txt');
     });
 
-    it("new from foo/bar/file.txt", () => {
+    it('new from foo/bar/file.txt', () => {
         const path = new Path('foo/bar/file.txt');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, false);
@@ -41,7 +41,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '.txt');
     });
 
-    it("new from /foo", () => {
+    it('new from /foo', () => {
         const path = new Path('/foo');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, true);
@@ -52,7 +52,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '');
     });
 
-    it("new from foo", () => {
+    it('new from foo', () => {
         const path = new Path('foo');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, false);
@@ -63,7 +63,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '');
     });
 
-    it("new from /", () => {
+    it('new from /', () => {
         const path = new Path('/');
         assert.deepEqual(path.isRoot, true);
         assert.deepEqual(path.isAbsolute, true);
@@ -74,7 +74,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '');
     });
 
-    it("new from /c:/foo/bar/file.txt", () => {
+    it('new from /c:/foo/bar/file.txt', () => {
         const path = new Path('/c:/foo/bar/file.txt');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, true);
@@ -85,7 +85,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '.txt');
     });
 
-    it("new from /c:/foo", () => {
+    it('new from /c:/foo', () => {
         const path = new Path('/c:/foo');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, true);
@@ -96,7 +96,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '');
     });
 
-    it("new from /c:/", () => {
+    it('new from /c:/', () => {
         const path = new Path('/c:/');
         assert.deepEqual(path.isRoot, false);
         assert.deepEqual(path.isAbsolute, true);
@@ -107,7 +107,7 @@ describe("Path", () => {
         assert.deepEqual(path.ext, '');
     });
 
-    it("new from /c:", () => {
+    it('new from /c:', () => {
         const path = new Path('/c:');
         assert.deepEqual(path.isRoot, true);
         assert.deepEqual(path.isAbsolute, true);

@@ -19,12 +19,12 @@ import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 
-import { injectable, inject, postConstruct } from "inversify";
+import { injectable, inject, postConstruct } from 'inversify';
 import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MessageService, ILogger } from '@theia/core';
-import { WorkspaceServer } from "../common";
+import { WorkspaceServer } from '../common';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -33,7 +33,7 @@ export class WorkspaceCliContribution implements CliContribution {
     workspaceRoot = new Deferred<string | undefined>();
 
     configure(conf: yargs.Argv): void {
-        conf.usage("$0 [workspace-directory] [options]");
+        conf.usage('$0 [workspace-directory] [options]');
         conf.option('root-dir', {
             description: 'DEPRECATED: Sets the workspace directory.',
         });

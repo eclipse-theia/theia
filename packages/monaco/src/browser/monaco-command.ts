@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
-import { Position, Location } from "@theia/languages/lib/browser";
+import { injectable, inject } from 'inversify';
+import { ProtocolToMonacoConverter } from 'monaco-languageclient/lib';
+import { Position, Location } from '@theia/languages/lib/browser';
 import { Command, CommandContribution } from '@theia/core';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';

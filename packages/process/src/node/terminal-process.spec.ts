@@ -18,7 +18,7 @@ import * as process from 'process';
 import * as stream from 'stream';
 import { createProcessTestContainer } from './test/process-test-container';
 import { TerminalProcessFactory } from './terminal-process';
-import { isWindows } from "@theia/core/lib/common";
+import { isWindows } from '@theia/core/lib/common';
 
 /**
  * Globals

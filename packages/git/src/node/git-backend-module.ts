@@ -20,7 +20,7 @@ import { Git, GitPath } from '../common/git';
 import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
 import { DugiteGit, OutputParser, NameStatusParser, CommitDetailsParser, GitBlameParser } from './dugite-git';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
-import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
+import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/core/lib/common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepositoryWatcher } from './git-repository-watcher';
 import { GitLocator } from './git-locator/git-locator-protocol';

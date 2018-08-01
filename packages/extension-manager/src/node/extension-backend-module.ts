@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces } from "inversify";
+import { ContainerModule, interfaces } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { CliContribution } from '@theia/core/lib/node';
-import { ExtensionServer, ExtensionClient, extensionPath } from "../common/extension-protocol";
+import { ExtensionServer, ExtensionClient, extensionPath } from '../common/extension-protocol';
 import { ExtensionKeywords, NodeExtensionServer } from './node-extension-server';
 import { ApplicationProject, ApplicationProjectOptions } from './application-project';
 import { NpmClient, NpmClientOptions } from './npm-client';
 import { ApplicationProjectArgs, ApplicationProjectCliContribution } from './application-project-cli';
 
-export const extensionKeyword = "theia-extension";
+export const extensionKeyword = 'theia-extension';
 
 export function bindNodeExtensionServer(bind: interfaces.Bind, args?: ApplicationProjectArgs): void {
     if (args) {

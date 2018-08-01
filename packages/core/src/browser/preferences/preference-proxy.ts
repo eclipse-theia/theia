@@ -17,9 +17,9 @@
 // tslint:disable:no-any
 
 import { Disposable, DisposableCollection, Event, Emitter, deepFreeze } from '../../common';
-import { PreferenceService, PreferenceChange } from "./preference-service";
-import { PreferenceSchema } from "./preference-contribution";
-import * as Ajv from "ajv";
+import { PreferenceService, PreferenceChange } from './preference-service';
+import { PreferenceSchema } from './preference-contribution';
+import * as Ajv from 'ajv';
 
 export interface Configuration {
     [preferenceName: string]: any;

@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from "@theia/core/lib/common/uri";
-import { LocationService } from "./location-service";
-import { ReactRenderer } from "@theia/core/lib/browser/widgets/react-renderer";
+import URI from '@theia/core/lib/common/uri';
+import { LocationService } from './location-service';
+import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import * as React from 'react';
 
 export const LOCATION_LIST_CLASS = 'theia-LocationList';

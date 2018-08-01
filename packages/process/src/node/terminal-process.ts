@@ -21,11 +21,11 @@ import { ProcessManager } from './process-manager';
 import { IPty, spawn } from 'node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 
-export const TerminalProcessOptions = Symbol("TerminalProcessOptions");
+export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
 export interface TerminalProcessOptions extends ProcessOptions {
 }
 
-export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
+export const TerminalProcessFactory = Symbol('TerminalProcessFactory');
 export interface TerminalProcessFactory {
     (options: TerminalProcessOptions): TerminalProcess;
 }

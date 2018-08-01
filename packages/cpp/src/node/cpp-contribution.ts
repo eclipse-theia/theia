@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { BaseLanguageServerContribution, IConnection } from "@theia/languages/lib/node";
+import { injectable } from 'inversify';
+import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
 

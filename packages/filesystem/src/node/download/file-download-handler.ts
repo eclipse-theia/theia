@@ -151,7 +151,7 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         if (body === undefined) {
-            this.handleError(response, `The request body must be defined when downloading multiple files.`, BAD_REQUEST);
+            this.handleError(response, 'The request body must be defined when downloading multiple files.', BAD_REQUEST);
             return;
         }
         if (!FileDownloadData.is(body)) {

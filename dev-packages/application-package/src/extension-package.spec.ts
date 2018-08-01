@@ -30,10 +30,10 @@ const testOutdated = (expectation: (extensionPackage: ExtensionPackage) => boole
         assert.equal(await expectation(extensionPackage), outdated);
     });
 
-describe("extension-package", function () {
+describe('extension-package', function () {
 
     this.timeout(10000);
-    describe("isOutdated", () => {
+    describe('isOutdated', () => {
         testOutdated(async extensionPackage => {
             const latestVersion = await extensionPackage.getLatestVersion();
             return latestVersion ? semver.gt(latestVersion, extensionPackage.raw.version) : false;

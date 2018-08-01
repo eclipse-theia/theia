@@ -802,7 +802,7 @@ export class ApplicationShell extends Widget {
     private checkActivation(widget: Widget): Widget {
         window.requestAnimationFrame(() => {
             if (this.activeWidget !== widget) {
-                console.warn("Widget was activated, but did not accept focus: " + widget.id);
+                console.warn('Widget was activated, but did not accept focus: ' + widget.id);
             }
         });
         return widget;

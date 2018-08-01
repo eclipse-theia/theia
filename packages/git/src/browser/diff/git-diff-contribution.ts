@@ -14,20 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageService } from "@theia/core/lib/common";
+import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageService } from '@theia/core/lib/common';
 import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
-import { open, OpenerService } from "@theia/core/lib/browser";
+import { open, OpenerService } from '@theia/core/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { GitQuickOpenService } from '../git-quick-open-service';
-import { FileSystem } from "@theia/filesystem/lib/common";
+import { FileSystem } from '@theia/filesystem/lib/common';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { Git } from "../../common";
+import { Git } from '../../common';
 
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {

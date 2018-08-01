@@ -13,17 +13,17 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from "../../api/plugin-api";
-import { UriComponents } from "../../common/uri-components";
-import { EditorsAndDocumentsMain } from "./editors-and-documents-main";
-import { DisposableCollection, Disposable } from "@theia/core";
-import { MonacoEditorModel } from "@theia/monaco/lib/browser/monaco-editor-model";
-import { RPCProtocol } from "../../api/rpc-protocol";
-import { EditorModelService } from "./text-editor-model-service";
-import { createUntitledResource } from "./editor/untitled-resource";
-import { EditorManager } from "@theia/editor/lib/browser";
-import URI from "@theia/core/lib/common/uri";
-import { Saveable } from "@theia/core/lib/browser";
+import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../api/plugin-api';
+import { UriComponents } from '../../common/uri-components';
+import { EditorsAndDocumentsMain } from './editors-and-documents-main';
+import { DisposableCollection, Disposable } from '@theia/core';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { RPCProtocol } from '../../api/rpc-protocol';
+import { EditorModelService } from './text-editor-model-service';
+import { createUntitledResource } from './editor/untitled-resource';
+import { EditorManager } from '@theia/editor/lib/browser';
+import URI from '@theia/core/lib/common/uri';
+import { Saveable } from '@theia/core/lib/browser';
 
 export class DocumentsMainImpl implements DocumentsMain {
     private proxy: DocumentsExt;

@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { TextEdit, TextDocument, Range } from "@theia/languages/lib/browser";
+import { injectable, inject } from 'inversify';
+import { TextEdit, TextDocument, Range } from '@theia/languages/lib/browser';
 import { CommandHandler } from '@theia/core/lib/common';
 import { MergeConflictCommandArgument, MergeConflict } from './merge-conflict';
-import { EditorManager } from "@theia/editor/lib/browser";
+import { EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()

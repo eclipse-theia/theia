@@ -22,7 +22,7 @@ const metricsName = 'theia_extension_version';
 
 @injectable()
 export class ExtensionMetricsContribution implements MetricsContribution {
-    private metrics: string = "";
+    private metrics: string = '';
     readonly applicationPackageManager: ApplicationPackageManager;
 
     constructor(@inject(MetricsProjectPath) readonly appProjectPath: string) { }
@@ -33,7 +33,7 @@ export class ExtensionMetricsContribution implements MetricsContribution {
 
     startCollecting(): void {
         const projectPath = this.appProjectPath;
-        let latestMetrics = "";
+        let latestMetrics = '';
         const app = new ApplicationPackageManager({ projectPath });
         const installedExtensions = app.pck.extensionPackages;
         latestMetrics += `# HELP ${metricsName} Theia extension version info.\n`;

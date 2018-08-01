@@ -18,7 +18,7 @@ import * as path from 'path';
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
-import { InstallationParam, InstallationResult } from "../common/extension-protocol";
+import { InstallationParam, InstallationResult } from '../common/extension-protocol';
 import extensionNodeTestContainer from './test/extension-node-test-container';
 import { ApplicationProject } from './application-project';
 
@@ -53,7 +53,7 @@ export async function assertInstallation(expectation: {
     assert.equal(false, result.failed, 'the installation is failed');
 }
 
-describe("application-project", function () {
+describe('application-project', function () {
 
     beforeEach(function () {
         this.timeout(50000);
@@ -75,14 +75,14 @@ describe("application-project", function () {
         fs.removeSync(appProjectPath);
     });
 
-    it("install", async function () {
+    it('install', async function () {
         this.timeout(1800000);
 
         await fs.writeJSON(path.resolve(appProjectPath, 'package.json'), {
-            "private": true,
-            "dependencies": {
-                "@theia/core": "0.1.1",
-                "@theia/filesystem": "0.1.1"
+            'private': true,
+            'dependencies': {
+                '@theia/core': '0.1.1',
+                '@theia/filesystem': '0.1.1'
             }
         });
         appProject.scheduleInstall();
@@ -91,9 +91,9 @@ describe("application-project", function () {
         });
 
         await fs.writeJSON(path.resolve(appProjectPath, 'package.json'), {
-            "private": true,
-            "dependencies": {
-                "@theia/core": "0.1.1"
+            'private': true,
+            'dependencies': {
+                '@theia/core': '0.1.1'
             }
         });
         appProject.scheduleInstall();

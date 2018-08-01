@@ -27,7 +27,7 @@ export class CppBuildConfigurationsStatusBarElement {
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
-    protected readonly cppIdentifier = `cpp-configurator`;
+    protected readonly cppIdentifier = 'cpp-configurator';
 
     /**
      * Display the cpp build configurations status bar element,
@@ -45,7 +45,7 @@ export class CppBuildConfigurationsStatusBarElement {
     protected setCppBuildConfigElement() {
         const activeConfig = this.cppManager.getActiveConfig();
         this.statusBar.setElement(this.cppIdentifier, {
-            text: `$(wrench) C/C++ Build Config ${(activeConfig) ? activeConfig.name : ""}`,
+            text: `$(wrench) C/C++ Build Config ${(activeConfig) ? activeConfig.name : ''}`,
             alignment: StatusBarAlignment.RIGHT,
             command: CPP_CHANGE_BUILD_CONFIGURATION.id
         });

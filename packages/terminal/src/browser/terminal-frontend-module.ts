@@ -25,7 +25,7 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
 import { createCommonBindings } from '../common/terminal-common-module';
-import { TerminalService } from "./base/terminal-service";
+import { TerminalService } from './base/terminal-service';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
@@ -51,7 +51,7 @@ export default new ContainerModule(bind => {
                 ...options
             };
             child.bind(TerminalWidgetOptions).toConstantValue(widgetOptions);
-            child.bind("terminal-dom-id").toConstantValue(domId);
+            child.bind('terminal-dom-id').toConstantValue(domId);
 
             return child.get(TerminalWidget);
         }

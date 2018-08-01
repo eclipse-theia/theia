@@ -32,9 +32,9 @@ const openerService = new DefaultOpenerService({
     getContributions: () => [openHandler]
 });
 
-describe("opener-service", () => {
+describe('opener-service', () => {
 
-    it("getOpeners", () => {
+    it('getOpeners', () => {
         return openerService.getOpeners().then(openers => {
             assert.deepStrictEqual([openHandler], openers);
         });

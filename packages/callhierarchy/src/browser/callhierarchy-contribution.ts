@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { MenuModelRegistry, Command, CommandRegistry } from "@theia/core/lib/common";
+import { injectable, inject } from 'inversify';
+import { MenuModelRegistry, Command, CommandRegistry } from '@theia/core/lib/common';
 import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from '@theia/core/lib/browser';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
 import { CALLHIERARCHY_ID } from './callhierarchy';
 import { CurrentEditorAccess } from './current-editor-access';
-import { CallHierarchyServiceProvider } from "./callhierarchy-service";
+import { CallHierarchyServiceProvider } from './callhierarchy-service';
 
 export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierachy:toggle';
 export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';

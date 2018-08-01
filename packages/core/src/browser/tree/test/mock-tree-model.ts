@@ -53,82 +53,82 @@ export namespace MockTreeModel {
     }
 
     export const HIERARCHICAL_MOCK_ROOT = () => Node.toTreeNode({
-        "id": "1",
-        "children": [
+        'id': '1',
+        'children': [
             {
-                "id": "1.1",
-                "children": [
+                'id': '1.1',
+                'children': [
                     {
-                        "id": "1.1.1"
+                        'id': '1.1.1'
                     },
                     {
-                        "id": "1.1.2"
+                        'id': '1.1.2'
                     }
                 ]
             },
             {
-                "id": "1.2",
-                "children": [
+                'id': '1.2',
+                'children': [
                     {
-                        "id": "1.2.1",
-                        "children": [
+                        'id': '1.2.1',
+                        'children': [
                             {
-                                "id": "1.2.1.1"
+                                'id': '1.2.1.1'
                             },
                             {
-                                "id": "1.2.1.2"
+                                'id': '1.2.1.2'
                             }
                         ]
                     },
                     {
-                        "id": "1.2.2"
+                        'id': '1.2.2'
                     },
                     {
-                        "id": "1.2.3"
+                        'id': '1.2.3'
                     }
                 ]
             },
             {
-                "id": "1.3"
+                'id': '1.3'
             }
         ]
     });
 
     export const FLAT_MOCK_ROOT = () => Node.toTreeNode({
-        "id": 'ROOT',
-        "children": [
+        'id': 'ROOT',
+        'children': [
             {
-                "id": "1"
+                'id': '1'
             },
             {
-                "id": "2"
+                'id': '2'
             },
             {
-                "id": "3"
+                'id': '3'
             },
             {
-                "id": "4"
+                'id': '4'
             },
             {
-                "id": "5"
+                'id': '5'
             },
             {
-                "id": "6"
+                'id': '6'
             },
             {
-                "id": "7"
+                'id': '7'
             },
             {
-                "id": "8"
+                'id': '8'
             },
             {
-                "id": "9"
+                'id': '9'
             },
             {
-                "id": "10"
+                'id': '10'
             },
             {
-                "id": "11"
+                'id': '11'
             }
         ]
     });

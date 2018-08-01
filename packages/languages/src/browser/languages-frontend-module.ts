@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
+import { ContainerModule } from 'inversify';
 import { bindContributionProvider, CommandContribution } from '@theia/core/lib/common';
-import { FrontendApplicationContribution, KeybindingContribution } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { Window } from './language-client-services';
 import { WindowImpl } from './window-impl';
 import { LanguageClientFactory } from './language-client-factory';
 import { LanguagesFrontendContribution } from './languages-frontend-contribution';
-import { LanguageClientContribution } from "./language-client-contribution";
+import { LanguageClientContribution } from './language-client-contribution';
 import { WorkspaceSymbolCommand } from './workspace-symbols';
 import { LanguageClientProvider } from './language-client-provider';
 import { LanguageClientProviderImpl } from './language-client-provider-impl';

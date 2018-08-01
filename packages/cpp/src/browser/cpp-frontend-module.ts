@@ -14,19 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
+import { ContainerModule } from 'inversify';
 import { CommandContribution } from '@theia/core/lib/common';
 import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
 import { CppCommandContribution } from './cpp-commands';
 
-import { LanguageClientContribution } from "@theia/languages/lib/browser";
-import { CppLanguageClientContribution } from "./cpp-language-client-contribution";
-import { CppKeybindingContribution, CppKeybindingContext } from "./cpp-keybinding";
-import { bindCppPreferences } from "./cpp-preferences";
-import { CppBuildConfigurationsContributions, CppBuildConfigurationChanger, CppBuildConfigurationManager } from "./cpp-build-configurations";
-import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate";
-import { CppGrammarContribution } from "./cpp-grammar-contribution";
-import { CppBuildConfigurationsStatusBarElement } from "./cpp-build-configurations-statusbar-element";
+import { LanguageClientContribution } from '@theia/languages/lib/browser';
+import { CppLanguageClientContribution } from './cpp-language-client-contribution';
+import { CppKeybindingContribution, CppKeybindingContext } from './cpp-keybinding';
+import { bindCppPreferences } from './cpp-preferences';
+import { CppBuildConfigurationsContributions, CppBuildConfigurationChanger, CppBuildConfigurationManager } from './cpp-build-configurations';
+import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
+import { CppGrammarContribution } from './cpp-grammar-contribution';
+import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
 
 export default new ContainerModule(bind => {
     bind(CommandContribution).to(CppCommandContribution).inSingletonScope();

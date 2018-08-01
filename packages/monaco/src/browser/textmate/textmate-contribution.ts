@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TextmateRegistry } from "./textmate-registry";
+import { TextmateRegistry } from './textmate-registry';
 
 /**
  * Callback for extensions to contribute language grammar definitions

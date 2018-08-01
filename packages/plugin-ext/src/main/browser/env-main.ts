@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
-import { EnvVariablesServer } from "@theia/core/lib/common/env-variables";
-import { RPCProtocol } from "../../api/rpc-protocol";
-import { EnvMain, EnvExt, MAIN_RPC_CONTEXT } from "../../api/plugin-api";
-import { QueryParameters } from "../../common/env";
+import { interfaces } from 'inversify';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { RPCProtocol } from '../../api/rpc-protocol';
+import { EnvMain, EnvExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { QueryParameters } from '../../common/env';
 
 export class EnvMainImpl implements EnvMain {
     private proxy: EnvExt;

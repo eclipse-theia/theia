@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { Git, Repository, Branch, BranchType, Tag } from '../common';
@@ -22,7 +22,7 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { GitErrorHandler } from "./git-error-handler";
+import { GitErrorHandler } from './git-error-handler';
 
 /**
  * Service delegating into the `Quick Open Service`, so that the Git commands can be further refined.
@@ -160,7 +160,7 @@ export class GitQuickOpenService {
                 const createBranchModel: QuickOpenModel = {
                     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                         const dynamicItems: QuickOpenItem[] = [];
-                        const suffix = `Press 'Enter' to confirm or 'Escape' to cancel.`;
+                        const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
                         if (lookFor === undefined || lookFor.length === 0) {
                             dynamicItems.push(new CreateNewBranchOpenItem(`Please provide a branch name. ${suffix}`, () => { }, () => false));
                         } else {
@@ -231,10 +231,10 @@ export class GitQuickOpenService {
                 onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                     const dynamicItems: QuickOpenItem[] = [];
                     if (!lookFor) {
-                        const description = `To reuse the last commit message, press 'Enter' or 'Escape' to cancel.`;
+                        const description = "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.";
                         dynamicItems.push(new GitQuickOpenItem(description, () => resolve(lastMessage), () => description));
                     } else {
-                        dynamicItems.push(new GitQuickOpenItem(`Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.`, item => resolve(lookFor)));
+                        dynamicItems.push(new GitQuickOpenItem("Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.", item => resolve(lookFor)));
                     }
                     acceptor(dynamicItems);
                 },

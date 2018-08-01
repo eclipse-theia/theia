@@ -380,10 +380,10 @@ describe('git', async function () {
         const init = async (git: Git, repository: Repository) => {
             await git.exec(repository, ['init']);
             if ((await git.exec(repository, ['config', 'user.name'], { successExitCodes: new Set([0, 1]) })).exitCode !== 0) {
-                await git.exec(repository, ['config', 'user.name', "User Name"]);
+                await git.exec(repository, ['config', 'user.name', 'User Name']);
             }
             if ((await git.exec(repository, ['config', 'user.email'], { successExitCodes: new Set([0, 1]) })).exitCode !== 0) {
-                await git.exec(repository, ['config', 'user.email', "user.name@domain.com"]);
+                await git.exec(repository, ['config', 'user.email', 'user.name@domain.com']);
             }
         };
 
@@ -541,10 +541,10 @@ describe('git', async function () {
         const init = async (git: Git, repository: Repository) => {
             await git.exec(repository, ['init']);
             if ((await git.exec(repository, ['config', 'user.name'], { successExitCodes: new Set([0, 1]) })).exitCode !== 0) {
-                await git.exec(repository, ['config', 'user.name', "User Name"]);
+                await git.exec(repository, ['config', 'user.name', 'User Name']);
             }
             if ((await git.exec(repository, ['config', 'user.email'], { successExitCodes: new Set([0, 1]) })).exitCode !== 0) {
-                await git.exec(repository, ['config', 'user.email', "user.name@domain.com"]);
+                await git.exec(repository, ['config', 'user.email', 'user.name@domain.com']);
             }
         };
 

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
+import { interfaces } from 'inversify';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -24,12 +24,12 @@ import {
 } from '@theia/core/lib/browser/preferences';
 
 export const OutputConfigSchema: PreferenceSchema = {
-    "type": "object",
-    "properties": {
-        "output.maxChannelHistory": {
-            "type": "number",
-            "description": "The maximum number of entries in an output channel.",
-            "default": 1000
+    'type': 'object',
+    'properties': {
+        'output.maxChannelHistory': {
+            'type': 'number',
+            'description': 'The maximum number of entries in an output channel.',
+            'default': 1000
         }
     }
 };

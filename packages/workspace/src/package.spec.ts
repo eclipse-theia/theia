@@ -22,9 +22,9 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("workspace package", () => {
+describe('workspace package', () => {
 
-    it("support code coverage statistics", () => {
+    it('support code coverage statistics', () => {
         return true;
     });
 });

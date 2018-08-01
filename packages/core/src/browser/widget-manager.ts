@@ -19,7 +19,7 @@ import { Widget } from '@phosphor/widgets';
 import { ILogger, Emitter, Event, ContributionProvider, MaybePromise } from '../common';
 
 // tslint:disable:no-any
-export const WidgetFactory = Symbol("WidgetFactory");
+export const WidgetFactory = Symbol('WidgetFactory');
 /**
  * `OpenHandler` should be implemented to provide a new opener.
  */
@@ -172,7 +172,7 @@ export class WidgetManager {
                 if (factory.id) {
                     this._cachedFactories.set(factory.id, factory);
                 } else {
-                    this.logger.error("Invalid ID for factory: " + factory + ". ID was: '" + factory.id + "'.");
+                    this.logger.error('Invalid ID for factory: ' + factory + ". ID was: '" + factory.id + "'.");
                 }
             }
         }

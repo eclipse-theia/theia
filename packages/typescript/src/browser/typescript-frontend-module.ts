@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
-import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate";
-import { LanguageClientContribution } from "@theia/languages/lib/browser";
-import { CallHierarchyService } from "@theia/callhierarchy/lib/browser";
-import { TypeScriptClientContribution } from "./typescript-client-contribution";
-import { TypeScriptCallHierarchyService } from "./typescript-callhierarchy-service";
-import { TypescriptGrammarContribution } from "./typescript-language-config";
-import { JavascriptGrammarContribution } from "./javascript-language-config";
+import { ContainerModule } from 'inversify';
+import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
+import { LanguageClientContribution } from '@theia/languages/lib/browser';
+import { CallHierarchyService } from '@theia/callhierarchy/lib/browser';
+import { TypeScriptClientContribution } from './typescript-client-contribution';
+import { TypeScriptCallHierarchyService } from './typescript-callhierarchy-service';
+import { TypescriptGrammarContribution } from './typescript-language-config';
+import { JavascriptGrammarContribution } from './javascript-language-config';
 
 export default new ContainerModule(bind => {
     bind(TypeScriptClientContribution).toSelf().inSingletonScope();

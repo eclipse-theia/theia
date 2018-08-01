@@ -15,84 +15,84 @@
  ********************************************************************************/
 
 import * as chai from 'chai';
-import { Endpoint } from "@theia/core/src/browser/endpoint";
+import { Endpoint } from '@theia/core/src/browser/endpoint';
 
 const expect = chai.expect;
 
-describe("Endpoint", () => {
+describe('Endpoint', () => {
 
-    describe("01 #getWebSocketUrl", () => {
+    describe('01 #getWebSocketUrl', () => {
 
-        it("Should correctly join root pathname", () => {
+        it('Should correctly join root pathname', () => {
             expectWsUri(
                 {
-                    httpScheme: "ws",
-                    path: "/miau/"
+                    httpScheme: 'ws',
+                    path: '/miau/'
                 },
                 {
-                    host: "example.org",
-                    pathname: "/",
-                    search: "",
-                    protocol: ""
-                }, "ws://example.org/miau/");
+                    host: 'example.org',
+                    pathname: '/',
+                    search: '',
+                    protocol: ''
+                }, 'ws://example.org/miau/');
         });
 
-        it("Should correctly join pathname and path", () => {
+        it('Should correctly join pathname and path', () => {
             expectWsUri(
                 {
-                    httpScheme: "ws",
-                    path: "/miau/"
+                    httpScheme: 'ws',
+                    path: '/miau/'
                 },
                 {
-                    host: "example.org",
-                    pathname: "/mainresource",
-                    search: "",
-                    protocol: ""
-                }, "ws://example.org/mainresource/miau/");
+                    host: 'example.org',
+                    pathname: '/mainresource',
+                    search: '',
+                    protocol: ''
+                }, 'ws://example.org/mainresource/miau/');
         });
 
-        it("Should correctly join pathname and path, ignoring double slash in between", () => {
+        it('Should correctly join pathname and path, ignoring double slash in between', () => {
             expectWsUri(
                 {
-                    httpScheme: "ws",
-                    path: "/miau/"
+                    httpScheme: 'ws',
+                    path: '/miau/'
                 },
                 {
-                    host: "example.org",
-                    pathname: "/mainresource/",
-                    search: "",
-                    protocol: ""
-                }, "ws://example.org/mainresource/miau/");
+                    host: 'example.org',
+                    pathname: '/mainresource/',
+                    search: '',
+                    protocol: ''
+                }, 'ws://example.org/mainresource/miau/');
         });
 
-        it("Should correctly join pathname and path, without trailing slash", () => {
+        it('Should correctly join pathname and path, without trailing slash', () => {
             expectWsUri(
                 {
-                    httpScheme: "ws",
-                    path: "/miau"
+                    httpScheme: 'ws',
+                    path: '/miau'
                 },
                 {
-                    host: "example.org",
-                    pathname: "/mainresource",
-                    search: "",
-                    protocol: ""
-                }, "ws://example.org/mainresource/miau");
+                    host: 'example.org',
+                    pathname: '/mainresource',
+                    search: '',
+                    protocol: ''
+                }, 'ws://example.org/mainresource/miau');
         });
     });
 
-    describe("02 #httpScheme", () => {
+    describe('02 #httpScheme', () => {
 
-        it("Should choose https:// if location protocol is https://", () => {
+        it('Should choose https:// if location protocol is https://', () => {
             expectRestUri(
                 {
-                    path: "/"
+                    path: '/'
                 },
                 {
-                    host: "example.org",
-                    pathname: "/",
-                    search: "",
-                    protocol: "https:"
-                }, "https://example.org/");
+                    host: 'example.org',
+                    pathname: '/',
+                    search: '',
+                    protocol: 'https:'
+                }, 'https://example.org/');
         });
     });
 });

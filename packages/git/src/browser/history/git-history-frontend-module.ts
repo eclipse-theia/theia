@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { GitHistoryContribution, GIT_HISTORY } from "./git-history-contribution";
-import { interfaces, Container } from "inversify";
-import { WidgetFactory, OpenHandler, bindViewContribution } from "@theia/core/lib/browser";
-import { GitHistoryWidget } from "./git-history-widget";
-import { GIT_COMMIT_DETAIL, GitCommitDetailWidget, GitCommitDetails, GitCommitDetailWidgetOptions } from "./git-commit-detail-widget";
-import { GitAvatarService } from "./git-avatar-service";
+import { GitHistoryContribution, GIT_HISTORY } from './git-history-contribution';
+import { interfaces, Container } from 'inversify';
+import { WidgetFactory, OpenHandler, bindViewContribution } from '@theia/core/lib/browser';
+import { GitHistoryWidget } from './git-history-widget';
+import { GIT_COMMIT_DETAIL, GitCommitDetailWidget, GitCommitDetails, GitCommitDetailWidgetOptions } from './git-commit-detail-widget';
+import { GitAvatarService } from './git-avatar-service';
 
 import '../../../src/browser/style/history.css';
 import '../../../src/browser/style/git-icons.css';
-import { GitCommitDetailOpenHandler } from "./git-commit-detail-open-handler";
+import { GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 
 export function bindGitHistoryModule(bind: interfaces.Bind) {
 

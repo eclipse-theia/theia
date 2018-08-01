@@ -13,10 +13,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Terminal, TerminalOptions } from "@theia/plugin";
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from "../api/plugin-api";
-import { RPCProtocol } from "../api/rpc-protocol";
-import { Emitter } from "@theia/core/lib/common/event";
+import { Terminal, TerminalOptions } from '@theia/plugin';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
+import { RPCProtocol } from '../api/rpc-protocol';
+import { Emitter } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
 
 /**
@@ -35,7 +35,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     createTerminal(nameOrOptions: TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
         let options: TerminalOptions;
-        if (typeof nameOrOptions === "object") {
+        if (typeof nameOrOptions === 'object') {
             options = nameOrOptions;
         } else {
             options = {
@@ -45,7 +45,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             };
         }
 
-        const terminal = new TerminalExtImpl(this.proxy, options.name || "Terminal");
+        const terminal = new TerminalExtImpl(this.proxy, options.name || 'Terminal');
         terminal.create(options, shellPath, shellArgs);
         terminal.processId.then(id => {
             this.terminals.set(id, terminal);

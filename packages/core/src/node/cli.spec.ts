@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as yargs from "yargs";
-import * as chai from "chai";
+import * as yargs from 'yargs';
+import * as chai from 'chai';
 import { CliManager, CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 
@@ -43,7 +43,7 @@ beforeEach(() => {
 });
 
 describe('CliManager', () => {
-    it("Parses simple option", async () => {
+    it('Parses simple option', async () => {
         const value = new Deferred<string>();
         const mnr = new TestCliManager({
             configure(conf: yargs.Argv) {
@@ -54,12 +54,12 @@ describe('CliManager', () => {
                 value.resolve(args['foo']);
             }
         });
-        mnr.setArgs('-f', "bla");
+        mnr.setArgs('-f', 'bla');
         await mnr.initializeCli();
         chai.assert.equal(await value.promise, 'bla');
     });
 
-    it("resolves with default", async () => {
+    it('resolves with default', async () => {
         const value = new Deferred<string>();
         const mnr = new TestCliManager({
             configure(conf: yargs.Argv) {
@@ -75,7 +75,7 @@ describe('CliManager', () => {
         chai.assert.equal(await value.promise, 'my-default');
     });
 
-    it("prints help and exits", async () =>
+    it('prints help and exits', async () =>
         await assertExits(async () => {
             const mnr = new TestCliManager();
             mnr.setArgs('--help');

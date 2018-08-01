@@ -28,7 +28,7 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
             [dependency: string]: string
         } = {};
         for (const module of modulesToProcess) {
-            console.log("Processing " + module);
+            console.log('Processing ' + module);
             const src = path.join(nodeModulesPath, module);
             if (fs.existsSync(src)) {
                 const dest = path.join(browserModulesPath, module);
@@ -37,12 +37,12 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
                 fs.copySync(src, dest);
             }
         }
-        const packFile = path.join(process.cwd(), "package.json");
+        const packFile = path.join(process.cwd(), 'package.json');
         const packageText = fs.readFileSync(packFile);
         const pack = fs.readJsonSync(packFile);
         try {
             pack.dependencies = Object.assign({}, pack.dependencies, dependencies);
-            fs.writeFileSync(packFile, JSON.stringify(pack, undefined, "  "));
+            fs.writeFileSync(packFile, JSON.stringify(pack, undefined, '  '));
             const electronRebuildPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron-rebuild');
             if (process.platform === 'win32') {
                 cp.spawnSync('cmd', ['/c', electronRebuildPath]);
@@ -56,7 +56,7 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
         }
     } else if (target === 'browser' && fs.existsSync(browserModulesPath)) {
         for (const moduleName of fs.readdirSync(browserModulesPath)) {
-            console.log("Reverting " + moduleName);
+            console.log('Reverting ' + moduleName);
             const src = path.join(browserModulesPath, moduleName);
             const dest = path.join(nodeModulesPath, moduleName);
             fs.removeSync(dest);

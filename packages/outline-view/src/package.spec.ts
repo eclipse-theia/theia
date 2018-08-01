@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("outline view package", () => {
+describe('outline view package', () => {
 
-    it("should support code coverage statistics", () => true);
+    it('should support code coverage statistics', () => true);
 });

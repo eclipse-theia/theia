@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import { Command, CommandRegistry } from '../../common';
 import { Keybinding, KeybindingRegistry } from '../keybinding';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
-import { QuickOpenService } from "./quick-open-service";
+import { QuickOpenService } from './quick-open-service';
 
 @injectable()
 export class QuickCommandService implements QuickOpenModel {
@@ -80,7 +80,7 @@ export class CommandQuickOpenItem extends QuickOpenItem {
     getIconClass() {
         const toggleHandler = this.commands.getToggledHandler(this.command.id);
         if (toggleHandler && toggleHandler.isToggled && toggleHandler.isToggled()) {
-            return `fa fa-check`;
+            return 'fa fa-check';
         }
         return super.getIconClass();
     }

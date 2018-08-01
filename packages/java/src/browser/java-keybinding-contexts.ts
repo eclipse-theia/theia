@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { EditorTextFocusContext, EditorWidget } from "@theia/editor/lib/browser";
-import { JAVA_LANGUAGE_ID } from "../common";
+import { injectable } from 'inversify';
+import { EditorTextFocusContext, EditorWidget } from '@theia/editor/lib/browser';
+import { JAVA_LANGUAGE_ID } from '../common';
 
 export namespace JavaKeybindingContexts {
     export const javaEditorTextFocus = 'javaEditorTextFocus';

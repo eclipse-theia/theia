@@ -60,7 +60,7 @@ export class NavigationLocationService {
                 const current = this.currentLocation();
                 this.debug(`Registering new location: ${NavigationLocation.toObject(location)}.`);
                 if (!this.isSimilar(current, location)) {
-                    this.debug(`Before location registration.`);
+                    this.debug('Before location registration.');
                     this.debug(this.stackDump);
                     // Just like in VSCode; if we are not at the end of stack, we remove anything after.
                     if (this.stack.length > this.pointer + 1) {
@@ -70,11 +70,11 @@ export class NavigationLocationService {
                     this.stack.push(location);
                     this.pointer = this.stack.length - 1;
                     if (this.stack.length > max) {
-                        this.debug(`Trimming exceeding locations.`);
+                        this.debug('Trimming exceeding locations.');
                         this.stack.shift();
                         this.pointer--;
                     }
-                    this.debug(`Updating preceding navigation locations.`);
+                    this.debug('Updating preceding navigation locations.');
                     for (let i = this.stack.length - 1; i >= 0; i--) {
                         const candidate = this.stack[i];
                         const update = this.updater.affects(candidate, location);
@@ -87,7 +87,7 @@ export class NavigationLocationService {
                             this.stack[i] = update;
                         }
                     }
-                    this.debug(`After location registration.`);
+                    this.debug('After location registration.');
                     this.debug(this.stackDump);
                 } else {
                     if (current) {

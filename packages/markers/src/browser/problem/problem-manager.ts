@@ -19,7 +19,7 @@ import { MarkerManager } from '../marker-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { Marker } from '../../common/marker';
 import URI from '@theia/core/lib/common/uri';
-import { Diagnostic } from "vscode-languageserver-types";
+import { Diagnostic } from 'vscode-languageserver-types';
 
 export interface ProblemStat {
     errors: number;

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../../common';
-import { configuration } from "./java-monaco-language";
+import { configuration } from './java-monaco-language';
 
 monaco.languages.register({
     id: JAVA_LANGUAGE_ID,

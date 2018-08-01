@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
-import { CommandRegistry, Disposable } from "@theia/core/lib/common";
-import { ErrorAction } from "monaco-languageclient";
+import { injectable, inject } from 'inversify';
+import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { CommandRegistry, Disposable } from '@theia/core/lib/common';
+import { ErrorAction } from 'monaco-languageclient';
 import {
     Workspace, Languages, Window, Services,
     ILanguageClient, LanguageClientOptions, MonacoLanguageClient,

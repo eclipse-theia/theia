@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
-import { loadMonaco, loadVsRequire } from "./monaco-loader";
+import { ContainerModule } from 'inversify';
+import { loadMonaco, loadVsRequire } from './monaco-loader';
 
 export { ContainerModule };
 

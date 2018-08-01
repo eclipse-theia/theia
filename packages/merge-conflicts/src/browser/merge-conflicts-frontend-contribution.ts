@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { Languages } from '@theia/languages/lib/browser';
 import { MergeConflictsCodeLensProvider } from './merge-conflicts-code-lense-provider';
 import { MergeConflictResolver } from './merge-conflict-resolver';
 import { MergeConflictsCommands as Commands } from './merge-conflict';
-import { MergeConflictsProvider } from "./merge-conflicts-provider";
-import { MergeConflictsDecorations } from "./merge-conflicts-decorations";
+import { MergeConflictsProvider } from './merge-conflicts-provider';
+import { MergeConflictsDecorations } from './merge-conflicts-decorations';
 
 @injectable()
 export class MergeConflictsFrontendContribution implements FrontendApplicationContribution, CommandContribution {

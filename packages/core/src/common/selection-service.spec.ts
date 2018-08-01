@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { SelectionService } from './selection-service';
-import * as chai from "chai";
+import * as chai from 'chai';
 
 const expect = chai.expect;
 
@@ -28,11 +28,11 @@ describe('selection-service', () => {
             const disposable = service.onSelectionChanged(
                 e => events.push(e)
             );
-            service.selection = "foo";
+            service.selection = 'foo';
             disposable.dispose();
-            service.selection = "bar";
+            service.selection = 'bar';
             expect(events.length).equals(1);
-            expect(events[0]).equals("foo");
+            expect(events[0]).equals('foo');
         });
     });
 });

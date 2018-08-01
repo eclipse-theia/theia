@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop } from "@theia/core/lib/browser";
-import { inject, injectable, postConstruct } from "inversify";
-import { SearchInWorkspaceResultTreeWidget } from "./search-in-workspace-result-tree-widget";
-import { SearchInWorkspaceOptions } from "../common/search-in-workspace-interface";
+import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop } from '@theia/core/lib/browser';
+import { inject, injectable, postConstruct } from 'inversify';
+import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
+import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -30,8 +30,8 @@ export interface SearchFieldState {
 @injectable()
 export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidget {
 
-    static ID = "search-in-workspace";
-    static LABEL = "Search";
+    static ID = 'search-in-workspace';
+    static LABEL = 'Search';
 
     protected matchCaseState: SearchFieldState;
     protected wholeWordState: SearchFieldState;
@@ -46,8 +46,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected searchInWorkspaceOptions: SearchInWorkspaceOptions;
 
-    protected searchTerm = "";
-    protected replaceTerm = "";
+    protected searchTerm = '';
+    protected replaceTerm = '';
 
     protected showReplaceField = false;
 
@@ -63,31 +63,31 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.title.label = SearchInWorkspaceWidget.LABEL;
 
         this.contentNode = document.createElement('div');
-        this.contentNode.classList.add("t-siw-search-container");
+        this.contentNode.classList.add('t-siw-search-container');
         this.searchFormContainer = document.createElement('div');
-        this.searchFormContainer.classList.add("searchHeader");
+        this.searchFormContainer.classList.add('searchHeader');
         this.contentNode.appendChild(this.searchFormContainer);
         this.node.appendChild(this.contentNode);
 
         this.matchCaseState = {
-            className: "match-case",
+            className: 'match-case',
             enabled: false,
-            title: "Match Case"
+            title: 'Match Case'
         };
         this.wholeWordState = {
-            className: "whole-word",
+            className: 'whole-word',
             enabled: false,
-            title: "Match Whole Word"
+            title: 'Match Whole Word'
         };
         this.regExpState = {
-            className: "use-regexp",
+            className: 'use-regexp',
             enabled: false,
-            title: "Use Regular Expression"
+            title: 'Use Regular Expression'
         };
         this.includeIgnoredState = {
-            className: "include-ignored fa fa-eye",
+            className: 'include-ignored fa fa-eye',
             enabled: false,
-            title: "Include Ignored Files"
+            title: 'Include Ignored Files'
         };
         this.searchInWorkspaceOptions = {
             matchCase: false,
@@ -145,7 +145,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.showSearchDetails = true;
         const value = `${uri}/**`;
         this.searchInWorkspaceOptions.include = [value];
-        const include = document.getElementById("include-glob-field");
+        const include = document.getElementById('include-glob-field');
         if (include) {
             (include as HTMLInputElement).value = value;
         }
@@ -178,7 +178,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected focusInputField() {
-        const f = document.getElementById("search-input-field");
+        const f = document.getElementById('search-input-field');
         if (f) {
             (f as HTMLInputElement).focus();
             (f as HTMLInputElement).select();
@@ -203,33 +203,33 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected clear = () => {
-        this.searchTerm = "";
-        this.replaceTerm = "";
+        this.searchTerm = '';
+        this.replaceTerm = '';
         this.searchInWorkspaceOptions.include = [];
         this.searchInWorkspaceOptions.exclude = [];
         this.includeIgnoredState.enabled = false;
         this.matchCaseState.enabled = false;
         this.wholeWordState.enabled = false;
         this.regExpState.enabled = false;
-        const search = document.getElementById("search-input-field");
-        const replace = document.getElementById("replace-input-field");
-        const include = document.getElementById("include-glob-field");
-        const exclude = document.getElementById("exclude-glob-field");
+        const search = document.getElementById('search-input-field');
+        const replace = document.getElementById('replace-input-field');
+        const include = document.getElementById('include-glob-field');
+        const exclude = document.getElementById('exclude-glob-field');
         if (search && replace && include && exclude) {
-            (search as HTMLInputElement).value = "";
-            (replace as HTMLInputElement).value = "";
-            (include as HTMLInputElement).value = "";
-            (exclude as HTMLInputElement).value = "";
+            (search as HTMLInputElement).value = '';
+            (replace as HTMLInputElement).value = '';
+            (include as HTMLInputElement).value = '';
+            (exclude as HTMLInputElement).value = '';
         }
         this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
         this.update();
     }
 
     protected renderControlButtons(): React.ReactNode {
-        const refreshButton = this.renderControlButton(`refresh${this.hasResults || this.searchTerm !== "" ? " enabled" : ""}`, 'Refresh', this.refresh);
-        const collapseAllButton = this.renderControlButton(`collapse-all${this.hasResults ? " enabled" : ""}`, 'Collapse All', this.collapseAll);
-        const clearButton = this.renderControlButton(`clear-all${this.hasResults ? " enabled" : ""}`, 'Clear', this.clear);
-        return <div className="controls button-container">{refreshButton}{collapseAllButton}{clearButton}</div>;
+        const refreshButton = this.renderControlButton(`refresh${this.hasResults || this.searchTerm !== '' ? ' enabled' : ''}`, 'Refresh', this.refresh);
+        const collapseAllButton = this.renderControlButton(`collapse-all${this.hasResults ? ' enabled' : ''}`, 'Collapse All', this.collapseAll);
+        const clearButton = this.renderControlButton(`clear-all${this.hasResults ? ' enabled' : ''}`, 'Clear', this.clear);
+        return <div className='controls button-container'>{refreshButton}{collapseAllButton}{clearButton}</div>;
     }
 
     protected renderControlButton(btnClass: string, title: string, clickHandler: () => void): React.ReactNode {
@@ -240,9 +240,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const toggleContainer = this.renderReplaceFieldToggle();
         const searchField = this.renderSearchField();
         const replaceField = this.renderReplaceField();
-        return <div className="search-and-replace-container">
+        return <div className='search-and-replace-container'>
             {toggleContainer}
-            <div className="search-and-replace-fields">
+            <div className='search-and-replace-fields'>
                 {searchField}
                 {replaceField}
             </div>
@@ -250,12 +250,12 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderReplaceFieldToggle(): React.ReactNode {
-        const toggle = <span className={`fa fa-caret-${this.showReplaceField ? "down" : "right"}`}></span>;
+        const toggle = <span className={`fa fa-caret-${this.showReplaceField ? 'down' : 'right'}`}></span>;
         return <div
-            className="replace-toggle"
+            className='replace-toggle'
             tabIndex={0}
             onClick={e => {
-                const elArr = document.getElementsByClassName("replace-toggle");
+                const elArr = document.getElementsByClassName('replace-toggle');
                 if (elArr && elArr.length > 0) {
                     (elArr[0] as HTMLElement).focus();
                 }
@@ -269,7 +269,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected renderNotification(): React.ReactNode {
         return <div
-            className={`search-notification ${this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? "show" : ""}`}>
+            className={`search-notification ${this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? 'show' : ''}`}>
             <div>
                 This is only a subset of all results. Use a more specific search term to narrow down the result list.
             </div>
@@ -302,19 +302,19 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected renderSearchField(): React.ReactNode {
         const input = <input
-            id="search-input-field"
-            type="text"
+            id='search-input-field'
+            type='text'
             size={1}
-            placeholder="Search"
+            placeholder='Search'
             defaultValue={this.searchTerm}
             onKeyUp={this.handleKeyUp}
         ></input>;
         const notification = this.renderNotification();
         const optionContainer = this.renderOptionContainer();
-        const tooMany = this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? "tooManyResults" : "";
+        const tooMany = this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? 'tooManyResults' : '';
         const className = `search-field-container ${tooMany} ${this.searchFieldContainerIsFocused ? 'focused' : ''}`;
         return <div className={className}>
-            <div className="search-field" tabIndex={-1} onFocus={this.focusSearchFieldContainer} onBlur={this.unfocusSearchFieldContainer}>
+            <div className='search-field' tabIndex={-1} onFocus={this.focusSearchFieldContainer} onBlur={this.unfocusSearchFieldContainer}>
                 {input}
                 {optionContainer}
             </div>
@@ -324,12 +324,12 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected renderReplaceField(): React.ReactNode {
         const replaceAllButtonContainer = this.renderReplaceAllButtonContainer();
-        return <div className={`replace-field${this.showReplaceField ? "" : " hidden"}`}>
+        return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
             <input
-                id="replace-input-field"
-                type="text"
+                id='replace-input-field'
+                type='text'
                 size={1}
-                placeholder="Replace"
+                placeholder='Replace'
                 defaultValue={this.replaceTerm}
                 onKeyUp={e => {
                     if (e.target) {
@@ -348,9 +348,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderReplaceAllButtonContainer(): React.ReactNode {
-        return <div className="replace-all-button-container">
+        return <div className='replace-all-button-container'>
             <span
-                className={`replace-all-button${this.searchTerm === "" ? " disabled" : ""}`}
+                className={`replace-all-button${this.searchTerm === '' ? ' disabled' : ''}`}
                 onClick={() => {
                     this.resultTreeWidget.replaceAll();
                 }}>
@@ -363,12 +363,12 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const wholeWordOption = this.renderOptionElement(this.wholeWordState);
         const regexOption = this.renderOptionElement(this.regExpState);
         const includeIgnoredOption = this.renderOptionElement(this.includeIgnoredState);
-        return <div className="option-buttons">{matchCaseOption}{wholeWordOption}{regexOption}{includeIgnoredOption}</div>;
+        return <div className='option-buttons'>{matchCaseOption}{wholeWordOption}{regexOption}{includeIgnoredOption}</div>;
     }
 
     protected renderOptionElement(opt: SearchFieldState): React.ReactNode {
         return <span
-            className={`${opt.className} option ${opt.enabled ? "enabled" : ""}`}
+            className={`${opt.className} option ${opt.enabled ? 'enabled' : ''}`}
             title={opt.title}
             onClick={() => this.handleOptionClick(opt)}></span>;
     }
@@ -391,19 +391,19 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderSearchDetails(): React.ReactNode {
         const expandButton = this.renderExpandGlobFieldsButton();
         const globFieldContainer = this.renderGlobFieldContainer();
-        return <div className="search-details">{expandButton}{globFieldContainer}</div>;
+        return <div className='search-details'>{expandButton}{globFieldContainer}</div>;
     }
 
     protected renderGlobFieldContainer(): React.ReactNode {
-        const includeField = this.renderGlobField("include");
-        const excludeField = this.renderGlobField("exclude");
-        return <div className={`glob-field-container${!this.showSearchDetails ? " hidden" : ""}`}>{includeField}{excludeField}</div>;
+        const includeField = this.renderGlobField('include');
+        const excludeField = this.renderGlobField('exclude');
+        return <div className={`glob-field-container${!this.showSearchDetails ? ' hidden' : ''}`}>{includeField}{excludeField}</div>;
     }
 
     protected renderExpandGlobFieldsButton(): React.ReactNode {
-        return <div className="button-container">
+        return <div className='button-container'>
             <span
-                className="fa fa-ellipsis-h btn"
+                className='fa fa-ellipsis-h btn'
                 onClick={() => {
                     this.showSearchDetails = !this.showSearchDetails;
                     this.update();
@@ -411,16 +411,16 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
 
-    protected renderGlobField(kind: "include" | "exclude"): React.ReactNode {
+    protected renderGlobField(kind: 'include' | 'exclude'): React.ReactNode {
         const currentValue = this.searchInWorkspaceOptions[kind];
         const value = currentValue && currentValue.join(', ') || '';
-        return <div className="glob-field">
-            <div className="label">{"files to " + kind}</div>
+        return <div className='glob-field'>
+            <div className='label'>{'files to ' + kind}</div>
             <input
-                type="text"
+                type='text'
                 size={1}
                 defaultValue={value}
-                id={kind + "-glob-field"}
+                id={kind + '-glob-field'}
                 onKeyUp={e => {
                     if (e.target) {
                         if (Key.ENTER.keyCode === e.keyCode) {

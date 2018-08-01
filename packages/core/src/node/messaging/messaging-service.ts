@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as ws from 'ws';
-import { MessageConnection } from "vscode-jsonrpc";
-import { IConnection } from "vscode-ws-jsonrpc/lib/server/connection";
+import { MessageConnection } from 'vscode-jsonrpc';
+import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 
 export interface MessagingService {
     /**

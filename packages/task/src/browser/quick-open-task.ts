@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
 import { TaskService } from './task-service';
-import { TaskConfigurations } from "./task-configurations";
+import { TaskConfigurations } from './task-configurations';
 import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
 
 @injectable()

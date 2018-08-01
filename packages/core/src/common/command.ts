@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from "inversify";
-import { Disposable, DisposableCollection } from "./disposable";
+import { injectable, inject, named } from 'inversify';
+import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 
 /**
@@ -63,7 +63,7 @@ export interface CommandHandler {
     isToggled?(...args: any[]): boolean;
 }
 
-export const CommandContribution = Symbol("CommandContribution");
+export const CommandContribution = Symbol('CommandContribution');
 /**
  * The command contribution should be implemented to register custom commands and handler.
  */
@@ -74,7 +74,7 @@ export interface CommandContribution {
     registerCommands(commands: CommandRegistry): void;
 }
 
-export const CommandService = Symbol("CommandService");
+export const CommandService = Symbol('CommandService');
 /**
  * The command service should be used to execute commands.
  */

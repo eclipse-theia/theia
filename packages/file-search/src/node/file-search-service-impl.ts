@@ -18,9 +18,9 @@ import * as readline from 'readline';
 import * as fuzzy from 'fuzzy';
 import { injectable, inject } from 'inversify';
 import { FileSearchService } from '../common/file-search-service';
-import { RawProcessFactory } from "@theia/process/lib/node";
-import { rgPath } from "vscode-ripgrep";
-import { Deferred } from "@theia/core/lib/common/promise-util";
+import { RawProcessFactory } from '@theia/process/lib/node';
+import { rgPath } from 'vscode-ripgrep';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CancellationToken, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 

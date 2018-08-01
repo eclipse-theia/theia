@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { MonacoToProtocolConverter } from "monaco-languageclient";
-import URI from "@theia/core/lib/common/uri";
+import { MonacoToProtocolConverter } from 'monaco-languageclient';
+import URI from '@theia/core/lib/common/uri';
 import { OpenerService, open, WidgetOpenMode } from '@theia/core/lib/browser';
 import { EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';

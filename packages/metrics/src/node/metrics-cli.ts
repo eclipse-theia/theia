@@ -16,7 +16,7 @@
 
 import * as yargs from 'yargs';
 import { injectable } from 'inversify';
-import { CliContribution } from "@theia/core/lib/node";
+import { CliContribution } from '@theia/core/lib/node';
 
 const metricsProjectPath = 'metrics-project-path';
 
@@ -27,7 +27,7 @@ export class MetricsCliContribution implements CliContribution {
 
     configure(conf: yargs.Argv): void {
         conf.option(metricsProjectPath, {
-            description: "Sets the application project directory (used in metrics extension)",
+            description: 'Sets the application project directory (used in metrics extension)',
             default: process.cwd()
         });
     }

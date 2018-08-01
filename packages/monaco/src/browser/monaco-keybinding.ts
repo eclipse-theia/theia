@@ -65,7 +65,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (selectAllCommand) {
             registry.registerKeybinding({
                 command: selectAllCommand,
-                keybinding: "ctrlcmd+a",
+                keybinding: 'ctrlcmd+a',
                 context: EditorKeybindingContexts.editorTextFocus
             });
         }

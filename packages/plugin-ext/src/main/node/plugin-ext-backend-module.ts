@@ -14,21 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
-import { PluginApiContribution } from "./plugin-service";
-import { BackendApplicationContribution } from "@theia/core/lib/node";
-import { PluginDeployerContribution } from "./plugin-deployer-contribution";
+import { interfaces } from 'inversify';
+import { PluginApiContribution } from './plugin-service';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { PluginDeployerContribution } from './plugin-deployer-contribution';
 import {
     PluginDeployer, PluginDeployerResolver, PluginDeployerFileHandler,
     PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath
-} from "../../common/plugin-protocol";
-import { PluginDeployerImpl } from "./plugin-deployer-impl";
-import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-dir-resolver";
-import { PluginTheiaFileHandler } from "./handlers/plugin-theia-file-handler";
-import { PluginTheiaDirectoryHandler } from "./handlers/plugin-theia-directory-handler";
-import { GithubPluginDeployerResolver } from "./plugin-github-resolver";
-import { HttpPluginDeployerResolver } from "./plugin-http-resolver";
-import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core";
+} from '../../common/plugin-protocol';
+import { PluginDeployerImpl } from './plugin-deployer-impl';
+import { LocalDirectoryPluginDeployerResolver } from './resolvers/plugin-local-dir-resolver';
+import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
+import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
+import { GithubPluginDeployerResolver } from './plugin-github-resolver';
+import { HttpPluginDeployerResolver } from './plugin-http-resolver';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();

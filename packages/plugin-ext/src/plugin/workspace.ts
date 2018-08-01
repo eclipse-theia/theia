@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WorkspaceFolder, WorkspaceFoldersChangeEvent } from "@theia/plugin";
-import { Event, Emitter } from "@theia/core/lib/common/event";
-import { WorkspaceExt } from "../api/plugin-api";
-import { Path } from "@theia/core/lib/common/path";
+import { WorkspaceFolder, WorkspaceFoldersChangeEvent } from '@theia/plugin';
+import { Event, Emitter } from '@theia/core/lib/common/event';
+import { WorkspaceExt } from '../api/plugin-api';
+import { Path } from '@theia/core/lib/common/path';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 

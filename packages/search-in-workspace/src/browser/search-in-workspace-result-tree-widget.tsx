@@ -27,18 +27,18 @@ import {
     TreeExpansionService,
     ApplicationShell,
     DiffUris
-} from "@theia/core/lib/browser";
-import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from "../common/search-in-workspace-interface";
-import { SearchInWorkspaceService } from "./search-in-workspace-service";
-import { TreeProps } from "@theia/core/lib/browser";
-import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation } from "@theia/editor/lib/browser";
-import { inject, injectable, postConstruct } from "inversify";
-import URI from "@theia/core/lib/common/uri";
-import { Path, CancellationTokenSource, Emitter, Event } from "@theia/core";
-import { WorkspaceService } from "@theia/workspace/lib/browser";
-import { MEMORY_TEXT } from "./in-memory-text-resource";
-import { FileResourceResolver } from "@theia/filesystem/lib/browser";
-import * as React from "react";
+} from '@theia/core/lib/browser';
+import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceService } from './search-in-workspace-service';
+import { TreeProps } from '@theia/core/lib/browser';
+import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
+import { inject, injectable, postConstruct } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { Path, CancellationTokenSource, Emitter, Event } from '@theia/core';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { MEMORY_TEXT } from './in-memory-text-resource';
+import { FileResourceResolver } from '@theia/filesystem/lib/browser';
+import * as React from 'react';
 
 export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, SelectableTreeNode {
     children: SearchInWorkspaceResultLineNode[];
@@ -47,14 +47,14 @@ export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, Selecta
 }
 export namespace SearchInWorkspaceResultNode {
     export function is(node: any): node is SearchInWorkspaceResultNode {
-        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && "path" in node;
+        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node;
     }
 }
 
 export type SearchInWorkspaceResultLineNode = SelectableTreeNode & SearchInWorkspaceResult;
 export namespace SearchInWorkspaceResultLineNode {
     export function is(node: any): node is SearchInWorkspaceResultLineNode {
-        return SelectableTreeNode.is(node) && "line" in node && "character" in node && "lineText" in node;
+        return SelectableTreeNode.is(node) && 'line' in node && 'character' in node && 'lineText' in node;
     }
 }
 
@@ -62,11 +62,11 @@ export namespace SearchInWorkspaceResultLineNode {
 export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected resultTree: Map<string, SearchInWorkspaceResultNode>;
-    protected workspaceRoot: string = "";
+    protected workspaceRoot: string = '';
 
     protected _showReplaceButtons = false;
-    protected _replaceTerm = "";
-    protected searchTerm = "";
+    protected _replaceTerm = '';
+    protected searchTerm = '';
 
     protected appliedDecorations = new Map<string, string[]>();
 
@@ -91,8 +91,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         super(props, model, contextMenuRenderer);
 
         model.root = {
-            id: "ResultTree",
-            name: "ResultTree",
+            id: 'ResultTree',
+            name: 'ResultTree',
             parent: undefined,
             visible: false,
             children: []
@@ -111,7 +111,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @postConstruct()
     protected init() {
         super.init();
-        this.addClass("resultContainer");
+        this.addClass('resultContainer');
 
         this.workspaceService.root.then(rootFileStat => {
             if (rootFileStat) {
@@ -153,7 +153,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
         this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
-        if (searchTerm === "") {
+        if (searchTerm === '') {
             this.refreshModelChildren();
             return;
         }
@@ -184,7 +184,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             path,
                             children,
                             expanded: true,
-                            id: path + "-" + name,
+                            id: path + '-' + name,
                             parent: this.model.root,
                             icon,
                             file: result.file
@@ -253,7 +253,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return {
             ...result,
             selected: false,
-            id: result.file + "-" + result.line + "-" + result.character + "-" + result.length,
+            id: result.file + '-' + result.line + '-' + result.character + '-' + result.length,
             name: result.lineText,
             parent: resultNode
         };
@@ -272,11 +272,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
             return this.renderResultLineNode(node);
         }
-        return "";
+        return '';
     }
 
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        return <div className="result-node-buttons">
+        return <div className='result-node-buttons'>
             {this._showReplaceButtons && this.renderReplaceButton(node)}
             {this.renderRemoveButton(node)}
         </div>;
@@ -290,7 +290,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
-        return <span className="replace-result" onClick={e => this.replace(node, e)}></span>;
+        return <span className='replace-result' onClick={e => this.replace(node, e)}></span>;
     }
 
     replaceAll(): void {
@@ -349,7 +349,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderRemoveButton(node: TreeNode): React.ReactNode {
-        return <span className="remove-node" onClick={e => this.remove(node, e)}></span>;
+        return <span className='remove-node' onClick={e => this.remove(node, e)}></span>;
     }
 
     protected removeNode(node: TreeNode) {
@@ -372,18 +372,18 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected renderResultNode(node: SearchInWorkspaceResultNode): React.ReactNode {
         const icon = node.icon;
-        return <div className="result">
-            <div className="result-head">
+        return <div className='result'>
+            <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>
-                    <span className={`file-icon ${icon || ""}`}></span>
-                    <span className={"file-name"}>
+                    <span className={`file-icon ${icon || ''}`}></span>
+                    <span className={'file-name'}>
                         {node.name}
                     </span>
-                    <span className={"file-path"}>
+                    <span className={'file-path'}>
                         {node.path}
                     </span>
                 </div>
-                <span className={"result-number"}>
+                <span className={'result-number'}>
                     {node.children.length.toString()}
                 </span>
             </div>
@@ -404,8 +404,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const replaceTerm = this._replaceTerm !== "" && this._showReplaceButtons ? <span className="replace-term">{this._replaceTerm}</span> : "";
-        const className = `match${this._showReplaceButtons ? " strike-through" : ""}`;
+        const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
+        const className = `match${this._showReplaceButtons ? ' strike-through' : ''}`;
         return <React.Fragment>
             <span className={className}> {node.lineText.substr(node.character - 1, node.length)}</span>
             {replaceTerm}
@@ -416,11 +416,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         let fileUri: URI;
         const resultNode = this.resultTree.get(node.file);
         if (resultNode && this._showReplaceButtons && preview) {
-            const leftUri = new URI(node.file).withScheme("file");
+            const leftUri = new URI(node.file).withScheme('file');
             const rightUri = await this.createReplacePreview(resultNode);
             fileUri = DiffUris.encode(leftUri, rightUri);
         } else {
-            fileUri = new URI(node.file).withScheme("file");
+            fileUri = new URI(node.file).withScheme('file');
         }
         const editorWidget = await this.editorManager.open(fileUri, {
             selection: {
@@ -433,7 +433,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     character: node.character - 1 + node.length
                 }
             },
-            mode: "reveal"
+            mode: 'reveal'
         });
 
         this.decorateEditor(resultNode, editorWidget);
@@ -442,12 +442,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected async createReplacePreview(node: SearchInWorkspaceResultNode): Promise<URI> {
-        const fileUri = new URI(node.file).withScheme("file");
+        const fileUri = new URI(node.file).withScheme('file');
         const uri = fileUri.withoutScheme().toString();
         const resource = await this.fileResourceResolver.resolve(fileUri);
         const content = await resource.readContents();
 
-        const lines = content.split("\n");
+        const lines = content.split('\n');
         node.children.map(l => {
             const leftPositionedNodes = node.children.filter(rl => rl.line === l.line && rl.character < l.character);
             const diff = (this._replaceTerm.length - this.searchTerm.length) * leftPositionedNodes.length;
@@ -456,7 +456,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             lines[l.line - 1] = start + this._replaceTerm + end;
         });
 
-        return new URI(uri).withScheme(MEMORY_TEXT).withQuery(lines.join("\n"));
+        return new URI(uri).withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
     }
 
     protected decorateEditor(node: SearchInWorkspaceResultNode | undefined, editorWidget: EditorWidget) {
@@ -487,10 +487,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     },
                     options: {
                         overviewRuler: {
-                            color: "rgba(230, 0, 0, 1)",
+                            color: 'rgba(230, 0, 0, 1)',
                             position: OverviewRulerLane.Full
                         },
-                        className: res.selected ? "current-search-in-workspace-editor-match" : "search-in-workspace-editor-match",
+                        className: res.selected ? 'current-search-in-workspace-editor-match' : 'search-in-workspace-editor-match',
                         stickiness: TrackedRangeStickiness.GrowsOnlyWhenTypingBefore
                     }
                 });

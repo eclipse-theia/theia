@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { Disposable } from "../common";
-import { Key } from "./keys";
+import { injectable, inject } from 'inversify';
+import { Disposable } from '../common';
+import { Key } from './keys';
 import { Widget, BaseWidget, Message } from './widgets';
 
 @injectable()
@@ -49,25 +49,25 @@ export abstract class AbstractDialog<T> extends BaseWidget {
                 Widget.detach(this);
             }
         }));
-        const container = document.createElement("div");
+        const container = document.createElement('div');
         container.classList.add('dialogBlock');
         this.node.appendChild(container);
 
-        const titleContentNode = document.createElement("div");
+        const titleContentNode = document.createElement('div');
         titleContentNode.classList.add('dialogTitle');
         container.appendChild(titleContentNode);
 
-        this.titleNode = document.createElement("div");
+        this.titleNode = document.createElement('div');
         this.titleNode.textContent = props.title;
         titleContentNode.appendChild(this.titleNode);
 
-        this.closeCrossNode = document.createElement("i");
+        this.closeCrossNode = document.createElement('i');
         this.closeCrossNode.classList.add('fa');
         this.closeCrossNode.classList.add('fa-times');
         this.closeCrossNode.classList.add('closeButton');
         titleContentNode.appendChild(this.closeCrossNode);
 
-        this.contentNode = document.createElement("div");
+        this.contentNode = document.createElement('div');
         this.contentNode.classList.add('dialogContent');
         container.appendChild(this.contentNode);
 
@@ -98,7 +98,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected createButton(text: string): HTMLButtonElement {
-        const button = document.createElement("button");
+        const button = document.createElement('button');
         button.classList.add('theia-button');
         button.textContent = text;
         return button;
@@ -239,7 +239,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
 
     protected createMessageNode(msg: string | HTMLElement): HTMLElement {
         if (typeof msg === 'string') {
-            const messageNode = document.createElement("div");
+            const messageNode = document.createElement('div');
             messageNode.textContent = msg;
             return messageNode;
         }
@@ -264,7 +264,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     ) {
         super(props);
 
-        this.inputField = document.createElement("input");
+        this.inputField = document.createElement('input');
         this.inputField.type = 'text';
         this.inputField.setAttribute('style', 'flex: 0;');
         this.inputField.value = props.initialValue || '';

@@ -22,8 +22,8 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("preview package", () => {
+describe('preview package', () => {
 
-    it("support code coverage statistics", () => true);
+    it('support code coverage statistics', () => true);
 
 });

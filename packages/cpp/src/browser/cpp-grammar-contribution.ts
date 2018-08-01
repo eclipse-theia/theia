@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
-import { injectable } from "inversify";
-import { C_LANGUAGE_ID, CPP_LANGUAGE_ID } from "../common";
+import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { injectable } from 'inversify';
+import { C_LANGUAGE_ID, CPP_LANGUAGE_ID } from '../common';
 
 @injectable()
 export class CppGrammarContribution implements LanguageGrammarDefinitionContribution {
@@ -47,8 +47,8 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         ],
         folding: {
             markers: {
-                start: new RegExp("^\\s*#pragma\\s+region\\b"),
-                end: new RegExp("^\\s*#pragma\\s+endregion\\b")
+                start: new RegExp('^\\s*#pragma\\s+region\\b'),
+                end: new RegExp('^\\s*#pragma\\s+endregion\\b')
             }
         }
     };

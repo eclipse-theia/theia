@@ -59,22 +59,22 @@ describe('tree-decorator', () => {
             ]);
             expect(decoratorService.inflateDecorators(
                 {
-                    "id_1": [
+                    'id_1': [
                         {
-                            "tooltip": "tooltip"
+                            'tooltip': 'tooltip'
                         },
                         {
-                            "fontData": {
-                                "color": "blue"
+                            'fontData': {
+                                'color': 'blue'
                             }
                         }
                     ],
-                    "id_2": [
+                    'id_2': [
                         {
-                            "backgroundColor": "yellow"
+                            'backgroundColor': 'yellow'
                         },
                         {
-                            "priority": 100
+                            'priority': 100
                         }
                     ]
                 }
@@ -106,22 +106,22 @@ describe('tree-decorator', () => {
                 }
             ]);
             expect(decoratorService.deflateDecorators(decorations)).to.be.deep.equal({
-                "id_1": [
+                'id_1': [
                     {
-                        "tooltip": "tooltip"
+                        'tooltip': 'tooltip'
                     },
                     {
-                        "fontData": {
-                            "color": "blue"
+                        'fontData': {
+                            'color': 'blue'
                         }
                     }
                 ],
-                "id_2": [
+                'id_2': [
                     {
-                        "backgroundColor": "yellow"
+                        'backgroundColor': 'yellow'
                     },
                     {
-                        "priority": 100
+                        'priority': 100
                     }
                 ]
             });

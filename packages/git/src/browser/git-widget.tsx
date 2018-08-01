@@ -27,7 +27,7 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitAvatarService } from './history/git-avatar-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import * as React from "react";
+import * as React from 'react';
 import { GitErrorHandler } from './git-error-handler';
 
 export interface GitFileChangeNode extends GitFileChange {
@@ -310,7 +310,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 {this.renderCommitMessage()}
                 {this.renderCommandBar(repository)}
             </div>
-            <div className="changesOuterContainer" id={this.scrollContainer}>
+            <div className='changesOuterContainer' id={this.scrollContainer}>
                 {this.renderMergeChanges(repository) || ''}
                 {this.renderStagedChanges(repository) || ''}
                 {this.renderUnstagedChanges(repository) || ''}

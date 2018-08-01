@@ -47,7 +47,7 @@ import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-wind
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspacePreferences, createWorkspacePreferences } from '@theia/workspace/lib/browser/workspace-preferences';
 import * as sinon from 'sinon';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 
 disableJSDOM();
 
@@ -275,22 +275,22 @@ describe('Preference Service', function () {
     });
 
     it('Should store preference when settings file is empty', async () => {
-        const settings = "{\n   \"key\": \"value\"\n}";
-        await prefService.set("key", "value", PreferenceScope.User);
+        const settings = '{\n   "key": "value"\n}';
+        await prefService.set('key', 'value', PreferenceScope.User);
         expect(fs.readFileSync(tempPath).toString()).equals(settings);
     });
 
     it('Should store preference when settings file is not empty', async () => {
-        const settings = "{\n   \"key\": \"value\",\n   \"newKey\": \"newValue\"\n}";
-        fs.writeFileSync(tempPath, "{\n   \"key\": \"value\"\n}");
-        await prefService.set("newKey", "newValue", PreferenceScope.User);
+        const settings = '{\n   "key": "value",\n   "newKey": "newValue"\n}';
+        fs.writeFileSync(tempPath, '{\n   "key": "value"\n}');
+        await prefService.set('newKey', 'newValue', PreferenceScope.User);
         expect(fs.readFileSync(tempPath).toString()).equals(settings);
     });
 
     it('Should override existing preference', async () => {
-        const settings = "{\n   \"key\": \"newValue\"\n}";
-        fs.writeFileSync(tempPath, "{\n   \"key\": \"oldValue\"\n}");
-        await prefService.set("key", "newValue", PreferenceScope.User);
+        const settings = '{\n   "key": "newValue"\n}';
+        fs.writeFileSync(tempPath, '{\n   "key": "oldValue"\n}');
+        await prefService.set('key', 'newValue', PreferenceScope.User);
         expect(fs.readFileSync(tempPath).toString()).equals(settings);
     });
 
