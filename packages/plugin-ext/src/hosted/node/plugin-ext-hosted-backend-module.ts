@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { HostedPluginManager, NodeHostedPluginRunner } from './hosted-plugin-manager';
-import { HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { interfaces } from 'inversify';
+import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { HostedInstanceManager, NodeHostedPluginRunner } from './hosted-instance-manager';
+import { HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MetadataScanner } from './metadata-scanner';
@@ -25,6 +25,7 @@ import { HostedPluginServerImpl } from './plugin-service';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
+import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
 import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath } from '../../common/plugin-protocol';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
@@ -32,6 +33,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginServer).to(HostedPluginServerImpl).inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(MetadataScanner).toSelf().inSingletonScope();
+    bind(HostedPluginsManager).to(HostedPluginsManagerImpl).inSingletonScope();
 
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(HostedPluginReader)).inSingletonScope();
 
@@ -50,7 +52,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 export function bindHostedBackend(bind: interfaces.Bind): void {
     bindCommonHostedBackend(bind);
 
-    bind(HostedPluginManager).to(NodeHostedPluginRunner).inSingletonScope();
+    bind(HostedInstanceManager).to(NodeHostedPluginRunner).inSingletonScope();
     bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
     bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
 }
