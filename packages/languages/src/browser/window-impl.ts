@@ -57,13 +57,13 @@ export class WindowImpl implements Window {
             append: outputChannel.append.bind(outputChannel),
             appendLine: outputChannel.appendLine.bind(outputChannel),
             show: async (preserveFocus?: boolean) => {
-                outputChannel.setVisibility(true);
                 const options = Object.assign({
                     preserveFocus: false,
                 }, { preserveFocus });
                 const activate = !options.preserveFocus;
                 const reveal = options.preserveFocus;
-                this.outputContribution.openView({ activate, reveal });
+                await this.outputContribution.openView({ activate, reveal });
+                outputChannel.setVisibility(true);
             },
             dispose: () => {
                 this.outputChannelManager.deleteChannel(outputChannel.name);

@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { CommandRegistry, Disposable } from '@theia/core/lib/common';
-import { ErrorAction } from 'monaco-languageclient';
+import { ErrorAction, RevealOutputChannelOn } from 'monaco-languageclient';
 import {
     Workspace, Languages, Window, Services,
     ILanguageClient, LanguageClientOptions, MonacoLanguageClient,
@@ -51,6 +51,9 @@ export class LanguageClientFactory {
     }
 
     get(contribution: LanguageContribution, clientOptions: LanguageClientOptions): ILanguageClient {
+        if (clientOptions.revealOutputChannelOn === undefined) {
+            clientOptions.revealOutputChannelOn = RevealOutputChannelOn.Never;
+        }
         if (!clientOptions.errorHandler) {
             clientOptions.errorHandler = {
                 // ignore connection errors
