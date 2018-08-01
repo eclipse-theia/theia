@@ -3238,26 +3238,25 @@ dtrace-provider@~0.8:
   dependencies:
     nan "^2.10.0"
 
-dugite-extra@0.0.1-alpha.23:
-  version "0.0.1-alpha.23"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.0.1-alpha.23.tgz#9a227a59fc8edf6b95b54b4810de2aaa3abe13a1"
+dugite-extra@0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.1.tgz#29f866b6de30c2ab64635c0749888ee9218fd885"
   dependencies:
     byline "^5.0.0"
-    dugite "1.42.0"
+    dugite "1.52.0"
     find-git-exec "0.0.1-alpha.2"
     upath "^1.0.0"
 
-dugite@1.42.0:
-  version "1.42.0"
-  resolved "https://registry.yarnpkg.com/dugite/-/dugite-1.42.0.tgz#1d79b35741656006674fabbbf6b32b7e04bdf35c"
+dugite@1.52.0:
+  version "1.52.0"
+  resolved "https://registry.yarnpkg.com/dugite/-/dugite-1.52.0.tgz#7607ebb2cd7809e933b4ccf05c20807d4d34d42e"
   dependencies:
     checksum "^0.1.1"
     mkdirp "^0.5.1"
-    os-tmpdir "^1.0.1"
     progress "^2.0.0"
-    request "^2.79.0"
+    request "^2.83.0"
     rimraf "^2.5.4"
-    tar "^2.2.1"
+    tar "^4.0.2"
 
 duplexer2@0.0.2:
   version "0.0.2"
@@ -8114,7 +8113,7 @@ request@2.81.0, "request@>=2.9.0 <2.82.0":
     tunnel-agent "^0.6.0"
     uuid "^3.0.0"
 
-request@2.87.0, request@^2.45.0, request@^2.79.0, request@^2.81.0, request@^2.82.0, request@^2.87.0:
+request@2.87.0, request@^2.45.0, request@^2.81.0, request@^2.82.0, request@^2.83.0, request@^2.87.0:
   version "2.87.0"
   resolved "https://registry.yarnpkg.com/request/-/request-2.87.0.tgz#32f00235cd08d482b4d0d68db93a829c0ed5756e"
   dependencies:
@@ -9068,7 +9067,7 @@ tar-stream@1.6.1, tar-stream@^1.1.2, tar-stream@^1.5.0, tar-stream@^1.5.2:
     to-buffer "^1.1.0"
     xtend "^4.0.0"
 
-tar@^2.0.0, tar@^2.2.1:
+tar@^2.0.0:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/tar/-/tar-2.2.1.tgz#8e4d2a256c0e2185c6b18ad694aec968b83cb1d1"
   dependencies:
@@ -9076,7 +9075,7 @@ tar@^2.0.0, tar@^2.2.1:
     fstream "^1.0.2"
     inherits "2"
 
-tar@^4, tar@^4.0.0:
+tar@^4, tar@^4.0.0, tar@^4.0.2:
   version "4.4.4"
   resolved "https://registry.yarnpkg.com/tar/-/tar-4.4.4.tgz#ec8409fae9f665a4355cc3b4087d0820232bb8cd"
   dependencies:
