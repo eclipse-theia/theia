@@ -19,21 +19,22 @@ import { CommandRegistry, CommandContribution, CommandHandler, Command } from '.
 import { Emitter, Event } from '../common/event';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open/quick-open-model';
 import { QuickOpenService } from './quick-open/quick-open-service';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
 export interface Theme {
-    id: string;
-    label: string;
-    description?: string;
-    editorTheme?: string;
+    readonly id: string;
+    readonly label: string;
+    readonly description?: string;
+    readonly editorTheme?: string;
     activate(): void;
     deactivate(): void;
 }
 
 export interface ThemeChangeEvent {
-    newTheme: Theme;
-    oldTheme?: Theme;
+    readonly newTheme: Theme;
+    readonly oldTheme?: Theme;
 }
 
 export class ThemeService {
@@ -44,25 +45,26 @@ export class ThemeService {
 
     readonly onThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
-    static get() {
+    static get(): ThemeService {
         const global = window as any; // tslint:disable-line
         return global[ThemeServiceSymbol] || new ThemeService();
     }
 
     protected constructor(
-        public defaultTheme: string = 'dark'
+        protected _defaultTheme: string | undefined = FrontendApplicationConfigProvider.get().defaultTheme,
+        protected fallbackTheme: string = 'dark'
     ) {
         const global = window as any; // tslint:disable-line
         global[ThemeServiceSymbol] = this;
     }
 
-    register(...themes: Theme[]) {
+    register(...themes: Theme[]): void {
         for (const theme of themes) {
             this.themes[theme.id] = theme;
         }
     }
 
-    getThemes() {
+    getThemes(): Theme[] {
         const result = [];
         for (const o in this.themes) {
             if (this.themes.hasOwnProperty(o)) {
@@ -72,21 +74,21 @@ export class ThemeService {
         return result;
     }
 
-    getTheme(themeId: string) {
-        return this.themes[themeId] || this.themes[this.defaultTheme];
+    getTheme(themeId: string): Theme {
+        return this.themes[themeId] || this.defaultTheme;
     }
 
-    startupTheme() {
+    startupTheme(): void {
         const theme = this.getCurrentTheme();
         theme.activate();
     }
 
-    loadUserTheme() {
+    loadUserTheme(): void {
         const theme = this.getCurrentTheme();
         this.setCurrentTheme(theme.id);
     }
 
-    setCurrentTheme(themeId: string) {
+    setCurrentTheme(themeId: string): void {
         const newTheme = this.getTheme(themeId);
         const oldTheme = this.activeTheme;
         if (oldTheme) {
@@ -101,8 +103,22 @@ export class ThemeService {
     }
 
     getCurrentTheme(): Theme {
-        const themeId = window.localStorage.getItem('theme') || this.defaultTheme;
-        return this.themes[themeId] || this.themes[this.defaultTheme];
+        const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
+        return this.getTheme(themeId);
+    }
+
+    /**
+     * The default them. If that is not applicable, returns with the fallback theme.
+     */
+    get defaultTheme(): Theme {
+        return this.themes[this._defaultTheme || this.fallbackTheme] || this.themes[this.fallbackTheme];
+    }
+
+    /**
+     * Resets the state to the user's default, or to the fallback theme. Also discards any persisted state in the local storage.
+     */
+    reset(): void {
+        this.setCurrentTheme(this.defaultTheme.id);
     }
 
 }

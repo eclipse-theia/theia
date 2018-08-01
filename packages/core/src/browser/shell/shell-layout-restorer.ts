@@ -22,6 +22,7 @@ import { StorageService } from '../storage-service';
 import { ILogger } from '../../common/logger';
 import { CommandContribution, CommandRegistry } from '../../common/command';
 import { ApplicationShell } from './application-shell';
+import { ThemeService } from '../theming';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -66,10 +67,11 @@ export class ShellLayoutRestorer implements CommandContribution {
             id: 'reset.layout',
             label: 'Reset Workbench Layout'
         }, {
-                execute: () => {
+                execute: async () => {
                     this.shouldStoreLayout = false;
-                    this.storageService.setData(this.storageKey, undefined)
-                        .then(() => window.location.reload(true));
+                    this.storageService.setData(this.storageKey, undefined);
+                    ThemeService.get().reset(); // Theme service cannot use DI, so the current theme ID is stored elsewhere. Hence the explicit reset.
+                    window.location.reload(true);
                 }
             });
     }

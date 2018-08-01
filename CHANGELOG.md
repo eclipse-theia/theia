@@ -1,5 +1,20 @@
 # Change Log
 
+## v0.3.13
+- [cpp] Add a status bar button to select an active cpp build configuration
+- Recently opened workspaces history 
+- [git/blame] convert to toggle command
+- [cpp] Watch changes to compile_commands.json
+- [ts] one ls for all js related languages
+- [terminal] update to xterm.js 3.5.0
+- Reimplemented further widgets with use of React JSX
+- Do not store markers in browser local storage by default
+- fix #2315: fine grain marker tree computation
+- [tree] don't render collapsed nodes
+- [textmate] added C/C++, Java, Python, CSS, html, less, markdown, shell, xml, yaml
+- Misc components re-impplemented using react
+
+
 ## v0.3.12
 - New Plugin system !
     - See [design](https://github.com/theia-ide/theia/issues/1482) and [documentation](https://github.com/theia-ide/theia/blob/master/packages/plugin/API.md) for more details.

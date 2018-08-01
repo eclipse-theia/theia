@@ -15,10 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { ILanguageClient } from '@theia/languages/lib/common/languageclient-services';
+import { ILanguageClient } from '@theia/languages/lib/browser';
 import { LanguageClientProvider } from '@theia/languages/lib/browser/language-client-provider';
-import { ReferencesRequest, ReferenceParams, DocumentSymbolRequest, DefinitionRequest, TextDocumentPositionParams } from 'vscode-base-languageclient/lib/protocol';
-import { DocumentSymbolParams, TextDocumentIdentifier, SymbolInformation, Location, Position, Range, SymbolKind } from 'vscode-languageserver-types';
+import {
+    ReferencesRequest, DocumentSymbolRequest, DefinitionRequest, TextDocumentPositionParams,
+    TextDocumentIdentifier, SymbolInformation, Location, Position, Range, SymbolKind
+} from 'monaco-languageclient/lib/services';
 import * as utils from './utils';
 import { Definition, Caller } from './callhierarchy';
 import { CallHierarchyService } from './callhierarchy-service';
@@ -40,9 +42,10 @@ export class CallHierarchyContext {
         if (cachedSymbols) {
             return cachedSymbols;
         }
-        const symbols = await this.languageClient.sendRequest(DocumentSymbolRequest.type, <DocumentSymbolParams>{
+        const result = await this.languageClient.sendRequest(DocumentSymbolRequest.type, {
             textDocument: TextDocumentIdentifier.create(uri)
         });
+        const symbols = (result || []) as SymbolInformation[];
         this.symbolCache.set(uri, symbols);
         return symbols;
     }
@@ -73,7 +76,7 @@ export class CallHierarchyContext {
 
     async getCallerReferences(definition: Location): Promise<Location[]> {
         try {
-            const references = await this.languageClient.sendRequest(ReferencesRequest.type, <ReferenceParams>{
+            const references = await this.languageClient.sendRequest(ReferencesRequest.type, {
                 context: {
                     includeDeclaration: false // TODO find out, why definitions are still contained
                 },

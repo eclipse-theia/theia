@@ -133,6 +133,30 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         const active: CppBuildConfiguration | undefined = this.cppBuildConfigurations.getActiveConfig();
         const configurations = Array.from(this.cppBuildConfigurations.getConfigs()).sort();
 
+        // Add feedback item when no configurations are present
+        if (!configurations.length) {
+            items.push(new QuickOpenItem({
+                label: 'No build configurations available',
+                run: () => false,
+            }));
+            return acceptor(items);
+        }
+
+        // Item to de-select any active build config
+        if (active) {
+            items.push(new QuickOpenItem({
+                label: 'None',
+                detail: 'Reset active build configuration',
+                run: (mode: QuickOpenMode): boolean => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    this.cppBuildConfigurations.setActiveConfig(undefined);
+                    return true;
+                },
+            }));
+        }
+
         // Add one item per build config.
         configurations.forEach(config => {
             items.push(new QuickOpenItem({

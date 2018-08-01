@@ -21,7 +21,7 @@ import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { CppLanguageClientContribution } from "./cpp-language-client-contribution";
 import { SwitchSourceHeaderRequest } from "./cpp-protocol";
-import { TextDocumentIdentifier } from "@theia/languages/lib/common";
+import { TextDocumentIdentifier } from "@theia/languages/lib/browser";
 import { EditorCommands, EditorManager } from "@theia/editor/lib/browser";
 import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 import { ExecuteCommandRequest, ExecuteCommandParams } from "vscode-languageserver-protocol";

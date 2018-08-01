@@ -33,7 +33,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected readonly controlPanel: HTMLDivElement;
     protected readonly errorMessageNode: HTMLDivElement;
 
-    protected resolve: undefined | ((value: T) => void);
+    protected resolve: undefined | ((value: T | undefined) => void);
     protected reject: undefined | ((reason: any) => void);
 
     protected closeButton: HTMLButtonElement | undefined;
@@ -135,20 +135,30 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         }
     }
 
-    open(): Promise<T> {
+    open(): Promise<T | undefined> {
         if (this.resolve) {
             return Promise.reject('The dialog is already opened.');
         }
-        return new Promise<T>((resolve, reject) => {
+
+        return new Promise<T | undefined>((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
             this.toDisposeOnDetach.push(Disposable.create(() => {
                 this.resolve = undefined;
                 this.reject = undefined;
             }));
+
             Widget.attach(this, document.body);
             this.activate();
         });
+    }
+
+    close(): void {
+        if (this.resolve) {
+            this.resolve(undefined);
+        }
+
+        super.close();
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -174,6 +184,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     abstract get value(): T;
+
     isValid(value: T): string {
         return '';
     }
@@ -204,6 +215,8 @@ export class ConfirmDialogProps extends DialogProps {
 
 export class ConfirmDialog extends AbstractDialog<boolean> {
 
+    protected confirmed = true;
+
     constructor(
         @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
     ) {
@@ -220,7 +233,6 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
         this.accept();
     }
 
-    protected confirmed = true;
     get value(): boolean {
         return this.confirmed;
     }

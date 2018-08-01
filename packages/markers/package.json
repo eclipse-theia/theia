@@ -1,12 +1,12 @@
 {
   "name": "@theia/markers",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "description": "Theia - Markers Extension",
   "dependencies": {
-    "@theia/core": "^0.3.12",
-    "@theia/filesystem": "^0.3.12",
-    "@theia/navigator": "^0.3.12",
-    "@theia/workspace": "^0.3.12"
+    "@theia/core": "^0.3.13",
+    "@theia/filesystem": "^0.3.13",
+    "@theia/navigator": "^0.3.13",
+    "@theia/workspace": "^0.3.13"
   },
   "publishConfig": {
     "access": "public"
@@ -41,7 +41,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.12"
+    "@theia/ext-scripts": "^0.3.13"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

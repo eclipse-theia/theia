@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, optional } from 'inversify';
+import { inject, injectable, optional, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Event, Emitter } from '../common/event';
 import { DefaultFrontendApplicationContribution } from './frontend-application';
@@ -83,11 +83,10 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
     protected connectionStatus: ConnectionStatus = ConnectionStatus.ONLINE;
     protected timer: number | undefined;
 
-    constructor(
-        @inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT,
-        @inject(ILogger) protected readonly logger: ILogger
-    ) {
-    }
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) { }
 
     get onStatusChange() {
         return this.statusChangeEmitter.event;
@@ -143,13 +142,11 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 
     private scheduledPing: number | undefined;
 
-    constructor(
-        @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider,
-        @inject(PingService) protected readonly pingService: PingService,
-        @inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT,
-        @inject(ILogger) protected readonly logger: ILogger
-    ) {
-        super(options, logger);
+    @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider;
+    @inject(PingService) protected readonly pingService: PingService;
+
+    @postConstruct()
+    protected init() {
         this.schedulePing();
         this.wsConnectionProvider.onIncomingMessageActivity(() => {
             // natural activity

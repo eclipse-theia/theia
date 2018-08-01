@@ -21,8 +21,8 @@ import { FrontendApplication } from '@theia/core/lib/browser';
 import {
     LanguageContribution, ILanguageClient, LanguageClientOptions,
     DocumentSelector, TextDocument, FileSystemWatcher,
-    Workspace, Languages, Commands
-} from '../common';
+    Workspace, Languages
+} from './language-client-services';
 import { LanguageClientFactory } from "./language-client-factory";
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 
@@ -34,7 +34,7 @@ export interface LanguageClientContribution extends LanguageContribution {
 }
 
 @injectable()
-export abstract class BaseLanguageClientContribution implements LanguageClientContribution, Commands {
+export abstract class BaseLanguageClientContribution implements LanguageClientContribution {
 
     abstract readonly id: string;
     abstract readonly name: string;
@@ -113,15 +113,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this.languageClientFactory.get(this, clientOptions);
     }
 
-    registerCommand(id: string, callback: (...args: any[]) => any, thisArg?: any): Disposable {
-        const execute = callback.bind(thisArg);
-        return this.registry.registerCommand({ id }, { execute });
-    }
-
     protected createOptions(): LanguageClientOptions {
         const fileEvents = this.createFileEvents();
         return {
-            commands: this,
             documentSelector: this.documentSelector,
             synchronize: { fileEvents },
             initializationFailedHandler: err => {

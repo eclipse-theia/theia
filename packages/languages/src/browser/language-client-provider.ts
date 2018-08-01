@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ILanguageClient } from '../common/languageclient-services';
+import { ILanguageClient } from './language-client-services';
 
 export const LanguageClientProvider = Symbol('LanguageClientProvider');
 export interface LanguageClientProvider {

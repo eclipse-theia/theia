@@ -17,7 +17,7 @@
 import { ContainerModule, decorate, injectable } from 'inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
-import { Languages, Workspace } from '@theia/languages/lib/common';
+import { Languages, Workspace } from '@theia/languages/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
