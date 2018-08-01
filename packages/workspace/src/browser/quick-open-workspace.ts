@@ -74,6 +74,15 @@ export class WorkspaceQuickOpenItem extends QuickOpenItem {
         return "";
     }
 
+    /**
+     * Display the workspace path as part of
+     * the WorkspaceQuickOpenItem description
+     * @returns workspace path
+     */
+    getDescription(): string {
+        return (this.workspace) ? new URI(this.workspace).path.dir.toString() : "";
+    }
+
     run(mode: QuickOpenMode): boolean {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
