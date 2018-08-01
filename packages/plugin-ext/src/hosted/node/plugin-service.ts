@@ -16,8 +16,9 @@
 import { injectable, inject } from 'inversify';
 import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
-import { HostedPluginManager } from './hosted-plugin-manager';
+import { HostedInstanceManager } from './hosted-instance-manager';
 import { HostedPluginSupport } from './hosted-plugin';
+import { HostedPluginsManager } from './hosted-plugins-manager';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core';
 
@@ -26,6 +27,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+    @inject(HostedPluginsManager)
+    protected readonly hostedPluginsManager: HostedPluginsManager;
 
     /**
      * Managed plugin metadata backend entries.
@@ -40,7 +43,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     constructor(
         @inject(HostedPluginReader) private readonly reader: HostedPluginReader,
         @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport,
-        @inject(HostedPluginManager) protected readonly hostedPluginManager: HostedPluginManager) {
+        @inject(HostedInstanceManager) protected readonly hostedInstanceManager: HostedInstanceManager) {
     }
 
     dispose(): void {
@@ -108,23 +111,27 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     isPluginValid(uri: string): Promise<boolean> {
-        return Promise.resolve(this.hostedPluginManager.isPluginValid(new URI(uri)));
+        return Promise.resolve(this.hostedInstanceManager.isPluginValid(new URI(uri)));
     }
 
     runHostedPluginInstance(uri: string): Promise<string> {
-        return this.uriToStrPromise(this.hostedPluginManager.run(new URI(uri)));
+        return this.uriToStrPromise(this.hostedInstanceManager.run(new URI(uri)));
     }
 
     terminateHostedPluginInstance(): Promise<void> {
-        return Promise.resolve(this.hostedPluginManager.terminate());
+        return Promise.resolve(this.hostedInstanceManager.terminate());
     }
 
-    isHostedTheiaRunning(): Promise<boolean> {
-        return Promise.resolve(this.hostedPluginManager.isRunning());
+    isHostedPluginInstanceRunning(): Promise<boolean> {
+        return Promise.resolve(this.hostedInstanceManager.isRunning());
     }
 
     getHostedPluginInstanceURI(): Promise<string> {
-        return Promise.resolve(this.hostedPluginManager.getInstanceURI().toString());
+        return Promise.resolve(this.hostedInstanceManager.getInstanceURI().toString());
+    }
+
+    getHostedPluginURI(): Promise<string> {
+        return Promise.resolve(this.hostedInstanceManager.getPluginURI().toString());
     }
 
     protected uriToStrPromise(promise: Promise<URI>): Promise<string> {
@@ -133,6 +140,18 @@ export class HostedPluginServerImpl implements HostedPluginServer {
                 resolve(uri.toString());
             }).catch(error => reject(error));
         });
+    }
+
+    runWatchCompilation(path: string): Promise<void> {
+        return this.hostedPluginsManager.runWatchCompilation(path);
+    }
+
+    stopWatchCompilation(path: string): Promise<void> {
+        return this.hostedPluginsManager.stopWatchCompilation(path);
+    }
+
+    isWatchCompilationRunning(path: string): Promise<boolean> {
+        return this.hostedPluginsManager.isWatchCompilationRunning(path);
     }
 
 }

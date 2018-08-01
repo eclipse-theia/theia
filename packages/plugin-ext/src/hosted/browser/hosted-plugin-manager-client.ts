@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
@@ -49,12 +49,17 @@ export namespace HostedPluginCommands {
 /**
  * Available states of hosted plugin instance.
  */
-export enum HostedPluginState {
-    Stopped = 'stopped',
-    Starting = 'starting',
-    Running = 'running',
-    Stopping = 'stopping',
-    Failed = 'failed'
+export enum HostedInstanceState {
+    STOPPED = 'stopped',
+    STARTING = 'starting',
+    RUNNNING = 'running',
+    STOPPING = 'stopping',
+    FAILED = 'failed'
+}
+
+export interface HostedInstanceData {
+    state: HostedInstanceState;
+    pluginLocation: URI;
 }
 
 /**
@@ -62,7 +67,7 @@ export enum HostedPluginState {
  */
 @injectable()
 export class HostedPluginManagerClient {
-    private readonly openNewTabAskDialog: OpenHostedInstanceLinkDialog;
+    private openNewTabAskDialog: OpenHostedInstanceLinkDialog;
 
     // path to the plugin on the file system
     protected pluginLocation: URI | undefined;
@@ -70,25 +75,50 @@ export class HostedPluginManagerClient {
     // URL to the running plugin instance
     protected pluginInstanceURL: string | undefined;
 
-    protected readonly stateChanged = new Emitter<HostedPluginState>();
+    protected readonly stateChanged = new Emitter<HostedInstanceData>();
 
-    get onStateChanged(): Event<HostedPluginState> {
+    get onStateChanged(): Event<HostedInstanceData> {
         return this.stateChanged.event;
     }
 
-    constructor(
-        @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
-        @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(WindowService) protected readonly windowService: WindowService,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
-    ) {
-        this.openNewTabAskDialog = new OpenHostedInstanceLinkDialog(windowService);
+    @inject(HostedPluginServer)
+    protected readonly hostedPluginServer: HostedPluginServer;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+    @inject(FileDialogFactory)
+    protected readonly fileDialogFactory: FileDialogFactory;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @postConstruct()
+    protected async init() {
+        this.openNewTabAskDialog = new OpenHostedInstanceLinkDialog(this.windowService);
+
+        // is needed for case when page is loaded when hosted instance is already running.
+        if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+            this.pluginLocation = new URI(await this.hostedPluginServer.getHostedPluginURI());
+        }
+    }
+
+    get lastPluginLocation(): string | undefined {
+        if (this.pluginLocation) {
+            return this.pluginLocation.toString();
+        }
+        return undefined;
     }
 
     async start(): Promise<void> {
+        if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+            this.messageService.warn('Hosted instance is already running.');
+            return;
+        }
+
         if (!this.pluginLocation) {
             await this.selectPluginPath();
             if (!this.pluginLocation) {
@@ -98,47 +128,52 @@ export class HostedPluginManagerClient {
         }
 
         try {
-            this.stateChanged.fire(HostedPluginState.Starting);
+            this.stateChanged.fire({ state: HostedInstanceState.STARTING, pluginLocation: this.pluginLocation });
             this.messageService.info('Starting hosted instance server ...');
 
             this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation.toString());
             await this.openPluginWindow();
 
             this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
-            this.stateChanged.fire(HostedPluginState.Running);
+            this.stateChanged.fire({ state: HostedInstanceState.RUNNNING, pluginLocation: this.pluginLocation });
         } catch (error) {
             this.messageService.error('Failed to run hosted plugin instance: ' + this.getErrorMessage(error));
-            this.stateChanged.fire(HostedPluginState.Failed);
+            this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation });
         }
     }
 
-    async stop(): Promise<void> {
+    async stop(checkRunning: boolean = true): Promise<void> {
+        if (checkRunning && ! await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+            this.messageService.warn('Hosted instance is not running.');
+            return;
+        }
+
         try {
-            this.stateChanged.fire(HostedPluginState.Stopping);
+            this.stateChanged.fire({ state: HostedInstanceState.STOPPING, pluginLocation: this.pluginLocation! });
             await this.hostedPluginServer.terminateHostedPluginInstance();
             this.messageService.info((this.pluginInstanceURL ? this.pluginInstanceURL : 'The instance') + ' has been terminated.');
-            this.stateChanged.fire(HostedPluginState.Stopped);
+            this.stateChanged.fire({ state: HostedInstanceState.STOPPED, pluginLocation: this.pluginLocation! });
         } catch (error) {
-            this.messageService.warn(this.getErrorMessage(error));
+            this.messageService.error(this.getErrorMessage(error));
         }
     }
 
     async restart(): Promise<void> {
-        if (await this.hostedPluginServer.isHostedTheiaRunning()) {
-            await this.stop();
+        if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+            await this.stop(false);
 
             this.messageService.info('Starting hosted instance server ...');
 
             // It takes some time before OS released all resources e.g. port.
-            // Keeping tries to run hosted instance with delay.
-            this.stateChanged.fire(HostedPluginState.Starting);
+            // Keep trying to run hosted instance with delay.
+            this.stateChanged.fire({ state: HostedInstanceState.STARTING, pluginLocation: this.pluginLocation! });
             let lastError;
             for (let tries = 0; tries < 15; tries++) {
                 try {
                     this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation!.toString());
                     await this.openPluginWindow();
                     this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
-                    this.stateChanged.fire(HostedPluginState.Running);
+                    this.stateChanged.fire({ state: HostedInstanceState.RUNNNING, pluginLocation: this.pluginLocation! });
                     return;
                 } catch (error) {
                     lastError = error;
@@ -146,11 +181,10 @@ export class HostedPluginManagerClient {
                 }
             }
             this.messageService.error('Failed to run hosted plugin instance: ' + this.getErrorMessage(lastError));
+            this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation! });
         } else {
             this.messageService.warn('Hosted Plugin instance is not running.');
         }
-
-        this.stateChanged.fire(HostedPluginState.Failed);
     }
 
     /**

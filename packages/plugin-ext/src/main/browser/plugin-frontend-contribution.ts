@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { HostedPluginManagerClient, HostedPluginCommands } from './plugin-manager-client';
+import { HostedPluginManagerClient, HostedPluginCommands } from '../../hosted/browser/hosted-plugin-manager-client';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 
 @injectable()

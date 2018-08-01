@@ -25,12 +25,12 @@ import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } 
 import { HostedPluginSupport } from './hosted-plugin';
 const processTree = require('ps-tree');
 
-export const HostedPluginManager = Symbol('HostedPluginManager');
+export const HostedInstanceManager = Symbol('HostedInstanceManager');
 
 /**
  * Is responsible for running and handling separate Theia instance with given plugin.
  */
-export interface HostedPluginManager {
+export interface HostedInstanceManager {
     /**
      * Checks whether hosted instance is run.
      */
@@ -58,6 +58,12 @@ export interface HostedPluginManager {
     getInstanceURI(): URI;
 
     /**
+     * Returns uri where plugin loaded into hosted instance is located.
+     * Throws error if instance is not running.
+     */
+    getPluginURI(): URI;
+
+    /**
      * Checks whether given uri points to a valid plugin.
      *
      * @param uri uri to the plugin source location
@@ -74,11 +80,12 @@ const PROCESS_OPTIONS = {
 delete PROCESS_OPTIONS.env.ELECTRON_RUN_AS_NODE;
 
 @injectable()
-export abstract class AbstractHostedPluginManager implements HostedPluginManager {
+export abstract class AbstractHostedInstanceManager implements HostedInstanceManager {
     protected hostedInstanceProcess: cp.ChildProcess;
     protected processOptions: cp.SpawnOptions;
     protected isPluginRunnig: boolean = false;
     protected instanceUri: URI;
+    protected pluginUri: URI;
 
     @inject(HostedPluginSupport)
     protected readonly hostedPluginSupport: HostedPluginSupport;
@@ -108,6 +115,8 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
 
         this.instanceUri = await this.postProcessInstanceUri(
             await this.runHostedPluginTheiaInstance(command, processOptions));
+        this.pluginUri = pluginUri;
+
         return this.instanceUri;
     }
 
@@ -126,6 +135,13 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
     getInstanceURI(): URI {
         if (this.isPluginRunnig) {
             return this.instanceUri;
+        }
+        throw new Error('Hosted plugin instance is not running.');
+    }
+
+    getPluginURI(): URI {
+        if (this.isPluginRunnig) {
+            return this.pluginUri;
         }
         throw new Error('Hosted plugin instance is not running.');
     }
@@ -221,7 +237,7 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
 }
 
 @injectable()
-export class NodeHostedPluginRunner extends AbstractHostedPluginManager {
+export class NodeHostedPluginRunner extends AbstractHostedInstanceManager {
     @inject(ContributionProvider) @named(Symbol.for(HostedPluginUriPostProcessorSymbolName))
     protected readonly uriPostProcessors: ContributionProvider<HostedPluginUriPostProcessor>;
 
@@ -246,6 +262,6 @@ export class NodeHostedPluginRunner extends AbstractHostedPluginManager {
 }
 
 @injectable()
-export class ElectronNodeHostedPluginRunner extends AbstractHostedPluginManager {
+export class ElectronNodeHostedPluginRunner extends AbstractHostedInstanceManager {
 
 }

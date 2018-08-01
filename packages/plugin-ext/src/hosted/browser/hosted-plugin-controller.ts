@@ -15,16 +15,18 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { setTimeout } from 'timers';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { HostedPluginServer } from '../../common/plugin-protocol';
-import { HostedPluginManagerClient, HostedPluginState, HostedPluginCommands } from './plugin-manager-client';
+import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, PreferenceServiceImpl, PreferenceChange } from '@theia/core/lib/browser';
+import { MessageService } from '@theia/core/lib/common';
 import { CommandRegistry } from '@phosphor/commands';
 import { Menu } from '@phosphor/widgets';
-import { setTimeout } from 'timers';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import { HostedPluginLogViewer } from '../../hosted/browser/hosted-plugin-log-viewer';
+import { HostedPluginServer } from '../../common/plugin-protocol';
+import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client';
+import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
+import { HostedPluginPreferences } from './hosted-plugin-preferences';
 
 /**
  * Adds a status bar element displaying the state of secondary Theia instance with hosted plugin and
@@ -55,32 +57,42 @@ export class HostedPluginController implements FrontendApplicationContribution {
     @inject(HostedPluginLogViewer)
     protected readonly hostedPluginLogViewer: HostedPluginLogViewer;
 
-    private pluginState: HostedPluginState = HostedPluginState.Stopped;
+    @inject(HostedPluginPreferences)
+    protected readonly hostedPluginPreferences: HostedPluginPreferences;
 
+    @inject(PreferenceServiceImpl)
+    protected readonly preferenceService: PreferenceServiceImpl;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    private pluginState: HostedInstanceState = HostedInstanceState.STOPPED;
+    // used only for displaying Running insted of Watching in status bar if run of watcher fails
+    private watcherSuccess: boolean;
     private entry: StatusBarEntry | undefined;
 
     public initialize(): void {
         this.hostedPluginServer.getHostedPlugin().then(pluginMetadata => {
             if (!pluginMetadata) {
                 this.frontendApplicationStateService.reachedState('ready').then(() => {
+                    // handles status bar item
                     this.hostedPluginManagerClient.onStateChanged(e => {
-                        switch (e) {
-                            case HostedPluginState.Starting:
-                                this.onHostedPluginStarting();
-                                break;
-                            case HostedPluginState.Running:
-                                this.onHostedPluginRunning();
-                                break;
-                            case HostedPluginState.Stopped:
-                                this.onHostedPluginStopped();
-                                break;
-                            case HostedPluginState.Failed:
-                                this.onHostedPluginFailed();
-                                break;
+                        if (e.state === HostedInstanceState.STARTING) {
+                            this.onHostedPluginStarting();
+                        } else if (e.state === HostedInstanceState.RUNNNING) {
+                            this.onHostedPluginRunning();
+                        } else if (e.state === HostedInstanceState.STOPPED) {
+                            this.onHostedPluginStopped();
+                        } else if (e.state === HostedInstanceState.FAILED) {
+                            this.onHostedPluginFailed();
                         }
                     });
 
-                    this.hostedPluginServer.isHostedTheiaRunning().then(running => {
+                    // handles watch compilation
+                    this.hostedPluginManagerClient.onStateChanged(e => this.handleWatchers(e));
+
+                    // updates status bar if page is loading when hosted instance is already running
+                    this.hostedPluginServer.isHostedPluginInstanceRunning().then(running => {
                         if (running) {
                             this.onHostedPluginRunning();
                         }
@@ -88,6 +100,8 @@ export class HostedPluginController implements FrontendApplicationContribution {
                 });
 
                 this.connectionStatusService.onStatusChange(() => this.onConnectionStatusChanged());
+
+                this.preferenceService.onPreferenceChanged(preference => this.onPreferencesChanged(preference));
             }
         });
     }
@@ -96,7 +110,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * Display status bar element for stopped plugin.
      */
     protected async onHostedPluginStopped(): Promise<void> {
-        this.pluginState = HostedPluginState.Stopped;
+        this.pluginState = HostedInstanceState.STOPPED;
 
         this.entry = {
             text: 'Hosted Plugin: Stopped $(angle-up)',
@@ -115,7 +129,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * Display status bar element for starting plugin.
      */
     protected async onHostedPluginStarting(): Promise<void> {
-        this.pluginState = HostedPluginState.Starting;
+        this.pluginState = HostedInstanceState.STARTING;
 
         this.hostedPluginLogViewer.showLogConsole();
 
@@ -133,10 +147,17 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * Display status bar element for running plugin.
      */
     protected async onHostedPluginRunning(): Promise<void> {
-        this.pluginState = HostedPluginState.Running;
+        this.pluginState = HostedInstanceState.RUNNNING;
+
+        let entryText: string;
+        if (this.hostedPluginPreferences['hosted-plugin.watchMode'] && this.watcherSuccess) {
+            entryText = '$(cog~spin) Hosted Plugin: Watching $(angle-up)';
+        } else {
+            entryText = '$(cog~spin) Hosted Plugin: Running $(angle-up)';
+        }
 
         this.entry = {
-            text: '$(cog~spin) Hosted Plugin: Running $(angle-up)',
+            text: entryText,
             alignment: StatusBarAlignment.LEFT,
             priority: 100,
             onclick: e => {
@@ -152,7 +173,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * Display status bar element for failed plugin.
      */
     protected async onHostedPluginFailed(): Promise<void> {
-        this.pluginState = HostedPluginState.Failed;
+        this.pluginState = HostedInstanceState.FAILED;
 
         this.entry = {
             text: 'Hosted Plugin: Stopped $(angle-up)',
@@ -165,6 +186,66 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
         this.entry.className = HostedPluginController.HOSTED_PLUGIN_FAILED;
         await this.statusBar.setElement(HostedPluginController.HOSTED_PLUGIN, this.entry);
+    }
+
+    protected async onPreferencesChanged(preference: PreferenceChange): Promise<void> {
+        if (preference.preferenceName === 'hosted-plugin.watchMode') {
+            if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+                const pluginLocation = await this.hostedPluginServer.getHostedPluginURI();
+                const isWatchCompilationRunning = await this.hostedPluginServer.isWatchCompilationRunning(pluginLocation);
+                if (preference.newValue === true) {
+                    if (!isWatchCompilationRunning) {
+                        await this.runWatchCompilation(pluginLocation.toString());
+                    }
+                } else {
+                    if (isWatchCompilationRunning) {
+                        await this.hostedPluginServer.stopWatchCompilation(pluginLocation.toString());
+                    }
+                }
+                // update status bar
+                this.onHostedPluginRunning();
+            }
+        }
+    }
+
+    /**
+     * Starts / stops watchers on hosted instance state change.
+     *
+     * @param event hosted instance state change event
+     */
+    protected async handleWatchers(event: HostedInstanceData): Promise<void> {
+        if (event.state === HostedInstanceState.RUNNNING) {
+            if (this.hostedPluginPreferences['hosted-plugin.watchMode']) {
+                await this.runWatchCompilation(event.pluginLocation.toString());
+                // update status bar
+                this.onHostedPluginRunning();
+            }
+        } else if (event.state === HostedInstanceState.STOPPING) {
+            if (this.hostedPluginPreferences['hosted-plugin.watchMode']) {
+                const isRunning = await this.hostedPluginServer.isWatchCompilationRunning(event.pluginLocation.toString());
+                if (isRunning) {
+                    try {
+                        await this.hostedPluginServer.stopWatchCompilation(event.pluginLocation.toString());
+                    } catch (error) {
+                        this.messageService.error(this.getErrorMessage(error.message));
+                    }
+                }
+            }
+        }
+    }
+
+    private async runWatchCompilation(pluginLocation: string): Promise<void> {
+        try {
+            await this.hostedPluginServer.runWatchCompilation(pluginLocation);
+            this.watcherSuccess = true;
+        } catch (error) {
+            this.messageService.error(this.getErrorMessage(error));
+            this.watcherSuccess = false;
+        }
+    }
+
+    private getErrorMessage(error: Error): string {
+        return error.message.substring(error.message.indexOf(':') + 1);
     }
 
     /**
@@ -186,7 +267,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         } else {
             // ask state of hosted plugin when switching to Online
             if (this.entry) {
-                this.hostedPluginServer.isHostedTheiaRunning().then(running => {
+                this.hostedPluginServer.isHostedPluginInstanceRunning().then(running => {
                     if (running) {
                         this.onHostedPluginRunning();
                     } else {
@@ -206,9 +287,9 @@ export class HostedPluginController implements FrontendApplicationContribution {
             commands
         });
 
-        if (this.pluginState === 'running') {
+        if (this.pluginState === HostedInstanceState.RUNNNING) {
             this.addCommandsForRunningPlugin(commands, menu);
-        } else if (this.pluginState === 'stopped' || this.pluginState === 'failed') {
+        } else if (this.pluginState === HostedInstanceState.STOPPED || this.pluginState === HostedInstanceState.FAILED) {
             this.addCommandsForStoppedPlugin(commands, menu);
         }
 

@@ -297,8 +297,13 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
     isPluginValid(uri: string): Promise<boolean>;
     runHostedPluginInstance(uri: string): Promise<string>;
     terminateHostedPluginInstance(): Promise<void>;
-    isHostedTheiaRunning(): Promise<boolean>;
+    isHostedPluginInstanceRunning(): Promise<boolean>;
     getHostedPluginInstanceURI(): Promise<string>;
+    getHostedPluginURI(): Promise<string>;
+
+    runWatchCompilation(uri: string): Promise<void>;
+    stopWatchCompilation(uri: string): Promise<void>;
+    isWatchCompilationRunning(uri: string): Promise<boolean>;
 }
 
 /**
