@@ -100,8 +100,10 @@ export class TextEditorMain {
     }
 
     dispose(): void {
-        delete this.model;
         this.modelListeners.dispose();
+        delete this.model;
+
+        this.editorListeners.dispose();
         delete this.editor;
     }
 
