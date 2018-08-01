@@ -463,7 +463,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
-            return null;
+            return undefined;
         }
         const attributes = this.createNodeAttributes(node, props);
         const content = <div className={TREE_NODE_CONTENT_CLASS}>

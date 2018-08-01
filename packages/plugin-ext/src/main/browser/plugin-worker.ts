@@ -25,7 +25,7 @@ export class PluginWorker {
     constructor() {
         const emmitter = new Emitter();
         this.worker = new (require('../../hosted/browser/worker/worker-main'));
-        this.worker.onmessage = (message) => {
+        this.worker.onmessage = message => {
             emmitter.fire(message.data);
         };
         this.worker.onerror = e => console.error(e);

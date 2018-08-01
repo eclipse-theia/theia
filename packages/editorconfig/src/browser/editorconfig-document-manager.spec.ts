@@ -16,6 +16,8 @@
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
+// tslint:disable:no-unused-expression
+
 const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';

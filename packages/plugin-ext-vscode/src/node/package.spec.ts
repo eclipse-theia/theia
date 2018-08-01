@@ -24,6 +24,5 @@
 
 describe("plugin-ext-vscode package", () => {
 
-    it("support code coverage statistics", () =>
-        true);
+    it("support code coverage statistics", () => true);
 });

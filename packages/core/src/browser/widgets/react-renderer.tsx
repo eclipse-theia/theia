@@ -35,6 +35,6 @@ export class ReactRenderer implements Disposable {
     }
 
     protected doRender(): React.ReactNode {
-        return null;
+        return undefined;
     }
 }

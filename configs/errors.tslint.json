@@ -1,10 +1,18 @@
 {
   "defaultSeverity": "error",
   "rules": {
-    "file-header": [
-      true,
-      "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
-    ],
+    "arrow-parens": {
+      "options": [
+        true,
+        "ban-single-arg-parens"
+      ]
+    },
+    "arrow-return-shorthand": {
+      "options": [
+        true,
+        "multiline"
+      ]
+    },
     "class-name": true,
     "comment-format": [
       true,
@@ -12,11 +20,19 @@
     ],
     "curly": true,
     "eofline": true,
-    "forin": true,
-    "indent": [
+    "file-header": [
       true,
-      "spaces"
+      "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
     ],
+    "forin": true,
+    "indent": {
+      "options": [
+        true,
+        "spaces",
+        4
+      ]
+    },
+    "interface-over-type-literal": true,
     "jsdoc-format": [
       true,
       "check-multiline-start"
@@ -26,9 +42,13 @@
       180
     ],
     "no-consecutive-blank-lines": true,
+    "no-construct": true,
+    "no-magic-numbers": false,
+    "no-null-keyword": true,
     "no-shadowed-variable": true,
     "no-string-throw": true,
     "no-trailing-whitespace": true,
+    "no-unused-expression": true,
     "no-var-keyword": true,
     "one-line": [
       true,
@@ -37,6 +57,7 @@
       "check-else",
       "check-whitespace"
     ],
+    "one-variable-per-declaration": true,
     "prefer-const": {
       "options": [
         true,
@@ -51,9 +72,7 @@
       "always",
       "ignore-interfaces"
     ],
-    "trailing-comma": [
-      false
-    ],
+    "trailing-comma": false,
     "triple-equals": [
       true,
       "allow-null-check"

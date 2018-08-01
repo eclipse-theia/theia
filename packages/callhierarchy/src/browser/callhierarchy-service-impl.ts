@@ -59,6 +59,9 @@ export class CallHierarchyContext {
     async getDefinitionLocation(location: Location): Promise<Location | undefined> {
         const uri = location.uri;
         const { line, character } = location.range.start;
+
+        // Definition can be null
+        // tslint:disable-next-line:no-null-keyword
         let locations: Location | Location[] | null = null;
         try {
             locations = await this.languageClient.sendRequest(DefinitionRequest.type, <TextDocumentPositionParams>{

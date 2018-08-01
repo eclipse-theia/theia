@@ -81,7 +81,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
             };
             // if latest, resolve first the real version
             if (version === 'latest') {
-                request.get(url, options).on('response', (response) => {
+                request.get(url, options).on('response', response => {
 
                     // should have a redirect
                     if (response.statusCode === 302) {
@@ -133,7 +133,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
         dest.addListener('finish', finish);
         const url = GithubPluginDeployerResolver.GITHUB_ENDPOINT + orgName + '/' + repoName + '/releases/download/' + version + '/' + filename;
         request.get(url)
-            .on('error', (err) => {
+            .on('error', err => {
                 reject(err);
             }).pipe(dest);
 

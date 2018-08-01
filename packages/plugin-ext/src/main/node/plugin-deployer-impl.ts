@@ -67,7 +67,7 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
 
         // call init on each resolver
         const pluginDeployerResolverInit: PluginDeployerResolverInit = new PluginDeployerResolverInitImpl();
-        const promises = this.pluginResolvers.map(async (pluginResolver) => {
+        const promises = this.pluginResolvers.map(async pluginResolver => {
             if (pluginResolver.init) {
                 pluginResolver.init(pluginDeployerResolverInit);
             }
@@ -151,8 +151,8 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
     public async applyFileHandlers(): Promise<any> {
         const waitPromises: Array<Promise<any>> = [];
 
-        this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map((pluginDeployerEntry) => {
-            this.pluginDeployerFileHandlers.map((pluginFileHandler) => {
+        this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map(pluginDeployerEntry => {
+            this.pluginDeployerFileHandlers.map(pluginFileHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginFileHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
                 if (pluginFileHandler.accept(proxyPluginDeployerEntry)) {
                     const pluginDeployerFileHandlerContext: PluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
@@ -171,8 +171,8 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
     public async applyDirectoryFileHandlers(): Promise<any> {
         const waitPromises: Array<Promise<any>> = [];
 
-        this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map((pluginDeployerEntry) => {
-            this.pluginDeployerDirectoryHandlers.map((pluginDirectoryHandler) => {
+        this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map(pluginDeployerEntry => {
+            this.pluginDeployerDirectoryHandlers.map(pluginDirectoryHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginDirectoryHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
                 if (pluginDirectoryHandler.accept(proxyPluginDeployerEntry)) {
                     const pluginDeployerDirectoryHandlerContext: PluginDeployerDirectoryHandlerContext = new PluginDeployerDirectoryHandlerContextImpl(proxyPluginDeployerEntry);
@@ -192,11 +192,9 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
         const pluginDeployerEntries: PluginDeployerEntry[] = [];
 
         // check if accepted ?
-        const promises = pluginIdList.map(async (pluginId) => {
+        const promises = pluginIdList.map(async pluginId => {
 
-            const foundPluginResolver = this.pluginResolvers.find(pluginResolver => {
-                return pluginResolver.accept(pluginId);
-            });
+            const foundPluginResolver = this.pluginResolvers.find(pluginResolver => pluginResolver.accept(pluginId));
             // there is a resolver for the input
             if (foundPluginResolver) {
 

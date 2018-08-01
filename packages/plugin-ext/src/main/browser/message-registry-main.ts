@@ -81,9 +81,7 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
             if (options.modal) {
                 const modalNotification = new ModalNotification();
                 promise = modalNotification.showDialog(type, message, actionTitles)
-                    .then(result => {
-                        return result !== undefined ? result : onCloseAction;
-                    });
+                    .then(result => result !== undefined ? result : onCloseAction);
             } else {
                 switch (type) {
                     case MessageType.Info:

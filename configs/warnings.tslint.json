@@ -1,50 +1,10 @@
 {
   "rules": {
-    "arrow-parens": {
-      "severity": "warning",
-      "options": [
-        true,
-        "ban-single-arg-parens"
-      ]
-    },
-    "arrow-return-shorthand": {
-      "severity": "warning",
-      "options": [
-        true,
-        "multiline"
-      ]
-    },
-    "indent": {
-      "severity": "warning",
-      "options": [
-        true,
-        "spaces",
-        4
-      ]
-    },
-    "interface-over-type-literal": {
-      "severity": "warning",
-      "options": true
-    },
     "no-any": {
       "severity": "warning",
       "options": true
     },
-    "no-console": false,
-    "no-construct": {
-      "severity": "warning",
-      "options": true
-    },
-    "no-magic-numbers": false,
-    "no-null-keyword": {
-      "severity": "warning",
-      "options": true
-    },
-    "no-unused-expression": {
-      "severity": "warning",
-      "options": true
-    },
-    "one-variable-per-declaration": {
+    "no-console": {
       "severity": "warning",
       "options": true
     }

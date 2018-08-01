@@ -59,7 +59,7 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
                 return;
             }
             const extensionName = extracted[1];
-            const wantedExtensionVersion = null;
+            const wantedExtensionVersion = undefined;
 
             const json = {
                 "filters": [{
@@ -103,7 +103,7 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
                     dest.addListener('finish', finish);
 
                     request.get(asset.source)
-                        .on('error', (err) => {
+                        .on('error', err => {
                             reject(err);
                         }).pipe(dest);
                 } else {
