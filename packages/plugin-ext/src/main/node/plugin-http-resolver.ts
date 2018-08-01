@@ -75,7 +75,7 @@ export class HttpPluginDeployerResolver implements PluginDeployerResolver {
 
             dest.addListener('finish', finish);
             request.get(pluginResolverContext.getOriginId())
-                .on('error', (err) => {
+                .on('error', err => {
                     reject(err);
                 }).pipe(dest);
         });

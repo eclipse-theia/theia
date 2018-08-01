@@ -16,6 +16,9 @@
 
 import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
 
+// Phosphor elements can be null, so we need to disable our no-null rule
+// tslint:disable:no-null-keyword
+
 /*
  * @deprecated use ReactRenderer instead. VirtualRenderer will be removed with the next major release.
  */

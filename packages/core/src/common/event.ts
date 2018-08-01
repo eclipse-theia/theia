@@ -56,7 +56,7 @@ class CallbackList {
         return this._callbacks && this._callbacks.length || 0;
     }
 
-    public add(callback: Function, context: any = null, bucket?: Disposable[]): void {
+    public add(callback: Function, context: any = undefined, bucket?: Disposable[]): void {
         if (!this._callbacks) {
             this._callbacks = [];
             this._contexts = [];
@@ -69,13 +69,13 @@ class CallbackList {
         }
     }
 
-    public remove(callback: Function, context: any = null): void {
+    public remove(callback: Function, context: any = undefined): void {
         if (!this._callbacks) {
             return;
         }
 
         let foundCallbackWithDifferentContext = false;
-        for (let i = 0, len = this._callbacks.length; i < len; i++) {
+        for (let i = 0; i < this._callbacks.length; i++) {
             if (this._callbacks[i] === callback) {
                 if (this._contexts![i] === context) {
                     // callback & context match => remove it
@@ -102,7 +102,7 @@ class CallbackList {
         const callbacks = this._callbacks.slice(0);
         const contexts = this._contexts!.slice(0);
 
-        for (let i = 0, len = callbacks.length; i < len; i++) {
+        for (let i = 0; i < callbacks.length; i++) {
             try {
                 ret.push(callbacks[i].apply(contexts[i], args));
             } catch (e) {

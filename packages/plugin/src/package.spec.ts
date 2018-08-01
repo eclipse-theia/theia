@@ -24,7 +24,5 @@
 
 describe("plugin package", () => {
 
-    it("support code coverage statistics", () => {
-        return true;
-    });
+    it("support code coverage statistics", () => true);
 });

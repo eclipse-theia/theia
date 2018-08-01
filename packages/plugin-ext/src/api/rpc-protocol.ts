@@ -64,12 +64,15 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     constructor(connection: MessageConnection) {
         this.isDisposed = false;
+        // tslint:disable-next-line:no-null-keyword
         this.locals = Object.create(null);
+        // tslint:disable-next-line:no-null-keyword
         this.proxies = Object.create(null);
         this.lastMessageId = 0;
+        // tslint:disable-next-line:no-null-keyword
         this.invokedHandlers = Object.create(null);
         this.pendingRPCReplies = {};
-        this.multiplexor = new RPCMultiplexer(connection, (msg) => this.receiveOneMessage(msg));
+        this.multiplexor = new RPCMultiplexer(connection, msg => this.receiveOneMessage(msg));
     }
     getProxy<T>(proxyId: ProxyIdentifier<T>): T {
         if (!this.proxies[proxyId.id]) {
@@ -93,6 +96,7 @@ export class RPCProtocolImpl implements RPCProtocol {
                 return target[name];
             }
         };
+        // tslint:disable-next-line:no-null-keyword
         return new Proxy(Object.create(null), handler);
     }
 
@@ -165,7 +169,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         const pendingReply = this.pendingRPCReplies[callId];
         delete this.pendingRPCReplies[callId];
 
-        let err: Error | null = null;
+        let err: Error | undefined = undefined;
         if (msg.err && msg.err.$isError) {
             err = new Error();
             err.name = msg.err.name;
