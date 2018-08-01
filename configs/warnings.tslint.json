@@ -47,6 +47,15 @@
     "one-variable-per-declaration": {
       "severity": "warning",
       "options": true
+    },
+    "quotemark": {
+      "severity": "warning",
+      "options": [
+        true,
+        "single",
+        "jsx-single",
+        "avoid-escape"
+      ]
     }
   }
 }
