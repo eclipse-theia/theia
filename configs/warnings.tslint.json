@@ -54,7 +54,8 @@
         true,
         "single",
         "jsx-single",
-        "avoid-escape"
+        "avoid-escape",
+        "avoid-template"
       ]
     }
   }
