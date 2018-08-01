@@ -27,6 +27,15 @@ import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS }
 import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
 import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
 
+/**
+ * Clangd extension to set clangd-specific "initializationOptions" in the
+ * "initialize" request and for the "workspace/didChangeConfiguration"
+ * notification since the data received is described as 'any' type in LSP.
+ */
+interface ClangdConfigurationParamsChange {
+    compilationDatabasePath?: string;
+}
+
 @injectable()
 export class CppLanguageClientContribution extends BaseLanguageClientContribution {
 
@@ -52,21 +61,22 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     protected onReady(languageClient: ILanguageClient): void {
         super.onReady(languageClient);
 
-        // When the language server is ready, send the active build
-        // configuration so it knows where to find the build commands
-        // (e.g. compile_commands.json).
-        this.onActiveBuildConfigChanged(this.cppBuildConfigurations.getActiveConfig());
         this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
 
         // Display the C/C++ build configurations status bar element to select active build config
         this.cppBuildConfigurationsStatusBarElement.show();
     }
 
+    private createClangdConfigurationParams(config: CppBuildConfiguration | undefined): ClangdConfigurationParamsChange {
+        const clangdParams: ClangdConfigurationParamsChange = {
+            compilationDatabasePath: config ? config.directory : ""
+        };
+        return clangdParams;
+    }
+
     async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
         const interfaceParams: DidChangeConfigurationParams = {
-            settings: {
-                compilationDatabasePath: config ? config.directory : '',
-            },
+            settings: this.createClangdConfigurationParams(config)
         };
 
         const languageClient = await this.languageClient;
@@ -90,6 +100,8 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     protected createOptions(): LanguageClientOptions {
         const clientOptions = super.createOptions();
+        clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig());
+
         clientOptions.initializationFailedHandler = () => {
             const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
             const ERROR_MESSAGE = 'Error starting C/C++ language server. ' +
