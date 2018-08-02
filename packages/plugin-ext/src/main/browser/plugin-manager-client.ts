@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { MessageService, Command, Emitter, Event } from '@theia/core/lib/common';
+import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -157,26 +157,31 @@ export class HostedPluginManagerClient {
      * Creates directory choose dialog and set selected folder into pluginLocation field.
      */
     async selectPluginPath(): Promise<void> {
-        const root = await this.workspaceService.root || await this.fileSystem.getCurrentUserHome();
-        if (!root) {
-            throw new Error('Unable to find the root');
-        }
-        const rootUri = new URI(root.uri);
-        const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
+        let rootStat = await this.workspaceService.root;
+
         if (!rootStat) {
-            throw new Error('Unable to find the rootStat');
+            rootStat = await this.fileSystem.getCurrentUserHome();
         }
 
-        const name = this.labelProvider.getName(rootUri);
-        const label = await this.labelProvider.getIcon(root);
+        if (!rootStat) {
+            throw new Error('Unable to find the root');
+        }
+
+        const name = this.labelProvider.getName(rootStat);
+        const label = await this.labelProvider.getIcon(rootStat);
         const rootNode = DirNode.createRoot(rootStat, name, label);
-        const dialog = this.fileDialogFactory({ title: HostedPluginCommands.SELECT_PATH.label! });
+
+        const dialog = this.fileDialogFactory({
+            title: HostedPluginCommands.SELECT_PATH.label!,
+            canSelectFiles: false
+        });
         dialog.model.navigateTo(rootNode);
-        const node = await dialog.open();
-        if (node) {
-            if (await this.hostedPluginServer.isPluginValid(node.uri.toString())) {
-                this.pluginLocation = node.uri;
-                this.messageService.info('Plugin folder is set to: ' + node.uri.toString());
+        const result = await dialog.open();
+
+        if (UriSelection.is(result)) {
+            if (await this.hostedPluginServer.isPluginValid(result.uri.toString())) {
+                this.pluginLocation = result.uri;
+                this.messageService.info('Plugin folder is set to: ' + result.uri.toString());
             } else {
                 this.messageService.error('Specified folder does not contain valid plugin.');
             }

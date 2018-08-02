@@ -93,7 +93,7 @@ export interface FileStatNode extends SelectableTreeNode, UriSelection {
     fileStat: FileStat;
 }
 export namespace FileStatNode {
-    export function is(node: TreeNode | undefined): node is FileStatNode {
+    export function is(node: object | undefined): node is FileStatNode {
         return !!node && 'fileStat' in node;
     }
 }

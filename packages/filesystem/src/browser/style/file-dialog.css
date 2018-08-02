@@ -14,30 +14,37 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- .dialogContent .theia-FileDialog {
-     height: 500px;
-     width: 500px;
-     border: var(--theia-border-width) solid var(--theia-border-color1);
- }
+.dialogContent .theia-FileDialog {
+    height: 500px;
+    width: 500px;
+    border: var(--theia-border-width) solid var(--theia-border-color1);
+}
 
- .dialogContent .theia-NavigationPanel {
-     display: flex;
-     flex-direction: row;
-     justify-content: center;
-     align-items: center;
-     margin-top: 0px;
- }
+.dialogContent .theia-NavigationPanel {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 0px;
+    height: 23px;
+}
 
- .dialogContent .theia-LocationList {
-     width: 250px;
- }
+.dialogContent .theia-LocationList,
+.dialogContent .theia-FileTreeFiltersList {
+    width: 250px;
+}
 
- .dialogContent .theia-NavigationPanel > * {
-     margin-right: 4px;
+.dialogContent .theia-NavigationPanel > * {
+    margin-right: 4px;
+}
+
+.dialogContent .theia-NavigationPanel > span {
+    line-height: 23px;
 }
 
 .dialogContent .theia-NavigationPanel select {
-    background-color: var(--theia-ui-dialog-color);
+    background: var(--theia-layout-color4);
+    height: 21px;
 }
 
 .dialogContent .theia-ControlPanel {

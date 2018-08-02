@@ -16,3 +16,4 @@
 
 export * from './file-dialog';
 export * from './file-dialog-container';
+export * from './file-dialog-tree-filters-renderer';

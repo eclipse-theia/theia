@@ -17,12 +17,13 @@
 import { injectable, inject, postConstruct } from "inversify";
 import { Emitter, Event } from "@theia/core/lib/common";
 import { TreeNode } from "@theia/core/lib/browser";
-import { DirNode, FileNode, FileTreeModel, FileTree } from '../file-tree';
+import { DirNode, FileNode, FileTreeModel } from '../file-tree';
+import { FileDialogTree } from './file-dialog-tree';
 
 @injectable()
 export class FileDialogModel extends FileTreeModel {
 
-    @inject(FileTree) protected readonly tree: FileTree;
+    @inject(FileDialogTree) readonly tree: FileDialogTree;
     protected readonly onDidOpenFileEmitter = new Emitter<void>();
 
     @postConstruct()

@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { interfaces, Container } from "inversify";
-import { TreeModel } from "@theia/core/lib/browser";
+import { Tree, TreeModel, TreeProps, defaultTreeProps } from "@theia/core/lib/browser";
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../file-tree';
 import { FileDialog, FileDialogProps } from "./file-dialog";
 import { FileDialogModel } from "./file-dialog-model";
 import { FileDialogWidget } from './file-dialog-widget';
+import { FileDialogTree } from './file-dialog-tree';
 
 export function createFileDialogContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);
@@ -31,6 +32,9 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
     child.unbind(FileTreeWidget);
     child.bind(FileDialogWidget).toSelf();
 
+    child.bind(FileDialogTree).toSelf();
+    child.rebind(Tree).toService(FileDialogTree);
+
     child.bind(FileDialog).toSelf();
 
     return child;
@@ -38,6 +42,11 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
 
 export function createFileDialog(parent: interfaces.Container, props: FileDialogProps): FileDialog {
     const container = createFileDialogContainer(parent);
+    container.rebind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        multiSelect: props.canSelectMany
+    });
+
     container.bind(FileDialogProps).toConstantValue(props);
     return container.get(FileDialog);
 }
