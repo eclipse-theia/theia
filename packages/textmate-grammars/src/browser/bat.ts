@@ -21,7 +21,7 @@ import { injectable } from 'inversify';
 export class BatContribution implements LanguageGrammarDefinitionContribution {
 
     readonly id = 'bat';
-    readonly scopeName = 'source.bat';
+    readonly scopeName = 'source.batchfile';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
