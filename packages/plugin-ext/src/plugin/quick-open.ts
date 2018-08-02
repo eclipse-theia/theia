@@ -128,7 +128,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         } as OpenDialogOptionsMain;
 
         return new Promise((resolve, reject) => {
-            this.proxy.$showOpenDialog(optionsMain).then((result) => {
+            this.proxy.$showOpenDialog(optionsMain).then(result => {
                 if (result) {
                     const uris = [];
                     for (let i = 0; i < result.length; i++) {
@@ -139,7 +139,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
                 } else {
                     resolve(undefined);
                 }
-            }).catch((reason) => {
+            }).catch(reason => {
                 reject(reason);
             });
         });

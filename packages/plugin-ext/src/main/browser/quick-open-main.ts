@@ -183,9 +183,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
             const result = await dialog.open();
 
             // Return the result
-            return UriSelection.getUris(result).map((uri): string => {
-                return uri.path.toString();
-            });
+            return UriSelection.getUris(result).map(uri => uri.path.toString());
         } catch (error) {
             console.log(error);
         }

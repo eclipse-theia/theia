@@ -51,12 +51,8 @@ export class FileDialogTree extends FileTree {
 
         const result = await Promise.all(
             fileStat.children
-                .filter(child => {
-                    return this.isVisible(child);
-                })
-                .map(async child =>
-                    await this.toNode(child, parent)
-                )
+                .filter(child => this.isVisible(child))
+                .map(async child => await this.toNode(child, parent))
         );
 
         return result.sort(DirNode.compare);
@@ -76,9 +72,7 @@ export class FileDialogTree extends FileTree {
             return true;
         }
 
-        return !this.fileExtensions.every((value) => {
-            return !fileStat.uri.endsWith('.' + value);
-        });
+        return !this.fileExtensions.every(value => !fileStat.uri.endsWith('.' + value));
     }
 
 }

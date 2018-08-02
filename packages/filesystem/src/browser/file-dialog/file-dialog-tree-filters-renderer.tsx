@@ -47,7 +47,7 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
     protected doRender(): React.ReactNode {
         if (!this.filters) {
-            return null;
+            return undefined;
         }
 
         const fileTypes = ['All Files'];
