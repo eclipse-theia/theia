@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : "";
+const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
 export const isIE = (userAgent.indexOf('Trident') >= 0);
 export const isEdge = (userAgent.indexOf('Edge/') >= 0);

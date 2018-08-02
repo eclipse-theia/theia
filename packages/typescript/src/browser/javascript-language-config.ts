@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME, JAVASCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_NAME } from "../common";
-import { injectable } from "inversify";
-import { LanguageGrammarDefinitionContribution, TextmateRegistry, getEncodedLanguageId } from "@theia/monaco/lib/browser/textmate";
-import { StandardTokenType } from "monaco-textmate";
+import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME, JAVASCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_NAME } from '../common';
+import { injectable } from 'inversify';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
+import { StandardTokenType } from 'monaco-textmate';
 
 @injectable()
 export class JavascriptGrammarContribution implements LanguageGrammarDefinitionContribution {
@@ -45,16 +45,16 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
 
         registry.registerGrammarConfiguration(JAVASCRIPT_LANGUAGE_ID, {
             embeddedLanguages: {
-                "meta.tag.js": getEncodedLanguageId("jsx-tags"),
-                "meta.tag.without-attributes.js": getEncodedLanguageId("jsx-tags"),
-                "meta.tag.attributes.js.jsx": getEncodedLanguageId("javascriptreact"),
-                "meta.embedded.expression.js": getEncodedLanguageId("javascriptreact")
+                'meta.tag.js': getEncodedLanguageId('jsx-tags'),
+                'meta.tag.without-attributes.js': getEncodedLanguageId('jsx-tags'),
+                'meta.tag.attributes.js.jsx': getEncodedLanguageId('javascriptreact'),
+                'meta.embedded.expression.js': getEncodedLanguageId('javascriptreact')
             },
             tokenTypes: {
-                "entity.name.type.instance.jsdoc": StandardTokenType.Other,
-                "entity.name.function.tagged-template": StandardTokenType.Other,
-                "meta.import string.quoted": StandardTokenType.Other,
-                "variable.other.jsdoc": StandardTokenType.Other
+                'entity.name.type.instance.jsdoc': StandardTokenType.Other,
+                'entity.name.function.tagged-template': StandardTokenType.Other,
+                'meta.import string.quoted': StandardTokenType.Other,
+                'variable.other.jsdoc': StandardTokenType.Other
             }
         });
 
@@ -78,21 +78,21 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             id: JAVASCRIPT_LANGUAGE_ID,
             aliases: [
                 JAVASCRIPT_LANGUAGE_NAME,
-                "javascript",
-                "js"
+                'javascript',
+                'js'
             ],
             extensions: [
-                ".js",
-                ".es6",
-                ".mjs",
-                ".pac"
+                '.js',
+                '.es6',
+                '.mjs',
+                '.pac'
             ],
             filenames: [
-                "jakefile"
+                'jakefile'
             ],
-            firstLine: "^#!.*\\bnode",
+            firstLine: '^#!.*\\bnode',
             mimetypes: [
-                "text/javascript"
+                'text/javascript'
             ]
         });
 
@@ -104,10 +104,10 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             id: JAVASCRIPT_REACT_LANGUAGE_ID,
             aliases: [
                 JAVASCRIPT_REACT_LANGUAGE_NAME,
-                "jsx"
+                'jsx'
             ],
             extensions: [
-                ".jsx"
+                '.jsx'
             ]
         });
         monaco.languages.onLanguage(JAVASCRIPT_REACT_LANGUAGE_ID, () => {
@@ -116,36 +116,36 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
     }
 
     protected configuration: monaco.languages.LanguageConfiguration = {
-        "comments": {
-            "lineComment": "//",
-            "blockComment": ["/*", "*/"]
+        'comments': {
+            'lineComment': '//',
+            'blockComment': ['/*', '*/']
         },
-        "brackets": [
-            ["{", "}"],
-            ["[", "]"],
-            ["(", ")"]
+        'brackets': [
+            ['{', '}'],
+            ['[', ']'],
+            ['(', ')']
         ],
-        "autoClosingPairs": [
-            { "open": "{", "close": "}" },
-            { "open": "[", "close": "]" },
-            { "open": "(", "close": ")" },
-            { "open": "'", "close": "'", "notIn": ["string", "comment"] },
-            { "open": "\"", "close": "\"", "notIn": ["string"] },
-            { "open": "`", "close": "`", "notIn": ["string", "comment"] },
-            { "open": "/**", "close": " */", "notIn": ["string"] }
+        'autoClosingPairs': [
+            { 'open': '{', 'close': '}' },
+            { 'open': '[', 'close': ']' },
+            { 'open': '(', 'close': ')' },
+            { 'open': "'", 'close': "'", 'notIn': ['string', 'comment'] },
+            { 'open': '"', 'close': '"', 'notIn': ['string'] },
+            { 'open': '`', 'close': '`', 'notIn': ['string', 'comment'] },
+            { 'open': '/**', 'close': ' */', 'notIn': ['string'] }
         ],
-        "surroundingPairs": [
-            { "open": "{", "close": "}" },
-            { "open": "[", "close": "]" },
-            { "open": "(", "close": ")" },
-            { "open": "'", "close": "'" },
-            { "open": "\"", "close": "\"" },
-            { "open": "`", "close": "`" }
+        'surroundingPairs': [
+            { 'open': '{', 'close': '}' },
+            { 'open': '[', 'close': ']' },
+            { 'open': '(', 'close': ')' },
+            { 'open': "'", 'close': "'" },
+            { 'open': '"', 'close': '"' },
+            { 'open': '`', 'close': '`' }
         ],
-        "folding": {
-            "markers": {
-                "start": new RegExp("^\\s*//\\s*#?region\\b"),
-                "end": new RegExp("^\\s*//\\s*#?endregion\\b")
+        'folding': {
+            'markers': {
+                'start': new RegExp('^\\s*//\\s*#?region\\b'),
+                'end': new RegExp('^\\s*//\\s*#?endregion\\b')
             }
         }
     };

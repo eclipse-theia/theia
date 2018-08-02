@@ -18,7 +18,7 @@ import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
 /**
  * Service manipulating terminal widgets.
  */
-export const TerminalService = Symbol("TerminalService");
+export const TerminalService = Symbol('TerminalService');
 export interface TerminalService {
     /**
      * Create new terminal with predefined options.

@@ -138,7 +138,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
                 if (location) {
                     locations.push(location);
                 } else {
-                    this.logger.warn(`Could not restore the state of the editor navigation history.`);
+                    this.logger.warn('Could not restore the state of the editor navigation history.');
                     return;
                 }
             }

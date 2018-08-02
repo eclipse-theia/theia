@@ -16,7 +16,7 @@
 
 import * as net from 'net';
 import * as cp from 'child_process';
-import { injectable, inject, named } from "inversify";
+import { injectable, inject, named } from 'inversify';
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 import {
@@ -25,8 +25,8 @@ import {
     forward,
     IConnection
 } from 'vscode-ws-jsonrpc/lib/server';
-import { MaybePromise, ILogger } from "@theia/core/lib/common";
-import { LanguageContribution } from "../common";
+import { MaybePromise, ILogger } from '@theia/core/lib/common';
+import { LanguageContribution } from '../common';
 import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
 import { ProcessManager } from '@theia/process/lib/node/process-manager';
 

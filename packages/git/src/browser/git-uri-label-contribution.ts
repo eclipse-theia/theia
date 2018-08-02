@@ -53,7 +53,7 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
         if (uri.query) {
             return ` (${uri.query})`;
         } else {
-            return "";
+            return '';
         }
     }
 }

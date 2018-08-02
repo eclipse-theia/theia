@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WindowStateExt, MAIN_RPC_CONTEXT } from "../../api/plugin-api";
-import { RPCProtocol } from "../../api/rpc-protocol";
+import { WindowStateExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { RPCProtocol } from '../../api/rpc-protocol';
 
 export class WindowStateMain {
 
@@ -24,8 +24,8 @@ export class WindowStateMain {
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT);
 
-        window.addEventListener("focus", () => this.onFocusChanged(true));
-        window.addEventListener("blur", () => this.onFocusChanged(false));
+        window.addEventListener('focus', () => this.onFocusChanged(true));
+        window.addEventListener('blur', () => this.onFocusChanged(false));
     }
 
     private onFocusChanged(focused: boolean): void {

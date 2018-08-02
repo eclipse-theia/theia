@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { Widget } from "@phosphor/widgets";
-import { FrontendApplicationContribution, WidgetOpenerOptions, WidgetOpenHandler } from "@theia/core/lib/browser";
+import { injectable, inject } from 'inversify';
+import { Widget } from '@phosphor/widgets';
+import { FrontendApplicationContribution, WidgetOpenerOptions, WidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
-import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from "@theia/core/lib/common";
+import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider, } from './preview-handler';
-import { PreviewUri } from "./preview-uri";
+import { PreviewUri } from './preview-uri';
 import { PreviewPreferences } from './preview-preferences';
 
 import debounce = require('lodash.debounce');
@@ -157,7 +157,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
     }
 
     protected get openByDefault(): boolean {
-        return this.preferences["preview.openByDefault"];
+        return this.preferences['preview.openByDefault'];
     }
 
     async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {

@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {inject, injectable} from "inversify";
-import {CommandContribution, CommandRegistry, Command} from "@theia/core/lib/common";
-import {CommonCommands, PreferenceService} from "@theia/core/lib/browser";
+import {inject, injectable} from 'inversify';
+import {CommandContribution, CommandRegistry, Command} from '@theia/core/lib/common';
+import {CommonCommands, PreferenceService} from '@theia/core/lib/browser';
 
 export namespace EditorCommands {
 
@@ -67,7 +67,7 @@ export namespace EditorCommands {
 @injectable()
 export class EditorCommandContribution implements CommandContribution {
 
-    public static readonly AUTOSAVE_PREFERENCE: string = "editor.autoSave";
+    public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
 
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;

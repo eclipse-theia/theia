@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WorkspaceExt, MAIN_RPC_CONTEXT } from "../../api/plugin-api";
-import { RPCProtocol } from "../../api/rpc-protocol";
-import { WorkspaceService } from "@theia/workspace/lib/browser";
+import { WorkspaceExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { RPCProtocol } from '../../api/rpc-protocol';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import Uri from 'vscode-uri';
-import { WorkspaceFoldersChangeEvent, WorkspaceFolder } from "@theia/plugin";
-import { Path } from "@theia/core/lib/common/path";
+import { WorkspaceFoldersChangeEvent, WorkspaceFolder } from '@theia/plugin';
+import { Path } from '@theia/core/lib/common/path';
 
 export class WorkspaceMain {
 

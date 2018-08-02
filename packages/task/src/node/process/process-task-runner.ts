@@ -57,7 +57,7 @@ export class ProcessTaskRunner implements TaskRunner {
      */
     async run(taskConfig: TaskConfiguration, ctx?: string): Promise<Task> {
         if (!taskConfig.command) {
-            throw new Error(`Process task config must have 'command' property specified`);
+            throw new Error("Process task config must have 'command' property specified");
         }
 
         let command;

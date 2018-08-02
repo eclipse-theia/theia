@@ -24,7 +24,7 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
 import { Emitter, Event } from '@theia/core';
-import { DisposableCollection } from "@theia/core";
+import { DisposableCollection } from '@theia/core';
 import { DocumentsMainImpl } from './documents-main';
 import { TextEditorsMainImpl } from './text-editors-main';
 import { EditorManager } from '@theia/editor/lib/browser';

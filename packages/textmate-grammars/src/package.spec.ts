@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("textmate-grammars package", () => {
+describe('textmate-grammars package', () => {
 
-    it("support code coverage statistics", () => true);
+    it('support code coverage statistics', () => true);
 });

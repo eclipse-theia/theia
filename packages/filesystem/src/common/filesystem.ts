@@ -18,7 +18,7 @@ import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import { JsonRpcServer, ApplicationError } from '@theia/core/lib/common';
 export const fileSystemPath = '/services/filesystem';
 
-export const FileSystem = Symbol("FileSystem");
+export const FileSystem = Symbol('FileSystem');
 
 export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 

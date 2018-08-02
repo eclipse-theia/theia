@@ -13,12 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { interfaces } from "inversify";
+import { interfaces } from 'inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from "../../api/plugin-api";
-import { RPCProtocol } from "../../api/rpc-protocol";
+import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { RPCProtocol } from '../../api/rpc-protocol';
 
 export class CommandRegistryMainImpl implements CommandRegistryMain {
     private proxy: CommandRegistryExt;
@@ -55,7 +55,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
         }
     }
     $getCommands(): PromiseLike<string[]> {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
 
 }

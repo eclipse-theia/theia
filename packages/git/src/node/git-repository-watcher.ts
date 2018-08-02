@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { Disposable, Event, Emitter, ILogger, DisposableCollection } from "@theia/core";
+import { injectable, inject } from 'inversify';
+import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Git, Repository, WorkingDirectoryStatus, GitUtils } from '../common';
-import { GitStatusChangeEvent } from "../common/git-watcher";
+import { GitStatusChangeEvent } from '../common/git-watcher';
 
 export const GitRepositoryWatcherFactory = Symbol('GitRepositoryWatcherFactory');
 export type GitRepositoryWatcherFactory = (options: GitRepositoryWatcherOptions) => GitRepositoryWatcher;
@@ -104,7 +104,7 @@ export class GitRepositoryWatcher implements Disposable {
                 return false;
             }
             const { localUri } = this.options.repository;
-            this.logger.error(`Error occurred while synchronizing the status of the repository.`, localUri, error);
+            this.logger.error('Error occurred while synchronizing the status of the repository.', localUri, error);
         }
         return true;
     }

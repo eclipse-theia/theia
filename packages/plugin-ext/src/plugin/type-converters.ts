@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorPosition, Selection, Range, Position, DecorationOptions, MarkdownString } from "../api/plugin-api";
+import { EditorPosition, Selection, Range, Position, DecorationOptions, MarkdownString } from '../api/plugin-api';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 

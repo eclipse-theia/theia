@@ -18,14 +18,14 @@ import * as http from 'http';
 import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
-import { inject, named, injectable } from "inversify";
+import { inject, named, injectable } from 'inversify';
 import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { BackendProcess } from './backend-process';
-import * as fs from "fs-extra";
+import * as fs from 'fs-extra';
 
-export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
+export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 export interface BackendApplicationContribution {
     initialize?(): void;
     configure?(app: express.Application): void;
@@ -133,11 +133,11 @@ export class BackendApplication {
         if (this.cliParams.ssl) {
 
             if (this.cliParams.cert === undefined) {
-                throw new Error("Missing --cert option, see --help for usage");
+                throw new Error('Missing --cert option, see --help for usage');
             }
 
             if (this.cliParams.certkey === undefined) {
-                throw new Error("Missing --certkey option, see --help for usage");
+                throw new Error('Missing --certkey option, see --help for usage');
             }
 
             let key: Buffer;
@@ -145,14 +145,14 @@ export class BackendApplication {
             try {
                 key = await fs.readFile(this.cliParams.certkey as string);
             } catch (err) {
-                await this.logger.error(`Can't read certificate key`);
+                await this.logger.error("Can't read certificate key");
                 throw err;
             }
 
             try {
                 cert = await fs.readFile(this.cliParams.cert as string);
             } catch (err) {
-                await this.logger.error(`Can't read certificate`);
+                await this.logger.error("Can't read certificate");
                 throw err;
             }
             server = https.createServer({ key, cert }, this.app);

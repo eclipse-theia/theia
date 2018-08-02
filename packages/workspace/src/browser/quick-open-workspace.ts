@@ -14,11 +14,11 @@
   * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
   ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from "@theia/core/lib/browser/quick-open/";
-import { WorkspaceService } from "./workspace-service";
-import URI from "@theia/core/lib/common/uri";
-import { MessageService } from "@theia/core/lib/common";
+import { injectable, inject } from 'inversify';
+import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
+import { WorkspaceService } from './workspace-service';
+import URI from '@theia/core/lib/common/uri';
+import { MessageService } from '@theia/core/lib/common';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
@@ -71,7 +71,7 @@ export class WorkspaceQuickOpenItem extends QuickOpenItem {
         if (this.workspace) {
             return new URI(this.workspace).path.name;
         }
-        return "";
+        return '';
     }
 
     /**
@@ -80,7 +80,7 @@ export class WorkspaceQuickOpenItem extends QuickOpenItem {
      * @returns workspace path
      */
     getDescription(): string {
-        return (this.workspace) ? new URI(this.workspace).path.dir.toString() : "";
+        return (this.workspace) ? new URI(this.workspace).path.dir.toString() : '';
     }
 
     run(mode: QuickOpenMode): boolean {

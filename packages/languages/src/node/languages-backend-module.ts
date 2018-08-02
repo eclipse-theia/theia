@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
+import { ContainerModule } from 'inversify';
 import { bindContributionProvider, ILogger } from '@theia/core/lib/common';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-import { LanguagesBackendContribution } from "./languages-backend-contribution";
-import { LanguageServerContribution } from "./language-server-contribution";
+import { LanguagesBackendContribution } from './languages-backend-contribution';
+import { LanguageServerContribution } from './language-server-contribution';
 
 export default new ContainerModule(bind => {
     bind(MessagingService.Contribution).to(LanguagesBackendContribution).inSingletonScope();

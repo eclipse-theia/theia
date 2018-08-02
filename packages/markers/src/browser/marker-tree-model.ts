@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { MarkerNode } from './marker-tree';
-import { TreeModelImpl, OpenerService, open, TreeNode, OpenerOptions } from "@theia/core/lib/browser";
+import { TreeModelImpl, OpenerService, open, TreeNode, OpenerOptions } from '@theia/core/lib/browser';
 
 @injectable()
 export class MarkerTreeModel extends TreeModelImpl {

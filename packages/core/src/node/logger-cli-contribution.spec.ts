@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as chai from "chai";
+import * as chai from 'chai';
 import * as yargs from 'yargs';
 import * as temp from 'temp';
 import * as fs from 'fs';
-import { ContainerModule, Container } from "inversify";
-import { LogLevel } from "../common/logger";
-import { LogLevelCliContribution } from "./logger-cli-contribution";
+import { ContainerModule, Container } from 'inversify';
+import { LogLevel } from '../common/logger';
+import { LogLevelCliContribution } from './logger-cli-contribution';
 import * as sinon from 'sinon';
 
 // Allow creating temporary files, but remove them when we are done.
@@ -176,7 +176,7 @@ describe('log-level-cli-contribution', function() {
         const gotEvent = new Promise<void>(resolve => {
             cli.onLogConfigChanged(() => resolve());
 
-            const fd = fs.openSync(filename, "w");
+            const fd = fs.openSync(filename, 'w');
 
             fs.ftruncateSync(fd);
             fs.writeFileSync(fd, JSON.stringify({

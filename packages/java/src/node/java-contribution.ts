@@ -17,9 +17,9 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as glob from 'glob';
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 import { DEBUG_MODE } from '@theia/core/lib/node';
-import { IConnection, BaseLanguageServerContribution } from "@theia/languages/lib/node";
+import { IConnection, BaseLanguageServerContribution } from '@theia/languages/lib/node';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';

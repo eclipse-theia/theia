@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { MessageService, Emitter, Event } from "@theia/core";
-import { QuickOpenService, QuickOpenItem, QuickOpenMode, ConfirmDialog } from "@theia/core/lib/browser";
-import { GitRepositoryTracker } from "./git-repository-tracker";
-import { Git, Repository, WorkingDirectoryStatus } from "../common";
-import { GitErrorHandler } from "./git-error-handler";
+import { injectable, inject } from 'inversify';
+import { MessageService, Emitter, Event } from '@theia/core';
+import { QuickOpenService, QuickOpenItem, QuickOpenMode, ConfirmDialog } from '@theia/core/lib/browser';
+import { GitRepositoryTracker } from './git-repository-tracker';
+import { Git, Repository, WorkingDirectoryStatus } from '../common';
+import { GitErrorHandler } from './git-error-handler';
 
 @injectable()
 export class GitSyncService {
@@ -121,7 +121,7 @@ export class GitSyncService {
             warning: `This action will override commits in '${upstreamBranch}'.`,
             value: 'force-push'
         }];
-        const method = await this.pick(`Pick how changes should be synchronized:`, methods);
+        const method = await this.pick('Pick how changes should be synchronized:', methods);
         if (method && await this.confirm('Synchronize Changes', methods.find(({ value }) => value === method)!.warning)) {
             return method;
         }

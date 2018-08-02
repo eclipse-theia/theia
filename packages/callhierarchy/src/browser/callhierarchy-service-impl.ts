@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { ILanguageClient } from '@theia/languages/lib/browser';
 import { LanguageClientProvider } from '@theia/languages/lib/browser/language-client-provider';
 import {
@@ -24,8 +24,8 @@ import {
 import * as utils from './utils';
 import { Definition, Caller } from './callhierarchy';
 import { CallHierarchyService } from './callhierarchy-service';
-import { ILogger, Disposable } from "@theia/core";
-import { MonacoTextModelService } from "@theia/monaco/lib/browser/monaco-text-model-service";
+import { ILogger, Disposable } from '@theia/core';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import URI from '@theia/core/lib/common/uri';
 
 export class CallHierarchyContext {
@@ -95,7 +95,7 @@ export class CallHierarchyContext {
             const filteredReferences = utils.filterSame(uniqueReferences, definition);
             return filteredReferences;
         } catch (error) {
-            this.logger.error(`Error from references request`, error);
+            this.logger.error('Error from references request', error);
             return [];
         }
     }
@@ -154,7 +154,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
                 return result;
             }
         } catch (error) {
-            this.logger.error("Error getting language client", error);
+            this.logger.error('Error getting language client', error);
         }
         return undefined;
     }
@@ -162,7 +162,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
     protected async createContext() {
         const languageClient = await this.languageClientProvider.getLanguageClient(this.languageId);
         if (!languageClient) {
-            this.logger.error("No language client with ID " + this.languageId);
+            this.logger.error('No language client with ID ' + this.languageId);
             return undefined;
         } else {
             return new CallHierarchyContext(languageClient, this.textModelService, this.logger);

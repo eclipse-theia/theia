@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("terminal package", () => {
+describe('terminal package', () => {
 
-    it("support code coverage statistics", () => true);
+    it('support code coverage statistics', () => true);
 });

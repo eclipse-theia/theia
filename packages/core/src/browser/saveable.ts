@@ -23,7 +23,7 @@ import { AbstractDialog } from './dialogs';
 export interface Saveable {
     readonly dirty: boolean;
     readonly onDirtyChanged: Event<void>;
-    readonly autoSave: "on" | "off";
+    readonly autoSave: 'on' | 'off';
     save(): MaybePromise<void>;
 }
 
@@ -125,7 +125,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
             title: `Do you want to save the changes you made to ${widget.title.label || widget.title.caption}?`
         });
 
-        const messageNode = document.createElement("div");
+        const messageNode = document.createElement('div');
         messageNode.textContent = "Your changes will be lost if you don't save them.";
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);

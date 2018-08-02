@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable } from "@theia/core";
+import { Disposable } from '@theia/core';
 
 export class EditorDecorationStyle implements Disposable {
 
@@ -52,7 +52,7 @@ export namespace EditorDecorationStyle {
         style.id = 'editorDecorationsStyle';
         style.type = 'text/css';
         style.media = 'screen';
-        style.appendChild(document.createTextNode("")); // trick for webkit
+        style.appendChild(document.createTextNode('')); // trick for webkit
         container.appendChild(style);
         return <CSSStyleSheet>style.sheet;
     }

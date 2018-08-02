@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MessageConnection, ResponseError } from "vscode-jsonrpc";
-import { ApplicationError } from "../application-error";
-import { Event, Emitter } from "../event";
-import { Disposable } from "../disposable";
+import { MessageConnection, ResponseError } from 'vscode-jsonrpc';
+import { ApplicationError } from '../application-error';
+import { Event, Emitter } from '../event';
+import { Disposable } from '../disposable';
 import { ConnectionHandler } from './handler';
 
 export type JsonRpcServer<Client> = Disposable & {
@@ -258,7 +258,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * @return Whether `p` represents a notification.
      */
     protected isNotification(p: PropertyKey): boolean {
-        return p.toString().startsWith("notify") || p.toString().startsWith("on");
+        return p.toString().startsWith('notify') || p.toString().startsWith('on');
     }
 
     protected serializeError(e: any): any {

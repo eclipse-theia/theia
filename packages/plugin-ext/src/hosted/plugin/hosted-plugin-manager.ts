@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { HostedPluginManagerExt, Plugin } from "../../api/plugin-api";
-import { getPluginId, PluginMetadata } from "../../common/plugin-protocol";
+import { HostedPluginManagerExt, Plugin } from '../../api/plugin-api';
+import { getPluginId, PluginMetadata } from '../../common/plugin-protocol';
 
 export interface PluginHost {
     initialize(contextPath: string, pluginMetadata: PluginMetadata): void;

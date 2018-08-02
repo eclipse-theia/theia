@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from "path";
-import * as cp from "child_process";
-import { injectable, inject } from "inversify";
-import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from "vscode-jsonrpc";
-import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from "../../common";
+import * as path from 'path';
+import * as cp from 'child_process';
+import { injectable, inject } from 'inversify';
+import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-jsonrpc';
+import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
 import { createIpcEnv } from './ipc-protocol';
 
 export interface ResolvedIPCConnectionOptions {

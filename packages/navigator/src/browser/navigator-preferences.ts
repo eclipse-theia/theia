@@ -32,7 +32,7 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
             description: `
 Configure glob patterns for excluding files and folders from the navigator. A resource that matches any of the enabled patterns, will be filtered out from the navigator. For more details about the exclusion patterns, see: \`man 5 gitignore\`.`,
             default: {
-                "**/.git": true
+                '**/.git': true
             }
         }
     }

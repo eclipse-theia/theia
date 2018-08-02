@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import * as jsoncparser from "jsonc-parser";
+import * as jsoncparser from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger, Resource, ResourceProvider, MaybePromise } from "@theia/core/lib/common";
+import { ILogger, Resource, ResourceProvider, MaybePromise } from '@theia/core/lib/common';
 import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
 
 @injectable()

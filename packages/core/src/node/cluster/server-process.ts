@@ -18,7 +18,7 @@ import * as net from 'net';
 import * as http from 'http';
 import * as https from 'https';
 import * as cluster from 'cluster';
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { createRemoteMaster, IMasterProcess, IServerProcess } from './cluster-protocol';
 import { BackendApplicationContribution } from '../backend-application';
 

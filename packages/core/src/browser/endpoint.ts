@@ -14,17 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from "../common/uri";
+import URI from '../common/uri';
 
 /**
  * An endpoint provides URLs for http and ws, based on configuration and defaults.
  */
 export class Endpoint {
-    static readonly PROTO_HTTPS: string = "https:";
-    static readonly PROTO_HTTP: string = "http:";
-    static readonly PROTO_WS: string = "ws:";
-    static readonly PROTO_WSS: string = "wss:";
-    static readonly PROTO_FILE: string = "file:";
+    static readonly PROTO_HTTPS: string = 'https:';
+    static readonly PROTO_HTTP: string = 'http:';
+    static readonly PROTO_WS: string = 'ws:';
+    static readonly PROTO_WSS: string = 'wss:';
+    static readonly PROTO_FILE: string = 'file:';
 
     constructor(
         protected readonly options: Endpoint.Options = {},
@@ -93,13 +93,13 @@ export class Endpoint {
 
     protected get path() {
         if (this.options.path) {
-            if (this.options.path.startsWith("/")) {
+            if (this.options.path.startsWith('/')) {
                 return this.options.path;
             } else {
                 return '/' + this.options.path;
             }
         }
-        return this.options.path || "";
+        return this.options.path || '';
     }
 }
 

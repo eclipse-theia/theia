@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import URI from "@theia/core/lib/common/uri";
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog } from '@theia/core/lib/browser';
 import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
-import { WorkspaceCommands } from "./workspace-commands";
-import { QuickOpenWorkspace } from "./quick-open-workspace";
+import { WorkspaceCommands } from './workspace-commands';
+import { QuickOpenWorkspace } from './quick-open-workspace';
 
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, MenuContribution {

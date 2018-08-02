@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from "@theia/core/lib/browser";
+import { injectable } from 'inversify';
+import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
 import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
-import { UriSelection } from "@theia/core/lib/common/selection";
-import URI from "@theia/core/lib/common/uri";
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import { UriSelection } from '@theia/core/lib/common/selection';
+import URI from '@theia/core/lib/common/uri';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
 export const MarkerOptions = Symbol('MarkerOptions');
 export interface MarkerOptions {
@@ -109,7 +109,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         );
     }
     protected createMarkerNode(marker: Marker<T>, index: number, parent: MarkerInfoNode): MarkerNode {
-        const id = parent.id + "_" + index;
+        const id = parent.id + '_' + index;
         const existing = this.getNode(id);
         if (MarkerNode.is(existing)) {
             existing.marker = marker;

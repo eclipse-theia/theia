@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule, interfaces, } from 'inversify';
-import { PreferenceProvider, PreferenceScope } from "@theia/core/lib/browser/preferences";
+import { PreferenceProvider, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { PreferenceFrontendContribution } from './preference-frontend-contribution';

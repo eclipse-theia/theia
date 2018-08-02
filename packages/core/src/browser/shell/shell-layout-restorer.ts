@@ -43,7 +43,7 @@ export interface StatefulWidget {
 export namespace StatefulWidget {
     // tslint:disable-next-line:no-any
     export function is(arg: any): arg is StatefulWidget {
-        return arg !== undefined && typeof arg["storeState"] === 'function' && typeof arg["restoreState"] === 'function';
+        return arg !== undefined && typeof arg['storeState'] === 'function' && typeof arg['restoreState'] === 'function';
     }
 }
 

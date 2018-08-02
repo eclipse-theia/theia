@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { ILogger } from "@theia/core/lib/common";
-import { TerminalProcess, ProcessManager } from "@theia/process/lib/node";
+import { ILogger } from '@theia/core/lib/common';
+import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 import { terminalsPath } from '../common/terminal-protocol';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 

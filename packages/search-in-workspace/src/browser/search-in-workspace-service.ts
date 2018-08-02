@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
-import { SearchInWorkspaceServer, SearchInWorkspaceClient, SearchInWorkspaceResult, SearchInWorkspaceOptions } from "../common/search-in-workspace-interface";
-import { WorkspaceService } from "@theia/workspace/lib/browser";
-import URI from "@theia/core/lib/common/uri";
-import { ILogger } from "@theia/core";
+import { injectable, inject, postConstruct } from 'inversify';
+import { SearchInWorkspaceServer, SearchInWorkspaceClient, SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import URI from '@theia/core/lib/common/uri';
+import { ILogger } from '@theia/core';
 
 /**
  * Class that will receive the search results from the server.  This is separate
@@ -109,7 +109,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         const root = await this.workspaceService.root;
 
         if (!root) {
-            throw new Error("Search failed: no workspace root.");
+            throw new Error('Search failed: no workspace root.');
         }
 
         const rootUri = new URI(root.uri);

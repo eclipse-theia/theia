@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { CommandRegistry } from '../common/command';
 import { KeyCode, KeySequence } from './keys';
 import { ContributionProvider } from '../common/contribution-provider';
-import { ILogger } from "../common/logger";
+import { ILogger } from '../common/logger';
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { isOSX } from '../common/os';
 
@@ -51,8 +51,8 @@ export namespace Keybinding {
     }
 
     /* Return a user visible representation of a keybinding.  */
-    export function acceleratorFor(keybinding: Keybinding, separator: string = " ") {
-        const keyCodesString = keybinding.keybinding.split(" ");
+    export function acceleratorFor(keybinding: Keybinding, separator: string = ' ') {
+        const keyCodesString = keybinding.keybinding.split(' ');
         return KeySequence.acceleratorFor(keyCodesString.map(k => KeyCode.parse(k)), separator);
     }
 }
@@ -70,12 +70,12 @@ export interface Keybinding {
     context?: string;
 }
 
-export const KeybindingContribution = Symbol("KeybindingContribution");
+export const KeybindingContribution = Symbol('KeybindingContribution');
 export interface KeybindingContribution {
     registerKeybindings(keybindings: KeybindingRegistry): void;
 }
 
-export const KeybindingContext = Symbol("KeybindingContext");
+export const KeybindingContext = Symbol('KeybindingContext');
 export interface KeybindingContext {
     /**
      * The unique ID of the current context.
@@ -100,7 +100,7 @@ export namespace KeybindingContexts {
 @injectable()
 export class KeybindingRegistry {
 
-    static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
+    static readonly PASSTHROUGH_PSEUDO_COMMAND = 'passthrough';
     protected keySequence: KeySequence = [];
 
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
@@ -467,7 +467,7 @@ export class KeybindingRegistry {
             event.stopPropagation();
 
             this.statusBar.setElement('keybinding-status', {
-                text: `(${KeySequence.acceleratorFor(this.keySequence, "+")}) was pressed, waiting for more keys`,
+                text: `(${KeySequence.acceleratorFor(this.keySequence, '+')}) was pressed, waiting for more keys`,
                 alignment: StatusBarAlignment.LEFT,
                 priority: 2
             });

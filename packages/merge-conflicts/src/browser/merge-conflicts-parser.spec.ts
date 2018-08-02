@@ -39,9 +39,9 @@ function parse(contents: string): MergeConflict[] {
     return parser.parse(input);
 }
 
-describe("merge-conflict-parser", () => {
+describe('merge-conflict-parser', () => {
 
-    it("simple merge conflict", () => {
+    it('simple merge conflict', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -61,7 +61,7 @@ bar on branch
         expect(conflict.incoming.content).to.not.be.undefined;
     });
 
-    it("content regions are correct", () => {
+    it('content regions are correct', () => {
         const content = `first line
 <<<<<<< HEAD
 foo changed on master
@@ -119,7 +119,7 @@ bar`);
 bar on branch`);
     });
 
-    it("multiple merge conflicts", () => {
+    it('multiple merge conflicts', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -148,7 +148,7 @@ bar on branch
         expect(conflicts).to.have.lengthOf(3);
     });
 
-    it("merge conflict with bases", () => {
+    it('merge conflict with bases', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -188,7 +188,7 @@ bar on branch
         });
     });
 
-    it("broken 1: second current marker in current content", () => {
+    it('broken 1: second current marker in current content', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 <<<<<<< HEAD
@@ -211,7 +211,7 @@ bar on branch
         });
     });
 
-    it("broken 2: current marker in incoming content", () => {
+    it('broken 2: current marker in incoming content', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -226,7 +226,7 @@ bar on branch
         expect(conflicts).to.have.lengthOf(0);
     });
 
-    it("broken 3: second separator", () => {
+    it('broken 3: second separator', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -241,7 +241,7 @@ bar on branch
         expect(conflicts).to.have.lengthOf(0);
     });
 
-    it("broken 4: second separator in incoming content", () => {
+    it('broken 4: second separator in incoming content', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -256,7 +256,7 @@ bar on branch
         expect(conflicts).to.have.lengthOf(0);
     });
 
-    it("broken 5: incoming marker, no separator", () => {
+    it('broken 5: incoming marker, no separator', () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -285,7 +285,7 @@ bar on branch
         });
     });
 
-    it("merge conflict with empty incoming change", () => {
+    it('merge conflict with empty incoming change', () => {
         const conflicts = parse(
             `<<<<<<<
 a
@@ -302,7 +302,7 @@ b
         expect(conflict.incoming.content).to.be.undefined;
     });
 
-    it("merge conflict with empty current change", () => {
+    it('merge conflict with empty current change', () => {
         const conflicts = parse(
             `<<<<<<<
 |||||||

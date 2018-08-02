@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { AbstractDefaultCallHierarchyService, CallHierarchyContext } from "@theia/callhierarchy/lib/browser/callhierarchy-service-impl";
-import { TYPESCRIPT_LANGUAGE_ID } from "../common";
+import { injectable } from 'inversify';
+import { AbstractDefaultCallHierarchyService, CallHierarchyContext } from '@theia/callhierarchy/lib/browser/callhierarchy-service-impl';
+import { TYPESCRIPT_LANGUAGE_ID } from '../common';
 import { SymbolInformation, Range, Location } from 'vscode-languageserver-types';
 import * as utils from '@theia/callhierarchy/lib/browser/utils';
 

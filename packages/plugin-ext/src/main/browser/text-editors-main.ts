@@ -27,12 +27,12 @@ import {
     UndoStopOptions,
     DecorationRenderOptions,
     DecorationOptions
-} from "../../api/plugin-api";
-import { EditorsAndDocumentsMain } from "./editors-and-documents-main";
-import { RPCProtocol } from "../../api/rpc-protocol";
-import { DisposableCollection } from "@theia/core";
-import { TextEditorMain } from "./text-editor-main";
-import { disposed } from "../../common/errors";
+} from '../../api/plugin-api';
+import { EditorsAndDocumentsMain } from './editors-and-documents-main';
+import { RPCProtocol } from '../../api/rpc-protocol';
+import { DisposableCollection } from '@theia/core';
+import { TextEditorMain } from './text-editor-main';
+import { disposed } from '../../common/errors';
 
 export class TextEditorsMainImpl implements TextEditorsMain {
 

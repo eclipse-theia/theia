@@ -16,27 +16,27 @@
 
 import '../../../src/main/style/status-bar.css';
 
-import { ContainerModule } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution } from "@theia/core/lib/browser";
-import { MaybePromise, CommandContribution, ResourceResolver } from "@theia/core/lib/common";
+import { ContainerModule } from 'inversify';
+import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import { MaybePromise, CommandContribution, ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { PluginWorker } from './plugin-worker';
-import { HostedPluginSupport } from "../../hosted/browser/hosted-plugin";
-import { HostedPluginWatcher } from "../../hosted/browser/hosted-plugin-watcher";
-import { HostedPluginLogViewer } from "../../hosted/browser/hosted-plugin-log-viewer";
-import { HostedPluginManagerClient } from "./plugin-manager-client";
-import { PluginApiFrontendContribution } from "./plugin-frontend-contribution";
-import { setUpPluginApi } from "./main-context";
-import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from "../../common/plugin-protocol";
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
+import { HostedPluginLogViewer } from '../../hosted/browser/hosted-plugin-log-viewer';
+import { HostedPluginManagerClient } from './plugin-manager-client';
+import { PluginApiFrontendContribution } from './plugin-frontend-contribution';
+import { setUpPluginApi } from './main-context';
+import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from '../../common/plugin-protocol';
 import { ModalNotification } from './dialogs/modal-notification';
-import { PluginWidget } from "./plugin-ext-widget";
-import { PluginFrontendViewContribution } from "./plugin-frontend-view-contribution";
+import { PluginWidget } from './plugin-ext-widget';
+import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
 
-import { HostedPluginInformer } from "../../hosted/browser/hosted-plugin-informer";
-import { HostedPluginController } from "./hosted-plugin-controller";
+import { HostedPluginInformer } from '../../hosted/browser/hosted-plugin-informer';
+import { HostedPluginController } from './hosted-plugin-controller';
 
 import '../../../src/main/browser/style/index.css';
-import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
+import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';

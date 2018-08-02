@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PluginDeployerEntry, PluginDeployerEntryType } from "../../common/plugin-protocol";
+import { PluginDeployerEntry, PluginDeployerEntryType } from '../../common/plugin-protocol';
 import * as fs from 'fs';
 
 export class PluginDeployerEntryImpl implements PluginDeployerEntry {
@@ -84,7 +84,7 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
         }
     }
     hasError(): boolean {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
 
     isResolved(): boolean {

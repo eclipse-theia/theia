@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from "inversify";
+import { injectable, inject, named } from 'inversify';
 import { Registry } from 'monaco-textmate';
-import { ILogger, DisposableCollection, ContributionProvider } from "@theia/core";
-import { FrontendApplicationContribution, isBasicWasmSupported } from "@theia/core/lib/browser";
-import { MonacoTextModelService } from "../monaco-text-model-service";
-import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from "./textmate-contribution";
-import { createTextmateTokenizer } from "./textmate-tokenizer";
-import { TextmateRegistry } from "./textmate-registry";
+import { ILogger, DisposableCollection, ContributionProvider } from '@theia/core';
+import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
+import { MonacoTextModelService } from '../monaco-text-model-service';
+import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
+import { createTextmateTokenizer } from './textmate-tokenizer';
+import { TextmateRegistry } from './textmate-registry';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
 export type OnigasmPromise = Promise<void>;

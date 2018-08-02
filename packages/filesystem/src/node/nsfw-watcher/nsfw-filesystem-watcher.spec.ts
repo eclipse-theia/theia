@@ -18,8 +18,8 @@ import * as temp from 'temp';
 import * as chai from 'chai';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
-import URI from "@theia/core/lib/common/uri";
-import { FileUri } from "@theia/core/lib/node";
+import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node';
 import { NsfwFileSystemWatcherServer } from './nsfw-filesystem-watcher';
 import { DidFilesChangedParams } from '../../common/filesystem-watcher-protocol';
 // tslint:disable:no-unused-expression
@@ -27,7 +27,7 @@ import { DidFilesChangedParams } from '../../common/filesystem-watcher-protocol'
 const expect = chai.expect;
 const track = temp.track();
 
-describe("nsfw-filesystem-watcher", function () {
+describe('nsfw-filesystem-watcher', function () {
 
     let root: URI;
     let watcherServer: NsfwFileSystemWatcherServer;
@@ -46,7 +46,7 @@ describe("nsfw-filesystem-watcher", function () {
         watcherServer.dispose();
     });
 
-    it("Should receive file changes events from in the workspace by default.", async function () {
+    it('Should receive file changes events from in the workspace by default.', async function () {
         if (process.platform === 'win32') {
             this.skip();
             return;
@@ -61,27 +61,27 @@ describe("nsfw-filesystem-watcher", function () {
         watcherServer.setClient(watcherClient);
 
         const expectedUris = [
-            root.resolve("foo").toString(),
+            root.resolve('foo').toString(),
             root.withPath(root.path.join('foo', 'bar')).toString(),
             root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString()
         ];
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
-        expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
+        fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
+        expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
-        expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
+        fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
+        expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
-        expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
+        fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
+        expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
         assert.deepEqual(expectedUris, [...actualUris]);
     });
 
-    it("Should not receive file changes events from in the workspace by default if unwatched", async function () {
+    it('Should not receive file changes events from in the workspace by default if unwatched', async function () {
         if (process.platform === 'win32') {
             this.skip();
             return;
@@ -98,16 +98,16 @@ describe("nsfw-filesystem-watcher", function () {
         /* Unwatch root */
         watcherServer.unwatchFileChanges(watcherId);
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
-        expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
+        fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
+        expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
-        expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
+        fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
+        expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
-        expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
+        fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
+        expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
         assert.deepEqual(0, actualUris.size);
@@ -125,6 +125,6 @@ describe("nsfw-filesystem-watcher", function () {
 
 });
 
-process.on("unhandledRejection", (reason: any) => {
-    console.error("Unhandled promise rejection: " + reason);
+process.on('unhandledRejection', (reason: any) => {
+    console.error('Unhandled promise rejection: ' + reason);
 });

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 
 // We export symbol name instead of symbol itself here because we need to provide
 // a contribution point to which any extensions could contribute.

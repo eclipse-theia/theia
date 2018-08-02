@@ -18,10 +18,10 @@ import {
     PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
     PluginDeployerEntryType
-} from "../../../common/plugin-protocol";
-import { injectable } from "inversify";
-import * as fs from "fs";
-import * as path from "path";
+} from '../../../common/plugin-protocol';
+import { injectable } from 'inversify';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @injectable()
 export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandler {

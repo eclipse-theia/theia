@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { TreeModelImpl, TreeNode } from "@theia/core/lib/browser";
-import { CallHierarchyTree, DefinitionNode } from "./callhierarchy-tree";
-import { CallHierarchyServiceProvider } from "../callhierarchy-service";
+import { injectable, inject } from 'inversify';
+import { TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
+import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
+import { CallHierarchyServiceProvider } from '../callhierarchy-service';
 import { Location } from 'vscode-languageserver-types';
 
 @injectable()

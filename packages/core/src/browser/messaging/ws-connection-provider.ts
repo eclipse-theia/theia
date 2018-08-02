@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, interfaces } from "inversify";
-import { createWebSocketConnection, Logger, ConsoleLogger } from "vscode-ws-jsonrpc/lib";
-import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from "../../common";
-import { WebSocketChannel } from "../../common/messaging/web-socket-channel";
-import { Endpoint } from "../endpoint";
+import { injectable, interfaces } from 'inversify';
+import { createWebSocketConnection, Logger, ConsoleLogger } from 'vscode-ws-jsonrpc/lib';
+import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from '../../common';
+import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { Endpoint } from '../endpoint';
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
 export interface WebSocketOptions {

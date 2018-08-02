@@ -21,11 +21,11 @@ import { Process, ProcessType, ProcessOptions } from './process';
 import { ChildProcess, spawn } from 'child_process';
 import * as stream from 'stream';
 
-export const RawProcessOptions = Symbol("RawProcessOptions");
+export const RawProcessOptions = Symbol('RawProcessOptions');
 export interface RawProcessOptions extends ProcessOptions {
 }
 
-export const RawProcessFactory = Symbol("RawProcessFactory");
+export const RawProcessFactory = Symbol('RawProcessFactory');
 export interface RawProcessFactory {
     (options: RawProcessOptions): RawProcess;
 }

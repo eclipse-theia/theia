@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from "inversify";
-import { MergeConflict } from "./merge-conflict";
-import { TextEditor, EditorManager, EditorWidget } from "@theia/editor/lib/browser";
-import { Emitter, Event } from "@theia/core";
-import { Deferred } from "@theia/core/lib/common/promise-util";
-import { MergeConflictsParser } from "./merge-conflicts-parser";
+import { inject, injectable, postConstruct } from 'inversify';
+import { MergeConflict } from './merge-conflict';
+import { TextEditor, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { Emitter, Event } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MergeConflictsParser } from './merge-conflicts-parser';
 
 import debounce = require('lodash.debounce');
 

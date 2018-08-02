@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as browser from "@theia/core/lib/browser";
+import * as browser from '@theia/core/lib/browser';
 
 const KeyCode = monaco.KeyCode;
 

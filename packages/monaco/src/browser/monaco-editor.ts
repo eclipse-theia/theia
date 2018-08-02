@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextEdit } from "monaco-languageclient";
-import { ElementExt } from "@phosphor/domutils";
-import URI from "@theia/core/lib/common/uri";
-import { DisposableCollection, Disposable, Emitter, Event } from "@theia/core/lib/common";
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextEdit } from 'monaco-languageclient';
+import { ElementExt } from '@phosphor/domutils';
+import URI from '@theia/core/lib/common/uri';
+import { DisposableCollection, Disposable, Emitter, Event } from '@theia/core/lib/common';
 import {
     Dimension,
     EditorManager,
@@ -32,7 +32,7 @@ import {
     DeltaDecorationParams,
     ReplaceTextParams,
 } from '@theia/editor/lib/browser';
-import { MonacoEditorModel } from "./monaco-editor-model";
+import { MonacoEditorModel } from './monaco-editor-model';
 
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions;
 import IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;
@@ -368,7 +368,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     }
 
     executeEdits(edits: TextEdit[]): boolean {
-        return this.editor.executeEdits("MonacoEditor", this.p2m.asTextEdits(edits) as IIdentifiedSingleEditOperation[]);
+        return this.editor.executeEdits('MonacoEditor', this.p2m.asTextEdits(edits) as IIdentifiedSingleEditOperation[]);
     }
 
 }

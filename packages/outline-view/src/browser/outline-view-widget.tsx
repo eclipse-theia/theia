@@ -24,11 +24,11 @@ import {
     ContextMenuRenderer,
     TreeModel,
     ExpandableTreeNode
-} from "@theia/core/lib/browser";
+} from '@theia/core/lib/browser';
 import { Message } from '@phosphor/messaging';
 import { Emitter } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
-import * as React from "react";
+import * as React from 'react';
 
 export interface OutlineSymbolInformationNode extends CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode {
     iconClass: string;
@@ -97,7 +97,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (OutlineSymbolInformationNode.is(node)) {
-            return <div className={"symbol-icon symbol-icon-center " + node.iconClass}></div>;
+            return <div className={'symbol-icon symbol-icon-center ' + node.iconClass}></div>;
         }
         // tslint:disable-next-line:no-null-keyword
         return null;

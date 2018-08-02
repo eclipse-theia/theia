@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '@theia/languages/lib/browser';
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_REACT_LANGUAGE_ID } from '../common';
 
@@ -59,8 +59,8 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         //     "**/jsconfig.*.json"
         // ];
         return [
-            "tsconfig.json",
-            "jsconfig.json"
+            'tsconfig.json',
+            'jsconfig.json'
         ];
     }
 

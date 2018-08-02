@@ -107,7 +107,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
 
     // tslint:disable-next-line:no-any
     $setError(error: Error): Promise<any> {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
 
     $input(options: InputBoxOptions, validateInput: boolean): Promise<string | undefined> {
@@ -154,16 +154,16 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
 
             let title;
             if (canSelectFiles && canSelectFolders) {
-                title = "Open";
+                title = 'Open';
             } else {
                 if (canSelectFiles) {
-                    title = "Open File";
+                    title = 'Open File';
                 } else {
-                    title = "Open Folder";
+                    title = 'Open Folder';
                 }
 
                 if (options.canSelectMany) {
-                    title += "(s)";
+                    title += '(s)';
                 }
             }
 

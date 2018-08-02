@@ -127,7 +127,7 @@ export class NavigationLocationUpdater {
 
     protected handleInside(candidate: NavigationLocation, endLine: number, endCharacter: number): NavigationLocation.Context {
         if (CursorLocation.is(candidate)) {
-            throw new Error(`Modifications are not allowed inside a cursor location.`);
+            throw new Error('Modifications are not allowed inside a cursor location.');
         }
         const { start } = NavigationLocation.range(candidate);
         const range = {

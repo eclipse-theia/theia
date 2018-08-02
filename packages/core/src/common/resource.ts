@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from "inversify";
-import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
-import URI from "../common/uri";
+import { injectable, inject, named } from 'inversify';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
+import URI from '../common/uri';
 import { ContributionProvider } from './contribution-provider';
-import { Event } from "./event";
-import { Disposable } from "./disposable";
-import { MaybePromise } from "./types";
-import { CancellationToken } from "./cancellation";
+import { Event } from './event';
+import { Disposable } from './disposable';
+import { MaybePromise } from './types';
+import { CancellationToken } from './cancellation';
 
 export interface Resource extends Disposable {
     readonly uri: URI;

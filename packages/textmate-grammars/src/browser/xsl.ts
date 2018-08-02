@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
-import { injectable } from "inversify";
+import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { injectable } from 'inversify';
 
 @injectable()
 export class XslContribution implements LanguageGrammarDefinitionContribution {
@@ -27,18 +27,18 @@ export class XslContribution implements LanguageGrammarDefinitionContribution {
         monaco.languages.register({
             id: this.id,
             extensions: [
-                ".xsl",
-                ".xslt"
+                '.xsl',
+                '.xslt'
             ],
-            aliases: ["XSL", "xsl"]
+            aliases: ['XSL', 'xsl']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: "",
-                blockComment: ["<!--", "-->"]
+                lineComment: '',
+                blockComment: ['<!--', '-->']
             },
             brackets: [
-                ["<", ">"]
+                ['<', '>']
             ]
         });
 

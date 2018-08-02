@@ -14,42 +14,42 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from "@theia/core/lib/browser/preferences";
-import { interfaces } from "inversify";
-import { CppBuildConfiguration } from "./cpp-build-configurations";
+import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
+import { interfaces } from 'inversify';
+import { CppBuildConfiguration } from './cpp-build-configurations';
 
 export const cppPreferencesSchema: PreferenceSchema = {
-    type: "object",
+    type: 'object',
     properties: {
-        "cpp.buildConfigurations": {
-            description: "List of build configurations",
-            type: "array",
+        'cpp.buildConfigurations': {
+            description: 'List of build configurations',
+            type: 'array',
             items: {
-                type: "object",
+                type: 'object',
                 properties: {
-                    "name": {
-                        type: "string"
+                    'name': {
+                        type: 'string'
                     },
-                    "directory": {
-                        type: "string"
+                    'directory': {
+                        type: 'string'
                     }
                 },
-                required: ["name", "directory"],
+                required: ['name', 'directory'],
             }
         },
-        "cpp.experimentalCommands": {
-            description: "Enable experimental commands mostly intended for Clangd developers.",
-            type: "boolean"
+        'cpp.experimentalCommands': {
+            description: 'Enable experimental commands mostly intended for Clangd developers.',
+            type: 'boolean'
         }
     }
 };
 
 export class CppConfiguration {
-    "cpp.buildConfigurations": CppBuildConfiguration[];
-    "cpp.experimentalCommands": boolean;
+    'cpp.buildConfigurations': CppBuildConfiguration[];
+    'cpp.experimentalCommands': boolean;
 }
 
-export const CppPreferences = Symbol("CppPreferences");
+export const CppPreferences = Symbol('CppPreferences');
 export type CppPreferences = PreferenceProxy<CppConfiguration>;
 
 export function createCppPreferences(preferences: PreferenceService): CppPreferences {

@@ -39,7 +39,7 @@ describe('search-service', function () {
 
     it('shall fuzzy search this spec file', async () => {
         const service = testContainer.get(FileSearchServiceImpl);
-        const rootUri = FileUri.create(path.resolve(__dirname, "..")).toString();
+        const rootUri = FileUri.create(path.resolve(__dirname, '..')).toString();
         const matches = await service.find('spc', { rootUri });
         const expectedFile = FileUri.create(__filename).displayName;
         const testFile = matches.find(e => e.endsWith(expectedFile));
@@ -58,7 +58,7 @@ describe('search-service', function () {
 
     it('shall cancel searches', async () => {
         const service = testContainer.get(FileSearchServiceImpl);
-        const rootUri = FileUri.create(path.resolve(__dirname, "../../../../..")).toString();
+        const rootUri = FileUri.create(path.resolve(__dirname, '../../../../..')).toString();
         const cancelTokenSource = new CancellationTokenSource();
         cancelTokenSource.cancel();
         const matches = await service.find('foo', { rootUri, fuzzyMatch: false }, cancelTokenSource.token);

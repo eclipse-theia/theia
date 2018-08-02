@@ -13,10 +13,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-export const MetricsContribution = Symbol("MetricsContribution");
+export const MetricsContribution = Symbol('MetricsContribution');
 export interface MetricsContribution {
     startCollecting(): void;
     getMetrics(): string;
 }
 
-export const MetricsProjectPath = Symbol("MetricsProjectPath");
+export const MetricsProjectPath = Symbol('MetricsProjectPath');

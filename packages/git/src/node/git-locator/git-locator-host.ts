@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { JsonRpcProxyFactory } from "@theia/core";
-import { IPCEntryPoint } from "@theia/core/lib/node/messaging/ipc-protocol";
-import { GitLocatorImpl } from "./git-locator-impl";
+import { JsonRpcProxyFactory } from '@theia/core';
+import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
+import { GitLocatorImpl } from './git-locator-impl';
 
 export default <IPCEntryPoint>(connection =>
     new JsonRpcProxyFactory(new GitLocatorImpl()).listen(connection)

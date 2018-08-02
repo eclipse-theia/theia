@@ -20,7 +20,7 @@ let disableJSDOM = enableJSDOM();
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 import { MarkdownPreviewHandler } from './markdown-preview-handler';
 
 disableJSDOM();
@@ -33,7 +33,7 @@ before(() => {
     previewHandler = new MarkdownPreviewHandler();
 });
 
-describe("markdown-preview-handler", () => {
+describe('markdown-preview-handler', () => {
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -43,12 +43,12 @@ describe("markdown-preview-handler", () => {
         disableJSDOM();
     });
 
-    it("renders html with line information", async () => {
+    it('renders html with line information', async () => {
         const contentElement = await previewHandler.renderContent({ content: exampleMarkdown1, originUri: new URI('') });
         expect(contentElement.innerHTML).equals(exampleHtml1);
     });
 
-    it("finds element for source line", () => {
+    it('finds element for source line', () => {
         document.body.innerHTML = exampleHtml1;
         const element = previewHandler.findElementForSourceLine(document.body, 4);
         expect(element).not.to.be.equal(undefined);
@@ -56,7 +56,7 @@ describe("markdown-preview-handler", () => {
         expect(element!.textContent).to.be.equal('License');
     });
 
-    it("finds previous element for empty source line", () => {
+    it('finds previous element for empty source line', () => {
         document.body.innerHTML = exampleHtml1;
         const element = previewHandler.findElementForSourceLine(document.body, 3);
         expect(element).not.to.be.equal(undefined);
@@ -64,7 +64,7 @@ describe("markdown-preview-handler", () => {
         expect(element!.textContent).that.startWith('Shows a preview of supported resources.');
     });
 
-    it("finds source line for offset in html", () => {
+    it('finds source line for offset in html', () => {
         mockOffsetProperties();
         document.body.innerHTML = exampleHtml1;
         for (const expectedLine of [0, 1, 4, 5]) {
@@ -73,7 +73,7 @@ describe("markdown-preview-handler", () => {
         }
     });
 
-    it("interpolates source lines for offset in html", () => {
+    it('interpolates source lines for offset in html', () => {
         mockOffsetProperties();
         document.body.innerHTML = exampleHtml1;
         const expectedLines = [1, 2, 3, 4];

@@ -14,22 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as fs from "fs";
-import * as nsfw from "vscode-nsfw";
-import * as paths from "path";
-import { IMinimatch, Minimatch } from "minimatch";
+import * as fs from 'fs';
+import * as nsfw from 'vscode-nsfw';
+import * as paths from 'path';
+import { IMinimatch, Minimatch } from 'minimatch';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FileUri } from "@theia/core/lib/node/file-uri";
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import {
     FileChangeType,
     FileSystemWatcherClient,
     FileSystemWatcherServer,
     WatchOptions
 } from '../../common/filesystem-watcher-protocol';
-import { FileChangeCollection } from "../file-change-collection";
-import { setInterval, clearInterval } from "timers";
+import { FileChangeCollection } from '../file-change-collection';
+import { setInterval, clearInterval } from 'timers';
 
-const debounce = require("lodash.debounce");
+const debounce = require('lodash.debounce');
 
 // tslint:disable:no-any
 

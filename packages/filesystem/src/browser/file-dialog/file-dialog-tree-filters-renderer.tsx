@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ReactRenderer } from "@theia/core/lib/browser/widgets/react-renderer";
+import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { FileDialogTree } from './file-dialog-tree';
 import * as React from 'react';
 

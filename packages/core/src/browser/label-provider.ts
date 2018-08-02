@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from "inversify";
-import * as fileIcons from "file-icons-js";
-import URI from "../common/uri";
+import { inject, injectable, named } from 'inversify';
+import * as fileIcons from 'file-icons-js';
+import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
 
@@ -94,7 +94,7 @@ export class LabelProvider {
         const contribs = this.findContribution(element);
         const contrib = contribs.find(c => c.getIcon !== undefined);
         if (!contrib) {
-            return "";
+            return '';
         }
         return contrib.getIcon!(element);
     }
@@ -103,7 +103,7 @@ export class LabelProvider {
         const contribs = this.findContribution(element);
         const contrib = contribs.find(c => c.getName !== undefined);
         if (!contrib) {
-            return "<unknown>";
+            return '<unknown>';
         }
         return contrib.getName!(element);
     }
@@ -112,7 +112,7 @@ export class LabelProvider {
         const contribs = this.findContribution(element);
         const contrib = contribs.find(c => c.getLongName !== undefined);
         if (!contrib) {
-            return "";
+            return '';
         }
         return contrib!.getLongName!(element);
     }

@@ -16,7 +16,7 @@
 
 import * as fs from 'fs';
 import * as Path from 'path';
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { git } from 'dugite-extra/lib/core/git';
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
@@ -418,7 +418,7 @@ export class DugiteGit implements Git {
         const repositoryPath = this.getFsPath(repository);
         const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
         if (r === undefined) {
-            this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
+            this.fail(repository, 'No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.');
         }
         return this.manager.run(repository, () =>
             fetch(repositoryPath, r!)
@@ -429,7 +429,7 @@ export class DugiteGit implements Git {
         const repositoryPath = this.getFsPath(repository);
         const currentRemote = await this.getDefaultRemote(repositoryPath, remote);
         if (currentRemote === undefined) {
-            this.fail(repository, `No configured push destination.`);
+            this.fail(repository, 'No configured push destination.');
         }
         const branch = await this.getCurrentBranch(repositoryPath, localBranch);
         const branchName = typeof branch === 'string' ? branch : branch.name;
@@ -457,7 +457,7 @@ export class DugiteGit implements Git {
         const repositoryPath = this.getFsPath(repository);
         const currentRemote = await this.getDefaultRemote(repositoryPath, remote);
         if (currentRemote === undefined) {
-            this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
+            this.fail(repository, 'No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.');
         }
         if (rebase) {
             const args = ['pull'];
@@ -648,7 +648,7 @@ export class DugiteGit implements Git {
         }
         const branch = await listBranch(repositoryPath, 'current');
         if (branch === undefined) {
-            return this.fail(repositoryPath, `No current branch.`);
+            return this.fail(repositoryPath, 'No current branch.');
         }
         if (Array.isArray(branch)) {
             return this.fail(repositoryPath, `Implementation error. Listing branch with the 'current' flag must return with single value. Was: ${branch}`);

@@ -19,9 +19,9 @@ import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode, MarkerRootNode } from '../marker-tree';
-import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel } from "@theia/core/lib/browser";
+import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel } from '@theia/core/lib/browser';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import * as React from "react";
+import * as React from 'react';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {

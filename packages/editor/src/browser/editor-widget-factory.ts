@@ -14,17 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, } from "inversify";
-import URI from "@theia/core/lib/common/uri";
+import { injectable, inject, } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common';
-import { WidgetFactory, LabelProvider } from "@theia/core/lib/browser";
-import { EditorWidget } from "./editor-widget";
-import { TextEditorProvider } from "./editor";
+import { WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
+import { EditorWidget } from './editor-widget';
+import { TextEditorProvider } from './editor';
 
 @injectable()
 export class EditorWidgetFactory implements WidgetFactory {
 
-    static ID = "code-editor-opener";
+    static ID = 'code-editor-opener';
 
     readonly id = EditorWidgetFactory.ID;
 
@@ -46,7 +46,7 @@ export class EditorWidgetFactory implements WidgetFactory {
         const icon = await this.labelProvider.getIcon(uri);
         return this.editorProvider(uri).then(textEditor => {
             const newEditor = new EditorWidget(textEditor, this.selectionService);
-            newEditor.id = this.id + ":" + uri.toString();
+            newEditor.id = this.id + ':' + uri.toString();
             newEditor.title.closable = true;
             newEditor.title.label = this.labelProvider.getName(uri);
             newEditor.title.iconClass = icon + ' file-icon';

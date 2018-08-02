@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { UriAwareCommandHandler } from '../common/uri-command-handler';
-import { SelectionService } from "../common/selection-service";
+import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
@@ -46,7 +46,7 @@ export namespace CommonMenus {
     export const VIEW_VIEWS = [...VIEW, '1_views'];
     export const VIEW_LAYOUT = [...VIEW, '2_layout'];
 
-    export const HELP = [...MAIN_MENU_BAR, "4_help"];
+    export const HELP = [...MAIN_MENU_BAR, '4_help'];
 
 }
 
@@ -397,81 +397,81 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         if (supportCut) {
             registry.registerKeybinding({
                 command: CommonCommands.CUT.id,
-                keybinding: "ctrlcmd+x"
+                keybinding: 'ctrlcmd+x'
             });
         }
         if (supportCopy) {
             registry.registerKeybinding({
                 command: CommonCommands.COPY.id,
-                keybinding: "ctrlcmd+c"
+                keybinding: 'ctrlcmd+c'
             });
         }
         if (supportPaste) {
             registry.registerKeybinding({
                 command: CommonCommands.PASTE.id,
-                keybinding: "ctrlcmd+v"
+                keybinding: 'ctrlcmd+v'
             });
         }
         registry.registerKeybindings(
             {
                 command: CommonCommands.UNDO.id,
-                keybinding: "ctrlcmd+z"
+                keybinding: 'ctrlcmd+z'
             },
             {
                 command: CommonCommands.REDO.id,
-                keybinding: "ctrlcmd+shift+z"
+                keybinding: 'ctrlcmd+shift+z'
             },
             {
                 command: CommonCommands.FIND.id,
-                keybinding: "ctrlcmd+f"
+                keybinding: 'ctrlcmd+f'
             },
             {
                 command: CommonCommands.REPLACE.id,
-                keybinding: "ctrlcmd+alt+f"
+                keybinding: 'ctrlcmd+alt+f'
             },
             {
                 command: CommonCommands.NEXT_TAB.id,
-                keybinding: "ctrlcmd+tab"
+                keybinding: 'ctrlcmd+tab'
             },
             {
                 command: CommonCommands.PREVIOUS_TAB.id,
-                keybinding: "ctrlcmd+shift+tab"
+                keybinding: 'ctrlcmd+shift+tab'
             },
             {
                 command: CommonCommands.CLOSE_TAB.id,
-                keybinding: "alt+w"
+                keybinding: 'alt+w'
             },
             {
                 command: CommonCommands.CLOSE_OTHER_TABS.id,
-                keybinding: "ctrlcmd+alt+t"
+                keybinding: 'ctrlcmd+alt+t'
             },
             {
                 command: CommonCommands.CLOSE_ALL_TABS.id,
-                keybinding: "alt+shift+w"
+                keybinding: 'alt+shift+w'
             },
             {
                 command: CommonCommands.COLLAPSE_PANEL.id,
-                keybinding: "alt+c"
+                keybinding: 'alt+c'
             },
             {
                 command: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
-                keybinding: "ctrlcmd+j",
+                keybinding: 'ctrlcmd+j',
             },
             {
                 command: CommonCommands.COLLAPSE_ALL_PANELS.id,
-                keybinding: "alt+shift+c",
+                keybinding: 'alt+shift+c',
             },
             {
                 command: CommonCommands.SAVE.id,
-                keybinding: "ctrlcmd+s"
+                keybinding: 'ctrlcmd+s'
             },
             {
                 command: CommonCommands.SAVE_ALL.id,
-                keybinding: "ctrlcmd+alt+s"
+                keybinding: 'ctrlcmd+alt+s'
             },
             {
                 command: CommonCommands.QUIT.id,
-                keybinding: "ctrlcmd+q"
+                keybinding: 'ctrlcmd+q'
             }
         );
     }

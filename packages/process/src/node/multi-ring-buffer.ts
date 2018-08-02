@@ -188,7 +188,7 @@ export class MultiRingBuffer {
             return undefined;
         }
 
-        let buffer = "";
+        let buffer = '';
         const maxDeqSize = this.sizeForReader(id);
         const wrapped = this.isWrapped(pos, this.head);
 

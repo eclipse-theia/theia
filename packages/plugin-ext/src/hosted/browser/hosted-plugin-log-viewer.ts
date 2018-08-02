@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
-import { OutputChannel, OutputChannelManager } from "@theia/output/lib/common/output-channel";
-import { OutputContribution } from "@theia/output/lib/browser/output-contribution";
-import { HostedPluginWatcher } from "./hosted-plugin-watcher";
-import { LogPart } from "../../common/types";
+import { injectable, inject, postConstruct } from 'inversify';
+import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
+import { HostedPluginWatcher } from './hosted-plugin-watcher';
+import { LogPart } from '../../common/types';
 
 @injectable()
 export class HostedPluginLogViewer {

@@ -97,7 +97,7 @@ export class DirtyDiffManager {
         return <DirtyDiffModel.PreviousFileRevision>{
             fileUri,
             getContents: async (staged: boolean) => {
-                const query = staged ? "" : "HEAD";
+                const query = staged ? '' : 'HEAD';
                 const uri = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(query);
                 const gitResource = await this.gitResourceResolver.getResource(uri);
                 return gitResource.readContents();
@@ -150,18 +150,18 @@ export class DirtyDiffModel implements Disposable {
 
     protected async handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): Promise<void> {
         const { preferenceName, newValue } = event;
-        if (preferenceName === "git.editor.decorations.enabled") {
+        if (preferenceName === 'git.editor.decorations.enabled') {
             const enabled = !!newValue;
             this.enabled = enabled;
             this.update();
         }
-        if (preferenceName === "git.editor.dirtydiff.linesLimit") {
+        if (preferenceName === 'git.editor.dirtydiff.linesLimit') {
             this.update();
         }
     }
 
     protected get linesLimit(): number {
-        const limit = this.preferences["git.editor.dirtydiff.linesLimit"];
+        const limit = this.preferences['git.editor.dirtydiff.linesLimit'];
         return limit > 0 ? limit : Number.MAX_SAFE_INTEGER;
     }
 

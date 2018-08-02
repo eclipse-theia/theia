@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
-import { bindElectronBackend } from "./hosted/node-electron/plugin-ext-hosted-electron-backend-module";
+import { ContainerModule } from 'inversify';
+import { bindElectronBackend } from './hosted/node-electron/plugin-ext-hosted-electron-backend-module';
 
 export default new ContainerModule(bind => {
     bindElectronBackend(bind);

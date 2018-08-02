@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as request from "request";
+import * as request from 'request';
 import { NodePackage } from '@theia/application-package';
 
 export function search(query: string, from?: number, size?: number): Promise<NodePackage[]> {

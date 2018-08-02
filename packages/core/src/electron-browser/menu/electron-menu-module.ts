@@ -15,17 +15,17 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution } from "../../common";
+import { CommandContribution, MenuContribution } from '../../common';
 import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution, KeybindingContext } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
-import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
-import { ElectronMenuContribution } from "./electron-menu-contribution";
+import { ElectronContextMenuRenderer } from './electron-context-menu-renderer';
+import { ElectronMenuContribution } from './electron-menu-contribution';
 
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(ElectronContextMenuRenderer).inSingletonScope();
     bind(KeybindingContext).toConstantValue({
-        id: "theia.context",
+        id: 'theia.context',
         isEnabled: true
     });
 
