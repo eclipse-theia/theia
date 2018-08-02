@@ -66,6 +66,15 @@
         }
       ]
     },
+    "quotemark": {
+      "options": [
+        true,
+        "single",
+        "jsx-single",
+        "avoid-escape",
+        "avoid-template"
+      ]
+    },
     "radix": false,
     "semicolon": [
       true,
