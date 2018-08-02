@@ -33,6 +33,7 @@ import { ClojureContribution } from "./clojure";
 import { CoffeescriptContribution } from "./coffeescript";
 import { CSharpContribution } from "./csharp";
 import { CssContribution } from "./css";
+import { DockerContribution } from "./docker";
 import { HtmlContribution } from "./html";
 import { LessContribution } from "./less";
 import { MarkdownContribution } from "./markdown";
@@ -58,6 +59,9 @@ export default new ContainerModule(bind => {
 
     bind(CssContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
+
+    bind(DockerContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(DockerContribution);
 
     bind(HtmlContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(HtmlContribution);
