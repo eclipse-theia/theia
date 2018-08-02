@@ -21,6 +21,7 @@
 
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
+import * as net from 'net';
 import * as WebSocket from 'ws';
 import { injectable, inject } from "inversify";
 import { ILogger, DisposableCollection, Disposable } from "@theia/core";
@@ -76,6 +77,17 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     protected readonly processManager: ProcessManager;
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
+
+        // If debugServer is set in the debug configuration, connect to that port for debugging
+        if (executable.debugServer) {
+            const socket = net.createConnection(executable.debugServer, '127.0.0.1');
+            return {
+                input: socket,
+                output: socket,
+                dispose: () => socket.end()
+            };
+        }
+
         const process = this.spawnProcess(executable);
 
         return {
