@@ -17,11 +17,8 @@
 import { injectable } from 'inversify';
 import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
+import { parseArgs } from '@theia/process/lib/node/utils';
 
-/**
- * IF you have python on your machine, `pyls` can be installed with the following command:
- * `pip install `
- */
 @injectable()
 export class PythonContribution extends BaseLanguageServerContribution {
 
@@ -29,18 +26,21 @@ export class PythonContribution extends BaseLanguageServerContribution {
     readonly name = PYTHON_LANGUAGE_NAME;
 
     start(clientConnection: IConnection): void {
-        const command = 'pyls';
-        const args: string[] = [
-        ];
+        let command = 'python';
+        let args = ['-m', 'pyls'];
+        const pythonLsCommand = process.env.PYTHON_LS_COMMAND;
+        if (pythonLsCommand) {
+            command = pythonLsCommand;
+            args = parseArgs(process.env.PYTHON_LS_ARGS || "");
+        }
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
 
     protected onDidFailSpawnProcess(error: Error): void {
         super.onDidFailSpawnProcess(error);
-        console.error('Error starting python language server.');
-        console.error('Please make sure it is installed on your system.');
-        console.error("Use the following command: 'pip install python-language-server'");
+        console.error('Python language server cannot be started.');
+        console.error("Make sure `pyls` is installed: e.g. `pip install 'python-language-server[all]'`");
     }
 
 }
