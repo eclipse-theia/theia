@@ -13,13 +13,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { TextEditorConfiguration, TextEditorsMain, TextEditorConfigurationUpdate, SingleEditOperation, Range as ApiRange } from "../api/plugin-api";
-import { Selection, Range, TextEditorLineNumbersStyle, SnippetString, Position, TextEditorRevealType, EndOfLine } from "./types-impl";
-import * as theia from "@theia/plugin";
-import { DocumentDataExt } from "./document-data";
+import { TextEditorConfiguration, TextEditorsMain, TextEditorConfigurationUpdate, SingleEditOperation, Range as ApiRange } from '../api/plugin-api';
+import { Selection, Range, TextEditorLineNumbersStyle, SnippetString, Position, TextEditorRevealType, EndOfLine } from './types-impl';
+import * as theia from '@theia/plugin';
+import { DocumentDataExt } from './document-data';
 import { readonly, illegalArgument } from '../common/errors';
-import { TextEditorCursorStyle } from "../common/editor-options";
-import { ok } from "../common/assert";
+import { TextEditorCursorStyle } from '../common/editor-options';
+import { ok } from '../common/assert';
 import * as Converter from './type-converters';
 
 export class TextEditorExt implements theia.TextEditor {

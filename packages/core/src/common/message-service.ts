@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { MessageClient, MessageType, MessageOptions } from "./message-service-protocol";
+import { injectable, inject } from 'inversify';
+import { MessageClient, MessageType, MessageOptions } from './message-service-protocol';
 
 @injectable()
 export class MessageService {

@@ -14,18 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import {
     BaseLanguageClientContribution, LanguageClientFactory,
     LanguageClientOptions,
     ILanguageClient
 } from '@theia/languages/lib/browser';
-import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from "@theia/languages/lib/browser";
+import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from '@theia/languages/lib/browser';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
-import { CppBuildConfigurationManager, CppBuildConfiguration } from "./cpp-build-configurations";
-import { CppBuildConfigurationsStatusBarElement } from "./cpp-build-configurations-statusbar-element";
+import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
+import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
 
 /**
  * Clangd extension to set clangd-specific "initializationOptions" in the
@@ -103,13 +103,13 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig());
 
         clientOptions.initializationFailedHandler = () => {
-            const READ_INSTRUCTIONS_ACTION = "Read Instructions";
-            const ERROR_MESSAGE = "Error starting C/C++ language server. " +
+            const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
+            const ERROR_MESSAGE = 'Error starting C/C++ language server. ' +
                 "Please make sure 'clangd' is installed on your system. " +
-                "You can refer to the clangd page for instructions.";
+                'You can refer to the clangd page for instructions.';
             this.messageService.error(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION).then(selected => {
                 if (READ_INSTRUCTIONS_ACTION === selected) {
-                    window.open("https://clang.llvm.org/extra/clangd.html");
+                    window.open('https://clang.llvm.org/extra/clangd.html');
                 }
             });
             this.logger.error(ERROR_MESSAGE);

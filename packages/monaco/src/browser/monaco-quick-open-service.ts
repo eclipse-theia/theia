@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenOptions,
     QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
-} from "@theia/core/lib/browser";
+} from '@theia/core/lib/browser';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ILogger } from '@theia/core';
 
@@ -173,7 +173,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
     }
 
     getModel(lookFor: string): monaco.quickOpen.QuickOpenModel {
-        throw new Error("getModel not supported!");
+        throw new Error('getModel not supported!');
     }
 
     onType(lookFor: string, acceptor: (model: monaco.quickOpen.QuickOpenModel) => void): void {

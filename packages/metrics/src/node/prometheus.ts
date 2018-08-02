@@ -18,7 +18,7 @@ export function toPrometheusValidName(name: string): string {
     /* Make sure that start of name is valid and respect [a-zA-Z_:] */
     const validFirstCharString = name.replace(/(^[^a-zA-Z_:]+)/gi, '');
     /* Make sure that rest of the name respect [a-zA-Z0-9_:]* */
-    const validPrometheusName = validFirstCharString.replace(/([^a-zA-Z0-9_:])/gi, "_");
+    const validPrometheusName = validFirstCharString.replace(/([^a-zA-Z0-9_:])/gi, '_');
     return validPrometheusName;
 }
 

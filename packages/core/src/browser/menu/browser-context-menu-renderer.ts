@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import { MenuPath } from '../../common/menu';
-import { ContextMenuRenderer, Anchor } from "../context-menu-renderer";
-import { BrowserMainMenuFactory } from "./browser-menu-plugin";
+import { ContextMenuRenderer, Anchor } from '../context-menu-renderer';
+import { BrowserMainMenuFactory } from './browser-menu-plugin';
 
 @injectable()
 export class BrowserContextMenuRenderer implements ContextMenuRenderer {

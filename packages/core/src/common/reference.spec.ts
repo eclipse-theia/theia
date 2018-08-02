@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as assert from "assert";
+import * as assert from 'assert';
 import { ReferenceCollection } from './reference';
-import { Disposable } from "./disposable";
+import { Disposable } from './disposable';
 
 describe('reference', () => {
 
@@ -27,17 +27,17 @@ describe('reference', () => {
                 expectation.disposed = true;
             }
         }));
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
         assert.deepEqual(references.keys(), []);
 
-        const reference = await references.acquire("a");
-        assert.ok(references.has("a"));
+        const reference = await references.acquire('a');
+        assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ["a"]);
+        assert.deepEqual(references.keys(), ['a']);
 
         reference.dispose();
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(expectation.disposed);
         assert.deepEqual(references.keys(), []);
     });
@@ -49,23 +49,23 @@ describe('reference', () => {
                 expectation.disposed = true;
             }
         }));
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
         assert.deepEqual(references.keys(), []);
 
-        const reference = await references.acquire("a");
-        const reference2 = await references.acquire("a");
-        assert.ok(references.has("a"));
+        const reference = await references.acquire('a');
+        const reference2 = await references.acquire('a');
+        assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ["a"]);
+        assert.deepEqual(references.keys(), ['a']);
 
         reference.dispose();
-        assert.ok(references.has("a"));
+        assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ["a"]);
+        assert.deepEqual(references.keys(), ['a']);
 
         reference2.dispose();
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(expectation.disposed);
         assert.deepEqual(references.keys(), []);
     });
@@ -77,18 +77,18 @@ describe('reference', () => {
                 expectation.disposed = true;
             }
         }));
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
         assert.deepEqual(references.keys(), []);
 
-        await references.acquire("a");
-        const reference = await references.acquire("a");
-        assert.ok(references.has("a"));
+        await references.acquire('a');
+        const reference = await references.acquire('a');
+        assert.ok(references.has('a'));
         assert.ok(!expectation.disposed);
-        assert.deepEqual(references.keys(), ["a"]);
+        assert.deepEqual(references.keys(), ['a']);
 
         reference.object.dispose();
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(expectation.disposed);
         assert.deepEqual(references.keys(), []);
     });
@@ -99,25 +99,25 @@ describe('reference', () => {
             key, dispose: () => {
             }
         }));
-        assert.ok(!references.has("a"));
+        assert.ok(!references.has('a'));
         assert.ok(!expectation.disposed);
         references.onWillDispose(e => {
             expectation.disposed = true;
         });
-        await references.acquire("a");
+        await references.acquire('a');
         assert.ok(!expectation.disposed);
 
-        const reference = await references.acquire("a");
+        const reference = await references.acquire('a');
         reference.object.dispose();
         assert.ok(expectation.disposed);
     });
 
-    it("the same object should be provided by an async factory for the same key", async () => {
+    it('the same object should be provided by an async factory for the same key', async () => {
         const references = new ReferenceCollection<string, Disposable>(async key => ({
             key, dispose: () => {
             }
         }));
-        const result = await Promise.all([...Array(10).keys()].map(() => references.acquire("a")));
+        const result = await Promise.all([...Array(10).keys()].map(() => references.acquire('a')));
         result.forEach(v => assert.ok(result[0].object === v.object));
     });
 

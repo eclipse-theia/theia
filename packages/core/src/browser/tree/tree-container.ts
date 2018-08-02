@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { interfaces, Container } from 'inversify';
-import { TreeWidget, TreeProps, defaultTreeProps } from "./tree-widget";
-import { TreeModelImpl, TreeModel } from "./tree-model";
-import { TreeImpl, Tree } from "./tree";
-import { TreeSelectionService } from "./tree-selection";
+import { TreeWidget, TreeProps, defaultTreeProps } from './tree-widget';
+import { TreeModelImpl, TreeModel } from './tree-model';
+import { TreeImpl, Tree } from './tree';
+import { TreeSelectionService } from './tree-selection';
 import { TreeSelectionServiceImpl } from './tree-selection-impl';
-import { TreeExpansionService, TreeExpansionServiceImpl } from "./tree-expansion";
+import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
 

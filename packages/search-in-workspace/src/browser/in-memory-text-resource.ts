@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { ResourceResolver, Resource } from "@theia/core";
-import URI from "@theia/core/lib/common/uri";
+import { injectable } from 'inversify';
+import { ResourceResolver, Resource } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
 
-export const MEMORY_TEXT = "mem-txt";
+export const MEMORY_TEXT = 'mem-txt';
 
 export class InMemoryTextResource implements Resource {
 

@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from "@theia/plugin-ext";
-import { injectable } from "inversify";
-import * as os from "os";
-import * as path from "path";
+import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from '@theia/plugin-ext';
+import { injectable } from 'inversify';
+import * as os from 'os';
+import * as path from 'path';
 
 @injectable()
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
@@ -28,7 +28,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     }
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
-        return resolvedPlugin.isFile() && resolvedPlugin.path() !== null && resolvedPlugin.path().endsWith(".vsix");
+        return resolvedPlugin.isFile() && resolvedPlugin.path() !== null && resolvedPlugin.path().endsWith('.vsix');
     }
 
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {

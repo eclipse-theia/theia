@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PluginDeployerResolver, PluginDeployerResolverContext } from "@theia/plugin-ext";
-import { injectable } from "inversify";
-import * as request from "request";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
+import { PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext';
+import { injectable } from 'inversify';
+import * as request from 'request';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 /**
  * Resolver that handle the vscode: protocol
@@ -62,11 +62,11 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
             const wantedExtensionVersion = null;
 
             const json = {
-                "filters": [{
-                    "criteria": [{ "filterType": 7, "value": extensionName }], "pageNumber": 1,
-                    "pageSize": 1, "sortBy": 0, "sortOrder": 0
-                }], "assetTypes": ["Microsoft.VisualStudio.Services.VSIXPackage"],
-                "flags": 131
+                'filters': [{
+                    'criteria': [{ 'filterType': 7, 'value': extensionName }], 'pageNumber': 1,
+                    'pageSize': 1, 'sortBy': 0, 'sortOrder': 0
+                }], 'assetTypes': ['Microsoft.VisualStudio.Services.VSIXPackage'],
+                'flags': 131
             };
 
             const options = {

@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, postConstruct, } from "inversify";
-import URI from "@theia/core/lib/common/uri";
+import { injectable, postConstruct, } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
-import { WidgetOpenHandler, WidgetOpenerOptions } from "@theia/core/lib/browser";
-import { EditorWidget } from "./editor-widget";
-import { Range, Position } from "./editor";
-import { EditorWidgetFactory } from "./editor-widget-factory";
+import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { EditorWidget } from './editor-widget';
+import { Range, Position } from './editor';
+import { EditorWidgetFactory } from './editor-widget-factory';
 
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
@@ -31,7 +31,7 @@ export class EditorManager extends WidgetOpenHandler<EditorWidget> {
 
     readonly id = EditorWidgetFactory.ID;
 
-    readonly label = "Code Editor";
+    readonly label = 'Code Editor';
 
     protected readonly onActiveEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
     /**

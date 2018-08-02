@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { Disposable } from "@theia/core/lib/common";
-import { Key } from "@theia/core/lib/browser";
-import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from "@theia/core/lib/browser";
+import { Disposable } from '@theia/core/lib/common';
+import { Key } from '@theia/core/lib/browser';
+import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer } from '../location';
 import { FileDialogModel } from './file-dialog-model';

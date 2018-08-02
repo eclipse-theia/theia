@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { KnownProps } from "editorconfig";
+import { KnownProps } from 'editorconfig';
 
 export const editorconfigServicePath = '/services/editorconfig';
 
-export const EditorconfigService = Symbol("EditorconfigService");
+export const EditorconfigService = Symbol('EditorconfigService');
 export interface EditorconfigService {
 
     /**

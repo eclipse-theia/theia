@@ -85,6 +85,6 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
     }
 
     getIcon(uri: URI): string {
-        return `fa fa-columns`;
+        return 'fa fa-columns';
     }
 }

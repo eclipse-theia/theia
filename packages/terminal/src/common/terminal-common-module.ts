@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
-import { ILogger } from "@theia/core";
+import { interfaces } from 'inversify';
+import { ILogger } from '@theia/core';
 
 /**
  * Create the bindings common to node and browser.

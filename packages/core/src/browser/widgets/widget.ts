@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, decorate, unmanaged } from "inversify";
-import { Widget } from "@phosphor/widgets";
-import { Message } from "@phosphor/messaging";
+import { injectable, decorate, unmanaged } from 'inversify';
+import { Widget } from '@phosphor/widgets';
+import { Message } from '@phosphor/messaging';
 import { Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keys';
 
@@ -25,8 +25,8 @@ import PerfectScrollbar from 'perfect-scrollbar';
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
 
-export * from "@phosphor/widgets";
-export * from "@phosphor/messaging";
+export * from '@phosphor/widgets';
+export * from '@phosphor/messaging';
 
 export const DISABLED_CLASS = 'theia-mod-disabled';
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';

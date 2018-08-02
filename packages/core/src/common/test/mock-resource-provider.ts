@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import URI from "../../common/uri";
+import URI from '../../common/uri';
 import { Resource } from '../resource';
 
 @injectable()
@@ -27,7 +27,7 @@ export class MockResourceProvider {
         return await {
             uri: new URI(''),
             dispose() { },
-            readContents(options?: { encoding?: string }): Promise<string> { return Promise.resolve(""); }
+            readContents(options?: { encoding?: string }): Promise<string> { return Promise.resolve(''); }
         };
     }
 }

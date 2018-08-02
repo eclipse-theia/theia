@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import {
     QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenService,
     OpenerService, KeybindingRegistry, Keybinding
@@ -24,7 +24,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
 import { CancellationTokenSource } from '@theia/core/lib/common';
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Command } from '@theia/core/lib/common';
 
 export const quickFileOpen: Command = {
@@ -64,14 +64,14 @@ export class QuickFileOpenService implements QuickOpenModel {
     /**
      * The current lookFor string input by the user.
      */
-    protected currentLookFor: string = "";
+    protected currentLookFor: string = '';
 
     isEnabled(): boolean {
         return this.wsRoot !== undefined;
     }
 
     open(): void {
-        let placeholderText = "File name to search.";
+        let placeholderText = 'File name to search.';
         const keybinding = this.getKeyCommand();
         if (keybinding) {
             placeholderText += ` (Press ${keybinding} to show/hide ignored files)`;
@@ -83,7 +83,7 @@ export class QuickFileOpenService implements QuickOpenModel {
             this.hideIgnoredFiles = !this.hideIgnoredFiles;
         } else {
             this.hideIgnoredFiles = true;
-            this.currentLookFor = "";
+            this.currentLookFor = '';
             this.isOpen = true;
         }
 

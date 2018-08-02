@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TerminalOptions } from "@theia/plugin";
-import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from "../../api/plugin-api";
-import { interfaces } from "inversify";
-import { TerminalService } from "@theia/terminal/lib/browser/base/terminal-service";
-import { TerminalWidget, TerminalWidgetOptions } from "@theia/terminal/lib/browser/base/terminal-widget";
-import { RPCProtocol } from "../../api/rpc-protocol";
-import { ApplicationShell } from "@theia/core/lib/browser";
+import { TerminalOptions } from '@theia/plugin';
+import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { interfaces } from 'inversify';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { RPCProtocol } from '../../api/rpc-protocol';
+import { ApplicationShell } from '@theia/core/lib/browser';
 
 /**
  * Plugin api service allows working with terminal emulator.
@@ -32,7 +32,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
     protected readonly terminals = new Map<number, TerminalWidget>();
     private readonly extProxy: TerminalServiceExt;
     private terminalNumber = 0;
-    private readonly TERM_ID_PREFIX = "plugin-terminal-";
+    private readonly TERM_ID_PREFIX = 'plugin-terminal-';
 
     constructor(container: interfaces.Container, rpc: RPCProtocol) {
         this.terminalService = container.get(TerminalService);
@@ -61,7 +61,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
                 this.extProxy.$terminalClosed(id);
             });
         } catch (error) {
-            throw new Error("Failed to create terminal. Cause: " + error);
+            throw new Error('Failed to create terminal. Cause: ' + error);
         }
         return id;
     }

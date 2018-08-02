@@ -27,7 +27,7 @@ import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorSearch } from './navigator-search';
 import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
-import * as React from "react";
+import * as React from 'react';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';

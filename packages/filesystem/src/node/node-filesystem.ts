@@ -218,7 +218,7 @@ export class FileSystemNode implements FileSystem {
             throw FileSystemError.FileNotFound(sourceUri);
         }
         if (targetStat && !overwrite) {
-            throw FileSystemError.FileExists(targetUri, `Did you set the 'overwrite' flag to true?`);
+            throw FileSystemError.FileExists(targetUri, "Did you set the 'overwrite' flag to true?");
         }
         await fs.copy(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { overwrite, recursive });
         const newStat = await this.doGetStat(_targetUri, 1);
@@ -233,7 +233,7 @@ export class FileSystemNode implements FileSystem {
         const parentUri = _uri.parent;
         const [stat, parentStat] = await Promise.all([this.doGetStat(_uri, 0), this.doGetStat(parentUri, 0)]);
         if (stat) {
-            throw FileSystemError.FileExists(uri, `Error occurred while creating the file.`);
+            throw FileSystemError.FileExists(uri, 'Error occurred while creating the file.');
         }
         if (!parentStat) {
             await fs.mkdirs(FileUri.fsPath(parentUri));
@@ -245,21 +245,21 @@ export class FileSystemNode implements FileSystem {
         if (newStat) {
             return newStat;
         }
-        throw FileSystemError.FileNotFound(uri, `Error occurred while creating the file.`);
+        throw FileSystemError.FileNotFound(uri, 'Error occurred while creating the file.');
     }
 
     async createFolder(uri: string): Promise<FileStat> {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (stat) {
-            throw FileSystemError.FileExists(uri, `Error occurred while creating the directory.`);
+            throw FileSystemError.FileExists(uri, 'Error occurred while creating the directory.');
         }
         await fs.mkdirs(FileUri.fsPath(_uri));
         const newStat = await this.doGetStat(_uri, 1);
         if (newStat) {
             return newStat;
         }
-        throw FileSystemError.FileNotFound(uri, `Error occurred while creating the directory.`);
+        throw FileSystemError.FileNotFound(uri, 'Error occurred while creating the directory.');
     }
 
     async touchFile(uri: string): Promise<FileStat> {

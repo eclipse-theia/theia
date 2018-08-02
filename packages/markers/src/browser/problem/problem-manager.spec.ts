@@ -17,7 +17,7 @@
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { ProblemManager } from './problem-manager';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { Event } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -52,7 +52,7 @@ before(() => {
                     character: 1
                 }
             },
-            message: "Foo"
+            message: 'Foo'
         },
         {
             range: {
@@ -65,7 +65,7 @@ before(() => {
                     character: 1
                 }
             },
-            message: "Bar"
+            message: 'Bar'
         }
     ]);
 
@@ -81,7 +81,7 @@ before(() => {
                     character: 1
                 }
             },
-            message: "Foo"
+            message: 'Foo'
         },
         {
             range: {
@@ -94,7 +94,7 @@ before(() => {
                     character: 2
                 }
             },
-            message: "Bar"
+            message: 'Bar'
         }
     ]);
 });
@@ -118,7 +118,7 @@ describe('problem-manager', () => {
                         character: 1
                     }
                 },
-                message: "Foo"
+                message: 'Foo'
             },
             {
                 range: {
@@ -131,7 +131,7 @@ describe('problem-manager', () => {
                         character: 1
                     }
                 },
-                message: "Bar"
+                message: 'Bar'
             }
         ]);
         expect(previous.length).equal(2);

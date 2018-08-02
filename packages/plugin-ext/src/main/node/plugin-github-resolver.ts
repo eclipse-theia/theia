@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
-import * as request from "request";
-import { PluginDeployerResolver, PluginDeployerResolverContext } from "../../common";
+import { injectable } from 'inversify';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import * as request from 'request';
+import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../common';
 
 /**
  * Resolver that handle the github: protocol
@@ -62,7 +62,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
             const file = extracted[3];
 
             // get version if any
-            const splitFile = file.split("@");
+            const splitFile = file.split('@');
             let version;
             let filename: string;
             if (splitFile.length === 1) {
@@ -87,14 +87,14 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
                     if (response.statusCode === 302) {
                         const redirectLocation = response.headers.location;
                         if (!redirectLocation) {
-                            reject("Invalid github link with latest not being found");
+                            reject('Invalid github link with latest not being found');
                             return;
                         }
 
                         // parse redirect link
                         const taggedValueArray = /^https:\/\/.*tag\/(.*)/gm.exec(redirectLocation);
                         if (!taggedValueArray || taggedValueArray.length !== 2) {
-                            reject("The redirect link for latest is invalid " + redirectLocation);
+                            reject('The redirect link for latest is invalid ' + redirectLocation);
                             return;
                         }
 

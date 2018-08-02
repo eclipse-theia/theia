@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { named, injectable, inject } from "inversify";
-import URI from "../common/uri";
-import { ContributionProvider, Prioritizeable, MaybePromise } from "../common";
+import { named, injectable, inject } from 'inversify';
+import URI from '../common/uri';
+import { ContributionProvider, Prioritizeable, MaybePromise } from '../common';
 
 export interface OpenerOptions {
 }
 
-export const OpenHandler = Symbol("OpenHandler");
+export const OpenHandler = Symbol('OpenHandler');
 /**
  * `OpenHandler` should be implemented to provide a new opener.
  */
@@ -54,7 +54,7 @@ export interface OpenHandler {
     open(uri: URI, options?: OpenerOptions): MaybePromise<object | undefined>;
 }
 
-export const OpenerService = Symbol("OpenerService");
+export const OpenerService = Symbol('OpenerService');
 /**
  * `OpenerService` provide an access to existing openers.
  */

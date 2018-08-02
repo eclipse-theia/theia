@@ -14,6 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import mainModule from "./main/browser/plugin-ext-frontend-module";
+import mainModule from './main/browser/plugin-ext-frontend-module';
 
 export default mainModule;

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import {
     CommandContribution,
     Command,
@@ -30,7 +30,7 @@ import {
 import { WidgetManager } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
-import { TerminalKeybindingContexts } from "./terminal-keybinding-contexts";
+import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 
@@ -71,7 +71,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
-            keybinding: "ctrl+`"
+            keybinding: 'ctrl+`'
         });
 
         /* Register passthrough keybindings for combinations recognized by
@@ -153,7 +153,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             // selectAll on OSX
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keybinding: "ctrlcmd+a",
+                keybinding: 'ctrlcmd+a',
                 context: TerminalKeybindingContexts.terminalActive
             });
         }

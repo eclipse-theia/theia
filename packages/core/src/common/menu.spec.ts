@@ -16,7 +16,7 @@
 
 import { CommandContribution, CommandRegistry } from './command';
 import { CompositeMenuNode, MenuContribution, MenuModelRegistry } from './menu';
-import * as chai from "chai";
+import * as chai from 'chai';
 
 const expect = chai.expect;
 
@@ -24,11 +24,11 @@ describe('menu-model-registry', () => {
 
     describe('01 #register', () => {
         it('Should allow to register menu actions.', () => {
-            const fileMenu = ["main", "File"];
-            const fileOpenMenu = [...fileMenu, "0_open"];
+            const fileMenu = ['main', 'File'];
+            const fileOpenMenu = [...fileMenu, '0_open'];
             const service = createMenuRegistry({
                 registerMenus(menuRegistry: MenuModelRegistry): void {
-                    menuRegistry.registerSubmenu(fileMenu, "File");
+                    menuRegistry.registerSubmenu(fileMenu, 'File');
                     menuRegistry.registerMenuAction(fileOpenMenu, {
                         commandId: 'open'
                     });
@@ -40,22 +40,22 @@ describe('menu-model-registry', () => {
                     registerCommands(reg: CommandRegistry) {
                         reg.registerCommand({
                             id: 'open',
-                            label: "A"
+                            label: 'A'
                         });
                         reg.registerCommand({
                             id: 'open.with',
-                            label: "B"
+                            label: 'B'
                         });
                     }
                 });
             const all = service.getMenu();
             const main = all.children[0] as CompositeMenuNode;
             expect(main.children.length).equals(1);
-            expect(main.id, "main");
+            expect(main.id, 'main');
             expect(all.children.length).equals(1);
             const file = main.children[0] as CompositeMenuNode;
             expect(file.children.length).equals(1);
-            expect(file.label, "File");
+            expect(file.label, 'File');
             const openGroup = file.children[0] as CompositeMenuNode;
             expect(openGroup.children.length).equals(2);
             // tslint:disable-next-line:no-unused-expression

@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { WidgetFactory, FrontendApplication } from "@theia/core/lib/browser";
+import { injectable, inject } from 'inversify';
+import { WidgetFactory, FrontendApplication } from '@theia/core/lib/browser';
 import { ExtensionManager } from '../common';
-import { ExtensionUri } from "./extension-uri";
+import { ExtensionUri } from './extension-uri';
 import { ExtensionDetailWidget } from './extension-detail-widget';
 
 export class ExtensionWidgetOptions {

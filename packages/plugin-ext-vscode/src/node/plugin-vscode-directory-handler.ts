@@ -18,10 +18,10 @@ import {
     PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
     PluginDeployerEntryType
-} from "@theia/plugin-ext";
-import { injectable } from "inversify";
-import * as fs from "fs";
-import * as path from "path";
+} from '@theia/plugin-ext';
+import { injectable } from 'inversify';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @injectable()
 export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHandler {
@@ -66,7 +66,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
         }
 
         if (packageJson.engines && packageJson.engines.vscode) {
-            console.log("accepting packagejson with engines", packageJson.engines);
+            console.log('accepting packagejson with engines', packageJson.engines);
             return true;
         }
 

@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import Uri from "vscode-uri";
-import URI from "../common/uri";
+import Uri from 'vscode-uri';
+import URI from '../common/uri';
 
 export namespace FileUri {
 

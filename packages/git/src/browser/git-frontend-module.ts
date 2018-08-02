@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { ResourceResolver } from "@theia/core/lib/common";
+import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, WidgetFactory, bindViewContribution, LabelProviderContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
 import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';

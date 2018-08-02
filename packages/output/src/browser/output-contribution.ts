@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { OUTPUT_WIDGET_KIND, OutputWidget } from "./output-widget";
+import { OUTPUT_WIDGET_KIND, OutputWidget } from './output-widget';
 
 @injectable()
 export class OutputContribution extends AbstractViewContribution<OutputWidget> {

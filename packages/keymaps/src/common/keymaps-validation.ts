@@ -13,8 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Keybinding } from "@theia/core/lib/browser";
-import * as jsoncparser from "jsonc-parser";
+import { Keybinding } from '@theia/core/lib/browser';
+import * as jsoncparser from 'jsonc-parser';
 import * as ajv from 'ajv';
 
 export class ValidationError extends Error {
@@ -22,22 +22,22 @@ export class ValidationError extends Error {
 }
 
 export const keymapsSchema = {
-    type: "array",
+    type: 'array',
     items: {
-        type: "object",
+        type: 'object',
         properties: {
             keybinding: {
-                type: "string"
+                type: 'string'
             },
             command: {
-                type: "string"
+                type: 'string'
             },
             context: {
-                type: "string"
+                type: 'string'
             },
         },
-        required: ["command", "keybinding"],
-        optional: ["context"],
+        required: ['command', 'keybinding'],
+        optional: ['context'],
         additionalProperties: false,
     }
 };

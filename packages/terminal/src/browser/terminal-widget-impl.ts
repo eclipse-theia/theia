@@ -16,18 +16,18 @@
 
 import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
-import { inject, injectable, named, postConstruct } from "inversify";
+import { inject, injectable, named, postConstruct } from 'inversify';
 import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop } from '@theia/core/lib/browser';
-import { WorkspaceService } from "@theia/workspace/lib/browser";
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { ThemeService } from "@theia/core/lib/browser/theming";
+import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
-import { Deferred } from "@theia/core/lib/common/promise-util";
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -56,7 +56,7 @@ interface TerminalCSSProperties {
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
-    private readonly TERMINAL = "Terminal";
+    private readonly TERMINAL = 'Terminal';
     private readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected terminalId: number;
     protected term: Xterm.Terminal;
@@ -71,7 +71,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
-    @inject("terminal-dom-id") public readonly id: string;
+    @inject('terminal-dom-id') public readonly id: string;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -79,7 +79,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected init(): void {
         this.title.caption = this.options.title || this.TERMINAL;
         this.title.label = this.options.title || this.TERMINAL;
-        this.title.iconClass = "fa fa-terminal";
+        this.title.iconClass = 'fa fa-terminal';
 
         if (this.options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>
@@ -88,7 +88,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
 
         this.title.closable = true;
-        this.addClass("terminal-container");
+        this.addClass('terminal-container');
 
         /* Read CSS properties from the page and apply them to the terminal.  */
         const cssProps = this.getCSSPropertiesFromPage();
@@ -123,12 +123,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId }) => {
             if (terminalId === this.terminalId) {
-                this.title.label = "<terminal error>";
+                this.title.label = '<terminal error>';
             }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
-                this.title.label = "<terminated>";
+                this.title.label = '<terminated>';
                 this.onTermDidClose.fire(this);
                 this.onTermDidClose.dispose();
             }
@@ -224,7 +224,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (IBaseTerminalServer.validateId(this.terminalId)) {
             return this.terminalId;
         }
-        throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : `.`));
+        throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : '.'));
     }
 
     protected async attachTerminal(id: number): Promise<number> {
@@ -255,7 +255,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (IBaseTerminalServer.validateId(terminalId)) {
             return terminalId;
         }
-        throw new Error("Error creating terminal widget, see the backend error log for more information.");
+        throw new Error('Error creating terminal widget, see the backend error log for more information.');
     }
 
     processMessage(msg: Message): void {
@@ -312,7 +312,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected connectTerminalProcess(): void {
-        if (typeof this.terminalId !== "number") {
+        if (typeof this.terminalId !== 'number') {
             return;
         }
         this.toDisposeOnConnect.dispose();
@@ -334,7 +334,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }, { reconnecting: false });
     }
     protected async reconnectTerminalProcess(): Promise<void> {
-        if (typeof this.terminalId === "number") {
+        if (typeof this.terminalId === 'number') {
             await this.start(this.terminalId);
         }
     }
@@ -356,7 +356,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     dispose(): void {
         /* Close the backend terminal only when explicitly closing the terminal
          * a refresh for example won't close it.  */
-        if (this.closeOnDispose === true && typeof this.terminalId === "number") {
+        if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
             this.shellTerminalServer.close(this.terminalId);
             this.onTermDidClose.fire(this);
             this.onTermDidClose.dispose();
@@ -372,7 +372,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected resizeTerminalProcess(): void {
-        if (typeof this.terminalId !== "number") {
+        if (typeof this.terminalId !== 'number') {
             return;
         }
         const { cols, rows } = this.term;

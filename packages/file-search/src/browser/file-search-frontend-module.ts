@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule, interfaces } from 'inversify';
-import { CommandContribution } from "@theia/core/lib/common";
+import { CommandContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, KeybindingContribution } from '@theia/core/lib/browser';
 import { QuickFileOpenFrontendContribution } from './quick-file-open-contribution';
 import { QuickFileOpenService } from './quick-file-open';

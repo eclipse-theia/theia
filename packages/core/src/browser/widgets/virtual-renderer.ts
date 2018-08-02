@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
+import { h, VirtualNode, VirtualText, VirtualDOM } from '@phosphor/virtualdom';
 
 /*
  * @deprecated use ReactRenderer instead. VirtualRenderer will be removed with the next major release.
@@ -68,14 +68,14 @@ export namespace VirtualRenderer {
         if (!children) {
             return null;
         }
-        if (typeof children === "string") {
+        if (typeof children === 'string') {
             return new VirtualText(children);
         }
         if (children instanceof Array) {
             const nodes: VirtualNode[] = [];
             for (const child of children) {
                 if (child) {
-                    const node = typeof child === "string" ? new VirtualText(child) : child;
+                    const node = typeof child === 'string' ? new VirtualText(child) : child;
                     nodes.push(node);
                 }
             }

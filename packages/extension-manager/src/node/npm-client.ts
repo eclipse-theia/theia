@@ -16,7 +16,7 @@
 
 import * as cp from 'child_process';
 import { injectable, inject } from 'inversify';
-import { cmd, CMD, ILogger, CancellationToken, checkCancelled, cancelled, Disposable } from "@theia/core";
+import { cmd, CMD, ILogger, CancellationToken, checkCancelled, cancelled, Disposable } from '@theia/core';
 
 @injectable()
 export class NpmClientOptions {

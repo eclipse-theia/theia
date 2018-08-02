@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from "inversify";
+import { inject, injectable, named } from 'inversify';
 import { ContributionProvider, ILogger } from '../../common';
 
-export const PreferenceContribution = Symbol("PreferenceContribution");
+export const PreferenceContribution = Symbol('PreferenceContribution');
 export interface PreferenceContribution {
     readonly schema: PreferenceSchema;
 }
 
-export const PreferenceSchema = Symbol("PreferenceSchema");
+export const PreferenceSchema = Symbol('PreferenceSchema');
 
 export interface PreferenceSchema {
     [name: string]: Object,
@@ -57,7 +57,7 @@ export class PreferenceSchemaProvider {
         this.preferenceContributions.getContributions().forEach(contrib => {
             for (const property in contrib.schema) {
                 if (this.combinedSchema.properties[property]) {
-                    this.logger.error("Preference name collision detected in the schema for property: " + property);
+                    this.logger.error('Preference name collision detected in the schema for property: ' + property);
                 } else {
                     this.combinedSchema.properties[property] = contrib.schema.properties[property];
                 }

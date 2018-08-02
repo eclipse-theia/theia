@@ -27,7 +27,7 @@ process.on('unhandledRejection', (reason, promise) => {
 const args = require('yargs').help(false).argv;
 const noCluster = args['cluster'] === false;
 const isMaster = !noCluster && cluster.isMaster;
-const development = process.env.NODE_ENV === "development";
+const development = process.env.NODE_ENV === 'development';
 
 if (isMaster && development) {
     // https://github.com/Microsoft/vscode/issues/3201

@@ -21,7 +21,7 @@ const expect = chai.expect;
 
 // tslint:disable:no-unused-expression
 
-describe("Prometheus helper module", () => {
+describe('Prometheus helper module', () => {
     /* According to https://prometheus.io/docs/concepts/data_model/ */
 
     const validName = 'theia_extension3242-:';
@@ -29,7 +29,7 @@ describe("Prometheus helper module", () => {
     const validTheiaName = 'theia_something';
     const invalidName2 = '@theia/?$%^ ';
 
-    it("Should correctly validate a metric name", () => {
+    it('Should correctly validate a metric name', () => {
         expect(PROMETHEUS_REGEXP.test(validName)).to.be.true;
 
         expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).to.be.false;
@@ -38,7 +38,7 @@ describe("Prometheus helper module", () => {
 
     });
 
-    it("Should correctly return a valid name from an otherwise invalid prometheus string", () => {
+    it('Should correctly return a valid name from an otherwise invalid prometheus string', () => {
         expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).to.be.false;
 
         const newName = toPrometheusValidName(invalidTheiaName);

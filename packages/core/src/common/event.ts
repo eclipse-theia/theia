@@ -16,7 +16,7 @@
 
 // tslint:disable:no-any
 
-import { Disposable } from "./disposable";
+import { Disposable } from './disposable';
 
 /**
  * Represents a typed event.

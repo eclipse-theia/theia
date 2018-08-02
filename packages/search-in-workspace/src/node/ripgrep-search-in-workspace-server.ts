@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient } from "../common/search-in-workspace-interface";
-import { ILogger } from "@theia/core";
-import { inject, injectable } from "inversify";
+import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient } from '../common/search-in-workspace-interface';
+import { ILogger } from '@theia/core';
+import { inject, injectable } from 'inversify';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
-import { rgPath } from "vscode-ripgrep";
+import { rgPath } from 'vscode-ripgrep';
 
 @injectable()
 export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
@@ -54,26 +54,26 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
-        const args = ["--vimgrep", "--color=always",
-            "--colors=path:none",
-            "--colors=line:none",
-            "--colors=column:none",
-            "--colors=match:none",
-            "--colors=path:fg:red",
-            "--colors=line:fg:green",
-            "--colors=column:fg:yellow",
-            "--colors=match:fg:blue",
-            "--sort-files",
-            "--max-count=100",
-            "--max-columns=250"];
-        args.push(options && options.matchCase ? "--case-sensitive" : "--ignore-case");
+        const args = ['--vimgrep', '--color=always',
+            '--colors=path:none',
+            '--colors=line:none',
+            '--colors=column:none',
+            '--colors=match:none',
+            '--colors=path:fg:red',
+            '--colors=line:fg:green',
+            '--colors=column:fg:yellow',
+            '--colors=match:fg:blue',
+            '--sort-files',
+            '--max-count=100',
+            '--max-columns=250'];
+        args.push(options && options.matchCase ? '--case-sensitive' : '--ignore-case');
         if (options && options.matchWholeWord) {
-            args.push("--word-regexp");
+            args.push('--word-regexp');
         }
         if (options && options.includeIgnored) {
-            args.push("-uu");
+            args.push('-uu');
         }
-        args.push(options && options.useRegExp ? "--regexp" : "--fixed-strings");
+        args.push(options && options.useRegExp ? '--regexp' : '--fixed-strings');
         return args;
     }
 
@@ -87,14 +87,14 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const globs = [];
         if (opts && opts.include) {
             for (const include of opts.include) {
-                if (include !== "") {
+                if (include !== '') {
                     globs.push('--glob=**/' + include);
                 }
             }
         }
         if (opts && opts.exclude) {
             for (const exclude of opts.exclude) {
-                if (exclude !== "") {
+                if (exclude !== '') {
                     globs.push('--glob=!**/' + exclude);
                 }
             }
@@ -125,7 +125,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         let numResults = 0;
 
         // Buffer to accumulate incoming output.
-        let databuf: string = "";
+        let databuf: string = '';
 
         const lastMatch = {
             file: '',
@@ -301,10 +301,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private wrapUpSearch(searchId: number, error?: string) {
         if (this.ongoingSearches.delete(searchId)) {
             if (this.client) {
-                this.logger.debug("Sending onDone for " + searchId, error);
+                this.logger.debug('Sending onDone for ' + searchId, error);
                 this.client.onDone(searchId, error);
             } else {
-                this.logger.debug("Wrapping up search " + searchId + " but no client");
+                this.logger.debug('Wrapping up search ' + searchId + ' but no client');
             }
         } else {
             this.logger.debug("Trying to wrap up a search we don't know about " + searchId);

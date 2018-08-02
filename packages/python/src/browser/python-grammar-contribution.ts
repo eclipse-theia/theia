@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
-import { injectable } from "inversify";
-import { PYTHON_LANGUAGE_ID } from "../common";
+import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { injectable } from 'inversify';
+import { PYTHON_LANGUAGE_ID } from '../common';
 
 @injectable()
 export class PythonGrammarContribution implements LanguageGrammarDefinitionContribution {
@@ -47,8 +47,8 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
         ],
         folding: {
             markers: {
-                start: new RegExp("^\\s*#pragma\\s+region\\b"),
-                end: new RegExp("^\\s*#pragma\\s+endregion\\b")
+                start: new RegExp('^\\s*#pragma\\s+region\\b'),
+                end: new RegExp('^\\s*#pragma\\s+endregion\\b')
             }
         },
         onEnterRules: [
@@ -62,9 +62,9 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: PYTHON_LANGUAGE_ID,
-            extensions: [".py", ".rpy", ".pyw", ".cpy", ".gyp", ".gypi", ".snakefile", ".smk"],
-            aliases: ["Python", "py"],
-            firstLine: "^#!\\s*/.*\\bpython[0-9.-]*\\b",
+            extensions: ['.py', '.rpy', '.pyw', '.cpy', '.gyp', '.gypi', '.snakefile', '.smk'],
+            aliases: ['Python', 'py'],
+            firstLine: '^#!\\s*/.*\\bpython[0-9.-]*\\b',
         });
 
         monaco.languages.setLanguageConfiguration(PYTHON_LANGUAGE_ID, this.config);

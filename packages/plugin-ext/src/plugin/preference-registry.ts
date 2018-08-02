@@ -155,7 +155,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     throw new Error(`TypeError: Cannot define property '${prop}' of a readonly object`);
                 },
                 setPrototypeOf: (targ: any) => {
-                    throw new Error(`TypeError: Cannot set prototype for a readonly object`);
+                    throw new Error('TypeError: Cannot set prototype for a readonly object');
                 },
                 isExtensible: () => false,
                 preventExtensions: () => true

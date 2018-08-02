@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_NAME } from "../common";
-import { injectable } from "inversify";
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
+import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_NAME } from '../common';
+import { injectable } from 'inversify';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 
 @injectable()
 export class TypescriptGrammarContribution implements LanguageGrammarDefinitionContribution {
@@ -35,11 +35,11 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
 
         registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_LANGUAGE_ID, 'source.ts');
         registry.registerGrammarConfiguration(TYPESCRIPT_LANGUAGE_ID, {
-            "tokenTypes": {
-                "entity.name.type.instance.jsdoc": 0,
-                "entity.name.function.tagged-template": 0,
-                "meta.import string.quoted": 0,
-                "variable.other.jsdoc": 0
+            'tokenTypes': {
+                'entity.name.type.instance.jsdoc': 0,
+                'entity.name.function.tagged-template': 0,
+                'meta.import string.quoted': 0,
+                'variable.other.jsdoc': 0
             }
         });
 
@@ -61,14 +61,14 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             id: TYPESCRIPT_LANGUAGE_ID,
             aliases: [
                 TYPESCRIPT_LANGUAGE_NAME,
-                "typescript",
-                "ts"
+                'typescript',
+                'ts'
             ],
             extensions: [
-                ".ts"
+                '.ts'
             ],
             mimetypes: [
-                "text/typescript"
+                'text/typescript'
             ]
         });
 
@@ -80,10 +80,10 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             id: TYPESCRIPT_REACT_LANGUAGE_ID,
             aliases: [
                 TYPESCRIPT_REACT_LANGUAGE_NAME,
-                "tsx"
+                'tsx'
             ],
             extensions: [
-                ".tsx"
+                '.tsx'
             ]
         });
         monaco.languages.onLanguage(TYPESCRIPT_REACT_LANGUAGE_ID, () => {
@@ -92,36 +92,36 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
     }
 
     protected configuration: monaco.languages.LanguageConfiguration = {
-        "comments": {
-            "lineComment": "//",
-            "blockComment": ["/*", "*/"]
+        'comments': {
+            'lineComment': '//',
+            'blockComment': ['/*', '*/']
         },
-        "brackets": [
-            ["{", "}"],
-            ["[", "]"],
-            ["(", ")"]
+        'brackets': [
+            ['{', '}'],
+            ['[', ']'],
+            ['(', ')']
         ],
-        "autoClosingPairs": [
-            { "open": "{", "close": "}" },
-            { "open": "[", "close": "]" },
-            { "open": "(", "close": ")" },
-            { "open": "'", "close": "'", "notIn": ["string", "comment"] },
-            { "open": "\"", "close": "\"", "notIn": ["string"] },
-            { "open": "`", "close": "`", "notIn": ["string", "comment"] },
-            { "open": "/**", "close": " */", "notIn": ["string"] }
+        'autoClosingPairs': [
+            { 'open': '{', 'close': '}' },
+            { 'open': '[', 'close': ']' },
+            { 'open': '(', 'close': ')' },
+            { 'open': "'", 'close': "'", 'notIn': ['string', 'comment'] },
+            { 'open': '"', 'close': '"', 'notIn': ['string'] },
+            { 'open': '`', 'close': '`', 'notIn': ['string', 'comment'] },
+            { 'open': '/**', 'close': ' */', 'notIn': ['string'] }
         ],
-        "surroundingPairs": [
-            { "open": "{", "close": "}" },
-            { "open": "[", "close": "]" },
-            { "open": "(", "close": ")" },
-            { "open": "'", "close": "'" },
-            { "open": "\"", "close": "\"" },
-            { "open": "`", "close": "`" }
+        'surroundingPairs': [
+            { 'open': '{', 'close': '}' },
+            { 'open': '[', 'close': ']' },
+            { 'open': '(', 'close': ')' },
+            { 'open': "'", 'close': "'" },
+            { 'open': '"', 'close': '"' },
+            { 'open': '`', 'close': '`' }
         ],
-        "folding": {
-            "markers": {
-                "start": new RegExp("^\\s*//\\s*#?region\\b"),
-                "end": new RegExp("^\\s*//\\s*#?endregion\\b")
+        'folding': {
+            'markers': {
+                'start': new RegExp('^\\s*//\\s*#?region\\b'),
+                'end': new RegExp('^\\s*//\\s*#?endregion\\b')
             }
         }
     };

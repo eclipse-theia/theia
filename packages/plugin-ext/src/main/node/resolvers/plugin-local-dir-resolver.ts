@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PluginDeployerResolver, PluginDeployerResolverContext } from "../../../common/plugin-protocol";
-import { injectable } from "inversify";
-import * as fs from "fs";
-import * as path from "path";
+import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../common/plugin-protocol';
+import { injectable } from 'inversify';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @injectable()
 export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResolver {
@@ -37,7 +37,7 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
 
         // check directory exists
         if (!fs.existsSync(dirPath)) {
-            throw new Error("The directory referenced by " + pluginResolverContext.getOriginId() + " does not exist.");
+            throw new Error('The directory referenced by ' + pluginResolverContext.getOriginId() + ' does not exist.');
 
         }
         // list all stuff from this directory

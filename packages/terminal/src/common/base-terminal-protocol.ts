@@ -27,7 +27,7 @@ export interface IBaseTerminalServer extends JsonRpcServer<IBaseTerminalClient> 
 }
 export namespace IBaseTerminalServer {
     export function validateId(id?: number): boolean {
-        return typeof id === "number" && id !== -1;
+        return typeof id === 'number' && id !== -1;
     }
 }
 

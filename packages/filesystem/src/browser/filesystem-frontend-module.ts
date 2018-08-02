@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { FileSystem, fileSystemPath } from "../common";
+import { FileSystem, fileSystemPath } from '../common';
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
@@ -27,7 +27,7 @@ import { FileSystemListener } from './filesystem-listener';
 import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemWatcher } from './filesystem-watcher';
 
-import "../../src/browser/style/index.css";
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);

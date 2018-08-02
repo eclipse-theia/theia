@@ -15,15 +15,15 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
-import { EditorTextFocusContext, StrictEditorTextFocusContext } from "./editor-keybinding-contexts";
-import { EditorKeybindingContribution } from "./editor-keybinding";
+import { EditorTextFocusContext, StrictEditorTextFocusContext } from './editor-keybinding-contexts';
+import { EditorKeybindingContribution } from './editor-keybinding';
 import { bindEditorPreferences } from './editor-preferences';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { EditorNavigationContribution } from './editor-navigation-contribution';

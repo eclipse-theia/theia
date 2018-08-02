@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from "inversify";
+import { injectable, inject, named } from 'inversify';
 import { Disposable } from './disposable';
 import { CommandRegistry } from './command';
 import { ContributionProvider } from './contribution-provider';
@@ -30,14 +30,14 @@ export type MenuPath = string[];
 
 export const MAIN_MENU_BAR: MenuPath = ['menubar'];
 
-export const MenuContribution = Symbol("MenuContribution");
+export const MenuContribution = Symbol('MenuContribution');
 export interface MenuContribution {
     registerMenus(menus: MenuModelRegistry): void;
 }
 
 @injectable()
 export class MenuModelRegistry {
-    protected readonly root = new CompositeMenuNode("");
+    protected readonly root = new CompositeMenuNode('');
 
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
@@ -59,7 +59,7 @@ export class MenuModelRegistry {
 
     registerSubmenu(menuPath: MenuPath, label: string): Disposable {
         if (menuPath.length === 0) {
-            throw new Error("The sub menu path cannot be empty.");
+            throw new Error('The sub menu path cannot be empty.');
         }
         const index = menuPath.length - 1;
         const menuId = menuPath[index];

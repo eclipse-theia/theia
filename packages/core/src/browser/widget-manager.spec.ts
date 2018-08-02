@@ -54,9 +54,9 @@ before(() => {
     widgetManager = testContainer.get(WidgetManager);
 });
 
-describe("widget-manager", () => {
+describe('widget-manager', () => {
 
-    it("creates and caches widgets", async () => {
+    it('creates and caches widgets', async () => {
         const wA = await widgetManager.getOrCreateWidget('test', 'widgetA');
         const wB = await widgetManager.getOrCreateWidget('test', 'widgetB');
         expect(wA).not.equals(wB);

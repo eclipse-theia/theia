@@ -68,7 +68,7 @@ export class TaskServerImpl implements TaskServer {
     }
 
     protected fireTaskExitedEvent(event: TaskExitedEvent) {
-        this.logger.debug(log => log(`task has exited:`, event));
+        this.logger.debug(log => log('task has exited:', event));
 
         this.clients.forEach(client => {
             client.onTaskExit(event);
@@ -76,7 +76,7 @@ export class TaskServerImpl implements TaskServer {
     }
 
     protected fireTaskCreatedEvent(event: TaskInfo) {
-        this.logger.debug(log => log(`task created:`, event));
+        this.logger.debug(log => log('task created:', event));
 
         this.clients.forEach(client => {
             client.onTaskCreated(event);
@@ -97,13 +97,13 @@ export class TaskServerImpl implements TaskServer {
 
     /** Adds a client to this server */
     setClient(client: TaskClient) {
-        this.logger.debug(`a client has connected - adding it to the list:`);
+        this.logger.debug('a client has connected - adding it to the list:');
         this.clients.push(client);
     }
 
     /** Removes a client, from this server */
     disconnectClient(client: TaskClient) {
-        this.logger.debug(`a client has disconnected - removed from list:`);
+        this.logger.debug('a client has disconnected - removed from list:');
         const idx = this.clients.indexOf(client);
         if (idx > -1) {
             this.clients.splice(idx, 1);

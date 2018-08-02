@@ -24,7 +24,7 @@ import {
 } from '@theia/core/lib/common';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { FrontendApplication } from '@theia/core/lib/browser';
-import { CommonMenus } from "@theia/core/lib/browser/common-frontend-contribution";
+import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { keymapsUri } from './keymaps-service';
 export namespace KeymapsCommands {

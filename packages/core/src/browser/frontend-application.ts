@@ -18,7 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { ContributionProvider, CommandRegistry, MenuModelRegistry, ILogger, isOSX } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
-import { Widget } from "./widgets";
+import { Widget } from './widgets';
 import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
@@ -27,7 +27,7 @@ import { preventNavigation, parseCssTime } from './browser';
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
  */
-export const FrontendApplicationContribution = Symbol("FrontendApplicationContribution");
+export const FrontendApplicationContribution = Symbol('FrontendApplicationContribution');
 export interface FrontendApplicationContribution {
 
     /**

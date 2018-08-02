@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from "path";
-import { injectable, inject } from "inversify";
-import { JsonRpcProxyFactory, ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from "@theia/core";
-import { IPCConnectionProvider } from "@theia/core/lib/node/messaging";
-import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, ReconnectingFileSystemWatcherServer } from "../common/filesystem-watcher-protocol";
+import * as path from 'path';
+import { injectable, inject } from 'inversify';
+import { JsonRpcProxyFactory, ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '@theia/core';
+import { IPCConnectionProvider } from '@theia/core/lib/node/messaging';
+import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, ReconnectingFileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
 
 export const NSFW_WATCHER = 'nsfw-watcher';
 

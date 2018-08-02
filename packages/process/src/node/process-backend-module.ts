@@ -18,7 +18,7 @@ import { ContainerModule, Container } from 'inversify';
 import { RawProcess, RawProcessOptions, RawProcessFactory } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { ProcessManager } from "./process-manager";
+import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
 import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
 

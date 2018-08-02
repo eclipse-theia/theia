@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { DirtyDiffManager } from './dirty-diff-manager';
 import { DirtyDiffDecorator } from './dirty-diff-decorator';
 

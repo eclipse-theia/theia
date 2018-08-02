@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { MessageService } from "@theia/core";
+import { injectable, inject } from 'inversify';
+import { MessageService } from '@theia/core';
 
 @injectable()
 export class GitErrorHandler {

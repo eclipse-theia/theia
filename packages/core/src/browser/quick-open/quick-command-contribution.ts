@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { QuickCommandService } from './quick-command-service';
 import { Command, CommandRegistry, CommandContribution } from '../../common';
-import { KeybindingRegistry, KeybindingContribution } from "../keybinding";
+import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 
 export const quickCommand: Command = {
     id: 'quickCommand',
@@ -39,11 +39,11 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: quickCommand.id,
-            keybinding: "f1"
+            keybinding: 'f1'
         });
         keybindings.registerKeybinding({
             command: quickCommand.id,
-            keybinding: "ctrlcmd+shift+p"
+            keybinding: 'ctrlcmd+shift+p'
         });
     }
 

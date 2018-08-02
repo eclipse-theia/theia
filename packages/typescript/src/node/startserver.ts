@@ -18,4 +18,4 @@
 
 // uncomment to run against repo checked out next to theia
 // require("./../../../../../typescript-language-server/lib/cli");
-require("typescript-language-server/lib/cli");
+require('typescript-language-server/lib/cli');

@@ -14,26 +14,26 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
-import { Message } from "@phosphor/messaging";
-import { Disposable, MenuPath } from "../../common";
-import { Key, KeyCode, KeyModifier } from "../keys";
-import { ContextMenuRenderer } from "../context-menu-renderer";
+import { injectable, inject, postConstruct } from 'inversify';
+import { Message } from '@phosphor/messaging';
+import { Disposable, MenuPath } from '../../common';
+import { Key, KeyCode, KeyModifier } from '../keys';
+import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
-import { SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget } from "../widgets";
-import { TreeNode, CompositeTreeNode } from "./tree";
-import { TreeModel } from "./tree-model";
-import { ExpandableTreeNode } from "./tree-expansion";
-import { SelectableTreeNode, TreeSelection } from "./tree-selection";
-import { TreeDecoration, TreeDecoratorService } from "./tree-decorator";
+import { SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget } from '../widgets';
+import { TreeNode, CompositeTreeNode } from './tree';
+import { TreeModel } from './tree-model';
+import { ExpandableTreeNode } from './tree-expansion';
+import { SelectableTreeNode, TreeSelection } from './tree-selection';
+import { TreeDecoration, TreeDecoratorService } from './tree-decorator';
 import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
-import { ReactWidget } from "../widgets/react-widget";
+import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
 import { List, ListRowRenderer } from 'react-virtualized';
-import { TopDownTreeIterator } from "./tree-iterator";
+import { TopDownTreeIterator } from './tree-iterator';
 
-const debounce = require("lodash.debounce");
+const debounce = require('lodash.debounce');
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';

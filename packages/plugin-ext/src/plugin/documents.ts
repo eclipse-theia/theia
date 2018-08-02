@@ -13,16 +13,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain } from "../api/plugin-api";
-import URI from "vscode-uri";
+import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain } from '../api/plugin-api';
+import URI from 'vscode-uri';
 import { UriComponents } from '../common/uri-components';
-import { RPCProtocol } from "../api/rpc-protocol";
+import { RPCProtocol } from '../api/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
-import { DocumentDataExt } from "./document-data";
-import { EditorsAndDocumentsExtImpl } from "./editors-and-documents";
+import { DocumentDataExt } from './document-data';
+import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
-import { DisposableCollection } from "@theia/core/lib/common/disposable";
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class DocumentsExtImpl implements DocumentsExt {
     private toDispose = new DisposableCollection();

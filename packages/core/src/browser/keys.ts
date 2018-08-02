@@ -84,7 +84,7 @@ export namespace KeySequence {
 
     export function parse(keybinding: string): KeySequence {
         const keyCodes = [];
-        const rawKeyCodes = keybinding.split(" ");
+        const rawKeyCodes = keybinding.split(' ');
         for (const rawKeyCode of rawKeyCodes) {
             const keyCode = KeyCode.parse(rawKeyCode);
             if (keyCode !== undefined) {
@@ -99,15 +99,15 @@ export namespace KeySequence {
      * For example ['ctrlcmd p', 'ctrlcmd k'].  The character used between
      * keys can be overriden using `separator`.
      */
-    export function acceleratorFor(keySequence: KeySequence, separator: string = " "): string[] {
+    export function acceleratorFor(keySequence: KeySequence, separator: string = ' '): string[] {
         const result: string[] = [];
         for (const keyCode of keySequence) {
-            let keyCodeResult = "";
+            let keyCodeResult = '';
             let previous = false;
 
             if (keyCode.meta && isOSX) {
                 if (isOSX) {
-                    keyCodeResult += "Cmd";
+                    keyCodeResult += 'Cmd';
                     previous = true;
                 }
             }
@@ -116,7 +116,7 @@ export namespace KeySequence {
                 if (previous) {
                     keyCodeResult += separator;
                 }
-                keyCodeResult += "Ctrl";
+                keyCodeResult += 'Ctrl';
                 previous = true;
             }
 
@@ -124,7 +124,7 @@ export namespace KeySequence {
                 if (previous) {
                     keyCodeResult += separator;
                 }
-                keyCodeResult += "Alt";
+                keyCodeResult += 'Alt';
                 previous = true;
             }
 
@@ -132,7 +132,7 @@ export namespace KeySequence {
                 if (previous) {
                     keyCodeResult += separator;
                 }
-                keyCodeResult += "Shift";
+                keyCodeResult += 'Shift';
                 previous = true;
             }
 
@@ -395,7 +395,7 @@ export class KeyCode {
 
     /* Return a keybinding string compatible with the Keybinding.keybinding property.  */
     toString() {
-        let result = "";
+        let result = '';
         let previous = false;
 
         if (this.meta) {
@@ -404,21 +404,21 @@ export class KeyCode {
         }
         if (this.shift) {
             if (previous) {
-                result += "+";
+                result += '+';
             }
             result += EasyKey.SHIFT.easyString;
             previous = true;
         }
         if (this.alt) {
             if (previous) {
-                result += "+";
+                result += '+';
             }
             result += EasyKey.ALT.easyString;
             previous = true;
         }
         if (this.ctrl) {
             if (previous) {
-                result += "+";
+                result += '+';
             }
             result += EasyKey.CONTROL.easyString;
             previous = true;
@@ -426,7 +426,7 @@ export class KeyCode {
 
         if (this.key) {
             if (previous) {
-                result += "+";
+                result += '+';
             }
 
             result += KEY_CODE_TO_EASY[this.key.keyCode].easyString;
@@ -468,19 +468,19 @@ export enum KeyModifier {
     /**
      * M1 is the COMMAND key on MacOS X, and the CTRL key on most other platforms.
      */
-    CtrlCmd = "M1",
+    CtrlCmd = 'M1',
     /**
      * M2 is the SHIFT key.
      */
-    Shift = "M2",
+    Shift = 'M2',
     /**
      * M3 is the Option key on MacOS X, and the ALT key on most other platforms.
      */
-    Alt = "M3",
+    Alt = 'M3',
     /**
      * M4 is the CTRL key on MacOS X, and is undefined on other platforms.
      */
-    MacCtrl = "M4"
+    MacCtrl = 'M4'
 }
 
 export namespace KeyModifier {
@@ -660,7 +660,7 @@ export namespace Key {
     }
 
     export function getKey(arg: string | number): Key | undefined {
-        if (typeof arg === "number") {
+        if (typeof arg === 'number') {
             return KEY_CODE_TO_KEY[arg];
         } else {
             return CODE_TO_KEY[arg];
@@ -672,7 +672,7 @@ export namespace Key {
     }
 
     export function isModifier(arg: string | number): boolean {
-        if (typeof arg === "number") {
+        if (typeof arg === 'number') {
             return MODIFIERS.map(key => key.keyCode).indexOf(arg) > 0;
         }
         return MODIFIERS.map(key => key.code).indexOf(arg) > 0;
@@ -682,115 +682,115 @@ export namespace Key {
         return !!keyCode.key && key.keyCode === keyCode.key.keyCode;
     }
 
-    export const BACKSPACE: Key = { code: "Backspace", keyCode: 8 };
-    export const TAB: Key = { code: "Tab", keyCode: 9 };
-    export const ENTER: Key = { code: "Enter", keyCode: 13 };
-    export const ESCAPE: Key = { code: "Escape", keyCode: 27 };
-    export const SPACE: Key = { code: "Space", keyCode: 32 };
-    export const PAGE_UP: Key = { code: "PageUp", keyCode: 33 };
-    export const PAGE_DOWN: Key = { code: "PageDown", keyCode: 34 };
-    export const END: Key = { code: "End", keyCode: 35 };
-    export const HOME: Key = { code: "Home", keyCode: 36 };
-    export const ARROW_LEFT: Key = { code: "ArrowLeft", keyCode: 37 };
-    export const ARROW_UP: Key = { code: "ArrowUp", keyCode: 38 };
-    export const ARROW_RIGHT: Key = { code: "ArrowRight", keyCode: 39 };
-    export const ARROW_DOWN: Key = { code: "ArrowDown", keyCode: 40 };
-    export const INSERT: Key = { code: "Insert", keyCode: 45 };
-    export const DELETE: Key = { code: "Delete", keyCode: 46 };
+    export const BACKSPACE: Key = { code: 'Backspace', keyCode: 8 };
+    export const TAB: Key = { code: 'Tab', keyCode: 9 };
+    export const ENTER: Key = { code: 'Enter', keyCode: 13 };
+    export const ESCAPE: Key = { code: 'Escape', keyCode: 27 };
+    export const SPACE: Key = { code: 'Space', keyCode: 32 };
+    export const PAGE_UP: Key = { code: 'PageUp', keyCode: 33 };
+    export const PAGE_DOWN: Key = { code: 'PageDown', keyCode: 34 };
+    export const END: Key = { code: 'End', keyCode: 35 };
+    export const HOME: Key = { code: 'Home', keyCode: 36 };
+    export const ARROW_LEFT: Key = { code: 'ArrowLeft', keyCode: 37 };
+    export const ARROW_UP: Key = { code: 'ArrowUp', keyCode: 38 };
+    export const ARROW_RIGHT: Key = { code: 'ArrowRight', keyCode: 39 };
+    export const ARROW_DOWN: Key = { code: 'ArrowDown', keyCode: 40 };
+    export const INSERT: Key = { code: 'Insert', keyCode: 45 };
+    export const DELETE: Key = { code: 'Delete', keyCode: 46 };
 
-    export const SHIFT_LEFT: Key = { code: "ShiftLeft", keyCode: 16 };
-    export const SHIFT_RIGHT: Key = { code: "ShiftRight", keyCode: 16 };
-    export const CONTROL_LEFT: Key = { code: "ControlLeft", keyCode: 17 };
-    export const CONTROL_RIGHT: Key = { code: "ControlRight", keyCode: 17 };
-    export const ALT_LEFT: Key = { code: "AltLeft", keyCode: 18 };
-    export const ALT_RIGHT: Key = { code: "AltRight", keyCode: 18 };
-    export const CAPS_LOCK: Key = { code: "CapsLock", keyCode: 20 };
-    export const OS_LEFT: Key = { code: "OSLeft", keyCode: 91 };
-    export const OS_RIGHT: Key = { code: "OSRight", keyCode: 92 };
+    export const SHIFT_LEFT: Key = { code: 'ShiftLeft', keyCode: 16 };
+    export const SHIFT_RIGHT: Key = { code: 'ShiftRight', keyCode: 16 };
+    export const CONTROL_LEFT: Key = { code: 'ControlLeft', keyCode: 17 };
+    export const CONTROL_RIGHT: Key = { code: 'ControlRight', keyCode: 17 };
+    export const ALT_LEFT: Key = { code: 'AltLeft', keyCode: 18 };
+    export const ALT_RIGHT: Key = { code: 'AltRight', keyCode: 18 };
+    export const CAPS_LOCK: Key = { code: 'CapsLock', keyCode: 20 };
+    export const OS_LEFT: Key = { code: 'OSLeft', keyCode: 91 };
+    export const OS_RIGHT: Key = { code: 'OSRight', keyCode: 92 };
 
-    export const DIGIT0: Key = { code: "Digit0", keyCode: 48 };
-    export const DIGIT1: Key = { code: "Digit1", keyCode: 49 };
-    export const DIGIT2: Key = { code: "Digit2", keyCode: 50 };
-    export const DIGIT3: Key = { code: "Digit3", keyCode: 51 };
-    export const DIGIT4: Key = { code: "Digit4", keyCode: 52 };
-    export const DIGIT5: Key = { code: "Digit5", keyCode: 53 };
-    export const DIGIT6: Key = { code: "Digit6", keyCode: 54 };
-    export const DIGIT7: Key = { code: "Digit7", keyCode: 55 };
-    export const DIGIT8: Key = { code: "Digit8", keyCode: 56 };
-    export const DIGIT9: Key = { code: "Digit9", keyCode: 57 };
+    export const DIGIT0: Key = { code: 'Digit0', keyCode: 48 };
+    export const DIGIT1: Key = { code: 'Digit1', keyCode: 49 };
+    export const DIGIT2: Key = { code: 'Digit2', keyCode: 50 };
+    export const DIGIT3: Key = { code: 'Digit3', keyCode: 51 };
+    export const DIGIT4: Key = { code: 'Digit4', keyCode: 52 };
+    export const DIGIT5: Key = { code: 'Digit5', keyCode: 53 };
+    export const DIGIT6: Key = { code: 'Digit6', keyCode: 54 };
+    export const DIGIT7: Key = { code: 'Digit7', keyCode: 55 };
+    export const DIGIT8: Key = { code: 'Digit8', keyCode: 56 };
+    export const DIGIT9: Key = { code: 'Digit9', keyCode: 57 };
 
-    export const KEY_A: Key = { code: "KeyA", keyCode: 65 };
-    export const KEY_B: Key = { code: "KeyB", keyCode: 66 };
-    export const KEY_C: Key = { code: "KeyC", keyCode: 67 };
-    export const KEY_D: Key = { code: "KeyD", keyCode: 68 };
-    export const KEY_E: Key = { code: "KeyE", keyCode: 69 };
-    export const KEY_F: Key = { code: "KeyF", keyCode: 70 };
-    export const KEY_G: Key = { code: "KeyG", keyCode: 71 };
-    export const KEY_H: Key = { code: "KeyH", keyCode: 72 };
-    export const KEY_I: Key = { code: "KeyI", keyCode: 73 };
-    export const KEY_J: Key = { code: "KeyJ", keyCode: 74 };
-    export const KEY_K: Key = { code: "KeyK", keyCode: 75 };
-    export const KEY_L: Key = { code: "KeyL", keyCode: 76 };
-    export const KEY_M: Key = { code: "KeyM", keyCode: 77 };
-    export const KEY_N: Key = { code: "KeyN", keyCode: 78 };
-    export const KEY_O: Key = { code: "KeyO", keyCode: 79 };
-    export const KEY_P: Key = { code: "KeyP", keyCode: 80 };
-    export const KEY_Q: Key = { code: "KeyQ", keyCode: 81 };
-    export const KEY_R: Key = { code: "KeyR", keyCode: 82 };
-    export const KEY_S: Key = { code: "KeyS", keyCode: 83 };
-    export const KEY_T: Key = { code: "KeyT", keyCode: 84 };
-    export const KEY_U: Key = { code: "KeyU", keyCode: 85 };
-    export const KEY_V: Key = { code: "KeyV", keyCode: 86 };
-    export const KEY_W: Key = { code: "KeyW", keyCode: 87 };
-    export const KEY_X: Key = { code: "KeyX", keyCode: 88 };
-    export const KEY_Y: Key = { code: "KeyY", keyCode: 89 };
-    export const KEY_Z: Key = { code: "KeyZ", keyCode: 90 };
+    export const KEY_A: Key = { code: 'KeyA', keyCode: 65 };
+    export const KEY_B: Key = { code: 'KeyB', keyCode: 66 };
+    export const KEY_C: Key = { code: 'KeyC', keyCode: 67 };
+    export const KEY_D: Key = { code: 'KeyD', keyCode: 68 };
+    export const KEY_E: Key = { code: 'KeyE', keyCode: 69 };
+    export const KEY_F: Key = { code: 'KeyF', keyCode: 70 };
+    export const KEY_G: Key = { code: 'KeyG', keyCode: 71 };
+    export const KEY_H: Key = { code: 'KeyH', keyCode: 72 };
+    export const KEY_I: Key = { code: 'KeyI', keyCode: 73 };
+    export const KEY_J: Key = { code: 'KeyJ', keyCode: 74 };
+    export const KEY_K: Key = { code: 'KeyK', keyCode: 75 };
+    export const KEY_L: Key = { code: 'KeyL', keyCode: 76 };
+    export const KEY_M: Key = { code: 'KeyM', keyCode: 77 };
+    export const KEY_N: Key = { code: 'KeyN', keyCode: 78 };
+    export const KEY_O: Key = { code: 'KeyO', keyCode: 79 };
+    export const KEY_P: Key = { code: 'KeyP', keyCode: 80 };
+    export const KEY_Q: Key = { code: 'KeyQ', keyCode: 81 };
+    export const KEY_R: Key = { code: 'KeyR', keyCode: 82 };
+    export const KEY_S: Key = { code: 'KeyS', keyCode: 83 };
+    export const KEY_T: Key = { code: 'KeyT', keyCode: 84 };
+    export const KEY_U: Key = { code: 'KeyU', keyCode: 85 };
+    export const KEY_V: Key = { code: 'KeyV', keyCode: 86 };
+    export const KEY_W: Key = { code: 'KeyW', keyCode: 87 };
+    export const KEY_X: Key = { code: 'KeyX', keyCode: 88 };
+    export const KEY_Y: Key = { code: 'KeyY', keyCode: 89 };
+    export const KEY_Z: Key = { code: 'KeyZ', keyCode: 90 };
 
-    export const MULTIPLY: Key = { code: "NumpadMultiply", keyCode: 106 };
-    export const ADD: Key = { code: "NumpadAdd", keyCode: 107 };
-    export const DECIMAL: Key = { code: "NumpadDecimal", keyCode: 108 };
-    export const SUBTRACT: Key = { code: "NumpadSubtract", keyCode: 109 };
-    export const DIVIDE: Key = { code: "NumpadDivide", keyCode: 111 };
+    export const MULTIPLY: Key = { code: 'NumpadMultiply', keyCode: 106 };
+    export const ADD: Key = { code: 'NumpadAdd', keyCode: 107 };
+    export const DECIMAL: Key = { code: 'NumpadDecimal', keyCode: 108 };
+    export const SUBTRACT: Key = { code: 'NumpadSubtract', keyCode: 109 };
+    export const DIVIDE: Key = { code: 'NumpadDivide', keyCode: 111 };
 
-    export const F1: Key = { code: "F1", keyCode: 112 };
-    export const F2: Key = { code: "F2", keyCode: 113 };
-    export const F3: Key = { code: "F3", keyCode: 114 };
-    export const F4: Key = { code: "F4", keyCode: 115 };
-    export const F5: Key = { code: "F5", keyCode: 116 };
-    export const F6: Key = { code: "F6", keyCode: 117 };
-    export const F7: Key = { code: "F7", keyCode: 118 };
-    export const F8: Key = { code: "F8", keyCode: 119 };
-    export const F9: Key = { code: "F9", keyCode: 120 };
-    export const F10: Key = { code: "F10", keyCode: 121 };
-    export const F11: Key = { code: "F11", keyCode: 122 };
-    export const F12: Key = { code: "F12", keyCode: 123 };
-    export const F13: Key = { code: "F13", keyCode: 124 };
-    export const F14: Key = { code: "F14", keyCode: 125 };
-    export const F15: Key = { code: "F15", keyCode: 126 };
-    export const F16: Key = { code: "F16", keyCode: 127 };
-    export const F17: Key = { code: "F17", keyCode: 128 };
-    export const F18: Key = { code: "F18", keyCode: 129 };
-    export const F19: Key = { code: "F19", keyCode: 130 };
-    export const F20: Key = { code: "F20", keyCode: 131 };
-    export const F21: Key = { code: "F21", keyCode: 132 };
-    export const F22: Key = { code: "F22", keyCode: 133 };
-    export const F23: Key = { code: "F23", keyCode: 134 };
-    export const F24: Key = { code: "F24", keyCode: 135 };
+    export const F1: Key = { code: 'F1', keyCode: 112 };
+    export const F2: Key = { code: 'F2', keyCode: 113 };
+    export const F3: Key = { code: 'F3', keyCode: 114 };
+    export const F4: Key = { code: 'F4', keyCode: 115 };
+    export const F5: Key = { code: 'F5', keyCode: 116 };
+    export const F6: Key = { code: 'F6', keyCode: 117 };
+    export const F7: Key = { code: 'F7', keyCode: 118 };
+    export const F8: Key = { code: 'F8', keyCode: 119 };
+    export const F9: Key = { code: 'F9', keyCode: 120 };
+    export const F10: Key = { code: 'F10', keyCode: 121 };
+    export const F11: Key = { code: 'F11', keyCode: 122 };
+    export const F12: Key = { code: 'F12', keyCode: 123 };
+    export const F13: Key = { code: 'F13', keyCode: 124 };
+    export const F14: Key = { code: 'F14', keyCode: 125 };
+    export const F15: Key = { code: 'F15', keyCode: 126 };
+    export const F16: Key = { code: 'F16', keyCode: 127 };
+    export const F17: Key = { code: 'F17', keyCode: 128 };
+    export const F18: Key = { code: 'F18', keyCode: 129 };
+    export const F19: Key = { code: 'F19', keyCode: 130 };
+    export const F20: Key = { code: 'F20', keyCode: 131 };
+    export const F21: Key = { code: 'F21', keyCode: 132 };
+    export const F22: Key = { code: 'F22', keyCode: 133 };
+    export const F23: Key = { code: 'F23', keyCode: 134 };
+    export const F24: Key = { code: 'F24', keyCode: 135 };
 
-    export const NUM_LOCK: Key = { code: "NumLock", keyCode: 144 };
-    export const SEMICOLON: Key = { code: "Semicolon", keyCode: 186 };
-    export const EQUAL: Key = { code: "Equal", keyCode: 187 };
-    export const COMMA: Key = { code: "Comma", keyCode: 188 };
-    export const MINUS: Key = { code: "Minus", keyCode: 189 };
-    export const PERIOD: Key = { code: "Period", keyCode: 190 };
-    export const SLASH: Key = { code: "Slash", keyCode: 191 };
-    export const BACKQUOTE: Key = { code: "Backquote", keyCode: 192 };
-    export const INTL_RO: Key = { code: "IntlRo", keyCode: 193 };
-    export const BRACKET_LEFT: Key = { code: "BracketLeft", keyCode: 219 };
-    export const BACKSLASH: Key = { code: "Backslash", keyCode: 220 };
-    export const BRACKET_RIGHT: Key = { code: "BracketRight", keyCode: 221 };
-    export const QUOTE: Key = { code: "Quote", keyCode: 222 };
-    export const INTL_YEN: Key = { code: "IntlYen", keyCode: 255 };
+    export const NUM_LOCK: Key = { code: 'NumLock', keyCode: 144 };
+    export const SEMICOLON: Key = { code: 'Semicolon', keyCode: 186 };
+    export const EQUAL: Key = { code: 'Equal', keyCode: 187 };
+    export const COMMA: Key = { code: 'Comma', keyCode: 188 };
+    export const MINUS: Key = { code: 'Minus', keyCode: 189 };
+    export const PERIOD: Key = { code: 'Period', keyCode: 190 };
+    export const SLASH: Key = { code: 'Slash', keyCode: 191 };
+    export const BACKQUOTE: Key = { code: 'Backquote', keyCode: 192 };
+    export const INTL_RO: Key = { code: 'IntlRo', keyCode: 193 };
+    export const BRACKET_LEFT: Key = { code: 'BracketLeft', keyCode: 219 };
+    export const BACKSLASH: Key = { code: 'Backslash', keyCode: 220 };
+    export const BRACKET_RIGHT: Key = { code: 'BracketRight', keyCode: 221 };
+    export const QUOTE: Key = { code: 'Quote', keyCode: 222 };
+    export const INTL_YEN: Key = { code: 'IntlYen', keyCode: 255 };
 
 }
 

@@ -31,11 +31,11 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 @injectable()
 export class HostedPluginInformer implements FrontendApplicationContribution {
 
-    public static readonly DEVELOPMENT_HOST_TITLE = "Development Host";
+    public static readonly DEVELOPMENT_HOST_TITLE = 'Development Host';
 
-    public static readonly DEVELOPMENT_HOST = "development-host";
+    public static readonly DEVELOPMENT_HOST = 'development-host';
 
-    public static readonly DEVELOPMENT_HOST_OFFLINE = "development-host-offline";
+    public static readonly DEVELOPMENT_HOST_OFFLINE = 'development-host-offline';
 
     private entry: StatusBarEntry;
 
@@ -90,7 +90,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     private updateTitle(root: FileStat | undefined): void {
         if (root) {
             const uri = new URI(root.uri);
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + " - " + uri.displayName;
+            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + uri.displayName;
         } else {
             document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE;
         }

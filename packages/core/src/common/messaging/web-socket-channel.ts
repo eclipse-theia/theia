@@ -16,8 +16,8 @@
 
 // tslint:disable:no-any
 
-import { IWebSocket } from "vscode-ws-jsonrpc/lib/socket/socket";
-import { Disposable, DisposableCollection } from "../disposable";
+import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
+import { Disposable, DisposableCollection } from '../disposable';
 
 export class WebSocketChannel implements IWebSocket {
 

@@ -14,21 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
+import { ContainerModule } from 'inversify';
 import { ResourceResolver, CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
-import { LanguageClientContribution } from "@theia/languages/lib/browser";
-import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
+import { LanguageClientContribution } from '@theia/languages/lib/browser';
+import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 
-import { JavaClientContribution } from "./java-client-contribution";
+import { JavaClientContribution } from './java-client-contribution';
 import { JavaCommandContribution } from './java-commands';
 import { JavaLabelProviderContribution } from './java-label-provider';
 import { JavaResourceResolver } from './java-resource';
-import { JavaEditorTextFocusContext } from "./java-keybinding-contexts";
-import { JavaTextmateContribution } from "./monaco-contribution/java-textmate-contribution";
-import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate/textmate-contribution";
+import { JavaEditorTextFocusContext } from './java-keybinding-contexts';
+import { JavaTextmateContribution } from './monaco-contribution/java-textmate-contribution';
+import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
 
-import "./monaco-contribution";
+import './monaco-contribution';
 
 export default new ContainerModule(bind => {
     bind(JavaCommandContribution).toSelf().inSingletonScope();

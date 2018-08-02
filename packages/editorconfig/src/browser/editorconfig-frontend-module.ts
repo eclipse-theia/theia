@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from "inversify";
+import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, FrontendApplication, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { EditorconfigDocumentManager } from './editorconfig-document-manager';
-import { EditorconfigService, editorconfigServicePath } from "../common/editorconfig-interface";
-import { MaybePromise } from "@theia/core";
+import { EditorconfigService, editorconfigServicePath } from '../common/editorconfig-interface';
+import { MaybePromise } from '@theia/core';
 
 export default new ContainerModule((bind, unbind) => {
     bind(EditorconfigService).toDynamicValue(ctx => {

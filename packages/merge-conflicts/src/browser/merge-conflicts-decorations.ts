@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { OverviewRulerLane, EditorDecoration, EditorDecorationOptions, EditorDecorator } from "@theia/editor/lib/browser";
-import { MergeConflictsUpdate } from "./merge-conflicts-provider";
+import { injectable } from 'inversify';
+import { OverviewRulerLane, EditorDecoration, EditorDecorationOptions, EditorDecorator } from '@theia/editor/lib/browser';
+import { MergeConflictsUpdate } from './merge-conflicts-provider';
 
 @injectable()
 export class MergeConflictsDecorations extends EditorDecorator {

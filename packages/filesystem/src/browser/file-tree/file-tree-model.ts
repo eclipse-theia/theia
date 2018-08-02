@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from "@theia/core/lib/browser";
-import { FileSystem, } from "../../common";
+import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
+import { FileSystem, } from '../../common';
 import { FileSystemWatcher, FileChangeType, FileChange } from '../filesystem-watcher';
-import { FileStatNode, DirNode, FileNode } from "./file-tree";
+import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import * as base64 from 'base64-js';
 
 @injectable()

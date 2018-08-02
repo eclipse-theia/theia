@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
-import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
+import { injectable, inject } from 'inversify';
+import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from '@phosphor/widgets';
+import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath
-} from "../../common";
-import { KeybindingRegistry, Keybinding } from "../keybinding";
-import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
+} from '../../common';
+import { KeybindingRegistry, Keybinding } from '../keybinding';
+import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 
 @injectable()
 export class BrowserMainMenuFactory {
