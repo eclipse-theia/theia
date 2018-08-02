@@ -34,6 +34,7 @@ import { CoffeescriptContribution } from "./coffeescript";
 import { CSharpContribution } from "./csharp";
 import { CssContribution } from "./css";
 import { DockerContribution } from "./docker";
+import { FSharpContribution } from "./fsharp";
 import { HtmlContribution } from "./html";
 import { LessContribution } from "./less";
 import { MarkdownContribution } from "./markdown";
@@ -62,6 +63,9 @@ export default new ContainerModule(bind => {
 
     bind(DockerContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(DockerContribution);
+
+    bind(FSharpContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(FSharpContribution);
 
     bind(HtmlContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(HtmlContribution);
