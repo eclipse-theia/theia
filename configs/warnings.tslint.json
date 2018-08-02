@@ -3,10 +3,6 @@
     "no-any": {
       "severity": "warning",
       "options": true
-    },
-    "no-console": {
-      "severity": "warning",
-      "options": true
     }
   }
 }
