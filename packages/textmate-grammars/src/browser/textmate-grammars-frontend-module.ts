@@ -30,6 +30,7 @@ import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser
 import { ContainerModule } from "inversify";
 import { BatContribution } from "./bat";
 import { ClojureContribution } from "./clojure";
+import { CoffeescriptContribution } from "./coffeescript";
 import { CssContribution } from "./css";
 import { HtmlContribution } from "./html";
 import { LessContribution } from "./less";
@@ -47,6 +48,9 @@ export default new ContainerModule(bind => {
 
     bind(ClojureContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(ClojureContribution);
+
+    bind(CoffeescriptContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(CoffeescriptContribution);
 
     bind(CssContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
