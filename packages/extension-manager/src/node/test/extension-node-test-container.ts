@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Container } from "inversify";
-import { stubRemoteMasterProcessFactory } from "@theia/core/lib/node";
-import { bindServerProcess } from "@theia/core/lib/node/backend-application-module";
-import { bindLogger } from "@theia/core/lib/node/logger-backend-module";
-import { bindFileSystem, bindFileSystemWatcherServer } from "@theia/filesystem/lib/node/filesystem-backend-module";
-import { ApplicationProjectArgs } from "../application-project-cli";
+import { Container } from 'inversify';
+import { stubRemoteMasterProcessFactory } from '@theia/core/lib/node';
+import { bindServerProcess } from '@theia/core/lib/node/backend-application-module';
+import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
+import { bindFileSystem, bindFileSystemWatcherServer } from '@theia/filesystem/lib/node/filesystem-backend-module';
+import { ApplicationProjectArgs } from '../application-project-cli';
 import { bindNodeExtensionServer } from '../extension-backend-module';
 
 export const extensionNodeTestContainer = (args: ApplicationProjectArgs) => {

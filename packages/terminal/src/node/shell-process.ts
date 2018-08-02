@@ -18,15 +18,15 @@ import { injectable, inject, named } from 'inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
-import { isWindows, isOSX } from "@theia/core/lib/common";
-import URI from "@theia/core/lib/common/uri";
-import { FileUri } from "@theia/core/lib/node/file-uri";
+import { isWindows, isOSX } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { parseArgs } from '@theia/process/lib/node/utils';
 
-export const ShellProcessFactory = Symbol("ShellProcessFactory");
+export const ShellProcessFactory = Symbol('ShellProcessFactory');
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
 
-export const ShellProcessOptions = Symbol("ShellProcessOptions");
+export const ShellProcessOptions = Symbol('ShellProcessOptions');
 export interface ShellProcessOptions {
     shell?: string,
     args?: string[],
@@ -41,12 +41,12 @@ function setUpEnvVariables(customEnv?:  { [key: string]: string | null }): { [ke
 
     const prEnv: NodeJS.ProcessEnv = process.env;
     Object.keys(prEnv).forEach((key: string) => {
-        processEnv[key] = prEnv[key] || "";
+        processEnv[key] = prEnv[key] || '';
     });
 
     if (customEnv) {
         for (const envName of Object.keys(customEnv)) {
-            processEnv[envName] = customEnv[envName] || "";
+            processEnv[envName] = customEnv[envName] || '';
         }
     }
 
@@ -72,7 +72,7 @@ export class ShellProcess extends TerminalProcess {
         @inject(ShellProcessOptions) options: ShellProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named("terminal") logger: ILogger
+        @inject(ILogger) @named('terminal') logger: ILogger
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),

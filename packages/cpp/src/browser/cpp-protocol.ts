@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { RequestType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/browser";
+import { TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
 export interface ActionableMessage {
     severity: MessageType;
     message: string;
@@ -24,5 +24,5 @@ export interface ActionableMessage {
 }
 
 export namespace SwitchSourceHeaderRequest {
-    export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>("textDocument/switchSourceHeader");
+    export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>('textDocument/switchSourceHeader');
 }

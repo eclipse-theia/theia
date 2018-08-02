@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, DisposableCollection } from "./disposable";
-import { Emitter, Event } from "./event";
-import { MaybePromise } from "./types";
+import { Disposable, DisposableCollection } from './disposable';
+import { Emitter, Event } from './event';
+import { MaybePromise } from './types';
 
 export interface Reference<T> extends Disposable {
     readonly object: T

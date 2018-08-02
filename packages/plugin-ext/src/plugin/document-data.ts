@@ -72,7 +72,7 @@ export class DocumentDataExt {
         this.dirty = isDirty;
     }
     acceptLanguageId(langId: string): void {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
     get document(): theia.TextDocument {
         if (!this._document) {

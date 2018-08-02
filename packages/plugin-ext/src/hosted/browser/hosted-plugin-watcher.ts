@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { HostedPluginClient } from "../../common/plugin-protocol";
-import { LogPart } from "../../common/types";
+import { HostedPluginClient } from '../../common/plugin-protocol';
+import { LogPart } from '../../common/types';
 
 @injectable()
 export class HostedPluginWatcher {

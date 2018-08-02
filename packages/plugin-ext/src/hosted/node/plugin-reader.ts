@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import * as express from 'express';
 import * as fs from 'fs';
 import { resolve } from 'path';

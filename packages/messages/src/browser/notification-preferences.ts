@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
+import { interfaces } from 'inversify';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -24,12 +24,12 @@ import {
 } from '@theia/core/lib/browser/preferences';
 
 export const NotificationConfigSchema: PreferenceSchema = {
-    "type": "object",
-    "properties": {
-        "notification.timeout": {
-            "type": "number",
-            "description": "The time before auto-dismiss the notification.",
-            "default": 5000 // time express in millisec. 0 means : Do not remove
+    'type': 'object',
+    'properties': {
+        'notification.timeout': {
+            'type': 'number',
+            'description': 'The time before auto-dismiss the notification.',
+            'default': 5000 // time express in millisec. 0 means : Do not remove
         }
     }
 };

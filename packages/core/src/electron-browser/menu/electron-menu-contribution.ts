@@ -141,23 +141,23 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerKeybindings(
             {
                 command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-                keybinding: "ctrlcmd+shift+i"
+                keybinding: 'ctrlcmd+shift+i'
             },
             {
                 command: ElectronCommands.RELOAD.id,
-                keybinding: "ctrlcmd+r"
+                keybinding: 'ctrlcmd+r'
             },
             {
                 command: ElectronCommands.ZOOM_IN.id,
-                keybinding: "ctrlcmd+="
+                keybinding: 'ctrlcmd+='
             },
             {
                 command: ElectronCommands.ZOOM_OUT.id,
-                keybinding: "ctrlcmd+-"
+                keybinding: 'ctrlcmd+-'
             },
             {
                 command: ElectronCommands.RESET_ZOOM.id,
-                keybinding: "ctrlcmd+0"
+                keybinding: 'ctrlcmd+0'
             }
         );
     }

@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("monaco package", () => {
+describe('monaco package', () => {
 
-    it("support code coverage statistics", () => true);
+    it('support code coverage statistics', () => true);
 });

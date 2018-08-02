@@ -14,22 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Message } from "@theia/core/lib/browser";
+import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Message } from '@theia/core/lib/browser';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
 import { GitFileStatus, Git, GitFileChange } from '../../common';
-import { FileSystem } from "@theia/filesystem/lib/common";
-import { GitDiffContribution } from "../diff/git-diff-contribution";
-import { GitAvatarService } from "./git-avatar-service";
-import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHandler } from "./git-commit-detail-open-handler";
-import { GitCommitDetails } from "./git-commit-detail-widget";
-import { GitNavigableListWidget } from "../git-navigable-list-widget";
-import { GitFileChangeNode } from "../git-widget";
-import { Disposable } from "vscode-jsonrpc";
-import * as React from "react";
+import { FileSystem } from '@theia/filesystem/lib/common';
+import { GitDiffContribution } from '../diff/git-diff-contribution';
+import { GitAvatarService } from './git-avatar-service';
+import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
+import { GitCommitDetails } from './git-commit-detail-widget';
+import { GitNavigableListWidget } from '../git-navigable-list-widget';
+import { GitFileChangeNode } from '../git-widget';
+import { Disposable } from 'vscode-jsonrpc';
+import * as React from 'react';
 
 export interface GitCommitNode extends GitCommitDetails {
     fileChanges?: GitFileChange[];
@@ -64,7 +64,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         super();
         this.id = GIT_HISTORY;
         this.scrollContainer = 'git-history-list-container';
-        this.title.label = "Git History";
+        this.title.label = 'Git History';
         this.addClass('theia-git');
     }
 
@@ -76,7 +76,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 const el = (e.srcElement || e.target) as HTMLElement;
                 if (el.scrollTop + el.clientHeight > el.scrollHeight - 83) {
                     const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-                    ll.className = "history-lazy-loading show";
+                    ll.className = 'history-lazy-loading show';
                     this.addCommits({
                         range: {
                             toRevision: this.commits[this.commits.length - 1].commitSha
@@ -85,9 +85,9 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     });
                 }
             };
-            sc.addEventListener("scroll", listener);
+            sc.addEventListener('scroll', listener);
             this.toDispose.push(Disposable.create(() => {
-                sc.removeEventListener("scroll", listener);
+                sc.removeEventListener('scroll', listener);
             }));
         })();
     }
@@ -181,21 +181,21 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.ready = true;
         this.update();
         const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-        if (ll && ll.className === "history-lazy-loading show") {
-            ll.className = "history-lazy-loading hide";
+        if (ll && ll.className === 'history-lazy-loading show') {
+            ll.className = 'history-lazy-loading hide';
         }
     }
 
     protected render(): React.ReactNode {
         this.gitNodes = [];
-        return <div className="git-diff-container">
+        return <div className='git-diff-container'>
             {
                 this.ready ?
                     < React.Fragment >
                         {this.renderHistoryHeader()}
                         {this.renderCommitList()}
                         <div className='history-lazy-loading'>
-                            <span className="fa fa-spinner fa-pulse fa-2x fa-fw"></span>
+                            <span className='fa fa-spinner fa-pulse fa-2x fa-fw'></span>
                         </div>
                     </React.Fragment>
                     :
@@ -209,7 +209,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected renderHistoryHeader(): React.ReactNode {
         if (this.options.uri) {
             const path = this.relativePath(this.options.uri);
-            return <div className="diff-header">
+            return <div className='diff-header'>
                 {
                     path.length > 0 ?
                         <div className='header-row'>
@@ -234,18 +234,18 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
         for (const commit of this.commits) {
             const head = this.renderCommit(commit);
-            const body = commit.expanded ? this.renderFileChangeList(commit) : "";
-            theList.push(<div key={commit.commitSha} className="commitListElement">{head}{body}</div>);
+            const body = commit.expanded ? this.renderFileChangeList(commit) : '';
+            theList.push(<div key={commit.commitSha} className='commitListElement'>{head}{body}</div>);
         }
-        const commitList = <div className="commitList">{...theList}</div>;
-        return <div className="listContainer" id={this.scrollContainer}>{commitList}</div>;
+        const commitList = <div className='commitList'>{...theList}</div>;
+        return <div className='listContainer' id={this.scrollContainer}>{commitList}</div>;
     }
 
     protected renderCommit(commit: GitCommitNode): React.ReactNode {
         this.gitNodes.push(commit);
-        let expansionToggleIcon = "caret-right";
+        let expansionToggleIcon = 'caret-right';
         if (commit && commit.expanded) {
-            expansionToggleIcon = "caret-down";
+            expansionToggleIcon = 'caret-down';
         }
         return <div
             className={`containerHead${commit.selected ? ' ' + SELECTED_CLASS : ''}`}
@@ -269,23 +269,23 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     }
                 }
             }>
-            <div className="headContent"><div className="image-container">
-                <img className="gravatar" src={commit.authorAvatar}></img>
+            <div className='headContent'><div className='image-container'>
+                <img className='gravatar' src={commit.authorAvatar}></img>
             </div>
                 <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
-                    <div className="headLabel noWrapInfo noselect">
+                    <div className='headLabel noWrapInfo noselect'>
                         {commit.commitMessage}
                     </div>
-                    <div className="commitTime noWrapInfo noselect">
+                    <div className='commitTime noWrapInfo noselect'>
                         {commit.authorDateRelative + ' by ' + commit.authorName}
                     </div>
                 </div>
-                <div className="fa fa-eye detailButton" onClick={() => this.openDetailWidget(commit)}></div>
+                <div className='fa fa-eye detailButton' onClick={() => this.openDetailWidget(commit)}></div>
                 {
-                    !this.singleFileMode ? <div className="expansionToggle noselect">
-                        <div className="toggle">
-                            <div className="number">{(commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()}</div>
-                            <div className={"icon fa fa-" + expansionToggleIcon}></div>
+                    !this.singleFileMode ? <div className='expansionToggle noselect'>
+                        <div className='toggle'>
+                            <div className='number'>{(commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()}</div>
+                            <div className={'icon fa fa-' + expansionToggleIcon}></div>
                         </div>
                     </div>
                         : ''
@@ -312,7 +312,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange, commit.commitSha);
             files.push(fileChangeElement);
         }
-        return <div className="commitBody"><div className="commitFileList">{...files}</div></div>;
+        return <div className='commitBody'><div className='commitFileList'>{...files}</div></div>;
     }
 
     protected renderGitItem(change: GitFileChangeNode, commitSha: string): React.ReactNode {
@@ -386,7 +386,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     this.openDetailWidget(selected);
                 }
             } else if (GitFileChangeNode.is(selected)) {
-                this.openFile(selected, selected.commitSha || "");
+                this.openFile(selected, selected.commitSha || '');
             }
         }
         this.update();
@@ -395,7 +395,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected openFile(change: GitFileChange, commitSha: string) {
         const uri: URI = new URI(change.uri);
         let fromURI = change.oldUri ? new URI(change.oldUri) : uri; // set oldUri on renamed and copied
-        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(commitSha + "~1");
+        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(commitSha + '~1');
         const toURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(commitSha);
         let uriToOpen = uri;
         if (change.status === GitFileStatus.Deleted) {

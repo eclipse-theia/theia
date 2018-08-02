@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from "@theia/core/lib/browser";
-import { FileSystem, FileStat } from "../../common";
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
+import { FileSystem, FileStat } from '../../common';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { UriSelection } from '@theia/core/lib/common//selection';
 
 @injectable()

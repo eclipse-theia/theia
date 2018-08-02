@@ -25,7 +25,7 @@ import { WorkspaceMain } from './workspace-main';
 import { StatusBarMessageRegistryMainImpl } from './status-bar-message-registry-main';
 import { EnvMainImpl } from './env-main';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { OutputChannelRegistryMainImpl } from "./output-channel-registry-main";
+import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalServiceMainImpl } from './terminal-main';
 

@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as chai from "chai";
+import * as chai from 'chai';
 import { ConsoleLogger } from '../../node/messaging/logger';
 import { JsonRpcProxyFactory } from './proxy-factory';
-import { createMessageConnection } from "vscode-jsonrpc/lib/main";
-import * as stream from "stream";
+import { createMessageConnection } from 'vscode-jsonrpc/lib/main';
+import * as stream from 'stream';
 
 const expect = chai.expect;
 
@@ -38,11 +38,11 @@ class TestServer {
     }
 
     fails(arg: string, otherArg: string): Promise<string> {
-        throw new Error("fails failed");
+        throw new Error('fails failed');
     }
 
     fails2(arg: string, otherArg: string): Promise<string> {
-        return Promise.reject("fails2 failed");
+        return Promise.reject('fails2 failed');
     }
 }
 
@@ -57,15 +57,15 @@ describe('Proxy-Factory', () => {
 
     it('Should correctly send notifications and requests.', done => {
         const it = getSetup();
-        it.clientProxy.notifyThat("hello");
+        it.clientProxy.notifyThat('hello');
         function check() {
             if (it.client.notifications.length === 0) {
-                console.log("waiting another 50 ms");
+                console.log('waiting another 50 ms');
                 setTimeout(check, 50);
             } else {
-                expect(it.client.notifications[0]).eq("hello");
-                it.serverProxy.doStuff("foo").then(result => {
-                    expect(result).to.be.eq("done: foo");
+                expect(it.client.notifications[0]).eq('hello');
+                it.serverProxy.doStuff('foo').then(result => {
+                    expect(result).to.be.eq('done: foo');
                     done();
                 });
             }
@@ -74,18 +74,18 @@ describe('Proxy-Factory', () => {
     });
     it('Rejected Promise should result in rejected Promise.', done => {
         const it = getSetup();
-        const handle = setTimeout(() => done("timeout"), 500);
+        const handle = setTimeout(() => done('timeout'), 500);
         it.serverProxy.fails('a', 'b').catch(err => {
-            expect(<Error>err.message).to.contain("fails failed");
+            expect(<Error>err.message).to.contain('fails failed');
             clearTimeout(handle);
             done();
         });
     });
     it('Remote Exceptions should result in rejected Promise.', done => {
         const { serverProxy } = getSetup();
-        const handle = setTimeout(() => done("timeout"), 500);
+        const handle = setTimeout(() => done('timeout'), 500);
         serverProxy.fails2('a', 'b').catch(err => {
-            expect(<Error>err.message).to.contain("fails2 failed");
+            expect(<Error>err.message).to.contain('fails2 failed');
             clearTimeout(handle);
             done();
         });

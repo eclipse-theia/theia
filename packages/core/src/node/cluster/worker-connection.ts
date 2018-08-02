@@ -17,7 +17,7 @@
 import { Worker } from 'cluster';
 import { WorkerMessageWriter } from './worker-writer';
 import { WorkerMessageReader } from './worker-reader';
-import { createMessageConnection, MessageConnection, Logger } from "vscode-jsonrpc";
+import { createMessageConnection, MessageConnection, Logger } from 'vscode-jsonrpc';
 
 export function createWorkerConnection(worker: Worker, logger: Logger): MessageConnection {
     const messageReader = new WorkerMessageReader(worker);

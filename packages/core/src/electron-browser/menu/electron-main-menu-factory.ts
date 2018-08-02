@@ -98,7 +98,7 @@ export class ElectronMainMenuFactory {
                     id: menu.id,
                     label: menu.label,
                     icon: menu.icon,
-                    type: this.commandRegistry.getToggledHandler(commandId) ? "checkbox" : "normal",
+                    type: this.commandRegistry.getToggledHandler(commandId) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId),
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
@@ -115,8 +115,8 @@ export class ElectronMainMenuFactory {
 
     /* Return a user visble representation of a keybinding.  */
     protected acceleratorFor(keybinding: Keybinding) {
-        const keyCodesString = keybinding.keybinding.split(" ");
-        let result = "";
+        const keyCodesString = keybinding.keybinding.split(' ');
+        let result = '';
         /* FIXME see https://github.com/electron/electron/issues/11740
            Key Sequences can't be represented properly in the electron menu. */
         if (keyCodesString.length > 1) {
@@ -126,11 +126,11 @@ export class ElectronMainMenuFactory {
         const keyCodeString = keyCodesString[0];
         const keyCode = KeyCode.parse(keyCodeString);
         let previous = false;
-        const separator = "+";
+        const separator = '+';
 
         if (keyCode.meta && isOSX) {
             if (isOSX) {
-                result += "Cmd";
+                result += 'Cmd';
                 previous = true;
             }
         }
@@ -139,7 +139,7 @@ export class ElectronMainMenuFactory {
             if (previous) {
                 result += separator;
             }
-            result += "Ctrl";
+            result += 'Ctrl';
             previous = true;
         }
 
@@ -147,7 +147,7 @@ export class ElectronMainMenuFactory {
             if (previous) {
                 result += separator;
             }
-            result += "Alt";
+            result += 'Alt';
             previous = true;
         }
 
@@ -155,7 +155,7 @@ export class ElectronMainMenuFactory {
             if (previous) {
                 result += separator;
             }
-            result += "Shift";
+            result += 'Shift';
             previous = true;
         }
 

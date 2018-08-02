@@ -14,18 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from "inversify";
+import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
+import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from '@theia/core/lib/common';
 import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-         OpenerService, FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
-import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
-import { FileDownloadCommands } from "@theia/filesystem/lib/browser/download/file-download-command-contribution";
+         OpenerService, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
+import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
+import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
-import { FileNavigatorPreferences } from "./navigator-preferences";
+import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
-import { FileNavigatorFilter } from "./navigator-filter";
+import { FileNavigatorFilter } from './navigator-filter';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = {
@@ -154,31 +154,31 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         super.registerKeybindings(registry);
         registry.registerKeybinding({
             command: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
-            keybinding: "alt+r"
+            keybinding: 'alt+r'
         });
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_DELETE.id,
-            keybinding: "del",
+            keybinding: 'del',
             context: NavigatorKeybindingContexts.navigatorActive
         });
         if (isOSX) {
             registry.registerKeybinding({
                 command: WorkspaceCommands.FILE_DELETE.id,
-                keybinding: "cmd+backspace",
+                keybinding: 'cmd+backspace',
                 context: NavigatorKeybindingContexts.navigatorActive
             });
         }
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_RENAME.id,
-            keybinding: "f2",
+            keybinding: 'f2',
             context: NavigatorKeybindingContexts.navigatorActive
         });
 
         registry.registerKeybinding({
             command: FileNavigatorCommands.TOGGLE_HIDDEN_FILES.id,
-            keybinding: "ctrlcmd+i",
+            keybinding: 'ctrlcmd+i',
             context: NavigatorKeybindingContexts.navigatorActive
         });
     }

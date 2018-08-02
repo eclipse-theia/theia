@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Git, Repository } from '../common';
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { Event, Emitter } from '@theia/core';
 

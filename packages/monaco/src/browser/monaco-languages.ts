@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, decorate } from "inversify";
-import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
-import { Languages, DiagnosticCollection, Language } from "@theia/languages/lib/browser";
-import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-manager";
+import { injectable, inject, decorate } from 'inversify';
+import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from 'monaco-languageclient';
+import { Languages, DiagnosticCollection, Language } from '@theia/languages/lib/browser';
+import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceSymbolProvider } from 'monaco-languageclient/lib/services';
 import { Disposable } from 'vscode-jsonrpc';

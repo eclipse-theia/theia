@@ -57,6 +57,6 @@ export class WorkspaceStorageService implements StorageService {
     }
 
     protected prefixWorkspaceURI(originalKey: string): string {
-        return this.prefix + ":" + originalKey;
+        return this.prefix + ':' + originalKey;
     }
 }

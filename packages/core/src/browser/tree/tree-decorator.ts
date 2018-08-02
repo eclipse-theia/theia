@@ -426,7 +426,7 @@ export namespace TreeDecoration {
                 result.push({ data });
             }
             if (ranges.length !== 0) {
-                throw new Error(`Error occurred when splitting the caption. There was a mismatch between the caption and the corresponding highlighting ranges.`);
+                throw new Error('Error occurred when splitting the caption. There was a mismatch between the caption and the corresponding highlighting ranges.');
             }
             return result;
         }

@@ -38,7 +38,7 @@ export class MasterProcess extends EventEmitter {
 
         // Failure
         if (!started) {
-            const error = new ProcessError(`Server worker failed to start.`);
+            const error = new ProcessError('Server worker failed to start.');
             console.error(error.message);
 
             worker.stop();
@@ -73,13 +73,13 @@ export class MasterProcess extends EventEmitter {
             throw new Error('Server worker is not running.');
         }
         this.emit('restarting', this.serverWorker);
-        console.log(`Restarting the server worker is requested.`);
+        console.log('Restarting the server worker is requested.');
 
         // Will throw if a problem is encountered at startup
         const newServerWorker = await this.fork();
 
         this.serverWorker = newServerWorker;
-        console.log(`Server worker has been restarted.`);
+        console.log('Server worker has been restarted.');
         this.emit('restarted', this.serverWorker);
     }
     get restarting(): Promise<ServerWorker> {

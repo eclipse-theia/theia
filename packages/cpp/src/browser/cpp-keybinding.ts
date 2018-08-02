@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { EditorManager } from "@theia/editor/lib/browser";
+import { injectable, inject } from 'inversify';
+import { EditorManager } from '@theia/editor/lib/browser';
 import {
     KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry
-} from "@theia/core/lib/browser";
-import { editorContainsCppFiles } from "./cpp-commands";
+} from '@theia/core/lib/browser';
+import { editorContainsCppFiles } from './cpp-commands';
 
 @injectable()
 export class CppKeybindingContext implements KeybindingContext {
@@ -44,7 +44,7 @@ export class CppKeybindingContribution implements KeybindingContribution {
             {
                 command: 'switch_source_header',
                 context: this.cppKeybindingContext.id,
-                keybinding: "alt+o"
+                keybinding: 'alt+o'
             }
         ].forEach(binding => {
             registry.registerKeybinding(binding);

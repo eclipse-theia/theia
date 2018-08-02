@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from "@theia/core/lib/common";
-import { EDITOR_CONTEXT_MENU } from "@theia/editor/lib/browser";
-import { MonacoCommands } from "./monaco-command";
+import { injectable, inject } from 'inversify';
+import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from '@theia/core/lib/common';
+import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
+import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
@@ -78,7 +78,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         for (const item of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
-                const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || "")];
+                const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || '')];
                 registry.registerMenuAction(menuPath, { commandId });
             }
         }

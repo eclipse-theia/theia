@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, interfaces } from "inversify";
+import { injectable, inject, interfaces } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, CommandRegistry
 } from '../../common';
-import { KeybindingContribution, KeybindingRegistry } from "../keybinding";
+import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';

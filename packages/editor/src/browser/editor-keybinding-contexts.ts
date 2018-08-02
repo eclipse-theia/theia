@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { KeybindingContext } from "@theia/core/lib/browser/keybinding";
-import { EditorManager } from "./editor-manager";
-import { EditorWidget } from "./editor-widget";
+import { injectable, inject } from 'inversify';
+import { KeybindingContext } from '@theia/core/lib/browser/keybinding';
+import { EditorManager } from './editor-manager';
+import { EditorWidget } from './editor-widget';
 
 export namespace EditorKeybindingContexts {
 

@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import * as http from 'http';
 import * as https from 'https';
 import * as express from 'express';
-import { ContributionProvider } from "@theia/core/lib/common";
+import { ContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { MetricsContribution } from './metrics-contribution';
 
@@ -45,6 +45,6 @@ export class MetricsBackendApplicationContribution implements BackendApplication
 
     fetchMetricsFromProviders(): string {
         return this.metricsProviders.getContributions().reduce((total, contribution) =>
-            total += contribution.getMetrics() + '\n', "");
+            total += contribution.getMetrics() + '\n', '');
     }
 }

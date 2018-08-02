@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
+import { interfaces } from 'inversify';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -24,17 +24,17 @@ import {
 } from '@theia/core/lib/browser/preferences';
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
-    "type": "object",
-    "properties": {
-        "files.watcherExclude": {
-            "description": "List of paths to exclude from the filesystem watcher",
-            "additionalProperties": {
-                "type": "boolean"
+    'type': 'object',
+    'properties': {
+        'files.watcherExclude': {
+            'description': 'List of paths to exclude from the filesystem watcher',
+            'additionalProperties': {
+                'type': 'boolean'
             },
-            "default": {
-                "**/.git/objects/**": true,
-                "**/.git/subtree-cache/**": true,
-                "**/node_modules/**": true
+            'default': {
+                '**/.git/objects/**': true,
+                '**/.git/subtree-cache/**': true,
+                '**/node_modules/**': true
             }
         }
     }

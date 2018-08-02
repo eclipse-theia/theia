@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { h } from "@phosphor/virtualdom";
-import { DisposableCollection } from "../../common";
-import { BaseWidget, Message } from "./widget";
-import { VirtualRenderer } from "./virtual-renderer";
+import { injectable } from 'inversify';
+import { h } from '@phosphor/virtualdom';
+import { DisposableCollection } from '../../common';
+import { BaseWidget, Message } from './widget';
+import { VirtualRenderer } from './virtual-renderer';
 
 /*
  * @deprecated use ReactWidget instead. VirtualWidget will be removed with the next major release.

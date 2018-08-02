@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import * as path from 'path';
-import * as cp from "child_process";
-import { injectable, inject } from "inversify";
-import { ILogger, ConnectionErrorHandler } from "@theia/core/lib/common";
+import * as cp from 'child_process';
+import { injectable, inject } from 'inversify';
+import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
 import { Emitter } from '@theia/core/lib/common/event';
-import { createIpcEnv } from "@theia/core/lib/node/messaging/ipc-protocol";
+import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, PluginModel } from '../../common/plugin-protocol';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
@@ -88,7 +88,7 @@ export class HostedPluginSupport {
             this.terminatePluginServer(this.cp);
         }
         this.cp = this.fork({
-            serverName: "hosted-plugin",
+            serverName: 'hosted-plugin',
             logger: this.logger,
             args: []
         });

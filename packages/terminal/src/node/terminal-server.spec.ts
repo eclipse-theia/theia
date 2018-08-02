@@ -19,7 +19,7 @@ import { createTerminalTestContainer } from './test/terminal-test-container';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ITerminalServer } from '../common/terminal-protocol';
 import { IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
-import { isWindows } from "@theia/core/lib/common";
+import { isWindows } from '@theia/core/lib/common';
 
 /**
  * Globals

@@ -54,7 +54,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     dispose(): void {
-        throw new Error("Method not implemented.");
+        throw new Error('Method not implemented.');
     }
 
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T> {

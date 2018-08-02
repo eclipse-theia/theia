@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe("application-manager package", () => {
+describe('application-manager package', () => {
 
-    it("should support code coverage statistics", () => true);
+    it('should support code coverage statistics', () => true);
 });

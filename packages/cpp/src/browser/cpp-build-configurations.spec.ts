@@ -14,17 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, Container } from "inversify";
+import { ContainerModule, Container } from 'inversify';
 import { expect } from 'chai';
-import { FileSystem } from "@theia/filesystem/lib/common";
-import { StorageService } from "@theia/core/lib/browser/storage-service";
-import { MockStorageService } from "@theia/core/lib/browser/test/mock-storage-service";
-import sinon = require("sinon");
-import { CppBuildConfigurationManager, CppBuildConfiguration } from "./cpp-build-configurations";
-import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem";
-import { bindCppPreferences } from "./cpp-preferences";
-import { PreferenceService } from "@theia/core/lib/browser/preferences/preference-service";
-import { MockPreferenceService } from "@theia/core/lib/browser/preferences/test/mock-preference-service";
+import { FileSystem } from '@theia/filesystem/lib/common';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { MockStorageService } from '@theia/core/lib/browser/test/mock-storage-service';
+import sinon = require('sinon');
+import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
+import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
+import { bindCppPreferences } from './cpp-preferences';
+import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { MockPreferenceService } from '@theia/core/lib/browser/preferences/test/mock-preference-service';
 
 let container: Container;
 
@@ -76,8 +76,8 @@ async function initializeTest(buildConfigurations: CppBuildConfiguration[] | und
     return configs;
 }
 
-describe("build-configurations", function() {
-    it("should work with no preferences", async function() {
+describe('build-configurations', function() {
+    it('should work with no preferences', async function() {
         const cppBuildConfigurations = await initializeTest(undefined, undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
@@ -87,7 +87,7 @@ describe("build-configurations", function() {
         expect(configs).lengthOf(0);
     });
 
-    it("should work with an empty list of builds", async function() {
+    it('should work with an empty list of builds', async function() {
         const cppBuildConfigurations = await initializeTest([], undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
@@ -97,7 +97,7 @@ describe("build-configurations", function() {
         expect(configs).lengthOf(0);
     });
 
-    it("should work with a simple list of builds", async function() {
+    it('should work with a simple list of builds', async function() {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',
@@ -115,7 +115,7 @@ describe("build-configurations", function() {
         expect(configs).to.have.deep.members(builds);
     });
 
-    it("should work with a simple list of builds and an active config", async function() {
+    it('should work with a simple list of builds and an active config', async function() {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',

@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import * as cluster from 'cluster';
-import { ContainerModule, interfaces } from "inversify";
-import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
+import { ContainerModule, interfaces } from 'inversify';
+import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/core/lib/common';
 import { FileSystemNode } from './node-filesystem';
-import { FileSystem, FileSystemClient, fileSystemPath } from "../common";
+import { FileSystem, FileSystemClient, fileSystemPath } from '../common';
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';

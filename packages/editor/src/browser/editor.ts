@@ -16,7 +16,7 @@
 
 import { Position, Range } from 'vscode-languageserver-types';
 import * as lsp from 'vscode-languageserver-types';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable } from '@theia/core/lib/common';
 import { Saveable, Navigatable } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
@@ -154,6 +154,6 @@ export interface ReplaceOperation {
 export namespace TextEditorSelection {
     // tslint:disable-next-line:no-any
     export function is(e: any): e is TextEditorSelection {
-        return e && e["uri"] instanceof URI;
+        return e && e['uri'] instanceof URI;
     }
 }

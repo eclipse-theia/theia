@@ -14,18 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import { SelectionService, UriSelection } from '@theia/core/lib/common';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 import { open, OpenerService } from '@theia/core/lib/browser';
-import { CppLanguageClientContribution } from "./cpp-language-client-contribution";
-import { SwitchSourceHeaderRequest } from "./cpp-protocol";
-import { TextDocumentIdentifier } from "@theia/languages/lib/browser";
-import { EditorCommands, EditorManager } from "@theia/editor/lib/browser";
+import { CppLanguageClientContribution } from './cpp-language-client-contribution';
+import { SwitchSourceHeaderRequest } from './cpp-protocol';
+import { TextDocumentIdentifier } from '@theia/languages/lib/browser';
+import { EditorCommands, EditorManager } from '@theia/editor/lib/browser';
 import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
-import { ExecuteCommandRequest, ExecuteCommandParams } from "vscode-languageserver-protocol";
-import { CppPreferences } from "./cpp-preferences";
+import { ExecuteCommandRequest, ExecuteCommandParams } from 'vscode-languageserver-protocol';
+import { CppPreferences } from './cpp-preferences';
 
 /**
  * Switch between source/header file
@@ -63,13 +63,13 @@ export const PRINT_STATS: Command = {
 };
 
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
-    id: `file:openPath`
+    id: 'file:openPath'
 };
 
 export function editorContainsCppFiles(editorManager: EditorManager | undefined): boolean {
     if (editorManager && editorManager.activeEditor) {
         const uri = editorManager.activeEditor.editor.document.uri;
-        return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith("." + value));
+        return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith('.' + value));
     }
     return false;
 }
@@ -98,19 +98,19 @@ export class CppCommandContribution implements CommandContribution {
                 commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, doc.uri, pos, locs)
         });
         commands.registerCommand(REINDEX, {
-            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"],
+            isEnabled: () => this.cppPreferences['cpp.experimentalCommands'],
             execute: () => this.reindex()
         });
         commands.registerCommand(DUMP_INCLUSIONS, {
-            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"] && editorContainsCppFiles(this.editorService),
+            isEnabled: () => this.cppPreferences['cpp.experimentalCommands'] && editorContainsCppFiles(this.editorService),
             execute: () => this.dumpInclusions()
         });
         commands.registerCommand(DUMP_INCLUDED_BY, {
-            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"] && editorContainsCppFiles(this.editorService),
+            isEnabled: () => this.cppPreferences['cpp.experimentalCommands'] && editorContainsCppFiles(this.editorService),
             execute: () => this.dumpIncludedBy()
         });
         commands.registerCommand(PRINT_STATS, {
-            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"],
+            isEnabled: () => this.cppPreferences['cpp.experimentalCommands'],
             execute: () => this.printStats()
         });
     }

@@ -132,7 +132,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
                 if (result) {
                     const uris = [];
                     for (let i = 0; i < result.length; i++) {
-                        const uri = Uri.parse("file://" + result[i]);
+                        const uri = Uri.parse('file://' + result[i]);
                         uris.push(uri);
                     }
                     resolve(uris);

@@ -17,7 +17,7 @@
 import { inject, injectable, named } from 'inversify';
 import { TaskConfiguration } from '../common/task-protocol';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core/lib/common/';
-import URI from "@theia/core/lib/common/uri";
+import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcherServer, FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import * as jsoncparser from 'jsonc-parser';

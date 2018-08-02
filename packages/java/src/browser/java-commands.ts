@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
-import { ExecuteCommandRequest } from "monaco-languageclient/lib";
+import { inject, injectable } from 'inversify';
+import { ExecuteCommandRequest } from 'monaco-languageclient/lib';
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { EditorCommands, EDITOR_CONTEXT_MENU, EditorManager } from "@theia/editor/lib/browser";
-import { KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser";
-import { WorkspaceEdit, Workspace } from "@theia/languages/lib/browser";
-import { JavaClientContribution } from "./java-client-contribution";
-import { JavaKeybindingContexts } from "./java-keybinding-contexts";
+import { EditorCommands, EDITOR_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { WorkspaceEdit, Workspace } from '@theia/languages/lib/browser';
+import { JavaClientContribution } from './java-client-contribution';
+import { JavaKeybindingContexts } from './java-keybinding-contexts';
 
 /**
  * Show Java references

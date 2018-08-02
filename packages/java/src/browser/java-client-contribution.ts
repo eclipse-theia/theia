@@ -14,21 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { CommandService } from "@theia/core/lib/common";
+import { injectable, inject } from 'inversify';
+import { CommandService } from '@theia/core/lib/common';
 import {
     Window, ILanguageClient, BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory, LanguageClientOptions
 } from '@theia/languages/lib/browser';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
-import { ActionableNotification, ActionableMessage, StatusReport, StatusNotification } from "./java-protocol";
-import { StatusBar, StatusBarEntry, StatusBarAlignment } from "@theia/core/lib/browser";
+import { ActionableNotification, ActionableMessage, StatusReport, StatusNotification } from './java-protocol';
+import { StatusBar, StatusBarEntry, StatusBarAlignment } from '@theia/core/lib/browser';
 
 @injectable()
 export class JavaClientContribution extends BaseLanguageClientContribution {
 
     readonly id = JAVA_LANGUAGE_ID;
     readonly name = JAVA_LANGUAGE_NAME;
-    private readonly statusNotificationName = "java-status-notification";
+    private readonly statusNotificationName = 'java-status-notification';
     private statusBarTimeout: number | undefined;
 
     constructor(
@@ -64,7 +64,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         const statusEntry = {
             alignment: StatusBarAlignment.LEFT,
             priority: 1,
-            text: "$(refresh~spin) " + message.message
+            text: '$(refresh~spin) ' + message.message
         } as StatusBarEntry;
         this.statusBar.setElement(this.statusNotificationName, statusEntry);
         this.statusBarTimeout = window.setTimeout(() => {

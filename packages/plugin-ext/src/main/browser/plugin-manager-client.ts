@@ -226,7 +226,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
         this.windowService = windowService;
 
         this.linkNode = document.createElement('a');
-        this.linkNode.target = "_blank";
+        this.linkNode.target = '_blank';
         this.linkNode.setAttribute('style', 'color: var(--theia-ui-dialog-font-color);');
         this.contentNode.appendChild(this.linkNode);
 

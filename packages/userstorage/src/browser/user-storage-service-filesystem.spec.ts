@@ -25,7 +25,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileSystemWatcher, FileChange, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
-import { PreferenceService } from "@theia/core/lib/browser/preferences";
+import { PreferenceService } from '@theia/core/lib/browser/preferences';
 import { MockPreferenceService } from '@theia/core/lib/browser/preferences/test/mock-preference-service';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { MockFilesystem, MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test';
@@ -55,9 +55,9 @@ before(async () => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         sinon.stub(preferences, 'get').returns({
             'files.watcherExclude': {
-                "**/.git/objects/**": true,
-                "**/.git/subtree-cache/**": true,
-                "**/node_modules/**": true
+                '**/.git/objects/**': true,
+                '**/.git/subtree-cache/**': true,
+                '**/node_modules/**': true
             }
         });
         return createFileSystemPreferences(preferences);

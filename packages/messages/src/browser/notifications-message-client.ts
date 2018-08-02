@@ -21,7 +21,7 @@ import {
     Message
 } from '@theia/core/lib/common';
 import { Notifications, NotificationAction } from './notifications';
-import { NotificationPreferences } from "./notification-preferences";
+import { NotificationPreferences } from './notification-preferences';
 
 @injectable()
 export class NotificationsMessageClient extends MessageClient {

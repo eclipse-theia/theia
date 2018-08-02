@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { Command, CommandHandler, CommandRegistry, SelectionService } from '@theia/core';
 import { EditorManager, TextEditorSelection } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';

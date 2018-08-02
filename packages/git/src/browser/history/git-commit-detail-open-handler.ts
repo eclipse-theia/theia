@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { WidgetOpenHandler, WidgetOpenerOptions } from "@theia/core/lib/browser";
-import URI from "@theia/core/lib/common/uri";
-import { GIT_COMMIT_DETAIL, GitCommitDetailWidgetOptions, GitCommitDetailWidget, GitCommitDetails } from "./git-commit-detail-widget";
+import { injectable } from 'inversify';
+import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import URI from '@theia/core/lib/common/uri';
+import { GIT_COMMIT_DETAIL, GitCommitDetailWidgetOptions, GitCommitDetailWidget, GitCommitDetails } from './git-commit-detail-widget';
 
 export namespace GitCommitDetailUri {
     export const scheme = GIT_COMMIT_DETAIL;
@@ -58,7 +58,7 @@ export class GitCommitDetailOpenHandler extends WidgetOpenHandler<GitCommitDetai
 
     getCommitDetailWidgetOptions(commit: GitCommitDetails): GitCommitDetailWidgetOptions {
         const range = {
-            fromRevision: commit.commitSha + "~1",
+            fromRevision: commit.commitSha + '~1',
             toRevision: commit.commitSha
         };
         return {

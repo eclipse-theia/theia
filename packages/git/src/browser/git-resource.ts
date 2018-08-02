@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import { Git, Repository } from '../common';
-import { Resource, ResourceResolver } from "@theia/core";
-import URI from "@theia/core/lib/common/uri";
+import { Resource, ResourceResolver } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
 import { GitRepositoryProvider } from './git-repository-provider';
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';

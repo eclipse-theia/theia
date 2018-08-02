@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MonacoEditor } from "@theia/monaco/lib/browser/monaco-editor";
-import { injectable, inject, postConstruct } from "inversify";
-import { EditorManager, EditorWidget, TextEditor } from "@theia/editor/lib/browser";
-import { EditorconfigService } from "../common/editorconfig-interface";
-import { KnownProps } from "editorconfig";
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { injectable, inject, postConstruct } from 'inversify';
+import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
+import { EditorconfigService } from '../common/editorconfig-interface';
+import { KnownProps } from 'editorconfig';
 
 @injectable()
 export class EditorconfigDocumentManager {
@@ -229,7 +229,7 @@ export class EditorconfigDocumentManager {
                     edits.push({
                         forceMoveMarkers: false,
                         range: new monaco.Range(i, trimmedLine.length + 1, i, line.length + 1),
-                        text: ""
+                        text: ''
                     });
                 }
             }
@@ -274,7 +274,7 @@ export class EditorconfigDocumentManager {
             const lineEnding = 'crlf' === properties.end_of_line ?
                 EditorconfigDocumentManager.LINE_ENDING.CRLF : EditorconfigDocumentManager.LINE_ENDING.LF;
 
-            if ("" !== lineContent) {
+            if ('' !== lineContent) {
                 return {
                     forceMoveMarkers: false,
                     range: new monaco.Range(lines, lineContent.length + 1, lines, lineContent.length + 1),

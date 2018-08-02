@@ -40,9 +40,9 @@ before(() => {
     storageService = testContainer.get(StorageService);
 });
 
-describe("storage-service", () => {
+describe('storage-service', () => {
 
-    it("stores data", async () => {
+    it('stores data', async () => {
         storageService.setData('foo', {
             test: 'foo'
         });
@@ -52,7 +52,7 @@ describe("storage-service", () => {
         })).test).equals('foo');
     });
 
-    it("removes data", async () => {
+    it('removes data', async () => {
         storageService.setData('foo', {
             test: 'foo'
         });

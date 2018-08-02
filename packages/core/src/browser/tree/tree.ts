@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
-import { Event, Emitter, Disposable, DisposableCollection } from "../../common";
+import { injectable } from 'inversify';
+import { Event, Emitter, Disposable, DisposableCollection } from '../../common';
 
-export const Tree = Symbol("Tree");
+export const Tree = Symbol('Tree');
 
 /**
  * The tree - an abstract data type.

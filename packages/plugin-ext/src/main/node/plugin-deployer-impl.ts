@@ -59,7 +59,7 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
     private pluginDeployerDirectoryHandlers: PluginDeployerDirectoryHandler[];
 
     public start(): void {
-        this.logger.debug("Starting the deployer with the list of resolvers", this.pluginResolvers);
+        this.logger.debug('Starting the deployer with the list of resolvers', this.pluginResolvers);
         this.doStart();
     }
 
@@ -86,10 +86,10 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
         }
         const pluginsValue = process.env.THEIA_PLUGINS;
 
-        this.logger.debug("Found the list of plugins ID on env:", pluginsValue);
+        this.logger.debug('Found the list of plugins ID on env:', pluginsValue);
 
         // transform it to an array
-        const pluginIdList = pluginsValue.split(",");
+        const pluginIdList = pluginsValue.split(',');
 
         await this.deployMultipleEntries(pluginIdList);
 
@@ -131,7 +131,7 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
         this.logger.debug('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
 
         acceptedPlugins.forEach(plugin => {
-            this.logger.debug("will deploy plugin", plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()), 'and this plugin has been resolved by', plugin.resolvedBy());
+            this.logger.debug('will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()), 'and this plugin has been resolved by', plugin.resolvedBy());
         });
 
         // local path to launch
@@ -206,7 +206,7 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
                 context.getPlugins().forEach(entry => pluginDeployerEntries.push(entry));
             } else {
                 // log it for now
-                this.logger.error("No plugin resolver found for the entry", pluginId);
+                this.logger.error('No plugin resolver found for the entry', pluginId);
                 pluginDeployerEntries.push(new PluginDeployerEntryImpl(pluginId, pluginId));
             }
             // you can do other stuff with the `item` here

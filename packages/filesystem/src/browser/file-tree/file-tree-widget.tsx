@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from "@theia/core/lib/browser";
-import { DirNode, FileStatNode } from "./file-tree";
-import { FileTreeModel } from "./file-tree-model";
+import { injectable, inject } from 'inversify';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from '@theia/core/lib/browser';
+import { DirNode, FileStatNode } from './file-tree';
+import { FileTreeModel } from './file-tree-model';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
-import * as React from "react";
+import * as React from 'react';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';

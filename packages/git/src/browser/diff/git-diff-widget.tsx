@@ -14,20 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from "inversify";
-import URI from "@theia/core/lib/common/uri";
-import { StatefulWidget, SELECTED_CLASS, DiffUris } from "@theia/core/lib/browser";
-import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser";
+import { inject, injectable, postConstruct } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { StatefulWidget, SELECTED_CLASS, DiffUris } from '@theia/core/lib/browser';
+import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
-import { GitWatcher } from "../../common";
+import { GitWatcher } from '../../common';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { GitNavigableListWidget } from "../git-navigable-list-widget";
-import { GitFileChangeNode } from "../git-widget";
-import * as React from "react";
+import { GitNavigableListWidget } from '../git-navigable-list-widget';
+import { GitFileChangeNode } from '../git-widget';
+import * as React from 'react';
 
 // tslint:disable:no-null-keyword
 
-export const GIT_DIFF = "git-diff";
+export const GIT_DIFF = 'git-diff';
 @injectable()
 export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
 
@@ -44,8 +44,8 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     constructor() {
         super();
         this.id = GIT_DIFF;
-        this.scrollContainer = "git-diff-list-container";
-        this.title.label = "Diff";
+        this.scrollContainer = 'git-diff-list-container';
+        this.title.label = 'Diff';
 
         this.addClass('theia-git');
     }
@@ -113,7 +113,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         this.gitNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
-        return <div className="git-diff-container">{commitishBar}{fileChangeList}</div>;
+        return <div className='git-diff-container'>{commitishBar}{fileChangeList}</div>;
     }
 
     protected renderDiffListHeader(): React.ReactNode {
@@ -125,7 +125,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected doRenderDiffListHeader(...children: React.ReactNode[]): React.ReactNode {
-        return <div className="diff-header">{...children}</div>;
+        return <div className='diff-header'>{...children}</div>;
     }
 
     protected renderHeaderRow({ name, value, classNames }: { name: string, value: React.ReactNode, classNames?: string[] }): React.ReactNode {
@@ -191,7 +191,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected renderNavigationLeft(): React.ReactNode {
-        return <span key="lnav" className="fa fa-arrow-left" title="Previous Change" onClick={this.showPreviousChange}></span>;
+        return <span key='lnav' className='fa fa-arrow-left' title='Previous Change' onClick={this.showPreviousChange}></span>;
     }
 
     protected readonly showNextChange = () => this.doShowNextChange();
@@ -200,7 +200,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected renderNavigationRight(): React.ReactNode {
-        return <span key="rnav" className="fa fa-arrow-right" title="Next Change" onClick={this.showNextChange}></span>;
+        return <span key='rnav' className='fa fa-arrow-right' title='Next Change' onClick={this.showNextChange}></span>;
     }
 
     protected renderFileChangeList(): React.ReactNode {
@@ -209,7 +209,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
             const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
-        return <div className="listContainer" id={this.scrollContainer}>{...files}</div>;
+        return <div className='listContainer' id={this.scrollContainer}>{...files}</div>;
     }
 
     protected renderGitItem(change: GitFileChangeNode): React.ReactNode {
@@ -324,11 +324,11 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
             if (typeof this.fromRevision !== 'number') {
                 fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
             } else {
-                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~" + this.fromRevision);
+                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + '~' + this.fromRevision);
             }
         } else {
             // default is to compare with previous revision
-            fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~1");
+            fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + '~1');
         }
 
         let toURI = uri;

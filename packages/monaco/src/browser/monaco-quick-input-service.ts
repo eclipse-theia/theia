@@ -13,9 +13,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { inject, injectable } from "inversify";
-import { MonacoQuickOpenService, MonacoQuickOpenControllerOptsImpl } from "./monaco-quick-open-service";
-import { QuickOpenMode, QuickOpenItemOptions, QuickOpenModel, QuickOpenOptions, QuickOpenItem } from "@theia/core/lib/browser";
+import { inject, injectable } from 'inversify';
+import { MonacoQuickOpenService, MonacoQuickOpenControllerOptsImpl } from './monaco-quick-open-service';
+import { QuickOpenMode, QuickOpenItemOptions, QuickOpenModel, QuickOpenOptions, QuickOpenItem } from '@theia/core/lib/browser';
 
 export interface QuickInputOptions {
 

@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Event, Emitter } from "./event";
+import { Event, Emitter } from './event';
 
 export interface Disposable {
     /**

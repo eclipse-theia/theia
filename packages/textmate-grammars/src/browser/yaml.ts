@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from "@theia/monaco/lib/browser/textmate";
-import { injectable } from "inversify";
+import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { injectable } from 'inversify';
 
 @injectable()
 export class YamlContribution implements LanguageGrammarDefinitionContribution {
@@ -27,16 +27,16 @@ export class YamlContribution implements LanguageGrammarDefinitionContribution {
         monaco.languages.register({
             id: this.id,
             aliases: [
-                "YAML",
-                "yaml"
+                'YAML',
+                'yaml'
             ],
             extensions: [
-                ".yml",
-                ".eyaml",
-                ".eyml",
-                ".yaml"
+                '.yml',
+                '.eyaml',
+                '.eyml',
+                '.yaml'
             ],
-            firstLine: "^#cloud-config"
+            firstLine: '^#cloud-config'
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

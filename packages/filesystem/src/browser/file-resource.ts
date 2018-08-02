@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
-import { Resource, ResourceResolver, Emitter, Event, DisposableCollection } from "@theia/core";
-import URI from "@theia/core/lib/common/uri";
-import { FileSystem, FileStat } from "../common/filesystem";
-import { FileSystemWatcher } from "./filesystem-watcher";
+import { injectable, inject } from 'inversify';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
+import { Resource, ResourceResolver, Emitter, Event, DisposableCollection } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
+import { FileSystem, FileStat } from '../common/filesystem';
+import { FileSystemWatcher } from './filesystem-watcher';
 
 export class FileResource implements Resource {
 

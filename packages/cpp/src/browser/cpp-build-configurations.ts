@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, Event, Emitter } from "@theia/core";
-import { injectable, inject, postConstruct } from "inversify";
-import { QuickOpenService } from "@theia/core/lib/browser/quick-open/quick-open-service";
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from "@theia/core/lib/browser/quick-open/quick-open-model";
-import { StorageService } from "@theia/core/lib/browser/storage-service";
-import { CppPreferences } from "./cpp-preferences";
+import { Command, CommandContribution, CommandRegistry, Event, Emitter } from '@theia/core';
+import { injectable, inject, postConstruct } from 'inversify';
+import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from '@theia/core/lib/browser/quick-open/quick-open-model';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { CppPreferences } from './cpp-preferences';
 
 export interface CppBuildConfiguration {
     name: string;

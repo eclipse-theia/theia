@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { IBaseTerminalClient, IBaseTerminalExitEvent, IBaseTerminalErrorEvent } from './base-terminal-protocol';
 

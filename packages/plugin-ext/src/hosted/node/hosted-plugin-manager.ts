@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from "inversify";
-import * as cp from "child_process";
-import * as fs from "fs";
-import * as net from "net";
+import { inject, injectable, named } from 'inversify';
+import * as cp from 'child_process';
+import * as fs from 'fs';
+import * as net from 'net';
 import URI from '@theia/core/lib/common/uri';
-import { ContributionProvider } from "@theia/core/lib/common/contribution-provider";
-import { LogType } from "./../../common/types";
-import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from "./hosted-plugin-uri-postprocessor";
-import { HostedPluginSupport } from "./hosted-plugin";
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { LogType } from './../../common/types';
+import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
+import { HostedPluginSupport } from './hosted-plugin';
 const processTree = require('ps-tree');
 
 export const HostedPluginManager = Symbol('HostedPluginManager');

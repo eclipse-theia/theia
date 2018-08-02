@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 
-import { ContainerModule } from "inversify";
+import { ContainerModule } from 'inversify';
 import {
     bindContributionProvider,
     SelectionService,
@@ -27,8 +27,8 @@ import {
     MenuModelRegistry, MenuContribution,
     MessageService,
     MessageClient
-} from "../common";
-import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from "./keybinding";
+} from '../common';
+import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
@@ -40,9 +40,9 @@ import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
     TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory, SplitPositionHandler, DockPanelRendererFactory
 } from './shell';
-import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
+import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
-import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
+import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import {
     PreferenceProviders, PreferenceProvider,
     PreferenceScope, PreferenceService, PreferenceServiceImpl
@@ -51,10 +51,10 @@ import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
-import { ApplicationServer, applicationPath } from "../common/application-protocol";
-import { WebSocketConnectionProvider } from "./messaging";
-import { AboutDialog, AboutDialogProps } from "./about-dialog";
-import { EnvVariablesServer, envVariablesPath } from "./../common/env-variables";
+import { ApplicationServer, applicationPath } from '../common/application-protocol';
+import { WebSocketConnectionProvider } from './messaging';
+import { AboutDialog, AboutDialogProps } from './about-dialog';
+import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {

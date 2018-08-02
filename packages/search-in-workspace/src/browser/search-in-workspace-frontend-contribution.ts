@@ -14,26 +14,26 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus } from "@theia/core/lib/browser";
-import { SearchInWorkspaceWidget } from "./search-in-workspace-widget";
-import { injectable, inject } from "inversify";
-import { CommandRegistry, MenuModelRegistry, SelectionService } from "@theia/core";
-import { NAVIGATOR_CONTEXT_MENU } from "@theia/navigator/lib/browser/navigator-contribution";
-import { UriCommandHandler, UriAwareCommandHandler } from "@theia/core/lib/common/uri-command-handler";
-import URI from "@theia/core/lib/common/uri";
+import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus } from '@theia/core/lib/browser';
+import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
+import { injectable, inject } from 'inversify';
+import { CommandRegistry, MenuModelRegistry, SelectionService } from '@theia/core';
+import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
+import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import URI from '@theia/core/lib/common/uri';
 
 export namespace SearchInWorkspaceCommands {
     export const TOGGLE_SIW_WIDGET = {
-        id: "search-in-workspace.toggle"
+        id: 'search-in-workspace.toggle'
     };
     export const OPEN_SIW_WIDGET = {
-        id: "search-in-workspace.open",
-        label: "Search In Workspace"
+        id: 'search-in-workspace.open',
+        label: 'Search In Workspace'
 
     };
     export const FIND_IN_FOLDER = {
-        id: "search-in-workspace.in-folder",
-        label: "Find In Folder..."
+        id: 'search-in-workspace.in-folder',
+        label: 'Find In Folder...'
     };
 }
 
@@ -48,7 +48,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             widgetId: SearchInWorkspaceWidget.ID,
             widgetName: SearchInWorkspaceWidget.LABEL,
             defaultWidgetOptions: {
-                area: "left"
+                area: 'left'
             },
             toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
         });
@@ -77,7 +77,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
-            keybinding: "ctrlcmd+shift+f"
+            keybinding: 'ctrlcmd+shift+f'
         });
     }
 

@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutlineViewWidget } from './outline-view-widget';
-import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser/frontend-application";
+import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 
 export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 

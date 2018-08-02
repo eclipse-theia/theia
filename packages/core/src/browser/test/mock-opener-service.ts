@@ -28,7 +28,7 @@ export class MockOpenerService implements OpenerService {
     }
 
     async getOpener(): Promise<OpenHandler> {
-        throw new Error(`MockOpenerService is for testing only.`);
+        throw new Error('MockOpenerService is for testing only.');
     }
 
 }

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 
 @injectable()

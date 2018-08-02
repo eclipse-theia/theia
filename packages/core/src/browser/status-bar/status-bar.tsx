@@ -19,7 +19,7 @@ import { LabelParser, LabelIcon } from '../label-parser';
 import { injectable, inject } from 'inversify';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { ReactWidget } from '../widgets/react-widget';
-import * as React from "react";
+import * as React from 'react';
 
 export interface StatusBarEntry {
     /**
@@ -126,8 +126,8 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         });
 
         return <React.Fragment>
-            <div className="area left">{leftEntries}</div>
-            <div className="area right">{rightEntries}</div>
+            <div className='area left'>{leftEntries}</div>
+            <div className='area right'>{rightEntries}</div>
         </React.Fragment>;
     }
 
@@ -179,7 +179,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         const children: JSX.Element[] = [];
 
         childStrings.forEach((val, idx) => {
-            const key = entry.alignment + "-" + idx;
+            const key = entry.alignment + '-' + idx;
             if (!(typeof val === 'string') && LabelIcon.is(val)) {
                 const classStr = `fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`;
                 children.push(<span className={classStr} key={key}></span>);
@@ -189,7 +189,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         });
         const elementInnerDiv = <div>{children}</div>;
 
-        return React.createElement("div", { key: entry.text + entry.tooltip + entry.priority + entry.command, ...this.createAttributes(entry) }, elementInnerDiv);
+        return React.createElement('div', { key: entry.text + entry.tooltip + entry.priority + entry.command, ...this.createAttributes(entry) }, elementInnerDiv);
     }
 
 }

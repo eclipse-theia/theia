@@ -20,7 +20,7 @@ import { Event, Disposable, SelectionProvider } from '../../common';
 /**
  * The tree selection service.
  */
-export const TreeSelectionService = Symbol("TreeSelectionService");
+export const TreeSelectionService = Symbol('TreeSelectionService');
 export interface TreeSelectionService extends Disposable, SelectionProvider<ReadonlyArray<Readonly<SelectableTreeNode>>> {
 
     /**

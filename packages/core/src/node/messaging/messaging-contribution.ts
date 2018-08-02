@@ -18,16 +18,16 @@ import * as ws from 'ws';
 import * as url from 'url';
 import * as http from 'http';
 import * as https from 'https';
-import { injectable, inject, named, postConstruct } from "inversify";
+import { injectable, inject, named, postConstruct } from 'inversify';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';
 import { ContributionProvider, ConnectionHandler } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
-import { BackendApplicationContribution } from "../backend-application";
+import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
-import { ConsoleLogger } from "./logger";
+import { ConsoleLogger } from './logger';
 
 import Route = require('route-parser');
 

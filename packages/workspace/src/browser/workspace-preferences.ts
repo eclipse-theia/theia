@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
+import { interfaces } from 'inversify';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -24,14 +24,14 @@ import {
 } from '@theia/core/lib/browser/preferences';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
-    "type": "object",
-    "properties": {
-        "workspace.preserveWindow": {
-            "description": "Enable opening workspaces in current window",
-            "additionalProperties": {
-                "type": "boolean"
+    'type': 'object',
+    'properties': {
+        'workspace.preserveWindow': {
+            'description': 'Enable opening workspaces in current window',
+            'additionalProperties': {
+                'type': 'boolean'
             },
-            "default": false
+            'default': false
         }
     }
 };

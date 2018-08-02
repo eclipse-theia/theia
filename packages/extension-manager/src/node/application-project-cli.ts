@@ -16,7 +16,7 @@
 
 import * as yargs from 'yargs';
 import { injectable } from 'inversify';
-import { CliContribution } from "@theia/core/lib/node";
+import { CliContribution } from '@theia/core/lib/node';
 import { ApplicationProjectOptions } from './application-project';
 import { NpmClientOptions } from './npm-client';
 
@@ -37,21 +37,21 @@ export class ApplicationProjectCliContribution implements CliContribution {
 
     configure(conf: yargs.Argv): void {
         conf.option(appProjectPath, {
-            description: "Sets the application project directory",
+            description: 'Sets the application project directory',
             default: process.cwd()
         });
         conf.option(appNpmClient, {
-            description: "Sets the application npm client",
-            choices: ["npm", "yarn"],
-            default: "yarn"
+            description: 'Sets the application npm client',
+            choices: ['npm', 'yarn'],
+            default: 'yarn'
         });
         conf.option(appAutoInstall, {
-            description: "Sets whether the application should be build on package.json changes",
-            type: "boolean",
+            description: 'Sets whether the application should be build on package.json changes',
+            type: 'boolean',
             default: true
         });
         conf.option(appWatchRegistry, {
-            type: "boolean",
+            type: 'boolean',
             default: true
         });
     }

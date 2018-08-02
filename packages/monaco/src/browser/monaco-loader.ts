@@ -42,7 +42,7 @@ export function loadVsRequire(context: any): Promise<any> {
 
 export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
-        vsRequire(["vs/editor/editor.main"], () => {
+        vsRequire(['vs/editor/editor.main'], () => {
             vsRequire([
                 'vs/language/css/monaco.contribution',
                 'vs/language/html/monaco.contribution',

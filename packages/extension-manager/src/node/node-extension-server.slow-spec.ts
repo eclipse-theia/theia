@@ -42,15 +42,15 @@ export function waitForDidChange(): Promise<void> {
 const dir = path.resolve(__dirname, '..', '..', 'node-extension-server-test-temp');
 fs.ensureDirSync(dir);
 
-describe("node-extension-server", function () {
+describe('node-extension-server', function () {
 
     beforeEach(function () {
         this.timeout(50000);
         appProjectPath = temp.mkdirSync({ dir });
         fs.writeJsonSync(path.resolve(appProjectPath, 'package.json'), {
-            "dependencies": {
-                "@theia/core": "0.1.0",
-                "@theia/extension-manager": "0.1.0"
+            'dependencies': {
+                '@theia/core': '0.1.0',
+                '@theia/extension-manager': '0.1.0'
             }
         });
 
@@ -71,18 +71,18 @@ describe("node-extension-server", function () {
         fs.removeSync(appProjectPath);
     });
 
-    it("search", function () {
+    it('search', function () {
         this.timeout(30000);
 
         return server.search({
-            query: "filesystem scope:theia"
+            query: 'filesystem scope:theia'
         }).then(extensions => {
             assert.equal(extensions.length, 1, JSON.stringify(extensions, undefined, 2));
             assert.equal(extensions[0].name, '@theia/filesystem');
         });
     });
 
-    it("installed", function () {
+    it('installed', function () {
         this.timeout(10000);
 
         return server.installed().then(extensions => {
@@ -93,7 +93,7 @@ describe("node-extension-server", function () {
         });
     });
 
-    it("install", async function () {
+    it('install', async function () {
         this.timeout(10000);
 
         const before = await server.installed();
@@ -101,7 +101,7 @@ describe("node-extension-server", function () {
 
         const onDidChangePackage = waitForDidChange();
 
-        await server.install("@theia/editor");
+        await server.install('@theia/editor');
 
         await onDidChangePackage;
         return server.installed().then(after => {
@@ -109,7 +109,7 @@ describe("node-extension-server", function () {
         });
     });
 
-    it("uninstall", async function () {
+    it('uninstall', async function () {
         this.timeout(10000);
 
         const before = await server.installed();
@@ -117,7 +117,7 @@ describe("node-extension-server", function () {
 
         const onDidChangePackage = waitForDidChange();
 
-        await server.uninstall("@theia/extension-manager");
+        await server.uninstall('@theia/extension-manager');
 
         await onDidChangePackage;
         return server.installed().then(after => {
@@ -125,7 +125,7 @@ describe("node-extension-server", function () {
         });
     });
 
-    it("outdated", function () {
+    it('outdated', function () {
         this.timeout(10000);
 
         return server.outdated().then(extensions => {
@@ -134,7 +134,7 @@ describe("node-extension-server", function () {
         });
     });
 
-    it("update", async function () {
+    it('update', async function () {
         this.timeout(10000);
 
         const before = await server.outdated();
@@ -142,7 +142,7 @@ describe("node-extension-server", function () {
 
         const onDidChangePackage = waitForDidChange();
 
-        await server.update("@theia/core");
+        await server.update('@theia/core');
 
         await onDidChangePackage;
         return server.outdated().then(after => {
@@ -150,7 +150,7 @@ describe("node-extension-server", function () {
         });
     });
 
-    it("list", function () {
+    it('list', function () {
         this.timeout(10000);
 
         return server.list().then(extensions => {
@@ -177,11 +177,11 @@ describe("node-extension-server", function () {
         });
     });
 
-    it("list with search", function () {
+    it('list with search', function () {
         this.timeout(50000);
 
         return server.list({
-            query: "scope:theia file"
+            query: 'scope:theia file'
         }).then(extensions => {
             const filtered = extensions.filter(e => ['@theia/filesystem', '@theia/file-search'].indexOf(e.name) !== -1);
 
@@ -189,7 +189,7 @@ describe("node-extension-server", function () {
                 name: '@theia/filesystem',
                 installed: true,
                 outdated: false,
-                dependent: "@theia/extension-manager"
+                dependent: '@theia/extension-manager'
             }, filtered);
 
             assertExtension({

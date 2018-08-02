@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from "inversify";
-import { QuickOpenService, QuickOpenItem, QuickOpenModel, QuickOpenMode } from "@theia/core/lib/browser";
-import { PluginServer } from "../../common";
-import { Command } from "@theia/core";
-import { HostedPluginSupport } from "../../hosted/browser/hosted-plugin";
-import { PluginWidget } from "./plugin-ext-widget";
+import { injectable, inject } from 'inversify';
+import { QuickOpenService, QuickOpenItem, QuickOpenModel, QuickOpenMode } from '@theia/core/lib/browser';
+import { PluginServer } from '../../common';
+import { Command } from '@theia/core';
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { PluginWidget } from './plugin-ext-widget';
 
 @injectable()
 export class PluginExtDeployCommandService implements QuickOpenModel {

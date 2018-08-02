@@ -40,7 +40,7 @@ export interface Variable {
     resolve(): MaybePromise<string | undefined>;
 }
 
-export const VariableContribution = Symbol("VariableContribution");
+export const VariableContribution = Symbol('VariableContribution');
 /**
  * The variable contribution should be implemented to register custom variables.
  */

@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from "inversify";
+import { inject, injectable } from 'inversify';
 import { Resource, MaybePromise } from '@theia/core';
 import { BaseWidget, Message, addEventListener } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter } from '@theia/core/lib/common';
-import { Workspace, Location, Range } from "@theia/languages/lib/browser";
+import { Workspace, Location, Range } from '@theia/languages/lib/browser';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { EditorPreferences } from "@theia/editor/lib/browser";
+import { EditorPreferences } from '@theia/editor/lib/browser';
 
 import throttle = require('lodash.throttle');
 

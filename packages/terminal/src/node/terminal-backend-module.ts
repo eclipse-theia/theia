@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { ContainerModule, Container, interfaces } from 'inversify';
-import { TerminalBackendContribution } from "./terminal-backend-contribution";
-import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
+import { TerminalBackendContribution } from './terminal-backend-contribution';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { IBaseTerminalClient, DispatchingBaseTerminalClient, IBaseTerminalServer } from '../common/base-terminal-protocol';

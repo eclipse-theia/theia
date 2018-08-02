@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from "inversify";
-import { Message } from "@theia/core/lib/browser";
-import { OutputChannelManager, OutputChannel } from "../common/output-channel";
-import { ReactWidget } from "@theia/core/lib/browser/widgets/react-widget";
-import * as React from "react";
+import { inject, injectable, postConstruct } from 'inversify';
+import { Message } from '@theia/core/lib/browser';
+import { OutputChannelManager, OutputChannel } from '../common/output-channel';
+import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
+import * as React from 'react';
 
-import "../../src/browser/style/output.css";
+import '../../src/browser/style/output.css';
 
 export const OUTPUT_WIDGET_KIND = 'outputView';
 

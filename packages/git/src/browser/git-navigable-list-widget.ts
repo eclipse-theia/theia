@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { SELECTED_CLASS, Key } from "@theia/core/lib/browser";
+import { SELECTED_CLASS, Key } from '@theia/core/lib/browser';
 import { GitFileStatus, Repository, GitFileChange } from '../common';
-import URI from "@theia/core/lib/common/uri";
-import { GitRepositoryProvider } from "./git-repository-provider";
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
-import { Message } from "@phosphor/messaging";
-import { ElementExt } from "@phosphor/domutils";
-import { inject, injectable } from "inversify";
-import { ReactWidget } from "@theia/core/lib/browser/widgets/react-widget";
+import URI from '@theia/core/lib/common/uri';
+import { GitRepositoryProvider } from './git-repository-provider';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { Message } from '@phosphor/messaging';
+import { ElementExt } from '@phosphor/domutils';
+import { inject, injectable } from 'inversify';
+import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 
 @injectable()
 export abstract class GitNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {

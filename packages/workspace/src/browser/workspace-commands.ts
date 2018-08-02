@@ -114,7 +114,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
                     const dialog = new SingleTextInputDialog({
-                        title: `New File`,
+                        title: 'New File',
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     });
@@ -135,7 +135,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
                     const dialog = new SingleTextInputDialog({
-                        title: `New Folder`,
+                        title: 'New Folder',
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     });
@@ -261,7 +261,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
      */
     protected validateFileName(name: string, parent: FileStat): string {
         if (!validFilename(name)) {
-            return "Invalid name, try other";
+            return 'Invalid name, try other';
         }
         if (parent.children) {
             for (const child of parent.children) {
