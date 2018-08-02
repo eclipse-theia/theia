@@ -34,7 +34,7 @@ export class FileSystemListener implements FileSystemClient {
             ok: 'Yes',
             cancel: 'No'
         });
-        return await dialog.open() ? true : false;
+        return !!await dialog.open();
     }
 
 }

@@ -1739,6 +1739,53 @@ declare module '@theia/plugin' {
         dispose(): void;
     }
 
+	/**
+	 * Options to configure the behaviour of a file open dialog.
+	 *
+	 * * Note 1: A dialog can select files, folders, or both. This is not true for Windows
+	 * which enforces to open either files or folder, but *not both*.
+	 * * Note 2: Explicitly setting `canSelectFiles` and `canSelectFolders` to `false` is futile
+	 * and the editor then silently adjusts the options to select files.
+	 */
+    export interface OpenDialogOptions {
+		/**
+		 * The resource the dialog shows when opened.
+		 */
+        defaultUri?: Uri;
+
+		/**
+		 * A human-readable string for the open button.
+		 */
+        openLabel?: string;
+
+		/**
+		 * Allow to select files, defaults to `true`.
+		 */
+        canSelectFiles?: boolean;
+
+		/**
+		 * Allow to select folders, defaults to `false`.
+		 */
+        canSelectFolders?: boolean;
+
+		/**
+		 * Allow to select many files or folders.
+		 */
+        canSelectMany?: boolean;
+
+		/**
+		 * A set of file filters that are used by the dialog. Each entry is a human readable label,
+		 * like "TypeScript", and an array of extensions, e.g.
+		 * ```ts
+		 * {
+		 * 	'Images': ['png', 'jpg']
+		 * 	'TypeScript': ['ts', 'tsx']
+		 * }
+		 * ```
+		 */
+        filters?: { [name: string]: string[] };
+    }
+
     /**
      * Definition of the terminal emulator.
      */
@@ -1996,6 +2043,7 @@ declare module '@theia/plugin' {
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
         export function showErrorMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
+
         /**
          * Opens an input box to ask the user for input.
          *
@@ -2008,6 +2056,16 @@ declare module '@theia/plugin' {
          * @return A promise that resolves to a string the user provided or to `undefined` in case of dismissal.
          */
         export function showInputBox(options?: InputBoxOptions, token?: CancellationToken): PromiseLike<string | undefined>;
+
+        /**
+         * Shows a file open dialog to the user which allows to select a file
+         * for opening-purposes.
+         *
+         * @param options Options that control the dialog.
+         * @returns A promise that resolves to the selected resources or `undefined`.
+         */
+        export function showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined>;
+
         /**
          * Represents the current window's state.
          *

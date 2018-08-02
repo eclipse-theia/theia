@@ -139,11 +139,54 @@ export interface QuickOpenExt {
     $validateInput(input: string): PromiseLike<string | undefined> | undefined;
 }
 
+/**
+ * Options to configure the behaviour of a file open dialog.
+ */
+export interface OpenDialogOptionsMain {
+    /**
+     * The resource the dialog shows when opened.
+     */
+    defaultUri?: string;
+
+    /**
+     * A human-readable string for the open button.
+     */
+    openLabel?: string;
+
+    /**
+     * Allow to select files, defaults to `true`.
+     */
+    canSelectFiles?: boolean;
+
+    /**
+     * Allow to select folders, defaults to `false`.
+     */
+    canSelectFolders?: boolean;
+
+    /**
+     * Allow to select many files or folders.
+     */
+    canSelectMany?: boolean;
+
+    /**
+     * A set of file filters that are used by the dialog. Each entry is a human readable label,
+     * like "TypeScript", and an array of extensions, e.g.
+     * ```ts
+     * {
+     * 	'Images': ['png', 'jpg']
+     * 	'TypeScript': ['ts', 'tsx']
+     * }
+     * ```
+     */
+    filters?: { [name: string]: string[] };
+}
+
 export interface QuickOpenMain {
     $show(options: PickOptions): Promise<number | number[]>;
     $setItems(items: PickOpenItem[]): Promise<any>;
     $setError(error: Error): Promise<any>;
     $input(options: theia.InputBoxOptions, validateInput: boolean): Promise<string | undefined>;
+    $showOpenDialog(options: OpenDialogOptionsMain): Promise<string[] | undefined>;
 }
 
 export interface WindowStateExt {

@@ -64,14 +64,19 @@ export class HostedPluginController implements FrontendApplicationContribution {
             if (!pluginMetadata) {
                 this.frontendApplicationStateService.reachedState('ready').then(() => {
                     this.hostedPluginManagerClient.onStateChanged(e => {
-                        if (e === 'starting') {
-                            this.onHostedPluginStarting();
-                        } else if (e === 'running') {
-                            this.onHostedPluginRunning();
-                        } else if (e === 'stopped') {
-                            this.onHostedPluginStopped();
-                        } else if (e === 'failed') {
-                            this.onHostedPluginFailed();
+                        switch (e) {
+                            case HostedPluginState.Starting:
+                                this.onHostedPluginStarting();
+                                break;
+                            case HostedPluginState.Running:
+                                this.onHostedPluginRunning();
+                                break;
+                            case HostedPluginState.Stopped:
+                                this.onHostedPluginStopped();
+                                break;
+                            case HostedPluginState.Failed:
+                                this.onHostedPluginFailed();
+                                break;
                         }
                     });
 

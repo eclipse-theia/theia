@@ -201,7 +201,7 @@ export class GitSyncService {
     }
 
     protected async confirm(title: string, msg: string): Promise<boolean> {
-        return await new ConfirmDialog({ title, msg, }).open() ? true : false;
+        return !!await new ConfirmDialog({ title, msg, }).open();
     }
 
 }

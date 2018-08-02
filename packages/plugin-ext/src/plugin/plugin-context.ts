@@ -142,6 +142,9 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             ...items: any[]): PromiseLike<any> {
             return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
         },
+        showOpenDialog(options: theia.OpenDialogOptions): PromiseLike<Uri[] | undefined> {
+            return quickOpenExt.showOpenDialog(options);
+        },
         // tslint:disable-next-line:no-any
         setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
             return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
