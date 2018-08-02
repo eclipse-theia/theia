@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+<<<<<<< HEAD
 import { ContainerModule } from 'inversify';
 import { BatContribution } from './bat';
 import { CssContribution } from './css';
@@ -25,10 +26,27 @@ import { XmlContribution } from './xml';
 import { XslContribution } from './xsl';
 import { YamlContribution } from './yaml';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
+=======
+import { ContainerModule } from "inversify";
+import { BatContribution } from "./bat";
+import { ClojureContribution } from "./clojure";
+import { CssContribution } from "./css";
+import { HtmlContribution } from "./html";
+import { LessContribution } from "./less";
+import { MarkdownContribution } from "./markdown";
+import { ShellContribution } from "./shell";
+import { XmlContribution } from "./xml";
+import { XslContribution } from "./xsl";
+import { YamlContribution } from "./yaml";
+import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate/textmate-contribution";
+>>>>>>> Added clojure to textmate-grammars
 
 export default new ContainerModule(bind => {
     bind(BatContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(BatContribution);
+
+    bind(ClojureContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(ClojureContribution);
 
     bind(CssContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
