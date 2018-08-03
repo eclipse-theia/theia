@@ -2483,4 +2483,284 @@ declare module '@theia/plugin' {
         export function getQueryParameters(): { [key: string]: string | string[] } | undefined;
     }
 
+    /**
+     * A relative pattern is a helper to construct glob patterns that are matched
+     * relatively to a base path. The base path can either be an absolute file path
+     * or a [workspace folder](#WorkspaceFolder).
+     */
+    export class RelativePattern {
+
+        /**
+         * A base file path to which this pattern will be matched against relatively.
+         */
+        base: string;
+
+        /**
+         * A file glob pattern like `*.{ts,js}` that will be matched on file paths
+         * relative to the base path.
+         *
+         * Example: Given a base of `/home/work/folder` and a file path of `/home/work/folder/index.js`,
+         * the file glob pattern will match on `index.js`.
+         */
+        pattern: string;
+
+        /**
+         * Creates a new relative pattern object with a base path and pattern to match. This pattern
+         * will be matched on file paths relative to the base path.
+         *
+         * @param base A base file path to which this pattern will be matched against relatively.
+         * @param pattern A file glob pattern like `*.{ts,js}` that will be matched on file paths
+         * relative to the base path.
+         */
+        constructor(base: WorkspaceFolder | string, pattern: string)
+    }
+
+    /**
+     * A file glob pattern to match file paths against. This can either be a glob pattern string
+     * (like `**​/*.{ts,js}` or `*.{ts,js}`) or a [relative pattern](#RelativePattern).
+     *
+     * Glob patterns can have the following syntax:
+     * * `*` to match one or more characters in a path segment
+     * * `?` to match on one character in a path segment
+     * * `**` to match any number of path segments, including none
+     * * `{}` to group conditions (e.g. `**​/*.{ts,js}` matches all TypeScript and JavaScript files)
+     * * `[]` to declare a range of characters to match in a path segment (e.g., `example.[0-9]` to match on `example.0`, `example.1`, …)
+     * * `[!...]` to negate a range of characters to match in a path segment (e.g., `example.[!0-9]` to match on `example.a`, `example.b`, but not `example.0`)
+     */
+    export type GlobPattern = string | RelativePattern;
+
+    /**
+     * A document filter denotes a document by different properties like
+     * the [language](#TextDocument.languageId), the [scheme](#Uri.scheme) of
+     * its resource, or a glob-pattern that is applied to the [path](#TextDocument.fileName).
+     *
+     * @sample A language filter that applies to typescript files on disk: `{ language: 'typescript', scheme: 'file' }`
+     * @sample A language filter that applies to all package.json paths: `{ language: 'json', scheme: 'untitled', pattern: '**​/package.json' }`
+     */
+    export interface DocumentFilter {
+
+        /**
+         * A language id, like `typescript`.
+         */
+        language?: string;
+
+        /**
+         * A Uri [scheme](#Uri.scheme), like `file` or `untitled`.
+         */
+        scheme?: string;
+
+        /**
+         * A [glob pattern](#GlobPattern) that is matched on the absolute path of the document. Use a [relative pattern](#RelativePattern)
+         * to filter documents to a [workspace folder](#WorkspaceFolder).
+         */
+        pattern?: GlobPattern;
+    }
+
+    /**
+     * A language selector is the combination of one or many language identifiers
+     * and [language filters](#DocumentFilter).
+     *
+     * *Note* that a document selector that is just a language identifier selects *all*
+     * documents, even those that are not saved on disk. Only use such selectors when
+     * a feature works without further context, e.g without the need to resolve related
+     * 'files'.
+     *
+     * @sample `let sel:DocumentSelector = { scheme: 'file', language: 'typescript' }`;
+     */
+    export type DocumentSelector = DocumentFilter | string | Array<DocumentFilter | string>;
+
+    /**
+     * A tuple of two characters, like a pair of
+     * opening and closing brackets.
+     */
+    export type CharacterPair = [string, string];
+
+    /**
+     * Describes how comments for a language work.
+     */
+    export interface CommentRule {
+
+        /**
+         * The line comment token, like `// this is a comment`
+         */
+        lineComment?: string;
+
+        /**
+         * The block comment character pair, like `/* block comment *&#47;`
+         */
+        blockComment?: CharacterPair;
+    }
+
+    /**
+     * Describes what to do with the indentation when pressing Enter.
+     */
+    export enum IndentAction {
+        /**
+         * Insert new line and copy the previous line's indentation.
+         */
+        None = 0,
+        /**
+         * Insert new line and indent once (relative to the previous line's indentation).
+         */
+        Indent = 1,
+        /**
+         * Insert two new lines:
+         *  - the first one indented which will hold the cursor
+         *  - the second one at the same indentation level
+         */
+        IndentOutdent = 2,
+        /**
+         * Insert new line and outdent once (relative to the previous line's indentation).
+         */
+        Outdent = 3
+    }
+
+    /**
+     * Describes what to do when pressing Enter.
+     */
+    export interface EnterAction {
+        /**
+         * Describe what to do with the indentation.
+         */
+        indentAction: IndentAction;
+        /**
+         * Describes text to be appended after the new line and after the indentation.
+         */
+        appendText?: string;
+        /**
+         * Describes the number of characters to remove from the new line's indentation.
+         */
+        removeText?: number;
+    }
+
+    /**
+     * Describes a rule to be evaluated when pressing Enter.
+     */
+    export interface OnEnterRule {
+        /**
+         * This rule will only execute if the text before the cursor matches this regular expression.
+         */
+        beforeText: RegExp;
+        /**
+         * This rule will only execute if the text after the cursor matches this regular expression.
+         */
+        afterText?: RegExp;
+        /**
+         * The action to execute.
+         */
+        action: EnterAction;
+    }
+
+    /**
+     * Describes indentation rules for a language.
+     */
+    export interface IndentationRule {
+        /**
+         * If a line matches this pattern, then all the lines after it should be unindented once (until another rule matches).
+         */
+        decreaseIndentPattern: RegExp;
+        /**
+         * If a line matches this pattern, then all the lines after it should be indented once (until another rule matches).
+         */
+        increaseIndentPattern: RegExp;
+        /**
+         * If a line matches this pattern, then **only the next line** after it should be indented once.
+         */
+        indentNextLinePattern?: RegExp;
+        /**
+         * If a line matches this pattern, then its indentation should not be changed and it should not be evaluated against the other rules.
+         */
+        unIndentedLinePattern?: RegExp;
+    }
+
+    /**
+     * The language configuration interfaces defines the contract between extensions
+     * and various editor features, like automatic bracket insertion, automatic indentation etc.
+     */
+    export interface LanguageConfiguration {
+        /**
+         * The language's comment settings.
+         */
+        comments?: CommentRule;
+        /**
+         * The language's brackets.
+         * This configuration implicitly affects pressing Enter around these brackets.
+         */
+        brackets?: CharacterPair[];
+        /**
+         * The language's word definition.
+         * If the language supports Unicode identifiers (e.g. JavaScript), it is preferable
+         * to provide a word definition that uses exclusion of known separators.
+         * e.g.: A regex that matches anything except known separators (and dot is allowed to occur in a floating point number):
+         *   /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g
+         */
+        wordPattern?: RegExp;
+        /**
+         * The language's indentation settings.
+         */
+        indentationRules?: IndentationRule;
+        /**
+         * The language's rules to be evaluated when pressing Enter.
+         */
+        onEnterRules?: OnEnterRule[];
+
+    }
+
+
+    export namespace languages {
+        /**
+         * Return the identifiers of all known languages.
+         * @return Promise resolving to an array of identifier strings.
+         */
+        export function getLanguages(): PromiseLike<string[]>;
+
+        /**
+         * Compute the match between a document [selector](#DocumentSelector) and a document. Values
+         * greater than zero mean the selector matches the document.
+         *
+         * A match is computed according to these rules:
+         * 1. When [`DocumentSelector`](#DocumentSelector) is an array, compute the match for each contained `DocumentFilter` or language identifier and take the maximum value.
+         * 2. A string will be desugared to become the `language`-part of a [`DocumentFilter`](#DocumentFilter), so `"fooLang"` is like `{ language: "fooLang" }`.
+         * 3. A [`DocumentFilter`](#DocumentFilter) will be matched against the document by comparing its parts with the document. The following rules apply:
+         *  1. When the `DocumentFilter` is empty (`{}`) the result is `0`
+         *  2. When `scheme`, `language`, or `pattern` are defined but one doesn’t match, the result is `0`
+         *  3. Matching against `*` gives a score of `5`, matching via equality or via a glob-pattern gives a score of `10`
+         *  4. The result is the maximum value of each match
+         *
+         * Samples:
+         * ```js
+         * // default document from disk (file-scheme)
+         * doc.uri; //'file:///my/file.js'
+         * doc.languageId; // 'javascript'
+         * match('javascript', doc); // 10;
+         * match({language: 'javascript'}, doc); // 10;
+         * match({language: 'javascript', scheme: 'file'}, doc); // 10;
+         * match('*', doc); // 5
+         * match('fooLang', doc); // 0
+         * match(['fooLang', '*'], doc); // 5
+         *
+         * // virtual document, e.g. from git-index
+         * doc.uri; // 'git:/my/file.js'
+         * doc.languageId; // 'javascript'
+         * match('javascript', doc); // 10;
+         * match({language: 'javascript', scheme: 'git'}, doc); // 10;
+         * match('*', doc); // 5
+         * ```
+         *
+         * @param selector A document selector.
+         * @param document A text document.
+         * @return A number `>0` when the selector matches and `0` when the selector does not match.
+         */
+        export function match(selector: DocumentSelector, document: TextDocument): number;
+
+        /**
+         * Set a [language configuration](#LanguageConfiguration) for a language.
+         *
+         * @param language A language identifier like `typescript`.
+         * @param configuration Language configuration.
+         * @return A [disposable](#Disposable) that unsets this configuration.
+         */
+        export function setLanguageConfiguration(language: string, configuration: LanguageConfiguration): Disposable;
+    }
+
 }

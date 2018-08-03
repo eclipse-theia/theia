@@ -17,6 +17,7 @@ import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart } from './types';
+import { CharacterPair, CommentRule } from '../api/plugin-api';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -42,8 +43,53 @@ export interface PluginPackage {
     main?: string;
     displayName: string;
     description: string;
-    contributes: {};
+    contributes?: PluginPackageContribution;
     packagePath: string;
+}
+
+/**
+ * This interface describes a package.json contribution section object.
+ */
+export interface PluginPackageContribution {
+    languages?: PluginPackageLanguageContribution[];
+    grammars?: PluginPackageGrammarsContribution[];
+}
+
+export interface PluginPackageGrammarsContribution {
+    language?: string;
+    scopeName: string;
+    path: string;
+    embeddedLanguages?: ScopeMap;
+    tokenTypes?: ScopeMap;
+    injectTo?: string[];
+}
+
+export interface ScopeMap {
+    [scopeName: string]: string;
+}
+
+/**
+ * This interface describes a package.json languages contribution section object.
+ */
+export interface PluginPackageLanguageContribution {
+    id: string;
+    extensions?: string[];
+    filenames?: string[];
+    filenamePatterns?: string[];
+    firstLine?: string;
+    aliases?: string[];
+    mimetypes?: string[];
+    configuration?: string;
+}
+
+export interface PluginPackageLanguageContributionConfiguration {
+    comments?: CommentRule;
+    brackets?: CharacterPair[];
+    autoClosingPairs?: (CharacterPair | AutoClosingPairConditional)[];
+    surroundingPairs?: (CharacterPair | AutoClosingPair)[];
+    wordPattern?: string;
+    indentationRules?: IndentationRules;
+    folding?: FoldingRules;
 }
 
 export const PluginScanner = Symbol('PluginScanner');
@@ -219,7 +265,75 @@ export interface PluginModel {
     entryPoint: {
         frontend?: string;
         backend?: string;
-    }
+    };
+    contributes?: PluginContribution;
+}
+
+/**
+ * This interface describes some static plugin contributions.
+ */
+export interface PluginContribution {
+    languages?: LanguageContribution[];
+    grammars?: GrammarsContribution[];
+}
+
+export interface GrammarsContribution {
+    format: 'json' | 'plist';
+    language?: string;
+    scope: string;
+    grammar?: string | object;
+    embeddedLanguages?: ScopeMap;
+    tokenTypes?: ScopeMap;
+    injectTo?: string[];
+}
+
+/**
+ * The language contribution
+ */
+export interface LanguageContribution {
+    id: string;
+    extensions?: string[];
+    filenames?: string[];
+    filenamePatterns?: string[];
+    firstLine?: string;
+    aliases?: string[];
+    mimetypes?: string[];
+    configuration?: LanguageConfiguration;
+}
+
+export interface LanguageConfiguration {
+    brackets?: CharacterPair[];
+    indentationRules?: IndentationRules;
+    surroundingPairs?: AutoClosingPair[];
+    autoClosingPairs?: AutoClosingPairConditional[];
+    comments?: CommentRule;
+    folding?: FoldingRules;
+    wordPattern?: string;
+}
+
+export interface IndentationRules {
+    increaseIndentPattern: string;
+    decreaseIndentPattern: string;
+    unIndentedLinePattern?: string;
+    indentNextLinePattern?: string;
+}
+export interface AutoClosingPair {
+    close: string;
+    open: string;
+}
+
+export interface AutoClosingPairConditional extends AutoClosingPair {
+    notIn?: string[];
+}
+
+export interface FoldingMarkers {
+    start: string;
+    end: string;
+}
+
+export interface FoldingRules {
+    offSide?: boolean;
+    markers?: FoldingMarkers;
 }
 
 /**

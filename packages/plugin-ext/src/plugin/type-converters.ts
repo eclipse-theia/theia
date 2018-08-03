@@ -17,6 +17,7 @@
 import { EditorPosition, Selection, Range, Position, DecorationOptions, MarkdownString } from '../api/plugin-api';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
+import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -153,4 +154,38 @@ export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString):
     } else {
         return { value: '' };
     }
+}
+
+export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
+    if (!selector) {
+        return undefined;
+    } else if (Array.isArray(selector)) {
+        return <LanguageSelector>selector.map(fromDocumentSelector);
+    } else if (typeof selector === 'string') {
+        return selector;
+    } else {
+        return {
+            language: selector.language,
+            scheme: selector.scheme,
+            pattern: fromGlobPattern(selector.pattern!)
+        } as LanguageFilter;
+    }
+
+}
+
+export function fromGlobPattern(pattern: theia.GlobPattern): string | RelativePattern {
+    if (typeof pattern === 'string') {
+        return pattern;
+    }
+
+    if (isRelativePattern(pattern)) {
+        return new types.RelativePattern(pattern.base, pattern.pattern);
+    }
+
+    return pattern;
+}
+
+function isRelativePattern(obj: {}): obj is theia.RelativePattern {
+    const rp = obj as theia.RelativePattern;
+    return rp && typeof rp.base === 'string' && typeof rp.pattern === 'string';
 }

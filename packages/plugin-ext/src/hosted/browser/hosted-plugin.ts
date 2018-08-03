@@ -22,6 +22,8 @@ import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger } from '@theia/core';
 import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
+
 @injectable()
 export class HostedPluginSupport {
     container: interfaces.Container;
@@ -35,6 +37,9 @@ export class HostedPluginSupport {
 
     @inject(HostedPluginWatcher)
     private readonly watcher: HostedPluginWatcher;
+
+    @inject(PluginContributionHandler)
+    private readonly contributionHandler: PluginContributionHandler;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -75,6 +80,9 @@ export class HostedPluginSupport {
         const pluginModel = pluginMetadata.model;
         const pluginLifecycle = pluginMetadata.lifecycle;
         this.logger.info('Ask to load the plugin with model ', pluginModel, ' and lifecycle', pluginLifecycle);
+        if (pluginMetadata.model.contributes) {
+            this.contributionHandler.handleContributions(pluginMetadata.model.contributes);
+        }
         if (pluginModel.entryPoint!.frontend) {
             this.logger.info(`Loading frontend hosted plugin: ${pluginModel.name}`);
             this.worker = new PluginWorker();

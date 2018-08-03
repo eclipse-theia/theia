@@ -27,6 +27,7 @@ import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
 import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
 import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath } from '../../common/plugin-protocol';
+import { GrammarsReader } from './scanners/grammars-reader';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
@@ -47,6 +48,8 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
             return server;
         })
     ).inSingletonScope();
+
+    bind(GrammarsReader).toSelf().inSingletonScope();
 }
 
 export function bindHostedBackend(bind: interfaces.Bind): void {

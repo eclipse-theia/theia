@@ -19,7 +19,7 @@ import { UriComponents } from '../common/uri-components';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
-import { DocumentDataExt } from './document-data';
+import { DocumentDataExt, setWordDefinitionFor } from './document-data';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -147,6 +147,10 @@ export class DocumentsExtImpl implements DocumentsExt {
 
     createDocumentData(options?: { language?: string; content?: string }): Promise<URI> {
         return this.proxy.$tryCreateDocument(options).then(data => URI.revive(data));
+    }
+
+    setWordDefinitionFor(modeId: string, wordDefinition: RegExp | null): void {
+        setWordDefinitionFor(modeId, wordDefinition);
     }
 
 }

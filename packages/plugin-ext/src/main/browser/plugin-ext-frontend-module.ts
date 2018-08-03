@@ -41,6 +41,7 @@ import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
+import { PluginContributionHandler } from './plugin-contribution-handler';
 
 export default new ContainerModule(bind => {
     bindHostedPluginPreferences(bind);
@@ -92,5 +93,7 @@ export default new ContainerModule(bind => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
     }).inSingletonScope();
+
+    bind(PluginContributionHandler).toSelf().inSingletonScope();
 
 });
