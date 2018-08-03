@@ -43,7 +43,13 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             if (command) {
                 const raw = item.keybinding;
                 if (raw.type === monaco.keybindings.KeybindingType.Simple) {
-                    const keybinding = raw as monaco.keybindings.SimpleKeybinding;
+                    let keybinding = raw as monaco.keybindings.SimpleKeybinding;
+                    // TODO: remove this temporary workaround after updating to monaco including the fix for https://github.com/Microsoft/vscode/issues/49225
+                    if (command === 'monaco.editor.action.refactor') {
+                        if (monaco.platform.OS !== monaco.platform.OperatingSystem.Macintosh) {
+                            keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
+                        }
+                    }
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
