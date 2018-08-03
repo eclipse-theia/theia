@@ -78,9 +78,22 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
 
-        // If debugServer is set in the debug configuration, connect to that port for debugging
+        // If debugServer is set in the debug configuration, connect to that server/port number for extension debugging
         if (executable.debugServer) {
-            const socket = net.createConnection(executable.debugServer, '127.0.0.1');
+
+            let server = '127.0.0.1';
+            let port = executable.debugServer;
+
+            // Split on '<server>:<port>'
+            const match = port.match(/^(.+):(.+)$/);
+
+            if (match) {
+                server = match[1];
+                port = match[2];
+            }
+
+            const socket = net.createConnection(port, server);
+
             return {
                 input: socket,
                 output: socket,

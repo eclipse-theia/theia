@@ -51,7 +51,8 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
     provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable {
         const program = path.join(__dirname, `../../${debugAdapterDir}/out/src/nodeDebug.js`);
         return {
-            // If debugServer is set in the config, connect to that port for debugging instead of executing program
+            // If debugServer is set in the config, connect to that server/port for debugging extension instead of executing it
+            // Format is <server>:<port> or simply <port>
             debugServer: config.debugServer,
             program,
             runtime: "node"
