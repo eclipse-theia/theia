@@ -92,7 +92,7 @@ export default new ContainerModule(bind => {
     bind(LanguageGrammarDefinitionContribution).toService(MakeContribution);
 
     bind(ObjectiveCContribution).toSelf().inSingletonScope();
-    bind(LanguageGrammarDefinitionContribution).toService(FSharpContribution);
+    bind(LanguageGrammarDefinitionContribution).toService(ObjectiveCContribution);
 
     bind(PerlContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(PerlContribution);
