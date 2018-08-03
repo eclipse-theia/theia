@@ -31,7 +31,7 @@ export class PythonContribution extends BaseLanguageServerContribution {
         const pythonLsCommand = process.env.PYTHON_LS_COMMAND;
         if (pythonLsCommand) {
             command = pythonLsCommand;
-            args = parseArgs(process.env.PYTHON_LS_ARGS || "");
+            args = parseArgs(process.env.PYTHON_LS_ARGS || '');
         }
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
