@@ -18,21 +18,21 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class IniContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'ini';
+    readonly scopeName = 'source.ini';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".ini"],
+            aliases: ["Ini", "ini"]
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                lineComment: ';',
+                blockComment: [';', ' ']
             },
             brackets: [
                 ['{', '}'],
@@ -54,7 +54,7 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '\'', close: '\'' }
             ]
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/ini.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {

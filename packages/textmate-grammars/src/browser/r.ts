@@ -18,17 +18,16 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class RContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'r';
+    readonly scopeName = 'source.r';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".r", ".rhistory", ".rprofile", ".rt"],
+            aliases: ["R", "r"]
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -43,18 +42,16 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
+                { open: '"', close: '"' }
             ],
             surroundingPairs: [
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
+                { open: '"', close: '"' }
             ]
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/r.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {

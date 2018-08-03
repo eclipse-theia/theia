@@ -18,26 +18,28 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class HandlebarsContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'handlebars';
+    readonly scopeName = 'text.html.handlebars';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".handlebars", ".hbs", ".hjs"],
+            aliases: ["Handlebars", "handlebars"],
+            mimetypes: ["text/x-handlebars-template"]
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                blockComment: ["{{!--", "--}}"]
             },
             brackets: [
-                ['{', '}'],
-                ['[', ']'],
-                ['(', ')']
+                ["<!--", "-->"],
+                ["<", ">"],
+                ["{{", "}}"],
+                ["{", "}"],
+                ["(", ")"]
             ],
             autoClosingPairs: [
                 { open: '{', close: '}' },
@@ -47,14 +49,12 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '\'', close: '\'' }
             ],
             surroundingPairs: [
-                { open: '{', close: '}' },
-                { open: '[', close: ']' },
-                { open: '(', close: ')' },
+                { open: '<', close: '>' },
                 { open: '"', close: '"' },
                 { open: '\'', close: '\'' }
             ]
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/csharp.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
