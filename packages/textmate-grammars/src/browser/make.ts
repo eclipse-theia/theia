@@ -26,15 +26,15 @@ export class MakeContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            aliases: ["Makefile", "makefile"],
-            extensions: [".mk"],
+            aliases: ['Makefile', 'makefile'],
+            extensions: ['.mk'],
             filenames: [
-                "Makefile",
-                "makefile",
-                "GNUmakefile",
-                "OCamlMakefile"
+                'Makefile',
+                'makefile',
+                'GNUmakefile',
+                'OCamlMakefile'
             ],
-            firstLine: "^#!\\s*/usr/bin/make"
+            firstLine: '^#!\\s*/usr/bin/make'
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

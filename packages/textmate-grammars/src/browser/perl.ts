@@ -26,9 +26,9 @@ export class PerlContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            aliases: ["Perl", "perl"],
-            extensions: [".pl", ".pm", ".pod", ".t", ".PL", ".psgi"],
-            firstLine: "^#!.*\\bperl\\b"
+            aliases: ['Perl', 'perl'],
+            extensions: ['.pl', '.pm', '.pod', '.t', '.PL', '.psgi'],
+            firstLine: '^#!.*\\bperl\\b'
         });
         const grammar = require('../../data/perl.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {

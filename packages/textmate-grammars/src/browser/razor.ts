@@ -26,16 +26,16 @@ export class RazorContribution implements LanguageGrammarDefinitionContribution 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".cshtml"],
-            aliases: ["Razor", "razor"],
-            mimetypes: ["text/x-cshtml"]
+            extensions: ['.cshtml'],
+            aliases: ['Razor', 'razor'],
+            mimetypes: ['text/x-cshtml']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                blockComment: ["<!--", "-->"]
+                blockComment: ['<!--', '-->']
             },
             brackets: [
-                ["<!--", "-->"],
+                ['<!--', '-->'],
                 ['<', '>'],
                 ['{', '}'],
                 ['(', ')']
@@ -54,8 +54,8 @@ export class RazorContribution implements LanguageGrammarDefinitionContribution 
             ],
             folding: {
                 markers: {
-                    start: new RegExp("^\\s*#region\\b"),
-                    end: new RegExp("^\\s*#endregion\\b")
+                    start: new RegExp('^\\s*#region\\b'),
+                    end: new RegExp('^\\s*#endregion\\b')
                 }
             }
         });

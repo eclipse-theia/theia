@@ -26,8 +26,8 @@ export class FSharpContribution implements LanguageGrammarDefinitionContribution
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".fs", ".fsi", ".fsx", ".fsscript"],
-            aliases: ["F#", "FSharp", "fsharp"]
+            extensions: ['.fs', '.fsi', '.fsx', '.fsscript'],
+            aliases: ['F#', 'FSharp', 'fsharp']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -55,8 +55,8 @@ export class FSharpContribution implements LanguageGrammarDefinitionContribution
             folding: {
                 offSide: true,
                 markers: {
-                    "start": new RegExp("^\\s*//\\s*#region\\b|^\\s*\\(\\*\\s*#region(.*)\\*\\)"),
-                    "end": new RegExp("^\\s*//\\s*#endregion\\b|^\\s*\\(\\*\\s*#endregion\\s*\\*\\)")
+                    'start': new RegExp('^\\s*//\\s*#region\\b|^\\s*\\(\\*\\s*#region(.*)\\*\\)'),
+                    'end': new RegExp('^\\s*//\\s*#endregion\\b|^\\s*\\(\\*\\s*#endregion\\s*\\*\\)')
                 }
             }
         });

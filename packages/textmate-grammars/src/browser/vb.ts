@@ -26,8 +26,8 @@ export class VbContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".vb", ".brs", ".vbs", ".bas"],
-            aliases: ["Visual Basic", "vb"]
+            extensions: ['.vb', '.brs', '.vbs', '.bas'],
+            aliases: ['Visual Basic', 'vb']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -54,8 +54,8 @@ export class VbContribution implements LanguageGrammarDefinitionContribution {
             ],
             folding: {
                 markers: {
-                    start: new RegExp("^\\s*#Region\\b"),
-                    end: new RegExp("^\\s*#End Region\\b")
+                    start: new RegExp('^\\s*#Region\\b'),
+                    end: new RegExp('^\\s*#End Region\\b')
                 }
             }
         });

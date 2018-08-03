@@ -39,7 +39,7 @@ export class ShellContribution implements LanguageGrammarDefinitionContribution 
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
                 { open: '"', close: '"' },
-                { open: "'", close: "'" },
+                { open: '\'', close: '\'' },
                 { open: '`', close: '`' },
             ],
             surroundingPairs: [
@@ -47,7 +47,7 @@ export class ShellContribution implements LanguageGrammarDefinitionContribution 
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
                 { open: '"', close: '"' },
-                { open: "'", close: "'" },
+                { open: '\'', close: '\'' },
                 { open: '`', close: '`' },
             ],
         });

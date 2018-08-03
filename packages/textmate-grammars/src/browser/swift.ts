@@ -26,8 +26,8 @@ export class SwiftContribution implements LanguageGrammarDefinitionContribution 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            aliases: ["Swift", "swift"],
-            extensions: [".swift"]
+            aliases: ['Swift', 'swift'],
+            extensions: ['.swift']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

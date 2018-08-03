@@ -26,8 +26,8 @@ export class LuaContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".lua"],
-            aliases: ["Lua", "lua"]
+            extensions: ['.lua'],
+            aliases: ['Lua', 'lua']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -54,8 +54,8 @@ export class LuaContribution implements LanguageGrammarDefinitionContribution {
                 { open: '\'', close: '\'' }
             ],
             indentationRules: {
-                increaseIndentPattern: new RegExp("((\\b(else|function|then|do|repeat)\\b((?!\\b(end|until)\\b).)*)|(\\{\\s*))$"),
-                decreaseIndentPattern: new RegExp("^\\s*((\\b(elseif|else|end|until)\\b)|(\\})|(\\)))")
+                increaseIndentPattern: new RegExp('((\\b(else|function|then|do|repeat)\\b((?!\\b(end|until)\\b).)*)|(\\{\\s*))$'),
+                decreaseIndentPattern: new RegExp('^\\s*((\\b(elseif|else|end|until)\\b)|(\\})|(\\)))')
             }
         });
         const grammar = require('../../data/lua.tmLanguage.json');

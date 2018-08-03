@@ -26,8 +26,8 @@ export class ObjectiveCContribution implements LanguageGrammarDefinitionContribu
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".m"],
-            aliases: ["Objective-C"]
+            extensions: ['.m'],
+            aliases: ['Objective-C']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

@@ -26,9 +26,9 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: ['.dockerfile'],
+            filenames: ['Dockerfile'],
+            aliases: ['Dockerfile']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

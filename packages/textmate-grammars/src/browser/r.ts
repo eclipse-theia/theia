@@ -26,8 +26,8 @@ export class RContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".r", ".rhistory", ".rprofile", ".rt"],
-            aliases: ["R", "r"]
+            extensions: ['.r', '.rhistory', '.rprofile', '.rt'],
+            aliases: ['R', 'r']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
