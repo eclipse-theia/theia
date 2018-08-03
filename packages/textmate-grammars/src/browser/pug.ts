@@ -26,8 +26,8 @@ export class PugContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".jade", ".pug"],
-            aliases: ["Pug", "Jade", "jade"]
+            extensions: ['.jade', '.pug'],
+            aliases: ['Pug', 'Jade', 'jade']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

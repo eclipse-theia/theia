@@ -26,8 +26,8 @@ export class HlslContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".hlsl", ".hlsli", ".fx", ".fxh", ".vsh", ".psh", ".cginc", ".compute"],
-            aliases: ["HLSL", "hlsl"]
+            extensions: ['.hlsl', '.hlsli', '.fx', '.fxh', '.vsh', '.psh', '.cginc', '.compute'],
+            aliases: ['HLSL', 'hlsl']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

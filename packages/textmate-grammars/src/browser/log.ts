@@ -26,8 +26,8 @@ export class LogContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".log", "*.log.?"],
-            aliases: ["log"]
+            extensions: ['.log', '*.log.?'],
+            aliases: ['log']
         });
         const grammar = require('../../data/log.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {

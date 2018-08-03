@@ -57,8 +57,8 @@ export class CSharpContribution implements LanguageGrammarDefinitionContribution
             ],
             folding: {
                 markers: {
-                    start: new RegExp("^\\s*#region\\b"),
-                    end: new RegExp("^\\s*#endregion\\b")
+                    start: new RegExp('^\\s*#region\\b'),
+                    end: new RegExp('^\\s*#endregion\\b')
                 }
             }
         });

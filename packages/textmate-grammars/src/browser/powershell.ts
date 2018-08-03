@@ -26,9 +26,9 @@ export class PowershellContribution implements LanguageGrammarDefinitionContribu
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".ps1", ".psm1", ".psd1", ".pssc", ".psrc"],
-            aliases: ["PowerShell", "powershell", "ps", "ps1"],
-            firstLine: "^#!\\s*/.*\\bpwsh\\b"
+            extensions: ['.ps1', '.psm1', '.psd1', '.pssc', '.psrc'],
+            aliases: ['PowerShell', 'powershell', 'ps', 'ps1'],
+            firstLine: '^#!\\s*/.*\\bpwsh\\b'
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -57,8 +57,8 @@ export class PowershellContribution implements LanguageGrammarDefinitionContribu
             ],
             folding: {
                 markers: {
-                    start: new RegExp("^\\s*#region\\b"),
-                    end: new RegExp("^\\s*#endregion\\b")
+                    start: new RegExp('^\\s*#region\\b'),
+                    end: new RegExp('^\\s*#endregion\\b')
                 }
             }
         });

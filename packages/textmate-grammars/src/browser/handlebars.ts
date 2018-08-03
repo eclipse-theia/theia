@@ -26,20 +26,20 @@ export class HandlebarsContribution implements LanguageGrammarDefinitionContribu
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".handlebars", ".hbs", ".hjs"],
-            aliases: ["Handlebars", "handlebars"],
-            mimetypes: ["text/x-handlebars-template"]
+            extensions: ['.handlebars', '.hbs', '.hjs'],
+            aliases: ['Handlebars', 'handlebars'],
+            mimetypes: ['text/x-handlebars-template']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                blockComment: ["{{!--", "--}}"]
+                blockComment: ['{{!--', '--}}']
             },
             brackets: [
-                ["<!--", "-->"],
-                ["<", ">"],
-                ["{{", "}}"],
-                ["{", "}"],
-                ["(", ")"]
+                ['<!--', '-->'],
+                ['<', '>'],
+                ['{{', '}}'],
+                ['{', '}'],
+                ['(', ')']
             ],
             autoClosingPairs: [
                 { open: '{', close: '}' },

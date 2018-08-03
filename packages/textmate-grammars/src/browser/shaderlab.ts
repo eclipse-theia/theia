@@ -26,8 +26,8 @@ export class ShaderlabContribution implements LanguageGrammarDefinitionContribut
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".shader"],
-            aliases: ["ShaderLab", "shaderlab"]
+            extensions: ['.shader'],
+            aliases: ['ShaderLab', 'shaderlab']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

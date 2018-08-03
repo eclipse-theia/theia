@@ -26,8 +26,8 @@ export class SqlContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".sql", ".dsql"],
-            aliases: ["SQL"]
+            extensions: ['.sql', '.dsql'],
+            aliases: ['SQL']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

@@ -26,10 +26,10 @@ export class GroovyContribution implements LanguageGrammarDefinitionContribution
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            aliases: ["Groovy", "groovy"],
-            extensions: [".groovy", ".gvy", ".gradle"],
-            filenames: ["Jenkinsfile"],
-            firstLine: "^#!.*\\bgroovy\\b"
+            aliases: ['Groovy', 'groovy'],
+            extensions: ['.groovy', '.gvy', '.gradle'],
+            filenames: ['Jenkinsfile'],
+            firstLine: '^#!.*\\bgroovy\\b'
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {

@@ -56,8 +56,8 @@ export class CoffeescriptContribution implements LanguageGrammarDefinitionContri
             folding: {
                 offSide: true,
                 markers: {
-                    start: new RegExp("^\\s*#region\\b"),
-                    end: new RegExp("^\\s*#endregion\\b")
+                    start: new RegExp('^\\s*#region\\b'),
+                    end: new RegExp('^\\s*#endregion\\b')
                 }
             }
         });
