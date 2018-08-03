@@ -102,7 +102,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
         keybindings.registerKeybinding({
             command: JAVA_ORGANIZE_IMPORTS.id,
             context: JavaKeybindingContexts.javaEditorTextFocus,
-            keybinding: 'ctrlcmd+shift+o'
+            keybinding: 'shift+alt+o'
         });
     }
 }
