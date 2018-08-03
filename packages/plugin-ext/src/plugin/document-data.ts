@@ -22,8 +22,8 @@ import { Range, Position, EndOfLine } from './types-impl';
 import { PrefixSumComputer } from './prefix-sum-computer';
 import { getWordAtText, ensureValidWordDefinition } from './word-helper';
 
-const _modeId2WordDefinition = new Map<string, RegExp>();
-export function setWordDefinitionFor(modeId: string, wordDefinition: RegExp): void {
+const _modeId2WordDefinition = new Map<string, RegExp | null>();
+export function setWordDefinitionFor(modeId: string, wordDefinition: RegExp | null): void {
     _modeId2WordDefinition.set(modeId, wordDefinition);
 }
 export function getWordDefinitionFor(modeId: string): RegExp {

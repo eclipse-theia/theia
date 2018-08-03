@@ -15,6 +15,9 @@
  ********************************************************************************/
 
 import { illegalArgument } from '../common/errors';
+import * as theia from '@theia/plugin';
+import URI from 'vscode-uri';
+import { relative } from '../common/paths-util';
 
 export class Disposable {
     private disposable: undefined | (() => void);
@@ -560,4 +563,34 @@ export enum OverviewRulerLane {
 export enum ConfigurationTarget {
     User = 0,
     Workspace = 1
+}
+
+export class RelativePattern {
+
+    base: string;
+
+    constructor(base: theia.WorkspaceFolder | string, public pattern: string) {
+        if (typeof base !== 'string') {
+            if (!base || !URI.isUri(base.uri)) {
+                throw illegalArgument('base');
+            }
+        }
+
+        if (typeof pattern !== 'string') {
+            throw illegalArgument('pattern');
+        }
+
+        this.base = typeof base === 'string' ? base : base.uri.fsPath;
+    }
+
+    pathToRelative(from: string, to: string): string {
+        return relative(from, to);
+    }
+}
+
+export enum IndentAction {
+    None = 0,
+    Indent = 1,
+    IndentOutdent = 2,
+    Outdent = 3
 }

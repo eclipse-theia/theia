@@ -28,6 +28,7 @@ import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalServiceMainImpl } from './terminal-main';
+import { LanguagesMainImpl } from './languages-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -59,4 +60,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const outputChannelRegistryMain = new OutputChannelRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, outputChannelRegistryMain);
+
+    const languagesMain = new LanguagesMainImpl();
+    rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, languagesMain);
 }

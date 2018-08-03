@@ -44,6 +44,8 @@ import {
     DecorationRangeBehavior,
     OverviewRulerLane,
     StatusBarAlignment,
+    RelativePattern,
+    IndentAction,
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -54,6 +56,8 @@ import { PreferenceRegistryExtImpl } from './preference-registry';
 import URI from 'vscode-uri';
 import { OutputChannelRegistryExt } from './output-channel-registry';
 import { TerminalServiceExtImpl } from './terminal-ext';
+import { LanguagesExtImpl, score } from './languages';
+import { fromDocumentSelector } from './type-converters';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -69,6 +73,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
     const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
+    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
 
     const commands: typeof theia.commands = {
         // tslint:disable-next-line:no-any
@@ -249,11 +254,24 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         }
     };
 
+    const languages: typeof theia.languages = {
+        getLanguages(): PromiseLike<string[]> {
+            return languagesExt.getLanguages();
+        },
+        match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
+            return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
+        },
+        setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
+            return languagesExt.setLanguageConfiguration(language, configuration);
+        }
+    };
+
     return <typeof theia>{
         commands,
         window,
         workspace,
         env,
+        languages,
         // Types
         StatusBarAlignment: StatusBarAlignment,
         Disposable: Disposable,
@@ -275,6 +293,8 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         DecorationRangeBehavior,
         OverviewRulerLane,
         ConfigurationTarget,
+        RelativePattern,
+        IndentAction,
     };
 }
 

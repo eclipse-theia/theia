@@ -19,7 +19,7 @@ import * as theia from '@theia/plugin';
 import { PluginLifecycle, PluginModel, PluginMetadata } from '../common/plugin-protocol';
 import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
-import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane } from '../plugin/types-impl';
+import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction } from '../plugin/types-impl';
 import { UriComponents } from '../common/uri-components';
 import { PreferenceChange } from '@theia/core/lib/browser';
 import { ConfigurationTarget } from '../plugin/types-impl';
@@ -501,6 +501,55 @@ export interface OutputChannelRegistryMain {
     $close(channelName: string): PromiseLike<void>;
 }
 
+export type CharacterPair = [string, string];
+
+export interface CommentRule {
+    lineComment?: string;
+    blockComment?: CharacterPair;
+}
+
+export interface SerializedRegExp {
+    pattern: string;
+    flags?: string;
+}
+
+export interface SerializedIndentationRule {
+    decreaseIndentPattern?: SerializedRegExp;
+    increaseIndentPattern?: SerializedRegExp;
+    indentNextLinePattern?: SerializedRegExp;
+    unIndentedLinePattern?: SerializedRegExp;
+}
+
+export interface EnterAction {
+    indentAction: IndentAction;
+    outdentCurrentLine?: boolean;
+    appendText?: string;
+    removeText?: number;
+}
+
+export interface SerializedOnEnterRule {
+    beforeText: SerializedRegExp;
+    afterText?: SerializedRegExp;
+    action: EnterAction;
+}
+
+export interface SerializedLanguageConfiguration {
+    comments?: CommentRule;
+    brackets?: CharacterPair[];
+    wordPattern?: SerializedRegExp;
+    indentationRules?: SerializedIndentationRule;
+    onEnterRules?: SerializedOnEnterRule[];
+}
+export interface LanguagesExt {
+
+}
+
+export interface LanguagesMain {
+    $getLanguages(): Promise<string[]>;
+    $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
+    $unregister(handle: number): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -511,7 +560,8 @@ export const PLUGIN_RPC_CONTEXT = {
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
     PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
-    OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain')
+    OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain'),
+    LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -525,5 +575,6 @@ export const MAIN_RPC_CONTEXT = {
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
-    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt')
+    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
+    LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
 };
