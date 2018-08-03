@@ -18,21 +18,22 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class PowershellContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'powershell';
+    readonly scopeName = 'source.powershell';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".ps1", ".psm1", ".psd1", ".pssc", ".psrc"],
+            aliases: ["PowerShell", "powershell", "ps", "ps1"],
+            firstLine: "^#!\\s*/.*\\bpwsh\\b"
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                lineComment: '#',
+                blockComment: ['<#', '#>']
             },
             brackets: [
                 ['{', '}'],
@@ -43,8 +44,9 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
+                { open: '"', close: '"', notIn: ['string'] },
+                { open: '\'', close: '\'', notIn: ['string', 'comment'] },
+                { open: '<#', close: '#>' }
             ],
             surroundingPairs: [
                 { open: '{', close: '}' },
@@ -52,9 +54,15 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '(', close: ')' },
                 { open: '"', close: '"' },
                 { open: '\'', close: '\'' }
-            ]
+            ],
+            folding: {
+                markers: {
+                    start: new RegExp("^\\s*#region\\b"),
+                    end: new RegExp("^\\s*#endregion\\b")
+                }
+            }
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/powershell.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {

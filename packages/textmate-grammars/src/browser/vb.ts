@@ -18,23 +18,23 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class VbContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'vb';
+    readonly scopeName = 'source.asp.vb.net';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".vb", ".brs", ".vbs", ".bas"],
+            aliases: ["Visual Basic", "vb"]
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                lineComment: '\''
             },
             brackets: [
+                ['<', '>'],
                 ['{', '}'],
                 ['[', ']'],
                 ['(', ')']
@@ -43,18 +43,23 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
+                { open: '"', close: '"' }
             ],
             surroundingPairs: [
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
-            ]
+                { open: '<', close: '>' },
+                { open: '"', close: '"' }
+            ],
+            folding: {
+                markers: {
+                    start: new RegExp("^\\s*#Region\\b"),
+                    end: new RegExp("^\\s*#End Region\\b")
+                }
+            }
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/vb.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {

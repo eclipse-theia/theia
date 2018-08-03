@@ -18,21 +18,21 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class LuaContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'lua';
+    readonly scopeName = 'source.lua';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".lua"],
+            aliases: ["Lua", "lua"]
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                lineComment: '--',
+                blockComment: ['--[[', ']]']
             },
             brackets: [
                 ['{', '}'],
@@ -52,9 +52,13 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '(', close: ')' },
                 { open: '"', close: '"' },
                 { open: '\'', close: '\'' }
-            ]
+            ],
+            indentationRules: {
+                increaseIndentPattern: new RegExp("((\\b(else|function|then|do|repeat)\\b((?!\\b(end|until)\\b).)*)|(\\{\\s*))$"),
+                decreaseIndentPattern: new RegExp("^\\s*((\\b(elseif|else|end|until)\\b)|(\\})|(\\)))")
+            }
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/lua.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {

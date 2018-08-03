@@ -14,19 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-<<<<<<< HEAD
-import { ContainerModule } from 'inversify';
-import { BatContribution } from './bat';
-import { CssContribution } from './css';
-import { HtmlContribution } from './html';
-import { LessContribution } from './less';
-import { MarkdownContribution } from './markdown';
-import { ShellContribution } from './shell';
-import { XmlContribution } from './xml';
-import { XslContribution } from './xsl';
-import { YamlContribution } from './yaml';
-import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
-=======
 import { ContainerModule } from "inversify";
 import { BatContribution } from "./bat";
 import { ClojureContribution } from "./clojure";
@@ -35,6 +22,23 @@ import { CSharpContribution } from "./csharp";
 import { CssContribution } from "./css";
 import { DockerContribution } from "./docker";
 import { FSharpContribution } from "./fsharp";
+import { GroovyContribution } from "./groovy";
+import { HandlebarsContribution } from "./handlebars";
+import { HlslContribution } from "./hlsl";
+import { IniContribution } from "./ini";
+import { LogContribution } from "./log";
+import { LuaContribution } from "./lua";
+import { MakeContribution } from "./make";
+import { ObjectiveCContribution } from "./objective-c";
+import { PerlContribution } from "./perl";
+import { PowershellContribution } from "./powershell";
+import { PugContribution } from "./pug";
+import { RContribution } from "./r";
+import { RazorContribution } from "./razor";
+import { ShaderlabContribution } from "./shaderlab";
+import { SqlContribution } from "./sql";
+import { SwiftContribution } from "./swift";
+import { VbContribution } from "./vb";
 import { HtmlContribution } from "./html";
 import { LessContribution } from "./less";
 import { MarkdownContribution } from "./markdown";
@@ -43,7 +47,6 @@ import { XmlContribution } from "./xml";
 import { XslContribution } from "./xsl";
 import { YamlContribution } from "./yaml";
 import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate/textmate-contribution";
->>>>>>> Added clojure to textmate-grammars
 
 export default new ContainerModule(bind => {
     bind(BatContribution).toSelf().inSingletonScope();
@@ -66,6 +69,57 @@ export default new ContainerModule(bind => {
 
     bind(FSharpContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(FSharpContribution);
+
+    bind(GroovyContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(GroovyContribution);
+
+    bind(HandlebarsContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(HandlebarsContribution);
+
+    bind(HlslContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(HlslContribution);
+
+    bind(IniContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(IniContribution);
+
+    bind(LogContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(LogContribution);
+
+    bind(LuaContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(LuaContribution);
+
+    bind(MakeContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(MakeContribution);
+
+    bind(ObjectiveCContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(FSharpContribution);
+
+    bind(PerlContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(PerlContribution);
+
+    bind(PowershellContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(PowershellContribution);
+
+    bind(PugContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(PugContribution);
+
+    bind(RContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(RContribution);
+
+    bind(RazorContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(RazorContribution);
+
+    bind(ShaderlabContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(ShaderlabContribution);
+
+    bind(SqlContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(SqlContribution);
+
+    bind(SwiftContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(SwiftContribution);
+
+    bind(VbContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(VbContribution);
 
     bind(HtmlContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(HtmlContribution);

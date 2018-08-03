@@ -18,17 +18,23 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class MakeContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'makefile';
+    readonly scopeName = 'source.makefile';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            aliases: ["Makefile", "makefile"],
+            extensions: [".mk"],
+            filenames: [
+                "Makefile",
+                "makefile",
+                "GNUmakefile",
+                "OCamlMakefile"
+            ],
+            firstLine: "^#!\\s*/usr/bin/make"
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
@@ -38,23 +44,9 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 ['{', '}'],
                 ['[', ']'],
                 ['(', ')']
-            ],
-            autoClosingPairs: [
-                { open: '{', close: '}' },
-                { open: '[', close: ']' },
-                { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
-            ],
-            surroundingPairs: [
-                { open: '{', close: '}' },
-                { open: '[', close: ']' },
-                { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
             ]
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/make.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {

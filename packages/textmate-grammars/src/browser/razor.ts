@@ -18,25 +18,26 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class DockerContribution implements LanguageGrammarDefinitionContribution {
+export class RazorContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'docker';
-    readonly scopeName = 'source.dockerfile';
+    readonly id = 'razor';
+    readonly scopeName = 'text.html.cshtml';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: [".dockerfile"],
-            filenames: ["Dockerfile"],
-            aliases: ["Dockerfile"]
+            extensions: [".cshtml"],
+            aliases: ["Razor", "razor"],
+            mimetypes: ["text/x-cshtml"]
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                lineComment: '#'
+                blockComment: ["<!--", "-->"]
             },
             brackets: [
+                ["<!--", "-->"],
+                ['<', '>'],
                 ['{', '}'],
-                ['[', ']'],
                 ['(', ')']
             ],
             autoClosingPairs: [
@@ -47,14 +48,18 @@ export class DockerContribution implements LanguageGrammarDefinitionContribution
                 { open: '\'', close: '\'' }
             ],
             surroundingPairs: [
-                { open: '{', close: '}' },
-                { open: '[', close: ']' },
-                { open: '(', close: ')' },
+                { open: '<', close: '>' },
                 { open: '"', close: '"' },
                 { open: '\'', close: '\'' }
-            ]
+            ],
+            folding: {
+                markers: {
+                    start: new RegExp("^\\s*#region\\b"),
+                    end: new RegExp("^\\s*#endregion\\b")
+                }
+            }
         });
-        const grammar = require('../../data/docker.tmLanguage.json');
+        const grammar = require('../../data/razor.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
