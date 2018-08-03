@@ -116,11 +116,20 @@
             "outputCapture": "std"
         },
         {
-            "name": "Launch Frontend",
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Frontend",
             "url": "http://localhost:3000/",
             "webRoot": "${workspaceRoot}"
-        }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug-Nodejs Server",
+            "program": "${workspaceRoot}/packages/debug-nodejs/lib/adapter/out/src/nodeDebug.js",
+            "args": [
+                "--server=4711"
+            ]
+        },
     ]
 }
