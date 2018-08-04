@@ -45,6 +45,7 @@ import { MarkdownContribution } from './markdown';
 import { ShellContribution } from './shell';
 import { XmlContribution } from './xml';
 import { XslContribution } from './xsl';
+import { XtendContribution } from './xtend';
 import { YamlContribution } from './yaml';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
 
@@ -138,6 +139,9 @@ export default new ContainerModule(bind => {
 
     bind(XslContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(XslContribution);
+
+    bind(XtendContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(XtendContribution);
 
     bind(YamlContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(YamlContribution);
