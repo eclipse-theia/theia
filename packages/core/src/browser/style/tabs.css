@@ -21,7 +21,7 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] {
-  overflow-x: scroll;
+  overflow-x: hidden;
   overflow-y: hidden;
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
 }
@@ -55,7 +55,7 @@
 |----------------------------------------------------------------------------*/
 
 /* This is a current tab of a tab bar: each tab bar has 1. */
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current {
+.p-TabBar .p-TabBar-tab.p-mod-current {
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   background: var(--theia-layout-color0);
   color: var(--theia-ui-font-color0);
@@ -63,7 +63,7 @@
 }
 
 /* This is the main application level active tab: only 1 exists. */
-.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-active {
+.p-TabBar .p-TabBar-tab.p-mod-current.theia-mod-active {
   border-top-color: var(--theia-accent-color2);
 }
 
@@ -73,7 +73,7 @@
   display: inline-block;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tabIcon {
+.p-TabBar .p-TabBar-tabIcon {
   width: 15px;
   line-height: 1.7;
 }
