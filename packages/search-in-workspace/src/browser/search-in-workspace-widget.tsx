@@ -287,8 +287,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
-    protected readonly handleKeyUp = (e: React.KeyboardEvent) => this.doHandleKeyUp(e);
-    protected doHandleKeyUp(e: React.KeyboardEvent) {
+    protected readonly search = (e: React.KeyboardEvent) => this.doSearch(e);
+    protected doSearch(e: React.KeyboardEvent) {
         if (e.target) {
             if (Key.ARROW_DOWN.keyCode === e.keyCode) {
                 this.resultTreeWidget.focusFirstResult();
@@ -307,7 +307,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             size={1}
             placeholder='Search'
             defaultValue={this.searchTerm}
-            onKeyUp={this.handleKeyUp}
+            onKeyUp={this.search}
         ></input>;
         const notification = this.renderNotification();
         const optionContainer = this.renderOptionContainer();
@@ -322,6 +322,16 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
 
+    protected readonly updateReplaceTerm = (e: React.KeyboardEvent) => this.doUpdateReplaceTerm(e);
+    protected doUpdateReplaceTerm(e: React.KeyboardEvent) {
+        if (e.target) {
+            this.replaceTerm = (e.target as HTMLInputElement).value;
+            this.resultTreeWidget.replaceTerm = this.replaceTerm;
+            this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+            this.update();
+        }
+    }
+
     protected renderReplaceField(): React.ReactNode {
         const replaceAllButtonContainer = this.renderReplaceAllButtonContainer();
         return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
@@ -331,17 +341,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 size={1}
                 placeholder='Replace'
                 defaultValue={this.replaceTerm}
-                onKeyUp={e => {
-                    if (e.target) {
-                        if (Key.ENTER.keyCode === e.keyCode) {
-                            this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
-                            this.update();
-                        } else {
-                            this.replaceTerm = (e.target as HTMLInputElement).value;
-                            this.resultTreeWidget.replaceTerm = this.replaceTerm;
-                        }
-                    }
-                }}>
+                onKeyUp={this.updateReplaceTerm}>
             </input>
             {replaceAllButtonContainer}
         </div>;
