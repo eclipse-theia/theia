@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { h } from '@phosphor/virtualdom';
 import { Widget } from '@phosphor/widgets';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { Git, GitFileChange } from '../../common';
 import { GitDiffWidget } from '../diff/git-diff-widget';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { GitFileChangeNode } from '../git-widget';
+import * as React from 'react';
 
 export const GIT_COMMIT_DETAIL = 'git-commit-detail-widget';
 
@@ -58,16 +58,15 @@ export class GitCommitDetailWidget extends GitDiffWidget {
         this.title.iconClass = 'icon-git-commit tab-git-icon';
     }
 
-    protected renderDiffListHeader(): h.Child {
-        const elements = [];
+    protected renderDiffListHeader(): React.ReactNode {
         const authorEMail = this.commitDetailOptions.authorEmail;
-        const subject = h.div({ className: 'subject' }, this.commitDetailOptions.commitMessage);
-        const body = h.div({ className: 'body' }, this.commitDetailOptions.messageBody || '');
-        const subjectRow = h.div({ className: 'header-row' }, h.div({ className: 'subjectContainer' }, subject, body));
-        const author = h.div({ className: 'author header-value noWrapInfo' }, this.commitDetailOptions.authorName);
-        const mail = h.div({ className: 'mail header-value noWrapInfo' }, `<${authorEMail}>`);
-        const authorRow = h.div({ className: 'header-row noWrapInfo' }, h.div({ className: 'theia-header' }, 'author: '), author);
-        const mailRow = h.div({ className: 'header-row noWrapInfo' }, h.div({ className: 'theia-header' }, 'e-mail: '), mail);
+        const subject = <div className='subject'>{this.commitDetailOptions.commitMessage}</div>;
+        const body = <div className='body'>{this.commitDetailOptions.messageBody || ''}</div>;
+        const subjectRow = <div className='header-row'><div className='subjectContainer'>{subject}{body}</div></div>;
+        const author = <div className='author header-value noWrapInfo'>{this.commitDetailOptions.authorName}</div>;
+        const mail = <div className='mail header-value noWrapInfo'>{`<${authorEMail}>`}</div>;
+        const authorRow = <div className='header-row noWrapInfo'><div className='theia-header'>author: </div>{author}</div>;
+        const mailRow = <div className='header-row noWrapInfo'><div className='theia-header'>e-mail: </div>{mail}</div>;
         const authorDate = this.commitDetailOptions.authorDate;
         const dateStr = authorDate.toLocaleDateString('en', {
             month: 'short',
@@ -77,18 +76,18 @@ export class GitCommitDetailWidget extends GitDiffWidget {
             hour: 'numeric',
             minute: 'numeric'
         });
-        const date = h.div({ className: 'date header-value noWrapInfo' }, dateStr);
-        const dateRow = h.div({ className: 'header-row noWrapInfo' }, h.div({ className: 'theia-header' }, 'date: '), date);
-        const revisionRow = h.div({ className: 'header-row noWrapInfo' },
-            h.div({ className: 'theia-header' }, 'revision: '),
-            h.div({ className: 'header-value noWrapInfo' }, this.commitDetailOptions.commitSha));
-        const gravatar = h.div({ className: 'image-container' },
-            h.img({ className: 'gravatar', src: this.commitDetailOptions.authorAvatar }));
-        const commitInfo = h.div({ className: 'header-row commit-info-row' }, gravatar, h.div({ className: 'commit-info' }, authorRow, mailRow, dateRow, revisionRow));
-        elements.push(subjectRow, commitInfo);
-        const header = h.div({ className: 'theia-header' }, 'Files changed');
+        const date = <div className='date header-value noWrapInfo'>{dateStr}</div>;
+        const dateRow = <div className='header-row noWrapInfo'><div className='theia-header'>date: </div>{date}</div>;
+        const revisionRow = <div className='header-row noWrapInfo'>
+            <div className='theia-header'>revision: </div>
+            <div className='header-value noWrapInfo'>{this.commitDetailOptions.commitSha}</div>
+        </div>;
+        const gravatar = <div className='image-container'>
+            <img className='gravatar' src={this.commitDetailOptions.authorAvatar}></img></div>;
+        const commitInfo = <div className='header-row commit-info-row'>{gravatar}<div className='commit-info'>{authorRow}{mailRow}{dateRow}{revisionRow}</div></div>;
+        const header = <div className='theia-header'>Files changed</div>;
 
-        return h.div({ className: 'diff-header' }, ...elements, header);
+        return <div className='diff-header'>{subjectRow}{commitInfo}{header}</div>;
     }
 
     protected ref: Widget | undefined;
