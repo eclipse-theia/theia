@@ -22,17 +22,17 @@ const mkdirp = require('mkdirp');
 exports.decompressArchive = function (archivePath, targetPath) {
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(archivePath)) {
-            reject(new Error("archive not found"));
+            reject(new Error(`The archive was not found at ${archivePath}.`));
             return;
         }
         if (!fs.existsSync(targetPath)) {
             mkdirp.sync(targetPath);
         }
         const gunzip = zlib.createGunzip({ finishFlush: zlib.Z_SYNC_FLUSH, flush: zlib.Z_SYNC_FLUSH });
-        console.log(targetPath);
+        console.log(`Decompressing the archive to ${targetPath}.`);
         const untar = tar.x({ cwd: targetPath });
         fs.createReadStream(archivePath).pipe(gunzip).pipe(untar)
-            .on("error", e => reject(e))
-            .on("end", () => resolve());
+            .on('error', e => reject(e))
+            .on('end', () => resolve());
     });
 }

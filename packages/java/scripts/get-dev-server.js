@@ -27,7 +27,7 @@ const package = require('../package.json');
 const shared = require('./shared');
 
 const devVersion = package.ls.dev.version;
-const packagePath = path.join(__dirname, "..");
+const packagePath = path.join(__dirname, '..');
 const targetPath = path.join(packagePath, 'server');
 const archiveName = `jdt.ls.extension.product-${devVersion}.tar.gz`;
 const downloadDir = 'download';
