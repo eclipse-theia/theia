@@ -15,6 +15,8 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { CallHierarchyService } from '@theia/callhierarchy/lib/browser';
@@ -22,6 +24,8 @@ import { TypeScriptClientContribution } from './typescript-client-contribution';
 import { TypeScriptCallHierarchyService } from './typescript-callhierarchy-service';
 import { TypescriptGrammarContribution } from './typescript-language-config';
 import { JavascriptGrammarContribution } from './javascript-language-config';
+import { TypeScriptFrontendContribution } from './typescript-frontend-contribution';
+import { TypeScriptEditorTextFocusContext } from './typescript-keybinding-contexts';
 
 export default new ContainerModule(bind => {
     bind(TypeScriptClientContribution).toSelf().inSingletonScope();
@@ -32,4 +36,11 @@ export default new ContainerModule(bind => {
 
     bind(LanguageGrammarDefinitionContribution).to(TypescriptGrammarContribution).inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).to(JavascriptGrammarContribution).inSingletonScope();
+
+    bind(TypeScriptFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(TypeScriptFrontendContribution);
+    bind(MenuContribution).toService(TypeScriptFrontendContribution);
+    bind(KeybindingContribution).toService(TypeScriptFrontendContribution);
+
+    bind(KeybindingContext).to(TypeScriptEditorTextFocusContext).inSingletonScope();
 });

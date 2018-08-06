@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { MessageService, Emitter, Event } from '@theia/core';
-import { QuickOpenService, QuickOpenItem, QuickOpenMode, ConfirmDialog } from '@theia/core/lib/browser';
+import { QuickPickService, ConfirmDialog } from '@theia/core/lib/browser';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { Git, Repository, WorkingDirectoryStatus } from '../common';
 import { GitErrorHandler } from './git-error-handler';
@@ -36,8 +36,8 @@ export class GitSyncService {
     @inject(GitErrorHandler)
     protected readonly gitErrorHandler: GitErrorHandler;
 
-    @inject(QuickOpenService)
-    protected readonly quickOpenService: QuickOpenService;
+    @inject(QuickPickService)
+    protected readonly quickPickService: QuickPickService;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -121,7 +121,9 @@ export class GitSyncService {
             warning: `This action will override commits in '${upstreamBranch}'.`,
             value: 'force-push'
         }];
-        const method = await this.pick('Pick how changes should be synchronized:', methods);
+        const method = await this.quickPickService.show(methods, {
+            placeholder: 'Pick how changes should be synchronized:'
+        });
         if (method && await this.confirm('Synchronize Changes', methods.find(({ value }) => value === method)!.warning)) {
             return method;
         }
@@ -160,7 +162,9 @@ export class GitSyncService {
         if (remotes.length === 0) {
             this.messageService.warn('Your repository has no remotes configured to publish to.');
         }
-        return this.pick(`Pick a remote to publish the branch ${branch} to:`, remotes);
+        return this.quickPickService.show(remotes, {
+            placeholder: `Pick a remote to publish the branch ${branch} to:`
+        });
     }
 
     protected shouldPush(status: WorkingDirectoryStatus): boolean {
@@ -168,36 +172,6 @@ export class GitSyncService {
     }
     protected shouldPull(status: WorkingDirectoryStatus): boolean {
         return status.aheadBehind ? status.aheadBehind.behind > 0 : true;
-    }
-
-    protected pick(placeholder: string, elements: string[]): Promise<string | undefined>;
-    protected pick<T>(placeholder: string, elements: { label: string, value: T }[]): Promise<T | undefined>;
-    protected async pick(placeholder: string, elements: (string | { label: string, value: Object })[]): Promise<Object | undefined> {
-        if (elements.length === 0) {
-            return undefined;
-        }
-        if (elements.length === 1) {
-            return elements[0];
-        }
-        return new Promise<Object | undefined>(resolve => {
-            const items = elements.map(element => {
-                const label = typeof element === 'string' ? element : element.label;
-                const value = typeof element === 'string' ? element : element.value;
-                return new QuickOpenItem({
-                    label,
-                    run: mode => {
-                        if (mode !== QuickOpenMode.OPEN) {
-                            return false;
-                        }
-                        resolve(value);
-                        return true;
-                    }
-                });
-            });
-            this.quickOpenService.open({
-                onType: (lookFor, acceptor) => acceptor(items)
-            }, { placeholder, onClose: () => resolve(undefined) });
-        });
     }
 
     protected async confirm(title: string, msg: string): Promise<boolean> {

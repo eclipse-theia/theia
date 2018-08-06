@@ -7,7 +7,7 @@
     "@theia/output": "^0.3.13",
     "@theia/process": "^0.3.13",
     "@theia/workspace": "^0.3.13",
-    "monaco-languageclient": "^0.7.2"
+    "monaco-languageclient": "next"
   },
   "publishConfig": {
     "access": "public"

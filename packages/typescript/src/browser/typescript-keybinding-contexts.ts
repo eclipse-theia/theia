@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './quick-open-model';
-export * from './quick-open-service';
-export * from './quick-pick-service';
-export * from './quick-command-service';
-export * from './quick-command-contribution';
+import { injectable } from 'inversify';
+import { EditorTextFocusContext, EditorWidget } from '@theia/editor/lib/browser';
+import { TYPESCRIPT_LANGUAGE_ID } from '../common';
+
+export namespace TypeScriptKeybindingContexts {
+    export const typescriptEditorTextFocus = 'typescriptEditorTextFocus';
+}
+
+@injectable()
+export class TypeScriptEditorTextFocusContext extends EditorTextFocusContext {
+
+    readonly id: string = TypeScriptKeybindingContexts.typescriptEditorTextFocus;
+
+    protected canHandle(widget: EditorWidget): boolean {
+        return super.canHandle(widget) && widget.editor.document.languageId === TYPESCRIPT_LANGUAGE_ID;
+    }
+
+}
