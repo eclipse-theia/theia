@@ -17,9 +17,10 @@
 import { inject, injectable } from 'inversify';
 import { ExecuteCommandRequest } from 'monaco-languageclient/lib';
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { EditorCommands, EDITOR_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
+import { EditorCommands, EDITOR_CONTEXT_MENU, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { WorkspaceEdit, Workspace } from '@theia/languages/lib/browser';
+import { JAVA_LANGUAGE_ID } from '../common';
 import { JavaClientContribution } from './java-client-contribution';
 import { JavaKeybindingContexts } from './java-keybinding-contexts';
 
@@ -68,7 +69,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
         });
         commands.registerCommand(JAVA_ORGANIZE_IMPORTS, {
             execute: async (changes: WorkspaceEdit) => {
-                const editor = this.editorManager.currentEditor;
+                const editor = this.currentEditor;
                 if (!editor) {
                     return false;
                 }
@@ -80,15 +81,23 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                         uri
                     ]
                 });
-                if (isWorkspaceEdit(result) && this.workspace.applyEdit) {
+                if (WorkspaceEdit.is(result) && this.workspace.applyEdit) {
                     return await this.workspace.applyEdit(result);
                 } else {
                     return false;
                 }
             },
-            isVisible: () => !!this.editorManager.currentEditor,
-            isEnabled: () => !!this.editorManager.currentEditor
+            isVisible: () => !!this.currentEditor,
+            isEnabled: () => !!this.currentEditor
         });
+    }
+
+    get currentEditor(): EditorWidget | undefined {
+        const { currentEditor } = this.editorManager;
+        if (currentEditor && currentEditor.editor.document.languageId === JAVA_LANGUAGE_ID) {
+            return currentEditor;
+        }
+        return undefined;
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -105,8 +114,4 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
             keybinding: 'shift+alt+o'
         });
     }
-}
-
-function isWorkspaceEdit(edit?: object): edit is WorkspaceEdit {
-    return !!edit && ('changes' in edit || 'documentchanges' in edit);
 }

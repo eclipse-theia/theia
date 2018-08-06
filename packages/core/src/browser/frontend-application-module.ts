@@ -33,7 +33,7 @@ import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendAp
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
-import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution } from './quick-open';
+import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickPickService } from './quick-open';
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import {
@@ -118,6 +118,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     );
 
     bind(QuickOpenService).toSelf().inSingletonScope();
+    bind(QuickPickService).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
