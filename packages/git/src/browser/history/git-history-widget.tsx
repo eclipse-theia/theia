@@ -264,8 +264,8 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             }
             onDoubleClick={
                 () => {
-                    if (this.singleFileMode) {
-                        this.openFile(commit.fileChangeNodes[0], commit.commitSha);
+                    if (this.singleFileMode && commit.fileChanges && commit.fileChanges.length > 0) {
+                        this.openFile(commit.fileChanges[0], commit.commitSha);
                     }
                 }
             }>
