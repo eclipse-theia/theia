@@ -61,12 +61,14 @@
   background: var(--theia-layout-color0);
 }
 
-.p-TabBar.theia-app-left .p-TabBar-tab.theia-mod-active {
+.p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current.theia-mod-active {
   border-left-color: var(--theia-accent-color2);
+  border-top-color: transparent;
 }
 
-.p-TabBar.theia-app-right .p-TabBar-tab.theia-mod-active {
+.p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current.theia-mod-active {
   border-right-color: var(--theia-accent-color2);
+  border-top-color: transparent;
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab:hover {

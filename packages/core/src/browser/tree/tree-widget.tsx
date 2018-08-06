@@ -299,7 +299,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         const className = classes.join(' ');
         let attrs = this.decorateCaption(node, {
-            className
+            className, id: node.id
         });
         if (tooltip.length > 0) {
             attrs = {

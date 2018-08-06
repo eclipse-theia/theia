@@ -47,7 +47,7 @@ export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'b
 
 @injectable()
 export class PreferenceSchemaProvider {
-    protected readonly combinedSchema: PreferenceSchema;
+    protected readonly combinedSchema: PreferenceSchema = {properties: {}};
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
@@ -55,7 +55,7 @@ export class PreferenceSchemaProvider {
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
     ) {
         this.preferenceContributions.getContributions().forEach(contrib => {
-            for (const property in contrib.schema) {
+            for (const property in contrib.schema.properties) {
                 if (this.combinedSchema.properties[property]) {
                     this.logger.error('Preference name collision detected in the schema for property: ' + property);
                 } else {
@@ -65,7 +65,7 @@ export class PreferenceSchemaProvider {
         });
     }
 
-    getSchema(): PreferenceSchema {
+    getCombinedSchema(): PreferenceSchema {
         return this.combinedSchema;
     }
 }

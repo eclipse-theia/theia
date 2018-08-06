@@ -44,8 +44,8 @@ import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import {
-    PreferenceProviders, PreferenceProvider,
-    PreferenceScope, PreferenceService, PreferenceServiceImpl
+    PreferenceProviders, PreferenceProvider, PreferenceScope, PreferenceService,
+    PreferenceServiceImpl, PreferenceSchemaProvider, PreferenceContribution
 } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
@@ -143,6 +143,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     for (const serviceIdentifier of [PreferenceService, FrontendApplicationContribution]) {
         bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(PreferenceServiceImpl)).inSingletonScope();
     }
+    bind(PreferenceSchemaProvider).toSelf().inSingletonScope();
+    bindContributionProvider(bind, PreferenceContribution);
 
     bind(PingService).toDynamicValue(ctx => {
         // let's reuse a simple and cheap service from this package

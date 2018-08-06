@@ -18,8 +18,14 @@ import { ContainerModule, interfaces, } from 'inversify';
 import { PreferenceProvider, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
-import { PreferenceFrontendContribution } from './preference-frontend-contribution';
-import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+import {
+    PreferencesContribution,
+    PREFERENCES_TREE_WIDGET_ID
+} from './preferences-contribution';
+import { createPreferencesTreeWidget } from './preference-tree-container';
+import { PreferencesMenuFactory } from './preferences-menu-factory';
+import { PreferencesWidgetFactory } from './preferences-widget-factory';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     unbind(PreferenceProvider);
@@ -27,10 +33,17 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferenceProvider).to(UserPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).to(WorkspacePreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
 
-    bind(PreferenceFrontendContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(PreferenceFrontendContribution);
-    bind(MenuContribution).toService(PreferenceFrontendContribution);
+    bindViewContribution(bind, PreferencesContribution);
 
+    bind(PreferencesWidgetFactory).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(PreferencesWidgetFactory)).inSingletonScope();
+
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: PREFERENCES_TREE_WIDGET_ID,
+        createWidget: () => createPreferencesTreeWidget(context.container)
+    })).inSingletonScope();
+
+    bind(PreferencesMenuFactory).toSelf();
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

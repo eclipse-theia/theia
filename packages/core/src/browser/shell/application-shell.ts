@@ -718,15 +718,23 @@ export class ApplicationShell extends Widget {
     private onActiveChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         const { newValue, oldValue } = args;
         if (oldValue) {
-            // Remove the mark of the previously active widget
-            oldValue.title.className = oldValue.title.className.replace(' theia-mod-active', '');
+            let w: Widget| null = oldValue;
+            while (w) {
+                // Remove the mark of the previously active widget
+                w.title.className = w.title.className.replace(' theia-mod-active', '');
+                w = w.parent;
+            }
             // Reset the z-index to the default
             // tslint:disable-next-line:no-null-keyword
             this.setZIndex(oldValue.node, null);
         }
         if (newValue) {
-            // Mark the tab of the active widget
-            newValue.title.className += ' theia-mod-active';
+            let w: Widget| null = newValue;
+            while (w) {
+                // Mark the tab of the active widget
+                w.title.className += ' theia-mod-active';
+                w = w.parent;
+            }
             // Reveal the title of the active widget in its tab bar
             const tabBar = this.getTabBarFor(newValue);
             if (tabBar instanceof ScrollableTabBar) {
@@ -758,6 +766,14 @@ export class ApplicationShell extends Widget {
     protected track(widget: Widget): void {
         this.tracker.add(widget);
         Saveable.apply(widget);
+        if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
+            widget.getTrackableWidgets().then(widgetsToTrack => {
+                for (const toTrack of widgetsToTrack) {
+                    this.tracker.add(toTrack);
+                    Saveable.apply(toTrack);
+                }
+            });
+        }
     }
 
     /**
@@ -1330,5 +1346,18 @@ export namespace ApplicationShell {
         config?: DockPanel.ILayoutConfig;
         size?: number;
         expanded?: boolean;
+    }
+
+    /**
+     * Exposes widgets which activation state should be tracked by shell.
+     */
+    export interface TrackableWidgetProvider {
+        getTrackableWidgets(): Promise<Widget[]>
+    }
+
+    export namespace TrackableWidgetProvider {
+        export function is(widget: object | undefined): widget is TrackableWidgetProvider {
+            return !!widget && 'getTrackableWidgets' in widget;
+        }
     }
 }

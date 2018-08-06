@@ -15,65 +15,63 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { CommandContribution, MenuContribution, Command, MenuModelRegistry, CommandRegistry } from '@theia/core';
+import { Command, MenuModelRegistry, CommandRegistry } from '@theia/core';
 import { UserPreferenceProvider } from './user-preference-provider';
-import { open, OpenerService, CommonMenus, PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser';
+import {
+    CommonMenus,
+    PreferenceScope,
+    PreferenceProvider,
+    AbstractViewContribution
+} from '@theia/core/lib/browser';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { UserStorageService } from '@theia/userstorage/lib/browser';
+import { PreferencesContainer } from './preferences-tree-widget';
 
-export namespace PreferenceCommands {
-    export const OPEN_USER_PREFERENCES: Command = {
-        id: 'preferences:open_user',
-        label: 'Open User Preferences'
-    };
-    export const OPEN_WORKSPACE_PREFERENCES: Command = {
-        id: 'preferences:open_workspace',
-        label: 'Open Workspace Preferences'
-    };
-}
+export const PREFERENCES_COMMAND: Command = {
+    id: 'preferences:open',
+    label: 'Open Preferences'
+};
+
+export const PREFERENCES_CONTAINER_WIDGET_ID = 'preferences_container_widget';
+export const PREFERENCES_TREE_WIDGET_ID = 'preferences_tree_widget';
 
 @injectable()
-export class PreferenceFrontendContribution implements CommandContribution, MenuContribution {
+export class PreferencesContribution extends AbstractViewContribution<PreferencesContainer> {
 
     @inject(UserStorageService) protected readonly userStorageService: UserStorageService;
     @inject(PreferenceProvider) @named(PreferenceScope.User) protected readonly userPreferenceProvider: UserPreferenceProvider;
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileSystem) protected readonly filesystem: FileSystem;
 
-    registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(PreferenceCommands.OPEN_USER_PREFERENCES, {
-            isEnabled: () => true,
-            execute: () => this.openUserPreferences()
+    constructor() {
+        super ({
+            widgetId: PREFERENCES_CONTAINER_WIDGET_ID,
+            widgetName: 'Preferences',
+            defaultWidgetOptions: {area: 'main'}
         });
+    }
 
-        commands.registerCommand(PreferenceCommands.OPEN_WORKSPACE_PREFERENCES, {
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(PREFERENCES_COMMAND, {
             isEnabled: () => true,
-            execute: () => this.openWorkspacePreferences()
+            execute: () => this.openPreferences()
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: PreferenceCommands.OPEN_USER_PREFERENCES.id
-        });
-        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: PreferenceCommands.OPEN_WORKSPACE_PREFERENCES.id
+            commandId: PREFERENCES_COMMAND.id
         });
     }
 
-    protected async openUserPreferences(): Promise<void> {
+    protected async openPreferences(): Promise<void> {
         const userUri = this.userPreferenceProvider.getUri();
         const content = await this.userStorageService.readContents(userUri);
         if (content === '') {
             await this.userStorageService.saveContents(userUri, this.getPreferenceTemplateForScope('user'));
         }
 
-        open(this.openerService, userUri);
-    }
-
-    protected async openWorkspacePreferences(): Promise<void> {
         const wsUri = await this.workspacePreferenceProvider.getUri();
         if (!wsUri) {
             return;
@@ -81,7 +79,8 @@ export class PreferenceFrontendContribution implements CommandContribution, Menu
         if (!(await this.filesystem.exists(wsUri.toString()))) {
             await this.filesystem.createFile(wsUri.toString(), { content: this.getPreferenceTemplateForScope('workspace') });
         }
-        open(this.openerService, wsUri);
+
+        super.openView({activate: true});
     }
 
     private getPreferenceTemplateForScope(scope: string): string {
