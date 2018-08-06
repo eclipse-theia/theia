@@ -11,6 +11,7 @@
     "@types/tar": "4.0.0",
     "glob": "^7.1.2",
     "mkdirp": "^0.5.0",
+    "sha1": "^1.1.1",
     "tar": "^4.0.0"
   },
   "devDependencies": {
@@ -57,7 +58,6 @@
     "extends": "../../configs/nyc.json"
   },
   "ls": {
-    "download.base": "https://www.eclipse.org/downloads/download.php?file=",
-    "download.path": "/che/che-ls-jdt/snapshots/che-jdt-language-server-latest.tar.gz"
+    "downloadUrl": "https://www.eclipse.org/downloads/download.php?file=/che/che-ls-jdt/snapshots/che-jdt-language-server-latest.tar.gz&r=1"
   }
 }
