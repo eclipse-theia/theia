@@ -289,6 +289,8 @@ export namespace GitBlameParser {
 @injectable()
 export class DugiteGit implements Git {
 
+    protected readonly limit = 1000;
+
     @inject(ILogger)
     protected readonly logger: ILogger;
 
@@ -344,7 +346,7 @@ export class DugiteGit implements Git {
 
     async status(repository: Repository): Promise<WorkingDirectoryStatus> {
         const repositoryPath = this.getFsPath(repository);
-        const dugiteStatus = await getStatus(repositoryPath);
+        const dugiteStatus = await getStatus(repositoryPath, true, this.limit);
         return this.mapStatus(dugiteStatus, repository);
     }
 
@@ -710,7 +712,8 @@ export class DugiteGit implements Git {
             upstreamBranch: toMap.currentUpstreamBranch,
             aheadBehind,
             changes,
-            currentHead: toMap.currentTip
+            currentHead: toMap.currentTip,
+            incomplete: toMap.incomplete
         };
     }
 
