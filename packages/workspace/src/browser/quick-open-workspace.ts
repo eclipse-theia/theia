@@ -28,12 +28,11 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    protected readonly workspace: string | undefined;
 
     open(workspaces: string[]): void {
         this.items = [];
         for (const workspace of workspaces) {
-            this.items.push(new WorkspaceQuickOpenItem(this.workspaceService, workspace, this.messageService));
+            this.items.push(new WorkspaceQuickOpenItem(this.workspaceService, this.messageService, workspace));
         }
 
         this.quickOpenService.open(this, {
@@ -61,17 +60,18 @@ export class WorkspaceQuickOpenItem extends QuickOpenItem {
 
     constructor(
         private readonly workspaceService: WorkspaceService,
-        private readonly workspace: string | undefined,
-        private readonly messageService: MessageService
+        private readonly messageService: MessageService,
+        private readonly workspace: string,
     ) {
         super();
     }
 
+    /**
+     * Display the workspace name
+     * @returns workspace name
+     */
     getLabel(): string {
-        if (this.workspace) {
-            return new URI(this.workspace).path.name;
-        }
-        return '';
+        return new URI(this.workspace).path.base;
     }
 
     /**
