@@ -37,6 +37,7 @@ export interface StatusBarEntry {
     alignment: StatusBarAlignment;
     color?: string;
     className?: string;
+    id?: string;
     tooltip?: string;
     command?: string;
     // tslint:disable-next-line:no-any
@@ -51,6 +52,7 @@ export enum StatusBarAlignment {
 
 export interface StatusBarEntryAttributes {
     className?: string;
+    id?: string;
     title?: string;
     style?: object;
     onClick?: (e: MouseEvent) => void;
@@ -169,6 +171,10 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
 
         if (entry.className) {
             attrs.className += ' ' + entry.className;
+        }
+
+        if (entry.id) {
+            attrs.id = entry.id;
         }
 
         return attrs;
