@@ -49,6 +49,11 @@ export interface WorkingDirectoryStatus {
      */
     readonly currentHead?: string;
 
+    /**
+     * `true` if a limit was specified and reached during get `git status`, so this result is not complete. Otherwise, (including `undefined`) is complete.
+     */
+    readonly incomplete?: boolean;
+
 }
 
 export namespace WorkingDirectoryStatus {
@@ -65,6 +70,7 @@ export namespace WorkingDirectoryStatus {
                 && (left.aheadBehind ? left.aheadBehind.ahead : -1) === (right.aheadBehind ? right.aheadBehind.ahead : -1)
                 && (left.aheadBehind ? left.aheadBehind.behind : -1) === (right.aheadBehind ? right.aheadBehind.behind : -1)
                 && left.changes.length === right.changes.length
+                && !!left.incomplete === !!right.incomplete
                 && JSON.stringify(left) === JSON.stringify(right);
         } else {
             return left === right;

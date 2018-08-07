@@ -53,6 +53,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
     protected mergeChanges: GitFileChangeNode[] = [];
+    protected incomplete?: boolean;
     protected message: string = '';
     protected messageBoxHeight: number = GitWidget.MESSAGE_BOX_MIN_HEIGHT;
     protected status: WorkingDirectoryStatus | undefined;
@@ -82,7 +83,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
-        this.scrollContainer = 'changesOuterContainer';
+        this.scrollContainer = GitWidget.Styles.CHANGES_CONTAINER;
         this.addClass('theia-git');
     }
 
@@ -222,6 +223,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                     }
                 }
             }
+            this.incomplete = status.incomplete;
         }
         const sort = (l: GitFileChangeNode, r: GitFileChangeNode) => l.label.localeCompare(r.label);
         this.stagedChanges = stagedChanges.sort(sort);
@@ -310,7 +312,13 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 {this.renderCommitMessage()}
                 {this.renderCommandBar(repository)}
             </div>
-            <div className='changesOuterContainer' id={this.scrollContainer}>
+            {
+                this.incomplete ?
+                    <div className={`${GitWidget.Styles.MESSAGE_CONTAINER} ${GitWidget.Styles.WARNING_MESSAGE}`}>
+                        There are too many active changes, only a subset is shown.</div>
+                    : ''
+            }
+            <div className={GitWidget.Styles.CHANGES_CONTAINER} id={this.scrollContainer}>
                 {this.renderMergeChanges(repository) || ''}
                 {this.renderStagedChanges(repository) || ''}
                 {this.renderUnstagedChanges(repository) || ''}
@@ -634,8 +642,11 @@ export namespace GitWidget {
 
     export namespace Styles {
         export const MAIN_CONTAINER = 'theia-git-main-container';
+        export const CHANGES_CONTAINER = 'changesOuterContainer';
         export const COMMIT_MESSAGE_CONTAINER = 'theia-git-commit-message-container';
         export const COMMIT_MESSAGE = 'theia-git-commit-message';
+        export const MESSAGE_CONTAINER = 'theia-git-message';
+        export const WARNING_MESSAGE = 'theia-git-message-warning';
         export const VALIDATION_MESSAGE = 'theia-git-commit-validation-message';
         export const LAST_COMMIT_CONTAINER = 'theia-git-last-commit-container';
         export const LAST_COMMIT_DETAILS = 'theia-git-last-commit-details';

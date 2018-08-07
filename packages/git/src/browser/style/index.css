@@ -275,6 +275,7 @@
     border-color: var(--theia-error-color0) !important;
 }
 
+.theia-git-message,
 .theia-git-commit-validation-message {
     padding: 4px 4px 4px 4px;
 }
@@ -293,6 +294,7 @@
     color: var(--theia-success-font-color0);
 }
 
+.theia-git-message-warning,
 .theia-git-validation-message-warning {
     background-color: var(--theia-warn-color0) !important;
     color: var(--theia-warn-font-color0);
