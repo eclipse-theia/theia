@@ -18,8 +18,12 @@
   padding: 0px;
 }
 
+.p-SplitPanel-handle {
+    background: var(--theia-layout-color1);
+}
+
 .p-DockPanel-widget {
-  background: var(--theia-layout-color1);
+  background: var(--theia-layout-color0);
   min-width: 100px;
   min-height: 100px;
 }
