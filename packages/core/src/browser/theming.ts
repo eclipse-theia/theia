@@ -92,6 +92,9 @@ export class ThemeService {
         const newTheme = this.getTheme(themeId);
         const oldTheme = this.activeTheme;
         if (oldTheme) {
+            if (oldTheme.id === newTheme.id) {
+                return;
+            }
             oldTheme.deactivate();
         }
         newTheme.activate();
@@ -108,7 +111,7 @@ export class ThemeService {
     }
 
     /**
-     * The default them. If that is not applicable, returns with the fallback theme.
+     * The default theme. If that is not applicable, returns with the fallback theme.
      */
     get defaultTheme(): Theme {
         return this.themes[this._defaultTheme || this.fallbackTheme] || this.themes[this.fallbackTheme];
