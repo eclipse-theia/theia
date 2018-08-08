@@ -6,6 +6,7 @@
     "@theia/core": "^0.3.13",
     "@theia/editor": "^0.3.13",
     "@theia/languages": "^0.3.13",
+    "@theia/mini-browser": "^0.3.13",
     "@types/highlight.js": "^9.12.2",
     "@types/markdown-it": "^0.0.4",
     "@types/markdown-it-anchor": "^4.0.1",

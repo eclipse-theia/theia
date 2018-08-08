@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-declare module "file-icons-js" {
+declare module 'file-icons-js' {
     function getClass(filePath: string): string;
     function getClassWithColor(filePath: string): string;
 }

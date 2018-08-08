@@ -24,6 +24,7 @@ import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { MarkdownPreviewHandler } from './markdown';
 import { bindPreviewPreferences } from './preview-preferences';
+import { PreviewLinkNormalizer } from './preview-link-normalizer';
 
 import '../../src/browser/style/index.css';
 import '../../src/browser/markdown/style/index.css';
@@ -34,6 +35,7 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, PreviewHandler);
     bind(MarkdownPreviewHandler).toSelf().inSingletonScope();
     bind(PreviewHandler).toService(MarkdownPreviewHandler);
+    bind(PreviewLinkNormalizer).toSelf().inSingletonScope();
 
     bind(PreviewWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(ctx => ({

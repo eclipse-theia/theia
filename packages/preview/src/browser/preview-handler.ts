@@ -25,6 +25,12 @@ export interface RenderContentParams {
     originUri: URI;
 }
 
+export namespace RenderContentParams {
+    export function is(params: object | undefined): params is RenderContentParams {
+        return !!params && 'content' in params && 'originUri' in params;
+    }
+}
+
 export interface PreviewHandler {
     readonly iconClass?: string;
     canHandle(uri: URI): number;
