@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-declare module 'string-argv' {
-    function stringArgv(...args: string[]): string[];
-    export = stringArgv;
-}
+import { injectable } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { Endpoint } from '@theia/core/lib/browser';
 
+@injectable()
+export class PreviewLinkNormalizer {
+
+    normalizeLink(documentUri: URI, link: string): string {
+        try {
+            const uri = new URI(link);
+            if (!uri.scheme) {
+                const location = documentUri.parent.resolve(link).path.toString();
+                return new Endpoint({ path: 'mini-browser/' + location }).getRestUrl().toString();
+            }
+        } catch {
+            // ignore
+        }
+        return link;
+    }
+}

@@ -31,6 +31,10 @@ let previewHandler: MarkdownPreviewHandler;
 
 before(() => {
     previewHandler = new MarkdownPreviewHandler();
+    (previewHandler as any).linkNormalizer = {
+        normalizeLink: (documentUri: URI, link: string) =>
+            'endpoint/' + documentUri.parent.resolve(link).path.toString().substr(1)
+    };
 });
 
 describe('markdown-preview-handler', () => {
@@ -46,6 +50,11 @@ describe('markdown-preview-handler', () => {
     it('renders html with line information', async () => {
         const contentElement = await previewHandler.renderContent({ content: exampleMarkdown1, originUri: new URI('') });
         expect(contentElement.innerHTML).equals(exampleHtml1);
+    });
+
+    it('renders images', async () => {
+        const contentElement = await previewHandler.renderContent({ content: exampleMarkdown2, originUri: new URI('file:///Users/me/workspace/DEMO.md') });
+        expect(contentElement.innerHTML).equals(exampleHtml2);
     });
 
     it('finds element for source line', () => {
@@ -102,6 +111,16 @@ const exampleHtml1 = //
 See <a href="https://github.com/theia-ide/theia">here</a>.</p>
 <h2 id="license" class="line" data-line="4">License</h2>
 <p class="line" data-line="5"><a href="https://github.com/theia-ide/theia/blob/master/LICENSE">Apache-2.0</a></p>
+`;
+
+const exampleMarkdown2 = //
+    `# Heading
+![alternativetext](subfolder/image.png)
+`;
+
+const exampleHtml2 = //
+    `<h1 id="heading" class="line" data-line="0">Heading</h1>
+<p class="line" data-line="1"><img src="endpoint/Users/me/workspace/subfolder/image.png" alt="alternativetext"></p>
 `;
 
 /**

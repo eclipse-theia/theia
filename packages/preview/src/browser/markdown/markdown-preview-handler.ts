@@ -25,6 +25,7 @@ import * as anchor from 'markdown-it-anchor';
 import { PreviewUri } from '../preview-uri';
 import { PreviewHandler, RenderContentParams } from '../preview-handler';
 import { PreviewOpenerOptions } from '../preview-contribution';
+import { PreviewLinkNormalizer } from '../preview-link-normalizer';
 
 @injectable()
 export class MarkdownPreviewHandler implements PreviewHandler {
@@ -35,13 +36,16 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
+    @inject(PreviewLinkNormalizer)
+    protected readonly linkNormalizer: PreviewLinkNormalizer;
+
     canHandle(uri: URI): number {
         return uri.scheme === 'file' && uri.path.ext === '.md' ? 500 : 0;
     }
 
     renderContent(params: RenderContentParams): HTMLElement {
         const content = params.content;
-        const renderedContent = this.getEngine().render(content);
+        const renderedContent = this.getEngine().render(content, params);
         const contentElement = document.createElement('div');
         contentElement.classList.add(this.contentClass);
         contentElement.innerHTML = renderedContent;
@@ -230,6 +234,21 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         : self.renderToken(tokens, index, options);
                 };
             }
+            const originalImageRenderer = engine.renderer.rules['image'];
+            engine.renderer.rules['image'] = (tokens, index, options, env, self) => {
+                if (RenderContentParams.is(env)) {
+                    const documentUri = env.originUri;
+                    const token = tokens[index];
+                    if (token.attrs) {
+                        const srcAttr = token.attrs.find(a => a[0] === 'src');
+                        if (srcAttr) {
+                            const href = srcAttr[1];
+                            srcAttr[1] = this.linkNormalizer.normalizeLink(documentUri, href);
+                        }
+                    }
+                }
+                return originalImageRenderer(tokens, index, options, env, self);
+            };
             anchor(engine, {});
         }
         return this.engine;
