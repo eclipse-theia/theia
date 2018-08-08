@@ -144,6 +144,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onTermDidClose);
     }
 
+    clearOutput(): void {
+        this.term.clear();
+    }
+
     storeState(): object {
         this.closeOnDispose = false;
         return { terminalId: this.terminalId, titleLabel: this.title.label };

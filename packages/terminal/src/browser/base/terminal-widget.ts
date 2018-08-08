@@ -38,6 +38,11 @@ export abstract class TerminalWidget extends BaseWidget {
     * Event which fires when terminal did closed. Event value contains closed terminal widget definition.
     */
    abstract onTerminalDidClose: Event<TerminalWidget>;
+
+   /**
+    * Cleat terminal output.
+    */
+   abstract clearOutput(): void;
 }
 
 /**
