@@ -16,7 +16,7 @@
 
 import { MockLogger } from '../../common/test/mock-logger';
 import { AbstractConnectionStatusService } from '../connection-status-service';
-import { ILogger } from '@theia/core/src/common';
+import { ILogger } from '../../common/logger';
 
 export class MockConnectionStatusService extends AbstractConnectionStatusService {
 

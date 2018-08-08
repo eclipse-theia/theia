@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as chai from 'chai';
-import { Endpoint } from '@theia/core/src/browser/endpoint';
+import { Endpoint } from './endpoint';
 
 const expect = chai.expect;
 
