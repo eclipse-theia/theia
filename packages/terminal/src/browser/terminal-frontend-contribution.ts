@@ -39,6 +39,10 @@ export namespace TerminalCommands {
         id: 'terminal:new',
         label: 'Open New Terminal'
     };
+    export const TERMINAL_CLEAR: Command = {
+        id: 'terminal:clear',
+        label: 'Terminal: Clear'
+    };
 }
 
 @injectable()
@@ -60,6 +64,12 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 this.activateTerminal(termWidget);
             }
         });
+
+        commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
+        commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
+            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
+            execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -72,6 +82,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
             keybinding: "ctrl+`"
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_CLEAR.id,
+            keybinding: 'ctrlcmd+k'
         });
 
         /* Register passthrough keybindings for combinations recognized by
