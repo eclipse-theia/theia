@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Argv, Arguments } from 'yargs';
-import { CliContribution } from '@theia/core/src/node/cli';
+import { CliContribution } from '@theia/core/lib/node/cli';
 
 @injectable()
 export class JavaCliContribution implements CliContribution {
