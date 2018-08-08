@@ -17,8 +17,8 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { SelectionService, CommandService } from '@theia/core/lib/common';
-import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
+import { CommandService, SelectionService } from '@theia/core/lib/common';
+import { CommonCommands } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode,
@@ -187,4 +187,5 @@ export class FileNavigatorWidget extends FileTreeWidget {
             </div>
         </div>;
     }
+
 }

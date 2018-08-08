@@ -28,7 +28,6 @@ import {
     KeyModifier, KeybindingRegistry
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
@@ -50,8 +49,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) { }
 
     registerCommands(commands: CommandRegistry): void {

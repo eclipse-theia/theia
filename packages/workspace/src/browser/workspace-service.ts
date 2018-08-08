@@ -21,10 +21,14 @@ import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browse
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { Disposable, Emitter, Event, DisposableCollection } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ILogger } from '@theia/core/lib/common/logger';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
+import * as jsoncparser from 'jsonc-parser';
+import * as Ajv from 'ajv';
+
+export const THEIA_EXT = 'theia-workspace';
+export const VSCODE_EXT = 'code-workspace';
 
 /**
  * The workspace service.
@@ -32,8 +36,8 @@ import { WorkspacePreferences } from './workspace-preferences';
 @injectable()
 export class WorkspaceService implements FrontendApplicationContribution {
 
-    // TODO remove it with the patch where the config file becomes independent from the workspace
-    private _workspaceFolder: FileStat | undefined;
+    private _workspace: FileStat | undefined;
+
     private _roots: FileStat[] = [];
     private deferredRoots = new Deferred<FileStat[]>();
 
@@ -59,18 +63,18 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        await this.updateWorkspace();
-        this.updateTitle();
-        const configUri = this.getWorkspaceConfigFileUri();
-        if (configUri) {
-            this.watcher.onFilesChanged(event => {
-                if (FileChangeEvent.isAffected(event, configUri)) {
-                    this.updateWorkspace();
-                }
-            });
-        }
+        const workspaceUri = await this.server.getMostRecentlyUsedWorkspace();
+        const workspaceFileStat = await this.toFileStat(workspaceUri);
+        await this.setWorkspace(workspaceFileStat);
+
+        this.watcher.onFilesChanged(event => {
+            if (this._workspace && FileChangeEvent.isAffected(event, new URI(this._workspace.uri))) {
+                this.updateWorkspace();
+            }
+        });
         this.preferences.onPreferenceChanged(event => {
-            if (event.preferenceName === 'workspace.supportMultiRootWorkspace') {
+            const multiRootPrefName = 'workspace.supportMultiRootWorkspace';
+            if (event.preferenceName === multiRootPrefName) {
                 this.updateWorkspace();
             }
         });
@@ -82,28 +86,32 @@ export class WorkspaceService implements FrontendApplicationContribution {
     tryGetRoots(): FileStat[] {
         return this._roots;
     }
+    get workspace(): FileStat | undefined {
+        return this._workspace;
+    }
 
     protected readonly onWorkspaceChangeEmitter = new Emitter<FileStat[]>();
     get onWorkspaceChanged(): Event<FileStat[]> {
         return this.onWorkspaceChangeEmitter.event;
     }
 
-    protected async updateWorkspace(): Promise<void> {
-        await this.ensureWorkspaceInitialized();
-        await this.updateRoots();
-        this.watchRoots();
-    }
-
-    protected async ensureWorkspaceInitialized(): Promise<void> {
-        if (this._workspaceFolder) {
+    protected readonly toDisposeOnWorkspace = new DisposableCollection();
+    protected async setWorkspace(workspaceStat: FileStat | undefined): Promise<void> {
+        if (FileStat.equals(this._workspace, workspaceStat)) {
             return;
         }
-        const rootUri = await this.server.getMostRecentlyUsedWorkspace();
-        this._workspaceFolder = await this.toValidRoot(rootUri);
-        const configUri = this.getWorkspaceConfigFileUri();
-        if (configUri) {
-            this.watcher.watchFileChanges(configUri);
+        this.toDisposeOnWorkspace.dispose();
+        this._workspace = workspaceStat;
+        if (this._workspace) {
+            this.toDisposeOnWorkspace.push(await this.watcher.watchFileChanges(new URI(this._workspace.uri)));
         }
+        this.updateTitle();
+        await this.updateWorkspace();
+    }
+
+    protected async updateWorkspace(): Promise<void> {
+        await this.updateRoots();
+        this.watchRoots();
     }
 
     protected async updateRoots(): Promise<void> {
@@ -115,51 +123,58 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async computeRoots(): Promise<FileStat[]> {
-        const config = await this.getWorkspaceConfig();
-        if (!config || !config.roots.length) {
-            return this._workspaceFolder ? [this._workspaceFolder] : [];
-        }
         const roots: FileStat[] = [];
-        for (const rootUri of config.roots) {
-            const root = await this.toValidRoot(rootUri);
-            if (root) {
-                roots.push(root);
+        if (this._workspace) {
+            if (this._workspace.isDirectory) {
+                return [this._workspace];
+            }
+
+            const workspaceData = await this.getWorkspaceDataFromFile();
+            if (workspaceData) {
+                for (const { path } of workspaceData.folders) {
+                    const valid = await this.toValidRoot(path);
+                    if (valid) {
+                        roots.push(valid);
+                    } else {
+                        roots.push({
+                            uri: path,
+                            lastModification: Date.now(),
+                            isDirectory: true
+                        });
+                    }
+                }
             }
         }
         return roots;
     }
 
-    protected async getWorkspaceConfig(): Promise<{ stat: FileStat, roots: string[] } | undefined> {
-        if (!this.preferences['workspace.supportMultiRootWorkspace']) {
-            return undefined;
-        }
-        const configUri = this.getWorkspaceConfigFileUri();
-        if (configUri) {
-            const uriStr = configUri.path.toString();
-            if (await this.fileSystem.exists(uriStr)) {
-                const { stat, content } = await this.fileSystem.resolveContent(uriStr);
-                if (content) {
-                    // FIXME use jsonc + ajx to parse & validate content
-                    const roots: string[] = JSON.parse(content).roots || [];
-                    return { stat, roots };
-                }
+    protected async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
+        if (this._workspace && await this.fileSystem.exists(this._workspace.uri)) {
+            if (this._workspace.isDirectory) {
+                return {
+                    folders: [{ path: this._workspace.uri }]
+                };
             }
+            const { stat, content } = await this.fileSystem.resolveContent(this._workspace.uri);
+            const strippedContent = jsoncparser.stripComments(content);
+            const data = jsoncparser.parse(strippedContent);
+            if (data && WorkspaceData.is(data)) {
+                return WorkspaceData.transformToAbsolute(data, stat);
+            }
+            this.logger.error(`Unable to retrieve workspace data from the file: '${this._workspace.uri}'. Please check if the file is corrupted.`);
         }
-        return undefined;
-    }
-
-    protected getWorkspaceConfigFileUri(): URI | undefined {
-        if (this._workspaceFolder) {
-            const rootUri = new URI(this._workspaceFolder.uri);
-            return rootUri.resolve('.theia').resolve('root.json');
-        }
-        return undefined;
     }
 
     protected updateTitle(): void {
-        if (this._workspaceFolder) {
-            const uri = new URI(this._workspaceFolder.uri);
-            document.title = uri.displayName;
+        if (this._workspace) {
+            const uri = new URI(this._workspace.uri);
+            const displayName = uri.displayName;
+            if (!this._workspace.isDirectory &&
+                (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
+                document.title = displayName.slice(0, displayName.lastIndexOf('.'));
+            } else {
+                document.title = displayName;
+            }
         } else {
             document.title = window.location.href;
         }
@@ -170,9 +185,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * @param app
      */
     onStop(app: FrontendApplication): void {
-        if (this._workspaceFolder) {
-            this.server.setMostRecentlyUsedWorkspace(this._workspaceFolder.uri);
-        }
+        this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.uri : '');
     }
 
     async onStart() {
@@ -195,7 +208,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * @returns {boolean}
      */
     get opened(): boolean {
-        return !!this._workspaceFolder;
+        return !!this._workspace;
     }
 
     /**
@@ -207,7 +220,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Opens the given URI as the current workspace root.
+     * Opens directory, or recreates a workspace from the file that `uri` points to.
      */
     open(uri: URI, options?: WorkspaceInput): void {
         this.doOpen(uri, options);
@@ -215,21 +228,20 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<void> {
         const rootUri = uri.toString();
-        const valid = await this.toValidRoot(rootUri);
-        if (valid) {
+        const stat = await this.toFileStat(rootUri);
+        if (stat) {
             // The same window has to be preserved too (instead of opening a new one), if the workspace root is not yet available and we are setting it for the first time.
             // Option passed as parameter has the highest priority (for api developers), then the preference, then the default.
             await this.roots;
-            const rootToOpen = this._workspaceFolder;
             const { preserveWindow } = {
-                preserveWindow: this.preferences['workspace.preserveWindow'] || !(rootToOpen),
+                preserveWindow: this.preferences['workspace.preserveWindow'] || !this.opened,
                 ...options
             };
             await this.server.setMostRecentlyUsedWorkspace(rootUri);
             if (preserveWindow) {
-                this._workspaceFolder = valid;
+                this._workspace = stat;
             }
-            await this.openWindow({ preserveWindow });
+            await this.openWindow(stat, { preserveWindow });
             return;
         }
         throw new Error('Invalid workspace root URI. Expected an existing directory location.');
@@ -241,26 +253,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
      */
     async addRoot(uri: URI): Promise<void> {
         await this.roots;
-        if (!this.opened || !this._workspaceFolder) {
-            throw new Error('Folder cannot be added as there is no active folder in the current workspace.');
+
+        if (!this.opened) {
+            throw new Error('Folder cannot be added as there is no active workspace or opened folder.');
+        }
+        const valid = await this.toValidRoot(uri);
+        if (!valid) {
+            throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${uri.toString()}.`);
         }
 
-        const rootToAdd = uri.toString();
-        const valid = await this.toValidRoot(rootToAdd);
-        if (!valid) {
-            throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${rootToAdd}.`);
-        }
-        if (this._workspaceFolder && !this._roots.find(r => r.uri === valid.uri)) {
-            const configUri = this.getWorkspaceConfigFileUri();
-            if (configUri) {
-                if (!await this.fileSystem.exists(configUri.toString())) {
-                    await this.fileSystem.createFile(configUri.toString());
+        if (this._workspace && !this._roots.find(r => r.uri === valid.uri)) {
+            if (this._workspace.isDirectory) { // save the workspace data in a temporary file
+                const tempFile = await this.getTemporaryWorkspaceFile();
+                if (tempFile) {
+                    await this.save(tempFile);
                 }
-                await this.writeRootFolderConfigFile(
-                    (await this.fileSystem.getFileStat(configUri.toString()))!,
-                    [...this._roots, valid]
-                );
             }
+            this._workspace = await this.writeWorkspaceFile(this._workspace, [...this._roots, valid]);
         }
     }
 
@@ -271,27 +280,41 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!this.opened) {
             throw new Error('Folder cannot be removed as there is no active folder in the current workspace.');
         }
-        const config = await this.getWorkspaceConfig();
-        if (config) {
-            await this.writeRootFolderConfigFile(
-                config.stat, this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0)
+        if (this._workspace) {
+            this._workspace = await this.writeWorkspaceFile(
+                this._workspace, this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0)
             );
         }
     }
 
-    private async writeRootFolderConfigFile(rootConfigFile: FileStat, rootFolders: FileStat[]): Promise<void> {
-        const folders = rootFolders.slice();
-        if (folders.length === 0 && this._workspaceFolder) {
-            folders.push(this._workspaceFolder);
+    private async writeWorkspaceFile(workspaceFile: FileStat | undefined, rootFolders: FileStat[]): Promise<FileStat | undefined> {
+        if (workspaceFile) {
+            const workspaceData = WorkspaceData.transformToRelative(
+                WorkspaceData.buildWorkspaceData(rootFolders.map(f => f.uri)), workspaceFile
+            );
+            if (workspaceData) {
+                const stat = await this.fileSystem.setContent(workspaceFile, JSON.stringify(workspaceData));
+                return stat;
+            }
         }
-        await this.fileSystem.setContent(rootConfigFile, JSON.stringify({ roots: folders.map(f => f.uri) }));
+    }
+
+    private async getTemporaryWorkspaceFile(): Promise<FileStat | undefined> {
+        const home = await this.fileSystem.getCurrentUserHome();
+        if (home) {
+            const tempWorkspaceUri = getTemporaryWorkspaceFileUri(new URI(home.uri));
+            if (!await this.fileSystem.exists(tempWorkspaceUri.toString())) {
+                return await this.fileSystem.createFile(tempWorkspaceUri.toString());
+            }
+            return this.toFileStat(tempWorkspaceUri);
+        }
     }
 
     /**
      * Clears current workspace root.
      */
     close(): void {
-        this._workspaceFolder = undefined;
+        this._workspace = undefined;
         this._roots.length = 0;
 
         this.server.setMostRecentlyUsedWorkspace('');
@@ -301,28 +324,37 @@ export class WorkspaceService implements FrontendApplicationContribution {
     /**
      * returns a FileStat if the argument URI points to an existing directory. Otherwise, `undefined`.
      */
-    protected async toValidRoot(uri: string | undefined): Promise<FileStat | undefined> {
+    protected async toValidRoot(uri: URI | string | undefined): Promise<FileStat | undefined> {
+        const fileStat = await this.toFileStat(uri);
+        if (fileStat && fileStat.isDirectory) {
+            return fileStat;
+        }
+        return undefined;
+    }
+
+    /**
+     * returns a FileStat if the argument URI points to a file or directory. Otherwise, `undefined`.
+     */
+    protected async toFileStat(uri: URI | string | undefined): Promise<FileStat | undefined> {
         if (!uri) {
             return undefined;
         }
+        let uriStr = uri.toString();
         try {
-            if (uri && uri.endsWith('/')) {
-                uri = uri.slice(0, -1);
+            if (uriStr.endsWith('/')) {
+                uriStr = uriStr.slice(0, -1);
             }
-            const fileStat = await this.fileSystem.getFileStat(uri);
+            const fileStat = await this.fileSystem.getFileStat(uriStr);
             if (!fileStat) {
                 return undefined;
             }
-            if (fileStat.isDirectory) {
-                return fileStat;
-            }
-            return undefined;
+            return fileStat;
         } catch (error) {
             return undefined;
         }
     }
 
-    protected openWindow(options?: WorkspaceInput): void {
+    protected openWindow(uri: FileStat, options?: WorkspaceInput): void {
         if (this.shouldPreserveWindow(options)) {
             this.reloadWindow();
         } else {
@@ -330,7 +362,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.openNewWindow();
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
-                this._workspaceFolder = undefined;
+                this._workspace = uri;
                 this.logger.error(error.toString()).then(async () => await this.reloadWindow());
             }
         }
@@ -354,24 +386,45 @@ export class WorkspaceService implements FrontendApplicationContribution {
      */
     async containsSome(paths: string[]): Promise<boolean> {
         await this.roots;
-        if (this._workspaceFolder) {
-            const uri = new URI(this._workspaceFolder.uri);
-            for (const path of paths) {
-                const fileUri = uri.resolve(path).toString();
-                const exists = await this.fileSystem.exists(fileUri);
-                if (exists) {
-                    return exists;
+        if (this.opened) {
+            for (const root of this._roots) {
+                const uri = new URI(root.uri);
+                for (const path of paths) {
+                    const fileUri = uri.resolve(path).toString();
+                    const exists = await this.fileSystem.exists(fileUri);
+                    if (exists) {
+                        return exists;
+                    }
                 }
             }
         }
         return false;
     }
 
-    protected readonly watchers = new Map<string, Disposable>();
+    get saved(): boolean {
+        return !!this._workspace && !this._workspace.isDirectory;
+    }
+
+    /**
+     * Save workspace data into a file
+     * @param uri URI or FileStat of the workspace file
+     */
+    async save(uri: URI | FileStat): Promise<void> {
+        const uriStr = uri instanceof URI ? uri.toString() : uri.uri;
+        if (!await this.fileSystem.exists(uriStr)) {
+            await this.fileSystem.createFile(uriStr);
+        }
+        let stat = await this.toFileStat(uriStr);
+        stat = await this.writeWorkspaceFile(stat, await this.roots);
+        await this.server.setMostRecentlyUsedWorkspace(uriStr);
+        await this.setWorkspace(stat);
+    }
+
+    protected readonly rootWatchers = new Map<string, Disposable>();
 
     protected async watchRoots(): Promise<void> {
         const rootUris = new Set(this._roots.map(r => r.uri));
-        for (const [uri, watcher] of this.watchers.entries()) {
+        for (const [uri, watcher] of this.rootWatchers.entries()) {
             if (!rootUris.has(uri)) {
                 watcher.dispose();
             }
@@ -382,15 +435,21 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async watchRoot(root: FileStat): Promise<void> {
-        if (this.watchers.has(root.uri)) {
+        const uriStr = root.uri;
+        if (this.rootWatchers.has(uriStr)) {
             return;
         }
-        this.watchers.set(root.uri, new DisposableCollection(
-            await this.watcher.watchFileChanges(new URI(root.uri)),
-            Disposable.create(() => this.watchers.delete(root.uri))
-        ));
+        const watcher = this.watcher.watchFileChanges(new URI(uriStr));
+        this.rootWatchers.set(uriStr, Disposable.create(() => {
+            watcher.then(disposable => disposable.dispose());
+            this.rootWatchers.delete(uriStr);
+        }));
     }
 
+}
+
+export function getTemporaryWorkspaceFileUri(home: URI): URI {
+    return home.resolve('.theia').resolve(`Untitled.${THEIA_EXT}`).withScheme('file');
 }
 
 export interface WorkspaceInput {
@@ -400,4 +459,73 @@ export interface WorkspaceInput {
      */
     preserveWindow?: boolean;
 
+}
+
+interface WorkspaceData {
+    folders: Array<{ path: string }>;
+    // TODO add workspace settings settings?: { [id: string]: any };
+}
+
+namespace WorkspaceData {
+    const validateSchema = new Ajv().compile({
+        type: 'object',
+        properties: {
+            folders: {
+                description: 'Root folders in the workspace',
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                        }
+                    },
+                    required: ['path']
+                }
+            }
+        }
+    });
+
+    // tslint:disable-next-line:no-any
+    export function is(data: any): data is WorkspaceData {
+        return !!validateSchema(data);
+    }
+
+    export function buildWorkspaceData(folders: string[]): WorkspaceData {
+        return {
+            folders: folders.map(f => ({ path: f }))
+        };
+    }
+
+    export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
+        const folderUris: string[] = [];
+        const workspaceFileUri = new URI(workspaceFile ? workspaceFile.uri : '').withScheme('file');
+        for (const { path } of data.folders) {
+            const folderUri = new URI(path).withScheme('file');
+            const rel = workspaceFileUri.parent.relative(folderUri);
+            if (rel) {
+                folderUris.push(rel.toString());
+            } else {
+                folderUris.push(folderUri.toString());
+            }
+        }
+        return buildWorkspaceData(folderUris);
+    }
+
+    export function transformToAbsolute(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
+        if (workspaceFile) {
+            const folders: string[] = [];
+            for (const folder of data.folders) {
+                const path = folder.path;
+                if (path.startsWith('file:///')) {
+                    folders.push(path);
+                } else {
+                    folders.push(new URI(workspaceFile.uri).withScheme('file').parent.resolve(path).toString());
+                }
+
+            }
+            return Object.assign(data, buildWorkspaceData(folders));
+        }
+        return data;
+    }
 }

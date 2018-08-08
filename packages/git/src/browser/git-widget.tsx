@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, CommandService, MenuPath } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
-import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
+import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
@@ -76,7 +76,6 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(GitAvatarService) protected readonly avatarService: GitAvatarService,
         @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator) {
 

@@ -83,6 +83,10 @@ export namespace WorkspaceCommands {
         id: 'workspace:removeFolder',
         label: 'Remove Folder from Workspace'
     };
+    export const SAVE_WORKSPACE_AS: Command = {
+        id: 'workspace:saveAs',
+        label: 'Save Workspace As...'
+    };
 }
 
 @injectable()
@@ -230,14 +234,33 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
                 isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
                 execute: async uris => {
-                    const node = await this.fileDialogService.showOpenDialog({ title: WorkspaceCommands.ADD_FOLDER.label! });
-                    this.addFolderToWorkspace(node);
+                    const node = await this.fileDialogService.showOpenDialog({
+                        title: WorkspaceCommands.ADD_FOLDER.label!,
+                        canSelectFiles: false,
+                        canSelectFolders: true
+                    });
+                    if (!node) {
+                        return;
+                    }
+                    const workspaceSavedBeforeAdding = this.workspaceService.saved;
+                    await this.addFolderToWorkspace(node);
+                    if (!workspaceSavedBeforeAdding) {
+                        const saveCommand = registry.getCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id);
+                        if (saveCommand && await new ConfirmDialog({
+                            title: 'Folder added to Workspace',
+                            msg: 'A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?',
+                            ok: 'Yes',
+                            cancel: 'No'
+                        }).open()) {
+                            registry.executeCommand(saveCommand.id);
+                        }
+                    }
                 }
             }));
             registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
+                execute: uris => this.removeFolderFromWorkspace(uris),
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
-                isVisible: uris => this.areWorkspaceRoots(uris),
-                execute: uris => this.removeFolderFromWorkspace(uris)
+                isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
             }));
         });
     }
@@ -298,9 +321,9 @@ export class WorkspaceCommandContribution implements CommandContribution {
         return parentUri.resolve(base);
     }
 
-    protected addFolderToWorkspace(node: Readonly<FileStatNode> | undefined): void {
+    protected async addFolderToWorkspace(node: Readonly<FileStatNode> | undefined): Promise<void> {
         if (node && node.fileStat.isDirectory) {
-            this.workspaceService.addRoot(node.uri);
+            await this.workspaceService.addRoot(node.uri);
         }
     }
 

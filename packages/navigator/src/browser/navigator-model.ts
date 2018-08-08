@@ -64,9 +64,9 @@ export class FileNavigatorModel extends FileTreeModel {
     }
 
     protected async createRoot(): Promise<TreeNode | undefined> {
-        const roots = await this.workspaceService.roots;
-        if (roots.length > 0) {
+        if (this.workspaceService.opened) {
             const workspaceNode = WorkspaceNode.createRoot();
+            const roots = await this.workspaceService.roots;
             for (const root of roots) {
                 workspaceNode.children.push(
                     await this.tree.createWorkspaceRoot(root, workspaceNode)

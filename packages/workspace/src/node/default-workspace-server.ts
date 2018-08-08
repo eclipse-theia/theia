@@ -18,6 +18,7 @@ import * as path from 'path';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import * as os from 'os';
+import * as jsoncparser from 'jsonc-parser';
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { FileUri } from '@theia/core/lib/node';
@@ -77,7 +78,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected async init() {
         let root = await this.getWorkspaceURIFromCli();
         if (!root) {
-            const data = await this.readMostRecentWorkspaceRootFromUserHome();
+            const data = await this.readRecentWorkspacePathsFromUserHome();
             if (data && data.recentRoots) {
                 root = data.recentRoots[0];
             }
@@ -109,7 +110,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     async getRecentWorkspaces(): Promise<string[]> {
         const listUri: string[] = [];
-        const data = await this.readMostRecentWorkspaceRootFromUserHome();
+        const data = await this.readRecentWorkspacePathsFromUserHome();
         if (data && data.recentRoots) {
             data.recentRoots.forEach(element => {
                 if (element.length > 0) {
@@ -139,7 +140,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
      * Writes the given uri as the most recently used workspace root to the user's home directory.
      * @param uri most recently used uri
      */
-    private async writeToUserHome(data: WorkspaceData): Promise<void> {
+    private async writeToUserHome(data: RecentWorkspacePathsData): Promise<void> {
         const file = this.getUserStoragePath();
         await this.writeToFile(file, data);
     }
@@ -154,37 +155,27 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     /**
      * Reads the most recently used workspace root from the user's home directory.
      */
-    private async readMostRecentWorkspaceRootFromUserHome(): Promise<WorkspaceData | undefined> {
-        const data = await this.readJsonFromFile(this.getUserStoragePath());
-        if (data && WorkspaceData.is(data)) {
+    private async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
+        const filePath = this.getUserStoragePath();
+        const data = await this.readJsonFromFile(filePath);
+        if (data && RecentWorkspacePathsData.is(data)) {
             return data;
         }
+        fs.exists(filePath, exists => {
+            if (exists) {
+                const message = `Unable to retrieve recent workspaces from the file: '${filePath}'. Please check if the file is corrupted.`;
+                this.messageService.error(message);
+                this.logger.error('[CAUGHT]', message);
+            }
+        });
     }
 
     private async readJsonFromFile(filePath: string): Promise<object | undefined> {
         if (await fs.pathExists(filePath)) {
             const rawContent = await fs.readFile(filePath, 'utf-8');
-            const content = rawContent.trim();
-            if (!content) {
-                return undefined;
-            }
-
-            let config;
-            try {
-                config = JSON.parse(content);
-            } catch (error) {
-                this.messageService.warn(`Parse error in '${filePath}':\nFile will be ignored...`);
-                error.message = `${filePath}:\n${error.message}`;
-                this.logger.warn('[CAUGHT]', error);
-                return undefined;
-            }
-
-            if (WorkspaceData.is(config)) {
-                return config;
-            }
+            const strippedContent = jsoncparser.stripComments(rawContent);
+            return jsoncparser.parse(strippedContent);
         }
-
-        return undefined;
     }
 
     protected getUserStoragePath(): string {
@@ -192,13 +183,13 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     }
 }
 
-interface WorkspaceData {
+interface RecentWorkspacePathsData {
     recentRoots: string[];
 }
 
-namespace WorkspaceData {
+namespace RecentWorkspacePathsData {
     // tslint:disable-next-line:no-any
-    export function is(data: any): data is WorkspaceData {
-        return data.recentRoots !== undefined;
+    export function is(data: any): data is RecentWorkspacePathsData {
+        return data.recentRoots !== undefined && Array.isArray(data.recentRoots);
     }
 }

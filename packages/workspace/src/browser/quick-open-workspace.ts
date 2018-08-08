@@ -15,8 +15,9 @@
   ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
-import { WorkspaceService } from './workspace-service';
+import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
+import { WorkspaceService, getTemporaryWorkspaceFileUri } from './workspace-service';
+import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService } from '@theia/core/lib/common';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
@@ -31,42 +32,45 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
         const homeStat = await this.fileSystem.getCurrentUserHome();
         const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
-
+        let tempWorkspaceFile: URI | undefined;
+        if (home) {
+            tempWorkspaceFile = getTemporaryWorkspaceFileUri(new URI(home));
+        }
+        await this.preferences.ready;
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
             const stat = await this.fileSystem.getFileStat(workspace);
-            if (!stat) {
-                continue;
+            if (!stat ||
+                !this.preferences['workspace.supportMultiRootWorkspace'] && !stat.isDirectory) {
+                continue; // skip the workspace files if multi root is not supported
+            }
+            if (tempWorkspaceFile && uri.toString() === tempWorkspaceFile.toString()) {
+                continue; // skip the temporary workspace files
             }
             const lastModification = moment(stat.lastModification).fromNow();
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
                 description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
                 groupLabel: (workspace === workspaces[0]) ? 'Current Workspace' : `Modified ${lastModification}`,
+                iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
                     }
-                    this.workspaceService.roots.then(roots => {
-                        const current = roots[0];
-                        if (current === undefined) {  // Available recent workspace(s) but closed
-                            if (workspace && workspace.length > 0) {
-                                this.workspaceService.open(new URI(workspace));
-                            }
-                        } else {
-                            if (current.uri !== workspace) {
-                                this.workspaceService.open(new URI(workspace));
-                            } else {
-                                this.messageService.info(`Using the same workspace [ ${name} ]`);
-                            }
-
-                        }
-                    });
+                    const current = this.workspaceService.workspace;
+                    const uriToOpen = new URI(workspace);
+                    if (current && current.uri === workspace) {
+                        this.messageService.info(`Using the same workspace [ ${uriToOpen.displayName} ]`);
+                    } else {
+                        this.workspaceService.open(uriToOpen);
+                    }
                     return true;
                 },
             }));
