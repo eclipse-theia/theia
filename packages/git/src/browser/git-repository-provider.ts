@@ -17,6 +17,7 @@
 import { Git, Repository } from '../common';
 import { injectable, inject } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { Event, Emitter } from '@theia/core';
 
 export interface GitRefreshOptions {
@@ -32,7 +33,8 @@ export class GitRepositoryProvider {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         this.initialize();
     }
@@ -77,7 +79,12 @@ export class GitRepositoryProvider {
     }
 
     async refresh(options?: GitRefreshOptions): Promise<void> {
-        const roots = await this.workspaceService.roots;
+        const roots: FileStat[] = [];
+        for (const root of await this.workspaceService.roots) {
+            if (await this.fileSystem.exists(root.uri)) {
+                roots.push(root);
+            }
+        }
         const repoUris = new Map<string, Repository>();
         const reposOfRoots = await Promise.all(
             roots.map(r => this.git.repositories(r.uri, { ...options }))

@@ -117,7 +117,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 }
 
 export interface FileMoveOptions {
-	overwrite?: boolean;
+    overwrite?: boolean;
 }
 
 export interface FileDeleteOptions {
@@ -175,6 +175,15 @@ export namespace FileStat {
         return candidate.hasOwnProperty('uri')
             && candidate.hasOwnProperty('lastModification')
             && candidate.hasOwnProperty('isDirectory');
+    }
+
+    export function equals(one: object | undefined, other: object | undefined): boolean {
+        if (!one || !other || !is(one) || !is(other)) {
+            return false;
+        }
+        return one.uri === other.uri
+            && one.lastModification === other.lastModification
+            && one.isDirectory === other.isDirectory;
     }
 }
 
