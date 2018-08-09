@@ -67,7 +67,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
-    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl());
+    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
@@ -128,6 +128,9 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             } else {
                 return quickOpenExt.showQuickPick(items, options);
             }
+        },
+        showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions) {
+            return workspaceExt.pickWorkspaceFolder(options);
         },
         showInformationMessage(message: string,
             optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
