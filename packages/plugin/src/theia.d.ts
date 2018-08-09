@@ -1464,6 +1464,22 @@ declare module '@theia/plugin' {
         onDidSelectItem?(item: QuickPickItem | string): any;
     }
 
+	/**
+	 * Options to configure the behaviour of the [workspace folder](#WorkspaceFolder) pick UI.
+	 */
+    export interface WorkspaceFolderPickOptions {
+
+		/**
+		 * An optional string to show as place holder in the input box to guide the user what to pick on.
+		 */
+        placeHolder?: string;
+
+		/**
+		 * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
+		 */
+        ignoreFocusOut?: boolean;
+    }
+
     /**
      * Options to configure the behavior of the input box UI.
      */
@@ -1929,6 +1945,15 @@ declare module '@theia/plugin' {
          * Shows a selection list with multiple selection allowed.
          */
         export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
+
+		/**
+		 * Shows a selection list of [workspace folders](#workspace.workspaceFolders) to pick from.
+		 * Returns `undefined` if no folder is open.
+		 *
+		 * @param options Configures the behavior of the workspace folder list.
+		 * @return A promise that resolves to the workspace folder or `undefined`.
+		 */
+        export function showWorkspaceFolderPick(options?: WorkspaceFolderPickOptions): PromiseLike<WorkspaceFolder | undefined>;
 
         /**
          * Show an information message.
