@@ -154,13 +154,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
         this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
+        this.cancelIndicator.cancel();
+        this.cancelIndicator = new CancellationTokenSource();
+        const token = this.cancelIndicator.token;
         if (searchTerm === '') {
             this.refreshModelChildren();
             return;
         }
-        this.cancelIndicator.cancel();
-        this.cancelIndicator = new CancellationTokenSource();
-        const token = this.cancelIndicator.token;
         const searchId = await this.searchService.search(searchTerm, {
             onResult: async (aSearchId: number, result: SearchInWorkspaceResult) => {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
