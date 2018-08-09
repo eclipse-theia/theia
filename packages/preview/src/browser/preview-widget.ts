@@ -16,6 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { Resource, MaybePromise } from '@theia/core';
+import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { BaseWidget, Message, addEventListener } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter } from '@theia/core/lib/common';
@@ -38,7 +39,7 @@ export interface PreviewWidgetOptions {
 }
 
 @injectable()
-export class PreviewWidget extends BaseWidget {
+export class PreviewWidget extends BaseWidget implements Navigatable {
 
     protected readonly uri: URI;
     protected readonly resource: Resource;
@@ -144,13 +145,13 @@ export class PreviewWidget extends BaseWidget {
         return this.uri;
     }
 
+    getTargetUri(): URI {
+        return this.uri;
+    }
+
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        if (this.node.children.length > 0) {
-            (this.node.children.item(0) as HTMLElement).focus();
-        } else {
-            this.node.focus();
-        }
+        this.node.focus();
         this.update();
     }
 
