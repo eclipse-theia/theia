@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystemWatcher, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Marker } from '../common/marker';
 
 /*
@@ -115,14 +115,14 @@ export abstract class MarkerManager<D extends object> {
 
     @postConstruct()
     protected init(): void {
-        this.fileWatcher.onFilesChanged(changes => {
-            for (const change of changes) {
-                if (change.type === FileChangeType.DELETED) {
-                    const uriString = change.uri.toString();
+        this.fileWatcher.onFilesChanged(event => {
+            for (const uriString of this.uri2MarkerCollection.keys()) {
+                const uri = new URI(uriString);
+                if (FileChangeEvent.isDeleted(event, uri)) {
                     const collection = this.uri2MarkerCollection.get(uriString);
                     if (collection !== undefined) {
                         this.uri2MarkerCollection.delete(uriString);
-                        this.fireOnDidChangeMarkers(change.uri);
+                        this.fireOnDidChangeMarkers(uri);
                     }
                 }
             }
@@ -142,7 +142,7 @@ export abstract class MarkerManager<D extends object> {
      */
     setMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
         const uriString = uri.toString();
-        const collection = this.uri2MarkerCollection.get(uriString) ||  new MarkerCollection<D>(uri, this.getKind());
+        const collection = this.uri2MarkerCollection.get(uriString) || new MarkerCollection<D>(uri, this.getKind());
         const oldMarkers = collection.setMarkers(owner, data);
         if (data.length > 0) {
             this.uri2MarkerCollection.set(uriString, collection);

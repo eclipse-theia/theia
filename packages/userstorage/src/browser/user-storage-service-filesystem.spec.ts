@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+const disableJSDOM = enableJSDOM();
+
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
@@ -31,6 +35,8 @@ import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem
 import { MockFilesystem, MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test';
 import { UserStorageUri } from './user-storage-uri';
 import URI from '@theia/core/lib/common/uri';
+
+disableJSDOM();
 
 import * as sinon from 'sinon';
 

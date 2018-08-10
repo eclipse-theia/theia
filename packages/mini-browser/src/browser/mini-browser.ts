@@ -26,7 +26,7 @@ import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplicationContribution, ApplicationShell } from '@theia/core/lib/browser';
-import { FileSystemWatcher, FileChangeType, FileChange } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { BaseWidget, addEventListener, FocusTracker, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { LocationMapperService } from './location-mapper-service';
@@ -336,8 +336,8 @@ export class MiniBrowser extends BaseWidget {
                 const fileUri = new URI(location);
                 const watcher = await this.fileSystemWatcher.watchFileChanges(fileUri);
                 this.toDispose.push(watcher);
-                const onFileChange = (e: FileChange[]) => {
-                    if (e.some(change => change.uri.toString() === fileUri.toString() && change.type !== FileChangeType.DELETED)) {
+                const onFileChange = (event: FileChangeEvent) => {
+                    if (FileChangeEvent.isChanged(event, fileUri)) {
                         this.go(location, false, false);
                     }
                 };

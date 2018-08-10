@@ -718,7 +718,7 @@ export class ApplicationShell extends Widget {
     private onActiveChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         const { newValue, oldValue } = args;
         if (oldValue) {
-            let w: Widget| null = oldValue;
+            let w: Widget | null = oldValue;
             while (w) {
                 // Remove the mark of the previously active widget
                 w.title.className = w.title.className.replace(' theia-mod-active', '');
@@ -729,7 +729,7 @@ export class ApplicationShell extends Widget {
             this.setZIndex(oldValue.node, null);
         }
         if (newValue) {
-            let w: Widget| null = newValue;
+            let w: Widget | null = newValue;
             while (w) {
                 // Mark the tab of the active widget
                 w.title.className += ' theia-mod-active';
@@ -1259,6 +1259,13 @@ export class ApplicationShell extends Widget {
      */
     async saveAll(): Promise<void> {
         await Promise.all(this.tracker.widgets.map(Saveable.save));
+    }
+
+    /**
+     * All tracked widgets.
+     */
+    get widgets(): ReadonlyArray<Widget> {
+        return [...this.tracker.widgets];
     }
 
 }

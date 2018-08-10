@@ -17,7 +17,7 @@
 import { DisposableCollection, ILogger, Emitter, Event } from '@theia/core/lib/common';
 import { UserStorageChangeEvent, UserStorageService } from './user-storage-service';
 import { injectable, inject } from 'inversify';
-import { FileChange, FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from './user-storage-uri';
@@ -56,12 +56,12 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         this.toDispose.dispose();
     }
 
-    onDidFilesChanged(fileChanges: FileChange[]): void {
+    protected onDidFilesChanged(event: FileChangeEvent): void {
         const uris: URI[] = [];
         this.userStorageFolder.then(folder => {
             if (folder) {
-                for (const change of fileChanges) {
-                    if (change.uri.toString().startsWith(folder.toString())) {
+                for (const change of event) {
+                    if (folder.isEqualOrParent(change.uri)) {
                         const userStorageUri = UserStorageServiceFilesystemImpl.toUserStorageUri(folder, change.uri);
                         uris.push(userStorageUri);
                     }

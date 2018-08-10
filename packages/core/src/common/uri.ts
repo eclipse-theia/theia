@@ -185,4 +185,18 @@ export default class URI {
         return this.codeUri.toString(skipEncoding);
     }
 
+    isEqualOrParent(uri: URI): boolean {
+        return this.authority === uri.authority && this.scheme === uri.scheme && this.path.isEqualOrParent(uri.path);
+    }
+
+    static getDistinctParents(uris: URI[]): URI[] {
+        const result: URI[] = [];
+        uris.forEach((uri, i) => {
+            if (!uris.some((otherUri, index) => index !== i && otherUri.isEqualOrParent(uri))) {
+                result.push(uri);
+            }
+        });
+        return result;
+    }
+
 }

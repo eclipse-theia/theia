@@ -64,7 +64,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * | dir       |    ✓    |   x  | overwrite | overwrite |
      *
      */
-    move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat>;
+    move(sourceUri: string, targetUri: string, options?: FileMoveOptions): Promise<FileStat>;
 
     /**
      * Copies the file to a path identified by the resource.
@@ -97,7 +97,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * Deletes the provided file. The optional moveToTrash parameter allows to
      * move the file to trash.
      */
-    delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void>;
+    delete(uri: string, options?: FileDeleteOptions): Promise<void>;
 
     /**
      * Returns the encoding of the given file resource.
@@ -116,6 +116,14 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 
 }
 
+export interface FileMoveOptions {
+	overwrite?: boolean;
+}
+
+export interface FileDeleteOptions {
+    moveToTrash?: boolean
+}
+
 export interface FileSystemClient {
 
     /**
@@ -123,6 +131,10 @@ export interface FileSystemClient {
      * in the case if it is out of sync with the given file stat.
      */
     shouldOverwrite(file: FileStat, stat: FileStat): Promise<boolean>;
+
+    onWillMove(sourceUri: string, targetUri: string): void;
+
+    onDidMove(sourceUri: string, targetUri: string): void;
 
 }
 
