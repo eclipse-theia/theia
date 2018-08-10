@@ -20,7 +20,6 @@ import { ClojureContribution } from './clojure';
 import { CoffeescriptContribution } from './coffeescript';
 import { CSharpContribution } from './csharp';
 import { CssContribution } from './css';
-import { DockerContribution } from './docker';
 import { FSharpContribution } from './fsharp';
 import { GroovyContribution } from './groovy';
 import { HandlebarsContribution } from './handlebars';
@@ -63,9 +62,6 @@ export default new ContainerModule(bind => {
 
     bind(CssContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
-
-    bind(DockerContribution).toSelf().inSingletonScope();
-    bind(LanguageGrammarDefinitionContribution).toService(DockerContribution);
 
     bind(FSharpContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(FSharpContribution);
