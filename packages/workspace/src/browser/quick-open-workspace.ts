@@ -19,6 +19,7 @@ import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '
 import { WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService } from '@theia/core/lib/common';
+import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
@@ -28,11 +29,40 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
 
-    open(workspaces: string[]): void {
+    async open(workspaces: string[]): Promise<void> {
         this.items = [];
+        const homeStat = await this.fileSystem.getCurrentUserHome();
+        const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
+
         for (const workspace of workspaces) {
-            this.items.push(new WorkspaceQuickOpenItem(this.workspaceService, this.messageService, workspace));
+            const name = new URI(workspace).path.base;
+            this.items.push(new QuickOpenItem({
+                label: name,
+                description: (home) ? FileSystemUtils.tildifyPath(workspace, home) : new URI(workspace).path.toString(),
+                run: (mode: QuickOpenMode): boolean => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    this.workspaceService.roots.then(roots => {
+                        const current = roots[0];
+                        if (current === undefined) {  // Available recent workspace(s) but closed
+                            if (workspace && workspace.length > 0) {
+                                this.workspaceService.open(new URI(workspace));
+                            }
+                        } else {
+                            if (current.uri !== workspace) {
+                                this.workspaceService.open(new URI(workspace));
+                            } else {
+                                this.messageService.info(`Using the same workspace [ ${name} ]`);
+                            }
+
+                        }
+                    });
+                    return true;
+                },
+            }));
         }
 
         this.quickOpenService.open(this, {
@@ -53,55 +83,5 @@ export class QuickOpenWorkspace implements QuickOpenModel {
                 this.open(workspaceRoots);
             }
         });
-    }
-}
-
-export class WorkspaceQuickOpenItem extends QuickOpenItem {
-
-    constructor(
-        private readonly workspaceService: WorkspaceService,
-        private readonly messageService: MessageService,
-        private readonly workspace: string,
-    ) {
-        super();
-    }
-
-    /**
-     * Display the workspace name
-     * @returns workspace name
-     */
-    getLabel(): string {
-        return new URI(this.workspace).path.base;
-    }
-
-    /**
-     * Display the workspace path as part of
-     * the WorkspaceQuickOpenItem description
-     * @returns workspace path
-     */
-    getDescription(): string {
-        return (this.workspace) ? new URI(this.workspace).path.dir.toString() : '';
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        if (mode !== QuickOpenMode.OPEN) {
-            return false;
-        }
-        this.workspaceService.roots.then(roots => {
-            const current = roots[0];
-            if (current === undefined) {  // Available recent workspace(s) but closed
-                if (this.workspace && this.workspace.length > 0) {
-                    this.workspaceService.open(new URI(this.workspace));
-                }
-            } else {
-                if (current.uri !== this.workspace) {
-                    this.workspaceService.open(new URI(this.workspace));
-                } else {
-                    this.messageService.info(`Using the same workspace [ ${this.getLabel()} ]`);
-                }
-
-            }
-        });
-        return true;
     }
 }
