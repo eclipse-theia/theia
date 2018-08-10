@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import {
     QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenService,
-    OpenerService, KeybindingRegistry, Keybinding
+    OpenerService, KeybindingRegistry, Keybinding, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenItemOptions
 } from '@theia/core/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -26,6 +26,8 @@ import { FileSearchService } from '../common/file-search-service';
 import { CancellationTokenSource } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Command } from '@theia/core/lib/common';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
+import * as fuzzy from 'fuzzy';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
@@ -49,6 +51,8 @@ export class QuickFileOpenService implements QuickOpenModel {
     protected readonly fileSearchService: FileSearchService;
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+    @inject(NavigationLocationService)
+    protected readonly navigationLocationService: NavigationLocationService;
 
     /**
      * Whether to hide .gitignored (and other ignored) files.
@@ -91,7 +95,7 @@ export class QuickFileOpenService implements QuickOpenModel {
             prefix: this.currentLookFor,
             fuzzyMatchLabel: true,
             fuzzyMatchDescription: true,
-            fuzzySort: true,
+            fuzzySort: false,
             onClose: () => {
                 this.isOpen = false;
             },
@@ -126,79 +130,74 @@ export class QuickFileOpenService implements QuickOpenModel {
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
-        const proposed = new Set<string>();
+
         const rootUri = workspaceFolder.uri;
-        const handler = async (result: string[]) => {
-            if (!token.isCancellationRequested) {
-                const root = new URI(rootUri);
-                result.forEach(p => {
-                    const uri = root.withPath(root.path.join(p)).toString();
-                    proposed.add(uri);
-                });
-                const itemPromises = Array.from(proposed).map(uri => this.toItem(uri));
-                acceptor(await Promise.all(itemPromises));
+        const root = new URI(rootUri);
+        const alreadyCollected = new Set<string>();
+
+        const recentlyUsedItems: QuickOpenItem[] = [];
+        const locations = [...this.navigationLocationService.locations()].reverse();
+        for (const location of locations) {
+            const uriString = location.uri.toString();
+            if (!alreadyCollected.has(uriString) && fuzzy.test(lookFor, uriString)) {
+                recentlyUsedItems.push(await this.toItem(location.uri, recentlyUsedItems.length === 0 ? 'recently opened' : undefined));
+                alreadyCollected.add(uriString);
             }
-        };
-        this.fileSearchService.find(lookFor, {
-            rootUri,
-            fuzzyMatch: true,
-            limit: 200,
-            useGitIgnore: this.hideIgnoredFiles,
-        }, token).then(handler);
-    }
-
-    private async toItem(uriString: string) {
-        const uri = new URI(uriString);
-        return new FileQuickOpenItem(uri,
-            this.labelProvider.getName(uri),
-            await this.labelProvider.getIcon(uri),
-            this.labelProvider.getLongName(uri.parent),
-            this.openerService);
-    }
-
-}
-
-export class FileQuickOpenItem extends QuickOpenItem {
-
-    constructor(
-        protected readonly uri: URI,
-        protected readonly label: string,
-        protected readonly icon: string,
-        protected readonly parent: string,
-        protected readonly openerService: OpenerService
-    ) {
-        super();
-    }
-
-    getLabel(): string {
-        return this.label;
-    }
-
-    isHidden(): boolean {
-        return false;
-    }
-
-    getTooltip(): string {
-        return this.uri.path.toString();
-    }
-
-    getDescription(): string {
-        return this.parent;
-    }
-
-    getUri(): URI {
-        return this.uri;
-    }
-
-    getIconClass(): string {
-        return this.icon + ' file-icon';
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        if (mode !== QuickOpenMode.OPEN) {
-            return false;
         }
-        this.openerService.getOpener(this.uri).then(opener => opener.open(this.uri));
-        return true;
+        if (lookFor.length > 0) {
+            const handler = async (result: string[]) => {
+                if (!token.isCancellationRequested) {
+                    const fileSearchResultItems: QuickOpenItem[] = [];
+                    for (const p of result) {
+                        const uri = root.withPath(root.path.join(p));
+                        const uriString = uri.toString();
+                        if (!alreadyCollected.has(uriString)) {
+                            fileSearchResultItems.push(await this.toItem(uri, fileSearchResultItems.length === 0 ? 'file results' : undefined));
+                            alreadyCollected.add(uriString);
+                        }
+                    }
+                    acceptor([...recentlyUsedItems, ...fileSearchResultItems]);
+                }
+            };
+            this.fileSearchService.find(lookFor, {
+                rootUri,
+                fuzzyMatch: true,
+                limit: 200,
+                useGitIgnore: this.hideIgnoredFiles,
+            }, token).then(handler);
+        } else {
+            acceptor(recentlyUsedItems);
+        }
+    }
+
+    protected getRunFunction(uri: URI) {
+        return (mode: QuickOpenMode) => {
+            if (mode !== QuickOpenMode.OPEN) {
+                return false;
+            }
+            this.openerService.getOpener(uri).then(opener => opener.open(uri));
+            return true;
+        };
+    }
+
+    private async toItem(uriOrString: URI | string, group?: string) {
+        const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
+        const options: QuickOpenItemOptions = {
+            label: this.labelProvider.getName(uri),
+            iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
+            description: this.labelProvider.getLongName(uri.parent),
+            tooltip: uri.path.toString(),
+            uri: uri,
+            hidden: false,
+            run: this.getRunFunction(uri)
+        };
+        if (group) {
+            return new QuickOpenGroupItem<QuickOpenGroupItemOptions>({
+                ...options,
+                groupLabel: group
+            });
+        } else {
+            return new QuickOpenItem<QuickOpenItemOptions>(options);
+        }
     }
 }
