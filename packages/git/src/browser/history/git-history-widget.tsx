@@ -16,7 +16,10 @@
 
 import { injectable, inject } from 'inversify';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Message } from '@theia/core/lib/browser';
+import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from '@theia/core/lib/browser';
+import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { Message } from '@phosphor/messaging';
+import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams } from 'react-virtualized';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
@@ -28,7 +31,6 @@ import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHa
 import { GitCommitDetails } from './git-commit-detail-widget';
 import { GitNavigableListWidget } from '../git-navigable-list-widget';
 import { GitFileChangeNode } from '../git-widget';
-import { Disposable } from 'vscode-jsonrpc';
 import * as React from 'react';
 
 export interface GitCommitNode extends GitCommitDetails {
@@ -39,7 +41,7 @@ export interface GitCommitNode extends GitCommitDetails {
 
 export namespace GitCommitNode {
     export function is(node: any): node is GitCommitNode {
-        return 'commitSha' in node && 'commitMessage' in node && 'fileChangeNodes' in node;
+        return !!node && 'commitSha' in node && 'commitMessage' in node && 'fileChangeNodes' in node;
     }
 }
 
@@ -51,6 +53,11 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected commits: GitCommitNode[];
     protected ready: boolean;
     protected singleFileMode: boolean;
+    private cancelIndicator: CancellationTokenSource;
+    protected listView: GitHistoryList | undefined;
+    protected hasMoreCommits: boolean;
+    protected allowScrollToSelected: boolean;
+    protected pathIsUnderVersionControl: boolean;
 
     constructor(
         @inject(OpenerService) protected readonly openerService: OpenerService,
@@ -66,51 +73,70 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.scrollContainer = 'git-history-list-container';
         this.title.label = 'Git History';
         this.addClass('theia-git');
-        this.options = {};
-        this.commits = [];
+        this.resetState();
+        this.cancelIndicator = new CancellationTokenSource();
     }
 
-    protected onAfterAttach(msg: Message) {
+    protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        (async () => {
-            const sc = await this.getScrollContainer();
-            const listener = (e: UIEvent) => {
-                const el = (e.srcElement || e.target) as HTMLElement;
-                if (el.scrollTop + el.clientHeight > el.scrollHeight - 83) {
-                    const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-                    ll.className = 'history-lazy-loading show';
-                    this.addCommits({
-                        range: {
-                            toRevision: this.commits[this.commits.length - 1].commitSha
-                        },
-                        maxCount: GIT_HISTORY_MAX_COUNT
-                    });
-                }
-            };
-            sc.addEventListener('scroll', listener);
-            this.toDispose.push(Disposable.create(() => {
-                sc.removeEventListener('scroll', listener);
-            }));
-        })();
+        this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
+            if (this.listView && this.listView.list && this.listView.list.Grid) {
+                const { scrollTop } = e.target;
+                this.listView.list.Grid.handleScrollEvent({ scrollTop });
+            }
+        });
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.update();
+    }
+
+    update(): void {
+        if (this.listView && this.listView.list) {
+            this.listView.list.forceUpdateGrid();
+        }
+        super.update();
     }
 
     async setContent(options?: Git.Options.Log) {
-        this.options = options || {};
+        this.resetState(options);
         this.ready = false;
         if (options && options.uri) {
             const fileStat = await this.fileSystem.getFileStat(options.uri);
             this.singleFileMode = !!fileStat && !fileStat.isDirectory;
         }
-        this.addCommits(options);
-        this.update();
+        await this.addCommits(options);
+        this.onDataReady();
+        if (this.gitNodes.length > 0) {
+            this.selectNode(this.gitNodes[0]);
+        }
     }
 
-    protected addCommits(options?: Git.Options.Log) {
+    protected resetState(options?: Git.Options.Log) {
+        this.options = options || {};
+        this.commits = [];
+        this.gitNodes = [];
+        this.hasMoreCommits = true;
+        this.allowScrollToSelected = true;
+    }
+
+    protected async addCommits(options?: Git.Options.Log): Promise<void> {
         const repository = this.repositoryProvider.selectedRepository;
+        let resolver: () => void;
+
+        this.cancelIndicator.cancel();
+        this.cancelIndicator = new CancellationTokenSource();
+        const token = this.cancelIndicator.token;
         if (repository) {
             const log = this.git.log(repository, options);
             log.then(async changes => {
-                this.commits = [];
+                if (token.isCancellationRequested || !this.hasMoreCommits) {
+                    return;
+                }
+                if (options && ((options.maxCount && changes.length < options.maxCount) || (!options.maxCount && this.commits))) {
+                    this.hasMoreCommits = false;
+                }
                 if (this.commits.length > 0) {
                     changes = changes.slice(1);
                 }
@@ -135,36 +161,57 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                         });
                     }
                     this.commits.push(...commits);
+                } else if (options && options.uri) {
+                    this.pathIsUnderVersionControl = await this.git.lsFiles(repository, options.uri, { errorUnmatch: true });
                 }
-                this.onDataReady();
+                resolver();
             });
         } else {
-            this.commits = [];
-            this.onDataReady();
+            setTimeout(() => {
+                this.commits = [];
+                resolver();
+            });
         }
+        return new Promise<void>(resolve => resolver = resolve);
     }
 
-    protected async addFileChangeNodesToCommit(commit: GitCommitNode) {
+    protected async addOrRemoveFileChangeNodes(commit: GitCommitNode) {
+        const id = this.gitNodes.findIndex(node => node === commit);
+        if (commit.expanded) {
+            this.removeFileChangeNodes(commit, id);
+        } else {
+            this.addFileChangeNodes(commit, id);
+        }
+        commit.expanded = !commit.expanded;
+        this.update();
+    }
+
+    protected async addFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number) {
         if (commit.fileChanges) {
+            const fileChangeNodes: GitFileChangeNode[] = [];
             await Promise.all(commit.fileChanges.map(async fileChange => {
                 const fileChangeUri = new URI(fileChange.uri);
                 const icon = await this.labelProvider.getIcon(fileChangeUri);
                 const label = this.labelProvider.getName(fileChangeUri);
                 const description = this.relativePath(fileChangeUri.parent);
                 const caption = this.computeCaption(fileChange);
-                commit.fileChangeNodes.push({
+                fileChangeNodes.push({
                     ...fileChange, icon, label, description, caption, commitSha: commit.commitSha
                 });
             }));
-            delete commit.fileChanges;
-            this.update();
+            this.gitNodes.splice(gitNodesArrayIndex + 1, 0, ...fileChangeNodes);
+        }
+    }
+
+    protected removeFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number) {
+        if (commit.fileChanges) {
+            this.gitNodes.splice(gitNodesArrayIndex + 1, commit.fileChanges.length);
         }
     }
 
     storeState(): object {
-        const { commits, options, singleFileMode } = this;
+        const { options, singleFileMode } = this;
         return {
-            commits,
             options,
             singleFileMode
         };
@@ -172,39 +219,45 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     // tslint:disable-next-line:no-any
     restoreState(oldState: any): void {
-        this.commits = oldState['commits'];
         this.options = oldState['options'];
         this.singleFileMode = oldState['singleFileMode'];
-        this.ready = true;
-        this.update();
+        this.setContent(this.options);
     }
 
     protected onDataReady(): void {
         this.ready = true;
+        this.gitNodes = this.commits;
         this.update();
-        const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-        if (ll && ll.className === 'history-lazy-loading show') {
-            ll.className = 'history-lazy-loading hide';
-        }
     }
 
     protected render(): React.ReactNode {
-        this.gitNodes = [];
-        return <div className='git-diff-container'>
-            {
-                this.ready ?
-                    < React.Fragment >
-                        {this.renderHistoryHeader()}
-                        {this.renderCommitList()}
-                        <div className='history-lazy-loading'>
-                            <span className='fa fa-spinner fa-pulse fa-2x fa-fw'></span>
-                        </div>
-                    </React.Fragment>
-                    :
-                    <div className='spinnerContainer'>
-                        <span className='fa fa-spinner fa-pulse fa-3x fa-fw'></span>
-                    </div>
+        let content: React.ReactNode;
+        if (this.ready && this.gitNodes.length > 0) {
+            content = < React.Fragment >
+                {this.renderHistoryHeader()}
+                {this.renderCommitList()}
+            </React.Fragment>;
+        } else if (this.ready) {
+            let path: React.ReactNode = '';
+            let notInVC: React.ReactNode;
+            if (this.options.uri) {
+                const relPath = this.relativePath(this.options.uri);
+                path = <React.Fragment> for <i>/{relPath}</i></React.Fragment>;
+                notInVC = !this.pathIsUnderVersionControl ? <div><i>/{relPath}</i> is not under version control.</div> : '';
             }
+            content = <div className='message-container'>
+                <div className='no-history-message'>
+                    <div>There is no Git history available{path}.</div>
+                    {notInVC}
+                </div>
+            </div>;
+        } else {
+            content = <div className='spinnerContainer'>
+                <span className='fa fa-spinner fa-pulse fa-3x fa-fw'></span>
+            </div>;
+        }
+        return <div className='git-diff-container'>
+            {content}
         </div>;
     }
 
@@ -232,19 +285,49 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected renderCommitList(): React.ReactNode {
-        const theList: React.ReactNode[] = [];
-
-        for (const commit of this.commits) {
-            const head = this.renderCommit(commit);
-            const body = commit.expanded ? this.renderFileChangeList(commit) : '';
-            theList.push(<div key={commit.commitSha} className='commitListElement'>{head}{body}</div>);
-        }
-        const commitList = <div className='commitList'>{...theList}</div>;
-        return <div className='listContainer' id={this.scrollContainer}>{commitList}</div>;
+        const list = <div className='listContainer' id={this.scrollContainer}>
+            <GitHistoryList
+                ref={listView => this.listView = (listView || undefined)}
+                rows={this.gitNodes}
+                hasMoreRows={this.hasMoreCommits}
+                indexOfSelected={this.allowScrollToSelected ? this.indexOfSelected : -1}
+                handleScroll={this.handleScroll}
+                loadMoreRows={this.loadMoreRows}
+                renderCommit={this.renderCommit}
+                renderFileChangeList={this.renderFileChangeList}
+            ></GitHistoryList>
+        </div>;
+        this.allowScrollToSelected = true;
+        return list;
     }
 
-    protected renderCommit(commit: GitCommitNode): React.ReactNode {
-        this.gitNodes.push(commit);
+    protected readonly handleScroll = (info: ScrollParams) => this.doHandleScroll(info);
+    protected doHandleScroll(info: ScrollParams) {
+        this.node.scrollTo({ top: info.scrollTop });
+    }
+
+    protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
+    protected doLoadMoreRows(params: IndexRange): Promise<any> {
+        let resolver: () => void;
+        const promise = new Promise(resolve => resolver = resolve);
+        const lastRow = this.gitNodes[params.stopIndex - 1];
+        if (GitCommitNode.is(lastRow)) {
+            const toRevision = lastRow.commitSha;
+            this.addCommits({
+                range: { toRevision },
+                maxCount: GIT_HISTORY_MAX_COUNT,
+                uri: this.options.uri
+            }).then(() => {
+                this.allowScrollToSelected = false;
+                this.onDataReady();
+                resolver();
+            });
+        }
+        return promise;
+    }
+
+    protected readonly renderCommit = (commit: GitCommitNode) => this.doRenderCommit(commit);
+    protected doRenderCommit(commit: GitCommitNode): React.ReactNode {
         let expansionToggleIcon = 'caret-right';
         if (commit && commit.expanded) {
             expansionToggleIcon = 'caret-down';
@@ -252,23 +335,22 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         return <div
             className={`containerHead${commit.selected ? ' ' + SELECTED_CLASS : ''}`}
             onClick={
-                () => {
+                e => {
                     if (commit.selected && !this.singleFileMode) {
-                        commit.expanded = !commit.expanded;
-                        if (commit.expanded) {
-                            this.addFileChangeNodesToCommit(commit);
-                        }
+                        this.addOrRemoveFileChangeNodes(commit);
                         this.update();
                     } else {
                         this.selectNode(commit);
                     }
+                    e.preventDefault();
                 }
             }
             onDoubleClick={
-                () => {
+                e => {
                     if (this.singleFileMode && commit.fileChanges && commit.fileChanges.length > 0) {
                         this.openFile(commit.fileChanges[0], commit.commitSha);
                     }
+                    e.preventDefault();
                 }
             }>
             <div className='headContent'><div className='image-container'>
@@ -303,18 +385,10 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         } as GitCommitDetailOpenerOptions);
     }
 
-    protected renderFileChangeList(commit: GitCommitNode): React.ReactNode {
-        const fileChanges = commit.fileChangeNodes;
-
-        this.gitNodes.push(...fileChanges);
-
-        const files: React.ReactNode[] = [];
-
-        for (const fileChange of fileChanges) {
-            const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange, commit.commitSha);
-            files.push(fileChangeElement);
-        }
-        return <div className='commitBody'><div className='commitFileList'>{...files}</div></div>;
+    protected readonly renderFileChangeList = (fileChange: GitFileChangeNode) => this.doRenderFileChangeList(fileChange);
+    protected doRenderFileChangeList(fileChange: GitFileChangeNode): React.ReactNode {
+        const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange, fileChange.commitSha || '');
+        return fileChangeElement;
     }
 
     protected renderGitItem(change: GitFileChangeNode, commitSha: string): React.ReactNode {
@@ -352,7 +426,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             const idx = this.commits.findIndex(c => c.commitSha === selected.commitSha);
             if (GitCommitNode.is(selected)) {
                 if (selected.expanded) {
-                    selected.expanded = false;
+                    this.addOrRemoveFileChangeNodes(selected);
                 } else {
                     if (idx > 0) {
                         this.selectNode(this.commits[idx - 1]);
@@ -369,8 +443,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         const selected = this.getSelected();
         if (selected) {
             if (GitCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
-                selected.expanded = true;
-                this.addFileChangeNodesToCommit(selected);
+                this.addOrRemoveFileChangeNodes(selected);
             } else {
                 this.selectNextNode();
             }
@@ -408,5 +481,103 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
         }
         open(this.openerService, uriToOpen, { mode: 'reveal' });
+    }
+}
+
+export namespace GitHistoryList {
+    export interface Props {
+        readonly rows: GitHistoryListNode[]
+        readonly indexOfSelected: number
+        readonly hasMoreRows: boolean
+        readonly handleScroll: (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void
+        readonly loadMoreRows: (params: IndexRange) => Promise<any>
+        readonly renderCommit: (commit: GitCommitNode) => React.ReactNode
+        readonly renderFileChangeList: (fileChange: GitFileChangeNode) => React.ReactNode
+    }
+}
+export class GitHistoryList extends React.Component<GitHistoryList.Props> {
+    list: List | undefined;
+
+    protected commitHeight: number = 50;
+    protected fileChangeHeight: number = 21;
+    protected lastFileChangeHeight: number = 31;
+
+    protected readonly checkIfRowIsLoaded = (opts: { index: number }) => this.doCheckIfRowIsLoaded(opts);
+    protected doCheckIfRowIsLoaded(opts: { index: number }) {
+        const row = this.props.rows[opts.index];
+        return !!row;
+    }
+
+    render(): React.ReactNode {
+        return <InfiniteLoader
+            isRowLoaded={this.checkIfRowIsLoaded}
+            loadMoreRows={this.props.loadMoreRows}
+            rowCount={this.props.rows.length + 1}
+            threshold={15}
+        >
+            {
+                ({ onRowsRendered, registerChild }) => (
+                    <AutoSizer>
+                        {
+                            ({ width, height }) => <List
+                                className='commitList'
+                                ref={list => {
+                                    this.list = (list || undefined);
+                                    registerChild(list);
+                                }}
+                                width={width}
+                                height={height}
+                                onRowsRendered={onRowsRendered}
+                                rowRenderer={this.renderRow}
+                                rowHeight={this.calcRowHeight}
+                                rowCount={this.props.hasMoreRows ? this.props.rows.length + 1 : this.props.rows.length}
+                                tabIndex={-1}
+                                onScroll={this.props.handleScroll}
+                                scrollToIndex={this.props.indexOfSelected}
+                                style={{
+                                    overflowY: 'visible',
+                                    overflowX: 'visible'
+                                }}
+                            />
+                        }
+                    </AutoSizer>
+                )
+            }
+        </InfiniteLoader>;
+    }
+
+    componentDidUpdate(): void {
+        if (this.list) {
+            this.list.recomputeRowHeights(this.props.indexOfSelected);
+        }
+    }
+
+    protected renderRow: ListRowRenderer = ({ index, key, style }) => {
+        if (this.checkIfRowIsLoaded({ index })) {
+            const row = this.props.rows[index];
+            if (GitCommitNode.is(row)) {
+                const head = this.props.renderCommit(row);
+                return <div key={key} style={style} className={`commitListElement${index === 0 ? ' first' : ''}`} >
+                    {head}
+                </div>;
+            } else if (GitFileChangeNode.is(row)) {
+                return <div key={key} style={style} className='fileChangeListElement'>
+                    {this.props.renderFileChangeList(row)}
+                </div>;
+            }
+        } else {
+            return <div key={key} style={style} className={`commitListElement${index === 0 ? ' first' : ''}`} >
+                <span className='fa fa-spinner fa-pulse fa-fw'></span>
+            </div>;
+        }
+    }
+
+    protected readonly calcRowHeight = (options: ListRowProps) => {
+        const row = this.props.rows[options.index];
+        if (GitFileChangeNode.is(row)) {
+            const nextIsCommit = GitCommitNode.is(this.props.rows[options.index + 1]);
+            return nextIsCommit ? this.lastFileChangeHeight : this.fileChangeHeight;
+        }
+        return this.commitHeight;
     }
 }
