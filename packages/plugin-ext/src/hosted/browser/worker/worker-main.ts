@@ -20,9 +20,10 @@ import { HostedPluginManagerExtImpl } from '../../plugin/hosted-plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
 import { createAPI, startPlugin } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import { Disposable } from '@theia/core/src/common';
 
 const ctx = self as any;
-const plugins = new Map<string, () => void>();
+const plugins = new Map<string, any>();
 
 const emitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -59,9 +60,22 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
     },
     stopPlugins(contextPath: string, pluginIds: string[]): void {
         pluginIds.forEach(pluginId => {
-            const stopPluginMethod = plugins.get(pluginId);
-            if (stopPluginMethod) {
-                stopPluginMethod();
+            const pluginData = plugins.get(pluginId);
+            if (pluginData) {
+                // call stop method
+                if (pluginData.stopPluginMethod) {
+                    pluginData.stopPluginMethod();
+                }
+
+                // dispose any objects
+                const pluginContext = pluginData.pluginContext;
+                if (pluginContext) {
+                    pluginContext.subscriptions.forEach((element: Disposable) => {
+                        element.dispose();
+                    });
+                }
+
+                // delete entry
                 plugins.delete(pluginId);
             }
         });
