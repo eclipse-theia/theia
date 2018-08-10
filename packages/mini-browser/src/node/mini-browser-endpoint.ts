@@ -296,7 +296,7 @@ export class SvgHandler implements MiniBrowserEndpointHandler {
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
-        response.contentType('text/xml');
+        response.contentType('image/svg+xml');
         return response.send(statWithContent.content);
     }
 
