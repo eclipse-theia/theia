@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Endpoint } from '@theia/core/lib/browser';
+import { MiniBrowserEndpoint } from '@theia/mini-browser/lib/browser/location-mapper-service';
 
 @injectable()
 export class PreviewLinkNormalizer {
@@ -26,7 +26,7 @@ export class PreviewLinkNormalizer {
             const uri = new URI(link);
             if (!uri.scheme) {
                 const location = documentUri.parent.resolve(link).path.toString();
-                return new Endpoint({ path: 'mini-browser/' + location }).getRestUrl().toString();
+                return new MiniBrowserEndpoint().getRestUrl().resolve(location).toString();
             }
         } catch {
             // ignore
