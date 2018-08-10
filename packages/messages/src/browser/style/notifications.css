@@ -79,7 +79,9 @@
 
 .theia-Notification .text {
     order: 2;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-items: left;
     max-height: calc(100vh - 100px);
     max-width: calc(100vw - 100px);
     -webkit-user-select: text;
