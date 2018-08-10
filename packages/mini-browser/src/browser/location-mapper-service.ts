@@ -105,6 +105,12 @@ export class HttpsLocationMapper implements LocationMapper {
 
 }
 
+export class MiniBrowserEndpoint extends Endpoint {
+    constructor() {
+        super({ path: 'mini-browser' });
+    }
+}
+
 /**
  * `file` URI location mapper.
  */
@@ -124,7 +130,7 @@ export class FileLocationMapper implements LocationMapper {
         if (rawLocation.charAt(0) === '/') {
             rawLocation = rawLocation.substr(1);
         }
-        return new Endpoint().getRestUrl().resolve(`mini-browser/${rawLocation}`).toString();
+        return new MiniBrowserEndpoint().getRestUrl().resolve(rawLocation).toString();
     }
 
 }
