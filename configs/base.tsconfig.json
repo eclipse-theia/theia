@@ -19,6 +19,14 @@
             "es6",
             "dom"
         ],
-        "sourceMap": true
+        "sourceMap": true,
+        "plugins": [
+            {
+                "name": "tslint-language-service",
+                "alwaysShowRuleFailuresAsWarnings": false,
+                "ignoreDefinitionFiles": true,
+                "configFile": "./errors.tslint.json"
+            }
+        ]
     }
 }
