@@ -23,7 +23,7 @@ import { PluginMetadata } from '../../common/plugin-protocol';
 
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
-const plugins = new Map<string, () => void>();
+const plugins = new Map<string, any>();
 
 const emmitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -66,9 +66,23 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
     stopPlugins(contextPath: string, pluginIds: string[]): void {
         console.log('PLUGIN_HOST(' + process.pid + '): stopPlugins(' + JSON.stringify(pluginIds) + ')');
         pluginIds.forEach(pluginId => {
-            const stopPluginMethod = plugins.get(pluginId);
-            if (stopPluginMethod) {
-                stopPluginMethod();
+            const pluginData = plugins.get(pluginId);
+
+            if (pluginData) {
+                // call stop method
+                if (pluginData.stopPluginMethod) {
+                    pluginData.stopPluginMethod();
+                }
+
+                // dispose any objects
+                const pluginContext = pluginData.pluginContext;
+                if (pluginContext) {
+                    pluginContext.subscriptions.forEach((element: any) => {
+                        element.dispose();
+                    });
+                }
+
+                // delete entry
                 plugins.delete(pluginId);
             }
         });

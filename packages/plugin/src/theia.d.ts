@@ -1919,6 +1919,22 @@ declare module '@theia/plugin' {
     }
 
     /**
+	 * A plug-in context is a collection of utilities private to a
+	 * plug-in.
+	 *
+	 * An instance of a `PluginContext` is provided as the first
+	 * parameter to the `start` of a plug-in.
+	 */
+    export interface PluginContext {
+
+		/**
+		 * An array to which disposables can be added. When this
+		 * extension is deactivated the disposables will be disposed.
+		 */
+        subscriptions: { dispose(): any }[];
+    }
+
+    /**
      * Common namespace for dealing with window and editor, showing messages and user input.
      */
     export namespace window {

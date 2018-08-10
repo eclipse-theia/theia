@@ -321,17 +321,29 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
 }
 
 // tslint:disable-next-line:no-any
-export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string, () => void>): void {
+export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string, any>): void {
+
+    const pluginId = getPluginId(plugin.model);
+    const pluginData: any = {};
+
+    // Create pluginContext object for this plugin.
+    const subscriptions: theia.Disposable[] = [];
+    const pluginContext: theia.PluginContext = {
+        subscriptions: subscriptions
+    };
+    pluginData.pluginContext = pluginContext;
+
     if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
-        pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), []);
+        pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
     } else {
-        console.log('there is no doStart method on plugin');
+        console.log('There is no start method on plugin');
     }
 
     if (typeof pluginMain[plugin.lifecycle.stopMethod] === 'function') {
-        const pluginId = getPluginId(plugin.model);
-        plugins.set(pluginId, pluginMain[plugin.lifecycle.stopMethod]);
+        pluginData.stopMethod = pluginMain[plugin.lifecycle.stopMethod];
     }
+
+    plugins.set(pluginId, pluginData);
 }
 
 // for electron
