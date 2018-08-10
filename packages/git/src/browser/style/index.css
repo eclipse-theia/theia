@@ -21,9 +21,10 @@
     background: var(--theia-layout-color0);
 }
 
-.theia-git:focus {
+.theia-git:focus, .theia-git :focus {
     outline: 0;
     box-shadow: none;
+    border: none;
 }
 
 #theia-gitContainer .flexcontainer {
