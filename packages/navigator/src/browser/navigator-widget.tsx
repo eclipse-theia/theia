@@ -96,6 +96,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
         ]);
     }
 
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.selectionService.selection = this.model.selectedNodes;
+    }
+
     protected async initialize(): Promise<void> {
         await this.model.updateRoot();
     }
