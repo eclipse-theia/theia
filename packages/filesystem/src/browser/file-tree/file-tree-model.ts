@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
 import { FileSystem, } from '../../common';
-import { FileSystemWatcher, FileChangeType, FileChange } from '../filesystem-watcher';
+import { FileSystemWatcher, FileChangeType, FileChange, FileMoveEvent } from '../filesystem-watcher';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
@@ -35,6 +35,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     protected init(): void {
         super.init();
         this.toDispose.push(this.watcher.onFilesChanged(changes => this.onFilesChanged(changes)));
+        this.toDispose.push(this.watcher.onDidMove(move => this.onDidMove(move)));
     }
 
     get location(): URI | undefined {
@@ -64,11 +65,28 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         return this.selectedNodes.filter(FileStatNode.is);
     }
 
-    protected async onFilesChanged(changes: FileChange[]): Promise<void> {
-        const affectedNodes = await this.getAffectedNodes(changes);
-        if (affectedNodes.length !== 0) {
-            affectedNodes.forEach(node => this.refresh(node));
-        } else if (this.isRootAffected(changes)) {
+    *getNodesByUri(uri: URI): IterableIterator<TreeNode> {
+        const node = this.getNode(uri.toString());
+        if (node) {
+            yield node;
+        }
+    }
+
+    /**
+     * to workaround https://github.com/Axosoft/nsfw/issues/42
+     */
+    protected onDidMove(move: FileMoveEvent): void {
+        if (FileMoveEvent.isRename(move)) {
+            return;
+        }
+        this.refreshAffectedNodes([
+            move.sourceUri.parent,
+            move.targetUri.parent
+        ]);
+    }
+
+    protected onFilesChanged(changes: FileChange[]): void {
+        if (!this.refreshAffectedNodes(this.getAffectedUris(changes)) && this.isRootAffected(changes)) {
             this.refresh();
         }
     }
@@ -83,25 +101,32 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         return false;
     }
 
-    protected async getAffectedNodes(changes: FileChange[]): Promise<CompositeTreeNode[]> {
-        const nodes = new Map<string, CompositeTreeNode>();
-        for (const change of changes) {
-            await this.collectAffectedNodes(change, node => nodes.set(node.id, node));
-        }
-        return [...nodes.values()];
+    protected getAffectedUris(changes: FileChange[]): URI[] {
+        return changes.filter(change => !this.isFileContentChanged(change)).map(change => change.uri);
     }
 
-    protected async collectAffectedNodes(change: FileChange, accept: (node: CompositeTreeNode) => void): Promise<void> {
-        if (this.isFileContentChanged(change)) {
-            return;
-        }
-        const parent = this.getNode(change.uri.parent.toString());
-        if (DirNode.is(parent) && parent.expanded) {
-            accept(parent);
-        }
-    }
     protected isFileContentChanged(change: FileChange): boolean {
-        return change.type === FileChangeType.UPDATED && FileNode.is(this.getNode(change.uri.toString()));
+        return change.type === FileChangeType.UPDATED && FileNode.is(this.getNodesByUri(change.uri).next().value);
+    }
+
+    protected refreshAffectedNodes(uris: URI[]): boolean {
+        const nodes = this.getAffectedNodes(uris);
+        for (const node of nodes.values()) {
+            this.refresh(node);
+        }
+        return nodes.size !== 0;
+    }
+
+    protected getAffectedNodes(uris: URI[]): Map<string, CompositeTreeNode> {
+        const nodes = new Map<string, CompositeTreeNode>();
+        for (const uri of uris) {
+            for (const node of this.getNodesByUri(uri.parent)) {
+                if (DirNode.is(node) && node.expanded) {
+                    nodes.set(node.id, node);
+                }
+            }
+        }
+        return nodes;
     }
 
     copy(uri: URI): boolean {
@@ -120,7 +145,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     /**
      * Move the given source file or directory to the given target directory.
      */
-    async move(source: TreeNode, target: TreeNode) {
+    async move(source: TreeNode, target: TreeNode): Promise<void> {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const sourceUri = source.uri.toString();
             if (target.uri.toString() === sourceUri) { /*  Folder on itself */
@@ -131,12 +156,6 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
                 const fileExistsInTarget = await this.fileSystem.exists(targetUri);
                 if (!fileExistsInTarget || await this.shouldReplace(source.name)) {
                     await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
-                    // to workaround https://github.com/Axosoft/nsfw/issues/42
-                    this.refresh(target);
-
-                    if (source.parent) {
-                        this.refresh(source.parent);
-                    }
                 }
             }
         }
@@ -225,4 +244,5 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             await this.fileSystem.createFile(uri, { content, encoding });
         }
     }
+
 }

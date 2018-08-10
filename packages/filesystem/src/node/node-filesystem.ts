@@ -24,7 +24,7 @@ import { injectable, inject, optional } from 'inversify';
 import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileStat, FileSystem, FileSystemClient, FileSystemError } from '../common/filesystem';
+import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions } from '../common/filesystem';
 
 @injectable()
 export class FileSystemNodeOptions {
@@ -155,7 +155,17 @@ export class FileSystemNode implements FileSystem {
         return FileSystemError.FileIsOutOfSync(file, stat);
     }
 
-    async move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
+    async move(sourceUri: string, targetUri: string, options?: FileMoveOptions): Promise<FileStat> {
+        if (this.client) {
+            this.client.onWillMove(sourceUri, targetUri);
+        }
+        const result = await this.doMove(sourceUri, targetUri, options);
+        if (this.client) {
+            this.client.onDidMove(sourceUri, targetUri);
+        }
+        return result;
+    }
+    protected async doMove(sourceUri: string, targetUri: string, options?: FileMoveOptions): Promise<FileStat> {
         const _sourceUri = new URI(sourceUri);
         const _targetUri = new URI(targetUri);
         const [sourceStat, targetStat, overwrite] = await Promise.all([this.doGetStat(_sourceUri, 1), this.doGetStat(_targetUri, 1), this.doGetOverwrite(options)]);
@@ -173,7 +183,6 @@ export class FileSystemNode implements FileSystem {
             }
             throw FileSystemError.FileNotDirectory(targetStat.uri, `Cannot move '${sourceStat.uri}' directory to an existing location.`);
         }
-
         const [sourceMightHaveChildren, targetMightHaveChildren] = await Promise.all([this.mayHaveChildren(_sourceUri), this.mayHaveChildren(_targetUri)]);
         // Handling special Windows case when source and target resources are empty folders.
         // Source should be deleted and target should be touched.
@@ -280,7 +289,7 @@ export class FileSystemNode implements FileSystem {
         }
     }
 
-    async delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void> {
+    async delete(uri: string, options?: FileDeleteOptions): Promise<void> {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {

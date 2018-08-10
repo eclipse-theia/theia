@@ -16,10 +16,12 @@
 
 import { injectable, inject } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
-import { Resource, ResourceResolver, Emitter, Event, DisposableCollection } from '@theia/core';
+import {
+    Resource, ResourceResolver, Emitter, Event, DisposableCollection
+} from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat } from '../common/filesystem';
-import { FileSystemWatcher } from './filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent } from './filesystem-watcher';
 
 export class FileResource implements Resource {
 
@@ -45,12 +47,17 @@ export class FileResource implements Resource {
             throw new Error('The given uri is a directory: ' + this.uriString);
         }
         this.stat = stat;
-        this.toDispose.push(await this.fileSystemWatcher.watchFileChanges(this.uri));
-        this.toDispose.push(this.fileSystemWatcher.onFilesChanged(changes => {
-            if (changes.some(e => e.uri.toString() === this.uriString)) {
+
+        this.toDispose.push(this.fileSystemWatcher.onFilesChanged(event => {
+            if (FileChangeEvent.isAffected(event, this.uri)) {
                 this.sync();
             }
         }));
+        try {
+            this.toDispose.push(await this.fileSystemWatcher.watchFileChanges(this.uri));
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     dispose(): void {

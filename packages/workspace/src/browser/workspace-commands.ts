@@ -29,6 +29,7 @@ import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/commo
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspacePreferences } from './workspace-preferences';
+import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -96,16 +97,15 @@ export class FileMenuContribution implements MenuContribution {
 @injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
 
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(WorkspacePreferences) protected readonly preferences: WorkspacePreferences,
-        @inject(FileDialogService) protected readonly fileDialogService: FileDialogService
-    ) { }
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(FrontendApplication) protected readonly app: FrontendApplication;
+    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(WorkspacePreferences) protected readonly preferences: WorkspacePreferences;
+    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
+    @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
 
     registerCommands(registry: CommandRegistry): void {
         this.openerService.getOpeners().then(openers => {
@@ -173,47 +173,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             })
         }));
-        let rootUri: URI | undefined;
-        this.workspaceService.roots.then(roots => {
-            const root = roots[0];
-            if (root) {
-                rootUri = new URI(root.uri);
-            }
-        });
-        registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler({
-            isVisible: uris => !(rootUri && uris.some(uri => uri.toString() === rootUri!.toString())),
-            execute: async uris => {
-                const msg = (() => {
-                    if (uris.length === 1) {
-                        return `Do you really want to delete ${uris[0].path.base}?`;
-                    }
-                    if (uris.length > 10) {
-                        return `Do you really want to delete all the ${uris.length} selected files?`;
-                    }
-                    const messageContainer = document.createElement('div');
-                    messageContainer.textContent = 'Do you really want to delete the following files?';
-                    const list = document.createElement('ul');
-                    list.style.listStyleType = 'none';
-                    for (const uri of uris) {
-                        const listItem = document.createElement('li');
-                        listItem.textContent = uri.path.base;
-                        list.appendChild(listItem);
-                    }
-                    messageContainer.appendChild(list);
-                    return messageContainer;
-                })();
-                const dialog = new ConfirmDialog({
-                    title: `Delete File${uris.length === 1 ? '' : 's'}`,
-                    msg
-                });
-
-                if (await dialog.open()) {
-                    // Make sure we delete the longest paths first, they might be nested. Longer paths come first.
-                    uris.sort((left, right) => right.toString().length - left.toString().length);
-                    await Promise.all(uris.map(uri => uri.toString()).map(uri => this.fileSystem.delete(uri)));
-                }
-            }
-        }));
+        registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler(this.deleteHandler));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
             isVisible: uris => uris.length === 2,
             execute: async uris => {
@@ -370,6 +330,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             throw new Error('Expected at least one root folder location.');
         }
     }
+
 }
 
 export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<URI> {

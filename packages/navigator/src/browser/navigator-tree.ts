@@ -39,12 +39,9 @@ export class FileNavigatorTree extends FileTree {
     }
 
     protected toNodeId(childFileStat: FileStat, parent: CompositeTreeNode): string {
-        if (WorkspaceNode.is(parent)) {
-            return WorkspaceRootNode.createId(childFileStat.uri, childFileStat.uri);
-        }
         const workspaceRootNode = WorkspaceRootNode.find(parent);
         if (workspaceRootNode) {
-            return WorkspaceRootNode.createId(workspaceRootNode.uri, childFileStat.uri);
+            return WorkspaceRootNode.createId(workspaceRootNode, childFileStat.uri);
         }
         return childFileStat.uri;
     }
@@ -65,12 +62,12 @@ export namespace WorkspaceNode {
         return CompositeTreeNode.is(node) && node.name === WorkspaceNode.name;
     }
 
-    export function createRoot(children: WorkspaceRootNode[]): WorkspaceNode {
+    export function createRoot(): WorkspaceNode {
         return {
             id: WorkspaceNode.id,
             name: WorkspaceNode.name,
             parent: undefined,
-            children: children.map(c => c as WorkspaceRootNode),
+            children: [],
             visible: false
         };
     }
@@ -93,7 +90,11 @@ export namespace WorkspaceRootNode {
         }
     }
 
-    export function createId(workspaceRootNodeUri: URI | string, nodeUri: string): string {
-        return `${new URI(workspaceRootNodeUri.toString()).withoutScheme().toString()}///${nodeUri}`;
+    export function createId(node: WorkspaceRootNode, uri: string | URI): string {
+        const uriString = uri.toString();
+        if (node.uri.toString() === uriString) {
+            return uriString;
+        }
+        return `${node.uri.path.toString()}:${uriString}`;
     }
 }

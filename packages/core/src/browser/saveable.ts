@@ -63,14 +63,21 @@ export namespace Saveable {
             await saveable.save();
         }
     }
-    export function apply(widget: Widget): void {
+    export function apply(widget: Widget): SaveableWidget | undefined {
+        if (SaveableWidget.is(widget)) {
+            return widget;
+        }
         const saveable = Saveable.get(widget);
-        if (saveable) {
-            setDirty(widget, saveable.dirty);
-            saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
-            const close = widget.close.bind(widget);
-            let closing = false;
-            widget.close = async () => {
+        if (!saveable) {
+            return undefined;
+        }
+        setDirty(widget, saveable.dirty);
+        saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
+        let closing = false;
+        const closeWithoutSaving = widget.close.bind(widget);
+        return Object.assign(widget, {
+            closeWithoutSaving,
+            close: async () => {
                 if (closing) {
                     return;
                 }
@@ -81,13 +88,13 @@ export namespace Saveable {
                         if (result) {
                             await Saveable.save(widget);
                         }
-                        close();
+                        closeWithoutSaving();
                     }
                 } finally {
                     closing = false;
                 }
-            };
-        }
+            }
+        });
     }
     export async function shouldSave(saveable: Saveable, widget: Widget): Promise<boolean | undefined> {
         if (!saveable.dirty) {
@@ -99,6 +106,15 @@ export namespace Saveable {
         }
 
         return new ShouldSaveDialog(widget).open();
+    }
+}
+
+export interface SaveableWidget extends Widget {
+    closeWithoutSaving(): void;
+}
+export namespace SaveableWidget {
+    export function is(widget: Widget | undefined): widget is SaveableWidget {
+        return !!widget && 'closeWithoutSaving' in widget;
     }
 }
 

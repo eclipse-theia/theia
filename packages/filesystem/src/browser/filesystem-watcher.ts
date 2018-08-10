@@ -16,7 +16,9 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
+import { ConfirmDialog } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { FileSystem, FileStat } from '../common/filesystem';
 import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
 import { FileSystemPreferences } from './filesystem-preferences';
 
@@ -28,13 +30,67 @@ export interface FileChange {
     uri: URI;
     type: FileChangeType;
 }
+export namespace FileChange {
+    export function isUpdated(change: FileChange, uri: URI): boolean {
+        return change.type === FileChangeType.UPDATED && uri.toString() === change.uri.toString();
+    }
+    export function isAdded(change: FileChange, uri: URI): boolean {
+        return change.type === FileChangeType.ADDED && uri.toString() === change.uri.toString();
+    }
+    export function isDeleted(change: FileChange, uri: URI): boolean {
+        return change.type === FileChangeType.DELETED && change.uri.isEqualOrParent(uri);
+    }
+    export function isAffected(change: FileChange, uri: URI): boolean {
+        return isDeleted(change, uri) || uri.toString() === change.uri.toString();
+    }
+    export function isChanged(change: FileChange, uri: URI): boolean {
+        return !isDeleted(change, uri) && uri.toString() === change.uri.toString();
+    }
+}
+
+export type FileChangeEvent = FileChange[];
+export namespace FileChangeEvent {
+    export function isUpdated(event: FileChangeEvent, uri: URI): boolean {
+        return event.some(change => FileChange.isUpdated(change, uri));
+    }
+    export function isAdded(event: FileChangeEvent, uri: URI): boolean {
+        return event.some(change => FileChange.isAdded(change, uri));
+    }
+    export function isDeleted(event: FileChangeEvent, uri: URI): boolean {
+        return event.some(change => FileChange.isDeleted(change, uri));
+    }
+    export function isAffected(event: FileChangeEvent, uri: URI): boolean {
+        return event.some(change => FileChange.isAffected(change, uri));
+    }
+    export function isChanged(event: FileChangeEvent, uri: URI): boolean {
+        return !isDeleted(event, uri) && event.some(change => FileChange.isChanged(change, uri));
+    }
+}
+
+export interface FileMoveEvent {
+    sourceUri: URI
+    targetUri: URI
+}
+export namespace FileMoveEvent {
+    export function isRename({ sourceUri, targetUri }: FileMoveEvent): boolean {
+        return sourceUri.parent.toString() === targetUri.parent.toString();
+    }
+}
 
 @injectable()
 export class FileSystemWatcher implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toRestartAll = new DisposableCollection();
-    protected readonly onFileChangedEmitter = new Emitter<FileChange[]>();
+
+    protected readonly onFileChangedEmitter = new Emitter<FileChangeEvent>();
+    readonly onFilesChanged: Event<FileChangeEvent> = this.onFileChangedEmitter.event;
+
+    protected readonly onWillMoveEmitter = new Emitter<FileMoveEvent>();
+    readonly onWillMove: Event<FileMoveEvent> = this.onWillMoveEmitter.event;
+
+    protected readonly onDidMoveEmitter = new Emitter<FileMoveEvent>();
+    readonly onDidMove: Event<FileMoveEvent> = this.onDidMoveEmitter.event;
 
     @inject(FileSystemWatcherServer)
     protected readonly server: FileSystemWatcherServer;
@@ -42,9 +98,14 @@ export class FileSystemWatcher implements Disposable {
     @inject(FileSystemPreferences)
     protected readonly preferences: FileSystemPreferences;
 
+    @inject(FileSystem)
+    protected readonly filesystem: FileSystem;
+
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.onFileChangedEmitter);
+        this.toDispose.push(this.onWillMoveEmitter);
+        this.toDispose.push(this.onDidMoveEmitter);
 
         this.toDispose.push(this.server);
         this.server.setClient({
@@ -56,6 +117,12 @@ export class FileSystemWatcher implements Disposable {
                 this.toRestartAll.dispose();
             }
         }));
+
+        this.filesystem.setClient({
+            shouldOverwrite: this.shouldOverwrite.bind(this),
+            onWillMove: this.fireWillMove.bind(this),
+            onDidMove: this.fireDidMove.bind(this)
+        });
     }
 
     /**
@@ -101,13 +168,6 @@ export class FileSystemWatcher implements Disposable {
             });
     }
 
-    /**
-     * Emit when files under watched uris are changed.
-     */
-    get onFilesChanged(): Event<FileChange[]> {
-        return this.onFileChangedEmitter.event;
-    }
-
     protected createWatchOptions(): Promise<WatchOptions> {
         return this.getIgnored().then(ignored => ({
             ignored
@@ -119,4 +179,29 @@ export class FileSystemWatcher implements Disposable {
 
         return Promise.resolve(Object.keys(patterns).filter(pattern => patterns[pattern]));
     }
+
+    protected async shouldOverwrite(file: FileStat, stat: FileStat): Promise<boolean> {
+        const dialog = new ConfirmDialog({
+            title: `The file '${file.uri}' has been changed on the file system.`,
+            msg: 'Do you want to overwrite the changes made on the file system?',
+            ok: 'Yes',
+            cancel: 'No'
+        });
+        return !!await dialog.open();
+    }
+
+    protected fireWillMove(sourceUri: string, targetUri: string): void {
+        this.onWillMoveEmitter.fire({
+            sourceUri: new URI(sourceUri),
+            targetUri: new URI(targetUri)
+        });
+    }
+
+    protected fireDidMove(sourceUri: string, targetUri: string): void {
+        this.onDidMoveEmitter.fire({
+            sourceUri: new URI(sourceUri),
+            targetUri: new URI(targetUri)
+        });
+    }
+
 }

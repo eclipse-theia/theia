@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+const disableJSDOM = enableJSDOM();
+
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { ProblemManager } from './problem-manager';
@@ -23,6 +27,8 @@ import { Event } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
+
+disableJSDOM();
 
 const expect = chai.expect;
 let manager: ProblemManager;
