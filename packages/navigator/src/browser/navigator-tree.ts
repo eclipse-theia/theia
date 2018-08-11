@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
+import { TreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';
 
 @injectable()
@@ -51,7 +51,7 @@ export class FileNavigatorTree extends FileTree {
     }
 }
 
-export interface WorkspaceNode extends CompositeTreeNode {
+export interface WorkspaceNode extends CompositeTreeNode, SelectableTreeNode {
     children: WorkspaceRootNode[];
 }
 export namespace WorkspaceNode {
@@ -68,7 +68,8 @@ export namespace WorkspaceNode {
             name: WorkspaceNode.name,
             parent: undefined,
             children: [],
-            visible: false
+            visible: false,
+            selected: false
         };
     }
 }

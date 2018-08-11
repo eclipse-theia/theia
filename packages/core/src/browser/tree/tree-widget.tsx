@@ -223,8 +223,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         return {
             className: TREE_CONTAINER_CLASS,
-            onContextMenu: event => this.handleContextMenuEvent(this.model.root, event)
+            onContextMenu: event => this.handleContextMenuEvent(this.getContainerTreeNode(), event)
         };
+    }
+    protected getContainerTreeNode(): TreeNode | undefined {
+        return this.model.root;
     }
 
     protected view: TreeWidget.View | undefined;
