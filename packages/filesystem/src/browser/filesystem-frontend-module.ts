@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2017-2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { FileSystem, fileSystemPath } from '../common';
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
@@ -26,6 +26,7 @@ import { FileResourceResolver } from './file-resource';
 import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemWatcher } from './filesystem-watcher';
 import { FileDialogService } from './file-dialog-service';
+import { FileSystemFrontendContribution } from './filesystem-frontend-contribution';
 
 import '../../src/browser/style/index.css';
 
@@ -46,4 +47,5 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
 
     bind(FileDialogService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).to(FileSystemFrontendContribution).inSingletonScope();
 });

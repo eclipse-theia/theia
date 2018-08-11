@@ -95,26 +95,19 @@ export class GitRepositoryTracker {
     }
 
     getPath(uri: URI): string | undefined {
-        const repository = this.selectedRepository;
-        if (!repository) {
-            return undefined;
-        }
-        const repositoryUri = new URI(repository.localUri);
-        const repositoryPath = repositoryUri.path.toString();
-        const path = uri.path.toString();
-        if (!path.startsWith(repositoryPath)) {
-            return undefined;
-        }
-        const relativePath = path.substr(repositoryPath.length);
-        return relativePath[0] === '/' ? relativePath.substr(1) : relativePath;
+        const { repositoryUri } = this;
+        const relativePath = repositoryUri && repositoryUri.relative(uri);
+        return relativePath && relativePath.toString();
     }
 
     getUri(path: string): URI | undefined {
+        const { repositoryUri } = this;
+        return repositoryUri && repositoryUri.resolve(path);
+    }
+
+    get repositoryUri(): URI | undefined {
         const repository = this.selectedRepository;
-        if (!repository) {
-            return undefined;
-        }
-        return new URI(repository.localUri).resolve(path);
+        return repository && new URI(repository.localUri);
     }
 
 }

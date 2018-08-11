@@ -22,6 +22,7 @@ import { Event } from './event';
 import { Disposable } from './disposable';
 import { MaybePromise } from './types';
 import { CancellationToken } from './cancellation';
+import { ApplicationError } from './application-error';
 
 export interface Resource extends Disposable {
     readonly uri: URI;
@@ -71,6 +72,10 @@ export namespace Resource {
         }
         return contentChangesLength > contentLength;
     }
+}
+
+export namespace ResourceError {
+    export const NotFound = ApplicationError.declare(-40000, (raw: ApplicationError.Literal<{ uri: URI }>) => raw);
 }
 
 export const ResourceResolver = Symbol('ResourceResolver');

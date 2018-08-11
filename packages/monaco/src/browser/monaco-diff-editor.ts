@@ -55,16 +55,6 @@ export class MonacoDiffEditor extends MonacoEditor {
         this._diffEditor.setModel({ original, modified });
     }
 
-    getTargetUri(): URI | undefined {
-        if (this.diffEditor.getModifiedEditor().getModel().uri.scheme === 'file') {
-            return new URI(this.modifiedModel.uri);
-        }
-        if (this.diffEditor.getOriginalEditor().getModel().uri.scheme === 'file') {
-            return new URI(this.originalModel.uri);
-        }
-        return undefined;
-    }
-
     get diffEditor(): IStandaloneDiffEditor {
         return this._diffEditor;
     }

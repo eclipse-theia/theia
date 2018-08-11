@@ -17,7 +17,7 @@
 import { TextDocumentSaveReason, Position, TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { TextEditorDocument } from '@theia/editor/lib/browser';
-import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource, CancellationToken } from '@theia/core';
+import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource, CancellationToken, ResourceError } from '@theia/core';
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
@@ -183,8 +183,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        const newText = await this.resource.readContents();
-        if (token.isCancellationRequested || this._dirty) {
+        const newText = await this.readContents();
+        if (newText === undefined || token.isCancellationRequested || this._dirty) {
             return;
         }
 
@@ -198,6 +198,16 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             ignoreDirty: true,
             ignoreContentChanges: true
         });
+    }
+    protected async readContents(): Promise<string | undefined> {
+        try {
+            return await this.resource.readContents();
+        } catch (e) {
+            if (ResourceError.NotFound.is(e)) {
+                return undefined;
+            }
+            throw e;
+        }
     }
 
     protected ignoreDirtyEdits = false;

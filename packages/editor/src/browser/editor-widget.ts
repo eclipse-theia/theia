@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import { SelectionService } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, DiffUris } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from './editor';
 
-export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable {
+export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget {
 
     constructor(
         readonly editor: TextEditor,
@@ -39,7 +39,26 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     }
 
     getTargetUri(): URI | undefined {
-        return this.editor.getTargetUri();
+        const { uri } = this.editor;
+        if (DiffUris.isDiffUri(uri)) {
+            const [left, right] = DiffUris.decode(uri);
+            if (left.scheme === 'file') {
+                return left;
+            }
+            if (right.scheme === 'file') {
+                return right;
+            }
+            return undefined;
+        }
+        return uri.scheme === 'file' ? uri : undefined;
+    }
+    getSourceUri(targetUri: URI): URI | undefined {
+        const { uri } = this.editor;
+        if (DiffUris.isDiffUri(uri)) {
+            const [left, right] = DiffUris.decode(uri);
+            return DiffUris.encode(left.withPath(targetUri.path), right.withPath(targetUri.path));
+        }
+        return uri.withPath(targetUri.path);
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -66,6 +85,14 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         } else {
             this.editor.setSize(msg);
         }
+    }
+
+    storeState(): object {
+        return this.editor.storeViewState();
+    }
+
+    restoreState(oldState: object): void {
+        this.editor.restoreViewState(oldState);
     }
 
 }

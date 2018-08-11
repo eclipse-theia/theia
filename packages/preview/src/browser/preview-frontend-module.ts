@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CommandContribution, MenuContribution, bindContributionProvider, ResourceProvider } from '@theia/core/lib/common';
-import { OpenHandler, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { OpenHandler, WidgetFactory, FrontendApplicationContribution, NavigatableWidgetOptions } from '@theia/core/lib/browser';
 import { PreviewContribution } from './preview-contribution';
 import { PreviewWidget, PreviewWidgetOptions } from './preview-widget';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
@@ -40,9 +40,9 @@ export default new ContainerModule(bind => {
     bind(PreviewWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(ctx => ({
         id: PreviewUri.id,
-        async createWidget(uri: string): Promise<PreviewWidget> {
+        async createWidget(options: NavigatableWidgetOptions): Promise<PreviewWidget> {
             const { container } = ctx;
-            const resource = await container.get<ResourceProvider>(ResourceProvider)(new URI(uri));
+            const resource = await container.get<ResourceProvider>(ResourceProvider)(new URI(options.uri));
             const child = container.createChild();
             child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource });
             return child.get(PreviewWidget);
