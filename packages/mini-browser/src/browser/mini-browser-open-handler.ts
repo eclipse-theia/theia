@@ -132,4 +132,8 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
         };
     }
 
+    protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions | undefined): Object {
+        throw new Error('Method not supported.');
+    }
+
 }

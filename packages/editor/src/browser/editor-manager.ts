@@ -17,7 +17,7 @@
 import { injectable, postConstruct, } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
-import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -27,7 +27,7 @@ export interface EditorOpenerOptions extends WidgetOpenerOptions {
 }
 
 @injectable()
-export class EditorManager extends WidgetOpenHandler<EditorWidget> {
+export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     readonly id = EditorWidgetFactory.ID;
 

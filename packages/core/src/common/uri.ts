@@ -64,6 +64,13 @@ export default class URI {
         return this.withPath(this.path.dir);
     }
 
+    relative(uri: URI): Path | undefined {
+        if (this.authority !== uri.authority || this.scheme !== uri.scheme) {
+            return undefined;
+        }
+        return this.path.relative(uri.path);
+    }
+
     resolve(path: string | Path): URI {
         return this.withPath(this.path.join(path.toString()));
     }

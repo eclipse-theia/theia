@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { Widget } from '@phosphor/widgets';
-import { FrontendApplicationContribution, WidgetOpenerOptions, WidgetOpenHandler } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
@@ -40,7 +40,7 @@ export interface PreviewOpenerOptions extends WidgetOpenerOptions {
 }
 
 @injectable()
-export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution {
+export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution {
 
     readonly id = PreviewUri.id;
     readonly label = 'Preview';
@@ -164,8 +164,8 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
         const resolvedOptions = await this.resolveOpenerOptions(options);
         return super.open(uri, resolvedOptions);
     }
-    protected createWidgetOptions(uri: URI, options?: PreviewOpenerOptions): string {
-        return PreviewUri.decode(uri).withoutFragment().toString();
+    protected serializeUri(uri: URI): string {
+        return super.serializeUri(PreviewUri.decode(uri));
     }
 
     protected async resolveOpenerOptions(options?: PreviewOpenerOptions): Promise<PreviewOpenerOptions> {

@@ -118,4 +118,39 @@ describe('Path', () => {
         assert.deepEqual(path.ext, '');
     });
 
+    assertRelative({
+        from: '/foo',
+        to: '/foo',
+        expectation: ''
+    });
+
+    assertRelative({
+        from: '/foo',
+        to: '/foo/bar',
+        expectation: 'bar'
+    });
+
+    assertRelative({
+        from: '/foo/',
+        to: '/foo/bar',
+        expectation: 'bar'
+    });
+
+    assertRelative({
+        from: '/f',
+        to: '/foo/bar',
+        expectation: undefined
+    });
+
+    function assertRelative({ from, to, expectation }: {
+        from: string,
+        to: string,
+        expectation: string | undefined
+    }): void {
+        it(`the relative path from '${from}' to '${to}' should be '${expectation}'`, () => {
+            const path = new Path(from).relative(new Path(to));
+            assert.deepEqual(expectation, path && path.toString());
+        });
+    }
+
 });

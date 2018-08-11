@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { MaybeArray } from '@theia/core/lib/common';
+import { LabelProvider } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '../common';
 import { FileStatNode, DirNode } from './file-tree';
 import { FileDialogFactory, FileDialogProps } from './file-dialog';
-import URI from '@theia/core/lib/common/uri';
-import { LabelProvider } from '@theia/core/lib/browser';
 
 @injectable()
 export class FileDialogService {
@@ -27,7 +28,9 @@ export class FileDialogService {
     @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
-    async show(props: FileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined> {
+    async show(props: FileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined>;
+    async show(props: FileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined>;
+    async show(props: FileDialogProps, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined> {
         const title = props && props.title ? props.title : 'Open';
         const folderToOpen = folder || await this.fileSystem.getCurrentUserHome();
         if (folderToOpen) {
@@ -41,9 +44,9 @@ export class FileDialogService {
                 const rootNode = DirNode.createRoot(rootStat, name, label);
                 const dialog = this.fileDialogFactory({ title });
                 dialog.model.navigateTo(rootNode);
-                const nodes = await dialog.open();
-                return Array.isArray(nodes) ? nodes[0] : nodes;
+                return await dialog.open();
             }
         }
+        return undefined;
     }
 }

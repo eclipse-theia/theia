@@ -124,16 +124,23 @@ export class Path {
         return this.raw;
     }
 
+    relative(path: Path): Path | undefined {
+        if (this.raw === path.raw) {
+            return new Path('');
+        }
+        if (!this.raw || !path.raw) {
+            return undefined;
+        }
+        const raw = this.base ? this.raw + Path.separator : this.raw;
+        if (!path.raw.startsWith(raw)) {
+            return undefined;
+        }
+        const relativePath = path.raw.substr(raw.length);
+        return new Path(relativePath);
+    }
+
     isEqualOrParent(path: Path): boolean {
-        const value = this.toString();
-        const value2 = path.toString();
-        if (value === value2) {
-            return true;
-        }
-        if (!value || !value2) {
-            return false;
-        }
-        return value2.startsWith(value);
+        return !!this.relative(path);
     }
 
 }

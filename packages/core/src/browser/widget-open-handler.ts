@@ -157,8 +157,6 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         return this.widgetManager.getOrCreateWidget(this.id, widgetOptions) as Promise<W>;
     }
 
-    protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object {
-        return uri.withoutFragment().toString();
-    }
+    protected abstract createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object;
 
 }

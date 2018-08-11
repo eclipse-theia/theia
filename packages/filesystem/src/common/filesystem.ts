@@ -132,8 +132,6 @@ export interface FileSystemClient {
      */
     shouldOverwrite(file: FileStat, stat: FileStat): Promise<boolean>;
 
-    onWillMove(sourceUri: string, targetUri: string): void;
-
     onDidMove(sourceUri: string, targetUri: string): void;
 
 }

@@ -17,10 +17,10 @@
 import { injectable, inject } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import {
-    Resource, ResourceResolver, Emitter, Event, DisposableCollection
+    Resource, ResourceResolver, Emitter, Event, DisposableCollection, ResourceError
 } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileStat } from '../common/filesystem';
+import { FileSystem, FileStat, FileSystemError } from '../common/filesystem';
 import { FileSystemWatcher, FileChangeEvent } from './filesystem-watcher';
 
 export class FileResource implements Resource {
@@ -65,9 +65,22 @@ export class FileResource implements Resource {
     }
 
     async readContents(options?: { encoding?: string }): Promise<string> {
-        const { stat, content } = await this.fileSystem.resolveContent(this.uriString, options);
-        this.stat = stat;
-        return content;
+        try {
+            const { stat, content } = await this.fileSystem.resolveContent(this.uriString, options);
+            this.stat = stat;
+            return content;
+        } catch (e) {
+            if (FileSystemError.FileNotFound.is(e)) {
+                this.stat = undefined;
+                throw ResourceError.NotFound({
+                    ...e.toJson(),
+                    data: {
+                        uri: this.uri
+                    }
+                });
+            }
+            throw e;
+        }
     }
 
     async saveContents(content: string, options?: { encoding?: string }): Promise<void> {

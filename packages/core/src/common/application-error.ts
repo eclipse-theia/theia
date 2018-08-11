@@ -19,17 +19,13 @@
 export interface ApplicationError<C extends number, D> extends Error {
     readonly code: C
     readonly data: D
-    toJson(): ApplicationError.Raw<D>
+    toJson(): ApplicationError.Literal<D>
 }
 export namespace ApplicationError {
-    export interface Raw<D> {
-        message: string
-        data: D
-        stack?: string
-    }
     export interface Literal<D> {
         message: string
         data: D
+        stack?: string
     }
     export interface Constructor<C extends number, D> {
         (...args: any[]): ApplicationError<C, D>;
@@ -52,27 +48,26 @@ export namespace ApplicationError {
     export function is<C extends number, D>(arg: object | undefined): arg is ApplicationError<C, D> {
         return arg instanceof Impl;
     }
-    export function fromJson<C extends number, D>(code: C, raw: Raw<D>): ApplicationError<C, D> {
+    export function fromJson<C extends number, D>(code: C, raw: Literal<D>): ApplicationError<C, D> {
         return new Impl(code, raw);
     }
     class Impl<C extends number, D> extends Error implements ApplicationError<C, D>  {
         readonly data: D;
         constructor(
             readonly code: C,
-            raw: ApplicationError.Raw<D>,
+            raw: ApplicationError.Literal<D>,
             constructorOpt?: Function
         ) {
             super(raw.message);
             this.data = raw.data;
             Object.setPrototypeOf(this, Impl.prototype);
-            if (Error.captureStackTrace && constructorOpt) {
-                Error.captureStackTrace(this, constructorOpt);
-            }
             if (raw.stack) {
                 this.stack = raw.stack;
+            } else if (Error.captureStackTrace && constructorOpt) {
+                Error.captureStackTrace(this, constructorOpt);
             }
         }
-        toJson(): ApplicationError.Raw<D> {
+        toJson(): ApplicationError.Literal<D> {
             const { message, data, stack } = this;
             return { message, data, stack };
         }

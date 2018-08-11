@@ -14,11 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ConfirmDialog, ApplicationShell, Navigatable, SaveableWidget, Saveable, Widget } from '@theia/core/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 
@@ -34,20 +33,13 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(FileSystemWatcher)
-    protected readonly fileSystemWatcher: FileSystemWatcher;
-
-    @postConstruct()
-    protected init(): void {
-        this.fileSystemWatcher.onFilesChanged(event => this.updateWidgets(event));
+    isVisible(uris: URI[]): boolean {
+        return !!uris.length && !this.isRootDeleted(uris);
     }
 
-    isVisible(uris: URI[]): boolean {
-        if (!uris.length) {
-            return false;
-        }
+    protected isRootDeleted(uris: URI[]): boolean {
         const rootUris = this.workspaceService.tryGetRoots().map(root => new URI(root.uri));
-        return !rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
+        return rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
     }
 
     async execute(uris: URI[]): Promise<void> {
@@ -133,53 +125,6 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
                 if (targetUri && uri.isEqualOrParent(targetUri)) {
                     yield widget;
                 }
-            }
-        }
-    }
-
-    protected updateWidgets(event: FileChangeEvent): void {
-        const dirty = new Set<string>();
-        const toClose = new Map<string, Widget[]>();
-        for (const widget of this.shell.widgets) {
-            this.updateWidget(widget, event, { dirty, toClose });
-        }
-        for (const [uriString, widgets] of toClose.entries()) {
-            if (!dirty.has(uriString)) {
-                for (const widget of widgets) {
-                    widget.close();
-                }
-            }
-        }
-    }
-
-    protected readonly deletedSuffix = ' (deleted from disk)';
-    protected updateWidget(widget: Widget, event: FileChangeEvent, { dirty, toClose }: {
-        dirty: Set<string>;
-        toClose: Map<string, Widget[]>
-    }) {
-        if (!Navigatable.is(widget)) {
-            return;
-        }
-        const targetUri = widget.getTargetUri();
-        if (!targetUri) {
-            return;
-        }
-        const label = widget.title.label;
-        const deleted = label.endsWith(this.deletedSuffix);
-        if (FileChangeEvent.isDeleted(event, targetUri)) {
-            const uriString = targetUri.toString();
-            if (Saveable.isDirty(widget)) {
-                if (!deleted) {
-                    widget.title.label += this.deletedSuffix;
-                }
-                dirty.add(uriString);
-            }
-            const widgets = toClose.get(uriString) || [];
-            widgets.push(widget);
-            toClose.set(uriString, widgets);
-        } else if (FileChangeEvent.isAdded(event, targetUri)) {
-            if (deleted) {
-                widget.title.label = widget.title.label.substr(0, label.length - this.deletedSuffix.length);
             }
         }
     }

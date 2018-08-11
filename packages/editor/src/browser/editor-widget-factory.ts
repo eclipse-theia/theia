@@ -17,7 +17,7 @@
 import { injectable, inject, } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common';
-import { WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
+import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { TextEditorProvider } from './editor';
 
@@ -37,8 +37,8 @@ export class EditorWidgetFactory implements WidgetFactory {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
-    createWidget(uriAsString: string): Promise<EditorWidget> {
-        const uri = new URI(uriAsString);
+    createWidget(options: NavigatableWidgetOptions): Promise<EditorWidget> {
+        const uri = new URI(options.uri);
         return this.createEditor(uri);
     }
 

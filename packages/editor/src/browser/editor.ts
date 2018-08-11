@@ -18,7 +18,7 @@ import { Position, Range } from 'vscode-languageserver-types';
 import * as lsp from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable } from '@theia/core/lib/common';
-import { Saveable, Navigatable } from '@theia/core/lib/browser';
+import { Saveable } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
 
 export {
@@ -51,7 +51,7 @@ export interface TextDocumentChangeEvent {
     readonly contentChanges: TextDocumentContentChangeDelta[];
 }
 
-export interface TextEditor extends Disposable, TextEditorSelection, Navigatable {
+export interface TextEditor extends Disposable, TextEditorSelection {
     readonly node: HTMLElement;
 
     readonly uri: URI;
@@ -110,6 +110,9 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
      * @param edits: edits created with `lsp.TextEdit.replace`, `lsp.TextEdit.insert`, `lsp.TextEdit.del`
      */
     executeEdits(edits: lsp.TextEdit[]): boolean;
+
+    storeViewState(): object;
+    restoreViewState(state: object): void;
 }
 
 export interface Dimension {

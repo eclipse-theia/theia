@@ -86,9 +86,6 @@ export class FileSystemWatcher implements Disposable {
     protected readonly onFileChangedEmitter = new Emitter<FileChangeEvent>();
     readonly onFilesChanged: Event<FileChangeEvent> = this.onFileChangedEmitter.event;
 
-    protected readonly onWillMoveEmitter = new Emitter<FileMoveEvent>();
-    readonly onWillMove: Event<FileMoveEvent> = this.onWillMoveEmitter.event;
-
     protected readonly onDidMoveEmitter = new Emitter<FileMoveEvent>();
     readonly onDidMove: Event<FileMoveEvent> = this.onDidMoveEmitter.event;
 
@@ -104,7 +101,6 @@ export class FileSystemWatcher implements Disposable {
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.onFileChangedEmitter);
-        this.toDispose.push(this.onWillMoveEmitter);
         this.toDispose.push(this.onDidMoveEmitter);
 
         this.toDispose.push(this.server);
@@ -120,7 +116,6 @@ export class FileSystemWatcher implements Disposable {
 
         this.filesystem.setClient({
             shouldOverwrite: this.shouldOverwrite.bind(this),
-            onWillMove: this.fireWillMove.bind(this),
             onDidMove: this.fireDidMove.bind(this)
         });
     }
@@ -188,13 +183,6 @@ export class FileSystemWatcher implements Disposable {
             cancel: 'No'
         });
         return !!await dialog.open();
-    }
-
-    protected fireWillMove(sourceUri: string, targetUri: string): void {
-        this.onWillMoveEmitter.fire({
-            sourceUri: new URI(sourceUri),
-            targetUri: new URI(targetUri)
-        });
     }
 
     protected fireDidMove(sourceUri: string, targetUri: string): void {

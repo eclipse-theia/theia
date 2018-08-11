@@ -127,10 +127,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         };
     }
 
-    getTargetUri(): URI | undefined {
-        return this.uri;
-    }
-
     get onDispose() {
         return this.toDispose.onDispose;
     }
@@ -390,6 +386,14 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     executeEdits(edits: TextEdit[]): boolean {
         return this.editor.executeEdits('MonacoEditor', this.p2m.asTextEdits(edits) as IIdentifiedSingleEditOperation[]);
+    }
+
+    storeViewState(): object {
+        return this.editor.saveViewState();
+    }
+
+    restoreViewState(state: object): void {
+        this.editor.restoreViewState(state as monaco.editor.ICodeEditorViewState);
     }
 
 }
