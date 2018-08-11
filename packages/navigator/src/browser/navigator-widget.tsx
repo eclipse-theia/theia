@@ -27,6 +27,7 @@ import {
 import { FileTreeWidget, FileNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { WorkspaceNode } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorSearch } from './navigator-search';
 import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
@@ -120,6 +121,17 @@ export class FileNavigatorWidget extends FileTreeWidget {
         };
         this.addEventListener(mainPanelNode, 'dragover', handler);
         this.addEventListener(mainPanelNode, 'dragenter', handler);
+    }
+
+    protected getContainerTreeNode(): TreeNode | undefined {
+        const root = this.model.root;
+        if (this.workspaceService.isMultiRootWorkspaceOpened) {
+            return root;
+        }
+        if (WorkspaceNode.is(root)) {
+            return root.children[0];
+        }
+        return undefined;
     }
 
     protected deflateForStorage(node: TreeNode): object {

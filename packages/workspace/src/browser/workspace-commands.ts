@@ -76,7 +76,8 @@ export namespace WorkspaceCommands {
         label: 'Add Folder to Workspace...'
     };
     export const REMOVE_FOLDER: Command = {
-        id: 'workspace:removeFolder'
+        id: 'workspace:removeFolder',
+        label: 'Remove Folder from Workspace'
     };
 }
 
@@ -211,29 +212,18 @@ export class WorkspaceCommandContribution implements CommandContribution {
             }
         }));
         this.preferences.ready.then(() => {
-            const isEnabled = () => this.workspaceService.isMultiRootWorkspaceOpened;
-            const isVisible = (uris: URI[]): boolean => {
-                const roots = this.workspaceService.tryGetRoots();
-                const selected = new Set(uris.map(u => u.toString()));
-                for (const root of roots) {
-                    if (selected.has(root.uri)) {
-                        return true;
-                    }
-                }
-                return false;
-            };
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
-                isEnabled,
-                isVisible,
+                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+                isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
                 execute: async uris => {
                     const node = await this.fileDialogService.show({ title: WorkspaceCommands.ADD_FOLDER.label! });
                     this.addFolderToWorkspace(node);
                 }
             }));
             registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
-                execute: uris => this.removeFolderFromWorkspace(uris),
-                isEnabled,
-                isVisible
+                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+                isVisible: uris => this.areWorkspaceRoots(uris),
+                execute: uris => this.removeFolderFromWorkspace(uris)
             }));
         });
     }
@@ -295,14 +285,17 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected addFolderToWorkspace(node: Readonly<FileStatNode> | undefined): void {
-        if (!node) {
-            return;
-        }
-        if (node.fileStat.isDirectory) {
+        if (node && node.fileStat.isDirectory) {
             this.workspaceService.addRoot(node.uri);
-        } else {
-            throw new Error(`Invalid folder. URI: ${node.fileStat.uri}.`);
         }
+    }
+
+    protected areWorkspaceRoots(uris: URI[]): boolean {
+        if (!uris.length) {
+            return false;
+        }
+        const rootUris = new Set(this.workspaceService.tryGetRoots().map(root => root.uri));
+        return uris.every(uri => rootUris.has(uri.toString()));
     }
 
     protected async removeFolderFromWorkspace(uris: URI[]): Promise<void> {
@@ -326,8 +319,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
             if (await dialog.open()) {
                 await this.workspaceService.removeRoots(toRemove);
             }
-        } else {
-            throw new Error('Expected at least one root folder location.');
         }
     }
 
@@ -335,24 +326,24 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
 export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<URI> {
 
-    protected rootUri: URI | undefined;
-
     constructor(
         protected readonly workspaceService: WorkspaceService,
         protected readonly selectionService: SelectionService,
         protected readonly handler: UriCommandHandler<URI>
     ) {
         super(selectionService, handler);
-        workspaceService.roots.then(roots => {
-            const root = roots[0];
-            if (root) {
-                this.rootUri = new URI(root.uri);
-            }
-        });
     }
 
     protected getUri(): URI | undefined {
-        return super.getUri() || this.rootUri;
+        const uri = super.getUri();
+        if (this.workspaceService.isMultiRootWorkspaceOpened) {
+            return uri;
+        }
+        if (uri) {
+            return uri;
+        }
+        const root = this.workspaceService.tryGetRoots()[0];
+        return root && new URI(root.uri);
     }
 
 }

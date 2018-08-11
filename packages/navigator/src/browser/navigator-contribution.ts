@@ -160,8 +160,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                     commandId: WorkspaceCommands.ADD_FOLDER.id
                 });
                 registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
-                    commandId: WorkspaceCommands.REMOVE_FOLDER.id,
-                    label: 'Remove Folder from Workspace'
+                    commandId: WorkspaceCommands.REMOVE_FOLDER.id
                 });
             }
         });

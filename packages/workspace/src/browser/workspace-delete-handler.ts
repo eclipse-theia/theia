@@ -43,6 +43,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     isVisible(uris: URI[]): boolean {
+        if (!uris.length) {
+            return false;
+        }
         const rootUris = this.workspaceService.tryGetRoots().map(root => new URI(root.uri));
         return !rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
     }
