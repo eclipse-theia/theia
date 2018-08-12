@@ -15,32 +15,34 @@
   ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
+import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
 import { WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService } from '@theia/core/lib/common';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import { WorkspacePreferences } from './workspace-preferences';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
 
-    protected items: QuickOpenItem[];
+    protected items: QuickOpenGroupItem[];
 
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
         const homeStat = await this.fileSystem.getCurrentUserHome();
         const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
-
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
-            this.items.push(new QuickOpenItem({
+            this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
                 description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
+                groupLabel: (workspace === workspaces[0]) ? 'Current Workspace' : '',
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
@@ -80,7 +82,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         this.items = [];
         this.workspaceService.recentWorkspaces().then(workspaceRoots => {
             if (workspaceRoots) {
-                this.open(workspaceRoots);
+                this.open(workspaceRoots.slice(0, this.preferences['workspace.recentWorkspaceLimit']));
             }
         });
     }
