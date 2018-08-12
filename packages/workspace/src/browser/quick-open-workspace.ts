@@ -20,6 +20,7 @@ import { WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService } from '@theia/core/lib/common';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import { WorkspacePreferences } from './workspace-preferences';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
@@ -30,6 +31,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
@@ -80,7 +82,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         this.items = [];
         this.workspaceService.recentWorkspaces().then(workspaceRoots => {
             if (workspaceRoots) {
-                this.open(workspaceRoots);
+                this.open(workspaceRoots.slice(0, this.preferences['workspace.recentWorkspaceLimit']));
             }
         });
     }
