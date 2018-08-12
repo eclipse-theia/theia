@@ -37,7 +37,6 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         this.items = [];
         const homeStat = await this.fileSystem.getCurrentUserHome();
         const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
-
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
             this.items.push(new QuickOpenGroupItem({
