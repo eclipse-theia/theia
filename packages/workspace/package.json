@@ -8,6 +8,7 @@
     "@theia/variable-resolver": "^0.3.13",
     "@types/fs-extra": "^4.0.2",
     "fs-extra": "^4.0.2",
+    "moment": "^2.21.0",
     "valid-filename": "^2.0.1"
   },
   "publishConfig": {

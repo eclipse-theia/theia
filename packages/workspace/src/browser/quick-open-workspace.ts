@@ -20,6 +20,7 @@ import { WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService } from '@theia/core/lib/common';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import * as moment from 'moment';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
@@ -38,10 +39,15 @@ export class QuickOpenWorkspace implements QuickOpenModel {
 
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
+            const stat = await this.fileSystem.getFileStat(workspace);
+            if (!stat) {
+                continue;
+            }
+            const lastModification = moment(stat.lastModification).fromNow();
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
                 description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
-                groupLabel: (workspace === workspaces[0]) ? 'Current Workspace' : '',
+                groupLabel: (workspace === workspaces[0]) ? 'Current Workspace' : `Modified ${lastModification}`,
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
