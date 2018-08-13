@@ -1,6 +1,5 @@
 --require ignore-styles
 --require monaco-languageclient/lib/register-vscode
---require ts-node/register
 --require reflect-metadata/Reflect
 --reporter spec
 --watch-extensions ts
