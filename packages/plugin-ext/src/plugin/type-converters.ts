@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorPosition, Selection, Range, Position, DecorationOptions, MarkdownString } from '../api/plugin-api';
+import { EditorPosition, Selection, Position, DecorationOptions } from '../api/plugin-api';
+import { Range, MarkdownString, CompletionType, SingleEditOperation } from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
@@ -76,6 +77,10 @@ export function fromRange(range: theia.Range): Range | undefined {
 
 export function fromPosition(position: types.Position): Position {
     return { lineNumber: position.line + 1, column: position.character + 1 };
+}
+
+export function toPosition(position: Position): types.Position {
+    return new types.Position(position.lineNumber, position.column);
 }
 
 // tslint:disable-next-line:no-any
@@ -188,4 +193,91 @@ export function fromGlobPattern(pattern: theia.GlobPattern): string | RelativePa
 function isRelativePattern(obj: {}): obj is theia.RelativePattern {
     const rp = obj as theia.RelativePattern;
     return rp && typeof rp.base === 'string' && typeof rp.pattern === 'string';
+}
+
+export function fromCompletionItemKind(kind?: types.CompletionItemKind): CompletionType {
+    switch (kind) {
+        case types.CompletionItemKind.Method: return 'method';
+        case types.CompletionItemKind.Function: return 'function';
+        case types.CompletionItemKind.Constructor: return 'constructor';
+        case types.CompletionItemKind.Field: return 'field';
+        case types.CompletionItemKind.Variable: return 'variable';
+        case types.CompletionItemKind.Class: return 'class';
+        case types.CompletionItemKind.Interface: return 'interface';
+        case types.CompletionItemKind.Struct: return 'struct';
+        case types.CompletionItemKind.Module: return 'module';
+        case types.CompletionItemKind.Property: return 'property';
+        case types.CompletionItemKind.Unit: return 'unit';
+        case types.CompletionItemKind.Value: return 'value';
+        case types.CompletionItemKind.Constant: return 'constant';
+        case types.CompletionItemKind.Enum: return 'enum';
+        case types.CompletionItemKind.EnumMember: return 'enum-member';
+        case types.CompletionItemKind.Keyword: return 'keyword';
+        case types.CompletionItemKind.Snippet: return 'snippet';
+        case types.CompletionItemKind.Text: return 'text';
+        case types.CompletionItemKind.Color: return 'color';
+        case types.CompletionItemKind.File: return 'file';
+        case types.CompletionItemKind.Reference: return 'reference';
+        case types.CompletionItemKind.Folder: return 'folder';
+        case types.CompletionItemKind.Event: return 'event';
+        case types.CompletionItemKind.Operator: return 'operator';
+        case types.CompletionItemKind.TypeParameter: return 'type-parameter';
+    }
+    return 'property';
+}
+
+export function toCompletionItemKind(type?: CompletionType): types.CompletionItemKind {
+    if (type) {
+        switch (type) {
+            case 'method': return types.CompletionItemKind.Method;
+            case 'function': return types.CompletionItemKind.Function;
+            case 'constructor': return types.CompletionItemKind.Constructor;
+            case 'field': return types.CompletionItemKind.Field;
+            case 'variable': return types.CompletionItemKind.Variable;
+            case 'class': return types.CompletionItemKind.Class;
+            case 'interface': return types.CompletionItemKind.Interface;
+            case 'struct': return types.CompletionItemKind.Struct;
+            case 'module': return types.CompletionItemKind.Module;
+            case 'property': return types.CompletionItemKind.Property;
+            case 'unit': return types.CompletionItemKind.Unit;
+            case 'value': return types.CompletionItemKind.Value;
+            case 'constant': return types.CompletionItemKind.Constant;
+            case 'enum': return types.CompletionItemKind.Enum;
+            case 'enum-member': return types.CompletionItemKind.EnumMember;
+            case 'keyword': return types.CompletionItemKind.Keyword;
+            case 'snippet': return types.CompletionItemKind.Snippet;
+            case 'text': return types.CompletionItemKind.Text;
+            case 'color': return types.CompletionItemKind.Color;
+            case 'file': return types.CompletionItemKind.File;
+            case 'reference': return types.CompletionItemKind.Reference;
+            case 'folder': return types.CompletionItemKind.Folder;
+            case 'event': return types.CompletionItemKind.Event;
+            case 'operator': return types.CompletionItemKind.Operator;
+            case 'type-parameter': return types.CompletionItemKind.TypeParameter;
+        }
+    }
+    return types.CompletionItemKind.Property;
+}
+
+export function fromTextEdit(edit: theia.TextEdit): SingleEditOperation {
+    return <SingleEditOperation>{
+        text: edit.newText,
+        range: fromRange(edit.range)
+    };
+}
+
+export function fromLanguageSelector(selector: theia.DocumentSelector): LanguageSelector | undefined {
+    if (!selector) {
+        return undefined;
+    } else if (Array.isArray(selector)) {
+        return <LanguageSelector>selector.map(fromLanguageSelector);
+    } else if (typeof selector === 'string') {
+        return selector;
+    } else {
+        return <LanguageFilter>{
+            language: selector.language,
+            scheme: selector.scheme,
+            pattern: fromGlobPattern(selector.pattern!)
+        };
+    }
 }

@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { ModelChangedEvent, DocumentsMain, Range as ARange } from '../api/plugin-api';
+import { ModelChangedEvent, DocumentsMain } from '../api/plugin-api';
+import { Range as ARange } from '../api/model';
 import URI from 'vscode-uri';
 import { ok } from '../common/assert';
 import { Range, Position, EndOfLine } from './types-impl';

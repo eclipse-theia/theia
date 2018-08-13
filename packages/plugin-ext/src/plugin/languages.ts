@@ -21,20 +21,28 @@ import {
     SerializedLanguageConfiguration,
     SerializedRegExp,
     SerializedOnEnterRule,
-    SerializedIndentationRule
+    SerializedIndentationRule,
+    Position
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
-import { Disposable } from './types-impl';
+import { Disposable, CompletionList, Range, SnippetString } from './types-impl';
 import URI from 'vscode-uri/lib/umd';
 import { match as matchGlobPattern } from '../common/glob';
+import { UriComponents } from '../common/uri-components';
+import { CompletionContext, CompletionResultDto, Completion, SerializedDocumentFilter, CompletionDto } from '../api/model';
+import * as Converter from './type-converters';
+import { mixin } from '../common/types';
+
+type Adapter = CompletionAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
     private proxy: LanguagesMain;
 
     private callId = 0;
+    private adaptersMap = new Map<number, Adapter>();
 
     constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
@@ -75,10 +83,72 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     private createDisposable(callId: number): theia.Disposable {
         return new Disposable(() => {
-            // TODO: unregister adapters!!!
+            this.adaptersMap.delete(callId);
             this.proxy.$unregister(callId);
         });
     }
+
+    private addNewAdapter(adapter: Adapter): number {
+        const callId = this.nextCallId();
+        this.adaptersMap.set(callId, adapter);
+        return callId;
+    }
+
+    private withAdapter<A, R>(handle: number, ctor: { new(...args: any[]): A }, callback: (adapter: A) => Promise<R>): Promise<R> {
+        const adapter = this.adaptersMap.get(handle);
+        if (!(adapter instanceof ctor)) {
+            return Promise.reject(new Error('no adapter found'));
+        }
+        return callback(<A>adapter);
+    }
+
+    private transformDocumentSelector(selector: theia.DocumentSelector): SerializedDocumentFilter[] {
+        if (Array.isArray(selector)) {
+            return selector.map(sel => this.doTransformDocumentSelector(sel)!);
+        }
+
+        return [this.doTransformDocumentSelector(selector)!];
+    }
+
+    private doTransformDocumentSelector(selector: string | theia.DocumentFilter): SerializedDocumentFilter | undefined {
+        if (typeof selector === 'string') {
+            return {
+                $serialized: true,
+                language: selector
+            };
+        }
+
+        if (selector) {
+            return {
+                $serialized: true,
+                language: selector.language,
+                scheme: selector.scheme,
+                pattern: selector.pattern
+            };
+        }
+
+        return undefined;
+    }
+
+    // ### Completion begin
+    $provideCompletionItems(handle: number, resource: UriComponents, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined> {
+        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.provideCompletionItems(URI.revive(resource), position, context));
+    }
+
+    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion> {
+        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(URI.revive(resource), position, completion));
+    }
+
+    $releaseCompletionItems(handle: number, id: number): void {
+        this.withAdapter(handle, CompletionAdapter, adapter => adapter.releaseCompletionItems(id));
+    }
+
+    registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, triggerCharacters: string[]): theia.Disposable {
+        const callId = this.addNewAdapter(new CompletionAdapter(provider, this.documents));
+        this.proxy.$registerCompletionSupport(callId, this.transformDocumentSelector(selector), triggerCharacters, CompletionAdapter.hasResolveSupport(provider));
+        return this.createDisposable(callId);
+    }
+    // ### Completion end
 
 }
 
@@ -202,5 +272,147 @@ export function score(selector: LanguageSelector | undefined, candidateUri: URI,
 
     } else {
         return 0;
+    }
+}
+
+class CompletionAdapter {
+    private cacheId = 0;
+    private cache = new Map<number, theia.CompletionItem[]>();
+
+    constructor(private readonly delegate: theia.CompletionItemProvider,
+        private readonly documents: DocumentsExtImpl) {
+
+    }
+
+    provideCompletionItems(resource: URI, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined> {
+        const document = this.documents.getDocumentData(resource);
+        if (!document) {
+            return Promise.reject(new Error(`There are no document for  ${resource}`));
+        }
+
+        const doc = document.document;
+
+        const pos = Converter.toPosition(position);
+        return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, undefined, context)).then(value => {
+            const id = this.cacheId++;
+            const result: CompletionResultDto = {
+                id,
+                completions: [],
+            };
+
+            let list: CompletionList;
+            if (!value) {
+                return undefined;
+            } else if (Array.isArray(value)) {
+                list = new CompletionList(value);
+            } else {
+                list = value;
+                result.incomplete = list.isIncomplete;
+            }
+
+            const wordRangeBeforePos = (doc.getWordRangeAtPosition(pos) as Range || new Range(pos, pos))
+                .with({ end: pos });
+
+            for (let i = 0; i < list.items.length; i++) {
+                const suggestion = this.convertCompletionItem(list.items[i], pos, wordRangeBeforePos, i, id);
+                if (suggestion) {
+                    result.completions.push(suggestion);
+                }
+            }
+            this.cache.set(id, list.items);
+
+            return result;
+        });
+    }
+
+    resolveCompletionItem(resource: URI, position: Position, completion: Completion): Promise<Completion> {
+
+        if (typeof this.delegate.resolveCompletionItem !== 'function') {
+            return Promise.resolve(completion);
+        }
+
+        const { parentId, id } = (<CompletionDto>completion);
+        const item = this.cache.has(parentId) && this.cache.get(parentId)![id];
+        if (!item) {
+            return Promise.resolve(completion);
+        }
+
+        return Promise.resolve(this.delegate.resolveCompletionItem(item, undefined)).then(resolvedItem => {
+
+            if (!resolvedItem) {
+                return completion;
+            }
+
+            const doc = this.documents.getDocumentData(resource)!.document;
+            const pos = Converter.toPosition(position);
+            const wordRangeBeforePos = (doc.getWordRangeAtPosition(pos) as Range || new Range(pos, pos)).with({ end: pos });
+            const newCompletion = this.convertCompletionItem(resolvedItem, pos, wordRangeBeforePos, id, parentId);
+            if (newCompletion) {
+                mixin(completion, newCompletion, true);
+            }
+
+            return completion;
+        });
+    }
+
+    releaseCompletionItems(id: number) {
+        this.cache.delete(id);
+        return Promise.resolve();
+    }
+
+    private convertCompletionItem(item: theia.CompletionItem, position: theia.Position, defaultRange: theia.Range, id: number, parentId: number): CompletionDto | undefined {
+        if (typeof item.label !== 'string' || item.label.length === 0) {
+            console.warn('Invalid Completion Item -> must have at least a label');
+            return undefined;
+        }
+
+        const result: CompletionDto = {
+            id,
+            parentId,
+            label: item.label,
+            type: Converter.fromCompletionItemKind(item.kind),
+            detail: item.detail,
+            documentation: item.documentation,
+            filterText: item.filterText,
+            sortText: item.sortText,
+            preselect: item.preselect,
+            insertText: '',
+            additionalTextEdits: item.additionalTextEdits && item.additionalTextEdits.map(Converter.fromTextEdit),
+            command: undefined,   // TODO: implement this: this.commands.toInternal(item.command),
+            commitCharacters: item.commitCharacters
+        };
+
+        if (typeof item.insertText === 'string') {
+            result.insertText = item.insertText;
+            result.snippetType = 'internal';
+
+        } else if (item.insertText instanceof SnippetString) {
+            result.insertText = item.insertText.value;
+            result.snippetType = 'textmate';
+
+        } else {
+            result.insertText = item.label;
+            result.snippetType = 'internal';
+        }
+
+        let range: theia.Range;
+        if (item.range) {
+            range = item.range;
+        } else {
+            range = defaultRange;
+        }
+        result.overwriteBefore = position.character - range.start.character;
+        result.overwriteAfter = range.end.character - position.character;
+
+        if (!range.isSingleLine || range.start.line !== position.line) {
+            console.warn('Invalid Completion Item -> must be single line and on the same line');
+            return undefined;
+        }
+
+        return result;
+    }
+
+    static hasResolveSupport(provider: theia.CompletionItemProvider): boolean {
+        return typeof provider.resolveCompletionItem === 'function';
     }
 }

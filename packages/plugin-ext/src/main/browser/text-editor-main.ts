@@ -22,10 +22,10 @@ import {
     TextEditorRevealType,
     SingleEditOperation,
     ApplyEditsOptions,
-    Range,
     UndoStopOptions,
     DecorationOptions
 } from '../../api/plugin-api';
+import { Range } from '../../api/model';
 import { DisposableCollection, Emitter, Event } from '@theia/core';
 import { TextEditorCursorStyle, cursorStyleToString } from '../../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine } from '../../plugin/types-impl';

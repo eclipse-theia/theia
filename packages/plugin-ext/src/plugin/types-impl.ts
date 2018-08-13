@@ -358,6 +358,17 @@ export class Range {
         return new Range(start, end);
     }
 
+    static isRange(thing: {}): thing is theia.Range {
+        if (thing instanceof Range) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return Position.isPosition((<Range>thing).start)
+            && Position.isPosition((<Range>thing).end);
+    }
+
 }
 
 export class Selection extends Range {
@@ -593,4 +604,145 @@ export enum IndentAction {
     Indent = 1,
     IndentOutdent = 2,
     Outdent = 3
+}
+
+export class TextEdit {
+
+    protected _range: Range;
+    protected _newText: string;
+    protected _newEol: EndOfLine;
+
+    get range(): Range {
+        return this._range;
+    }
+
+    set range(value: Range) {
+        if (value && !Range.isRange(value)) {
+            throw illegalArgument('range');
+        }
+        this._range = value;
+    }
+
+    get newText(): string {
+        return this._newText || '';
+    }
+
+    set newText(value: string) {
+        if (value && typeof value !== 'string') {
+            throw illegalArgument('newText');
+        }
+        this._newText = value;
+    }
+
+    get newEol(): EndOfLine {
+        return this._newEol;
+    }
+
+    set newEol(value: EndOfLine) {
+        if (value && typeof value !== 'number') {
+            throw illegalArgument('newEol');
+        }
+        this._newEol = value;
+    }
+
+    constructor(range: Range | undefined, newText: string | undefined) {
+        this.range = range!;
+        this.newText = newText!;
+    }
+
+    static isTextEdit(thing: {}): thing is TextEdit {
+        if (thing instanceof TextEdit) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return Range.isRange((<TextEdit>thing))
+            && typeof (<TextEdit>thing).newText === 'string';
+    }
+
+    static replace(range: Range, newText: string): TextEdit {
+        return new TextEdit(range, newText);
+    }
+
+    static insert(position: Position, newText: string): TextEdit {
+        return TextEdit.replace(new Range(position, position), newText);
+    }
+
+    static delete(range: Range): TextEdit {
+        return TextEdit.replace(range, '');
+    }
+
+    static setEndOfLine(eol: EndOfLine): TextEdit {
+        const ret = new TextEdit(undefined, undefined);
+        ret.newEol = eol;
+        return ret;
+    }
+}
+
+export enum CompletionTriggerKind {
+    Invoke = 0,
+    TriggerCharacter = 1,
+    TriggerForIncompleteCompletions = 2
+}
+
+export enum CompletionItemKind {
+    Text = 0,
+    Method = 1,
+    Function = 2,
+    Constructor = 3,
+    Field = 4,
+    Variable = 5,
+    Class = 6,
+    Interface = 7,
+    Module = 8,
+    Property = 9,
+    Unit = 10,
+    Value = 11,
+    Enum = 12,
+    Keyword = 13,
+    Snippet = 14,
+    Color = 15,
+    File = 16,
+    Reference = 17,
+    Folder = 18,
+    EnumMember = 19,
+    Constant = 20,
+    Struct = 21,
+    Event = 22,
+    Operator = 23,
+    TypeParameter = 24
+}
+
+export class CompletionItem implements theia.CompletionItem {
+
+    label: string;
+    kind?: CompletionItemKind;
+    detail: string;
+    documentation: string | MarkdownString;
+    sortText: string;
+    filterText: string;
+    preselect: boolean;
+    insertText: string | SnippetString;
+    range: Range;
+    textEdit: TextEdit;
+    additionalTextEdits: TextEdit[];
+    command: theia.Command;
+
+    constructor(label: string, kind?: CompletionItemKind) {
+        this.label = label;
+        this.kind = kind;
+    }
+}
+
+export class CompletionList {
+
+    isIncomplete?: boolean;
+
+    items: theia.CompletionItem[];
+
+    constructor(items: theia.CompletionItem[] = [], isIncomplete: boolean = false) {
+        this.items = items;
+        this.isIncomplete = isIncomplete;
+    }
 }

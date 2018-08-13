@@ -19,14 +19,20 @@ import {
     SerializedLanguageConfiguration,
     SerializedRegExp,
     SerializedIndentationRule,
-    SerializedOnEnterRule
+    SerializedOnEnterRule,
+    MAIN_RPC_CONTEXT,
+    LanguagesExt
 } from '../../api/plugin-api';
+import { SerializedDocumentFilter } from '../../api/model';
+import { RPCProtocol } from '../../api/rpc-protocol';
+import { fromLanguageSelector } from '../../plugin/type-converters';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
+    private readonly proxy: LanguagesExt;
     private readonly disposables = new Map<number, monaco.IDisposable>();
-    constructor() {
-
+    constructor(rpc: RPCProtocol) {
+        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.LANGUAGES_EXT);
     }
 
     $getLanguages(): Promise<string[]> {
@@ -51,6 +57,30 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
 
         this.disposables.set(handle, monaco.languages.setLanguageConfiguration(languageId, config));
+    }
+
+    $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void {
+        this.disposables.set(handle, monaco.modes.SuggestRegistry.register(fromLanguageSelector(selector)!, {
+            triggerCharacters,
+            provideCompletionItems: (model: monaco.editor.ITextModel,
+                position: monaco.Position,
+                context: monaco.modes.SuggestContext,
+                token: monaco.CancellationToken): Thenable<monaco.modes.ISuggestResult> =>
+                Promise.resolve(this.proxy.$provideCompletionItems(handle, model.uri, position, context)).then(result => {
+                    if (!result) {
+                        return undefined!;
+                    }
+                    return {
+                        suggestions: result.completions,
+                        incomplete: result.incomplete,
+                        dispose: () => this.proxy.$releaseCompletionItems(handle, (<any>result)._id)
+                    };
+                }),
+            resolveCompletionItem: supportsResolveDetails
+                ? (model, position, suggestion, token) => Promise.resolve(this.proxy.$resolveCompletionItem(handle, model.uri, position, suggestion))
+                : undefined
+        }));
+
     }
 }
 

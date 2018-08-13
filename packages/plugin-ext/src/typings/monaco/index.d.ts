@@ -234,3 +234,103 @@ declare module monaco.services {
     }
 
 }
+
+declare module monaco.modes {
+
+    export type SuggestionType = 'method'
+        | 'function'
+        | 'constructor'
+        | 'field'
+        | 'variable'
+        | 'class'
+        | 'struct'
+        | 'interface'
+        | 'module'
+        | 'property'
+        | 'event'
+        | 'operator'
+        | 'unit'
+        | 'value'
+        | 'constant'
+        | 'enum'
+        | 'enum-member'
+        | 'keyword'
+        | 'snippet'
+        | 'text'
+        | 'color'
+        | 'file'
+        | 'reference'
+        | 'customcolor'
+        | 'folder'
+        | 'type-parameter';
+
+    export type SnippetType = 'internal' | 'textmate';
+
+    export interface ISuggestion {
+        label: string;
+        insertText: string;
+        type: SuggestionType;
+        detail?: string;
+        documentation?: string | IMarkdownString;
+        filterText?: string;
+        sortText?: string;
+        preselect?: boolean;
+        noAutoAccept?: boolean;
+        commitCharacters?: string[];
+        overwriteBefore?: number;
+        overwriteAfter?: number;
+        additionalTextEdits?: editor.ISingleEditOperation[];
+        command?: monaco.languages.Command;
+        snippetType?: SnippetType;
+    }
+
+    export interface ISuggestResult {
+        suggestions: ISuggestion[];
+        incomplete?: boolean;
+        dispose?(): void;
+    }
+
+    export enum CompletionTriggerKind {
+        Invoke = 0,
+        TriggerCharacter = 1,
+        TriggerForIncompleteCompletions = 2,
+    }
+
+    export interface SuggestContext {
+        triggerKind: CompletionTriggerKind;
+        triggerCharacter?: string;
+    }
+
+    export interface ISuggestSupport {
+
+        triggerCharacters?: string[];
+
+        provideCompletionItems(model: monaco.editor.ITextModel, position: Position, context: SuggestContext, token: CancellationToken): ISuggestResult | Thenable<ISuggestResult | undefined> | undefined;
+
+        resolveCompletionItem?(model: monaco.editor.ITextModel, position: Position, item: ISuggestion, token: CancellationToken): ISuggestion | Thenable<ISuggestion>;
+    }
+
+    export interface IRelativePattern {
+        base: string;
+        pattern: string;
+    }
+
+    export interface LanguageFilter {
+        language?: string;
+        scheme?: string;
+        pattern?: string | IRelativePattern;
+        /**
+         * This provider is implemented in the UI thread.
+         */
+        hasAccessToAllModels?: boolean;
+        exclusive?: boolean;
+    }
+
+    export type LanguageSelector = string | LanguageFilter | (string | LanguageFilter)[];
+
+    export interface LanguageFeatureRegistry<T> {
+        register(selector: LanguageSelector, provider: T): IDisposable;
+    }
+
+    export const SuggestRegistry: LanguageFeatureRegistry<ISuggestSupport>;
+}

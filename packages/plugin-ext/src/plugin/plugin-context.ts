@@ -46,6 +46,11 @@ import {
     StatusBarAlignment,
     RelativePattern,
     IndentAction,
+    CompletionItem,
+    CompletionItemKind,
+    CompletionList,
+    TextEdit,
+    CompletionTriggerKind,
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -266,10 +271,14 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         },
         setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
             return languagesExt.setLanguageConfiguration(language, configuration);
-        }
+        },
+        registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, ...triggerCharacters: string[]): theia.Disposable {
+            return languagesExt.registerCompletionItemProvider(selector, provider, triggerCharacters);
+        },
     };
 
     return <typeof theia>{
+        version: require('../../package.json').version,
         commands,
         window,
         workspace,
@@ -298,6 +307,11 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         ConfigurationTarget,
         RelativePattern,
         IndentAction,
+        CompletionItem,
+        CompletionItemKind,
+        CompletionList,
+        CompletionTriggerKind,
+        TextEdit,
     };
 }
 
