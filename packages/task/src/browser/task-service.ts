@@ -224,7 +224,8 @@ export class TaskService implements TaskConfigurationClient {
                 caption: `Task #${taskId}`,
                 label: `Task #${taskId}`,
                 destroyTermOnClose: true
-            });
+            }
+        );
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
         widget.start(terminalId);

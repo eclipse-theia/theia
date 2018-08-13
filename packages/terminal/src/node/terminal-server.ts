@@ -29,18 +29,19 @@ export class TerminalServer extends BaseTerminalServer implements ITerminalServe
     constructor(
         @inject(TerminalProcessFactory) protected readonly terminalFactory: TerminalProcessFactory,
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) @named('terminal') protected readonly logger: ILogger) {
+        @inject(ILogger) @named('terminal') protected readonly logger: ILogger
+    ) {
         super(processManager, logger);
     }
 
-    create(options: ITerminalServerOptions): Promise<number> {
+    async create(options: ITerminalServerOptions): Promise<number> {
         try {
             const term = this.terminalFactory(options);
             this.postCreate(term);
-            return Promise.resolve(term.id);
+            return term.id;
         } catch (error) {
             this.logger.error('Error while creating terminal', error);
-            return Promise.resolve(-1);
+            return -1;
         }
     }
 }

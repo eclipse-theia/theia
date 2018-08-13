@@ -96,7 +96,9 @@ export class MultiRingBuffer {
     protected readonly streams: Map<MultiRingBufferReadableStream, number>;
     protected readerId = 0;
 
-    constructor( @inject(MultiRingBufferOptions) protected readonly options: MultiRingBufferOptions) {
+    constructor(
+        @inject(MultiRingBufferOptions) protected readonly options: MultiRingBufferOptions
+    ) {
         this.maxSize = options.size;
         if (options.encoding !== undefined) {
             this.encoding = options.encoding;
@@ -199,7 +201,7 @@ export class MultiRingBuffer {
             deqSize = Math.min(size, maxDeqSize);
         }
 
-        if (wrapped === false) { // no warp
+        if (wrapped === false) { // no wrap
             buffer = this.buffer.toString(encoding, pos, pos + deqSize);
         } else { // wrap
             buffer = buffer.concat(this.buffer.toString(encoding, pos, this.maxSize),

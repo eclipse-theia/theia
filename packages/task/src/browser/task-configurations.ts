@@ -100,10 +100,10 @@ export class TaskConfigurations implements Disposable {
             this.refreshTasks();
         }
         if (await this.fileSystem.exists(configFile)) {
-            return Promise.resolve(true);
+            return true;
         } else {
             this.logger.info(`Config file ${this.TASKFILE} does not exist under ${rootUri}`);
-            return Promise.resolve(false);
+            return false;
         }
     }
 

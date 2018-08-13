@@ -170,7 +170,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
            not defined.  */
         function lookup(props: CSSStyleDeclaration, name: string): string {
             /* There is sometimes an extra space in the front, remove it.  */
-            const value = htmlElementProps.getPropertyValue(name).trim();
+            const value = props.getPropertyValue(name).trim();
             if (!value) {
                 throw new Error(`Couldn\'t find value of ${name}`);
             }
