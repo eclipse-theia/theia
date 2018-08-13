@@ -47,8 +47,8 @@ export abstract class Process {
         protected readonly processManager: ProcessManager,
         protected readonly logger: ILogger,
         @unmanaged() protected readonly type: ProcessType,
-        protected readonly options: ProcessOptions) {
-
+        protected readonly options: ProcessOptions
+    ) {
         this.exitEmitter = new Emitter<IProcessExitEvent>();
         this.errorEmitter = new Emitter<Error>();
         this.id = this.processManager.register(this);

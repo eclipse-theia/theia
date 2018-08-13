@@ -26,7 +26,9 @@ export class ProcessManager implements BackendApplicationContribution {
     protected readonly processes: Map<number, Process>;
     protected readonly deleteEmitter: Emitter<number>;
 
-    constructor(@inject(ILogger) @named('process') protected logger: ILogger) {
+    constructor(
+        @inject(ILogger) @named('process') protected logger: ILogger
+    ) {
         this.processes = new Map();
         this.deleteEmitter = new Emitter<number>();
     }

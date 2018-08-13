@@ -26,8 +26,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) @named('terminal') protected readonly logger: ILogger) {
-
+        @inject(ILogger) @named('terminal') protected readonly logger: ILogger
+    ) {
         processManager.onDelete(id => {
             const toDispose = this.terminalToDispose.get(id);
             if (toDispose !== undefined) {
@@ -39,68 +39,64 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     abstract create(options: IBaseTerminalServerOptions): Promise<number>;
 
-    attach(id: number): Promise<number> {
+    async attach(id: number): Promise<number> {
         const term = this.processManager.get(id);
 
         if (term && term instanceof TerminalProcess) {
-            return Promise.resolve(term.id);
+            return term.id;
         } else {
             this.logger.error(`Couldn't attach - can't find terminal with id: ${id} `);
-            return Promise.resolve(-1);
+            return -1;
         }
     }
 
-    close(id: number): Promise<void> {
+    async close(id: number): Promise<void> {
         const term = this.processManager.get(id);
 
         if (term instanceof TerminalProcess) {
             term.kill();
         }
-        return Promise.resolve();
     }
 
     dispose(): void {
         // noop
     }
 
-    resize(id: number, cols: number, rows: number): Promise<void> {
+    async resize(id: number, cols: number, rows: number): Promise<void> {
         const term = this.processManager.get(id);
         if (term && term instanceof TerminalProcess) {
             term.resize(cols, rows);
         } else {
             console.error("Couldn't resize terminal " + id + ", because it doesn't exist.");
         }
-        return Promise.resolve();
     }
 
     /* Set the client to receive notifications on.  */
-    setClient(client: IBaseTerminalClient | undefined) {
+    setClient(client: IBaseTerminalClient | undefined): void {
         this.client = client;
     }
 
-    protected postCreate(term: TerminalProcess) {
+    protected postCreate(term: TerminalProcess): void {
         const toDispose = new DisposableCollection();
 
         toDispose.push(term.onError(error => {
             this.logger.error(`Terminal pid: ${term.pid} error: ${error}, closing it.`);
 
             if (this.client !== undefined) {
-                this.client.onTerminalError(
-                    {
-                        'terminalId': term.id,
-                        'error': error
-                    });
+                this.client.onTerminalError({
+                    'terminalId': term.id,
+                    'error': error
+                });
             }
         }));
 
         toDispose.push(term.onExit(event => {
             if (this.client !== undefined) {
-                this.client.onTerminalExitChanged(
-                    {
-                        'terminalId': term.id,
-                        'code': event.code,
-                        'signal': event.signal
-                    });
+                this.client.onTerminalExitChanged({
+                    'terminalId': term.id,
+                    'code': event.code,
+                    'signal': event.signal
+                });
             }
         }));
 
