@@ -32,96 +32,94 @@ export class WorkspaceVariableContribution implements VariableContribution {
         variables.registerVariable({
             name: 'workspaceFolder',
             description: 'The path of the workspace root folder',
-            resolve: async () => {
-                const uri = await this.getWorkspaceRootUri();
-                return uri ? uri.path.toString() : undefined;
+            resolve: () => {
+                const uri = this.getWorkspaceRootUri();
+                return uri && uri.path.toString();
             }
         });
         variables.registerVariable({
             name: 'workspaceFolderBasename',
             description: 'The name of the workspace root folder',
-            resolve: async () => {
-                const uri = await this.getWorkspaceRootUri();
-                return uri ? uri.displayName : undefined;
+            resolve: () => {
+                const uri = this.getWorkspaceRootUri();
+                return uri && uri.displayName;
             }
         });
         variables.registerVariable({
             name: 'file',
             description: 'The path of the currently opened file',
             resolve: () => {
-                const uri = this.getCurrentURI();
-                return uri ? uri.path.toString() : undefined;
+                const uri = this.getResourceUri();
+                return uri && uri.path.toString();
             }
         });
         variables.registerVariable({
             name: 'fileBasename',
             description: 'The basename of the currently opened file',
             resolve: () => {
-                const uri = this.getCurrentURI();
-                return uri ? uri.path.base : undefined;
+                const uri = this.getResourceUri();
+                return uri && uri.path.base;
             }
         });
         variables.registerVariable({
             name: 'fileBasenameNoExtension',
             description: "The currently opened file's name without extension",
             resolve: () => {
-                const uri = this.getCurrentURI();
-                return uri ? uri.path.name : undefined;
+                const uri = this.getResourceUri();
+                return uri && uri.path.name;
             }
         });
         variables.registerVariable({
             name: 'fileDirname',
             description: "The name of the currently opened file's directory",
             resolve: () => {
-                const uri = this.getCurrentURI();
-                return uri ? uri.path.dir.toString() : undefined;
+                const uri = this.getResourceUri();
+                return uri && uri.path.dir.toString();
             }
         });
         variables.registerVariable({
             name: 'fileExtname',
             description: 'The extension of the currently opened file',
             resolve: () => {
-                const uri = this.getCurrentURI();
-                return uri ? uri.path.ext : undefined;
+                const uri = this.getResourceUri();
+                return uri && uri.path.ext;
             }
         });
         variables.registerVariable({
             name: 'relativeFile',
             description: "The currently opened file's path relative to the workspace root",
             resolve: () => {
-                const currentURI = this.getCurrentURI();
-                return currentURI ? this.getWorkspaceRelativePath(currentURI) : undefined;
+                const uri = this.getResourceUri();
+                return uri && this.getWorkspaceRelativePath(uri);
             }
         });
     }
 
-    protected async getWorkspaceRootUri(): Promise<URI | undefined> {
-        const wsRoot = (await this.workspaceService.roots)[0];
-        if (wsRoot) {
-            return new URI(wsRoot.uri);
+    protected getWorkspaceRootUri(uri: URI | undefined = this.getResourceUri()): URI | undefined {
+        if (!uri) {
+            const root = this.workspaceService.tryGetRoots()[0];
+            if (root) {
+                return new URI(root.uri);
+            }
+            return undefined;
+        }
+        for (const root of this.workspaceService.tryGetRoots()) {
+            const rootUri = new URI(root.uri);
+            if (rootUri && rootUri.isEqualOrParent(uri)) {
+                return rootUri;
+            }
         }
         return undefined;
     }
 
-    protected getCurrentURI(): URI | undefined {
+    protected getResourceUri(): URI | undefined {
         const widget = this.shell.currentWidget;
-        if (Navigatable.is(widget)) {
-            return widget.getTargetUri();
-        }
-        return undefined;
+        return Navigatable.is(widget) ? widget.getResourceUri() : undefined;
     }
 
-    protected async getWorkspaceRelativePath(uri: URI): Promise<string | undefined> {
-        const workspaceRootURI = await this.getWorkspaceRootUri();
-        if (!workspaceRootURI) {
-            return undefined;
-        }
-        const workspacePath = workspaceRootURI.path.toString();
-        const path = uri.path.toString();
-        if (!path.startsWith(workspacePath)) {
-            return undefined;
-        }
-        const relativePath = path.substr(workspacePath.length);
-        return relativePath[0] === '/' ? relativePath.substr(1) : relativePath;
+    protected getWorkspaceRelativePath(uri: URI): string | undefined {
+        const workspaceRootUri = this.getWorkspaceRootUri(uri);
+        const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
+        return path && path.toString();
     }
 }

@@ -62,7 +62,7 @@ export class FileTree extends TreeImpl {
         const uri = new URI(fileStat.uri);
         const name = await this.labelProvider.getName(uri);
         const icon = await this.labelProvider.getIcon(fileStat);
-        const id = this.toNodeId(fileStat, parent);
+        const id = this.toNodeId(uri, parent);
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
             if (DirNode.is(node)) {
@@ -86,8 +86,8 @@ export class FileTree extends TreeImpl {
         };
     }
 
-    protected toNodeId(fileStat: FileStat, parent: CompositeTreeNode): string {
-        return fileStat.uri;
+    protected toNodeId(uri: URI, parent: CompositeTreeNode): string {
+        return uri.path.toString();
     }
 }
 

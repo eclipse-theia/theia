@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ConfirmDialog, ApplicationShell, Navigatable, SaveableWidget, Saveable, Widget } from '@theia/core/lib/browser';
+import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
@@ -85,16 +85,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
     protected getDirty(uris: URI[]): URI[] {
         const dirty = new Map<string, URI>();
-        for (const widget of this.shell.widgets) {
-            if (Saveable.isDirty(widget) && Navigatable.is(widget)) {
-                const targetUri = widget.getTargetUri();
-                if (targetUri) {
-                    const key = targetUri.toString();
-                    if (!dirty.has(key) && uris.some(uri => uri.isEqualOrParent(targetUri))) {
-                        dirty.set(key, targetUri);
-                    }
-                }
-            }
+        const widgets = NavigatableWidget.getAffected(SaveableWidget.getDirty(this.shell.widgets), uris);
+        for (const [resourceUri] of widgets) {
+            dirty.set(resourceUri.toString(), resourceUri);
         }
         return [...dirty.values()];
     }
@@ -109,22 +102,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     protected async closeWithoutSaving(uri: URI): Promise<void> {
-        for (const widget of this.getAffectedWidgets(uri)) {
+        for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, uri)) {
             if (SaveableWidget.is(widget)) {
                 widget.closeWithoutSaving();
             } else {
                 widget.close();
-            }
-        }
-    }
-
-    protected *getAffectedWidgets(uri: URI): IterableIterator<Widget> {
-        for (const widget of this.shell.widgets) {
-            if (Navigatable.is(widget)) {
-                const targetUri = widget.getTargetUri();
-                if (targetUri && uri.isEqualOrParent(targetUri)) {
-                    yield widget;
-                }
             }
         }
     }

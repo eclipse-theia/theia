@@ -49,11 +49,11 @@ export class FileNavigatorModel extends FileTreeModel {
         }
     }
 
-    *getNodesByUri(nodeUri: URI): IterableIterator<TreeNode> {
+    *getNodesByUri(uri: URI): IterableIterator<TreeNode> {
         const workspace = this.root;
         if (WorkspaceNode.is(workspace)) {
             for (const root of workspace.children) {
-                const id = WorkspaceRootNode.createId(root, nodeUri);
+                const id = this.tree.createId(root, uri);
                 const node = this.getNode(id);
                 if (node) {
                     yield node;
@@ -93,15 +93,11 @@ export class FileNavigatorModel extends FileTreeModel {
     /**
      * Reveals node in the navigator by given file uri.
      *
-     * @param targetFileUri uri to file which should be revealed in the navigator
+     * @param uri uri to file which should be revealed in the navigator
      * @returns file tree node if the file with given uri was revealed, undefined otherwise
      */
-    async revealFile(targetFileUri: URI): Promise<TreeNode | undefined> {
-        if (targetFileUri.scheme !== 'file') {
-            return undefined;
-        }
-
-        let node = await this.getNodeClosestToRootByUri(targetFileUri);
+    async revealFile(uri: URI): Promise<TreeNode | undefined> {
+        let node = await this.getNodeClosestToRootByUri(uri);
 
         // success stop condition
         // we have to reach workspace root because expanded node could be inside collapsed one
@@ -117,16 +113,16 @@ export class FileNavigatorModel extends FileTreeModel {
         }
 
         // fail stop condition
-        if (targetFileUri.path.isRoot) {
+        if (uri.path.isRoot) {
             // file system root is reached but workspace root wasn't found, it means that
             // given uri is not in workspace root folder or points to not existing file.
             return undefined;
         }
 
-        if (await this.revealFile(targetFileUri.parent)) {
+        if (await this.revealFile(uri.parent)) {
             if (node === undefined) {
                 // get node if it wasn't mounted into navigator tree before expansion
-                node = await this.getNodeClosestToRootByUri(targetFileUri);
+                node = await this.getNodeClosestToRootByUri(uri);
             }
             if (ExpandableTreeNode.is(node) && !node.expanded) {
                 await this.expandNode(node);

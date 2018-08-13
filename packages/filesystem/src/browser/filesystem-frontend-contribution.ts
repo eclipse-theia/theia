@@ -22,7 +22,7 @@ import {
     NavigatableWidget, NavigatableWidgetOptions,
     Saveable, WidgetManager, StatefulWidget
 } from '@theia/core/lib/browser';
-import { FileSystemWatcher, FileChangeEvent, FileMoveEvent } from './filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent, FileMoveEvent, FileChangeType } from './filesystem-watcher';
 
 @injectable()
 export class FileSystemFrontendContribution implements FrontendApplicationContribution {
@@ -54,14 +54,14 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
 
     protected async moveWidgets(event: FileMoveEvent): Promise<void> {
         const promises: Promise<void>[] = [];
-        for (const [uri, widget] of this.resolveWidgets()) {
-            promises.push(this.moveWidget(uri, widget, event));
+        for (const [resourceUri, widget] of NavigatableWidget.get(this.shell.widgets)) {
+            promises.push(this.moveWidget(resourceUri, widget, event));
         }
         await Promise.all(promises);
     }
-    protected async moveWidget(targetUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
-        const sourceUri = this.resolveSourceUri(targetUri, widget, event);
-        if (!sourceUri) {
+    protected async moveWidget(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+        const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
+        if (!newResourceUri) {
             return;
         }
         const description = this.widgetManager.getDescription(widget);
@@ -74,7 +74,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         }
         const newWidget = await this.widgetManager.getOrCreateWidget(factoryId, <NavigatableWidgetOptions>{
             ...options,
-            uri: sourceUri.toString()
+            uri: newResourceUri.toString()
         });
         const oldState = StatefulWidget.is(widget) ? widget.storeState() : undefined;
         if (oldState && StatefulWidget.is(newWidget)) {
@@ -90,17 +90,23 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             this.shell.revealWidget(newWidget.id);
         }
     }
-    protected resolveSourceUri(targetUri: URI, widget: NavigatableWidget, event: FileMoveEvent): URI | undefined {
-        const path = event.sourceUri.relative(targetUri);
-        const newUri = path && event.targetUri.resolve(path);
-        return newUri && widget.getSourceUri(newUri);
+    protected createMoveToUri(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): URI | undefined {
+        const path = event.sourceUri.relative(resourceUri);
+        const targetUri = path && event.targetUri.resolve(path);
+        return targetUri && widget.createMoveToUri(targetUri);
     }
 
     protected readonly deletedSuffix = ' (deleted from disk)';
     protected updateWidgets(event: FileChangeEvent): void {
+        const relevantEvent = event.filter(({ type }) => type !== FileChangeType.UPDATED);
+        if (relevantEvent.length) {
+            this.doUpdateWidgets(relevantEvent);
+        }
+    }
+    protected doUpdateWidgets(event: FileChangeEvent): void {
         const dirty = new Set<string>();
         const toClose = new Map<string, NavigatableWidget[]>();
-        for (const [uri, widget] of this.resolveWidgets()) {
+        for (const [uri, widget] of NavigatableWidget.get(this.shell.widgets)) {
             this.updateWidget(uri, widget, event, { dirty, toClose });
         }
         for (const [uriString, widgets] of toClose.entries()) {
@@ -131,17 +137,6 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         } else if (FileChangeEvent.isAdded(event, uri)) {
             if (deleted) {
                 widget.title.label = widget.title.label.substr(0, label.length - this.deletedSuffix.length);
-            }
-        }
-    }
-
-    protected *resolveWidgets(): IterableIterator<[URI, NavigatableWidget]> {
-        for (const widget of this.shell.widgets) {
-            if (NavigatableWidget.is(widget)) {
-                const targetUri = widget.getTargetUri();
-                if (targetUri) {
-                    yield [targetUri, widget];
-                }
             }
         }
     }

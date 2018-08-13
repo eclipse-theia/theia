@@ -145,11 +145,11 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         return this.uri;
     }
 
-    getTargetUri(): URI |  undefined {
-        return this.uri.scheme === 'file' ? this.uri : undefined;
+    getResourceUri(): URI | undefined {
+        return this.uri;
     }
-    getSourceUri(targetUri: URI): URI |  undefined {
-        return this.uri.withPath(targetUri.path);
+    createMoveToUri(resourceUri: URI): URI | undefined {
+        return this.uri.withPath(resourceUri.path);
     }
 
     onActivateRequest(msg: Message): void {

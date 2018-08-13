@@ -1262,7 +1262,7 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * All tracked widgets.
+     * Returns a snapshot of all tracked widgets to allow async modifications.
      */
     get widgets(): ReadonlyArray<Widget> {
         return [...this.tracker.widgets];
