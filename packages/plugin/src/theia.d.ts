@@ -14,7 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// This file is heavily inspired by VSCode 'vscode.d.ts' - https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
+// 'vscode.d.ts' copyright:
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 declare module '@theia/plugin' {
+
+    /**
+     * The version of the Theia API.
+     */
+    export const version: string;
 
     export class Disposable {
 
@@ -43,9 +55,18 @@ declare module '@theia/plugin' {
          */
         label?: string;
         /**
+         * A tooltip for for command, when represented in the UI.
+         */
+        tooltip?: string;
+        /**
          * An icon class of this command.
          */
         iconClass?: string;
+        /**
+         * Arguments that the command handler should be
+         * invoked with.
+         */
+        arguments?: any[];
     }
 
     /**
@@ -1755,50 +1776,50 @@ declare module '@theia/plugin' {
         dispose(): void;
     }
 
-	/**
-	 * Options to configure the behaviour of a file open dialog.
-	 *
-	 * * Note 1: A dialog can select files, folders, or both. This is not true for Windows
-	 * which enforces to open either files or folder, but *not both*.
-	 * * Note 2: Explicitly setting `canSelectFiles` and `canSelectFolders` to `false` is futile
-	 * and the editor then silently adjusts the options to select files.
-	 */
+    /**
+     * Options to configure the behaviour of a file open dialog.
+     *
+     * * Note 1: A dialog can select files, folders, or both. This is not true for Windows
+     * which enforces to open either files or folder, but *not both*.
+     * * Note 2: Explicitly setting `canSelectFiles` and `canSelectFolders` to `false` is futile
+     * and the editor then silently adjusts the options to select files.
+     */
     export interface OpenDialogOptions {
-		/**
-		 * The resource the dialog shows when opened.
-		 */
+        /**
+         * The resource the dialog shows when opened.
+         */
         defaultUri?: Uri;
 
-		/**
-		 * A human-readable string for the open button.
-		 */
+        /**
+         * A human-readable string for the open button.
+         */
         openLabel?: string;
 
-		/**
-		 * Allow to select files, defaults to `true`.
-		 */
+        /**
+         * Allow to select files, defaults to `true`.
+         */
         canSelectFiles?: boolean;
 
-		/**
-		 * Allow to select folders, defaults to `false`.
-		 */
+        /**
+         * Allow to select folders, defaults to `false`.
+         */
         canSelectFolders?: boolean;
 
-		/**
-		 * Allow to select many files or folders.
-		 */
+        /**
+         * Allow to select many files or folders.
+         */
         canSelectMany?: boolean;
 
-		/**
-		 * A set of file filters that are used by the dialog. Each entry is a human readable label,
-		 * like "TypeScript", and an array of extensions, e.g.
-		 * ```ts
-		 * {
-		 * 	'Images': ['png', 'jpg']
-		 * 	'TypeScript': ['ts', 'tsx']
-		 * }
-		 * ```
-		 */
+        /**
+         * A set of file filters that are used by the dialog. Each entry is a human readable label,
+         * like "TypeScript", and an array of extensions, e.g.
+         * ```ts
+         * {
+         *     'Images': ['png', 'jpg']
+         *     'TypeScript': ['ts', 'tsx']
+         * }
+         * ```
+         */
         filters?: { [name: string]: string[] };
     }
 
@@ -2731,6 +2752,334 @@ declare module '@theia/plugin' {
 
     }
 
+    /**
+     * How a [completion provider](#CompletionItemProvider) was triggered
+     */
+    export enum CompletionTriggerKind {
+        /**
+         * Completion was triggered normally.
+         */
+        Invoke = 0,
+        /**
+         * Completion was triggered by a trigger character.
+         */
+        TriggerCharacter = 1,
+        /**
+         * Completion was re-triggered as current completion list is incomplete
+         */
+        TriggerForIncompleteCompletions = 2
+    }
+
+    /**
+     * Contains additional information about the context in which
+     * [completion provider](#CompletionItemProvider.provideCompletionItems) is triggered.
+     */
+    export interface CompletionContext {
+        /**
+         * How the completion was triggered.
+         */
+        readonly triggerKind: CompletionTriggerKind;
+
+        /**
+         * Character that triggered the completion item provider.
+         *
+         * `undefined` if provider was not triggered by a character.
+         *
+         * The trigger character is already in the document when the completion provider is triggered.
+         */
+        readonly triggerCharacter?: string;
+    }
+
+    /**
+     * A provider result represents the values a provider, like the [`CompletionItemProvider`](#CompletionItemProvider),
+     * may return. For once this is the actual result type `T`, like `CompletionItemProvider`, or a thenable that resolves
+     * to that type `T`. In addition, `null` and `undefined` can be returned - either directly or from a
+     * thenable.
+     *
+     */
+    export type ProviderResult<T> = T | undefined | PromiseLike<T | undefined>;
+
+    /**
+     * A text edit represents edits that should be applied
+     * to a document.
+     */
+    export class TextEdit {
+
+        /**
+         * Utility to create a replace edit.
+         *
+         * @param range A range.
+         * @param newText A string.
+         * @return A new text edit object.
+         */
+        static replace(range: Range, newText: string): TextEdit;
+
+        /**
+         * Utility to create an insert edit.
+         *
+         * @param position A position, will become an empty range.
+         * @param newText A string.
+         * @return A new text edit object.
+         */
+        static insert(position: Position, newText: string): TextEdit;
+
+        /**
+         * Utility to create a delete edit.
+         *
+         * @param range A range.
+         * @return A new text edit object.
+         */
+        static delete(range: Range): TextEdit;
+
+        /**
+         * Utility to create an eol-edit.
+         *
+         * @param eol An eol-sequence
+         * @return A new text edit object.
+         */
+        static setEndOfLine(eol: EndOfLine): TextEdit;
+
+        /**
+         * The range this edit applies to.
+         */
+        range: Range;
+
+        /**
+         * The string this edit will insert.
+         */
+        newText: string;
+
+        /**
+         * The eol-sequence used in the document.
+         *
+         * *Note* that the eol-sequence will be applied to the
+         * whole document.
+         */
+        newEol: EndOfLine;
+
+        /**
+         * Create a new TextEdit.
+         *
+         * @param range A range.
+         * @param newText A string.
+         */
+        constructor(range: Range, newText: string);
+    }
+
+
+    /**
+     * Completion item kinds.
+     */
+    export enum CompletionItemKind {
+        Text = 0,
+        Method = 1,
+        Function = 2,
+        Constructor = 3,
+        Field = 4,
+        Variable = 5,
+        Class = 6,
+        Interface = 7,
+        Module = 8,
+        Property = 9,
+        Unit = 10,
+        Value = 11,
+        Enum = 12,
+        Keyword = 13,
+        Snippet = 14,
+        Color = 15,
+        Reference = 17,
+        File = 16,
+        Folder = 18,
+        EnumMember = 19,
+        Constant = 20,
+        Struct = 21,
+        Event = 22,
+        Operator = 23,
+        TypeParameter = 24
+    }
+
+    /**
+     * A completion item represents a text snippet that is proposed to complete text that is being typed.
+     *
+     * It is sufficient to create a completion item from just a [label](#CompletionItem.label). In that
+     * case the completion item will replace the [word](#TextDocument.getWordRangeAtPosition)
+     * until the cursor with the given label or [insertText](#CompletionItem.insertText). Otherwise the
+     * the given [edit](#CompletionItem.textEdit) is used.
+     *
+     * When selecting a completion item in the editor its defined or synthesized text edit will be applied
+     * to *all* cursors/selections whereas [additionalTextEdits](CompletionItem.additionalTextEdits) will be
+     * applied as provided.
+     *
+     * @see [CompletionItemProvider.provideCompletionItems](#CompletionItemProvider.provideCompletionItems)
+     * @see [CompletionItemProvider.resolveCompletionItem](#CompletionItemProvider.resolveCompletionItem)
+     */
+    export class CompletionItem {
+
+        /**
+         * The label of this completion item. By default
+         * this is also the text that is inserted when selecting
+         * this completion.
+         */
+        label: string;
+
+        /**
+         * The kind of this completion item. Based on the kind
+         * an icon is chosen by the editor.
+         */
+        kind?: CompletionItemKind;
+
+        /**
+         * A human-readable string with additional information
+         * about this item, like type or symbol information.
+         */
+        detail?: string;
+
+        /**
+         * A human-readable string that represents a doc-comment.
+         */
+        documentation?: string | MarkdownString;
+
+        /**
+         * A string that should be used when comparing this item
+         * with other items. When `falsy` the [label](#CompletionItem.label)
+         * is used.
+         */
+        sortText?: string;
+
+        /**
+         * A string that should be used when filtering a set of
+         * completion items. When `falsy` the [label](#CompletionItem.label)
+         * is used.
+         */
+        filterText?: string;
+
+        /**
+         * Select this item when showing. *Note* that only one completion item can be selected and
+         * that the editor decides which item that is. The rule is that the *first* item of those
+         * that match best is selected.
+         */
+        preselect?: boolean;
+
+        /**
+         * A string or snippet that should be inserted in a document when selecting
+         * this completion. When `falsy` the [label](#CompletionItem.label)
+         * is used.
+         */
+        insertText?: string | SnippetString;
+
+        /**
+         * A range of text that should be replaced by this completion item.
+         *
+         * Defaults to a range from the start of the [current word](#TextDocument.getWordRangeAtPosition) to the
+         * current position.
+         *
+         * *Note:* The range must be a [single line](#Range.isSingleLine) and it must
+         * [contain](#Range.contains) the position at which completion has been [requested](#CompletionItemProvider.provideCompletionItems).
+         */
+        range?: Range;
+
+        /**
+         * An optional set of characters that when pressed while this completion is active will accept it first and
+         * then type that character. *Note* that all commit characters should have `length=1` and that superfluous
+         * characters will be ignored.
+         */
+        commitCharacters?: string[];
+
+        /**
+         * An optional array of additional [text edits](#TextEdit) that are applied when
+         * selecting this completion. Edits must not overlap with the main [edit](#CompletionItem.textEdit)
+         * nor with themselves.
+         */
+        additionalTextEdits?: TextEdit[];
+
+        /**
+         * An optional [command](#Command) that is executed *after* inserting this completion. *Note* that
+         * additional modifications to the current document should be described with the
+         * [additionalTextEdits](#CompletionItem.additionalTextEdits)-property.
+         */
+        command?: Command;
+
+        /**
+         * Creates a new completion item.
+         *
+         * Completion items must have at least a [label](#CompletionItem.label) which then
+         * will be used as insert text as well as for sorting and filtering.
+         *
+         * @param label The label of the completion.
+         * @param kind The [kind](#CompletionItemKind) of the completion.
+         */
+        constructor(label: string, kind?: CompletionItemKind);
+    }
+
+    /**
+     * Represents a collection of [completion items](#CompletionItem) to be presented
+     * in the editor.
+     */
+    export class CompletionList {
+
+        /**
+         * This list is not complete. Further typing should result in recomputing
+         * this list.
+         */
+        isIncomplete?: boolean;
+
+        /**
+         * The completion items.
+         */
+        items: CompletionItem[];
+
+        /**
+         * Creates a new completion list.
+         *
+         * @param items The completion items.
+         * @param isIncomplete The list is not complete.
+         */
+        constructor(items?: CompletionItem[], isIncomplete?: boolean);
+    }
+
+
+    /**
+     * The completion item provider interface defines the contract between plugin and IntelliSense
+     *
+     * Providers can delay the computation of the [`detail`](#CompletionItem.detail)
+     * and [`documentation`](#CompletionItem.documentation) properties by implementing the
+     * [`resolveCompletionItem`](#CompletionItemProvider.resolveCompletionItem)-function. However, properties that
+     * are needed for the initial sorting and filtering, like `sortText`, `filterText`, `insertText`, and `range`, must
+     * not be changed during resolve.
+     *
+     * Providers are asked for completions either explicitly by a user gesture or -depending on the configuration-
+     * implicitly when typing words or trigger characters.
+     */
+    export interface CompletionItemProvider {
+
+        /**
+         * Provide completion items for the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @param context How the completion was triggered.
+         *
+         * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken | undefined, context: CompletionContext): ProviderResult<CompletionItem[] | CompletionList>;
+
+        /**
+         * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
+         * or [details](#CompletionItem.detail).
+         *
+         * The editor will only resolve a completion item once.
+         *
+         * @param item A completion item currently active in the UI.
+         * @param token A cancellation token.
+         * @return The resolved completion item or a thenable that resolves to of such. It is OK to return the given
+         * `item`. When no result is returned, the given `item` will be used.
+         */
+        resolveCompletionItem?(item: CompletionItem, token?: CancellationToken): ProviderResult<CompletionItem>;
+    }
+
+
 
     export namespace languages {
         /**
@@ -2786,6 +3135,22 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unsets this configuration.
          */
         export function setLanguageConfiguration(language: string, configuration: LanguageConfiguration): Disposable;
+
+        /**
+         * Register a completion provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are sorted
+         * by their [score](#languages.match) and groups of equal score are sequentially asked for
+         * completion items. The process stops when one or many providers of a group return a
+         * result. A failing provider (rejected promise or exception) will not fail the whole
+         * operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A completion provider.
+         * @param triggerCharacters Trigger completion when the user types one of the characters, like `.` or `:`.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerCompletionItemProvider(selector: DocumentSelector, provider: CompletionItemProvider, ...triggerCharacters: string[]): Disposable;
     }
 
 }

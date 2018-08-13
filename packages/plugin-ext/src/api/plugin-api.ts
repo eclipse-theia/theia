@@ -23,6 +23,14 @@ import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction 
 import { UriComponents } from '../common/uri-components';
 import { PreferenceChange } from '@theia/core/lib/browser';
 import { ConfigurationTarget } from '../plugin/types-impl';
+import {
+    SerializedDocumentFilter,
+    CompletionContext,
+    MarkdownString,
+    Range,
+    Completion,
+    CompletionResultDto
+} from './model';
 
 export interface HostedPluginManagerExt {
     $initialize(contextPath: string, pluginMetadata: PluginMetadata): void;
@@ -227,25 +235,6 @@ export interface Position {
     readonly column: number;
 }
 
-export interface Range {
-    /**
-     * Line number on which the range starts (starts at 1).
-     */
-    readonly startLineNumber: number;
-    /**
-     * Column on which the range starts in line `startLineNumber` (starts at 1).
-     */
-    readonly startColumn: number;
-    /**
-     * Line number on which the range ends.
-     */
-    readonly endLineNumber: number;
-    /**
-     * Column on which the range ends in line `endLineNumber`.
-     */
-    readonly endColumn: number;
-}
-
 export interface Selection {
     /**
      * The line number on which the selection has started.
@@ -402,11 +391,6 @@ export interface DecorationInstanceRenderOptions extends ThemeDecorationInstance
     dark?: ThemeDecorationInstanceRenderOptions;
 }
 
-export interface MarkdownString {
-    value: string;
-    isTrusted?: boolean;
-}
-
 export interface DecorationOptions {
     range: Range;
     hoverMessage?: MarkdownString | MarkdownString[];
@@ -559,14 +543,18 @@ export interface SerializedLanguageConfiguration {
     indentationRules?: SerializedIndentationRule;
     onEnterRules?: SerializedOnEnterRule[];
 }
-export interface LanguagesExt {
 
+export interface LanguagesExt {
+    $provideCompletionItems(handle: number, resource: UriComponents, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined>;
+    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion>;
+    $releaseCompletionItems(handle: number, id: number): void;
 }
 
 export interface LanguagesMain {
     $getLanguages(): Promise<string[]>;
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
     $unregister(handle: number): void;
+    $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {

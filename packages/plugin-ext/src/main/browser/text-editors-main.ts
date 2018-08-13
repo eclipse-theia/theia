@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import {
-    Range,
     TextEditorsMain,
     MAIN_RPC_CONTEXT,
     TextEditorsExt,
@@ -28,6 +27,7 @@ import {
     DecorationRenderOptions,
     DecorationOptions
 } from '../../api/plugin-api';
+import { Range } from '../../api/model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
