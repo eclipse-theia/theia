@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
@@ -67,9 +67,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this.updateTitle();
         const configUri = this.getWorkspaceConfigFileUri();
         if (configUri) {
-            const configUriString = configUri.toString();
-            this.watcher.onFilesChanged(changes => {
-                if (changes.some(change => change.uri.toString() === configUriString)) {
+            this.watcher.onFilesChanged(event => {
+                if (FileChangeEvent.isAffected(event, configUri)) {
                     this.updateWorkspace();
                 }
             });

@@ -207,10 +207,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
      */
     async selectWidgetFileNode(widget: Widget | undefined): Promise<void> {
         if (Navigatable.is(widget)) {
-            const fileUri = widget.getTargetUri();
-            if (fileUri) {
+            const resourceUri = widget.getResourceUri();
+            if (resourceUri) {
                 const { model } = await this.widget;
-                const node = await model.revealFile(fileUri);
+                const node = await model.revealFile(resourceUri);
                 if (SelectableTreeNode.is(node)) {
                     model.selectNode(node);
                 }

@@ -38,27 +38,20 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         return this.editor.document;
     }
 
-    getTargetUri(): URI | undefined {
+    getResourceUri(): URI | undefined {
         const { uri } = this.editor;
         if (DiffUris.isDiffUri(uri)) {
-            const [left, right] = DiffUris.decode(uri);
-            if (left.scheme === 'file') {
-                return left;
-            }
-            if (right.scheme === 'file') {
-                return right;
-            }
-            return undefined;
+            return DiffUris.decode(uri)[0];
         }
-        return uri.scheme === 'file' ? uri : undefined;
+        return uri;
     }
-    getSourceUri(targetUri: URI): URI | undefined {
+    createMoveToUri(resourceUri: URI): URI | undefined {
         const { uri } = this.editor;
         if (DiffUris.isDiffUri(uri)) {
             const [left, right] = DiffUris.decode(uri);
-            return DiffUris.encode(left.withPath(targetUri.path), right.withPath(targetUri.path));
+            return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
         }
-        return uri.withPath(targetUri.path);
+        return uri.withPath(resourceUri.path);
     }
 
     protected onActivateRequest(msg: Message): void {

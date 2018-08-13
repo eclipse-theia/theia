@@ -15,28 +15,27 @@
  ********************************************************************************/
 
 import URI from '../common/uri';
-import { BaseWidget } from './widgets';
+import { MaybeArray } from '../common/types';
+import { Widget, BaseWidget } from './widgets';
 import { WidgetOpenHandler, WidgetOpenerOptions } from './widget-open-handler';
 
 /**
- * Each widget which holds an uri to a workspace file and wants to be able to reveal that file in navigator,
- * (e.g. editor, image viewer, diff editor, etc.) has to implement this interface and provide the file uri on demand.
- * No additional registration is needed.
+ * `Navigatable` provides an access to an URI of an underyling instance of `Resource`.
  */
 export interface Navigatable {
     /**
-     * Return an underlying file uri.
+     * Return an underlying resource URI.
      */
-    getTargetUri(): URI | undefined;
+    getResourceUri(): URI | undefined;
     /**
-     * Return a source uri for the given file URI.
+     * Creates a new URI to which this navigatable should moved based on the given target resource URI.
      */
-    getSourceUri(targetUri: URI): URI | undefined;
+    createMoveToUri(resourceUri: URI): URI | undefined;
 }
 
 export namespace Navigatable {
     export function is(arg: Object | undefined): arg is Navigatable {
-        return !!arg && 'getTargetUri' in arg && typeof (arg as any).getTargetUri === 'function';
+        return !!arg && 'getResourceUri' in arg && 'createMoveToUri' in arg;
     }
 }
 
@@ -44,6 +43,26 @@ export type NavigatableWidget = BaseWidget & Navigatable;
 export namespace NavigatableWidget {
     export function is(arg: Object | undefined): arg is NavigatableWidget {
         return arg instanceof BaseWidget && Navigatable.is(arg);
+    }
+    export function* getAffected<T extends Widget>(
+        widgets: IterableIterator<T> | ArrayLike<T>,
+        context: MaybeArray<URI>
+    ): IterableIterator<[URI, T & NavigatableWidget]> {
+        const uris = Array.isArray(context) ? context : [context];
+        return get(widgets, resourceUri => uris.some(uri => uri.isEqualOrParent(resourceUri)));
+    }
+    export function* get<T extends Widget>(
+        widgets: IterableIterator<T> | ArrayLike<T>,
+        filter: (resourceUri: URI) => boolean = () => true
+    ): IterableIterator<[URI, T & NavigatableWidget]> {
+        for (const widget of widgets) {
+            if (NavigatableWidget.is(widget)) {
+                const resourceUri = widget.getResourceUri();
+                if (resourceUri && filter(resourceUri)) {
+                    yield [resourceUri, widget];
+                }
+            }
+        }
     }
 }
 

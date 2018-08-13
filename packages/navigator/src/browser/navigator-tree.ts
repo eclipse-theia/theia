@@ -38,12 +38,16 @@ export class FileNavigatorTree extends FileTree {
         return this.filter.filter(super.resolveChildren(parent));
     }
 
-    protected toNodeId(childFileStat: FileStat, parent: CompositeTreeNode): string {
+    protected toNodeId(uri: URI, parent: CompositeTreeNode): string {
         const workspaceRootNode = WorkspaceRootNode.find(parent);
         if (workspaceRootNode) {
-            return WorkspaceRootNode.createId(workspaceRootNode, childFileStat.uri);
+            return this.createId(workspaceRootNode, uri);
         }
-        return childFileStat.uri;
+        return super.toNodeId(uri, parent);
+    }
+    createId(root: WorkspaceRootNode, uri: URI): string {
+        const id = super.toNodeId(uri, root);
+        return id === root.id ? id : `${root.id}:${id}`;
     }
 
     async createWorkspaceRoot(rootFolder: FileStat, workspaceNode: WorkspaceNode): Promise<WorkspaceRootNode> {
@@ -89,13 +93,5 @@ export namespace WorkspaceRootNode {
             }
             return find(node.parent);
         }
-    }
-
-    export function createId(node: WorkspaceRootNode, uri: string | URI): string {
-        const uriString = uri.toString();
-        if (node.uri.toString() === uriString) {
-            return uriString;
-        }
-        return `${node.uri.path.toString()}:${uriString}`;
     }
 }
