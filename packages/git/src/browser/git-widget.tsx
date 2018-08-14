@@ -82,6 +82,8 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
+        this.title.caption = "Git";
+        this.title.iconClass = "fa fa-code-fork";
         this.scrollContainer = 'changesOuterContainer';
         this.addClass('theia-git');
     }

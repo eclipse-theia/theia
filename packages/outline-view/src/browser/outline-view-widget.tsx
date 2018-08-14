@@ -57,6 +57,8 @@ export class OutlineViewWidget extends TreeWidget {
 
         this.id = 'outline-view';
         this.title.label = 'Outline';
+        this.title.caption = 'Outline';
+        this.title.iconClass = 'fa fa-list';
         this.addClass('theia-outline-view');
     }
 
