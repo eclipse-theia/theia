@@ -20,6 +20,9 @@ import { Position, Range } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { ILanguageClient } from '@theia/languages/lib/browser/language-client-services';
+import { SemanticHighlightFeature } from '@theia/languages/lib/browser/semantic-highlighting/semantic-highlighting-feature';
+import { SemanticHighlightingParams } from '@theia/languages/lib/browser/semantic-highlighting/semantic-highlighting-protocol';
 
 /**
  * Service for registering and managing semantic highlighting decorations in the code editors for multiple languages.
@@ -164,7 +167,7 @@ export namespace SemanticHighlightingService {
         for (let i = 0; i < buffer.byteLength / Uint32Array.BYTES_PER_ELEMENT; i = i + 2) {
             const character = dataView.getUint32(i * Uint32Array.BYTES_PER_ELEMENT);
             const lengthAndScope = dataView.getUint32((i + 1) * Uint32Array.BYTES_PER_ELEMENT);
-            const length = lengthAndScope >> LENGTH_SHIFT;
+            const length = lengthAndScope >>> LENGTH_SHIFT;
             const scope = lengthAndScope & SCOPE_MASK;
             result.push({
                 character,
@@ -196,6 +199,39 @@ export namespace SemanticHighlightingService {
             dataView.setUint32(j++ * Uint32Array.BYTES_PER_ELEMENT, lengthAndScope);
         }
         return base64Encode(buffer);
+    }
+
+    /**
+     * Creates a new text document feature to handle the semantic highlighting capabilities of the protocol.
+     * When the feature gets initialized, it delegates to the semantic highlighting service and registers the TextMate scopes received as part of the server capabilities.
+     * Plus, each time when a notification is received by the client, the semantic highlighting service will be used as the consumer and the highlighting information
+     * will be used to decorate the text editor.
+     */
+    export function createNewFeature(service: SemanticHighlightingService, client: ILanguageClient & Readonly<{ languageId: string }>): SemanticHighlightFeature {
+        const { languageId } = client;
+        const initializeCallback = (id: string, scopes: string[][]): Disposable => service.register(id, scopes);
+        const consumer = (params: SemanticHighlightingParams): void => {
+            const toRanges: (tuple: [number, string | undefined]) => SemanticHighlightingRange[] = tuple => {
+                const [line, tokens] = tuple;
+                if (!tokens) {
+                    return [
+                        {
+                            start: Position.create(line, 0),
+                            end: Position.create(line, 0),
+                        }
+                    ];
+                }
+                return SemanticHighlightingService.decode(tokens).map(token => ({
+                    start: Position.create(line, token.character),
+                    end: Position.create(line, token.character + token.length),
+                    scope: token.scope
+                }));
+            };
+            const ranges = params.lines.map(line => [line.line, line.tokens]).map(toRanges).reduce((acc, current) => acc.concat(current), []);
+            const uri = new URI(params.textDocument.uri);
+            service.decorate(languageId, uri, ranges);
+        };
+        return new SemanticHighlightFeature(client, initializeCallback, consumer);
     }
 
 }
