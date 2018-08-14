@@ -79,7 +79,9 @@ export class LanguageClientFactory {
                     })
             }
         });
-        const defaultErrorHandler = client.createDefaultErrorHandler();
+        let defaultErrorHandler = client.createDefaultErrorHandler();
+        // reset the error handler on a new ws connection
+        this.connectionProvider.onClose(() => defaultErrorHandler = client.createDefaultErrorHandler());
         return client;
     }
 

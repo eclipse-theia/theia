@@ -47,10 +47,11 @@ export class WebSocketConnectionProvider {
         const socket = this.createWebSocket(url);
         socket.onerror = console.error;
         socket.onclose = ({ code, reason }) => {
-            for (const channel of this.channels.values()) {
+            const channels = [...this.channels.values()];
+            this.channels.clear();
+            for (const channel of channels) {
                 channel.fireClose(code, reason);
             }
-            this.channels.clear();
         };
         socket.onmessage = ({ data }) => {
             const message: WebSocketChannel.Message = JSON.parse(data);
@@ -88,7 +89,11 @@ export class WebSocketConnectionProvider {
         if (this.socket.readyState === WebSocket.OPEN) {
             this.openChannel(handler, options);
         } else {
-            this.socket.addEventListener('open', () => this.openChannel(handler, options), { once: true });
+            const openChannel = () => {
+                this.socket.removeEventListener('open', openChannel);
+                this.openChannel(handler, options);
+            };
+            this.socket.addEventListener('open', openChannel);
         }
     }
 
