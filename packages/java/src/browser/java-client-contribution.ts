@@ -15,24 +15,16 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { v4 } from 'uuid';
-import URI from '@theia/core/lib/common/uri';
-import { DisposableCollection, CommandService } from '@theia/core/lib/common/';
+import { CommandService } from '@theia/core/lib/common/';
 import { StatusBar, StatusBarEntry, StatusBarAlignment } from '@theia/core/lib/browser';
-import { SemanticHighlightingService, SemanticHighlightingRange, Position } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
+import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import {
     Window,
     ILanguageClient,
     BaseLanguageClientContribution,
     Workspace, Languages,
     LanguageClientFactory,
-    LanguageClientOptions,
-    TextDocumentFeature,
-    TextDocumentRegistrationOptions,
-    ClientCapabilities,
-    ServerCapabilities,
-    Disposable,
-    DocumentSelector
+    LanguageClientOptions
 } from '@theia/languages/lib/browser';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import {
@@ -40,8 +32,6 @@ import {
     ActionableMessage,
     StatusReport,
     StatusNotification,
-    SemanticHighlight,
-    SemanticHighlightingParams
 } from './java-protocol';
 
 @injectable()
@@ -80,7 +70,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
 
     createLanguageClient(): ILanguageClient {
         const client: ILanguageClient & Readonly<{ languageId: string }> = Object.assign(super.createLanguageClient(), { languageId: this.id });
-        client.registerFeature(new SemanticHighlightFeature(client, this.semanticHighlightingService));
+        client.registerFeature(SemanticHighlightingService.createNewFeature(this.semanticHighlightingService, client));
         return client;
     }
 
@@ -120,75 +110,6 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
             }
         };
         return options;
-    }
-
-}
-
-// TODO: This will be part of the protocol.
-export class SemanticHighlightFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
-
-    protected readonly languageId: string;
-    protected readonly toDispose: DisposableCollection;
-
-    constructor(client: ILanguageClient & Readonly<{ languageId: string }>, protected readonly semanticHighlightingService: SemanticHighlightingService) {
-        super(client, SemanticHighlight.type);
-        this.languageId = client.languageId;
-        this.toDispose = new DisposableCollection();
-    }
-
-    fillClientCapabilities(capabilities: ClientCapabilities): void {
-        if (!capabilities.textDocument) {
-            capabilities.textDocument = {};
-        }
-        // tslint:disable-next-line:no-any
-        (capabilities.textDocument as any).semanticHighlightingCapabilities = {
-            semanticHighlighting: true
-        };
-    }
-
-    initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (!documentSelector) {
-            return;
-        }
-        const capabilitiesExt: ServerCapabilities & { semanticHighlighting?: { scopes: string[][] | undefined } } = capabilities;
-        if (capabilitiesExt.semanticHighlighting) {
-            const { scopes } = capabilitiesExt.semanticHighlighting;
-            if (scopes && scopes.length > 0) {
-                this.toDispose.push(this.semanticHighlightingService.register(this.languageId, scopes));
-                const id = v4();
-                this.register(this.messages, {
-                    id,
-                    registerOptions: Object.assign({}, { documentSelector: documentSelector }, capabilitiesExt.semanticHighlighting)
-                });
-            }
-        }
-    }
-
-    protected registerLanguageProvider(): Disposable {
-        this._client.onNotification(SemanticHighlight.type, this.applySemanticHighlighting.bind(this));
-        return Disposable.create(() => this.toDispose.dispose());
-    }
-
-    protected applySemanticHighlighting(params: SemanticHighlightingParams): void {
-        const toRanges: (tuple: [number, string | undefined]) => SemanticHighlightingRange[] = tuple => {
-            const [line, tokens] = tuple;
-            if (!tokens) {
-                return [
-                    {
-                        start: Position.create(line, 0),
-                        end: Position.create(line, 0),
-                    }
-                ];
-            }
-            return SemanticHighlightingService.decode(tokens).map(token => ({
-                start: Position.create(line, token.character),
-                end: Position.create(line, token.character + token.length),
-                scope: token.scope
-            }));
-        };
-        const ranges = params.lines.map(line => [line.line, line.tokens]).map(toRanges).reduce((acc, current) => acc.concat(current), []);
-        const uri = new URI(params.textDocument.uri);
-        this.semanticHighlightingService.decorate(this.languageId, uri, ranges);
     }
 
 }
