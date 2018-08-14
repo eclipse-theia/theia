@@ -183,7 +183,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
 
     upload(node: DirNode, items: DataTransferItemList): void {
         for (let i = 0; i < items.length; i++) {
-            const entry = items[i].webkitGetAsEntry() as WebKitEntry;
+            const entry = items[i].webkitGetAsEntry();
             this.uploadEntry(node.uri, entry);
         }
     }
@@ -212,7 +212,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
      *  Read all entries within a folder by block of 100 files or folders until the
      *  whole folder has been read.
      */
-    protected readEntries(entry: WebKitDirectoryEntry, cb: (items: any) => void): void {
+    protected readEntries(entry: WebKitDirectoryEntry, cb: (items: WebKitEntry[]) => void): void {
         const reader = entry.createReader();
         const getEntries = () => {
             reader.readEntries(results => {
@@ -232,7 +232,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     }
 
     protected uploadFileEntry(base: URI, entry: WebKitFileEntry): void {
-        entry.file(file => this.uploadFile(base, file as any));
+        entry.file(file => this.uploadFile(base, file));
     }
 
     protected uploadFile(base: URI, file: File): void {
