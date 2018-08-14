@@ -62,7 +62,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected term: Xterm.Terminal;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<MessageConnection | undefined>;
+    protected waitForConnection: Deferred<MessageConnection> | undefined;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -289,7 +289,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.update();
     }
 
-    protected termOpened = false;
     protected needsResize = true;
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
@@ -297,15 +296,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
 
-        if (!this.termOpened) {
-            this.term.open(this.node);
-            this.termOpened = true;
-
-            if (isFirefox) {
-                // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
-                (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
-            }
-        }
+        this.open();
 
         if (this.needsResize) {
             this.resizeTerminal();
@@ -321,11 +312,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        this.waitForConnection = new Deferred<MessageConnection | undefined>();
+        this.term.reset();
+        const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.termOpened && this.term.write(data));
+                connection.onNotification('onData', (data: string) => this.write(data));
 
                 const sendData = (data?: string) => data && connection.sendRequest('write', data);
                 this.term.on('data', sendData);
@@ -333,7 +325,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
                 this.toDisposeOnConnect.push(connection);
                 connection.listen();
-                this.waitForConnection.resolve(connection);
+                if (waitForConnection) {
+                    waitForConnection.resolve(connection);
+                }
             }
         }, { reconnecting: false });
     }
@@ -343,13 +337,37 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
+    protected termOpened = false;
+    protected initialData = '';
+    protected open(): void {
+        if (this.termOpened) {
+            return;
+        }
+        this.term.open(this.node);
+        if (this.initialData) {
+            this.term.write(this.initialData);
+        }
+        this.termOpened = true;
+        this.initialData = '';
+
+        if (isFirefox) {
+            // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
+            (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
+        }
+    }
+    protected write(data: string): void {
+        if (this.termOpened) {
+            this.term.write(data);
+        } else {
+            this.initialData += data;
+        }
+    }
+
     sendText(text: string): void {
         if (this.waitForConnection) {
-            this.waitForConnection.promise.then(connection => {
-                if (connection) {
-                    connection.sendRequest('write', text);
-                }
-            });
+            this.waitForConnection.promise.then(connection =>
+                connection.sendRequest('write', text)
+            );
         }
     }
 
