@@ -9602,10 +9602,10 @@ typescript@2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.1.tgz#c3ccb16ddaa0b2314de031e7e6fee89e5ba346bc"
 
-typescript@^3.1.3:
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.3.tgz#01b70247a6d3c2467f70c45795ef5ea18ce191d5"
-  integrity sha512-+81MUSyX+BaSo+u2RbozuQk/UWx6hfG0a5gHu4ANEM4sU96XbuIyAB+rWBW1u70c6a5QuZfuYICn3s2UjuHUpA==
+typescript@next:
+  version "3.2.0-dev.20181101"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.2.0-dev.20181101.tgz#bd38f9b2977c396e8225ee66ad75c4593e31b763"
+  integrity sha512-7OL68e1Ab4L5EyKsscjgta0i6tiwzzeYCnmd6sLOJyy0GAvvuNKbtHQlICBhF227z8K0P8r/OQoL32If5So2Cw==
 
 ua-parser-js@^0.7.18:
   version "0.7.18"

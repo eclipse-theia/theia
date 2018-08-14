@@ -25,7 +25,7 @@
   "scripts": {
     "prepare": "yarn run clean && yarn build",
     "clean": "rimraf lib",
-    "build": "tsc -p compile.tsconfig.json",
+    "build": "tsc -b",
     "watch": "yarn build -w",
     "test": "echo 'skip'",
     "docs": "echo 'skip'"

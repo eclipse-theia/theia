@@ -1,0 +1,42 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib",
+    "lib": [
+      "es6",
+      "dom",
+      "webworker"
+    ],
+    "composite": true
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../debug-nodejs"
+    },
+    {
+      "path": "../editor"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../monaco"
+    },
+    {
+      "path": "../navigator"
+    },
+    {
+      "path": "../plugin"
+    },
+    {
+      "path": "../workspace"
+    }
+  ]
+}
