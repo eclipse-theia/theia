@@ -87,7 +87,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             ]
         });
         monaco.languages.onLanguage(TYPESCRIPT_REACT_LANGUAGE_ID, () => {
-            monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, this.configuration);
+            monaco.languages.setLanguageConfiguration(TYPESCRIPT_REACT_LANGUAGE_ID, this.configuration);
         });
     }
 
