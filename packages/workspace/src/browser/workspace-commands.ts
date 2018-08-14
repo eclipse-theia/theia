@@ -34,9 +34,9 @@ import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
-    export const OPEN_FILE: Command = {
-        id: 'workspace:openFile',
-        label: 'Open File...'
+    export const OPEN: Command = {
+        id: 'workspace:open',
+        label: 'Open...'
     };
     export const OPEN_WORKSPACE: Command = {
         id: 'workspace:openWorkspace',

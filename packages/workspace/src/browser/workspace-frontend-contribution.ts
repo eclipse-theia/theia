@@ -38,11 +38,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(WorkspaceCommands.OPEN_FILE, {
+        commands.registerCommand(WorkspaceCommands.OPEN, {
             isEnabled: () => true,
             execute: () => this.showFileDialog({
-                title: WorkspaceCommands.OPEN_FILE.label!,
-                canSelectFolders: false,
+                title: WorkspaceCommands.OPEN.label!,
+                canSelectFolders: true,
                 canSelectFiles: true
             })
         });
@@ -66,7 +66,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: WorkspaceCommands.OPEN_FILE.id,
+            commandId: WorkspaceCommands.OPEN.id,
             order: 'a00'
         });
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
