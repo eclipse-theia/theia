@@ -39,13 +39,21 @@ export const workspacePreferenceSchema: PreferenceSchema = {
                 type: 'boolean'
             },
             default: false
+        },
+        'workspace.recentWorkspaceLimit': {
+            description: 'Recent workspace limit',
+            additionalProperties: {
+                type: 'number'
+            },
+            default: 10
         }
     }
 };
 
 export interface WorkspaceConfiguration {
     'workspace.preserveWindow': boolean,
-    'workspace.supportMultiRootWorkspace': boolean
+    'workspace.supportMultiRootWorkspace': boolean,
+    'workspace.recentWorkspaceLimit': number
 }
 
 export const WorkspacePreferences = Symbol('WorkspacePreferences');
