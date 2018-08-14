@@ -188,7 +188,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected readonly openWorkspace = () => this.doOpenWorkspace();
     protected doOpenWorkspace() {
-        this.commandService.executeCommand(WorkspaceCommands.OPEN.id);
+        this.commandService.executeCommand(WorkspaceCommands.OPEN_WORKSPACE.id);
     }
 
     /**

@@ -45,10 +45,10 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(FileSystem) protected readonly filesystem: FileSystem;
 
     constructor() {
-        super ({
+        super({
             widgetId: PREFERENCES_CONTAINER_WIDGET_ID,
             widgetName: 'Preferences',
-            defaultWidgetOptions: {area: 'main'}
+            defaultWidgetOptions: { area: 'main' }
         });
     }
 
@@ -61,7 +61,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: PREFERENCES_COMMAND.id
+            commandId: PREFERENCES_COMMAND.id,
+            order: 'a30'
         });
     }
 
@@ -80,7 +81,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             await this.filesystem.createFile(wsUri.toString(), { content: this.getPreferenceTemplateForScope('workspace') });
         }
 
-        super.openView({activate: true});
+        super.openView({ activate: true });
     }
 
     private getPreferenceTemplateForScope(scope: string): string {

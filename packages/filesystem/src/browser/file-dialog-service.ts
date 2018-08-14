@@ -31,7 +31,7 @@ export class FileDialogService {
     async show(props: FileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined>;
     async show(props: FileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined>;
     async show(props: FileDialogProps, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined> {
-        const title = props && props.title ? props.title : 'Open';
+        const title = props.title || 'Open';
         const folderToOpen = folder || await this.fileSystem.getCurrentUserHome();
         if (folderToOpen) {
             const rootUri = new URI(folderToOpen.uri).parent;
@@ -42,7 +42,7 @@ export class FileDialogService {
             ]);
             if (rootStat) {
                 const rootNode = DirNode.createRoot(rootStat, name, label);
-                const dialog = this.fileDialogFactory({ title });
+                const dialog = this.fileDialogFactory(Object.assign(props, { title }));
                 dialog.model.navigateTo(rootNode);
                 return await dialog.open();
             }

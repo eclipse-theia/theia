@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog } from '@theia/core/lib/browser';
-import { FileDialogFactory, FileStatNode, FileDialogService } from '@theia/filesystem/lib/browser';
+import { FileDialogFactory, FileStatNode, FileDialogProps, FileDialogService } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
@@ -38,9 +38,21 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(WorkspaceCommands.OPEN, {
+        commands.registerCommand(WorkspaceCommands.OPEN_FILE, {
             isEnabled: () => true,
-            execute: () => this.showFileDialog()
+            execute: () => this.showFileDialog({
+                title: WorkspaceCommands.OPEN_FILE.label!,
+                canSelectFolders: false,
+                canSelectFiles: true
+            })
+        });
+        commands.registerCommand(WorkspaceCommands.OPEN_WORKSPACE, {
+            isEnabled: () => true,
+            execute: () => this.showFileDialog({
+                title: WorkspaceCommands.OPEN_WORKSPACE.label!,
+                canSelectFolders: true,
+                canSelectFiles: false
+            })
         });
         commands.registerCommand(WorkspaceCommands.CLOSE, {
             isEnabled: () => this.workspaceService.opened,
@@ -54,19 +66,25 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: WorkspaceCommands.OPEN.id
+            commandId: WorkspaceCommands.OPEN_FILE.id,
+            order: 'a00'
+        });
+        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
+            commandId: WorkspaceCommands.OPEN_WORKSPACE.id,
+            order: 'a10'
         });
         menus.registerMenuAction(CommonMenus.FILE_CLOSE, {
             commandId: WorkspaceCommands.CLOSE.id
         });
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
-            commandId: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id
+            commandId: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id,
+            order: 'a20'
         });
     }
 
-    protected showFileDialog(): void {
+    protected showFileDialog(props: FileDialogProps): void {
         this.workspaceService.roots.then(async roots => {
-            const node = await this.fileDialogService.show({ title: WorkspaceCommands.OPEN.label! }, roots[0]);
+            const node = await this.fileDialogService.show(props, roots[0]);
             this.openFile(node);
         });
     }
@@ -84,7 +102,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
 
     protected async closeWorkspace(): Promise<void> {
         const dialog = new ConfirmDialog({
-            title: 'Close Workspace',
+            title: WorkspaceCommands.CLOSE.label!,
             msg: 'Do you really want to close the workspace?'
         });
         if (await dialog.open()) {
