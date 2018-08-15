@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog } from '@theia/core/lib/browser';
-import { FileDialogFactory, FileStatNode, FileDialogProps, FileDialogService } from '@theia/filesystem/lib/browser';
+import { FileStatNode, FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
@@ -28,7 +28,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(StorageService) protected readonly workspaceStorage: StorageService,
@@ -82,7 +81,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         });
     }
 
-    protected showFileDialog(props: FileDialogProps): void {
+    protected showFileDialog(props: OpenFileDialogProps): void {
         this.workspaceService.roots.then(async roots => {
             const node = await this.fileDialogService.show(props, roots[0]);
             this.openFile(node);

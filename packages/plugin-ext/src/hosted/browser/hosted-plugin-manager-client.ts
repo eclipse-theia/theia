@@ -21,7 +21,7 @@ import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { FileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
+import { OpenFileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
 import { HostedPluginServer } from '../../common/plugin-protocol';
 
 /**
@@ -85,8 +85,8 @@ export class HostedPluginManagerClient {
     protected readonly hostedPluginServer: HostedPluginServer;
     @inject(MessageService)
     protected readonly messageService: MessageService;
-    @inject(FileDialogFactory)
-    protected readonly fileDialogFactory: FileDialogFactory;
+    @inject(OpenFileDialogFactory)
+    protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
     @inject(WindowService)
@@ -200,7 +200,7 @@ export class HostedPluginManagerClient {
         const label = await this.labelProvider.getIcon(workspaceFolder);
         const rootNode = DirNode.createRoot(workspaceFolder, name, label);
 
-        const dialog = this.fileDialogFactory({
+        const dialog = this.openFileDialogFactory({
             title: HostedPluginCommands.SELECT_PATH.label!,
             canSelectFiles: false
         });

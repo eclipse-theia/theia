@@ -18,15 +18,9 @@ import { InputBoxOptions } from '@theia/plugin';
 import { interfaces } from 'inversify';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { RPCProtocol } from '../../api/rpc-protocol';
-import { QuickOpenExt, QuickOpenMain, MAIN_RPC_CONTEXT, PickOptions, PickOpenItem, OpenDialogOptionsMain } from '../../api/plugin-api';
+import { QuickOpenExt, QuickOpenMain, MAIN_RPC_CONTEXT, PickOptions, PickOpenItem } from '../../api/plugin-api';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { QuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
-import URI from '@theia/core/lib/common/uri';
-import { DirNode, FileDialogProps, FileDialogFactory } from '@theia/filesystem/lib/browser';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common';
-import { LabelProvider } from '@theia/core/lib/browser';
-import { UriSelection } from '@theia/core/lib/common/selection';
 
 export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
 
@@ -37,21 +31,12 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
     private acceptor: ((items: QuickOpenItem[]) => void) | undefined;
     private items: QuickOpenItem[] | undefined;
 
-    private workspaceService: WorkspaceService;
-    private fileSystem: FileSystem;
-    private labelProvider: LabelProvider;
-    private fileDialogFactory: FileDialogFactory;
-
     private activeElement: HTMLElement | undefined;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
         this.delegate = container.get(MonacoQuickOpenService);
         this.quickInput = container.get(QuickInputService);
-        this.workspaceService = container.get(WorkspaceService);
-        this.fileSystem = container.get(FileSystem);
-        this.labelProvider = container.get(LabelProvider);
-        this.fileDialogFactory = container.get(FileDialogFactory);
     }
 
     private cleanUp() {
@@ -118,83 +103,11 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         return this.quickInput.open(options);
     }
 
-    async $showOpenDialog(options: OpenDialogOptionsMain): Promise<string[] | undefined> {
-        let rootStat;
-
-        // Try to use preconfigured default URI as root
-        if (options.defaultUri) {
-            rootStat = await this.fileSystem.getFileStat(options.defaultUri);
-        }
-
-        // Try to use workspace service root if there is no preconfigured URI
-        if (!rootStat) {
-            rootStat = (await this.workspaceService.roots)[0];
-        }
-
-        // Try to use current user home if root folder is still not taken
-        if (!rootStat) {
-            rootStat = await this.fileSystem.getCurrentUserHome();
-        }
-
-        // Fail of root not fount
-        if (!rootStat) {
-            throw new Error('Unable to find the rootStat');
-        }
-
-        // Take the info for root node
-        const rootUri = new URI(rootStat.uri);
-        const name = this.labelProvider.getName(rootUri);
-        const icon = await this.labelProvider.getIcon(rootUri);
-        const rootNode = DirNode.createRoot(rootStat, name, icon);
-
-        try {
-            // Determine proper title for the dialog
-            const canSelectFiles = typeof options.canSelectFiles === 'boolean' ? options.canSelectFiles : true;
-            const canSelectFolders = typeof options.canSelectFolders === 'boolean' ? options.canSelectFolders : true;
-
-            let title;
-            if (canSelectFiles && canSelectFolders) {
-                title = 'Open';
-            } else {
-                if (canSelectFiles) {
-                    title = 'Open File';
-                } else {
-                    title = 'Open Folder';
-                }
-
-                if (options.canSelectMany) {
-                    title += '(s)';
-                }
-            }
-
-            // Create dialog props
-            const dialogProps = {
-                title: title,
-                openLabel: options.openLabel,
-                canSelectFiles: options.canSelectFiles,
-                canSelectFolders: options.canSelectFolders,
-                canSelectMany: options.canSelectMany,
-                filters: options.filters
-            } as FileDialogProps;
-
-            // Open the dialog
-            const dialog = this.fileDialogFactory(dialogProps);
-            dialog.model.navigateTo(rootNode);
-            const result = await dialog.open();
-
-            // Return the result
-            return UriSelection.getUris(result).map(uri => uri.path.toString());
-        } catch (error) {
-            console.log(error);
-        }
-
-        return undefined;
-    }
-
     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         this.acceptor = acceptor;
         if (this.items) {
             acceptor(this.items);
         }
     }
+
 }

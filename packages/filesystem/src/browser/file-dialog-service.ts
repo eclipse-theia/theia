@@ -20,17 +20,17 @@ import { MaybeArray } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '../common';
 import { FileStatNode, DirNode } from './file-tree';
-import { FileDialogFactory, FileDialogProps } from './file-dialog';
+import { OpenFileDialogFactory, OpenFileDialogProps } from './file-dialog';
 
 @injectable()
 export class FileDialogService {
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
-    @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory;
+    @inject(OpenFileDialogFactory) protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
-    async show(props: FileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined>;
-    async show(props: FileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined>;
-    async show(props: FileDialogProps, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined> {
+    async show(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined>;
+    async show(props: OpenFileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined>;
+    async show(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined> {
         const title = props.title || 'Open';
         const folderToOpen = folder || await this.fileSystem.getCurrentUserHome();
         if (folderToOpen) {
@@ -42,7 +42,7 @@ export class FileDialogService {
             ]);
             if (rootStat) {
                 const rootNode = DirNode.createRoot(rootStat, name, label);
-                const dialog = this.fileDialogFactory(Object.assign(props, { title }));
+                const dialog = this.openFileDialogFactory(Object.assign(props, { title }));
                 dialog.model.navigateTo(rootNode);
                 return await dialog.open();
             }

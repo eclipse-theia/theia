@@ -17,7 +17,7 @@
 import { interfaces, Container } from 'inversify';
 import { Tree, TreeModel, TreeProps, defaultTreeProps } from '@theia/core/lib/browser';
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../file-tree';
-import { FileDialog, FileDialogProps } from './file-dialog';
+import { OpenFileDialog, OpenFileDialogProps, SaveFileDialog, SaveFileDialogProps } from './file-dialog';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 import { FileDialogTree } from './file-dialog-tree';
@@ -35,18 +35,27 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
     child.bind(FileDialogTree).toSelf();
     child.rebind(Tree).toService(FileDialogTree);
 
-    child.bind(FileDialog).toSelf();
-
     return child;
 }
 
-export function createFileDialog(parent: interfaces.Container, props: FileDialogProps): FileDialog {
+export function createOpenFileDialog(parent: interfaces.Container, props: OpenFileDialogProps): OpenFileDialog {
     const container = createFileDialogContainer(parent);
     container.rebind(TreeProps).toConstantValue({
         ...defaultTreeProps,
         multiSelect: props.canSelectMany
     });
 
-    container.bind(FileDialogProps).toConstantValue(props);
-    return container.get(FileDialog);
+    container.bind(OpenFileDialogProps).toConstantValue(props);
+    container.bind(OpenFileDialog).toSelf();
+
+    return container.get(OpenFileDialog);
+}
+
+export function createSaveFileDialog(parent: interfaces.Container, props: SaveFileDialogProps): SaveFileDialog {
+    const container = createFileDialogContainer(parent);
+
+    container.bind(SaveFileDialogProps).toConstantValue(props);
+    container.bind(SaveFileDialog).toSelf();
+
+    return container.get(SaveFileDialog);
 }

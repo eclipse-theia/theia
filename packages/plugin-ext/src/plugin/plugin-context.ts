@@ -63,10 +63,12 @@ import { OutputChannelRegistryExt } from './output-channel-registry';
 import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
+import { DialogsExtImpl } from './dialogs';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
+    const dialogsExt = new DialogsExtImpl(rpc);
     const messageRegistryExt = new MessageRegistryExt(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
@@ -156,7 +158,10 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
         },
         showOpenDialog(options: theia.OpenDialogOptions): PromiseLike<Uri[] | undefined> {
-            return quickOpenExt.showOpenDialog(options);
+            return dialogsExt.showOpenDialog(options);
+        },
+        showSaveDialog(options: theia.SaveDialogOptions): PromiseLike<Uri | undefined> {
+            return dialogsExt.showSaveDialog(options);
         },
         // tslint:disable-next-line:no-any
         setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {

@@ -17,7 +17,14 @@
 import { ContainerModule, interfaces } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { FileDialogFactory, createFileDialog, FileDialogProps } from '@theia/filesystem/lib/browser';
+import {
+    OpenFileDialogFactory,
+    SaveFileDialogFactory,
+    OpenFileDialogProps,
+    SaveFileDialogProps,
+    createOpenFileDialog,
+    createSaveFileDialog
+} from '@theia/filesystem/lib/browser';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
@@ -49,10 +56,16 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
         ).inSingletonScope();
     }
 
-    bind(FileDialogFactory).toFactory(ctx =>
-        (props: FileDialogProps) =>
-            createFileDialog(ctx.container, props)
+    bind(OpenFileDialogFactory).toFactory(ctx =>
+        (props: OpenFileDialogProps) =>
+            createOpenFileDialog(ctx.container, props)
     );
+
+    bind(SaveFileDialogFactory).toFactory(ctx =>
+        (props: SaveFileDialogProps) =>
+            createSaveFileDialog(ctx.container, props)
+    );
+
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
     bind(WorkspaceDeleteHandler).toSelf().inSingletonScope();
