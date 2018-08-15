@@ -55,7 +55,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.title.caption = LABEL;
-        this.title.iconClass = 'fa fa-files-o';
+        this.title.iconClass = 'fa navigator-tab-icon';
         this.addClass(CLASS);
         this.initialize();
         this.searchBox = searchBoxFactory(SearchBoxProps.DEFAULT);

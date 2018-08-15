@@ -66,7 +66,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.scrollContainer = 'git-history-list-container';
         this.title.label = "Git History";
         this.title.caption = "Git History";
-        this.title.iconClass = "fa fa-history";
+        this.title.iconClass = "fa git-history-tab-icon";
         this.addClass('theia-git');
     }
 

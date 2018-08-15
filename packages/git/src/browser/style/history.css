@@ -184,3 +184,7 @@
     width: 20px!important;
     height: 20px;
 }
+
+.git-history-tab-icon::before {
+    content: "\f1da"
+ }
