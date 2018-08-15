@@ -18,7 +18,6 @@ import { ContainerModule } from 'inversify';
 import { BatContribution } from './bat';
 import { ClojureContribution } from './clojure';
 import { CoffeescriptContribution } from './coffeescript';
-import { CSharpContribution } from './csharp';
 import { CssContribution } from './css';
 import { FSharpContribution } from './fsharp';
 import { GroovyContribution } from './groovy';
@@ -56,9 +55,6 @@ export default new ContainerModule(bind => {
 
     bind(CoffeescriptContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CoffeescriptContribution);
-
-    bind(CSharpContribution).toSelf().inSingletonScope();
-    bind(LanguageGrammarDefinitionContribution).toService(CSharpContribution);
 
     bind(CssContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
