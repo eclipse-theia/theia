@@ -1823,6 +1823,33 @@ declare module '@theia/plugin' {
         filters?: { [name: string]: string[] };
     }
 
+	/**
+	 * Options to configure the behaviour of a file save dialog.
+	 */
+    export interface SaveDialogOptions {
+		/**
+		 * The resource the dialog shows when opened.
+		 */
+        defaultUri?: Uri;
+
+		/**
+		 * A human-readable string for the save button.
+		 */
+        saveLabel?: string;
+
+		/**
+		 * A set of file filters that are used by the dialog. Each entry is a human readable label,
+		 * like "TypeScript", and an array of extensions, e.g.
+		 * ```ts
+		 * {
+		 * 	'Images': ['png', 'jpg']
+		 * 	'TypeScript': ['ts', 'tsx']
+		 * }
+		 * ```
+		 */
+        filters?: { [name: string]: string[] };
+    }
+
     /**
      * Definition of the terminal emulator.
      */
@@ -2111,6 +2138,15 @@ declare module '@theia/plugin' {
          * @returns A promise that resolves to the selected resources or `undefined`.
          */
         export function showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined>;
+
+		/**
+		 * Shows a file save dialog to the user which allows to select a file
+		 * for saving-purposes.
+		 *
+		 * @param options Options that control the dialog.
+		 * @returns A promise that resolves to the selected resource or `undefined`.
+		 */
+        export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
 
         /**
          * Represents the current window's state.

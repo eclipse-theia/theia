@@ -24,19 +24,56 @@ import { LocationListRenderer } from '../location';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters } from './file-dialog-tree-filters-renderer';
+import URI from '@theia/core/lib/common/uri';
 
-export const FileDialogFactory = Symbol('FileDialogFactory');
-export interface FileDialogFactory {
-    (props: FileDialogProps): FileDialog;
+export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
+export interface OpenFileDialogFactory {
+    (props: OpenFileDialogProps): OpenFileDialog;
 }
 
+export const SaveFileDialogFactory = Symbol('SaveFileDialogFactory');
+export interface SaveFileDialogFactory {
+    (props: SaveFileDialogProps): SaveFileDialog;
+}
+
+export const SAVE_DIALOG_CLASS = 'theia-SaveFileDialog';
+
 export const NAVIGATION_PANEL_CLASS = 'theia-NavigationPanel';
+export const NAVIGATION_BACK_CLASS = 'theia-NavigationBack';
+export const NAVIGATION_FORWARD_CLASS = 'theia-NavigationForward';
+export const NAVIGATION_LOCATION_LIST_PANEL_CLASS = 'theia-LocationListPanel';
+
+export const FILTERS_PANEL_CLASS = 'theia-FiltersPanel';
+export const FILTERS_LABEL_CLASS = 'theia-FiltersLabel';
+export const FILTERS_LIST_PANEL_CLASS = 'theia-FiltersListPanel';
+
+export const FILENAME_PANEL_CLASS = 'theia-FileNamePanel';
+export const FILENAME_LABEL_CLASS = 'theia-FileNameLabel';
+export const FILENAME_TEXTFIELD_CLASS = 'theia-FileNameTextField';
+
 export const CONTROL_PANEL_CLASS = 'theia-ControlPanel';
 
-@injectable()
 export class FileDialogProps extends DialogProps {
+
     /**
-     * A human-readable string for the open button.
+     * A set of file filters that are used by the dialog. Each entry is a human readable label,
+     * like "TypeScript", and an array of extensions, e.g.
+     * ```ts
+     * {
+     * 	'Images': ['png', 'jpg']
+     * 	'TypeScript': ['ts', 'tsx']
+     * }
+     * ```
+     */
+    filters?: FileDialogTreeFilters;
+
+}
+
+@injectable()
+export class OpenFileDialogProps extends FileDialogProps {
+
+    /**
+     * A human-readable string for the accept button.
      */
     openLabel?: string;
 
@@ -55,21 +92,19 @@ export class FileDialogProps extends DialogProps {
      */
     canSelectMany?: boolean;
 
-    /**
-     * A set of file filters that are used by the dialog. Each entry is a human readable label,
-     * like "TypeScript", and an array of extensions, e.g.
-     * ```ts
-     * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
-     * }
-     * ```
-     */
-    filters?: FileDialogTreeFilters;
 }
 
 @injectable()
-export class FileDialog extends AbstractDialog<MaybeArray<FileStatNode>> {
+export class SaveFileDialogProps extends FileDialogProps {
+
+    /**
+     * A human-readable string for the accept button.
+     */
+    saveLabel?: string;
+
+}
+
+export abstract class FileDialog<T> extends AbstractDialog<T> {
 
     protected readonly back: HTMLSpanElement;
     protected readonly forward: HTMLSpanElement;
@@ -91,9 +126,12 @@ export class FileDialog extends AbstractDialog<MaybeArray<FileStatNode>> {
         this.contentNode.appendChild(navigationPanel);
 
         navigationPanel.appendChild(this.back = createIconButton('fa', 'fa-chevron-left'));
+        this.back.classList.add(NAVIGATION_BACK_CLASS);
         navigationPanel.appendChild(this.forward = createIconButton('fa', 'fa-chevron-right'));
+        this.forward.classList.add(NAVIGATION_FORWARD_CLASS);
 
         this.locationListRenderer = this.createLocationListRenderer();
+        this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
         navigationPanel.appendChild(this.locationListRenderer.host);
 
         this.treeFiltersRenderer = this.createFileTreeFiltersRenderer();
@@ -130,15 +168,17 @@ export class FileDialog extends AbstractDialog<MaybeArray<FileStatNode>> {
 
     protected appendFiltersPanel(): void {
         if (this.treeFiltersRenderer) {
-            const navigationPanel = document.createElement('div');
-            navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
-            this.contentNode.appendChild(navigationPanel);
+            const filtersPanel = document.createElement('div');
+            filtersPanel.classList.add(FILTERS_PANEL_CLASS);
+            this.contentNode.appendChild(filtersPanel);
 
             const titlePanel = document.createElement('div');
             titlePanel.innerHTML = 'Format:';
-            navigationPanel.appendChild(titlePanel);
+            titlePanel.classList.add(FILTERS_LABEL_CLASS);
+            filtersPanel.appendChild(titlePanel);
 
-            navigationPanel.appendChild(this.treeFiltersRenderer.host);
+            this.treeFiltersRenderer.host.classList.add(FILTERS_LIST_PANEL_CLASS);
+            filtersPanel.appendChild(this.treeFiltersRenderer.host);
         }
     }
 
@@ -155,15 +195,33 @@ export class FileDialog extends AbstractDialog<MaybeArray<FileStatNode>> {
         this.appendFiltersPanel();
 
         this.appendCloseButton('Cancel');
-        this.appendAcceptButton(this.props.openLabel ? this.props.openLabel : 'Open');
+        this.appendAcceptButton(this.getAcceptButtonLabel());
 
         this.addKeyListener(this.back, Key.ENTER, () => this.model.navigateBackward(), 'click');
         this.addKeyListener(this.forward, Key.ENTER, () => this.model.navigateForward(), 'click');
         super.onAfterAttach(msg);
     }
 
+    protected abstract getAcceptButtonLabel(): string;
+
     protected onActivateRequest(msg: Message): void {
         this.widget.activate();
+    }
+
+}
+
+@injectable()
+export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
+
+    constructor(
+        @inject(OpenFileDialogProps) readonly props: OpenFileDialogProps,
+        @inject(FileDialogWidget) readonly widget: FileDialogWidget
+    ) {
+        super(props, widget);
+    }
+
+    protected getAcceptButtonLabel(): string {
+        return this.props.openLabel ? this.props.openLabel : 'Open';
     }
 
     isValid(value: MaybeArray<FileStatNode>): string {
@@ -215,6 +273,89 @@ export class FileDialog extends AbstractDialog<MaybeArray<FileStatNode>> {
         } else {
             return this.widget.model.selectedFileStatNodes;
         }
+    }
+
+}
+
+@injectable()
+export class SaveFileDialog extends FileDialog<URI | undefined> {
+
+    protected fileNameField: HTMLInputElement | undefined;
+
+    constructor(
+        @inject(SaveFileDialogProps) readonly props: SaveFileDialogProps,
+        @inject(FileDialogWidget) readonly widget: FileDialogWidget
+    ) {
+        super(props, widget);
+        widget.addClass(SAVE_DIALOG_CLASS);
+    }
+
+    protected getAcceptButtonLabel(): string {
+        return this.props.saveLabel ? this.props.saveLabel : 'Save';
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        // Update file name field when changing a selection
+        if (this.fileNameField) {
+            if (this.widget.model.selectedFileStatNodes.length === 1) {
+                const fileStat = this.widget.model.selectedFileStatNodes[0];
+                if (!fileStat.fileStat.isDirectory) {
+                    this.fileNameField.value = fileStat.name;
+                }
+            } else {
+                this.fileNameField.value = '';
+            }
+        }
+
+        // Continue updating the dialog
+        super.onUpdateRequest(msg);
+    }
+
+    isValid(value: URI | undefined): string {
+        if (this.fileNameField && this.fileNameField.value) {
+            return '';
+        }
+
+        // Returning a space disables the 'Save' button and doesn't show an error message at the bottom
+        return ' ';
+    }
+
+    get value(): URI | undefined {
+        if (this.fileNameField && this.widget.model.selectedFileStatNodes.length === 1) {
+            const node = this.widget.model.selectedFileStatNodes[0];
+
+            if (node.fileStat.isDirectory) {
+                return node.uri.resolve(this.fileNameField.value);
+            }
+
+            return node.uri.parent.resolve(this.fileNameField.value);
+        }
+
+        return undefined;
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+
+        const fileNamePanel = document.createElement('div');
+        fileNamePanel.classList.add(FILENAME_PANEL_CLASS);
+        this.contentNode.appendChild(fileNamePanel);
+
+        const titlePanel = document.createElement('div');
+        titlePanel.innerHTML = 'Name:';
+        titlePanel.classList.add(FILENAME_LABEL_CLASS);
+        fileNamePanel.appendChild(titlePanel);
+
+        this.fileNameField = document.createElement('input');
+        this.fileNameField.type = 'text';
+        this.fileNameField.classList.add(FILENAME_TEXTFIELD_CLASS);
+        fileNamePanel.appendChild(this.fileNameField);
+
+        this.fileNameField.onkeyup = () => {
+            const value = this.value;
+            const error = this.isValid(value);
+            this.setErrorMessage(error);
+        };
     }
 
 }

@@ -13,13 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem, OpenDialogOptionsMain } from '../api/plugin-api';
-import { QuickPickOptions, QuickPickItem, InputBoxOptions, OpenDialogOptions } from '@theia/plugin';
+import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem } from '../api/plugin-api';
+import { QuickPickOptions, QuickPickItem, InputBoxOptions } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { anyPromise } from '../api/async-util';
 import { hookCancellationToken } from '../api/async-util';
-import Uri from 'vscode-uri';
 
 export type Item = string | QuickPickItem;
 
@@ -115,34 +114,6 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
         const promise = this.proxy.$input(options!, typeof this.validateInputHandler === 'function');
         return hookCancellationToken(token, promise);
-    }
-
-    showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined> {
-        const optionsMain = {
-            openLabel: options.openLabel,
-            defaultUri: options.defaultUri ? options.defaultUri.path : undefined,
-            canSelectFiles: options.canSelectFiles,
-            canSelectFolders: options.canSelectFolders,
-            canSelectMany: options.canSelectMany,
-            filters: options.filters
-        } as OpenDialogOptionsMain;
-
-        return new Promise((resolve, reject) => {
-            this.proxy.$showOpenDialog(optionsMain).then(result => {
-                if (result) {
-                    const uris = [];
-                    for (let i = 0; i < result.length; i++) {
-                        const uri = Uri.parse('file://' + result[i]);
-                        uris.push(uri);
-                    }
-                    resolve(uris);
-                } else {
-                    resolve(undefined);
-                }
-            }).catch(reason => {
-                reject(reason);
-            });
-        });
     }
 
 }
