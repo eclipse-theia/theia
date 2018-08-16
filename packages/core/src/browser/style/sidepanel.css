@@ -46,6 +46,7 @@
   position: relative;
   padding: 12px 8px;
   background: var(--theia-layout-color2);
+  flex-direction: column;
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
@@ -85,8 +86,7 @@
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon {
-  position: absolute;
-  transform: scale(1.5) translate(3px,1px);
+  transform: scale(1.5);
   max-height: 15px;
 }
 
@@ -98,6 +98,7 @@
 .p-TabBar.theia-app-right .p-TabBar-tabLabel {
   transform-origin: top left 0;
   transform: rotate(90deg) translateY(-50%);
+  align-items: flex-start;
 }
 
 #theia-left-content-panel.theia-mod-collapsed,
