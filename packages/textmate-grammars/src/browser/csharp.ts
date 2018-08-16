@@ -18,41 +18,49 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class HandlebarsContribution implements LanguageGrammarDefinitionContribution {
+export class CSharpContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'handlebars';
-    readonly scopeName = 'text.html.handlebars';
+    readonly id = 'csharp';
+    readonly scopeName = 'source.cs';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: ['.handlebars', '.hbs', '.hjs'],
-            aliases: ['Handlebars', 'handlebars'],
-            mimetypes: ['text/x-handlebars-template']
+            extensions: ['.cs'],
+            aliases: ['CSharp', 'C#', 'csharp']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
-                blockComment: ['{{!--', '--}}']
+                lineComment: '//',
+                blockComment: ['/*', '*/']
             },
             brackets: [
-                ['<!--', '-->'],
-                ['<', '>'],
-                ['{{', '}}'],
                 ['{', '}'],
+                ['[', ']'],
                 ['(', ')']
             ],
             autoClosingPairs: [
                 { open: '{', close: '}' },
                 { open: '[', close: ']' },
                 { open: '(', close: ')' },
-                { open: '"', close: '"' },
-                { open: '\'', close: '\'' }
+                { open: '"', close: '"', notIn: ['string', 'comment'] },
+                { open: '\'', close: '\'', notIn: ['string', 'comment'] },
+                { open: '/*', close: '*/', notIn: ['string'] }
             ],
             surroundingPairs: [
+                { open: '{', close: '}' },
+                { open: '[', close: ']' },
+                { open: '(', close: ')' },
                 { open: '<', close: '>' },
                 { open: '"', close: '"' },
                 { open: '\'', close: '\'' }
-            ]
+            ],
+            folding: {
+                markers: {
+                    start: new RegExp('^\\s*#region\\b'),
+                    end: new RegExp('^\\s*#endregion\\b')
+                }
+            }
         });
         const grammar = require('../../data/csharp.tmLanguage.json');
         registry.registerTextMateGrammarScope(this.scopeName, {
