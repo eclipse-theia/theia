@@ -71,7 +71,7 @@ describe('node-extension-server', function () {
         fs.removeSync(appProjectPath);
     });
 
-    it('search', function () {
+    it.skip('search', function () {
         this.timeout(30000);
 
         return server.search({
@@ -177,7 +177,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('list with search', function () {
+    it.skip('list with search', function () {
         this.timeout(50000);
 
         return server.list({
