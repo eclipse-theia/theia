@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { CommandService } from '@theia/core/lib/common/';
+import { MessageConnection } from 'vscode-jsonrpc';
+import { CommandService } from '@theia/core/lib/common';
 import { StatusBar, StatusBarEntry, StatusBarAlignment } from '@theia/core/lib/browser';
 import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import {
@@ -68,8 +69,8 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         super.onReady(languageClient);
     }
 
-    createLanguageClient(): ILanguageClient {
-        const client: ILanguageClient & Readonly<{ languageId: string }> = Object.assign(super.createLanguageClient(), { languageId: this.id });
+    protected createLanguageClient(connection: MessageConnection): ILanguageClient {
+        const client: ILanguageClient & Readonly<{ languageId: string }> = Object.assign(super.createLanguageClient(connection), { languageId: this.id });
         client.registerFeature(SemanticHighlightingService.createNewFeature(this.semanticHighlightingService, client));
         return client;
     }
