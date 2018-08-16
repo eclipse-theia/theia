@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { MessageConnection } from 'vscode-jsonrpc';
 import { CommandRegistry, Disposable } from '@theia/core/lib/common';
-import { ErrorAction, RevealOutputChannelOn } from 'monaco-languageclient';
+import { ErrorAction, RevealOutputChannelOn, CloseAction } from 'monaco-languageclient';
 import {
     Workspace, Languages, Window, Services,
     ILanguageClient, LanguageClientOptions, MonacoLanguageClient,
-    createConnection, ConnectionErrorHandler, ConnectionCloseHandler, LanguageContribution
+    createConnection, LanguageContribution
 } from './language-client-services';
 
 @injectable()
@@ -32,8 +32,7 @@ export class LanguageClientFactory {
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(Window) protected readonly window: Window,
-        @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider
+        @inject(Window) protected readonly window: Window
     ) {
         Services.install({
             workspace,
@@ -45,12 +44,13 @@ export class LanguageClientFactory {
         });
     }
 
+    // tslint:disable-next-line:no-any
     protected registerCommand(id: string, callback: (...args: any[]) => any, thisArg?: any): Disposable {
         const execute = callback.bind(thisArg);
         return this.registry.registerCommand({ id }, { execute });
     }
 
-    get(contribution: LanguageContribution, clientOptions: LanguageClientOptions): ILanguageClient {
+    get(contribution: LanguageContribution, clientOptions: LanguageClientOptions, connection: MessageConnection): ILanguageClient {
         if (clientOptions.revealOutputChannelOn === undefined) {
             clientOptions.revealOutputChannelOn = RevealOutputChannelOn.Never;
         }
@@ -58,31 +58,19 @@ export class LanguageClientFactory {
             clientOptions.errorHandler = {
                 // ignore connection errors
                 error: () => ErrorAction.Continue,
-                closed: () => defaultErrorHandler.closed()
+                closed: () => CloseAction.DoNotRestart
             };
         }
-        const client = new MonacoLanguageClient({
+        let initializationFailedHandler = clientOptions.initializationFailedHandler;
+        clientOptions.initializationFailedHandler = e => !!initializationFailedHandler && initializationFailedHandler(e);
+        connection.onDispose(() => initializationFailedHandler = () => false);
+        return new MonacoLanguageClient({
             name: contribution.name,
             clientOptions,
             connectionProvider: {
-                get: (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) =>
-                    new Promise(resolve => {
-                        this.connectionProvider.listen({
-                            path: LanguageContribution.getPath(contribution),
-                            onConnection: messageConnection => {
-                                const connection = createConnection(messageConnection, errorHandler, closeHandler);
-                                resolve(connection);
-                            },
-                        },
-                            { reconnecting: false }
-                        );
-                    })
+                get: async (errorHandler, closeHandler) => createConnection(connection, errorHandler, closeHandler)
             }
         });
-        let defaultErrorHandler = client.createDefaultErrorHandler();
-        // reset the error handler on a new ws connection
-        this.connectionProvider.onClose(() => defaultErrorHandler = client.createDefaultErrorHandler());
-        return client;
     }
 
 }
