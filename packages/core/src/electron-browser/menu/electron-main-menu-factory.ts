@@ -69,11 +69,14 @@ export class ElectronMainMenuFactory {
                         label: menu.label,
                         submenu: this.fillMenuTemplate([], menu)
                     });
-                } else {
-                    // or just a separator?
-                    items.push({
-                        type: 'separator'
-                    });
+                } else if (menu.children.length > 0) {
+                    // do not put a separator above the first group
+                    if (items.length > 0) {
+                        // or just a separator?
+                        items.push({
+                            type: 'separator'
+                        });
+                    }
                     // followed by the elements
                     this.fillMenuTemplate(items, menu);
                 }
