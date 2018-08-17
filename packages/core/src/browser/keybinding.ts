@@ -489,7 +489,7 @@ export class KeybindingRegistry {
         return commandId === KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND;
     }
 
-    setKeymap(scope: KeybindingScope, bindings: Keybinding[]) {
+    setKeymap(scope: KeybindingScope, bindings: Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
         this.doRegisterKeybindings(bindings, scope);
     }
@@ -498,14 +498,14 @@ export class KeybindingRegistry {
      * Reset keybindings for a specific scope
      * @param scope scope to reset the keybindings for
      */
-    resetKeybindingsForScope(scope: KeybindingScope) {
+    resetKeybindingsForScope(scope: KeybindingScope): void {
         this.keymaps[scope] = [];
     }
 
     /**
      * Reset keybindings for all scopes(only leaves the default keybindings mapped)
      */
-    resetKeybindings() {
+    resetKeybindings(): void {
         for (let i = KeybindingScope.DEFAULT + 1; i < KeybindingScope.END; i++) {
             this.keymaps[i] = [];
         }
