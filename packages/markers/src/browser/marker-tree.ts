@@ -55,14 +55,14 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         const markers = this.markerManager.findMarkers({ uri });
         if (markers.length <= 0) {
             if (MarkerInfoNode.is(existing)) {
-                this.removeChild(existing.parent, existing);
+                CompositeTreeNode.removeChild(existing.parent, existing);
                 this.removeNode(existing);
                 this.fireChanged();
             }
             return;
         }
         const node = MarkerInfoNode.is(existing) ? existing : await this.createMarkerInfo(id, uri);
-        this.addChild(node.parent, node);
+        CompositeTreeNode.addChild(node.parent, node);
         const children = this.getMarkerNodes(node, markers);
         node.numberOfMarkers = markers.length;
         this.setChildren(node, children);

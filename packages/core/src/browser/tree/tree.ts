@@ -144,6 +144,54 @@ export namespace CompositeTreeNode {
         }
         return parent.children.findIndex(child => TreeNode.equals(node, child));
     }
+
+    export function addChildren(parent: CompositeTreeNode, children: TreeNode[]): CompositeTreeNode {
+        for (const child of children) {
+            addChild(parent, child);
+        }
+        return parent;
+    }
+
+    export function addChild(parent: CompositeTreeNode, child: TreeNode): CompositeTreeNode {
+        const children = parent.children as TreeNode[];
+        const index = children.findIndex(value => value.id === child.id);
+        if (index !== -1) {
+            children.splice(index, 1, child);
+            setParent(child, index, parent);
+        } else {
+            children.push(child);
+            setParent(child, parent.children.length - 1, parent);
+        }
+        return parent;
+    }
+
+    export function removeChild(parent: CompositeTreeNode, child: TreeNode): void {
+        const children = parent.children as TreeNode[];
+        const index = children.findIndex(value => value.id === child.id);
+        if (index === -1) {
+            return;
+        }
+        children.splice(index, 1);
+        const { previousSibling, nextSibling } = child;
+        if (previousSibling) {
+            Object.assign(previousSibling, { nextSibling });
+        }
+        if (nextSibling) {
+            Object.assign(nextSibling, { previousSibling });
+        }
+    }
+
+    export function setParent(child: TreeNode, index: number, parent: CompositeTreeNode): void {
+        const previousSibling = parent.children[index - 1];
+        const nextSibling = parent.children[index + 1];
+        Object.assign(child, { parent, previousSibling, nextSibling });
+        if (previousSibling) {
+            Object.assign(previousSibling, { nextSibling: child });
+        }
+        if (nextSibling) {
+            Object.assign(nextSibling, { previousSibling: child });
+        }
+    }
 }
 
 /**
@@ -246,33 +294,9 @@ export class TreeImpl implements Tree {
         if (CompositeTreeNode.is(node)) {
             const { children } = node;
             children.forEach((child, index) => {
-                this.setParent(child, index, node);
+                CompositeTreeNode.setParent(child, index, node);
                 this.addNode(child);
             });
-        }
-    }
-
-    protected setParent(child: TreeNode, index: number, parent: CompositeTreeNode): void {
-        const previousSibling = parent.children[index - 1];
-        const nextSibling = parent.children[index + 1];
-        Object.assign(child, { parent, previousSibling, nextSibling });
-    }
-
-    protected addChild(parent: CompositeTreeNode, child: TreeNode): void {
-        const index = parent.children.findIndex(value => value.id === child.id);
-        if (index !== -1) {
-            (parent.children as TreeNode[]).splice(index, 1, child);
-            this.setParent(child, index, parent);
-        } else {
-            (parent.children as TreeNode[]).push(child);
-            this.setParent(child, parent.children.length - 1, parent);
-        }
-    }
-
-    protected removeChild(parent: CompositeTreeNode, child: TreeNode): void {
-        const index = parent.children.findIndex(value => value.id === child.id);
-        if (index !== -1) {
-            (parent.children as TreeNode[]).splice(index, 1);
         }
     }
 
