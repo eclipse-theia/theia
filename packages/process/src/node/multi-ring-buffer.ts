@@ -105,7 +105,7 @@ export class MultiRingBuffer {
         } else {
             this.encoding = 'utf8';
         }
-        this.buffer = Buffer.alloc(this.maxSize, this.encoding);
+        this.buffer = Buffer.alloc(this.maxSize);
         this.readers = new Map();
         this.streams = new Map();
     }
