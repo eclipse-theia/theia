@@ -14,27 +14,40 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as Ajv from 'ajv';
+import * as jsoncparser from 'jsonc-parser';
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection, CommandRegistry, ILogger, ResourceProvider, Resource, MessageService } from '@theia/core/lib/common';
-import { FrontendApplicationContribution, FrontendApplication, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser';
-import { UserStorageUri } from '@theia/userstorage/lib/browser/';
-import parseKeybindings from '../common/keymaps-validation';
+import { ResourceProvider, Resource, MessageService } from '@theia/core/lib/common';
+import { KeybindingRegistry, KeybindingScope, OpenerService, open, Keybinding } from '@theia/core/lib/browser';
+import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 
-export const keymapsUri: URI = new URI('keymaps.json').withScheme(UserStorageUri.SCHEME);
+export const keymapsSchema = {
+    type: 'array',
+    items: {
+        type: 'object',
+        properties: {
+            keybinding: {
+                type: 'string'
+            },
+            command: {
+                type: 'string'
+            },
+            context: {
+                type: 'string'
+            },
+        },
+        required: ['command', 'keybinding'],
+        optional: ['context'],
+        additionalProperties: false,
+    }
+};
 
 @injectable()
-export class KeymapsService implements Disposable, FrontendApplicationContribution {
-
-    protected readonly toDispose = new DisposableCollection();
-    protected keymapsResource: Resource;
-    protected ready = false;
+export class KeymapsService {
 
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
-
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
 
     @inject(KeybindingRegistry)
     protected readonly keyBindingRegistry: KeybindingRegistry;
@@ -42,58 +55,51 @@ export class KeymapsService implements Disposable, FrontendApplicationContributi
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ILogger)
-    protected readonly logger: ILogger;
+    @inject(OpenerService)
+    protected readonly opener: OpenerService;
+
+    protected resource: Resource;
+
+    protected readonly validate: Ajv.ValidateFunction;
+
+    constructor() {
+        // https://github.com/epoberezkin/ajv#options
+        this.validate = new Ajv({
+            jsonPointers: true
+        }).compile(keymapsSchema);
+    }
 
     @postConstruct()
     protected async init() {
-        // this.ajv.compile(keymapsSchema);
-        const resource = await this.resourceProvider(keymapsUri);
-        this.keymapsResource = resource;
-
-        this.toDispose.push(this.keymapsResource);
-
-        if (this.keymapsResource.onDidChangeContents) {
-            this.keymapsResource.onDidChangeContents(() => {
-                this.onDidChangeKeymap();
-            });
+        this.resource = await this.resourceProvider(new URI('keymaps.json').withScheme(UserStorageUri.SCHEME));
+        this.reconcile();
+        if (this.resource.onDidChangeContents) {
+            this.resource.onDidChangeContents(() => this.reconcile());
         }
-
-        this.parseAndSetKeybindings(await this.keymapsResource.readContents());
     }
 
-    dispose(): void {
-        this.toDispose.dispose();
+    protected async reconcile(): Promise<void> {
+        const keybindings = await this.parseKeybindings();
+        this.keyBindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
     }
 
-    onStart(app?: FrontendApplication): void {
-        this.ready = true;
-    }
-
-    protected onDidChangeKeymap(): void {
-        this.keymapsResource.readContents().then(content => {
-            try {
-                this.parseAndSetKeybindings(content);
-                this.messageService.info(`[${this.keymapsResource.uri}] updated the user keybindings`);
-            } catch (error) {
-                const errors = error.messages || [error.message];
-                for (const message of errors) {
-                    this.messageService.error(`[${this.keymapsResource.uri}] ${message}`);
-                }
+    protected async parseKeybindings(): Promise<Keybinding[]> {
+        try {
+            const content = await this.resource.readContents();
+            const strippedContent = jsoncparser.stripComments(content);
+            const bindings = jsoncparser.parse(strippedContent);
+            if (this.validate(bindings)) {
+                return bindings;
             }
-        });
-    }
-
-    /**
-     * Actually parses some raw content and tries to update the USER keybindings.
-     * Throws if the parsing or validation fail.
-     *
-     * @param content the raw text defining the keybindings
-     */
-    protected parseAndSetKeybindings(content: string): void {
-        const keybindings = parseKeybindings(content); // can throw
-        if (keybindings.length) {
-            this.keyBindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
+            return [];
+        } catch (e) {
+            console.error(e);
+            return [];
         }
     }
+
+    open(): void {
+        open(this.opener, this.resource.uri);
+    }
+
 }
