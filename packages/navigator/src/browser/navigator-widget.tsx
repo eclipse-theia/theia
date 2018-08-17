@@ -22,7 +22,7 @@ import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribu
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode,
-    LabelProvider, Widget, SelectableTreeNode
+    LabelProvider, Widget, SelectableTreeNode, CompositeTreeNode
 } from '@theia/core/lib/browser';
 import { FileTreeWidget, FileNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -100,6 +100,14 @@ export class FileNavigatorWidget extends FileTreeWidget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.selectionService.selection = this.model.selectedNodes;
+        const root = this.model.root;
+        if (CompositeTreeNode.is(root) && root.children.length === 1) {
+            const child = root.children[0];
+            if (SelectableTreeNode.is(child) && !child.selected && ExpandableTreeNode.is(child)) {
+                this.model.selectNode(child);
+                this.model.expandNode(child);
+            }
+        }
     }
 
     protected async initialize(): Promise<void> {
