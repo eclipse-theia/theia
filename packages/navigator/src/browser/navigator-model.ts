@@ -97,6 +97,9 @@ export class FileNavigatorModel extends FileTreeModel {
      * @returns file tree node if the file with given uri was revealed, undefined otherwise
      */
     async revealFile(uri: URI): Promise<TreeNode | undefined> {
+        if (!uri.path.isAbsolute) {
+            return undefined;
+        }
         let node = await this.getNodeClosestToRootByUri(uri);
 
         // success stop condition
