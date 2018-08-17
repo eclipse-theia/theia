@@ -14,34 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as Ajv from 'ajv';
-import * as jsoncparser from 'jsonc-parser';
 import { inject, injectable, postConstruct } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, Resource, MessageService } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingScope, OpenerService, open, Keybinding } from '@theia/core/lib/browser';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
-import URI from '@theia/core/lib/common/uri';
-
-export const keymapsSchema = {
-    type: 'array',
-    items: {
-        type: 'object',
-        properties: {
-            keybinding: {
-                type: 'string'
-            },
-            command: {
-                type: 'string'
-            },
-            context: {
-                type: 'string'
-            },
-        },
-        required: ['command', 'keybinding'],
-        optional: ['context'],
-        additionalProperties: false,
-    }
-};
+import { KeymapsParser } from './keymaps-parser';
 
 @injectable()
 export class KeymapsService {
@@ -58,16 +36,10 @@ export class KeymapsService {
     @inject(OpenerService)
     protected readonly opener: OpenerService;
 
+    @inject(KeymapsParser)
+    protected readonly parser: KeymapsParser;
+
     protected resource: Resource;
-
-    protected readonly validate: Ajv.ValidateFunction;
-
-    constructor() {
-        // https://github.com/epoberezkin/ajv#options
-        this.validate = new Ajv({
-            jsonPointers: true
-        }).compile(keymapsSchema);
-    }
 
     @postConstruct()
     protected async init() {
@@ -86,12 +58,7 @@ export class KeymapsService {
     protected async parseKeybindings(): Promise<Keybinding[]> {
         try {
             const content = await this.resource.readContents();
-            const strippedContent = jsoncparser.stripComments(content);
-            const bindings = jsoncparser.parse(strippedContent);
-            if (this.validate(bindings)) {
-                return bindings;
-            }
-            return [];
+            return this.parser.parse(content);
         } catch (e) {
             console.error(e);
             return [];
