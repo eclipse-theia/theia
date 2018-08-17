@@ -45,9 +45,9 @@ export class KeymapsFrontendContribution implements CommandContribution, MenuCon
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
+        menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: KeymapsCommands.OPEN_KEYMAPS.id,
-            order: 'a40'
+            order: 'a20'
         });
     }
 

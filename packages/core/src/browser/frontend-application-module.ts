@@ -176,5 +176,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     }).inSingletonScope();
 
     bind(ThemeService).toDynamicValue(() => ThemeService.get());
-    bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
+
+    bind(ThemingCommandContribution).toSelf().inSingletonScope();
+    [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
+        bind(serviceIdentifier).toService(ThemingCommandContribution),
+    );
 });

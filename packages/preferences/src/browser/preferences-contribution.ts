@@ -57,9 +57,9 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
+        menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: PREFERENCES_COMMAND.id,
-            order: 'a30'
+            order: 'a10'
         });
     }
 

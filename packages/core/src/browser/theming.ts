@@ -20,6 +20,8 @@ import { Emitter, Event } from '../common/event';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open/quick-open-model';
 import { QuickOpenService } from './quick-open/quick-open-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { MenuContribution, MenuModelRegistry } from '../common/';
+import { CommonMenus } from './common-frontend-contribution';
 
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
@@ -127,7 +129,7 @@ export class ThemeService {
 }
 
 @injectable()
-export class ThemingCommandContribution implements CommandContribution, CommandHandler, Command, QuickOpenModel {
+export class ThemingCommandContribution implements CommandContribution, MenuContribution, CommandHandler, Command, QuickOpenModel {
 
     id = 'change_theme';
     label = 'Change Color Theme';
@@ -141,6 +143,14 @@ export class ThemingCommandContribution implements CommandContribution, CommandH
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(this, this);
+    }
+
+    registerMenus(menus: MenuModelRegistry) {
+        menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
+            commandId: this.id,
+            label: this.label,
+            order: 'a30'
+        });
     }
 
     execute() {
