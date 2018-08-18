@@ -250,33 +250,61 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
 ## Building on Windows
 
-Run cmd.exe as an administrator and install `choco` by copy-pasting the command
-to your console:
+1. Run cmd.exe as an Administrator. You can do this by pressing <kbd>Win</kbd>+<kbd>r</kbd> and entering `runas /user:Administrator cmd` in the open text box, and then clicking OK or pressing <kbd>Enter</kbd>.
 
+2. Install Chocolately (which will give you the `choco` command) by copy and pasting the command below into the Command Prompt, and then pressing the <kbd>return</kbd> key to run it:
+
+```ps
     @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+```
 
-Install `yarn` via `choco`. The `yarn` installation ensures that you will have
-Node.js and npm too:
+3. Refresh the environment settings by running the following command in the Command Prompt: 
+```ps
+refreshenv
+```
 
-    choco install yarn
+4. Install Node.js via. choco (**NOTE**: the version is important!) by running the following in the Command Prompt:
+```ps
+choco install nodejs.install --version 8.11.4 -y
+```
 
-Install `git` via `choco`
+5. Install Yarn via. choco (**NOTE**: the version is important!) by running the following in the Command Prompt:
+```ps
+choco install yarn --version 1.7.0 -y
+```
 
-    choco install git
+6. Install Git via. choco:
+```ps
+choco install git -y
+```
 
-Install the correct version of `yarn` (The version is important)
+7. Refresh the environment settings by running the following command in the Command Prompt:
+```ps
+refreshenv
+```
 
-    choco install yarn --version 1.7.0 -y
+8. Install the Windows build tools via. npm:
+```ps
+npm --add-python-to-path install --global --production windows-build-tools
+```
 
-Install Windows-Build-Tools.
-Run PowerShell as an administrator and copy-paste the below command:
+9. Refresh the environment settings by running the following command in the Command Prompt:
+```ps
+refreshenv
+```
 
-    npm --add-python-to-path install --global --production windows-build-tools
+10. Clone, and build Theia:
+```ps
+git clone https://github.com/theia-ide/theia.git
+cd theia
+yarn
+```
 
-Clone, build and run Theia.
-Using Git Bash as administrator:
-
-    git clone https://github.com/theia-ide/theia.git && cd theia && yarn && cd examples/browser && yarn run start
+11. Run the Theia Browser Example app:
+```ps
+cd examples\browser
+yarn run start
+```
 
 ## Troubleshooting
 
