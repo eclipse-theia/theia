@@ -134,10 +134,19 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     }
 
     /**
-     * Return an opened widget for the given uri.
+     * Return an existing widget for the given uri.
      */
     getByUri(uri: URI): Promise<W | undefined> {
         return this.getWidget(uri);
+    }
+
+    /**
+     * Return an existing widget for the given uri or creates a new one.
+     *
+     * It does not open a widget, use `open` instead.
+     */
+    getOrCreateByUri(uri: URI): Promise<W> {
+        return this.getOrCreateWidget(uri);
     }
 
     /**

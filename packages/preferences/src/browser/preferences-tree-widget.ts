@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject } from 'inversify';
+import { inject, postConstruct, named, injectable } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
 import { PreferencesDecorator } from './preferences-decorator';
@@ -34,52 +34,57 @@ import {
     TreeNode,
     TreeProps,
     TreeWidget,
-    WidgetManager
+    WidgetManager,
+    PreferenceProvider
 } from '@theia/core/lib/browser';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
-import { EditorWidget } from '@theia/editor/lib/browser';
-import { DisposableCollection, Emitter, Event, MaybePromise, MessageService } from '@theia/core';
-import { PREFERENCES_CONTAINER_WIDGET_ID, PREFERENCES_TREE_WIDGET_ID } from './preferences-contribution';
+import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
+import { DisposableCollection, Emitter, Event, MessageService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
+@injectable()
 export class PreferencesContainer extends SplitPanel implements ApplicationShell.TrackableWidgetProvider, Saveable {
 
-    protected treeWidget: TreeWidget;
-    private currentEditor: EditorWidget;
-    private editors: EditorWidget[];
+    static ID = 'preferences_container_widget';
+
+    protected treeWidget: PreferencesTreeWidget | undefined;
+    private currentEditor: EditorWidget | undefined;
+    private readonly editors: EditorWidget[] = [];
     private deferredEditors = new Deferred<EditorWidget[]>();
 
-    get dirty(): boolean {
-        return this.editors.some(editor => editor.saveable.dirty);
-    }
-    autoSave: 'on' | 'off';
-    readonly onDirtyChangedEmitter: Emitter<void>;
-    readonly onDirtyChanged: Event<void>;
-    readonly save: () => MaybePromise<void>;
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    readonly onDirtyChanged: Event<void> = this.onDirtyChangedEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(protected readonly widgetManager: WidgetManager,
-                protected readonly shell: ApplicationShell,
-                protected readonly preferenceService: PreferenceService,
-                protected readonly messageService: MessageService,
-                protected readonly userPreferenceProvider: UserPreferenceProvider,
-                protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider) {
-        super();
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
 
-        this.id = PREFERENCES_CONTAINER_WIDGET_ID;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    @inject(PreferenceProvider) @named(PreferenceScope.User)
+    protected readonly userPreferenceProvider: UserPreferenceProvider;
+
+    @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
+    protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
+
+    @postConstruct()
+    protected init(): void {
+        this.id = PreferencesContainer.ID;
         this.title.label = 'Preferences';
         this.title.closable = true;
         this.title.iconClass = 'fa fa-sliders';
-
-        this.editors = [];
-
-        this.onDirtyChangedEmitter = new Emitter<void>();
-        this.onDirtyChanged = this.onDirtyChangedEmitter.event;
-        this.save = () => {
-            this.editors.forEach(editor => editor.saveable.save());
-        };
 
         this.toDispose.push(this.onDirtyChangedEmitter);
     }
@@ -92,18 +97,30 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         this.toDispose.dispose();
     }
 
+    get autoSave(): 'on' | 'off' {
+        return this.editors.some(editor => editor.saveable.autoSave === 'on') ? 'on' : 'off';
+    }
+
+    get dirty(): boolean {
+        return this.editors.some(editor => editor.saveable.dirty);
+    }
+
+    save(): void {
+        this.editors.forEach(editor => editor.saveable.save());
+    }
+
     getTrackableWidgets(): Promise<Widget[]> {
         return this.deferredEditors.promise;
     }
 
-    protected async onAfterAttach(msg: Message) {
-        this.treeWidget = await this.widgetManager.getOrCreateWidget(PREFERENCES_TREE_WIDGET_ID) as TreeWidget;
-        (this.treeWidget as PreferencesTreeWidget).onPreferenceSelected(value => {
+    protected async onAfterAttach(msg: Message): Promise<void> {
+        this.treeWidget = await this.widgetManager.getOrCreateWidget<PreferencesTreeWidget>(PreferencesTreeWidget.ID);
+        this.treeWidget.onPreferenceSelected(value => {
             const preferenceName = Object.keys(value)[0];
             const preferenceValue = value[preferenceName];
             if (this.dirty) {
                 this.messageService.warn('Preferences editor(s) has/have unsaved changes');
-            } else {
+            } else if (this.currentEditor) {
                 this.preferenceService.set(preferenceName,
                     preferenceValue,
                     this.currentEditor.title.label === 'User Preferences'
@@ -112,7 +129,8 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
         });
 
-        const editorsContainer = new PreferencesEditorsContainer(this.widgetManager, this.userPreferenceProvider, this.workspacePreferenceProvider);
+        const editorsContainer = new PreferencesEditorsContainer(this.editorManager, this.userPreferenceProvider, this.workspacePreferenceProvider);
+        this.toDispose.push(editorsContainer);
         editorsContainer.onInit(() => {
             toArray(editorsContainer.widgets()).forEach(editor => {
                 const editorWidget = editor as EditorWidget;
@@ -138,7 +156,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     }
 
     protected onActivateRequest(msg: Message): void {
-        this.treeWidget.activate();
+        if (this.treeWidget) {
+            this.treeWidget.activate();
+        }
         super.onActivateRequest(msg);
     }
 
@@ -151,27 +171,23 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
 
 export class PreferencesEditorsContainer extends DockPanel {
 
-    private readonly onInitEmitter: Emitter<void>;
-    private readonly onEditorChangedEmitter: Emitter<EditorWidget>;
+    private readonly onInitEmitter = new Emitter<void>();
+    readonly onInit: Event<void> = this.onInitEmitter.event;
 
-    readonly onInit: Event<void>;
-    readonly onEditorChanged: Event<EditorWidget>;
+    private readonly onEditorChangedEmitter = new Emitter<EditorWidget>();
+    readonly onEditorChanged: Event<EditorWidget> = this.onEditorChangedEmitter.event;
 
-    protected readonly toDispose: DisposableCollection;
+    protected readonly toDispose = new DisposableCollection(
+        this.onEditorChangedEmitter,
+        this.onInitEmitter
+    );
 
-    constructor(protected readonly widgetManager: WidgetManager,
-                protected readonly userPreferenceProvider: UserPreferenceProvider,
-                protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider) {
+    constructor(
+        protected readonly editorManager: EditorManager,
+        protected readonly userPreferenceProvider: UserPreferenceProvider,
+        protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider
+    ) {
         super();
-
-        this.onInitEmitter = new Emitter<void>();
-        this.onEditorChangedEmitter = new Emitter<EditorWidget>();
-        this.onInit = this.onInitEmitter.event;
-        this.onEditorChanged = this.onEditorChangedEmitter.event;
-
-        this.toDispose = new DisposableCollection();
-        this.toDispose.push(this.onEditorChangedEmitter);
-        this.toDispose.push(this.onInitEmitter);
     }
 
     dispose(): void {
@@ -190,31 +206,31 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
-        const userPreferences = await await this.widgetManager.getOrCreateWidget(
-            'code-editor-opener',
-            this.userPreferenceProvider.getUri().withoutFragment().toString()
-        ) as EditorWidget;
+        const userPreferences = await this.editorManager.getOrCreateByUri(this.userPreferenceProvider.getUri());
         userPreferences.title.label = 'User Preferences';
         this.addWidget(userPreferences);
 
-        const workspacePreferences = await this.widgetManager.getOrCreateWidget(
-            'code-editor-opener',
-            await this.workspacePreferenceProvider.getUri()
-        ) as EditorWidget;
-        workspacePreferences.title.label = 'Workspace Preferences';
-        this.addWidget(workspacePreferences);
+        const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
+        const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri);
+        if (workspacePreferences) {
+            workspacePreferences.title.label = 'Workspace Preferences';
+            this.addWidget(workspacePreferences);
+        }
 
         super.onAfterAttach(msg);
         this.onInitEmitter.fire(undefined);
     }
 }
 
+@injectable()
 export class PreferencesTreeWidget extends TreeWidget {
+
+    static ID = 'preferences_tree_widget';
 
     private preferencesGroupNames: string[] = [];
     private readonly properties: { [name: string]: PreferenceProperty };
-    private readonly onPreferenceSelectedEmitter: Emitter<{[key: string]: string}>;
-    readonly onPreferenceSelected: Event<{[key: string]: string}>;
+    private readonly onPreferenceSelectedEmitter: Emitter<{ [key: string]: string }>;
+    readonly onPreferenceSelected: Event<{ [key: string]: string }>;
 
     protected readonly toDispose: DisposableCollection;
 
@@ -222,18 +238,20 @@ export class PreferencesTreeWidget extends TreeWidget {
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(PreferencesDecorator) protected readonly decorator: PreferencesDecorator;
 
-    protected constructor(@inject(TreeModel) readonly model: TreeModel,
-                          @inject(TreeProps) protected readonly treeProps: TreeProps,
-                          @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
-                          @inject(PreferenceSchemaProvider) protected readonly preferenceSchemaProvider: PreferenceSchemaProvider) {
+    protected constructor(
+        @inject(TreeModel) readonly model: TreeModel,
+        @inject(TreeProps) protected readonly treeProps: TreeProps,
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(PreferenceSchemaProvider) protected readonly preferenceSchemaProvider: PreferenceSchemaProvider
+    ) {
         super(treeProps, model, contextMenuRenderer);
 
-        this.onPreferenceSelectedEmitter = new Emitter<{[key: string]: string}>();
+        this.onPreferenceSelectedEmitter = new Emitter<{ [key: string]: string }>();
         this.onPreferenceSelected = this.onPreferenceSelectedEmitter.event;
         this.toDispose = new DisposableCollection();
         this.toDispose.push(this.onPreferenceSelectedEmitter);
 
-        this.id = PREFERENCES_TREE_WIDGET_ID;
+        this.id = PreferencesTreeWidget.ID;
 
         this.properties = this.preferenceSchemaProvider.getCombinedSchema().properties;
         for (const property in this.properties) {
@@ -290,7 +308,7 @@ export class PreferencesTreeWidget extends TreeWidget {
                 this.preferenceService.get(node.id),
                 this.properties[node.id],
                 (property, value) => {
-                    this.onPreferenceSelectedEmitter.fire({[property]: value});
+                    this.onPreferenceSelectedEmitter.fire({ [property]: value });
                 }
             );
             contextMenu.aboutToClose.connect(() => {
@@ -303,7 +321,7 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     protected initializeModel(): void {
         type GroupNode = SelectableTreeNode & ExpandableTreeNode;
-        const preferencesGroups: GroupNode [] = [];
+        const preferencesGroups: GroupNode[] = [];
         const root: ExpandableTreeNode = {
             id: 'root-node-id',
             name: 'Apply the preference to selected preferences file',
@@ -312,7 +330,7 @@ export class PreferencesTreeWidget extends TreeWidget {
             children: preferencesGroups,
             expanded: true,
         };
-        const nodes: { [id: string]: PreferenceProperty } [] = [];
+        const nodes: { [id: string]: PreferenceProperty }[] = [];
         for (const group of this.preferencesGroupNames) {
             const propertyNodes: SelectableTreeNode[] = [];
             const properties: string[] = [];
@@ -339,7 +357,7 @@ export class PreferencesTreeWidget extends TreeWidget {
                     selected: false
                 };
                 propertyNodes.push(node);
-                nodes.push({[property]: this.properties[property]});
+                nodes.push({ [property]: this.properties[property] });
             });
             preferencesGroups.push(preferencesGroup);
         }
