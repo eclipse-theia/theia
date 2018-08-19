@@ -33,9 +33,6 @@ export const PREFERENCES_COMMAND: Command = {
     label: 'Open Preferences'
 };
 
-export const PREFERENCES_CONTAINER_WIDGET_ID = 'preferences_container_widget';
-export const PREFERENCES_TREE_WIDGET_ID = 'preferences_tree_widget';
-
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesContainer> {
 
@@ -46,7 +43,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
 
     constructor() {
         super({
-            widgetId: PREFERENCES_CONTAINER_WIDGET_ID,
+            widgetId: PreferencesContainer.ID,
             widgetName: 'Preferences',
             defaultWidgetOptions: { area: 'main' }
         });

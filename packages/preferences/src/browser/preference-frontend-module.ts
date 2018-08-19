@@ -19,13 +19,10 @@ import { PreferenceProvider, PreferenceScope } from '@theia/core/lib/browser/pre
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
-import {
-    PreferencesContribution,
-    PREFERENCES_TREE_WIDGET_ID
-} from './preferences-contribution';
+import { PreferencesContribution } from './preferences-contribution';
 import { createPreferencesTreeWidget } from './preference-tree-container';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
-import { PreferencesWidgetFactory } from './preferences-widget-factory';
+import { PreferencesContainer, PreferencesTreeWidget } from './preferences-tree-widget';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     unbind(PreferenceProvider);
@@ -35,12 +32,15 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
 
     bindViewContribution(bind, PreferencesContribution);
 
-    bind(PreferencesWidgetFactory).toSelf().inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(PreferencesWidgetFactory)).inSingletonScope();
+    bind(PreferencesContainer).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: PreferencesContainer.ID,
+        createWidget: () => container.get(PreferencesContainer)
+    }));
 
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: PREFERENCES_TREE_WIDGET_ID,
-        createWidget: () => createPreferencesTreeWidget(context.container)
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: PreferencesTreeWidget.ID,
+        createWidget: () => createPreferencesTreeWidget(container)
     })).inSingletonScope();
 
     bind(PreferencesMenuFactory).toSelf();
