@@ -19,5 +19,6 @@ import { LanguageServerContribution } from '@theia/languages/lib/node';
 import { PythonContribution } from './python-contribution';
 
 export default new ContainerModule(bind => {
-    bind(LanguageServerContribution).to(PythonContribution).inSingletonScope();
+    bind(PythonContribution).toSelf().inSingletonScope();
+    bind(LanguageServerContribution).toService(PythonContribution);
 });
