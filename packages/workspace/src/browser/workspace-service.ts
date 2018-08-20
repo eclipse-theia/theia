@@ -21,7 +21,7 @@ import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browse
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { Disposable, Emitter, Event } from '@theia/core/lib/common';
+import { Disposable, Emitter, Event, DisposableCollection } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -34,10 +34,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     // TODO remove it with the patch where the config file becomes independent from the workspace
     private _workspaceFolder: FileStat | undefined;
-    private _roots: FileStat[];
+    private _roots: FileStat[] = [];
     private deferredRoots = new Deferred<FileStat[]>();
-
-    private rootWatchers: { [uri: string]: Disposable } = {};
 
     private hasWorkspace: boolean = false;
 
@@ -61,8 +59,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this._workspaceFolder = undefined;
-        this._roots = [];
         await this.updateWorkspace();
         this.updateTitle();
         const configUri = this.getWorkspaceConfigFileUri();
@@ -73,6 +69,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 }
             });
         }
+        this.preferences.onPreferenceChanged(event => {
+            if (event.preferenceName === 'workspace.supportMultiRootWorkspace') {
+                this.updateWorkspace();
+            }
+        });
     }
 
     get roots(): Promise<FileStat[]> {
@@ -88,64 +89,63 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async updateWorkspace(): Promise<void> {
-        if (!this._workspaceFolder) {
-            const rootUri = await this.server.getMostRecentlyUsedWorkspace();
-            this._workspaceFolder = await this.toValidRoot(rootUri);
-            if (this._workspaceFolder) {
-                this._roots.push(this._workspaceFolder);
-            }
-        }
-        this.deferredRoots.resolve(this._roots);
+        await this.ensureWorkspaceInitialized();
+        await this.updateRoots();
+        this.watchRoots();
+    }
 
-        await this.preferences.ready;
+    protected async ensureWorkspaceInitialized(): Promise<void> {
         if (this._workspaceFolder) {
-            let roots: string[];
-            if (this.preferences['workspace.supportMultiRootWorkspace']) {
-                const rootConfig = await this.getRootConfig();
-                roots = rootConfig.roots;
-            } else {
-                roots = [this._workspaceFolder.uri];
-            }
-
-            for (const rootBeingWatched of Object.keys(this.rootWatchers)) {
-                if (roots.indexOf(rootBeingWatched) < 0) {
-                    this.stopWatch(rootBeingWatched);
-                }
-            }
-            this._roots.length = 0;
-            for (const rootToWatch of roots) {
-                const valid = await this.toValidRoot(rootToWatch);
-                if (!this.rootWatchers[rootToWatch]) {
-                    await this.startWatch(valid);
-                }
-                if (valid) {
-                    this._roots.push(valid);
-                }
-            }
-            if (!this.rootWatchers[this._workspaceFolder.uri]) {
-                // must watch the workspace folder for meta data changes, even if it is not in the workspace
-                await this.startWatch(this._workspaceFolder);
-            }
+            return;
         }
+        const rootUri = await this.server.getMostRecentlyUsedWorkspace();
+        this._workspaceFolder = await this.toValidRoot(rootUri);
+        const configUri = this.getWorkspaceConfigFileUri();
+        if (configUri) {
+            this.watcher.watchFileChanges(configUri);
+        }
+    }
+
+    protected async updateRoots(): Promise<void> {
+        this._roots = await this.computeRoots();
+        this.deferredRoots.resolve(this._roots); // in order to resolve first
+        this.deferredRoots = new Deferred<FileStat[]>();
+        this.deferredRoots.resolve(this._roots);
         this.onWorkspaceChangeEmitter.fire(this._roots);
     }
 
-    protected async getRootConfig(): Promise<{ stat: FileStat | undefined, roots: string[] }> {
+    protected async computeRoots(): Promise<FileStat[]> {
+        const config = await this.getWorkspaceConfig();
+        if (!config || !config.roots.length) {
+            return this._workspaceFolder ? [this._workspaceFolder] : [];
+        }
+        const roots: FileStat[] = [];
+        for (const rootUri of config.roots) {
+            const root = await this.toValidRoot(rootUri);
+            if (root) {
+                roots.push(root);
+            }
+        }
+        return roots;
+    }
+
+    protected async getWorkspaceConfig(): Promise<{ stat: FileStat, roots: string[] } | undefined> {
+        if (!this.preferences['workspace.supportMultiRootWorkspace']) {
+            return undefined;
+        }
         const configUri = this.getWorkspaceConfigFileUri();
         if (configUri) {
-            let fileStat = undefined;
             const uriStr = configUri.path.toString();
             if (await this.fileSystem.exists(uriStr)) {
                 const { stat, content } = await this.fileSystem.resolveContent(uriStr);
-                fileStat = stat;
                 if (content) {
-                    const roots = JSON.parse(content).roots || [];
-                    return { stat, roots: this._workspaceFolder && roots.length === 0 ? [this._workspaceFolder.uri] : roots };
+                    // FIXME use jsonc + ajx to parse & validate content
+                    const roots: string[] = JSON.parse(content).roots || [];
+                    return { stat, roots };
                 }
             }
-            return { stat: fileStat, roots: [this._workspaceFolder!.uri] };
         }
-        return { stat: undefined, roots: [] };
+        return undefined;
     }
 
     protected getWorkspaceConfigFileUri(): URI | undefined {
@@ -153,6 +153,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             const rootUri = new URI(this._workspaceFolder.uri);
             return rootUri.resolve('.theia').resolve('root.json');
         }
+        return undefined;
     }
 
     protected updateTitle(): void {
@@ -270,10 +271,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!this.opened) {
             throw new Error('Folder cannot be removed as there is no active folder in the current workspace.');
         }
-        const configStat = (await this.getRootConfig()).stat;
-        if (configStat) {
+        const config = await this.getWorkspaceConfig();
+        if (config) {
             await this.writeRootFolderConfigFile(
-                configStat, this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0)
+                config.stat, this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0)
             );
         }
     }
@@ -366,27 +367,30 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return false;
     }
 
-    protected async startWatch(validRoot: FileStat | undefined): Promise<void> {
-        if (validRoot && !this.rootWatchers[validRoot.uri]) {
-            const uri = new URI(validRoot.uri);
-            const watcher = (await this.watcher.watchFileChanges(uri));
-            this.rootWatchers[validRoot.uri] = watcher;
+    protected readonly watchers = new Map<string, Disposable>();
+
+    protected async watchRoots(): Promise<void> {
+        const rootUris = new Set(this._roots.map(r => r.uri));
+        for (const [uri, watcher] of this.watchers.entries()) {
+            if (!rootUris.has(uri)) {
+                watcher.dispose();
+            }
+        }
+        for (const root of this._roots) {
+            this.watchRoot(root);
         }
     }
 
-    protected stopWatch(uri?: string): void {
-        if (uri) {
-            if (this.rootWatchers[uri]) {
-                this.rootWatchers[uri].dispose();
-                delete this.rootWatchers[uri];
-            }
-        } else {
-            for (const watchedUri of Object.keys(this.rootWatchers)) {
-                this.rootWatchers[watchedUri].dispose();
-            }
-            this.rootWatchers = {};
+    protected async watchRoot(root: FileStat): Promise<void> {
+        if (this.watchers.has(root.uri)) {
+            return;
         }
+        this.watchers.set(root.uri, new DisposableCollection(
+            await this.watcher.watchFileChanges(new URI(root.uri)),
+            Disposable.create(() => this.watchers.delete(root.uri))
+        ));
     }
+
 }
 
 export interface WorkspaceInput {
