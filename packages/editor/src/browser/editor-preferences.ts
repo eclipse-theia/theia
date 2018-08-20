@@ -33,6 +33,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'default': 4,
             'description': 'Configure the tab size in the editor'
         },
+        'editor.fontSize': {
+            'type': 'number',
+            'default': 12,
+            'description': 'Configure the editor font size'
+        },
         'editor.lineNumbers': {
             'enum': [
                 'on',
@@ -334,6 +339,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
 
 export interface EditorConfiguration {
     'editor.tabSize': number
+    'editor.fontSize': number
     'editor.autoSave': 'on' | 'off'
     'editor.autoSaveDelay': number
     'editor.lineNumbers'?: 'on' | 'off'
