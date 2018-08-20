@@ -18,6 +18,7 @@ import { injectable } from 'inversify';
 import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
 import { parseArgs } from '@theia/process/lib/node/utils';
+import { SpawnOptions } from 'child_process';
 
 @injectable()
 export class PythonContribution extends BaseLanguageServerContribution {
@@ -33,8 +34,12 @@ export class PythonContribution extends BaseLanguageServerContribution {
             command = pythonLsCommand;
             args = parseArgs(process.env.PYTHON_LS_ARGS || '');
         }
-        const serverConnection = this.createProcessStreamConnection(command, args);
+        const serverConnection = this.createProcessStreamConnection(command, args, this.getSpawnOptions());
         this.forward(clientConnection, serverConnection);
+    }
+
+    protected getSpawnOptions(): SpawnOptions | undefined {
+        return undefined;
     }
 
     protected onDidFailSpawnProcess(error: Error): void {
