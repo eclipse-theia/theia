@@ -39,6 +39,10 @@ export function createTextmateTokenizer(grammar: IGrammar): monaco.languages.Tok
     return {
         getInitialState: () => new State(INITIAL),
         tokenize(line: string, state: State) {
+            if (line.length > 400) {
+                console.log(`Line starting with "${line.substr(0, 10)}..." is too long to be tokenized.`);
+                return { tokens: [], endState: state };
+            }
             const result = grammar.tokenizeLine(line, state.ruleStack);
             const tokenTheme = monaco.services.StaticServices.standaloneThemeService.get().getTheme().tokenTheme;
             const defaultResult = tokenTheme.match(undefined, 'should.return.default');
