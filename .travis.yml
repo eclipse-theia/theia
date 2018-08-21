@@ -16,6 +16,8 @@ cache:
   - packages/bunyan/node_modules
   - packages/callhierarchy/node_modules
   - packages/core/node_modules
+  - packages/debug/node_modules
+  - packages/debug-nodejs/node_modules
   - packages/cpp/node_modules
   - packages/editorconfig/node_modules
   - packages/editor/node_modules
