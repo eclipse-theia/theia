@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import * as tsp from 'typescript/lib/protocol';
 import { Commands } from 'typescript-language-server/lib/commands';
 import { QuickPickService, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
@@ -25,6 +25,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TYPESCRIPT_LANGUAGE_ID } from '../common';
 import { TypeScriptClientContribution } from './typescript-client-contribution';
 import { TypeScriptKeybindingContexts } from './typescript-keybinding-contexts';
+import { FileSystemWatcher, FileMoveEvent } from '@theia/filesystem/lib/browser';
 
 export namespace TypeScriptCommands {
     export const applyCompletionCodeAction: Command = {
@@ -48,6 +49,14 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
 
     @inject(TypeScriptClientContribution)
     protected readonly clientContribution: TypeScriptClientContribution;
+
+    @inject(FileSystemWatcher)
+    protected readonly fileSystemWatcher: FileSystemWatcher;
+
+    @postConstruct()
+    protected init(): void {
+        this.fileSystemWatcher.onDidMove(event => this.renameFile(event));
+    }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TypeScriptCommands.applyCompletionCodeAction, {
@@ -110,6 +119,17 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
         return client.sendRequest(ExecuteCommandRequest.type, {
             command: Commands.APPLY_CODE_ACTION,
             arguments: [codeAction]
+        });
+    }
+
+    protected async renameFile({ sourceUri, targetUri }: FileMoveEvent): Promise<void> {
+        const client = await this.clientContribution.languageClient;
+        return client.sendRequest(ExecuteCommandRequest.type, {
+            command: Commands.APPLY_RENAME_FILE,
+            arguments: [{
+                sourceUri: sourceUri.toString(),
+                targetUri: targetUri.toString()
+            }]
         });
     }
 
