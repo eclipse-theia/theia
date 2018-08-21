@@ -22,10 +22,8 @@ export default class URI {
     private readonly codeUri: Uri;
     private _path: Path | undefined;
 
-    constructor(uri?: string | Uri) {
-        if (uri === undefined) {
-            this.codeUri = Uri.from({});
-        } else if (uri instanceof Uri) {
+    constructor(uri: string | Uri = '') {
+        if (uri instanceof Uri) {
             this.codeUri = uri;
         } else {
             this.codeUri = Uri.parse(uri);
@@ -99,6 +97,7 @@ export default class URI {
     withAuthority(authority: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
+            scheme: this.codeUri.scheme,
             authority
         });
         return new URI(newCodeUri);
@@ -117,6 +116,7 @@ export default class URI {
     withPath(path: string | Path): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
+            scheme: this.codeUri.scheme,
             path: path.toString()
         });
         return new URI(newCodeUri);
@@ -135,6 +135,7 @@ export default class URI {
     withQuery(query: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
+            scheme: this.codeUri.scheme,
             query
         });
         return new URI(newCodeUri);
@@ -153,6 +154,7 @@ export default class URI {
     withFragment(fragment: string): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
+            scheme: this.codeUri.scheme,
             fragment
         });
         return new URI(newCodeUri);
