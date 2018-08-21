@@ -165,14 +165,20 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newUriAwareCommandHandler({
             execute: uri => this.getParent(uri).then(parent => {
                 if (parent) {
+                    const initialValue = uri.path.base;
                     const dialog = new SingleTextInputDialog({
                         title: 'Rename File',
-                        initialValue: uri.path.base,
+                        initialValue,
                         initialSelectionRange: {
                             start: 0,
                             end: uri.path.name.length
                         },
-                        validate: name => this.validateFileName(name, parent)
+                        validate: name => {
+                            if (initialValue === name) {
+                                return false;
+                            }
+                            return this.validateFileName(name, parent);
+                        }
                     });
                     dialog.open().then(name => {
                         if (name) {

@@ -224,7 +224,7 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         return this.props.openLabel ? this.props.openLabel : 'Open';
     }
 
-    isValid(value: MaybeArray<FileStatNode>): string {
+    protected isValid(value: MaybeArray<FileStatNode>): string {
         if (value) {
             if (this.props.canSelectMany) {
                 if (Array.isArray(value)) {
@@ -311,13 +311,11 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         super.onUpdateRequest(msg);
     }
 
-    isValid(value: URI | undefined): string {
+    protected isValid(value: URI | undefined): string | boolean {
         if (this.fileNameField && this.fileNameField.value) {
             return '';
         }
-
-        // Returning a space disables the 'Save' button and doesn't show an error message at the bottom
-        return ' ';
+        return false;
     }
 
     get value(): URI | undefined {
@@ -351,11 +349,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         this.fileNameField.classList.add(FILENAME_TEXTFIELD_CLASS);
         fileNamePanel.appendChild(this.fileNameField);
 
-        this.fileNameField.onkeyup = () => {
-            const value = this.value;
-            const error = this.isValid(value);
-            this.setErrorMessage(error);
-        };
+        this.fileNameField.onkeyup = () => this.validate();
     }
 
 }

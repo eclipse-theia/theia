@@ -157,17 +157,21 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.resolve) {
             this.resolve(undefined);
         }
-
         super.close();
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        if (this.resolve) {
-            const value = this.value;
-            const error = this.isValid(value);
-            this.setErrorMessage(error);
+        this.validate();
+    }
+
+    protected validate(): void {
+        if (!this.resolve) {
+            return;
         }
+        const value = this.value;
+        const error = this.isValid(value);
+        this.setErrorMessage(error);
     }
 
     protected accept(): void {
@@ -185,11 +189,14 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     abstract get value(): T;
 
-    isValid(value: T): string {
+    /**
+     * Return a string of zero-length or true if valid.
+     */
+    protected isValid(value: T): string | boolean {
         return '';
     }
 
-    protected setErrorMessage(error: string) {
+    protected setErrorMessage(error: string | boolean): void {
         if (this.acceptButton) {
             this.acceptButton.disabled = !!error;
         }
@@ -257,7 +264,7 @@ export class SingleTextInputDialogProps extends DialogProps {
         end: number
         direction?: 'forward' | 'backward' | 'none'
     };
-    readonly validate?: (input: string) => string;
+    readonly validate?: (input: string) => string | boolean;
 }
 
 export class SingleTextInputDialog extends AbstractDialog<string> {
@@ -291,7 +298,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return this.inputField.value;
     }
 
-    isValid(value: string): string {
+    protected isValid(value: string): string | boolean {
         if (this.props.validate) {
             return this.props.validate(value);
         }
