@@ -104,7 +104,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         const iconSize = data.iconSize;
         let height: string | undefined;
         if (labelSize || iconSize) {
-            const labelHeight = labelSize ? labelSize.width : 0;
+            const labelHeight = labelSize ? (this.tabBar && this.tabBar.orientation === 'horizontal' ? labelSize.height : labelSize.width) : 0;
             const iconHeight = iconSize ? iconSize.height : 0;
             let paddingTop = data.paddingTop || 0;
             if (labelHeight > 0 && iconHeight > 0) {

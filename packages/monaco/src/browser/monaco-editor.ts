@@ -31,7 +31,8 @@ import {
     RevealPositionOptions,
     DeltaDecorationParams,
     ReplaceTextParams,
-    EditorDecoration
+    EditorDecoration,
+    EditorMouseEvent
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 
@@ -58,6 +59,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
+    protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -74,7 +76,8 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             this.onCursorPositionChangedEmitter,
             this.onSelectionChangedEmitter,
             this.onFocusChangedEmitter,
-            this.onDocumentContentChangedEmitter
+            this.onDocumentContentChangedEmitter,
+            this.onMouseDownEmitter
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -117,6 +120,19 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.toDispose.push(codeEditor.onDidBlurEditor(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));
+        this.toDispose.push(codeEditor.onMouseDown(e => {
+            const { lineNumber, column } = e.target.position;
+            const event = {
+                target: {
+                    ...e.target,
+                    mouseColumn: this.m2p.asPosition(undefined, e.target.mouseColumn).character,
+                    range: this.m2p.asRange(e.target.range),
+                    position: this.m2p.asPosition(lineNumber, column),
+                },
+                event: e.event.browserEvent
+            };
+            this.onMouseDownEmitter.fire(event);
+        }));
     }
 
     protected mapModelContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
@@ -211,6 +227,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     get onFocusChanged(): Event<boolean> {
         return this.onFocusChangedEmitter.event;
+    }
+
+    get onMouseDown(): Event<EditorMouseEvent> {
+        return this.onMouseDownEmitter.event;
     }
 
     /**

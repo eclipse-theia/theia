@@ -1,0 +1,50 @@
+{
+  "name": "@theia/debug",
+  "version": "0.3.13",
+  "description": "Theia - Debug Extension",
+  "dependencies": {
+    "@theia/core": "^0.3.13",
+    "@theia/editor": "^0.3.13",
+    "@theia/monaco": "^0.3.13",
+    "@theia/process": "^0.3.13",
+    "vscode-debugprotocol": "^1.26.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/debug-frontend-module",
+      "backend": "lib/node/debug-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension, debug"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.13"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
