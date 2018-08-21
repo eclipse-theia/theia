@@ -168,6 +168,10 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new SingleTextInputDialog({
                         title: 'Rename File',
                         initialValue: uri.path.base,
+                        initialSelectionRange: {
+                            start: 0,
+                            end: uri.path.name.length
+                        },
                         validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name => {
