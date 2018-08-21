@@ -23,6 +23,7 @@ export const EDITOR_CONTEXT_MENU: MenuPath = ['editor_context_menu'];
 
 export namespace EditorContextMenu {
     export const UNDO_REDO = [...EDITOR_CONTEXT_MENU, '1_undo'];
+    export const CUT_COPY_PASTE = [...EDITOR_CONTEXT_MENU, '2_cut_copy_paste'];
     export const NAVIGATION = [...EDITOR_CONTEXT_MENU, 'navigation'];
 }
 
@@ -49,6 +50,19 @@ export class EditorMenuContribution implements MenuContribution {
         });
         registry.registerMenuAction(EditorContextMenu.UNDO_REDO, {
             commandId: CommonCommands.REDO.id
+        });
+
+        registry.registerMenuAction(EditorContextMenu.CUT_COPY_PASTE, {
+            commandId: CommonCommands.CUT.id,
+            order: '0'
+        });
+        registry.registerMenuAction(EditorContextMenu.CUT_COPY_PASTE, {
+            commandId: CommonCommands.COPY.id,
+            order: '1'
+        });
+        registry.registerMenuAction(EditorContextMenu.CUT_COPY_PASTE, {
+            commandId: CommonCommands.PASTE.id,
+            order: '2'
         });
 
         // Editor navigation. Go > Back and Go > Forward.
