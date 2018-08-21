@@ -137,7 +137,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         this.messageBoxHeight = oldState.messageBoxHeight || GitWidget.MESSAGE_BOX_MIN_HEIGHT;
     }
 
-    protected async undo(): Promise<void> {
+    protected async amend(): Promise<void> {
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository) {
             const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
@@ -362,8 +362,8 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${commit.authorDateRelative} by ${commit.author.name}`}</div>
             </div>
             <div className={GitWidget.Styles.FLEX_CENTER}>
-                <button className='theia-button' title='Undo last commit' onClick={() => this.undo.bind(this)()}>
-                    Undo
+                <button className='theia-button' title='Amend last commit' onClick={() => this.amend.bind(this)()}>
+                    Amend
             </button>
             </div>
         </React.Fragment>;
