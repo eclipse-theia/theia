@@ -60,7 +60,7 @@ export class MainPage {
         /* Make sure that all the "docked" layouts are closed */
         while (this.driver.isExisting(`.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable`)) {
             this.driver.rightClick(`.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable`);
-            this.driver.element(`.p-Widget.p-Menu .p-Menu-content`).click(`div\=Close All`);
+            this.driver.element(`.p-Widget.p-Menu .p-Menu-content`).click(`div=Close All`);
         }
     }
 }
