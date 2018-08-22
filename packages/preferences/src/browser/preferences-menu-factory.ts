@@ -47,7 +47,7 @@ export class PreferencesMenuFactory {
                 commands.addCommand(commandTrue, {
                     label: 'true',
                     iconClass: savedPreference === 'true' || !savedPreference && property.default === true ? 'fa fa-check' : '',
-                    execute: () => execute(id, 'true')
+                    execute: () => execute(id, true)
                 });
                 menu.addItem({
                     type: 'command',
@@ -58,7 +58,7 @@ export class PreferencesMenuFactory {
                 commands.addCommand(commandFalse, {
                     label: 'false',
                     iconClass: savedPreference === 'false' || !savedPreference && property.default === false ? 'fa fa-check' : '',
-                    execute: () => execute(id, 'false')
+                    execute: () => execute(id, false)
                 });
                 menu.addItem({
                     type: 'command',
