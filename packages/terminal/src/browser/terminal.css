@@ -19,3 +19,28 @@
     height:100%;
     padding: var(--theia-code-padding);
 }
+
+.terminal-container-toolbar {
+    color: var(--theia-ui-font-color1);
+    padding: 0px 5px 5px 5px;
+}
+
+.terminal-container-toolbar .control-button-holder {
+    display: inline;
+    padding-right: 10px;
+}
+
+.terminal-container-toolbar .control-button {
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.terminal-container-toolbar .control-button:hover {
+    opacity: 1;
+}
+
+.terminal-container-toolbar .control-button-label {
+    font-family: var(--theia-code-font-family);
+    font-feature-settings: "liga" 0;
+    opacity: 0.7;
+}

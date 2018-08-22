@@ -45,6 +45,48 @@ export abstract class TerminalWidget extends BaseWidget {
    abstract clearOutput(): void;
 }
 
+export const TerminalActionOptions = Symbol('TerminalActionOptions');
+export interface TerminalActionOptions {
+
+    /**
+     * Label that will be placed onto terminal toolbar. Icon can be used from
+     * fontawesome collection. To set an icon, the following pattern has to be
+     * provided: $(fontawesomeClasssName).
+     */
+    label: string;
+
+    /**
+     * Tooltip that will be shown to user on mouse hover.
+     */
+    tooltip: string;
+
+    /**
+     * Action that is performed when user clicks on item in terminal toolbar.
+     */
+    run(): void;
+}
+
+/**
+ * Terminal action item represent a button which located in terminal toolbar.
+ */
+export class TerminalActionItem<T extends TerminalActionOptions = TerminalActionOptions> {
+    constructor(
+        protected options: T = {} as T
+    ) { }
+
+    getLabel(): string {
+        return this.options.label;
+    }
+
+    getTooltip(): string {
+        return this.options.tooltip;
+    }
+
+    run(): void {
+        this.options.run();
+    }
+}
+
 /**
  * Terminal widget options.
  */
@@ -92,4 +134,9 @@ export interface TerminalWidgetOptions {
      * Terminal id. Should be unique for all DOM.
      */
     readonly id?: string;
+
+    /**
+     * Terminal actions. Represents buttons, which locate on terminal toolbar.
+     */
+    readonly terminalActionItems?: TerminalActionItem[];
 }

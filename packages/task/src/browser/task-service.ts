@@ -19,7 +19,7 @@ import { ILogger } from '@theia/core/lib/common';
 import { FrontendApplication, ApplicationShell } from '@theia/core/lib/browser';
 import { TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
-import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalWidget, TerminalActionItem } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
@@ -210,8 +210,50 @@ export class TaskService implements TaskConfigurationClient {
 
         // open terminal widget if the task is based on a terminal process (type: shell)
         if (taskInfo.terminalId !== undefined) {
-            this.attach(taskInfo.terminalId, taskInfo.taskId);
+            const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
+                TERMINAL_WIDGET_FACTORY_ID,
+                <TerminalWidgetFactoryOptions>{
+                    created: new Date().toString(),
+                    id: 'task-' + taskInfo.taskId,
+                    caption: `Task #${taskInfo.taskId}`,
+                    label: `Task #${taskInfo.taskId}`,
+                    destroyTermOnClose: true,
+                    terminalActionItems: new Array(new TerminalActionItem({
+                        label: `$(repeat) ${this.getHumanReadableCommand(taskInfo)}`,
+                        tooltip: `Re-run current task: ${resolvedTask.label}`,
+                        run: async () => {
+                            try {
+                                taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
+                                if (taskInfo.terminalId !== undefined) {
+                                    widget.clearOutput();
+                                    widget.start(taskInfo.terminalId);
+                                }
+                            } catch (error) {
+                                this.logger.error(`Error launching task '${taskLabel}': ${error}`);
+                                this.messageService.error(`Error launching task '${taskLabel}': ${error}`);
+                                return;
+                            }
+                        }
+                    }))
+                });
+            this.shell.addWidget(widget, { area: 'bottom' });
+            this.shell.activateWidget(widget.id);
+            widget.start(taskInfo.terminalId);
         }
+    }
+
+    protected getHumanReadableCommand(taskInfo: TaskInfo): string {
+        let cmdLine = '';
+        if (taskInfo.config.command) {
+            cmdLine += taskInfo.config.command;
+        }
+        if (taskInfo.config.args) {
+            if (cmdLine.length > 0) {
+                cmdLine += ' ';
+            }
+            cmdLine += taskInfo.config.args.join(' ');
+        }
+        return cmdLine.length > 0 ? '$ ' + cmdLine : cmdLine;
     }
 
     async attach(terminalId: number, taskId: number): Promise<void> {

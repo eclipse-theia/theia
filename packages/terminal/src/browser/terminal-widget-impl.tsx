@@ -25,9 +25,12 @@ import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalActionItem } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+import { LabelParser, LabelIcon } from '@theia/core/lib/browser/label-parser';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -63,6 +66,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
+    protected terminalActionItems: TerminalActionItem[];
+    protected terminalActionItemsToolBar: HTMLElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -72,6 +77,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
     @inject('terminal-dom-id') public readonly id: string;
+    @inject(LabelParser) protected readonly entryService: LabelParser;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -142,6 +148,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.toDispose.push(disposable);
         }));
         this.toDispose.push(this.onTermDidClose);
+
+        this.terminalActionItems = this.options.terminalActionItems ?
+        this.getDefaultTerminalActionitems().concat(this.options.terminalActionItems) : this.getDefaultTerminalActionitems();
+        this.terminalActionItemsToolBar = document.createElement('div');
+        this.terminalActionItemsToolBar.classList.add('terminal-container-toolbar');
+        this.node.appendChild(this.terminalActionItemsToolBar);
     }
 
     clearOutput(): void {
@@ -222,6 +234,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * If id is provided attach to the terminal for this id.
      */
     async start(id?: number): Promise<number> {
+        const renderedItems: JSX.Element[] = [];
+        this.terminalActionItems.forEach(item => {
+            renderedItems.push(this.renderTerminalActionItem(item));
+        });
+        ReactDOM.render(<React.Fragment>{renderedItems}</React.Fragment>, this.terminalActionItemsToolBar);
+
         this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
@@ -284,6 +302,24 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected onAfterAttach(msg: Message): void {
         this.update();
     }
+
+    protected renderTerminalActionItem(entry: TerminalActionItem): JSX.Element {
+        const childStrings = this.entryService.parse(entry.getLabel());
+        const children: JSX.Element[] = [];
+
+        childStrings.forEach((val, idx) => {
+            const key = entry.getLabel() + '-' + idx;
+            if (!(typeof val === 'string') && LabelIcon.is(val)) {
+                const classStr = `control-button fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`;
+                children.push(<span key={key} onClick={() => entry.run()} title={entry.getTooltip()} className={classStr}></span>);
+            } else {
+                children.push(<span key={key} className='control-button-label'>{val}</span>);
+            }
+        });
+
+        return React.createElement('div', { key: entry.getLabel() + entry.getTooltip(), className: 'control-button-holder' }, children);
+    }
+
     protected onResize(msg: Widget.ResizeMessage): void {
         this.needsResize = true;
         this.update();
@@ -399,5 +435,17 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         const { cols, rows } = this.term;
         this.shellTerminalServer.resize(this.terminalId, cols, rows);
+    }
+
+    protected getDefaultTerminalActionitems(): TerminalActionItem[] {
+        const clearTerminalOutput = new TerminalActionItem({
+            label: '$(trash)',
+            tooltip: 'Clear terminal output',
+            run: () => {
+                this.clearOutput();
+            }
+        });
+
+        return [clearTerminalOutput];
     }
 }
