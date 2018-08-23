@@ -219,7 +219,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                     return '<pre class="hljs"><code><div>' + engine.utils.escapeHtml(str) + '</div></code></pre>';
                 }
             });
-            const renderers = ['heading_open', 'paragraph_open', 'list_item_open', 'blockquote_open', 'code_block', 'image'];
+            const renderers = ['heading_open', 'paragraph_open', 'list_item_open', 'blockquote_open', 'code_block', 'image', 'fence'];
             for (const renderer of renderers) {
                 const originalRenderer = engine.renderer.rules[renderer];
                 engine.renderer.rules[renderer] = (tokens, index, options, env, self) => {
@@ -249,6 +249,34 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 }
                 return originalImageRenderer(tokens, index, options, env, self);
             };
+
+            const domParser = new DOMParser();
+
+            const parseHtml = (html: string, tag: string) =>
+                domParser.parseFromString(html, 'text/html').getElementsByTagName(tag)[0] as HTMLElement | undefined;
+
+            const parseImageElement = (html: string) => parseHtml(html, 'img') as HTMLImageElement | undefined;
+
+            for (const name of ['html_block', 'html_inline']) {
+                const originalRenderer = engine.renderer.rules[name];
+                engine.renderer.rules[name] = (tokens, index, options, env, self) => {
+                    const currentToken = tokens[index];
+                    const content = currentToken.content;
+                    if (/^\s*<img/.test(content) && RenderContentParams.is(env)) {
+                        const imgElement = parseImageElement(content);
+                        if (imgElement) {
+                            const documentUri = env.originUri;
+                            const src = imgElement.getAttributeNode('src');
+                            if (src) {
+                                src.nodeValue = this.linkNormalizer.normalizeLink(documentUri, src.nodeValue || '');
+                                currentToken.content = imgElement.outerHTML;
+                            }
+                        }
+                    }
+                    return originalRenderer(tokens, index, options, env, self);
+                };
+            }
+
             anchor(engine, {});
         }
         return this.engine;
