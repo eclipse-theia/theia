@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,18 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, } from 'inversify';
-import { KeymapsService } from './keymaps-service';
-import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { KeymapsParser } from './keymaps-parser';
-
-import './monaco-contribution';
-
-export default new ContainerModule(bind => {
-    bind(KeymapsParser).toSelf().inSingletonScope();
-    bind(KeymapsService).toSelf().inSingletonScope();
-    bind(KeymapsFrontendContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(KeymapsFrontendContribution);
-    bind(MenuContribution).toService(KeymapsFrontendContribution);
+monaco.languages.register({
+    id: 'jsonc',
+    'aliases': [
+        'JSON with Comments'
+    ],
+    'filenames': [
+        'keymaps.json'
+    ]
 });
