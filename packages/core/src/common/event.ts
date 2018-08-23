@@ -106,7 +106,7 @@ class CallbackList {
             try {
                 ret.push(callbacks[i].apply(contexts[i], args));
             } catch (e) {
-                // FIXME: log error
+                console.error(e);
             }
         }
         return ret;
