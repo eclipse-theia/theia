@@ -243,17 +243,8 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected getHumanReadableCommand(taskInfo: TaskInfo): string {
-        let cmdLine = '';
-        if (taskInfo.config.command) {
-            cmdLine += taskInfo.config.command;
-        }
-        if (taskInfo.config.args) {
-            if (cmdLine.length > 0) {
-                cmdLine += ' ';
-            }
-            cmdLine += taskInfo.config.args.join(' ');
-        }
-        return cmdLine.length > 0 ? '$ ' + cmdLine : cmdLine;
+        const args = taskInfo.config.args ? taskInfo.config.args.join(' ') : '';
+        return taskInfo.config.command ? `${taskInfo.config.command} ${args}` : '';
     }
 
     async attach(terminalId: number, taskId: number): Promise<void> {
