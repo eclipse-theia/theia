@@ -39,6 +39,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected closeButton: HTMLButtonElement | undefined;
     protected acceptButton: HTMLButtonElement | undefined;
 
+    protected activeElement: HTMLElement | undefined;
+
     constructor(
         @inject(DialogProps) protected readonly props: DialogProps
     ) {
@@ -139,7 +141,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.resolve) {
             return Promise.reject('The dialog is already opened.');
         }
-
+        this.activeElement = window.document.activeElement as HTMLElement;
         return new Promise<T | undefined>((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -155,8 +157,12 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     close(): void {
         if (this.resolve) {
+            if (this.activeElement) {
+                this.activeElement.focus();
+            }
             this.resolve(undefined);
         }
+        this.activeElement = undefined;
         super.close();
     }
 
@@ -264,7 +270,7 @@ export class SingleTextInputDialogProps extends DialogProps {
         end: number
         direction?: 'forward' | 'backward' | 'none'
     };
-    readonly validate?: (input: string) => string | boolean;
+    readonly validate?: (input: string) => string | boolean;
 }
 
 export class SingleTextInputDialog extends AbstractDialog<string> {
