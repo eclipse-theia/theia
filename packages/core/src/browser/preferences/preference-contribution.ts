@@ -35,16 +35,22 @@ export interface PreferenceSchema {
     }
 }
 
-export interface PreferenceProperty {
-    description: string;
+export interface PreferenceItem {
     type?: JsonType | JsonType[];
     minimum?: number;
     // tslint:disable-next-line:no-any
     default?: any;
     enum?: string[];
-    additionalProperties?: object;
+    items?: PreferenceItem;
+    properties?: { [name: string]: PreferenceItem };
+    patternProperties?: { [name: string]: PreferenceItem };
+    additionalProperties?: boolean | object;
     // tslint:disable-next-line:no-any
     [name: string]: any;
+}
+
+export interface PreferenceProperty extends PreferenceItem {
+    description: string;
 }
 
 export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';

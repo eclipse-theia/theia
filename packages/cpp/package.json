@@ -9,17 +9,16 @@
     "@theia/languages": "^0.3.14",
     "@theia/monaco": "^0.3.14",
     "@theia/preferences": "^0.3.14",
-    "@theia/process": "^0.3.14"
+    "@theia/process": "^0.3.14",
+    "string-argv": "^0.1.1"
   },
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/cpp-frontend-module",
-      "backend": "lib/node/cpp-backend-module"
-    }
-  ],
+  "theiaExtensions": [{
+    "frontend": "lib/browser/cpp-frontend-module",
+    "backend": "lib/node/cpp-backend-module"
+  }],
   "keywords": [
     "theia-extension"
   ],

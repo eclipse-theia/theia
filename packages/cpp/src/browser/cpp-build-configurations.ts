@@ -14,10 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core';
-import { CppPreferences } from './cpp-preferences';
+import { injectable, inject, postConstruct } from 'inversify';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { Command, CommandContribution, CommandRegistry, Event, Emitter } from '@theia/core/lib/common';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from '@theia/core/lib/browser/quick-open/quick-open-model';
+import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { ProcessTaskConfiguration } from '@theia/task/lib/common/process/task-protocol';
+import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import { CppBuildManager } from './cpp-build-manager';
+import { CppPreferences } from './cpp-preferences';
 
 export interface CppBuildConfiguration {
     /** Human-readable configuration name.  */
@@ -25,6 +32,14 @@ export interface CppBuildConfiguration {
 
     /** Base directory of this build.  */
     directory: string;
+
+    /** List of commands for this project (build, or others) */
+    commands?: { [key: string]: string };
+}
+
+export interface CppBuildTaskConfiguration extends ProcessTaskConfiguration<'cpp'> {
+    configuration: CppBuildConfiguration;
+    target?: string;
 }
 
 /** What we save in the local storage.  */

@@ -95,8 +95,7 @@ export class ProcessTaskRunner implements TaskRunner {
         const cmd = await this.findCommand(command, cwd);
         if (!cmd) {
             throw new Error(`Command not found: ${command}`);
-        }
-        try {
+        } try {
             // use terminal or raw process
             let proc: TerminalProcess | RawProcess;
             const processType = taskConfig.type === 'process' ? 'process' : 'shell';

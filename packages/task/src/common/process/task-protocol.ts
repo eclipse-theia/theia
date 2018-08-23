@@ -25,8 +25,8 @@ export interface CommandProperties {
 }
 
 /** Configuration of a Task that may be run as a process or a command inside a shell. */
-export interface ProcessTaskConfiguration extends TaskConfiguration, CommandProperties {
-    readonly type: ProcessType;
+export interface ProcessTaskConfiguration<T extends string = ProcessType> extends TaskConfiguration, CommandProperties {
+    readonly type: T;
 
     /**
      * Windows version of CommandProperties. Used in preference on Windows, if defined.

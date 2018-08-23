@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,16 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { RequestType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
-
-export interface ActionableMessage {
-    severity: MessageType;
-    message: string;
-    data?: any;
-    commands?: Command[];
-}
-
-export namespace SwitchSourceHeaderRequest {
-    export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>('textDocument/switchSourceHeader');
+declare module 'string-argv' {
+    const stringArgv: stringArgv;
+    interface stringArgv {
+        (...string: string[]): string[];
+        parseArgsStringToArgv: stringArgv;
+    }
+    export = stringArgv;
 }

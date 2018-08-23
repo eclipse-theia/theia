@@ -19,11 +19,12 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import {
     KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry
 } from '@theia/core/lib/browser';
+import { CPP_BUILD_ACTIVE_CONFIGURATION } from './cpp-build-configurations';
 import { editorContainsCppFiles } from './cpp-commands';
 
 @injectable()
 export class CppKeybindingContext implements KeybindingContext {
-    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) { }
+    constructor(@inject(EditorManager) protected readonly editorService: EditorManager) { }
 
     id = 'cpp.keybinding.context';
 
@@ -45,6 +46,10 @@ export class CppKeybindingContribution implements KeybindingContribution {
                 command: 'switch_source_header',
                 context: this.cppKeybindingContext.id,
                 keybinding: 'alt+o'
+            },
+            {
+                command: CPP_BUILD_ACTIVE_CONFIGURATION.id,
+                keybinding: 'ctrl+b'
             }
         ].forEach(binding => {
             registry.registerKeybinding(binding);

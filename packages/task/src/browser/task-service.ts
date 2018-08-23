@@ -186,14 +186,20 @@ export class TaskService implements TaskConfigurationClient {
                 return;
             }
         }
+        this.runTask(task);
+    }
 
+    /**
+     * Runs a task, directly.
+     */
+    async runTask(task: TaskConfiguration): Promise<void> {
         const resolver = this.taskResolverRegistry.getResolver(task.type);
         let resolvedTask: TaskConfiguration;
         try {
             resolvedTask = resolver ? await resolver.resolveTask(task) : task;
         } catch (error) {
-            this.logger.error(`Error resolving task '${taskLabel}': ${error}`);
-            this.messageService.error(`Error resolving task '${taskLabel}': ${error}`);
+            this.logger.error(`Error resolving task '${task.label}': ${error}`);
+            this.messageService.error(`Error resolving task '${task.label}': ${error}`);
             return;
         }
 
@@ -201,8 +207,8 @@ export class TaskService implements TaskConfigurationClient {
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
         } catch (error) {
-            this.logger.error(`Error launching task '${taskLabel}': ${error}`);
-            this.messageService.error(`Error launching task '${taskLabel}': ${error}`);
+            this.logger.error(`Error launching task '${task.label}': ${error}`);
+            this.messageService.error(`Error launching task '${task.label}': ${error}`);
             return;
         }
 
