@@ -28,6 +28,8 @@ import { CppBuildConfigurationManager, CppBuildConfigurationManagerImpl } from '
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { CppGrammarContribution } from './cpp-grammar-contribution';
 import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
+import { CppTaskProvider } from './cpp-task-provider';
+import { TaskContribution } from '@theia/task/lib/browser/task-contribution';
 
 export default new ContainerModule(bind => {
     bind(CommandContribution).to(CppCommandContribution).inSingletonScope();
@@ -38,11 +40,13 @@ export default new ContainerModule(bind => {
     bind(CppLanguageClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(CppLanguageClientContribution));
 
+    bind(CppTaskProvider).toSelf().inSingletonScope();
     bind(CppBuildConfigurationManager).to(CppBuildConfigurationManagerImpl).inSingletonScope();
     bind(CppBuildConfigurationChanger).toSelf().inSingletonScope();
     bind(CppBuildConfigurationsContributions).toSelf().inSingletonScope();
-    bind(CommandContribution).to(CppBuildConfigurationsContributions).inSingletonScope();
 
+    bind(TaskContribution).toService(CppTaskProvider);
+    bind(CommandContribution).toService(CppBuildConfigurationsContributions);
     bind(LanguageGrammarDefinitionContribution).to(CppGrammarContribution).inSingletonScope();
 
     bind(CppBuildConfigurationsStatusBarElement).toSelf().inSingletonScope();
