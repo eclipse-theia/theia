@@ -4,6 +4,7 @@
   "description": "Theia - Custom Keymaps Extension",
   "dependencies": {
     "@theia/core": "^0.3.13",
+    "@theia/monaco": "^0.3.13",
     "@theia/userstorage": "^0.3.13",
     "@theia/workspace": "^0.3.13",
     "ajv": "^5.2.2",

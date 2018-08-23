@@ -24,6 +24,8 @@ import { createPreferencesTreeWidget } from './preference-tree-container';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
 import { PreferencesContainer, PreferencesTreeWidget } from './preferences-tree-widget';
 
+import './monaco-contribution';
+
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     unbind(PreferenceProvider);
 

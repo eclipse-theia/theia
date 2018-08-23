@@ -6,6 +6,7 @@
     "@theia/core": "^0.3.13",
     "@theia/editor": "^0.3.13",
     "@theia/filesystem": "^0.3.13",
+    "@theia/monaco": "^0.3.13",
     "@theia/userstorage": "^0.3.13",
     "@theia/workspace": "^0.3.13",
     "@types/fs-extra": "^4.0.2",
