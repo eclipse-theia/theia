@@ -4542,13 +4542,6 @@ har-validator@~5.1.0:
     ajv "^5.3.0"
     har-schema "^2.0.0"
 
-har-validator@~5.1.0:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/har-validator/-/har-validator-5.1.0.tgz#44657f5688a22cfd4b72486e81b3a3fb11742c29"
-  dependencies:
-    ajv "^5.3.0"
-    har-schema "^2.0.0"
-
 has-ansi@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/has-ansi/-/has-ansi-2.0.0.tgz#34f5049ce1ecdf2b0649af3ef24e45ed35416d91"
@@ -9524,9 +9517,9 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-language-server@dev:
-  version "0.3.0-dev.ceb1d15"
-  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.0-dev.ceb1d15.tgz#3826f2dc96202328bcc8040bdf281c4d3951db07"
+typescript-language-server@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.0.tgz#f9594408ae7db2b21c1d2179d9470ed65c4b9906"
   dependencies:
     command-exists "1.2.6"
     commander "^2.11.0"
