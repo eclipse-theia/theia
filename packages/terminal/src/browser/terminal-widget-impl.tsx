@@ -66,8 +66,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
-    protected terminalActionItems: TerminalActionItem[];
-    protected terminalActionItemsToolBar: HTMLElement;
+    protected readonly terminalActionItems: TerminalActionItem[];
+    protected readonly terminalActionItemsToolBar: HTMLElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
