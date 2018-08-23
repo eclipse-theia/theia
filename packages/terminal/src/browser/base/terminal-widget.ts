@@ -138,5 +138,5 @@ export interface TerminalWidgetOptions {
     /**
      * Terminal actions. Represents buttons, which locate on terminal toolbar.
      */
-    readonly terminalActionItems?: TerminalActionItem[];
+    readonly actionItems?: TerminalActionItem[];
 }

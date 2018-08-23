@@ -218,7 +218,7 @@ export class TaskService implements TaskConfigurationClient {
                     caption: `Task #${taskInfo.taskId}`,
                     label: `Task #${taskInfo.taskId}`,
                     destroyTermOnClose: true,
-                    terminalActionItems: [new TerminalActionItem({
+                    actionItems: [new TerminalActionItem({
                         label: `$(repeat) ${this.getHumanReadableCommand(taskInfo)}`,
                         tooltip: `Re-run current task: ${resolvedTask.label}`,
                         run: async () => {

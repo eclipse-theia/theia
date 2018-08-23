@@ -66,8 +66,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
-    protected readonly terminalActionItems: TerminalActionItem[];
-    protected readonly terminalActionItemsToolBar: HTMLElement;
+    protected terminalActionItems: TerminalActionItem[];
+    protected terminalActionItemsToolBar: HTMLElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -149,8 +149,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.onTermDidClose);
 
-        this.terminalActionItems = this.options.terminalActionItems ?
-        this.getDefaultTerminalActionitems().concat(this.options.terminalActionItems) : this.getDefaultTerminalActionitems();
+        this.terminalActionItems = this.options.actionItems ?
+        this.getDefaultTerminalActionitems().concat(this.options.actionItems) : this.getDefaultTerminalActionitems();
         this.terminalActionItemsToolBar = document.createElement('div');
         this.terminalActionItemsToolBar.classList.add('terminal-container-toolbar');
         this.node.appendChild(this.terminalActionItemsToolBar);
