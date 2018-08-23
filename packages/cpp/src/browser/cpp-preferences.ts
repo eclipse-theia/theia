@@ -32,6 +32,14 @@ export const cppPreferencesSchema: PreferenceSchema = {
                     },
                     'directory': {
                         type: 'string'
+                    },
+                    'commands': {
+                        type: 'object',
+                        properties: {
+                            'build': {
+                                type: 'string',
+                            }
+                        },
                     }
                 },
                 required: ['name', 'directory'],

@@ -25,6 +25,11 @@ export interface CppBuildConfiguration {
 
     /** Base directory of this build.  */
     directory: string;
+
+    /** List of commands for this build configuration.  */
+    commands?: {
+        'build'?: string
+    };
 }
 
 /** What we save in the local storage.  */
