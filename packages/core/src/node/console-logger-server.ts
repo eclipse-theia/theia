@@ -15,22 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { LogLevel } from '../common/logger';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { LogLevelCliContribution } from './logger-cli-contribution';
-import { ILoggerServer, ILoggerClient } from '../common/logger-protocol';
-
-// tslint:disable-next-line:no-any
-type Console = (message?: any, ...optionalParams: any[]) => void;
-const originalConsoleLog = console.log;
-const Consoles = new Map<LogLevel, Console>([
-    [LogLevel.FATAL, console.error],
-    [LogLevel.ERROR, console.error],
-    [LogLevel.WARN, console.warn],
-    [LogLevel.INFO, console.info],
-    [LogLevel.DEBUG, console.debug],
-    [LogLevel.TRACE, console.trace]
-]);
+import { ILoggerServer, ILoggerClient, LogLevel, ConsoleLogger } from '../common/logger-protocol';
 
 @injectable()
 export class ConsoleLoggerServer implements ILoggerServer {
@@ -68,13 +55,11 @@ export class ConsoleLoggerServer implements ILoggerServer {
         return this.loggers.get(name) || this.cli.defaultLogLevel;
     }
 
-    // tslint:disable-next-line:no-any
+    // tslint:disable:no-any
     async log(name: string, logLevel: number, message: string, params: any[]): Promise<void> {
         const configuredLogLevel = await this.getLogLevel(name);
         if (logLevel >= configuredLogLevel) {
-            const console = Consoles.get(logLevel) || originalConsoleLog;
-            const severity = `${(LogLevel.strings.get(logLevel) || 'unknown').toUpperCase()}`;
-            console(`${name} ${severity}`, message, ...params);
+            ConsoleLogger.log(name, logLevel, message, params);
         }
     }
 

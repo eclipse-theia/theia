@@ -16,62 +16,16 @@
 
 import { inject, injectable } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
-import { ILoggerServer } from './logger-protocol';
+import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol';
 
 // tslint:disable:no-any
 
-export enum LogLevel {
-    FATAL = 60,
-    ERROR = 50,
-    WARN = 40,
-    INFO = 30,
-    DEBUG = 20,
-    TRACE = 10
-}
-
-export namespace LogLevel {
-    export const strings = new Map<LogLevel, string>([
-        [LogLevel.FATAL, 'fatal'],
-        [LogLevel.ERROR, 'error'],
-        [LogLevel.WARN, 'warn'],
-        [LogLevel.INFO, 'info'],
-        [LogLevel.DEBUG, 'debug'],
-        [LogLevel.TRACE, 'trace']
-    ]);
-
-    export function toString(level: LogLevel): string | undefined {
-        return strings.get(level);
-    }
-
-    export function fromString(levelStr: string): LogLevel | undefined {
-        for (const pair of strings) {
-            if (pair[1] === levelStr) {
-                return pair[0];
-            }
-        }
-
-        return undefined;
-    }
-}
-
-type ConsoleError = typeof console.error;
-type ConsoleWarn = typeof console.warn;
-type ConsoleInfo = typeof console.info;
-type ConsoleDebug = typeof console.debug;
-type ConsoleTrace = typeof console.trace;
-type ConsoleLog = typeof console.log;
-
-let originalConsoleError: ConsoleError;
-let originalConsoleWarn: ConsoleWarn;
-let originalConsoleInfo: ConsoleInfo;
-let originalConsoleDebug: ConsoleDebug;
-let originalConsoleTrace: ConsoleTrace;
-let originalConsoleLog: ConsoleLog;
+export {
+    LogLevel, rootLoggerName
+};
 
 /* This is to be initialized from container composition root. It can be used outside of the inversify context.  */
 export let logger: ILogger;
-
-export const rootLoggerName: string = 'root';
 
 /**
  * Counterpart of the `#setRootLogger(ILogger)`. Restores the `console.xxx` bindings to the original one.
@@ -80,40 +34,22 @@ export const rootLoggerName: string = 'root';
  */
 export function unsetRootLogger() {
     if (logger !== undefined) {
-        console.error = originalConsoleError;
-        console.warn = originalConsoleWarn;
-        console.info = originalConsoleInfo;
-        console.debug = originalConsoleDebug;
-        console.trace = originalConsoleTrace;
-        console.log = originalConsoleLog;
+        ConsoleLogger.reset();
         (<any>logger) = undefined;
     }
 }
 
-export function setRootLogger(aLogger: ILogger) {
-    if (logger === undefined) {
-        originalConsoleError = console.error;
-        originalConsoleWarn = console.warn;
-        originalConsoleInfo = console.info;
-        originalConsoleDebug = console.debug;
-        originalConsoleTrace = console.trace;
-        originalConsoleLog = console.log;
-    }
+export function setRootLogger(aLogger: ILogger): void {
     logger = aLogger;
-    const frontend = typeof window !== 'undefined' && typeof (window as any).process === 'undefined';
-    const log = (logLevel: number, consoleLog: ConsoleLog, message?: any, ...optionalParams: any[]) => {
-        aLogger.log(logLevel, message, ...optionalParams);
-        if (frontend) {
-            consoleLog(message, ...optionalParams);
-        }
-    };
+    const log = (logLevel: number, message?: any, ...optionalParams: any[]) =>
+        logger.log(logLevel, message, ...optionalParams);
 
-    console.error = log.bind(undefined, LogLevel.ERROR, console.error);
-    console.warn = log.bind(undefined, LogLevel.WARN, console.warn);
-    console.info = log.bind(undefined, LogLevel.INFO, console.info);
-    console.debug = log.bind(undefined, LogLevel.DEBUG, console.debug);
-    console.trace = log.bind(undefined, LogLevel.TRACE, console.trace);
-    console.log = log.bind(undefined, LogLevel.INFO, console.log);
+    console.error = log.bind(undefined, LogLevel.ERROR);
+    console.warn = log.bind(undefined, LogLevel.WARN);
+    console.info = log.bind(undefined, LogLevel.INFO);
+    console.debug = log.bind(undefined, LogLevel.DEBUG);
+    console.trace = log.bind(undefined, LogLevel.TRACE);
+    console.log = log.bind(undefined, LogLevel.INFO);
 }
 
 export type Log = (message: any, ...params: any[]) => void;
