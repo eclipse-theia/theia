@@ -173,8 +173,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                             start: 0,
                             end: uri.path.name.length
                         },
-                        validate: name => {
-                            if (initialValue === name) {
+                        validate: (name, mode) => {
+                            if (initialValue === name && mode === 'preview') {
                                 return false;
                             }
                             return this.validateFileName(name, parent);

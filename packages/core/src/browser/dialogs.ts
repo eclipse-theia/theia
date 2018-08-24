@@ -24,6 +24,33 @@ export class DialogProps {
     readonly title: string;
 }
 
+export type DialogMode = 'open' | 'preview';
+
+export type DialogError = string | boolean | {
+    message: string
+    result: boolean
+};
+export namespace DialogError {
+    export function getResult(error: DialogError): boolean {
+        if (typeof error === 'string') {
+            return !error.length;
+        }
+        if (typeof error === 'boolean') {
+            return error;
+        }
+        return error.result;
+    }
+    export function getMessage(error: DialogError): string {
+        if (typeof error === 'string') {
+            return error;
+        }
+        if (typeof error === 'boolean') {
+            return '';
+        }
+        return error.message;
+    }
+}
+
 @injectable()
 export abstract class AbstractDialog<T> extends BaseWidget {
 
@@ -176,15 +203,15 @@ export abstract class AbstractDialog<T> extends BaseWidget {
             return;
         }
         const value = this.value;
-        const error = this.isValid(value);
+        const error = this.isValid(value, 'preview');
         this.setErrorMessage(error);
     }
 
     protected accept(): void {
         if (this.resolve) {
             const value = this.value;
-            const error = this.isValid(value);
-            if (error) {
+            const error = this.isValid(value, 'open');
+            if (!DialogError.getResult(error)) {
                 this.setErrorMessage(error);
             } else {
                 this.resolve(value);
@@ -198,15 +225,15 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     /**
      * Return a string of zero-length or true if valid.
      */
-    protected isValid(value: T): string | boolean {
+    protected isValid(value: T, mode: DialogMode): DialogError {
         return '';
     }
 
-    protected setErrorMessage(error: string | boolean): void {
+    protected setErrorMessage(error: DialogError): void {
         if (this.acceptButton) {
-            this.acceptButton.disabled = !!error;
+            this.acceptButton.disabled = !DialogError.getResult(error);
         }
-        this.errorMessageNode.innerHTML = typeof error === 'string' ? error : '';
+        this.errorMessageNode.innerHTML = DialogError.getMessage(error);
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
@@ -270,7 +297,7 @@ export class SingleTextInputDialogProps extends DialogProps {
         end: number
         direction?: 'forward' | 'backward' | 'none'
     };
-    readonly validate?: (input: string) => string | boolean;
+    readonly validate?: (input: string, mode: DialogMode) => DialogError;
 }
 
 export class SingleTextInputDialog extends AbstractDialog<string> {
@@ -304,11 +331,11 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return this.inputField.value;
     }
 
-    protected isValid(value: string): string | boolean {
+    protected isValid(value: string, mode: DialogMode): DialogError {
         if (this.props.validate) {
-            return this.props.validate(value);
+            return this.props.validate(value, mode);
         }
-        return super.isValid(value);
+        return super.isValid(value, mode);
     }
 
     protected onAfterAttach(msg: Message): void {
