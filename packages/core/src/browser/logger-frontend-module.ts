@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule, Container } from 'inversify';
-import { ILoggerServer, loggerPath } from '../common/logger-protocol';
+import { ILoggerServer, loggerPath, ConsoleLogger } from '../common/logger-protocol';
 import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
@@ -34,7 +34,17 @@ export const loggerFrontendModule = new ContainerModule(bind => {
     bind(ILoggerServer).toDynamicValue(ctx => {
         const loggerWatcher = ctx.container.get(LoggerWatcher);
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<ILoggerServer>(loggerPath, loggerWatcher.getLoggerClient());
+        const target = connection.createProxy<ILoggerServer>(loggerPath, loggerWatcher.getLoggerClient());
+        function get<K extends keyof ILoggerServer>(_: ILoggerServer, property: K): ILoggerServer[K] {
+            if (property === 'log') {
+                return (name, logLevel, message, params) => {
+                    ConsoleLogger.log(name, logLevel, message, params);
+                    return target.log(name, logLevel, message, params);
+                };
+            }
+            return target[property];
+        }
+        return new Proxy(target, { get });
     }).inSingletonScope();
     bind(LoggerFactory).toFactory(ctx =>
         (name: string) => {
