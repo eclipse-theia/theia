@@ -20,6 +20,8 @@ import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { CppPreferences } from './cpp-preferences';
+import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import URI from '@theia/core/lib/common/uri';
 
 export interface CppBuildConfiguration {
     name: string;
@@ -128,10 +130,16 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     @inject(CppBuildConfigurationManager)
     protected readonly cppBuildConfigurations: CppBuildConfigurationManager;
 
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
     async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
         const items: QuickOpenItem[] = [];
         const active: CppBuildConfiguration | undefined = this.cppBuildConfigurations.getActiveConfig();
-        const configurations = Array.from(this.cppBuildConfigurations.getConfigs()).sort();
+        const configurations = Array.from(this.cppBuildConfigurations.getConfigs()).sort((a, b) => (a.name.localeCompare(b.name)));
+
+        const homeStat = await this.fileSystem.getCurrentUserHome();
+        const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
 
         // Add feedback item when no configurations are present
         if (!configurations.length) {
@@ -146,7 +154,8 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         if (active) {
             items.push(new QuickOpenItem({
                 label: 'None',
-                detail: 'Reset active build configuration',
+                iconClass: 'fa fa-times',
+                description: 'Reset active build configuration',
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
@@ -159,9 +168,12 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
 
         // Add one item per build config.
         configurations.forEach(config => {
+            const uri = new URI(config.directory);
             items.push(new QuickOpenItem({
-                label: config.name + (config === active ? ' ✔' : ''),
-                detail: config.directory,
+                label: config.name,
+                // add a icon for active build config, and empty placeholder for others
+                iconClass: (config === active) ? 'fa fa-check' : 'fa fa-empty-item',
+                description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
