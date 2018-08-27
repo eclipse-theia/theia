@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickCommandService } from './quick-command-service';
 import { Command, CommandRegistry, CommandContribution } from '../../common';
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
+import { PrefixQuickOpenService, QuickOpenHandlerRegistry } from './prefix-quick-open-service';
 
 export const quickCommand: Command = {
     id: 'quickCommand',
@@ -27,12 +27,14 @@ export const quickCommand: Command = {
 @injectable()
 export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution {
 
-    @inject(QuickCommandService)
-    protected readonly quickCommandService: QuickCommandService;
+    @inject(PrefixQuickOpenService)
+    protected readonly quickOpenService: PrefixQuickOpenService;
+
+    @inject(QuickOpenHandlerRegistry) protected readonly quickOpenHandlerRegistry: QuickOpenHandlerRegistry;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
-            execute: () => this.quickCommandService.open()
+            execute: () => this.quickOpenService.open('>')
         });
     }
 
@@ -46,5 +48,4 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
             keybinding: 'ctrlcmd+shift+p'
         });
     }
-
 }
