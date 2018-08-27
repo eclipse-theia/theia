@@ -20,6 +20,8 @@ import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeymapsParser } from './keymaps-parser';
 
+import './monaco-contribution';
+
 export default new ContainerModule(bind => {
     bind(KeymapsParser).toSelf().inSingletonScope();
     bind(KeymapsService).toSelf().inSingletonScope();

@@ -18,20 +18,26 @@ import { inject, injectable } from 'inversify';
 import { Command, CommandRegistry } from '../../common';
 import { Keybinding, KeybindingRegistry } from '../keybinding';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
-import { QuickOpenService } from './quick-open-service';
+import { QuickOpenOptions } from './quick-open-service';
+import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
 
 @injectable()
-export class QuickCommandService implements QuickOpenModel {
+export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
 
     private items: QuickOpenItem[];
 
-    constructor(
-        @inject(CommandRegistry) protected readonly commands: CommandRegistry,
-        @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
-    ) { }
+    readonly prefix: string = '>';
 
-    open(): void {
+    readonly description: string = 'Quick Command';
+
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
+    @inject(KeybindingRegistry)
+    protected readonly keybindings: KeybindingRegistry;
+
+    /** Initialize this quick open model with the commands. */
+    init(): void {
         // let's compute the items here to do it in the context of the currently activeElement
         this.items = [];
         const filteredAndSortedCommands = this.commands.commands.filter(a => a.label).sort((a, b) => a.label!.localeCompare(b.label!));
@@ -40,18 +46,19 @@ export class QuickCommandService implements QuickOpenModel {
                 this.items.push(new CommandQuickOpenItem(command, this.commands, this.keybindings));
             }
         }
-
-        this.quickOpenService.open(this, {
-            placeholder: 'Type the name of a command you want to execute',
-            fuzzyMatchLabel: true,
-            fuzzySort: false
-        });
     }
 
     public onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         acceptor(this.items);
     }
 
+    getModel(): QuickOpenModel {
+        return this;
+    }
+
+    getOptions(): QuickOpenOptions {
+        return { fuzzyMatchLabel: true };
+    }
 }
 
 export class CommandQuickOpenItem extends QuickOpenItem {
@@ -101,5 +108,16 @@ export class CommandQuickOpenItem extends QuickOpenItem {
             this.commands.executeCommand(this.command.id);
         }, 50);
         return true;
+    }
+}
+
+@injectable()
+export class CommandQuickOpenContribution implements QuickOpenContribution {
+
+    @inject(QuickCommandService)
+    protected readonly commandQuickOpenHandler: QuickCommandService;
+
+    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
+        handlers.registerHandler(this.commandQuickOpenHandler);
     }
 }

@@ -24,6 +24,33 @@ export class DialogProps {
     readonly title: string;
 }
 
+export type DialogMode = 'open' | 'preview';
+
+export type DialogError = string | boolean | {
+    message: string
+    result: boolean
+};
+export namespace DialogError {
+    export function getResult(error: DialogError): boolean {
+        if (typeof error === 'string') {
+            return !error.length;
+        }
+        if (typeof error === 'boolean') {
+            return error;
+        }
+        return error.result;
+    }
+    export function getMessage(error: DialogError): string {
+        if (typeof error === 'string') {
+            return error;
+        }
+        if (typeof error === 'boolean') {
+            return '';
+        }
+        return error.message;
+    }
+}
+
 @injectable()
 export abstract class AbstractDialog<T> extends BaseWidget {
 
@@ -38,6 +65,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     protected closeButton: HTMLButtonElement | undefined;
     protected acceptButton: HTMLButtonElement | undefined;
+
+    protected activeElement: HTMLElement | undefined;
 
     constructor(
         @inject(DialogProps) protected readonly props: DialogProps
@@ -139,7 +168,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.resolve) {
             return Promise.reject('The dialog is already opened.');
         }
-
+        this.activeElement = window.document.activeElement as HTMLElement;
         return new Promise<T | undefined>((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -155,26 +184,34 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     close(): void {
         if (this.resolve) {
+            if (this.activeElement) {
+                this.activeElement.focus();
+            }
             this.resolve(undefined);
         }
-
+        this.activeElement = undefined;
         super.close();
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        if (this.resolve) {
-            const value = this.value;
-            const error = this.isValid(value);
-            this.setErrorMessage(error);
+        this.validate();
+    }
+
+    protected validate(): void {
+        if (!this.resolve) {
+            return;
         }
+        const value = this.value;
+        const error = this.isValid(value, 'preview');
+        this.setErrorMessage(error);
     }
 
     protected accept(): void {
         if (this.resolve) {
             const value = this.value;
-            const error = this.isValid(value);
-            if (error) {
+            const error = this.isValid(value, 'open');
+            if (!DialogError.getResult(error)) {
                 this.setErrorMessage(error);
             } else {
                 this.resolve(value);
@@ -185,15 +222,18 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     abstract get value(): T;
 
-    isValid(value: T): string {
+    /**
+     * Return a string of zero-length or true if valid.
+     */
+    protected isValid(value: T, mode: DialogMode): DialogError {
         return '';
     }
 
-    protected setErrorMessage(error: string) {
+    protected setErrorMessage(error: DialogError): void {
         if (this.acceptButton) {
-            this.acceptButton.disabled = !!error;
+            this.acceptButton.disabled = !DialogError.getResult(error);
         }
-        this.errorMessageNode.innerHTML = error;
+        this.errorMessageNode.innerHTML = DialogError.getMessage(error);
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
@@ -252,7 +292,12 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
 export class SingleTextInputDialogProps extends DialogProps {
     readonly confirmButtonLabel?: string;
     readonly initialValue?: string;
-    readonly validate?: (input: string) => string;
+    readonly initialSelectionRange?: {
+        start: number
+        end: number
+        direction?: 'forward' | 'backward' | 'none'
+    };
+    readonly validate?: (input: string, mode: DialogMode) => DialogError;
 }
 
 export class SingleTextInputDialog extends AbstractDialog<string> {
@@ -268,6 +313,15 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.type = 'text';
         this.inputField.setAttribute('style', 'flex: 0;');
         this.inputField.value = props.initialValue || '';
+        if (props.initialSelectionRange) {
+            this.inputField.setSelectionRange(
+                props.initialSelectionRange.start,
+                props.initialSelectionRange.end,
+                props.initialSelectionRange.direction
+            );
+        } else {
+            this.inputField.select();
+        }
         this.contentNode.appendChild(this.inputField);
 
         this.appendAcceptButton(props.confirmButtonLabel);
@@ -277,11 +331,11 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return this.inputField.value;
     }
 
-    isValid(value: string): string {
+    protected isValid(value: string, mode: DialogMode): DialogError {
         if (this.props.validate) {
-            return this.props.validate(value);
+            return this.props.validate(value, mode);
         }
-        return super.isValid(value);
+        return super.isValid(value, mode);
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -291,7 +345,6 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
 
     protected onActivateRequest(msg: Message): void {
         this.inputField.focus();
-        this.inputField.select();
     }
 
 }

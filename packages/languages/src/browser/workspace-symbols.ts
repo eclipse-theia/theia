@@ -16,8 +16,8 @@
 
 import { injectable, inject } from 'inversify';
 import {
-    QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
-    QuickOpenMode, KeybindingContribution, KeybindingRegistry
+    PrefixQuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
+    QuickOpenMode, KeybindingContribution, KeybindingRegistry, QuickOpenHandler, QuickOpenOptions, QuickOpenContribution, QuickOpenHandlerRegistry
 } from '@theia/core/lib/browser';
 import { Languages, WorkspaceSymbolParams, SymbolInformation } from './language-client-services';
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
@@ -26,7 +26,10 @@ import { CommandContribution } from '@theia/core/lib/common';
 import { Range } from 'vscode-languageserver-types';
 
 @injectable()
-export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContribution, KeybindingContribution, CommandHandler {
+export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContribution, KeybindingContribution, CommandHandler, QuickOpenHandler, QuickOpenContribution {
+
+    readonly prefix = '#';
+    readonly description = 'Go to symbol in workspace';
 
     private command: Command = {
         id: 'languages.workspace.symbol',
@@ -35,7 +38,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
     constructor(@inject(Languages) protected languages: Languages,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(QuickOpenService) protected quickOpenService: QuickOpenService,
+        @inject(PrefixQuickOpenService) protected quickOpenService: PrefixQuickOpenService,
         @inject(SelectionService) protected selectionService: SelectionService) { }
 
     isEnabled() {
@@ -43,11 +46,23 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
     }
 
     execute() {
-        this.quickOpenService.open(this, {
-            placeholder: 'Type to search for symbols.',
+        this.quickOpenService.open(this.prefix);
+    }
+
+    init(): void { }
+
+    getModel(): QuickOpenModel {
+        return this;
+    }
+
+    getOptions(): QuickOpenOptions {
+        return {
             fuzzyMatchLabel: true,
             showItemsWithoutHighlight: true,
-        });
+            onClose: () => {
+                this.cancellationSource.cancel();
+            }
+        };
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -59,6 +74,10 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
             command: this.command.id,
             keybinding: 'ctrlcmd+o',
         });
+    }
+
+    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
+        handlers.registerHandler(this);
     }
 
     private cancellationSource = new CancellationTokenSource();
@@ -80,6 +99,12 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
                     if (symbols && !newCancellationSource.token.isCancellationRequested) {
                         for (const symbol of symbols) {
                             items.push(this.createItem(symbol));
+                        }
+                        if (items.length === 0) {
+                            items.push(new QuickOpenItem({
+                                label: lookFor.length === 0 ? 'Type to search for symbols' : 'No symbols matching',
+                                run: () => false
+                            }));
                         }
                         acceptor(items);
                     }

@@ -15,6 +15,7 @@
     "@theia/filesystem": "^0.3.13",
     "@theia/git": "^0.3.13",
     "@theia/java": "^0.3.13",
+    "@theia/json": "^0.3.13",
     "@theia/keymaps": "^0.3.13",
     "@theia/languages": "^0.3.13",
     "@theia/markers": "^0.3.13",

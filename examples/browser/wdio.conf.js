@@ -2,10 +2,27 @@
 const http = require('http');
 const path = require('path');
 
-const port = 3000;
-const host = 'localhost';
+const wdioRunnerScript = require.resolve('webdriverio/build/lib/runner.js');
 
-let server;
+/**
+ * WebdriverIO will execute this current script first to setup the tests,
+ *  and it will re-execute it for every test workers (subprocesses).
+ * This means that if we are to set a random port for Theia's backend in the master process,
+ *  we have to pass the port value to the child processes.
+ * This is done via command line arguments: the following lines fetch the port passed
+ *  to the script, it should be set by the master process for the children,
+ *  but you can also specify it manually by doing `yarn test --theia-port 4000` from
+ *  `examples/browser`.
+ */
+const cliPortKey = '--theia-port';
+const cliPortIndex = process.argv.indexOf(cliPortKey);
+const masterPort = cliPortIndex > -1 ? process.argv[cliPortIndex + 1] : 0; // 0 if master
+if (typeof masterPort === 'undefined') {
+    throw new Error(`${cliPortKey} expects a number as following argument`);
+}
+
+const port = masterPort;
+const host = 'localhost';
 
 exports.config = {
 
@@ -167,15 +184,16 @@ exports.config = {
     //
     // Gets executed once before all workers get launched.
     onPrepare: function (config, capabilities) {
-        return require('./src-gen/backend/server')(port, host).then(s => {
-            server = s;
+        return require('./src-gen/backend/server')(port, host).then(created => {
+            this.execArgv = [wdioRunnerScript, cliPortKey, created.address().port];
+            this.server = created;
         });
     },
     // Gets executed after all workers got shut down and the process is about to exit. It is not
     // possible to defer the end of the process using a promise.
     onComplete: function (exitCode) {
-        if (server) {
-            server.close();
+        if (this.server) {
+            this.server.close();
         }
     },
     //

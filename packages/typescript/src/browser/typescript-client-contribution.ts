@@ -32,15 +32,6 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         super(workspace, languages, languageClientFactory);
     }
 
-    protected get globPatterns(): string[] {
-        return [
-            '**/*.ts',
-            '**/*.tsx',
-            '**/*.js',
-            '**/*.jsx'
-        ];
-    }
-
     protected get documentSelector(): string[] {
         return [
             TYPESCRIPT_LANGUAGE_ID,

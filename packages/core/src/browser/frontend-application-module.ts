@@ -33,7 +33,10 @@ import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendAp
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
-import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickPickService } from './quick-open';
+import {
+    QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickPickService, QuickOpenContribution,
+    QuickOpenHandlerRegistry, CommandQuickOpenContribution, HelpQuickOpenHandler, QuickOpenFrontendContribution, PrefixQuickOpenService
+} from './quick-open';
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import {
@@ -101,6 +104,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(CommandRegistry).toSelf().inSingletonScope();
     bind(CommandService).toDynamicValue(context => context.container.get(CommandRegistry));
     bindContributionProvider(bind, CommandContribution);
+    bind(QuickOpenContribution).to(CommandQuickOpenContribution);
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);
@@ -124,6 +128,15 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope()
     );
+
+    bind(PrefixQuickOpenService).toSelf().inSingletonScope();
+    bindContributionProvider(bind, QuickOpenContribution);
+    bind(QuickOpenHandlerRegistry).toSelf().inSingletonScope();
+    bind(QuickOpenFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QuickOpenFrontendContribution);
+
+    bind(HelpQuickOpenHandler).toSelf().inSingletonScope();
+    bind(QuickOpenContribution).toService(HelpQuickOpenHandler);
 
     bind(LocalStorageService).toSelf().inSingletonScope();
     bind(StorageService).toService(LocalStorageService);

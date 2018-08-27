@@ -77,7 +77,7 @@ export class ProcessTaskRunner implements TaskRunner {
         // sanity checks:
         // - we expect the cwd to be set by the client.
         if (!taskConfig.cwd) {
-            return Promise.reject(new Error("Can't run a task when 'cwd' is not provided by the client"));
+            throw new Error("Can't run a task when 'cwd' is not provided by the client");
         }
 
         const cwd = FileUri.fsPath(taskConfig.cwd);
@@ -93,42 +93,40 @@ export class ProcessTaskRunner implements TaskRunner {
         // unsuccessfully. So here we look to see if it seems we can find a file of that name
         // that is likely to be the one we want, before attempting to execute it.
         const cmd = await this.findCommand(command, cwd);
-        if (cmd) {
-            try {
-                // use terminal or raw process
-                let proc: TerminalProcess | RawProcess;
-                const processType = taskConfig.type === 'process' ? 'process' : 'shell';
-                if (processType === 'process') {
-                    this.logger.debug('Task: creating underlying raw process');
-                    proc = this.rawProcessFactory(<RawProcessOptions>{
-                        command: command,
-                        args: args,
-                        options: options
-                    });
-                } else {
-                    // all Task types without specific TaskRunner will be run as a shell process e.g.: npm, gulp, etc.
-                    this.logger.debug('Task: creating underlying terminal process');
-                    proc = this.terminalProcessFactory(<TerminalProcessOptions>{
-                        command: command,
-                        args: args,
-                        options: options
-                    });
-                }
-                return this.taskFactory(
-                    {
-                        label: taskConfig.label,
-                        command: cmd,
-                        process: proc,
-                        processType: processType,
-                        context: ctx,
-                        config: taskConfig
-                    });
-            } catch (error) {
-                this.logger.error(`Error occurred while creating task: ${error}`);
-                return Promise.reject(new Error(error));
+        if (!cmd) {
+            throw new Error(`Command not found: ${command}`);
+        }
+        try {
+            // use terminal or raw process
+            let proc: TerminalProcess | RawProcess;
+            const processType = taskConfig.type === 'process' ? 'process' : 'shell';
+            if (processType === 'process') {
+                this.logger.debug('Task: creating underlying raw process');
+                proc = this.rawProcessFactory(<RawProcessOptions>{
+                    command: command,
+                    args: args,
+                    options: options
+                });
+            } else {
+                // all Task types without specific TaskRunner will be run as a shell process e.g.: npm, gulp, etc.
+                this.logger.debug('Task: creating underlying terminal process');
+                proc = this.terminalProcessFactory(<TerminalProcessOptions>{
+                    command: command,
+                    args: args,
+                    options: options
+                });
             }
-        } else {
-            return Promise.reject(new Error(`Command not found: ${command}`));
+            return this.taskFactory({
+                label: taskConfig.label,
+                command: cmd,
+                process: proc,
+                processType: processType,
+                context: ctx,
+                config: taskConfig
+            });
+        } catch (error) {
+            this.logger.error(`Error occurred while creating task: ${error}`);
+            throw error;
         }
     }
 
@@ -170,7 +168,6 @@ export class ProcessTaskRunner implements TaskRunner {
                     }
                 }
             }
-
         }
     }
 

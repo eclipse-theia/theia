@@ -15,23 +15,31 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
+import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenHandler, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/';
 import { TaskService } from './task-service';
 import { TaskConfigurations } from './task-configurations';
 import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
 
 @injectable()
-export class QuickOpenTask implements QuickOpenModel {
+export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
     protected items: QuickOpenItem[];
 
-    constructor(
-        @inject(TaskService) protected readonly taskService: TaskService,
-        @inject(TaskConfigurations) protected readonly taskConfigurations: TaskConfigurations,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
-    ) { }
+    readonly prefix: string = 'task ';
 
-    async open(): Promise<void> {
+    readonly description: string = 'Run Task';
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
+    @inject(TaskConfigurations)
+    protected readonly taskConfigurations: TaskConfigurations;
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+
+    /** Initialize this quick open model with the tasks. */
+    async init(): Promise<void> {
         this.items = [];
 
         const configuredTasks = await this.taskConfigurations.getTasks();
@@ -43,12 +51,26 @@ export class QuickOpenTask implements QuickOpenModel {
         for (const task of providedTasks) {
             this.items.push(new TaskRunQuickOpenItem(task, this.taskService, true));
         }
+    }
 
+    async open(): Promise<void> {
+        await this.init();
         this.quickOpenService.open(this, {
             placeholder: 'Type the name of a task you want to execute',
             fuzzyMatchLabel: true,
             fuzzySort: true
         });
+    }
+
+    getModel(): QuickOpenModel {
+        return this;
+    }
+
+    getOptions(): QuickOpenOptions {
+        return {
+            fuzzyMatchLabel: true,
+            fuzzySort: true
+        };
     }
 
     attach(): void {
@@ -75,10 +97,6 @@ export class QuickOpenTask implements QuickOpenModel {
         });
     }
 
-    public getItems(lookFor: string): QuickOpenItem[] {
-        return this.items;
-    }
-
     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         acceptor(this.items);
     }
@@ -86,7 +104,6 @@ export class QuickOpenTask implements QuickOpenModel {
     protected getRunningTaskLabel(task: TaskInfo): string {
         return `Task id: ${task.taskId}, label: ${task.config.label}`;
     }
-
 }
 
 export class TaskRunQuickOpenItem extends QuickOpenItem {
