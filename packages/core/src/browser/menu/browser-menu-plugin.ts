@@ -146,31 +146,72 @@ class DynamicMenuWidget extends MenuWidget {
         super.open(x, y, options);
     }
 
-    private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
+    private updateSubMenus(
+        parent: MenuWidget,
+        menu: CompositeMenuNode,
+        commands: PhosphorCommandRegistry
+    ): void {
+        const items = this.buildSubMenus([], menu, commands);
+        for (const item of items) {
+            parent.addItem(item);
+        }
+    }
+
+    private buildSubMenus(
+        items: MenuWidget.IItemOptions[],
+        menu: CompositeMenuNode,
+        commands: PhosphorCommandRegistry
+    ): MenuWidget.IItemOptions[] {
         for (const item of menu.children) {
             if (item instanceof CompositeMenuNode) {
-                if (item.label && item.children.length > 0) {
-                    parent.addItem({
-                        type: 'submenu',
-                        submenu: new DynamicMenuWidget(item, this.options)
-                    });
-                } else {
-                    if (item.children.length > 0) {
-                        if (parent.items.length > 0) {
-                            parent.addItem({
+                if (item.children.length > 0) {
+                    // do not render empty nodes
+
+                    if (item.isSubmenu) { // submenu node
+
+                        const submenu = new DynamicMenuWidget(item, this.options);
+                        if (submenu.items.length === 0) {
+                            continue;
+                        }
+
+                        items.push({
+                            type: 'submenu',
+                            submenu,
+                        });
+
+                    } else { // group node
+
+                        const submenu = this.buildSubMenus([], item, commands);
+                        if (submenu.length === 0) {
+                            continue;
+                        }
+
+                        if (items.length > 0) {
+                            // do not put a separator above the first group
+
+                            items.push({
                                 type: 'separator'
                             });
                         }
-                        this.updateSubMenus(parent, item, commands);
+
+                        // render children
+                        items.push(...submenu);
                     }
                 }
+
             } else if (item instanceof ActionMenuNode) {
-                parent.addItem({
+
+                if (!commands.isVisible(item.action.commandId)) {
+                    continue;
+                }
+
+                items.push({
                     command: item.action.commandId,
                     type: 'command'
                 });
             }
         }
+        return items;
     }
 }
 

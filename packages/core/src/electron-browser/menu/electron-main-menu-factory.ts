@@ -63,28 +63,51 @@ export class ElectronMainMenuFactory {
     protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[], menuModel: CompositeMenuNode): Electron.MenuItemConstructorOptions[] {
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
-                if (menu.label) {
-                    // should we create a submenu?
-                    items.push({
-                        label: menu.label,
-                        submenu: this.fillMenuTemplate([], menu)
-                    });
-                } else if (menu.children.length > 0) {
-                    // do not put a separator above the first group
-                    if (items.length > 0) {
-                        // or just a separator?
+                if (menu.children.length > 0) {
+                    // do not render empty nodes
+
+                    if (menu.isSubmenu) { // submenu node
+
+                        const submenu = this.fillMenuTemplate([], menu);
+                        if (submenu.length === 0) {
+                            continue;
+                        }
+
                         items.push({
-                            type: 'separator'
+                            label: menu.label,
+                            submenu
                         });
+
+                    } else { // group node
+
+                        // process children
+                        const submenu = this.fillMenuTemplate([], menu);
+                        if (submenu.length === 0) {
+                            continue;
+                        }
+
+                        if (items.length > 0) {
+                            // do not put a separator above the first group
+
+                            items.push({
+                                type: 'separator'
+                            });
+                        }
+
+                        // render children
+                        items.push(...submenu);
                     }
-                    // followed by the elements
-                    this.fillMenuTemplate(items, menu);
                 }
             } else if (menu instanceof ActionMenuNode) {
                 const commandId = menu.action.commandId;
+
                 // That is only a sanity check at application startup.
                 if (!this.commandRegistry.getCommand(commandId)) {
                     throw new Error(`Unknown command with ID: ${commandId}.`);
+                }
+
+                if (!this.commandRegistry.isVisible(commandId)) {
+                    continue;
                 }
 
                 const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
