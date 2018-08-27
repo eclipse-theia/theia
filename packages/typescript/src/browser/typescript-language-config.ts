@@ -17,12 +17,14 @@
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_NAME } from '../common';
 import { injectable } from 'inversify';
 import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { TextmateSnippetCompletionProvider } from '@theia/monaco/lib/browser/textmate/textmate-snippet-completion-provider';
 
 @injectable()
 export class TypescriptGrammarContribution implements LanguageGrammarDefinitionContribution {
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         this.registerTypeScript();
+        this.registerSnippets();
         const grammar = require('../../data/grammars/typescript.tmlanguage.json');
         registry.registerTextMateGrammarScope('source.ts', {
             async getGrammarDefinition() {
@@ -54,6 +56,12 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
         });
 
         registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_REACT_LANGUAGE_ID, 'source.tsx');
+    }
+
+    protected registerSnippets() {
+        const snippets = require('../../data/snippets/typescript.json');
+        monaco.languages.registerCompletionItemProvider(TYPESCRIPT_LANGUAGE_ID, new TextmateSnippetCompletionProvider(snippets, 'ts'));
+        monaco.languages.registerCompletionItemProvider(TYPESCRIPT_REACT_LANGUAGE_ID, new TextmateSnippetCompletionProvider(snippets, 'ts'));
     }
 
     protected registerTypeScript() {

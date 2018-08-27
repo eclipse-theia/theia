@@ -762,3 +762,9 @@ declare module monaco.rename {
     }
 
 }
+
+declare module monaco.snippetParser {
+    export class SnippetParser {
+        text(value: string): string;
+    }
+}
