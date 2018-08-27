@@ -66,9 +66,10 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/contrib/suggest/suggestController',
                 'vs/editor/contrib/find/findController',
                 'vs/editor/contrib/rename/rename',
+                'vs/editor/contrib/snippet/snippetParser',
             ], (css: any, html: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
-                filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any) => {
+                filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any, snippetParser: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
@@ -84,6 +85,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.suggestController = suggestController;
                     global.monaco.findController = findController;
                     global.monaco.rename = rename;
+                    global.monaco.snippetParser = snippetParser;
                     resolve();
                 });
         });
