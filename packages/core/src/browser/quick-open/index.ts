@@ -19,3 +19,5 @@ export * from './quick-open-service';
 export * from './quick-pick-service';
 export * from './quick-command-service';
 export * from './quick-command-contribution';
+export * from './quick-open-frontend-contribution';
+export * from './prefix-quick-open-service';

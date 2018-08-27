@@ -28,6 +28,9 @@ export namespace QuickOpenOptions {
         readonly fuzzyMatchDescription: boolean;
         readonly fuzzySort: boolean;
 
+        /** The amount of first symbols to be ignored by quick open widget (e.g. don't affect matching). */
+        readonly skipPrefix: number;
+
         /**
          * Whether to display the items that don't have any highlight.
          */
@@ -45,6 +48,8 @@ export namespace QuickOpenOptions {
         fuzzyMatchDetail: false,
         fuzzyMatchDescription: false,
         fuzzySort: false,
+
+        skipPrefix: 0,
 
         showItemsWithoutHighlight: false,
 
