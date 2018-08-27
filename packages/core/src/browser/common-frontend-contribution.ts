@@ -153,6 +153,11 @@ export namespace CommonCommands {
         label: 'About'
     };
 
+    export const OPEN_PREFERENCES: Command = {
+        id: 'preferences:open',
+        label: 'Open Preferences'
+    };
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');

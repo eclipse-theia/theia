@@ -14,14 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, Event, Emitter } from '@theia/core';
 import { injectable, inject, postConstruct } from 'inversify';
-import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from '@theia/core/lib/browser/quick-open/quick-open-model';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { Emitter, Event } from '@theia/core';
 import { CppPreferences } from './cpp-preferences';
-import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
 
 export interface CppBuildConfiguration {
     /** Human-readable configuration name.  */
@@ -42,11 +38,12 @@ class SavedActiveBuildConfiguration {
  */
 @injectable()
 export class CppBuildConfigurationManager {
-    @inject(StorageService)
-    protected readonly storageService: StorageService;
 
     @inject(CppPreferences)
     protected readonly cppPreferences: CppPreferences;
+
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
 
     /**
      * The current active build configuration.  undefined means there's not
@@ -122,102 +119,11 @@ export class CppBuildConfigurationManager {
     getConfigs(): CppBuildConfiguration[] {
         return this.cppPreferences[this.BUILD_CONFIGURATIONS_PREFERENCE_KEY] || [];
     }
-}
 
-@injectable()
-export class CppBuildConfigurationChanger implements QuickOpenModel {
-
-    @inject(QuickOpenService)
-    protected readonly quickOpenService: QuickOpenService;
-
-    @inject(CppBuildConfigurationManager)
-    protected readonly cppBuildConfigurations: CppBuildConfigurationManager;
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
-    async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        const items: QuickOpenItem[] = [];
-        const active: CppBuildConfiguration | undefined = this.cppBuildConfigurations.getActiveConfig();
-        const configurations = Array.from(this.cppBuildConfigurations.getConfigs()).sort((a, b) => (a.name.localeCompare(b.name)));
-
-        const homeStat = await this.fileSystem.getCurrentUserHome();
-        const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
-
-        // Add feedback item when no configurations are present
-        if (!configurations.length) {
-            items.push(new QuickOpenItem({
-                label: 'No build configurations available',
-                run: () => false,
-            }));
-            return acceptor(items);
-        }
-
-        // Item to de-select any active build config
-        if (active) {
-            items.push(new QuickOpenItem({
-                label: 'None',
-                iconClass: 'fa fa-times',
-                description: 'Reset active build configuration',
-                run: (mode: QuickOpenMode): boolean => {
-                    if (mode !== QuickOpenMode.OPEN) {
-                        return false;
-                    }
-                    this.cppBuildConfigurations.setActiveConfig(undefined);
-                    return true;
-                },
-            }));
-        }
-
-        // Add one item per build config.
-        configurations.forEach(config => {
-            const uri = new URI(config.directory);
-            items.push(new QuickOpenItem({
-                label: config.name,
-                // add a icon for active build config, and empty placeholder for others
-                iconClass: (config === active) ? 'fa fa-check' : 'fa fa-empty-item',
-                description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
-                run: (mode: QuickOpenMode): boolean => {
-                    if (mode !== QuickOpenMode.OPEN) {
-                        return false;
-                    }
-
-                    this.cppBuildConfigurations.setActiveConfig(config);
-                    return true;
-                },
-            }));
-        });
-
-        acceptor(items);
-    }
-
-    open() {
-        this.quickOpenService.open(this, {
-            placeholder: 'Choose a build configuration...',
-            fuzzyMatchLabel: true,
-            fuzzyMatchDescription: true,
-        });
-    }
-}
-
-/**
- * Open the quick open menu to let the user change the active build
- * configuration.
- */
-export const CPP_CHANGE_BUILD_CONFIGURATION: Command = {
-    id: 'cpp.change-build-configuration',
-    label: 'C/C++: Change Build Configuration'
-};
-
-@injectable()
-export class CppBuildConfigurationsContributions implements CommandContribution {
-
-    @inject(CppBuildConfigurationChanger)
-    protected readonly cppChangeBuildConfiguration: CppBuildConfigurationChanger;
-
-    registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(CPP_CHANGE_BUILD_CONFIGURATION, {
-            execute: () => this.cppChangeBuildConfiguration.open()
-        });
+    /** Get the list of valid defined build configurations.  */
+    getValidConfigs(): CppBuildConfiguration[] {
+        return Array.from(this.getConfigs())
+            .filter(a => a.name !== '' && a.directory !== '')
+            .sort((a, b) => (a.name.localeCompare(b.name)));
     }
 }

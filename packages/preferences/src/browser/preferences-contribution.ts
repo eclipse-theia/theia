@@ -15,31 +15,27 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { Command, MenuModelRegistry, CommandRegistry } from '@theia/core';
-import { UserPreferenceProvider } from './user-preference-provider';
+import { MenuModelRegistry, CommandRegistry } from '@theia/core';
 import {
     CommonMenus,
     PreferenceScope,
     PreferenceProvider,
-    AbstractViewContribution
+    AbstractViewContribution,
+    CommonCommands
 } from '@theia/core/lib/browser';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { UserStorageService } from '@theia/userstorage/lib/browser';
 import { PreferencesContainer } from './preferences-tree-widget';
-
-export const PREFERENCES_COMMAND: Command = {
-    id: 'preferences:open',
-    label: 'Open Preferences'
-};
+import { EditorManager } from '@theia/editor/lib/browser';
 
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesContainer> {
 
     @inject(UserStorageService) protected readonly userStorageService: UserStorageService;
-    @inject(PreferenceProvider) @named(PreferenceScope.User) protected readonly userPreferenceProvider: UserPreferenceProvider;
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
     @inject(FileSystem) protected readonly filesystem: FileSystem;
+    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     constructor() {
         super({
@@ -49,33 +45,30 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         });
     }
 
-    registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(PREFERENCES_COMMAND, {
+    async registerCommands(commands: CommandRegistry): Promise<void> {
+        commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
             isEnabled: () => true,
-            execute: () => this.openPreferences()
+            execute: (preferenceScope = PreferenceScope.User) => this.openPreferences(preferenceScope)
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
-            commandId: PREFERENCES_COMMAND.id,
+            commandId: CommonCommands.OPEN_PREFERENCES.id,
             order: 'a10'
         });
     }
 
-    protected async openPreferences(): Promise<void> {
-        const userUri = this.userPreferenceProvider.getUri();
-        const content = await this.userStorageService.readContents(userUri);
-        if (content === '') {
-            await this.userStorageService.saveContents(userUri, '');
-        }
-
+    protected async openPreferences(preferenceScope: PreferenceScope): Promise<void> {
         const wsUri = await this.workspacePreferenceProvider.getUri();
         if (wsUri && !await this.filesystem.exists(wsUri.toString())) {
             await this.filesystem.createFile(wsUri.toString());
         }
 
+        const widget = await this.widget;
+        widget.preferenceScope = preferenceScope;
         super.openView({ activate: true });
+        widget.activatePreferenceEditor(preferenceScope);
     }
 
 }
