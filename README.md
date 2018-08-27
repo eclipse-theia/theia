@@ -31,6 +31,7 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
+- [Quick Start Guide](https://github.com/theia-ide/theia/blob/master/doc/Developing.md#prerequisites)
 - [Develop a new Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.html)
 - Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
 - [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
