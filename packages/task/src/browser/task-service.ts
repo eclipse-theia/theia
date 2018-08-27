@@ -210,35 +210,23 @@ export class TaskService implements TaskConfigurationClient {
 
         // open terminal widget if the task is based on a terminal process (type: shell)
         if (taskInfo.terminalId !== undefined) {
-            const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
-                TERMINAL_WIDGET_FACTORY_ID,
-                <TerminalWidgetFactoryOptions>{
-                    created: new Date().toString(),
-                    id: 'task-' + taskInfo.taskId,
-                    caption: `Task #${taskInfo.taskId}`,
-                    label: `Task #${taskInfo.taskId}`,
-                    destroyTermOnClose: true,
-                    actionItems: [new TerminalAction.Item({
-                        label: `$(repeat) ${this.getHumanReadableCommand(taskInfo)}`,
-                        tooltip: `Re-run current task: ${resolvedTask.label}`,
-                        run: async () => {
-                            try {
-                                taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
-                                if (taskInfo.terminalId !== undefined) {
-                                    widget.clearOutput();
-                                    widget.start(taskInfo.terminalId);
-                                }
-                            } catch (error) {
-                                this.logger.error(`Error launching task '${taskLabel}': ${error}`);
-                                this.messageService.error(`Error launching task '${taskLabel}': ${error}`);
-                                return;
-                            }
+            const widget = await this.attach(taskInfo.terminalId, taskInfo.taskId, [new TerminalAction.Item({
+                label: `$(repeat) ${this.getHumanReadableCommand(taskInfo)}`,
+                tooltip: `Re-run current task: ${resolvedTask.label}`,
+                run: async () => {
+                    try {
+                        taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
+                        if (taskInfo.terminalId !== undefined) {
+                            widget.clearOutput();
+                            widget.start(taskInfo.terminalId);
                         }
-                    })]
-                });
-            this.shell.addWidget(widget, { area: 'bottom' });
-            this.shell.activateWidget(widget.id);
-            widget.start(taskInfo.terminalId);
+                    } catch (error) {
+                        this.logger.error(`Error launching task '${taskLabel}': ${error}`);
+                        this.messageService.error(`Error launching task '${taskLabel}': ${error}`);
+                        return;
+                    }
+                }
+            })]);
         }
     }
 
@@ -247,7 +235,7 @@ export class TaskService implements TaskConfigurationClient {
         return taskInfo.config.command ? `${taskInfo.config.command} ${args}` : '';
     }
 
-    async attach(terminalId: number, taskId: number): Promise<void> {
+    async attach(terminalId: number, taskId: number, terminalActions?: TerminalAction.Item[]): Promise<TerminalWidget> {
         // create terminal widget to display an execution output of a Task that was launched as a command inside a shell
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
             TERMINAL_WIDGET_FACTORY_ID,
@@ -256,11 +244,13 @@ export class TaskService implements TaskConfigurationClient {
                 id: 'task-' + taskId,
                 caption: `Task #${taskId}`,
                 label: `Task #${taskId}`,
-                destroyTermOnClose: true
+                destroyTermOnClose: true,
+                actionItems: terminalActions
             });
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
         widget.start(terminalId);
+        return widget;
     }
 
     protected isEventForThisClient(context: string | undefined): boolean {
