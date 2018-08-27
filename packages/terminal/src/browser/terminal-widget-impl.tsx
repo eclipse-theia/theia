@@ -171,6 +171,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
+            this.terminalActionItems = this.getDefaultTerminalActionitems();
             this.start(state.terminalId);
         }
     }
@@ -234,12 +235,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * If id is provided attach to the terminal for this id.
      */
     async start(id?: number): Promise<number> {
-        const renderedItems: JSX.Element[] = [];
-        this.terminalActionItems.forEach(item => {
-            renderedItems.push(this.renderTerminalActionItem(item));
-        });
-        ReactDOM.render(<React.Fragment>{renderedItems}</React.Fragment>, this.terminalActionItemsToolBar);
-
         this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
@@ -331,6 +326,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (!this.isVisible || !this.isAttached) {
             return;
         }
+
+        const terminalActions: JSX.Element[] = [];
+        this.terminalActionItems.forEach(item => {
+            terminalActions.push(this.renderTerminalActionItem(item));
+        });
+        ReactDOM.render(<React.Fragment>{terminalActions}</React.Fragment>, this.terminalActionItemsToolBar);
 
         this.open();
 
