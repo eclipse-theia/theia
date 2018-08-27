@@ -16,8 +16,8 @@
 
 import { inject, injectable } from 'inversify';
 import {
-    QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenService,
-    OpenerService, KeybindingRegistry, Keybinding, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenItemOptions
+    QuickOpenModel, QuickOpenItem, QuickOpenMode, PrefixQuickOpenService,
+    OpenerService, KeybindingRegistry, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenItemOptions, QuickOpenHandler, QuickOpenOptions, Keybinding
 } from '@theia/core/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -35,7 +35,7 @@ export const quickFileOpen: Command = {
 };
 
 @injectable()
-export class QuickFileOpenService implements QuickOpenModel {
+export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
@@ -45,8 +45,8 @@ export class QuickFileOpenService implements QuickOpenModel {
     protected readonly workspaceService: WorkspaceService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
-    @inject(QuickOpenService)
-    protected readonly quickOpenService: QuickOpenService;
+    @inject(PrefixQuickOpenService)
+    protected readonly quickOpenService: PrefixQuickOpenService;
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
     @inject(LabelProvider)
@@ -69,17 +69,39 @@ export class QuickFileOpenService implements QuickOpenModel {
      */
     protected currentLookFor: string = '';
 
+    readonly prefix: string = '...';
+
+    get description(): string {
+        return 'Open File';
+    }
+
+    getModel(): QuickOpenModel {
+        return this;
+    }
+
+    getOptions(): QuickOpenOptions {
+        let placeholder = 'File name to search.';
+        const keybinding = this.getKeyCommand();
+        if (keybinding) {
+            placeholder += ` (Press ${keybinding} to show/hide ignored files)`;
+        }
+        return {
+            placeholder,
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
+            onClose: () => {
+                this.isOpen = false;
+                this.cancelIndicator.cancel();
+            }
+        };
+    }
+
     isEnabled(): boolean {
         return this.workspaceService.opened;
     }
 
-    open(): void {
-        let placeholderText = 'File name to search.';
-        const keybinding = this.getKeyCommand();
-        if (keybinding) {
-            placeholderText += ` (Press ${keybinding} to show/hide ignored files)`;
-        }
-
+    /** Initialize this quick open model with the tasks. */
+    init(): void {
         // Triggering the keyboard shortcut while the dialog is open toggles
         // showing the ignored files.
         if (this.isOpen) {
@@ -89,17 +111,11 @@ export class QuickFileOpenService implements QuickOpenModel {
             this.currentLookFor = '';
             this.isOpen = true;
         }
+    }
 
-        this.quickOpenService.open(this, {
-            placeholder: placeholderText,
-            prefix: this.currentLookFor,
-            fuzzyMatchLabel: true,
-            fuzzyMatchDescription: true,
-            fuzzySort: false,
-            onClose: () => {
-                this.isOpen = false;
-            },
-        });
+    open(): void {
+        this.init();
+        this.quickOpenService.open(this.currentLookFor);
     }
 
     /**
