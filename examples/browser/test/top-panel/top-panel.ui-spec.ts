@@ -245,8 +245,8 @@ describe('theia top panel (menubar)', () => {
     });
 
     describe('search view UI', () => {
-        it('should start with search view not visible', () => {
-            expect(leftPanel.isSearchViewVisible()).to.be.false;
+        it('should start with search view visible', () => {
+            expect(leftPanel.isSearchViewVisible()).to.be.true;
         });
         it('search view should toggle-on then toggle-off', () => {
             if (!leftPanel.isSearchViewVisible()) {
