@@ -49,7 +49,7 @@ export interface QuickOpenHandler {
      * the quick open widget matches this handler's prefix.
      * Allows to initialize the model with some initial data.
      */
-    init(): void;
+    init?(): void;
 
     /**
      * A model that should be used by the quick open widget when this handler's prefix is used.
@@ -176,7 +176,9 @@ class PrefixModel implements QuickOpenModel {
             }
         }
         this.currentHandler = handler;
-        await handler.init();
+        if (handler.init) {
+            await handler.init();
+        }
         // a prefix has been changed, so the quick open widget needs to be reopened with the new options
         this.openService.open(prefix);
     }
