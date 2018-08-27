@@ -43,6 +43,10 @@ import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
 import { DisposableCollection, Emitter, Event, MessageService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
+export interface PreferencesEditorWidget extends EditorWidget {
+    scope?: PreferenceScope;
+}
+
 @injectable()
 export class PreferencesContainer extends SplitPanel implements ApplicationShell.TrackableWidgetProvider, Saveable {
 
@@ -80,6 +84,8 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
     protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
 
+    protected _preferenceScope: PreferenceScope = PreferenceScope.User;
+
     @postConstruct()
     protected init(): void {
         this.id = PreferencesContainer.ID;
@@ -114,6 +120,14 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         return this.deferredEditors.promise;
     }
 
+    get preferenceScope(): PreferenceScope {
+        return this._preferenceScope;
+    }
+
+    set preferenceScope(preferenceScope: PreferenceScope) {
+        this._preferenceScope = preferenceScope;
+    }
+
     protected async onAfterAttach(msg: Message): Promise<void> {
         this.treeWidget = await this.widgetManager.getOrCreateWidget<PreferencesTreeWidget>(PreferencesTreeWidget.ID);
         this.treeWidget.onPreferenceSelected(value => {
@@ -130,7 +144,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
         });
 
-        this.editorsContainer = new PreferencesEditorsContainer(this.editorManager, this.userPreferenceProvider, this.workspacePreferenceProvider);
+        this.editorsContainer = new PreferencesEditorsContainer(this.editorManager, this.userPreferenceProvider, this.workspacePreferenceProvider, this.preferenceScope);
         this.toDispose.push(this.editorsContainer);
         this.editorsContainer.onInit(() => {
             toArray(this.editorsContainer.widgets()).forEach(editor => {
@@ -171,6 +185,12 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         super.onCloseRequest(msg);
         this.dispose();
     }
+
+    public activatePreferenceEditor(preferenceScope: PreferenceScope) {
+        if (this.editorsContainer) {
+            this.editorsContainer.activatePreferenceEditor(preferenceScope);
+        }
+    }
 }
 
 export class PreferencesEditorsContainer extends DockPanel {
@@ -189,7 +209,8 @@ export class PreferencesEditorsContainer extends DockPanel {
     constructor(
         protected readonly editorManager: EditorManager,
         protected readonly userPreferenceProvider: UserPreferenceProvider,
-        protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider
+        protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider,
+        protected preferenceScope: PreferenceScope,
     ) {
         super();
     }
@@ -211,20 +232,36 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
-        const userPreferences = await this.editorManager.getOrCreateByUri(this.userPreferenceProvider.getUri());
+        const userPreferences = await this.editorManager.getOrCreateByUri(this.userPreferenceProvider.getUri()) as PreferencesEditorWidget;
         userPreferences.title.label = 'User Preferences';
+        userPreferences.scope = PreferenceScope.User;
         this.addWidget(userPreferences);
 
         const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
-        const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri);
+        const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri) as PreferencesEditorWidget;
+
         if (workspacePreferences) {
             workspacePreferences.title.label = 'Workspace Preferences';
+            workspacePreferences.scope = PreferenceScope.Workspace;
             this.addWidget(workspacePreferences);
         }
 
+        this.activatePreferenceEditor(this.preferenceScope);
         super.onAfterAttach(msg);
         this.onInitEmitter.fire(undefined);
     }
+
+    public activatePreferenceEditor(preferenceScope: PreferenceScope) {
+        this.preferenceScope = preferenceScope;
+        for (const widget of toArray(this.widgets())) {
+            const preferenceEditor = widget as PreferencesEditorWidget;
+            if (preferenceEditor.scope === preferenceScope) {
+                this.activateWidget(widget);
+                break;
+            }
+        }
+    }
+
 }
 
 @injectable()
