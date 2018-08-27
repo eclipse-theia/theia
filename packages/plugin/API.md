@@ -408,3 +408,28 @@ diagnosticsCollection.forEach((uri, diagnostics) => {
 ```
 
 `dispose` method should be used when the collection is not needed any more. In case of attempt to do an operaton after disposing an error will be thrown.
+
+#### Hover Message
+
+To contribute a hover it is only needed to provide a function that can be called with a `TextDocument` and a `Position` returning hover info. Registration is done using a document selector which either a language id ('typescript', 'javascript' etc.) or a more complex filter like `{scheme: 'file', language: 'typescript'}`.
+
+For example,
+```typescript
+theia.languages.registerHoverProvider('typescript', {
+    provideHover(doc: theia.TextDocument, position: theia.Position) {
+        return new theia.Hover('Hover for all **typescript** files.');
+    }
+});
+```
+will show the hover message for all `typescript` files.
+
+The code below puts word under cursor into hover message:
+```typescript
+theia.languages.registerHoverProvider({scheme: 'file'}, {
+    provideHover(doc: theia.TextDocument, position: theia.Position) {
+        const range = doc.getWordRangeAtPosition(position);
+        const text = doc.getText(range);
+        return new theia.Hover(text);
+    }
+});
+```

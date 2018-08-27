@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { EditorPosition, Selection, Position, DecorationOptions } from '../api/plugin-api';
-import { Range, MarkdownString, CompletionType, SingleEditOperation, MarkerData, RelatedInformation } from '../api/model';
+import { Range, Hover, MarkdownString, CompletionType, SingleEditOperation, MarkerData, RelatedInformation } from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
@@ -62,15 +62,15 @@ export function toRange(range: Range): types.Range {
     return new types.Range(startLineNumber - 1, startColumn - 1, endLineNumber - 1, endColumn - 1);
 }
 
-export function fromRange(range: theia.Range): Range | undefined {
+export function fromRange(range: theia.Range | undefined): Range | undefined {
     if (!range) {
         return undefined;
     }
     const { start, end } = range;
     return {
-        startLineNumber: start.line + 1,
+        startLineNumber: start.line,
         startColumn: start.character + 1,
-        endLineNumber: end.line + 1,
+        endLineNumber: end.line,
         endColumn: end.character + 1
     };
 }
@@ -345,4 +345,11 @@ function convertTags(tags: types.DiagnosticTag[] | undefined): types.MarkerTag[]
         }
     }
     return markerTags;
+}
+
+export function fromHover(hover: theia.Hover): Hover {
+    return <Hover>{
+        range: fromRange(hover.range),
+        contents: fromManyMarkdown(hover.contents)
+    };
 }

@@ -170,3 +170,12 @@ export enum MarkerSeverity {
 export enum MarkerTag {
     Unnecessary = 1,
 }
+
+export interface Hover {
+    contents: MarkdownString[];
+    range?: Range;
+}
+
+export interface HoverProvider {
+    provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
+}

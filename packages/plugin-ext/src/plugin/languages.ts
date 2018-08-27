@@ -31,11 +31,12 @@ import { Disposable } from './types-impl';
 import URI from 'vscode-uri/lib/umd';
 import { match as matchGlobPattern } from '../common/glob';
 import { UriComponents } from '../common/uri-components';
-import { CompletionContext, CompletionResultDto, Completion, SerializedDocumentFilter } from '../api/model';
+import { CompletionContext, CompletionResultDto, Completion, SerializedDocumentFilter, Hover } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
+import { HoverAdapter } from './languages/hover';
 
-type Adapter = CompletionAdapter;
+type Adapter = CompletionAdapter | HoverAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -165,6 +166,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.diagnostics.createDiagnosticCollection(name);
     }
     // ### Diagnostics end
+
+    // ### Hover Provider begin
+    registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new HoverAdapter(provider, this.documents));
+        this.proxy.$registerHoverProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideHover(handle: number, resource: UriComponents, position: Position): Promise<Hover | undefined> {
+        return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position));
+    }
+    // ### Hover Provider end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {

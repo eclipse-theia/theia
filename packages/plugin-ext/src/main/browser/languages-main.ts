@@ -103,6 +103,13 @@ export class LanguagesMainImpl implements LanguagesMain {
             monaco.editor.setModelMarkers(textModel, id, markers.map(reviveMarker));
         }
     }
+
+    $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        this.disposables.set(handle, monaco.modes.HoverProviderRegistry.register(selector, {
+            provideHover: (model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken) =>
+                this.proxy.$provideHover(handle, model.uri, position)
+        }));
+    }
 }
 
 function reviveMarker(marker: MarkerData): monaco.editor.IMarkerData {

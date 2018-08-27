@@ -54,7 +54,8 @@ import {
     DiagnosticRelatedInformation,
     DiagnosticSeverity,
     DiagnosticTag,
-    Location
+    Location,
+    Hover
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -293,6 +294,9 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, ...triggerCharacters: string[]): theia.Disposable {
                 return languagesExt.registerCompletionItemProvider(selector, provider, triggerCharacters);
             },
+            registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
+                return languagesExt.registerHoverProvider(selector, provider);
+            },
         };
 
         const plugins: typeof theia.plugins = {
@@ -349,6 +353,7 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             Diagnostic,
             CompletionTriggerKind,
             TextEdit,
+            Hover,
         };
     };
 }
