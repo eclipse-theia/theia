@@ -45,45 +45,46 @@ export abstract class TerminalWidget extends BaseWidget {
    abstract clearOutput(): void;
 }
 
-export const TerminalActionOptions = Symbol('TerminalActionOptions');
-export interface TerminalActionOptions {
+export namespace TerminalAction {
+    export interface Options {
+        /**
+         * Label that will be placed onto terminal toolbar. Icon can be used from
+         * fontawesome collection. To set an icon, the following pattern has to be
+         * provided: $(fontawesomeClasssName).
+         */
+        label: string;
 
-    /**
-     * Label that will be placed onto terminal toolbar. Icon can be used from
-     * fontawesome collection. To set an icon, the following pattern has to be
-     * provided: $(fontawesomeClasssName).
-     */
-    label: string;
+        /**
+         * Tooltip that will be shown to user on mouse hover.
+         */
+        tooltip: string;
 
-    /**
-     * Tooltip that will be shown to user on mouse hover.
-     */
-    tooltip: string;
-
-    /**
-     * Action that is performed when user clicks on item in terminal toolbar.
-     */
-    run(): void;
-}
-
-/**
- * Terminal action item represent a button which located in terminal toolbar.
- */
-export class TerminalActionItem<T extends TerminalActionOptions = TerminalActionOptions> {
-    constructor(
-        protected options: T = {} as T
-    ) { }
-
-    getLabel(): string {
-        return this.options.label;
+        /**
+         * Action that is performed when user clicks on item in terminal toolbar.
+         */
+        run(): void;
     }
 
-    getTooltip(): string {
-        return this.options.tooltip;
-    }
+    /**
+     * Action that is placed onto additional toolbar under terminal widget to allow
+     * user perform specific actions provided by each item.
+     */
+    export class Item<T extends Options = Options> {
+        constructor(
+            protected options: T = {} as T
+        ) { }
 
-    run(): void {
-        this.options.run();
+        getLabel(): string {
+            return this.options.label;
+        }
+
+        getTooltip(): string {
+            return this.options.tooltip;
+        }
+
+        run(): void {
+            this.options.run();
+        }
     }
 }
 
@@ -138,5 +139,5 @@ export interface TerminalWidgetOptions {
     /**
      * Terminal actions. Represents buttons, which locate on terminal toolbar.
      */
-    readonly actionItems?: TerminalActionItem[];
+    readonly actionItems?: TerminalAction.Item[];
 }

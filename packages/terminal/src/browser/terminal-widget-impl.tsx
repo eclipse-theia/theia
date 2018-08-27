@@ -25,7 +25,7 @@ import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { TerminalWidgetOptions, TerminalWidget, TerminalActionItem } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalAction } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as React from 'react';
@@ -66,7 +66,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
-    protected terminalActionItems: TerminalActionItem[];
+    protected terminalActionItems: TerminalAction.Item[];
     protected terminalActionItemsToolBar: HTMLElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
@@ -303,7 +303,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.update();
     }
 
-    protected renderTerminalActionItem(entry: TerminalActionItem): JSX.Element {
+    protected renderTerminalActionItem(entry: TerminalAction.Item): JSX.Element {
         const childStrings = this.entryService.parse(entry.getLabel());
         const children: JSX.Element[] = [];
 
@@ -437,8 +437,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
 
-    protected getDefaultTerminalActionitems(): TerminalActionItem[] {
-        const clearTerminalOutput = new TerminalActionItem({
+    protected getDefaultTerminalActionitems(): TerminalAction.Item[] {
+        const clearTerminalOutput = new TerminalAction.Item({
             label: '$(trash)',
             tooltip: 'Clear terminal output',
             run: () => {

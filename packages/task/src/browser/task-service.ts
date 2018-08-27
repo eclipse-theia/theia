@@ -19,7 +19,7 @@ import { ILogger } from '@theia/core/lib/common';
 import { FrontendApplication, ApplicationShell } from '@theia/core/lib/browser';
 import { TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
-import { TerminalWidget, TerminalActionItem } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalWidget, TerminalAction } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
@@ -218,7 +218,7 @@ export class TaskService implements TaskConfigurationClient {
                     caption: `Task #${taskInfo.taskId}`,
                     label: `Task #${taskInfo.taskId}`,
                     destroyTermOnClose: true,
-                    actionItems: [new TerminalActionItem({
+                    actionItems: [new TerminalAction.Item({
                         label: `$(repeat) ${this.getHumanReadableCommand(taskInfo)}`,
                         tooltip: `Re-run current task: ${resolvedTask.label}`,
                         run: async () => {
