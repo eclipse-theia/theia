@@ -18,6 +18,7 @@ import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
 import URI from 'vscode-uri';
 import { relative } from '../common/paths-util';
+import { isMarkdownString } from './type-converters';
 
 export class Disposable {
     private disposable: undefined | (() => void);
@@ -807,4 +808,27 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+}
+
+export class Hover {
+
+    public contents: MarkdownString[] | theia.MarkedString[];
+    public range?: Range;
+
+    constructor(
+        contents: MarkdownString | theia.MarkedString | MarkdownString[] | theia.MarkedString[],
+        range?: Range
+    ) {
+        if (!contents) {
+            illegalArgument('contents must be defined');
+        }
+        if (Array.isArray(contents)) {
+            this.contents = <MarkdownString[] | theia.MarkedString[]>contents;
+        } else if (isMarkdownString(contents)) {
+            this.contents = [contents];
+        } else {
+            this.contents = [contents];
+        }
+        this.range = range;
+    }
 }

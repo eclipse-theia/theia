@@ -3569,6 +3569,66 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerCompletionItemProvider(selector: DocumentSelector, provider: CompletionItemProvider, ...triggerCharacters: string[]): Disposable;
+
+        /**
+         * Register a hover provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A hover provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable;
+    }
+
+    /**
+     * A hover represents additional information for a symbol or word. Hovers are
+     * rendered in a tooltip-like widget.
+     */
+    export class Hover {
+
+        /**
+         * The contents of this hover.
+         */
+        contents: MarkedString[];
+
+        /**
+         * The range to which this hover applies. When missing, the
+         * editor will use the range at the current position or the
+         * current position itself.
+         */
+        range?: Range;
+
+        /**
+         * Creates a new hover object.
+         *
+         * @param contents The contents of the hover.
+         * @param range The range to which the hover applies.
+         */
+        constructor(contents: MarkedString | MarkedString[], range?: Range);
+    }
+
+    /**
+     * The hover provider interface defines the contract between extensions and
+     * the [hover](https://code.visualstudio.com/docs/editor/intellisense)-feature.
+     */
+    export interface HoverProvider {
+
+        /**
+         * Provide a hover for the given position and document. Multiple hovers at the same
+         * position will be merged by the editor. A hover can have a range which defaults
+         * to the word range at the position when omitted.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @return A hover or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideHover(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<Hover>;
     }
 
 }

@@ -30,7 +30,8 @@ import {
     Range,
     Completion,
     CompletionResultDto,
-    MarkerData
+    MarkerData,
+    Hover
 } from './model';
 
 export interface PluginInitData {
@@ -638,6 +639,7 @@ export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined>;
     $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion>;
     $releaseCompletionItems(handle: number, id: number): void;
+    $provideHover(handle: number, resource: UriComponents, position: Position): Promise<Hover | undefined>;
 }
 
 export interface LanguagesMain {
@@ -645,9 +647,9 @@ export interface LanguagesMain {
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
     $unregister(handle: number): void;
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
-
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
+    $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {

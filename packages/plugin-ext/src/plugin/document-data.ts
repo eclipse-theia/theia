@@ -189,7 +189,7 @@ export class DocumentDataExt {
         }
 
         if (range.isSingleLine) {
-            return this.lines[range.start.line].substring(range.start.character, range.end.character);
+            return this.lines[range.start.line - 1].substring(range.start.character, range.end.character);
         }
 
         const lineEnding = this.eol;
@@ -241,7 +241,7 @@ export class DocumentDataExt {
             character = this.lines[line].length;
             hasChanged = true;
         } else {
-            const maxCharacter = this.lines[line].length;
+            const maxCharacter = this.lines[line - 1].length;
             if (character < 0) {
                 character = 0;
                 hasChanged = true;
@@ -341,7 +341,7 @@ export class DocumentDataExt {
         const wordAtText = getWordAtText(
             position.character + 1,
             ensureValidWordDefinition(regexp),
-            this.lines[position.line],
+            this.lines[position.line - 1],
             0
         );
 
