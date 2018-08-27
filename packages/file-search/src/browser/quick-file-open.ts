@@ -100,8 +100,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         return this.workspaceService.opened;
     }
 
-    /** Initialize this quick open model with the tasks. */
-    init(): void {
+    open(): void {
         // Triggering the keyboard shortcut while the dialog is open toggles
         // showing the ignored files.
         if (this.isOpen) {
@@ -111,10 +110,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             this.currentLookFor = '';
             this.isOpen = true;
         }
-    }
 
-    open(): void {
-        this.init();
         this.quickOpenService.open(this.currentLookFor);
     }
 
