@@ -17,12 +17,13 @@
 import { injectable, inject } from 'inversify';
 import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
+import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
 
 @injectable()
-export class QuickFileOpenFrontendContribution implements CommandContribution, KeybindingContribution {
+export class QuickFileOpenFrontendContribution implements CommandContribution, KeybindingContribution, QuickOpenContribution {
 
-    constructor(@inject(QuickFileOpenService) protected readonly quickFileOpenService: QuickFileOpenService) { }
+    @inject(QuickFileOpenService)
+    protected readonly quickFileOpenService: QuickFileOpenService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {
@@ -38,4 +39,7 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
         });
     }
 
+    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
+        handlers.registerHandler(this.quickFileOpenService, true);
+    }
 }
