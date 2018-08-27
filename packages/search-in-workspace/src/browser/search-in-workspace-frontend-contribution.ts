@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus } from '@theia/core/lib/browser';
+import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService } from '@theia/core';
@@ -38,7 +38,7 @@ export namespace SearchInWorkspaceCommands {
 }
 
 @injectable()
-export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> {
+export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -52,6 +52,10 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             },
             toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView({activate: false});
     }
 
     registerCommands(commands: CommandRegistry): void {

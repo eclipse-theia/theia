@@ -17,7 +17,7 @@
 import { ContainerModule, interfaces } from 'inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer } from '../common/search-in-workspace-interface';
-import { WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ResourceResolver } from '@theia/core';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
@@ -35,6 +35,7 @@ export default new ContainerModule(bind => {
     bind(SearchInWorkspaceResultTreeWidget).toDynamicValue(ctx => createSearchTreeWidget(ctx.container));
 
     bindViewContribution(bind, SearchInWorkspaceFrontendContribution);
+    bind(FrontendApplicationContribution).toService(SearchInWorkspaceFrontendContribution);
 
     // The object that gets notified of search results.
     bind(SearchInWorkspaceClientImpl).toSelf().inSingletonScope();
