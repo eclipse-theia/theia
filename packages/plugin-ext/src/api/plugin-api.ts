@@ -29,7 +29,8 @@ import {
     MarkdownString,
     Range,
     Completion,
-    CompletionResultDto
+    CompletionResultDto,
+    MarkerData
 } from './model';
 
 export interface HostedPluginManagerExt {
@@ -586,6 +587,9 @@ export interface LanguagesMain {
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
     $unregister(handle: number): void;
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
+
+    $clearDiagnostics(id: string): void;
+    $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {

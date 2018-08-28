@@ -746,3 +746,65 @@ export class CompletionList {
         this.isIncomplete = isIncomplete;
     }
 }
+
+export enum DiagnosticSeverity {
+    Error = 0,
+    Warning = 1,
+    Information = 2,
+    Hint = 3
+}
+
+export class DiagnosticRelatedInformation {
+    location: Location;
+    message: string;
+
+    constructor(location: Location, message: string) {
+        this.location = location;
+        this.message = message;
+    }
+}
+
+export class Location {
+    uri: URI;
+    range: Range;
+
+    constructor(uri: URI, rangeOrPosition: Range | Position) {
+        this.uri = uri;
+        if (rangeOrPosition instanceof Range) {
+            this.range = rangeOrPosition;
+        } else if (rangeOrPosition instanceof Position) {
+            this.range = new Range(rangeOrPosition, rangeOrPosition);
+        }
+    }
+}
+
+export enum DiagnosticTag {
+    Unnecessary = 1,
+}
+
+export class Diagnostic {
+    range: Range;
+    message: string;
+    severity: DiagnosticSeverity;
+    source?: string;
+    code?: string | number;
+    relatedInformation?: DiagnosticRelatedInformation[];
+    tags?: DiagnosticTag[];
+
+    constructor(range: Range, message: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error) {
+        this.range = range;
+        this.message = message;
+        this.severity = severity;
+    }
+}
+
+export enum MarkerSeverity {
+    Hint = 1,
+    Info = 2,
+    Warning = 4,
+    Error = 8,
+}
+
+export enum MarkerTag {
+    Unnecessary = 1,
+}

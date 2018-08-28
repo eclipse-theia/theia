@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { EditorPosition, Selection, Position, DecorationOptions } from '../api/plugin-api';
-import { Range, MarkdownString, CompletionType, SingleEditOperation } from '../api/model';
+import { Range, MarkdownString, CompletionType, SingleEditOperation, MarkerData, RelatedInformation } from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
@@ -280,4 +280,69 @@ export function fromLanguageSelector(selector: theia.DocumentSelector): Language
             pattern: fromGlobPattern(selector.pattern!)
         };
     }
+}
+
+export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): MarkerData {
+    return {
+        code: convertCode(diagnostic.code),
+        severity: convertSeverity(diagnostic.severity),
+        message: diagnostic.message,
+        source: diagnostic.source,
+        startLineNumber: diagnostic.range.start.line + 1,
+        startColumn: diagnostic.range.start.character + 1,
+        endLineNumber: diagnostic.range.end.line + 1,
+        endColumn: diagnostic.range.end.character + 1,
+        relatedInformation: convertRelatedInformation(diagnostic.relatedInformation),
+        tags: convertTags(diagnostic.tags)
+    };
+}
+
+function convertCode(code: string | number | undefined): string | undefined {
+    if (typeof code === 'number') {
+        return String(code);
+    } else {
+        return code;
+    }
+}
+
+function convertSeverity(severity: types.DiagnosticSeverity): types.MarkerSeverity {
+    switch (severity) {
+        case types.DiagnosticSeverity.Error: return types.MarkerSeverity.Error;
+        case types.DiagnosticSeverity.Warning: return types.MarkerSeverity.Warning;
+        case types.DiagnosticSeverity.Information: return types.MarkerSeverity.Info;
+        case types.DiagnosticSeverity.Hint: return types.MarkerSeverity.Hint;
+    }
+}
+
+function convertRelatedInformation(diagnosticsRelatedInformation: theia.DiagnosticRelatedInformation[] | undefined): RelatedInformation[] | undefined {
+    if (!diagnosticsRelatedInformation) {
+        return undefined;
+    }
+
+    const relatedInformation: RelatedInformation[] = [];
+    for (const item of diagnosticsRelatedInformation) {
+        relatedInformation.push({
+            resource: item.location.uri,
+            message: item.message,
+            startLineNumber: item.location.range.start.line + 1,
+            startColumn: item.location.range.start.character + 1,
+            endLineNumber: item.location.range.end.line + 1,
+            endColumn: item.location.range.end.character + 1
+        });
+    }
+    return relatedInformation;
+}
+
+function convertTags(tags: types.DiagnosticTag[] | undefined): types.MarkerTag[] | undefined {
+    if (!tags) {
+        return undefined;
+    }
+
+    const markerTags: types.MarkerTag[] = [];
+    for (const tag of tags) {
+        switch (tag) {
+            case types.DiagnosticTag.Unnecessary: markerTags.push(types.MarkerTag.Unnecessary);
+        }
+    }
+    return markerTags;
 }
