@@ -27,13 +27,13 @@ import {
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
-import { Disposable, CompletionList, Range, SnippetString } from './types-impl';
+import { Disposable } from './types-impl';
 import URI from 'vscode-uri/lib/umd';
 import { match as matchGlobPattern } from '../common/glob';
 import { UriComponents } from '../common/uri-components';
-import { CompletionContext, CompletionResultDto, Completion, SerializedDocumentFilter, CompletionDto } from '../api/model';
-import * as Converter from './type-converters';
-import { mixin } from '../common/types';
+import { CompletionContext, CompletionResultDto, Completion, SerializedDocumentFilter } from '../api/model';
+import { CompletionAdapter } from './languages/completion';
+import { Diagnostics } from './languages/diagnostics';
 
 type Adapter = CompletionAdapter;
 
@@ -41,11 +41,18 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     private proxy: LanguagesMain;
 
+    private diagnostics: Diagnostics;
+
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
 
     constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
+        this.diagnostics = new Diagnostics(rpc);
+    }
+
+    get onDidChangeDiagnostics() {
+        return this.diagnostics.onDidChangeDiagnostics;
     }
 
     getLanguages(): Promise<string[]> {
@@ -74,7 +81,6 @@ export class LanguagesExtImpl implements LanguagesExt {
 
         this.proxy.$setLanguageConfiguration(callId, language, config);
         return this.createDisposable(callId);
-
     }
 
     private nextCallId(): number {
@@ -150,6 +156,15 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### Completion end
 
+    // ### Diagnostics begin
+    getDiagnostics(resource?: URI): theia.Diagnostic[] | [URI, theia.Diagnostic[]][] {
+        return this.diagnostics.getDiagnostics(resource);
+    }
+
+    createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
+        return this.diagnostics.createDiagnosticCollection(name);
+    }
+    // ### Diagnostics end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {
@@ -272,147 +287,5 @@ export function score(selector: LanguageSelector | undefined, candidateUri: URI,
 
     } else {
         return 0;
-    }
-}
-
-class CompletionAdapter {
-    private cacheId = 0;
-    private cache = new Map<number, theia.CompletionItem[]>();
-
-    constructor(private readonly delegate: theia.CompletionItemProvider,
-        private readonly documents: DocumentsExtImpl) {
-
-    }
-
-    provideCompletionItems(resource: URI, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined> {
-        const document = this.documents.getDocumentData(resource);
-        if (!document) {
-            return Promise.reject(new Error(`There are no document for  ${resource}`));
-        }
-
-        const doc = document.document;
-
-        const pos = Converter.toPosition(position);
-        return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, undefined, context)).then(value => {
-            const id = this.cacheId++;
-            const result: CompletionResultDto = {
-                id,
-                completions: [],
-            };
-
-            let list: CompletionList;
-            if (!value) {
-                return undefined;
-            } else if (Array.isArray(value)) {
-                list = new CompletionList(value);
-            } else {
-                list = value;
-                result.incomplete = list.isIncomplete;
-            }
-
-            const wordRangeBeforePos = (doc.getWordRangeAtPosition(pos) as Range || new Range(pos, pos))
-                .with({ end: pos });
-
-            for (let i = 0; i < list.items.length; i++) {
-                const suggestion = this.convertCompletionItem(list.items[i], pos, wordRangeBeforePos, i, id);
-                if (suggestion) {
-                    result.completions.push(suggestion);
-                }
-            }
-            this.cache.set(id, list.items);
-
-            return result;
-        });
-    }
-
-    resolveCompletionItem(resource: URI, position: Position, completion: Completion): Promise<Completion> {
-
-        if (typeof this.delegate.resolveCompletionItem !== 'function') {
-            return Promise.resolve(completion);
-        }
-
-        const { parentId, id } = (<CompletionDto>completion);
-        const item = this.cache.has(parentId) && this.cache.get(parentId)![id];
-        if (!item) {
-            return Promise.resolve(completion);
-        }
-
-        return Promise.resolve(this.delegate.resolveCompletionItem(item, undefined)).then(resolvedItem => {
-
-            if (!resolvedItem) {
-                return completion;
-            }
-
-            const doc = this.documents.getDocumentData(resource)!.document;
-            const pos = Converter.toPosition(position);
-            const wordRangeBeforePos = (doc.getWordRangeAtPosition(pos) as Range || new Range(pos, pos)).with({ end: pos });
-            const newCompletion = this.convertCompletionItem(resolvedItem, pos, wordRangeBeforePos, id, parentId);
-            if (newCompletion) {
-                mixin(completion, newCompletion, true);
-            }
-
-            return completion;
-        });
-    }
-
-    releaseCompletionItems(id: number) {
-        this.cache.delete(id);
-        return Promise.resolve();
-    }
-
-    private convertCompletionItem(item: theia.CompletionItem, position: theia.Position, defaultRange: theia.Range, id: number, parentId: number): CompletionDto | undefined {
-        if (typeof item.label !== 'string' || item.label.length === 0) {
-            console.warn('Invalid Completion Item -> must have at least a label');
-            return undefined;
-        }
-
-        const result: CompletionDto = {
-            id,
-            parentId,
-            label: item.label,
-            type: Converter.fromCompletionItemKind(item.kind),
-            detail: item.detail,
-            documentation: item.documentation,
-            filterText: item.filterText,
-            sortText: item.sortText,
-            preselect: item.preselect,
-            insertText: '',
-            additionalTextEdits: item.additionalTextEdits && item.additionalTextEdits.map(Converter.fromTextEdit),
-            command: undefined,   // TODO: implement this: this.commands.toInternal(item.command),
-            commitCharacters: item.commitCharacters
-        };
-
-        if (typeof item.insertText === 'string') {
-            result.insertText = item.insertText;
-            result.snippetType = 'internal';
-
-        } else if (item.insertText instanceof SnippetString) {
-            result.insertText = item.insertText.value;
-            result.snippetType = 'textmate';
-
-        } else {
-            result.insertText = item.label;
-            result.snippetType = 'internal';
-        }
-
-        let range: theia.Range;
-        if (item.range) {
-            range = item.range;
-        } else {
-            range = defaultRange;
-        }
-        result.overwriteBefore = position.character - range.start.character;
-        result.overwriteAfter = range.end.character - position.character;
-
-        if (!range.isSingleLine || range.start.line !== position.line) {
-            console.warn('Invalid Completion Item -> must be single line and on the same line');
-            return undefined;
-        }
-
-        return result;
-    }
-
-    static hasResolveSupport(provider: theia.CompletionItemProvider): boolean {
-        return typeof provider.resolveCompletionItem === 'function';
     }
 }

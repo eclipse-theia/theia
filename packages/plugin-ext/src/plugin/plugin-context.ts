@@ -51,6 +51,11 @@ import {
     CompletionList,
     TextEdit,
     CompletionTriggerKind,
+    Diagnostic,
+    DiagnosticRelatedInformation,
+    DiagnosticSeverity,
+    DiagnosticTag,
+    Location
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -58,7 +63,6 @@ import { DocumentsExtImpl } from './documents';
 import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
-import URI from 'vscode-uri';
 import { OutputChannelRegistryExt } from './output-channel-registry';
 import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl, score } from './languages';
@@ -229,12 +233,12 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
         },
         openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }) {
-            let uriPromise: Promise<URI>;
+            let uriPromise: Promise<Uri>;
 
             const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
             if (typeof uriOrFileNameOrOptions === 'string') {
-                uriPromise = Promise.resolve(URI.file(uriOrFileNameOrOptions));
-            } else if (uriOrFileNameOrOptions instanceof URI) {
+                uriPromise = Promise.resolve(Uri.file(uriOrFileNameOrOptions));
+            } else if (uriOrFileNameOrOptions instanceof Uri) {
                 uriPromise = Promise.resolve(uriOrFileNameOrOptions);
             } else if (!options || typeof options === 'object') {
                 uriPromise = documents.createDocumentData(options);
@@ -268,6 +272,15 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         },
         match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
             return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
+        },
+        get onDidChangeDiagnostics(): theia.Event<theia.DiagnosticChangeEvent> {
+            return languagesExt.onDidChangeDiagnostics;
+        },
+        getDiagnostics(resource?: Uri) {
+            return <any>languagesExt.getDiagnostics(resource);
+        },
+        createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
+            return languagesExt.createDiagnosticCollection(name);
         },
         setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
             return languagesExt.setLanguageConfiguration(language, configuration);
@@ -310,6 +323,11 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         CompletionItem,
         CompletionItemKind,
         CompletionList,
+        DiagnosticSeverity,
+        DiagnosticRelatedInformation,
+        Location,
+        DiagnosticTag,
+        Diagnostic,
         CompletionTriggerKind,
         TextEdit,
     };
