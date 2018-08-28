@@ -3,12 +3,12 @@
 This extension uses [Clangd](https://clang.llvm.org/extra/clangd.html) to
 provide LSP features.
 
-To install Clangd on Ubuntu 16.04:
+To install Clangd on Ubuntu 18.04:
 
     $ wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-    $ echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main" | sudo tee /etc/apt/sources.list.d/llvm.list
-    $ sudo apt-get update && sudo apt-get install -y clang-tools-7
-    $ sudo ln -s /usr/bin/clangd-7 /usr/bin/clangd
+    $ echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main" | sudo tee /etc/apt/sources.list.d/llvm.list
+    $ sudo apt-get update && sudo apt-get install -y clang-tools-8
+    $ sudo ln -s /usr/bin/clangd-8 /usr/bin/clangd
 
 See [here](https://clang.llvm.org/extra/clangd.html#id4) for detailed installation instructions.
 
