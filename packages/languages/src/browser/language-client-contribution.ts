@@ -133,10 +133,10 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     protected createOptions(): LanguageClientOptions {
-        const { id, documentSelector, fileEvents } = this;
+        const { id, documentSelector, fileEvents, configurationSection } = this;
         return {
             documentSelector,
-            synchronize: { fileEvents },
+            synchronize: { fileEvents, configurationSection },
             initializationFailedHandler: err => {
                 const detail = err instanceof Error ? `: ${err.message}` : '.';
                 this.messageService.error(`Failed to start ${this.name} language server${detail}`);
@@ -144,6 +144,10 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
             },
             diagnosticCollectionName: id
         };
+    }
+
+    protected get configurationSection(): string | string[] | undefined {
+        return undefined;
     }
 
     protected get workspaceContains(): string[] {
