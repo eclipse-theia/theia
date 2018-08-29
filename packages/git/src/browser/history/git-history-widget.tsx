@@ -58,7 +58,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(Git) protected readonly git: Git,
-        @inject(GitAvatarService) protected readonly avartarService: GitAvatarService,
+        @inject(GitAvatarService) protected readonly avatarService: GitAvatarService,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(GitDiffContribution) protected readonly diffContribution: GitDiffContribution) {
         super();
@@ -118,7 +118,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     const commits: GitCommitNode[] = [];
                     for (const commit of changes) {
                         const fileChangeNodes: GitFileChangeNode[] = [];
-                        const avatarUrl = await this.avartarService.getAvatar(commit.author.email);
+                        const avatarUrl = await this.avatarService.getAvatar(commit.author.email);
                         commits.push({
                             authorName: commit.author.name,
                             authorDate: new Date(commit.author.timestamp),
