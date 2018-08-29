@@ -14,8 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
+import { MessageService } from '../common/message-service';
 
 export const StorageService = Symbol('IStorageService');
 /**
@@ -43,21 +44,27 @@ interface LocalStorage {
 @injectable()
 export class LocalStorageService implements StorageService {
     private storage: LocalStorage;
+    @inject(ILogger) protected logger: ILogger;
+    @inject(MessageService) protected readonly messageService: MessageService;
 
-    constructor(
-        @inject(ILogger) protected logger: ILogger
-    ) {
+    @postConstruct()
+    protected init() {
         if (typeof window !== 'undefined' && window.localStorage) {
             this.storage = window.localStorage;
+            this.testLocalStorage();
         } else {
-            logger.warn(log => log("The browser doesn't support localStorage. state will not be persisted across sessions."));
+            this.logger.warn(log => log("The browser doesn't support localStorage. state will not be persisted across sessions."));
             this.storage = {};
         }
     }
 
     setData<T>(key: string, data?: T): Promise<void> {
         if (data !== undefined) {
-            this.storage[this.prefix(key)] = JSON.stringify(data);
+            try {
+                this.storage[this.prefix(key)] = JSON.stringify(data);
+            } catch (e) {
+                this.showDiskQuotaExceededMessage();
+            }
         } else {
             delete this.storage[this.prefix(key)];
         }
@@ -76,4 +83,35 @@ export class LocalStorageService implements StorageService {
         const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
         return `theia:${pathname}:${key}`;
     }
+
+    private showDiskQuotaExceededMessage() {
+        const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
+        const ERROR_MESSAGE = `Your preferred browser's local storage is almost full.
+        To be able to save your current workspace layout or data, you may need to free up some space.
+        You can refer to Theia's documentation page for instructions on how to manually clean
+        your browser's local storage.`;
+        this.messageService.warn(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION).then(selected => {
+            if (READ_INSTRUCTIONS_ACTION === selected) {
+                window.open('https://github.com/theia-ide/theia/wiki/Cleaning-Local-Storage');
+            }
+        });
+    }
+
+    /**
+     * Verify if there is still some spaces left to save another workspace configuration into the local storage of your browser.
+     * If we are close to the limit, use a dialog to notify the user.
+     */
+    private testLocalStorage(): void {
+        const array = new Array(60000); // size: <array size> * 5 =  ~ 300K
+        const keyTest = this.prefix('Test');
+
+        try {
+            this.storage[keyTest] = JSON.stringify(array);
+        } catch (error) {
+            this.showDiskQuotaExceededMessage();
+        } finally {
+            this.storage.removeItem(keyTest);
+        }
+    }
+
 }
