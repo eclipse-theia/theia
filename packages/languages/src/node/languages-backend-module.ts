@@ -24,7 +24,6 @@ export default new ContainerModule(bind => {
     bind(MessagingService.Contribution).to(LanguagesBackendContribution).inSingletonScope();
     bindContributionProvider(bind, LanguageServerContribution);
 
-    // FIXME: get rid of it, replace by a logger per a language
     bind(ILogger).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
         return logger.child('languages');

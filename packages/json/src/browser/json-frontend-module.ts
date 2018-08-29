@@ -19,8 +19,11 @@ import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { JsonClientContribution } from './json-client-contribution';
 import { JsonGrammarContribution } from './json-grammar-contribution';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
+import { bindJsonPreferences } from './json-preferences';
 
 export default new ContainerModule(bind => {
+    bindJsonPreferences(bind);
+
     bind(LanguageClientContribution).to(JsonClientContribution).inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).to(JsonGrammarContribution).inSingletonScope();
 });

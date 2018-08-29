@@ -131,4 +131,8 @@ export class MonacoWorkspaceConfiguration implements WorkspaceConfiguration {
         return result as any;
     }
 
+    toJSON(): JSONValue | undefined {
+        return this.tree && JSONExt.isObject(this.tree) ? JSONExt.deepCopy(this.tree) : this.tree;
+    }
+
 }

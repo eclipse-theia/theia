@@ -8,7 +8,7 @@
     "@theia/process": "^0.3.14",
     "@theia/workspace": "^0.3.14",
     "@types/uuid": "^3.4.3",
-    "monaco-languageclient": "next",
+    "monaco-languageclient": "^0.7.3",
     "uuid": "^3.2.1"
   },
   "publishConfig": {
