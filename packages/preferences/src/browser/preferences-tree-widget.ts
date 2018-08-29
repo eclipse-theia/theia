@@ -49,6 +49,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     static ID = 'preferences_container_widget';
 
     protected treeWidget: PreferencesTreeWidget | undefined;
+    protected editorsContainer: PreferencesEditorsContainer;
     private currentEditor: EditorWidget | undefined;
     private readonly editors: EditorWidget[] = [];
     private deferredEditors = new Deferred<EditorWidget[]>();
@@ -129,10 +130,10 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
         });
 
-        const editorsContainer = new PreferencesEditorsContainer(this.editorManager, this.userPreferenceProvider, this.workspacePreferenceProvider);
-        this.toDispose.push(editorsContainer);
-        editorsContainer.onInit(() => {
-            toArray(editorsContainer.widgets()).forEach(editor => {
+        this.editorsContainer = new PreferencesEditorsContainer(this.editorManager, this.userPreferenceProvider, this.workspacePreferenceProvider);
+        this.toDispose.push(this.editorsContainer);
+        this.editorsContainer.onInit(() => {
+            toArray(this.editorsContainer.widgets()).forEach(editor => {
                 const editorWidget = editor as EditorWidget;
                 this.editors.push(editorWidget);
                 const savable = editorWidget.saveable;
@@ -142,7 +143,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             });
             this.deferredEditors.resolve(this.editors);
         });
-        editorsContainer.onEditorChanged(editor => {
+        this.editorsContainer.onEditorChanged(editor => {
             if (this.currentEditor) {
                 this.currentEditor.saveable.save();
             }
@@ -150,7 +151,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         });
 
         this.addWidget(this.treeWidget);
-        this.addWidget(editorsContainer);
+        this.addWidget(this.editorsContainer);
         this.treeWidget.activate();
         super.onAfterAttach(msg);
     }
@@ -163,7 +164,10 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     }
 
     protected onCloseRequest(msg: Message) {
-        this.widgets.forEach(widget => widget.close());
+        if (this.treeWidget) {
+            this.treeWidget.close();
+        }
+        this.editorsContainer.close();
         super.onCloseRequest(msg);
         this.dispose();
     }
@@ -192,6 +196,7 @@ export class PreferencesEditorsContainer extends DockPanel {
 
     dispose(): void {
         this.toDispose.dispose();
+        super.dispose();
     }
 
     onCloseRequest(msg: Message) {
@@ -266,6 +271,7 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     dispose(): void {
         this.toDispose.dispose();
+        super.dispose();
     }
 
     protected onAfterAttach(msg: Message): void {
