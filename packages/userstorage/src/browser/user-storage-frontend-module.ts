@@ -21,6 +21,7 @@ import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesys
 import { UserStorageService } from './user-storage-service';
 
 export default new ContainerModule(bind => {
-    bind(ResourceResolver).to(UserStorageResolver).inSingletonScope();
+    bind(UserStorageResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(UserStorageResolver);
     bind(UserStorageService).to(UserStorageServiceFilesystemImpl).inSingletonScope();
 });
