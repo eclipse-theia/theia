@@ -20,6 +20,7 @@ import { expect } from 'chai';
 import { ILogger } from '../common/logger';
 import { MockLogger } from '../common/test/mock-logger';
 import * as sinon from 'sinon';
+import { MessageService, MessageClient } from '../common/';
 
 let storageService: StorageService;
 
@@ -36,6 +37,9 @@ before(() => {
     });
     testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
     testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
+
+    testContainer.bind(MessageClient).toSelf().inSingletonScope();
+    testContainer.bind(MessageService).toSelf().inSingletonScope();
 
     storageService = testContainer.get(StorageService);
 });
