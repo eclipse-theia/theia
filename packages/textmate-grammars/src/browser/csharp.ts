@@ -63,7 +63,7 @@ export class CSharpContribution implements LanguageGrammarDefinitionContribution
             }
         });
         const grammar = require('../../data/csharp.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

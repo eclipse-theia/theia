@@ -55,7 +55,7 @@ export class IniContribution implements LanguageGrammarDefinitionContribution {
             ]
         });
         const grammar = require('../../data/ini.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

@@ -31,7 +31,7 @@ export class PerlContribution implements LanguageGrammarDefinitionContribution {
             firstLine: '^#!.*\\bperl\\b'
         });
         const grammar = require('../../data/perl.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

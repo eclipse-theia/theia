@@ -53,7 +53,7 @@ export class ShellContribution implements LanguageGrammarDefinitionContribution 
         });
 
         const grammar = require('../../data/shell.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

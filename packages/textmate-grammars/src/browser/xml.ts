@@ -109,7 +109,7 @@ export class XmlContribution implements LanguageGrammarDefinitionContribution {
         });
 
         const grammar = require('../../data/xml.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

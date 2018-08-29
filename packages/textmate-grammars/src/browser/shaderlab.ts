@@ -53,7 +53,7 @@ export class ShaderlabContribution implements LanguageGrammarDefinitionContribut
             ]
         });
         const grammar = require('../../data/shaderlab.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

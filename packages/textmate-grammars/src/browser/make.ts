@@ -47,7 +47,7 @@ export class MakeContribution implements LanguageGrammarDefinitionContribution {
             ]
         });
         const grammar = require('../../data/make.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
