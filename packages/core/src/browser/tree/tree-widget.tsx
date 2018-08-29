@@ -418,10 +418,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }
             const style = this.applyFontStyles({}, affix.fontData);
             const className = classes.join(' ');
+            const key = node.id + '_' + i;
             const attrs = {
                 className,
-                style
-            };
+                style,
+                key};
             children.push(React.createElement('div', attrs, affix.data));
         }
         return <React.Fragment>{children}</React.Fragment>;
