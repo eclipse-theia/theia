@@ -7,7 +7,6 @@
     "@theia/core": "^0.3.13",
     "@theia/languages": "^0.3.13",
     "@theia/monaco": "^0.3.13",
-    "@theia/typescript": "^0.3.13",
     "typescript-language-server": "^0.3.0"
   },
   "publishConfig": {

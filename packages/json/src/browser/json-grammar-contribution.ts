@@ -72,7 +72,7 @@ export class JsonGrammarContribution implements LanguageGrammarDefinitionContrib
         monaco.languages.setLanguageConfiguration(JSON_LANGUAGE_ID, this.config);
 
         const jsonGrammar = require('../../data/json.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.json', {
+        registry.registerTextmateGrammarScope('source.json', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -97,7 +97,7 @@ export class JsonGrammarContribution implements LanguageGrammarDefinitionContrib
         monaco.languages.setLanguageConfiguration(JSONC_LANGUAGE_ID, this.config);
 
         const jsoncGrammar = require('../../data/jsonc.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.json.comments', {
+        registry.registerTextmateGrammarScope('source.json.comments', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

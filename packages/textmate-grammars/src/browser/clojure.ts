@@ -39,23 +39,23 @@ export class ClojureContribution implements LanguageGrammarDefinitionContributio
                 ['(', ')']
             ],
             autoClosingPairs: [
-                {open: '{', close: '}'},
-                {open: '[', close: ']'},
-                {open: '(', close: ')'},
-                {open: '\'', close: '\''}
+                { open: '{', close: '}' },
+                { open: '[', close: ']' },
+                { open: '(', close: ')' },
+                { open: '\'', close: '\'' }
             ],
             surroundingPairs: [
-                {open: '{', close: '}'},
-                {open: '[', close: ']'},
-                {open: '(', close: ')'},
-                {open: '\'', close: '\''}
+                { open: '{', close: '}' },
+                { open: '[', close: ']' },
+                { open: '(', close: ')' },
+                { open: '\'', close: '\'' }
             ],
             folding: {
                 offSide: true
             }
         });
         const grammar = require('../../data/clojure.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

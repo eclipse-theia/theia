@@ -70,7 +70,7 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
         monaco.languages.setLanguageConfiguration(PYTHON_LANGUAGE_ID, this.config);
 
         const platformGrammar = require('../../data/MagicPython.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.python', {
+        registry.registerTextmateGrammarScope('source.python', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -80,7 +80,7 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
         });
 
         const cGrammar = require('../../data/MagicRegExp.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.regexp.python', {
+        registry.registerTextmateGrammarScope('source.regexp.python', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

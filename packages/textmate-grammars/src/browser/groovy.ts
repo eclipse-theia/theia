@@ -57,7 +57,7 @@ export class GroovyContribution implements LanguageGrammarDefinitionContribution
             ]
         });
         const grammar = require('../../data/groovy.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

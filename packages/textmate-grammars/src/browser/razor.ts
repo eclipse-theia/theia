@@ -60,7 +60,7 @@ export class RazorContribution implements LanguageGrammarDefinitionContribution 
             }
         });
         const grammar = require('../../data/razor.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

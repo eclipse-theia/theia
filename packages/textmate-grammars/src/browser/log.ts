@@ -30,7 +30,7 @@ export class LogContribution implements LanguageGrammarDefinitionContribution {
             aliases: ['log']
         });
         const grammar = require('../../data/log.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

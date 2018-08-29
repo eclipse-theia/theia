@@ -52,7 +52,7 @@ export class RContribution implements LanguageGrammarDefinitionContribution {
             ]
         });
         const grammar = require('../../data/r.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

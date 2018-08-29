@@ -16,30 +16,55 @@
 
 import { INITIAL, StackElement, IGrammar } from 'monaco-textmate';
 
-export class State implements monaco.languages.IState {
+export class TokenizerState implements monaco.languages.IState {
 
     constructor(
-        public ruleStack: StackElement
+        public readonly ruleStack: StackElement
     ) { }
 
     clone(): monaco.languages.IState {
-        return new State(this.ruleStack);
+        return new TokenizerState(this.ruleStack);
     }
 
     equals(other: monaco.languages.IState): boolean {
-        return other &&
-            (other instanceof State) &&
-            (other === this || other.ruleStack === this.ruleStack)
-            ;
+        return other instanceof TokenizerState && (other === this || other.ruleStack === this.ruleStack);
     }
 
 }
 
-export function createTextmateTokenizer(grammar: IGrammar): monaco.languages.TokensProvider {
+/**
+ * Options for the TextMate tokenizer.
+ */
+export interface TokenizerOption {
+
+    /**
+     * Maximum line length that will be handled by the TextMate tokenizer. If the length of the actual line exceeds this
+     * limit, the tokenizer terminates and the tokenization of any subsequent lines might be broken.
+     *
+     * If the `lineLimit` is `false` it means, there are no line length limits. If the `lineLimit` is a number, then it must
+     * be a positive integer. Otherwise, an error will be thrown.
+     */
+    readonly lineLimit: number | false;
+
+}
+
+export namespace TokenizerOption {
+    /**
+     * The default TextMate tokenizer option.
+     */
+    export const DEFAULT: TokenizerOption = {
+        lineLimit: 400
+    };
+}
+
+export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.TokensProvider {
+    if (options.lineLimit <= 0) {
+        throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
+    }
     return {
-        getInitialState: () => new State(INITIAL),
-        tokenize(line: string, state: State) {
-            if (line.length > 400) {
+        getInitialState: () => new TokenizerState(INITIAL),
+        tokenize(line: string, state: TokenizerState) {
+            if (typeof options.lineLimit === 'number' && line.length > options.lineLimit) {
                 console.log(`Line starting with "${line.substr(0, 10)}..." is too long to be tokenized.`);
                 return { tokens: [], endState: state };
             }
@@ -48,7 +73,7 @@ export function createTextmateTokenizer(grammar: IGrammar): monaco.languages.Tok
             const defaultResult = tokenTheme.match(undefined, 'should.return.default');
             const defaultForeground = monaco.modes.TokenMetadata.getForeground(defaultResult);
             return {
-                endState: new State(result.ruleStack),
+                endState: new TokenizerState(result.ruleStack),
                 tokens: result.tokens.map(token => {
                     const scopes = token.scopes.slice(0);
 

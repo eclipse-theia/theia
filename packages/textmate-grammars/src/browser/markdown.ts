@@ -58,7 +58,7 @@ export class MarkdownContribution implements LanguageGrammarDefinitionContributi
         });
 
         const grammar = require('../../data/markdown.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

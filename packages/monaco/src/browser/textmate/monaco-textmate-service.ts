@@ -20,7 +20,7 @@ import { ILogger, DisposableCollection, ContributionProvider } from '@theia/core
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { MonacoTextModelService } from '../monaco-text-model-service';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
-import { createTextmateTokenizer } from './textmate-tokenizer';
+import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
@@ -95,10 +95,10 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
         await this.onigasmPromise;
         try {
-            monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(
-                await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration)
-            ));
-        } catch (err) {
+            const grammar = await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration);
+            const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
+            monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(grammar, options));
+        } catch {
             this.logger.warn('No grammar for this language id', languageId);
         }
     }

@@ -55,7 +55,7 @@ export class ObjectiveCContribution implements LanguageGrammarDefinitionContribu
             ]
         });
         const grammar = require('../../data/objective-c.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

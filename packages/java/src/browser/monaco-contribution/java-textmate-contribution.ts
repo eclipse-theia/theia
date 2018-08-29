@@ -23,7 +23,7 @@ export class JavaTextmateContribution implements LanguageGrammarDefinitionContri
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         const javaDocGrammar = require('../../../data/javadoc.tmlanguage.json');
-        registry.registerTextMateGrammarScope('text.html.javadoc', {
+        registry.registerTextmateGrammarScope('text.html.javadoc', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -33,7 +33,7 @@ export class JavaTextmateContribution implements LanguageGrammarDefinitionContri
         });
         const scope = 'source.java';
         const javaGrammar = require('../../../data/java.tmlanguage.json');
-        registry.registerTextMateGrammarScope(scope, {
+        registry.registerTextmateGrammarScope(scope, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

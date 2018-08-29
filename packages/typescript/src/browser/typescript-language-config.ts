@@ -24,7 +24,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
     registerTextmateLanguage(registry: TextmateRegistry) {
         this.registerTypeScript();
         const grammar = require('../../data/grammars/typescript.tmlanguage.json');
-        registry.registerTextMateGrammarScope('source.ts', {
+        registry.registerTextmateGrammarScope('source.ts', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -35,7 +35,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
 
         registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_LANGUAGE_ID, 'source.ts');
         registry.registerGrammarConfiguration(TYPESCRIPT_LANGUAGE_ID, {
-            'tokenTypes': {
+            tokenTypes: {
                 'entity.name.type.instance.jsdoc': 0,
                 'entity.name.function.tagged-template': 0,
                 'meta.import string.quoted': 0,
@@ -44,7 +44,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
         });
 
         const jsxGrammar = require('../../data/grammars/typescript.tsx.tmlanguage.json');
-        registry.registerTextMateGrammarScope('source.tsx', {
+        registry.registerTextmateGrammarScope('source.tsx', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

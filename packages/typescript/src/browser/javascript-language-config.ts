@@ -25,7 +25,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
     registerTextmateLanguage(registry: TextmateRegistry) {
         this.registerJavaScript();
         const grammar = require('../../data/grammars/javascript.tmlanguage.json');
-        registry.registerTextMateGrammarScope('source.js', {
+        registry.registerTextmateGrammarScope('source.js', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -34,7 +34,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
             }
         });
 
-        registry.registerTextMateGrammarScope('source.js.regexp', {
+        registry.registerTextmateGrammarScope('source.js.regexp', {
             async getGrammarDefinition() {
                 return {
                     format: 'plist',
@@ -61,7 +61,7 @@ export class JavascriptGrammarContribution implements LanguageGrammarDefinitionC
         registry.mapLanguageIdToTextmateGrammar(JAVASCRIPT_LANGUAGE_ID, 'source.js');
 
         const jsxGrammar = require('../../data/grammars/javascript.jsx.tmlanguage.json');
-        registry.registerTextMateGrammarScope('source.jsx', {
+        registry.registerTextmateGrammarScope('source.jsx', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

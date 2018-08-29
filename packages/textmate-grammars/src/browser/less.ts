@@ -64,7 +64,7 @@ export class LessContribution implements LanguageGrammarDefinitionContribution {
         });
 
         const grammar = require('../../data/less.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
