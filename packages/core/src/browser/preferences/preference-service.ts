@@ -142,7 +142,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         }
     }
 
-    getPreferences(): { [key: string]: any } {
+    getPreferences(): { [key: string]: Object | undefined } {
         return this.preferences;
     }
 

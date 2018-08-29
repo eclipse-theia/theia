@@ -29,6 +29,7 @@ import { Emitter, TextDocumentWillSaveEvent, TextEdit } from '@theia/languages/l
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
+import { MonacoConfigurations } from './monaco-configurations';
 
 export interface MonacoDidChangeTextDocumentParams extends lang.DidChangeTextDocumentParams {
     readonly textDocument: MonacoEditorModel;
@@ -46,12 +47,6 @@ export class MonacoWorkspace implements lang.Workspace {
         workspaceEdit: {
             documentChanges: true
         }
-    };
-
-    readonly synchronization = {
-        didSave: true,
-        willSave: true,
-        willSaveWaitUntil: true
     };
 
     protected resolveReady: () => void;
@@ -94,6 +89,9 @@ export class MonacoWorkspace implements lang.Workspace {
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+
+    @inject(MonacoConfigurations)
+    readonly configurations: MonacoConfigurations;
 
     @postConstruct()
     protected init(): void {
