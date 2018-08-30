@@ -1,12 +1,12 @@
 {
   "name": "@theia/languages",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Theia - Languages Extension",
   "dependencies": {
-    "@theia/core": "^0.3.13",
-    "@theia/output": "^0.3.13",
-    "@theia/process": "^0.3.13",
-    "@theia/workspace": "^0.3.13",
+    "@theia/core": "^0.3.14",
+    "@theia/output": "^0.3.14",
+    "@theia/process": "^0.3.14",
+    "@theia/workspace": "^0.3.14",
     "@types/uuid": "^3.4.3",
     "monaco-languageclient": "next",
     "uuid": "^3.2.1"
@@ -45,7 +45,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.13"
+    "@theia/ext-scripts": "^0.3.14"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

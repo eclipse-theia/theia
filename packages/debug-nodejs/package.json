@@ -1,9 +1,9 @@
 {
   "name": "@theia/debug-nodejs",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Theia - NodeJS Debug Extension",
   "dependencies": {
-    "@theia/debug": "^0.3.13",
+    "@theia/debug": "^0.3.14",
     "vscode-debugprotocol": "^1.26.0"
   },
   "publishConfig": {
@@ -40,7 +40,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.13"
+    "@theia/ext-scripts": "^0.3.14"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
