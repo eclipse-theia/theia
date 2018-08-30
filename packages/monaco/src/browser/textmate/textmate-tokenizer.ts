@@ -41,10 +41,10 @@ export interface TokenizerOption {
      * Maximum line length that will be handled by the TextMate tokenizer. If the length of the actual line exceeds this
      * limit, the tokenizer terminates and the tokenization of any subsequent lines might be broken.
      *
-     * If the `lineLimit` is `false` it means, there are no line length limits. If the `lineLimit` is a number, then it must
-     * be a positive integer. Otherwise, an error will be thrown.
+     * If the `lineLimit` is not defined, it means, there are no line length limits. Otherwise, it must be a positive
+     * integer or an error will be thrown.
      */
-    readonly lineLimit: number | false;
+    readonly lineLimit?: number;
 
 }
 
@@ -58,13 +58,13 @@ export namespace TokenizerOption {
 }
 
 export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.TokensProvider {
-    if (options.lineLimit <= 0) {
+    if (options.lineLimit !== undefined && (options.lineLimit <= 0 || !Number.isInteger(options.lineLimit))) {
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
     }
     return {
         getInitialState: () => new TokenizerState(INITIAL),
         tokenize(line: string, state: TokenizerState) {
-            if (typeof options.lineLimit === 'number' && line.length > options.lineLimit) {
+            if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 console.log(`Line starting with "${line.substr(0, 10)}..." is too long to be tokenized.`);
                 return { tokens: [], endState: state };
             }
