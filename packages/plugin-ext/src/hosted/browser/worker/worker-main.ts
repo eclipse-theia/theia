@@ -16,14 +16,13 @@
 
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../api/rpc-protocol';
-import { HostedPluginManagerExtImpl } from '../../plugin/hosted-plugin-manager';
+import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
-import { createAPI, startPlugin } from '../../../plugin/plugin-context';
+import { createAPI } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
-import { Disposable } from '@theia/core/src/common';
 
+// tslint:disable-next-line:no-any
 const ctx = self as any;
-const plugins = new Map<string, any>();
 
 const emitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -32,18 +31,17 @@ const rpc = new RPCProtocolImpl({
         ctx.postMessage(m);
     }
 });
+// tslint:disable-next-line:no-any
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);
 });
+function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
+    ctx.importScripts('/context/' + contextPath);
+}
 
-const theia = createAPI(rpc);
-ctx['theia'] = theia;
-
-rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
-    initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-        ctx.importScripts('/context/' + contextPath);
-    },
-    loadPlugin(contextPath: string, plugin: Plugin): void {
+const pluginManager = new PluginManagerExtImpl({
+    // tslint:disable-next-line:no-any
+    loadPlugin(contextPath: string, plugin: Plugin): any {
         if (isElectron()) {
             ctx.importScripts(plugin.pluginPath);
         } else {
@@ -55,32 +53,49 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
                 console.error(`WebWorker: Cannot start plugin "${plugin.model.name}". Frontend plugin not found: "${plugin.lifecycle.frontendModuleName}"`);
                 return;
             }
-            startPlugin(plugin, ctx[plugin.lifecycle.frontendModuleName], plugins);
+            return ctx[plugin.lifecycle.frontendModuleName];
         }
     },
-    stopPlugins(contextPath: string, pluginIds: string[]): void {
-        pluginIds.forEach(pluginId => {
-            const pluginData = plugins.get(pluginId);
-            if (pluginData) {
-                // call stop method
-                if (pluginData.stopPluginMethod) {
-                    pluginData.stopPluginMethod();
+    init(rawPluginData: PluginMetadata[]): [Plugin[], Plugin[]] {
+        const result: Plugin[] = [];
+        const foreign: Plugin[] = [];
+        for (const plg of rawPluginData) {
+            const pluginModel = plg.model;
+            const pluginLifecycle = plg.lifecycle;
+            if (pluginModel.entryPoint!.frontend) {
+                let frontendInitPath = pluginLifecycle.frontendInitPath;
+                if (frontendInitPath) {
+                    initialize(frontendInitPath, plg);
+                } else {
+                    frontendInitPath = '';
                 }
-
-                // dispose any objects
-                const pluginContext = pluginData.pluginContext;
-                if (pluginContext) {
-                    pluginContext.subscriptions.forEach((element: Disposable) => {
-                        element.dispose();
-                    });
-                }
-
-                // delete entry
-                plugins.delete(pluginId);
+                const plugin: Plugin = {
+                    pluginPath: pluginModel.entryPoint.frontend!,
+                    initPath: frontendInitPath,
+                    model: pluginModel,
+                    lifecycle: pluginLifecycle,
+                    rawModel: plg.source
+                };
+                result.push(plugin);
+            } else {
+                foreign.push({
+                    pluginPath: pluginModel.entryPoint.backend!,
+                    initPath: pluginLifecycle.backendInitPath!,
+                    model: pluginModel,
+                    lifecycle: pluginLifecycle,
+                    rawModel: plg.source
+                });
             }
-        });
+        }
+
+        return [result, foreign];
     }
-}));
+});
+
+const theia = createAPI(rpc, pluginManager);
+ctx['theia'] = theia;
+
+rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 
 function isElectron() {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {

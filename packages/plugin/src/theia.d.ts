@@ -40,6 +40,105 @@ declare module '@theia/plugin' {
 
     }
 
+    export type PluginType = 'frontend' | 'backend';
+
+    /**
+     * Represents an extension.
+     *
+     * To get an instance of an `Plugin` use [getPlugin](#plugins.getPlugin).
+     */
+    export interface Plugin<T> {
+
+        /**
+         * The canonical plug-in identifier in the form of: `publisher.name`.
+         */
+        readonly id: string;
+
+        /**
+         * The absolute file path of the directory containing this plug-in.
+         */
+        readonly pluginPath: string;
+
+        /**
+         * `true` if the plug-in has been activated.
+         */
+        readonly isActive: boolean;
+
+        /**
+         * The parsed contents of the plug-in's package.json.
+         */
+        readonly packageJSON: any;
+
+        /**
+         * 
+         */
+        readonly pluginType : PluginType;
+
+        /**
+         * The public API exported by this plug-in. It is an invalid action
+         * to access this field before this plug-in has been activated.
+         */
+        readonly exports: T;
+
+        /**
+         * Activates this plug-in and returns its public API.
+         *
+         * @return A promise that will resolve when this plug-in has been activated.
+         */
+        activate(): PromiseLike<T>;
+    }
+
+    /**
+     * Namespace for dealing with installed plug-ins. Plug-ins are represented
+     * by an [plug-in](#Plugin)-interface which enables reflection on them.
+     *
+     * Plug-in writers can provide APIs to other plug-ins by returning their API public
+     * surface from the `start`-call.
+     *
+     * ```javascript
+     * export function start() {
+     *     let api = {
+     *         sum(a, b) {
+     *             return a + b;
+     *         },
+     *         mul(a, b) {
+     *             return a * b;
+     *         }
+     *     };
+     *     // 'export' public api-surface
+     *     return api;
+     * }
+     * ```
+     * ```javascript
+     * let mathExt = plugins.getPlugin('genius.math');
+     * let importedApi = mathExt.exports;
+     *
+     * console.log(importedApi.mul(42, 1));
+     * ```
+     */
+    export namespace plugins {
+        /**
+         * Get an plug-in by its full identifier in the form of: `publisher.name`.
+         *
+         * @param pluginId An plug-in identifier.
+         * @return An plug-in or `undefined`.
+         */
+        export function getPlugin(pluginId: string): Plugin<any> | undefined;
+
+        /**
+         * Get an plug-in its full identifier in the form of: `publisher.name`.
+         *
+         * @param pluginId An plug-in identifier.
+         * @return An plug-in or `undefined`.
+         */
+        export function getPlugin<T>(pluginId: string): Plugin<T> | undefined;
+
+        /**
+         * All plug-ins currently known to the system.
+         */
+        export let all: Plugin<any>[];
+    }
+
     /**
      * A command is a unique identifier of a function
      * which can be executed by a user via a keyboard shortcut,
