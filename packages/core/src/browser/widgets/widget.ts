@@ -79,10 +79,7 @@ export class BaseWidget extends Widget {
             (async () => {
                 const container = await this.getScrollContainer();
                 container.style.overflow = 'hidden';
-                this.scrollBar = new PerfectScrollbar(container, {
-                    suppressScrollX: true
-                });
-
+                this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
                 this.toDispose.push(Disposable.create(async () => {
                     if (this.scrollBar) {
                         this.scrollBar.destroy();
