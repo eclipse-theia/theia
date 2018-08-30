@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable, inject, postConstruct } from 'inversify';
 import { JSONExt, JSONObject, JSONValue } from '@phosphor/coreutils';
 import { Configurations, ConfigurationChangeEvent, WorkspaceConfiguration } from 'monaco-languageclient';
 import { Event, Emitter } from '@theia/core/lib/common';
-import { PreferenceServiceImpl, PreferenceChange } from '@theia/core/lib/browser';
-
-const debounce = require('lodash.debounce');
+import { PreferenceServiceImpl, PreferenceChanges } from '@theia/core/lib/browser';
 
 @injectable()
 export class MonacoConfigurations implements Configurations {
@@ -32,36 +32,29 @@ export class MonacoConfigurations implements Configurations {
     protected readonly preferences: PreferenceServiceImpl;
 
     protected tree: JSONObject = {};
-    protected changes: PreferenceChange[] = [];
 
     @postConstruct()
     protected init(): void {
-        this.doReconcileData();
-        this.preferences.onPreferenceChanged(change => {
-            this.changes.push(change);
-            this.reconcileData();
-        });
+        this.reconcileData();
+        this.preferences.onPreferencesChanged(changes => this.reconcileData(changes));
     }
 
-    protected readonly reconcileData = debounce(() => this.doReconcileData(), 50);
-    protected doReconcileData(): void {
-        const changes = [...this.changes];
-        this.changes = [];
+    protected reconcileData(changes?: PreferenceChanges): void {
         this.tree = MonacoConfigurations.parse(this.preferences.getPreferences());
         this.onDidChangeConfigurationEmitter.fire({
-            affectsConfiguration: section => {
-                if (!changes.length) {
-                    return true;
-                }
-                return changes.some(({ preferenceName }) => section.startsWith(preferenceName) || preferenceName.startsWith(section));
-            }
+            affectsConfiguration: section => this.affectsConfiguration(section, changes)
         });
     }
-
-    protected fireDidChangeConfiguration({ preferenceName }: PreferenceChange): void {
-        this.onDidChangeConfigurationEmitter.fire({
-            affectsConfiguration: section => section.startsWith(preferenceName) || preferenceName.startsWith(section)
-        });
+    protected affectsConfiguration(section: string, changes?: PreferenceChanges): boolean {
+        if (!changes) {
+            return true;
+        }
+        for (const preferenceName in changes) {
+            if (section.startsWith(preferenceName) || preferenceName.startsWith(section)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     getConfiguration(section?: string, resource?: string): WorkspaceConfiguration {

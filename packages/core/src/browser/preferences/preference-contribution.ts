@@ -14,8 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, ILogger } from '../../common';
+import * as Ajv from 'ajv';
+import { inject, injectable, named, interfaces } from 'inversify';
+import { ContributionProvider, bindContributionProvider } from '../../common';
+import { PreferenceProvider } from './preference-provider';
+
+// tslint:disable:no-any
 
 export const PreferenceContribution = Symbol('PreferenceContribution');
 export interface PreferenceContribution {
@@ -45,27 +49,55 @@ export interface PreferenceProperty {
 
 export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
 
+export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
+    bind(PreferenceSchemaProvider).toSelf().inSingletonScope();
+    bindContributionProvider(bind, PreferenceContribution);
+}
+
 @injectable()
-export class PreferenceSchemaProvider {
-    protected readonly combinedSchema: PreferenceSchema = {properties: {}};
+export class PreferenceSchemaProvider extends PreferenceProvider {
+
+    protected readonly combinedSchema: PreferenceSchema = { properties: {} };
+    protected readonly preferences: { [name: string]: any } = {};
+    protected readonly validateFunction: Ajv.ValidateFunction;
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
         @inject(ContributionProvider) @named(PreferenceContribution)
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
     ) {
+        super();
+        const schema = this.combinedSchema;
         this.preferenceContributions.getContributions().forEach(contrib => {
             for (const property in contrib.schema.properties) {
-                if (this.combinedSchema.properties[property]) {
-                    this.logger.error('Preference name collision detected in the schema for property: ' + property);
+                if (schema.properties[property]) {
+                    console.error('Preference name collision detected in the schema for property: ' + property);
                 } else {
-                    this.combinedSchema.properties[property] = contrib.schema.properties[property];
+                    schema.properties[property] = contrib.schema.properties[property];
                 }
             }
         });
+        this.validateFunction = new Ajv().compile(schema);
+        // tslint:disable-next-line:forin
+        for (const property in schema.properties) {
+            this.preferences[property] = schema.properties[property].default;
+        }
+        this._ready.resolve();
+    }
+
+    validate(name: string, value: any): boolean {
+        return this.validateFunction({ [name]: value }) as boolean;
     }
 
     getCombinedSchema(): PreferenceSchema {
         return this.combinedSchema;
     }
+
+    getPreferences(): { [name: string]: any } {
+        return this.preferences;
+    }
+
+    async setPreference(): Promise<void> {
+        throw new Error('Unsupported');
+    }
+
 }
