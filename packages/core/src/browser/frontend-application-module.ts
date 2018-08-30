@@ -47,8 +47,8 @@ import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import {
-    PreferenceProviders, PreferenceProvider, PreferenceScope, PreferenceService,
-    PreferenceServiceImpl, PreferenceSchemaProvider, PreferenceContribution
+    PreferenceProviderProvider, PreferenceProvider, PreferenceScope, PreferenceService,
+    PreferenceServiceImpl, bindPreferenceSchemaProvider
 } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
@@ -152,13 +152,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
-    bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
-    for (const serviceIdentifier of [PreferenceService, FrontendApplicationContribution]) {
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(PreferenceServiceImpl)).inSingletonScope();
-    }
-    bind(PreferenceSchemaProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, PreferenceContribution);
+    bind(PreferenceService).toService(PreferenceServiceImpl);
+    bind(FrontendApplicationContribution).toService(PreferenceServiceImpl);
+    bindPreferenceSchemaProvider(bind);
 
     bind(PingService).toDynamicValue(ctx => {
         // let's reuse a simple and cheap service from this package
