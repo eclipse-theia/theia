@@ -17,7 +17,7 @@ import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart } from './types';
-import { CharacterPair, CommentRule } from '../api/plugin-api';
+import { CharacterPair, CommentRule, PluginManager } from '../api/plugin-api';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -253,6 +253,7 @@ export interface PluginDeployerDirectoryHandler {
  * This interface describes a plugin model object, which is populated from package.json.
  */
 export interface PluginModel {
+    id: string;
     name: string;
     publisher: string;
     version: string;
@@ -360,7 +361,7 @@ export interface PluginLifecycle {
  * The export function of initialization module of backend plugin.
  */
 export interface BackendInitializationFn {
-    (rpc: RPCProtocol, pluginMetadata: PluginMetadata): void;
+    (rpc: RPCProtocol, manager: PluginManager, pluginMetadata: PluginMetadata): void;
 }
 
 export interface BackendLoadingFn {

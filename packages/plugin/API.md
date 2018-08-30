@@ -2,6 +2,48 @@
 
 ## Theia Plugin system description
 
+### Plugin API
+
+Namespace for dealing with installed plug-ins. Plug-ins are represented
+by an Plugin-interface which enables reflection on them.
+Plug-in writers can provide APIs to other plug-ins by returning their API public
+surface from the `start`-call.
+
+For example some plugin exports it's API:
+
+```javascript
+export function start() {
+    let api = {
+        sum(a, b) {
+            return a + b;
+        },
+        mul(a, b) {
+            return a * b;
+        }
+    };
+    // 'export' public api-surface
+    return api;
+}
+```
+
+Another plugin can use that API:
+
+```javascript
+let mathExt = theia.plugins.getPlugin('genius.math');
+let importedApi = mathExt.exports;
+console.log(importedApi.mul(42, 1));
+```
+
+Also plugin API allows access to plugin `package.json` content.
+
+Example:
+
+```javascript
+const fooPlugin = plugins.getPlugin('publisher.plugin_name');
+const fooPluginPackageJson = fooPlugin.packageJSON;
+console.log(fooPluginPackageJson.someField);
+```
+
 ### Command API
 
  A command is a unique identifier of a function which

@@ -16,7 +16,7 @@
 
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
-import { PluginLifecycle, PluginModel, PluginMetadata } from '../common/plugin-protocol';
+import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage } from '../common/plugin-protocol';
 import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction } from '../plugin/types-impl';
@@ -33,16 +33,34 @@ import {
     MarkerData
 } from './model';
 
-export interface HostedPluginManagerExt {
-    $initialize(contextPath: string, pluginMetadata: PluginMetadata): void;
-    $loadPlugin(contextPath: string, plugin: Plugin): void;
-    $stopPlugin(contextPath: string): PromiseLike<void>;
+export interface PluginInitData {
+    plugins: PluginMetadata[];
 }
 
 export interface Plugin {
     pluginPath: string;
+    initPath: string;
     model: PluginModel;
+    rawModel: PluginPackage;
     lifecycle: PluginLifecycle;
+}
+
+export interface PluginAPI {
+
+}
+
+export interface PluginManager {
+    getAllPlugins(): Plugin[];
+    getPluginById(pluginId: string): Plugin | undefined;
+    getPluginExport(pluginId: string): PluginAPI | undefined;
+    isRunning(pluginId: string): boolean;
+    activatePlugin(pluginId: string): PromiseLike<void>;
+}
+
+export interface PluginManagerExt {
+    $stopPlugin(contextPath: string): PromiseLike<void>;
+
+    $init(pluginInit: PluginInitData): PromiseLike<void>;
 }
 
 export interface CommandRegistryMain {
@@ -609,7 +627,7 @@ export const PLUGIN_RPC_CONTEXT = {
 };
 
 export const MAIN_RPC_CONTEXT = {
-    HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<HostedPluginManagerExt>('HostedPluginManagerExt'),
+    HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<PluginManagerExt>('PluginManagerExt'),
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
     WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt'),

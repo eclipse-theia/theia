@@ -16,9 +16,10 @@
 
 import { createAPI } from '../../../plugin/plugin-context';
 import { BackendInitializationFn } from '../../../common/plugin-protocol';
+import { PluginManager } from '../../../api/plugin-api';
 
-export const doInitialization: BackendInitializationFn = (rpc: any) => {
-    const theia = createAPI(rpc);
+export const doInitialization: BackendInitializationFn = (rpc: any, manager: PluginManager) => {
+    const theia = createAPI(rpc, manager);
 
     // add theia into global goal
     const g = global as any;
