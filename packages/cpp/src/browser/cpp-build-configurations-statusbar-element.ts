@@ -47,7 +47,8 @@ export class CppBuildConfigurationsStatusBarElement {
         this.statusBar.setElement(this.cppIdentifier, {
             text: `$(wrench) C/C++ Build Config ${(activeConfig) ? activeConfig.name : ''}`,
             alignment: StatusBarAlignment.RIGHT,
-            command: CPP_CHANGE_BUILD_CONFIGURATION.id
+            command: CPP_CHANGE_BUILD_CONFIGURATION.id,
+            priority: 0.5,
         });
     }
 
