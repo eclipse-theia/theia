@@ -59,6 +59,16 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
             }
             throw new Error('unexpected property: ' + property);
         },
+        ownKeys: () => Object.keys(schema.properties),
+        getOwnPropertyDescriptor: (_, property: string) => {
+            if (schema.properties[property]) {
+                return {
+                    enumerable: true,
+                    configurable: true
+                };
+            }
+            return {};
+        },
         set: unsupportedOperation,
         deleteProperty: unsupportedOperation,
         defineProperty: unsupportedOperation
