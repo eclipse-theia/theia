@@ -14,6 +14,7 @@ For Windows instructions [click here](#building-on-windows).
  - [**Prerequisites**](#prerequisites)
  - [**Quick Start**](#quick-start)
     - [Run with SSL](#run-the-browser-example-with-ssl)
+    - [Run with Gitpod](#run-the-browser-example-with-gitpod)
  - [**Clone the repository**](#clone-the-repository)
  - [**The repository structure**](#the-repository-structure)
  - [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
@@ -82,6 +83,17 @@ To run the browser example using SSL use:
     && yarn run start --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
 
 Start your browser on https://localhost:3000.
+
+### Run the browser example with Gitpod
+
+[Gitpod](http://gitpod.io/) is a Theia-based IDE for GitHub.
+You can start by prefixing any GitHub URL in the Theia repository with `gitpod.io#`:
+- Open http://gitpod.io#https://github.com/theia-ide/theia to start development with the master branch.
+- Gitpod will start a properly configured for Theia development workspace, clone and build the Theia repository.
+- After the build is finished, run from the terminal in Gitpod:
+    
+        cd examples/browser \
+        && yarn run start ../.. --hostname 0.0.0.0
 
 ## Clone the repository
 
