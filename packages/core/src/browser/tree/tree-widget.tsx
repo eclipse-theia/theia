@@ -249,7 +249,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected readonly handleScroll = (info: ScrollParams) => {
-        this.node.scrollTo({ top: info.scrollTop });
+        this.node.scrollTop = info.scrollTop;
     }
 
     protected readonly renderNodeRow = (row: TreeWidget.NodeRow) => this.doRenderNodeRow(row);
@@ -427,7 +427,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             const attrs = {
                 className,
                 style,
-                key};
+                key
+            };
             children.push(React.createElement('div', attrs, affix.data));
         }
         return <React.Fragment>{children}</React.Fragment>;
