@@ -70,7 +70,7 @@ export const jsonPreferenceSchema: PreferenceSchema = {
                 'verbose'
             ],
             'default': 'off',
-            'description': 'Enable/disable default JSON formatter'
+            'description': 'Enable/disable tracing communications with the JSON language server'
         }
     }
 };

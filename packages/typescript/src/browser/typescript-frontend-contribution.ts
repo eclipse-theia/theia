@@ -36,6 +36,14 @@ export namespace TypeScriptCommands {
         label: 'TypeScript: Organize Imports',
         id: 'typescript.edit.organizeImports'
     };
+    export const openServerLog: Command = {
+        label: 'TypeScript: Open Server Log',
+        id: 'typescript.server.openLog'
+    };
+    export const restartServer: Command = {
+        label: 'TypeScript: Restart Server',
+        id: 'typescript.server.restart'
+    };
 }
 
 @injectable()
@@ -70,6 +78,16 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
             isEnabled: () => !!this.currentEditor,
             isVisible: () => !!this.currentEditor
         });
+        commands.registerCommand(TypeScriptCommands.openServerLog, {
+            execute: () => this.openServerLog(),
+            isEnabled: () => !!this.clientContribution.logFileUri,
+            isVisible: () => !!this.clientContribution.logFileUri
+        });
+        commands.registerCommand(TypeScriptCommands.restartServer, {
+            execute: () => this.clientContribution.restart(),
+            isEnabled: () => this.clientContribution.running,
+            isVisible: () => this.clientContribution.running
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -85,6 +103,13 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
             context: TypeScriptKeybindingContexts.typescriptEditorTextFocus,
             keybinding: 'shift+alt+o'
         });
+    }
+
+    openServerLog(): void {
+        const logFileUri = this.clientContribution.logFileUri;
+        if (logFileUri) {
+            this.editorManager.open(logFileUri);
+        }
     }
 
     organizeImports(): void {
