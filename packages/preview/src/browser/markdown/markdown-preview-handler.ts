@@ -252,26 +252,36 @@ export class MarkdownPreviewHandler implements PreviewHandler {
 
             const domParser = new DOMParser();
 
-            const parseHtml = (html: string, tag: string) =>
-                domParser.parseFromString(html, 'text/html').getElementsByTagName(tag)[0] as HTMLElement | undefined;
+            const parseDOM = (html: string) =>
+                domParser.parseFromString(html, 'text/html').getElementsByTagName('body')[0] as HTMLElement;
 
-            const parseImageElement = (html: string) => parseHtml(html, 'img') as HTMLImageElement | undefined;
+            const modifyDOM = (body: HTMLElement, tag: string, procedure: (element: Element) => void) => {
+                const elements = body.getElementsByTagName(tag);
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements.item(i);
+                    procedure(element);
+                }
+            };
+
+            const normalizeAllImgSrcInHTML = (html: string, normalizeLink: (link: string) => string) => {
+                const body = parseDOM(html);
+                modifyDOM(body, 'img', img => {
+                    const src = img.getAttributeNode('src');
+                    if (src) {
+                        src.nodeValue = normalizeLink(src.nodeValue || '');
+                    }
+                });
+                return body.innerHTML;
+            };
 
             for (const name of ['html_block', 'html_inline']) {
                 const originalRenderer = engine.renderer.rules[name];
                 engine.renderer.rules[name] = (tokens, index, options, env, self) => {
                     const currentToken = tokens[index];
                     const content = currentToken.content;
-                    if (/^\s*<img/.test(content) && RenderContentParams.is(env)) {
-                        const imgElement = parseImageElement(content);
-                        if (imgElement) {
-                            const documentUri = env.originUri;
-                            const src = imgElement.getAttributeNode('src');
-                            if (src) {
-                                src.nodeValue = this.linkNormalizer.normalizeLink(documentUri, src.nodeValue || '');
-                                currentToken.content = imgElement.outerHTML;
-                            }
-                        }
+                    if (content.includes('<img') && RenderContentParams.is(env)) {
+                        const documentUri = env.originUri;
+                        currentToken.content = normalizeAllImgSrcInHTML(content, link => this.linkNormalizer.normalizeLink(documentUri, link));
                     }
                     return originalRenderer(tokens, index, options, env, self);
                 };

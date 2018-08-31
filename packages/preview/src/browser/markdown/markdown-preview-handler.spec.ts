@@ -55,12 +55,16 @@ describe('markdown-preview-handler', () => {
         await assertRenderedContent(exampleMarkdown2, exampleHtml2);
     });
 
-    it('renders HTML images as block', async () => {
+    it('renders HTML image as block', async () => {
         await assertRenderedContent(exampleMarkdown3, exampleHtml3);
     });
 
     it('renders HTML images inlined', async () => {
         await assertRenderedContent(exampleMarkdown4, exampleHtml4);
+    });
+
+    it('renders multiple HTML images in a html block', async () => {
+        await assertRenderedContent(exampleMarkdown5, exampleHtml5);
     });
 
     it('finds element for source line', () => {
@@ -144,8 +148,10 @@ const exampleMarkdown3 = //
 
 const exampleHtml3 = //
     `<h1 id="block-html-image" class="line" data-line="0">Block HTML Image</h1>
-<img src="endpoint/workspace/subfolder/image1.png" alt="tada"><h1 id="block-html-image-2" class="line" data-line="3">Block HTML Image</h1>
-<img src="endpoint/workspace/subfolder/image3.png" alt="tada">`;
+<img src="endpoint/workspace/subfolder/image1.png" alt="tada">
+<h1 id="block-html-image-2" class="line" data-line="3">Block HTML Image</h1>
+<img src="endpoint/workspace/subfolder/image3.png" alt="tada">
+`;
 
 const exampleMarkdown4 = //
     `# Inlined HTML Image
@@ -155,6 +161,27 @@ text in paragraph <img src="subfolder/image2.png" alt="tada"/>
 const exampleHtml4 = //
     `<h1 id="inlined-html-image" class="line" data-line="0">Inlined HTML Image</h1>
 <p class="line" data-line="1">text in paragraph <img src="endpoint/workspace/subfolder/image2.png" alt="tada"></p>
+`;
+
+const exampleMarkdown5 = //
+    `# Multiple HTML Images nested in blocks
+word  <p>
+<img src="subfolder/image2.png" alt="tada"/>
+</p>
+
+<p>
+<img src="subfolder/image2.png" alt="tada"/>
+</p>
+`;
+
+const exampleHtml5 = //
+    `<h1 id="multiple-html-images-nested-in-blocks" class="line" data-line="0">Multiple HTML Images nested in blocks</h1>
+<p class="line" data-line="1">word  </p><p>
+<img src="endpoint/workspace/subfolder/image2.png" alt="tada"></p>
+<p></p>
+<p>
+<img src="endpoint/workspace/subfolder/image2.png" alt="tada">
+</p>
 `;
 
 /**
