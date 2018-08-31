@@ -28,16 +28,12 @@ export const workspacePreferenceSchema: PreferenceSchema = {
     properties: {
         'workspace.preserveWindow': {
             description: 'Enable opening workspaces in current window',
-            additionalProperties: {
-                type: 'boolean'
-            },
+            type: 'boolean',
             default: false
         },
         'workspace.supportMultiRootWorkspace': {
             description: 'Enable the multi-root workspace support to test this feature internally',
-            additionalProperties: {
-                type: 'boolean'
-            },
+            type: 'boolean',
             default: false
         }
     }
