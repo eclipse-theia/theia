@@ -19,6 +19,7 @@ import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from 
 import { DirNode, FileStatNode } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
+import { UriSelection } from '@theia/core/lib/common/selection';
 import * as React from 'react';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
@@ -80,8 +81,14 @@ export class FileTreeWidget extends TreeWidget {
             onDragEnter: event => this.handleDragEnterEvent(node, event),
             onDragOver: event => this.handleDragOverEvent(node, event),
             onDragLeave: event => this.handleDragLeaveEvent(node, event),
-            onDrop: event => this.handleDropEvent(node, event)
+            onDrop: event => this.handleDropEvent(node, event),
+            title: this.getNodeTooltip(node)
         };
+    }
+
+    protected getNodeTooltip(node: TreeNode): string | undefined {
+        const uri = UriSelection.getUri(node);
+        return uri ? uri.path.toString() : undefined;
     }
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
