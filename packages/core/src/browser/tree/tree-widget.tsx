@@ -30,7 +30,7 @@ import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
-import { List, ListRowRenderer } from 'react-virtualized';
+import { List, ListRowRenderer, ScrollParams } from 'react-virtualized';
 import { TopDownTreeIterator } from './tree-iterator';
 
 const debounce = require('lodash.debounce');
@@ -248,7 +248,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return null;
     }
 
-    protected readonly handleScroll = (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => {
+    protected readonly handleScroll = (info: ScrollParams) => {
         this.node.scrollTo({ top: info.scrollTop });
     }
 
@@ -571,10 +571,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addKeyListener(this.node, up, event => this.handleUp(event));
         this.addKeyListener(this.node, down, event => this.handleDown(event));
         this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
-        this.node.addEventListener('ps-scroll-y', (e: any) => {
+        this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.view && this.view.list && this.view.list.Grid) {
                 const { scrollTop } = e.target;
-                this.view.list.Grid.handleScrollEvent({ scrollLeft: 0, scrollTop });
+                this.view.list.Grid.handleScrollEvent({ scrollTop });
             }
         });
     }
@@ -763,7 +763,7 @@ export namespace TreeWidget {
         height: number
         scrollToRow?: number
         rows: NodeRow[]
-        handleScroll: (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void
+        handleScroll: (info: ScrollParams) => void
         getNodeRowHeight: (row: NodeRow) => number
         renderNodeRow: (row: NodeRow) => React.ReactNode
     }
