@@ -21,7 +21,7 @@ import { FrontendApplication, WebSocketConnectionProvider, WebSocketOptions } fr
 import {
     LanguageContribution, ILanguageClient, LanguageClientOptions,
     DocumentSelector, TextDocument, FileSystemWatcher,
-    Workspace, Languages
+    Workspace, Languages, State
 } from './language-client-services';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { LanguageClientFactory } from './language-client-factory';
@@ -111,7 +111,20 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return toDeactivate;
     }
 
+    protected state: State | undefined;
+    get running(): boolean {
+        return this.state === State.Running;
+    }
+    restart(): void {
+        if (this._languageClient) {
+            this._languageClient.stop();
+        }
+    }
+
     protected onWillStart(languageClient: ILanguageClient): void {
+        languageClient.onDidChangeState(({ newState }) => {
+            this.state = newState;
+        });
         languageClient.onReady().then(() => this.onReady(languageClient));
     }
 
@@ -133,7 +146,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     protected createOptions(): LanguageClientOptions {
-        const { id, documentSelector, fileEvents, configurationSection } = this;
+        const { id, documentSelector, fileEvents, configurationSection, initializationOptions } = this;
         return {
             documentSelector,
             synchronize: { fileEvents, configurationSection },
@@ -142,11 +155,17 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                 this.messageService.error(`Failed to start ${this.name} language server${detail}`);
                 return false;
             },
-            diagnosticCollectionName: id
+            diagnosticCollectionName: id,
+            initializationOptions
         };
     }
 
-    protected get configurationSection(): string | string[] | undefined {
+    // tslint:disable-next-line:no-any
+    protected get initializationOptions(): any | (() => any) | undefined {
+        return undefined;
+    }
+
+    protected get configurationSection(): string | string[] | undefined {
         return undefined;
     }
 
