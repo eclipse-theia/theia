@@ -65,7 +65,7 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
         getInitialState: () => new TokenizerState(INITIAL),
         tokenize(line: string, state: TokenizerState) {
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
-                console.log(`Line starting with "${line.substr(0, 10)}..." is too long to be tokenized.`);
+                // Line is too long to be tokenized
                 return { tokens: [], endState: state };
             }
             const result = grammar.tokenizeLine(line, state.ruleStack);
