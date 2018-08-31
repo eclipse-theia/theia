@@ -1,4 +1,5 @@
 # Theia - Cloud & Desktop IDE
+[![Gitpod - Code Now](https://img.shields.io/badge/Gitpod-code%20now-blue.svg?longCache=true)](https://gitpod.io#https://github.com/theia-ide/theia)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/help%20wanted)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
 [![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
@@ -31,9 +32,11 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
-- [Develop a new Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.html)
-- Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
-- [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
+- [Run Theia in Docker](https://github.com/theia-ide/theia-apps#theia-docker)
+- [Run Theia in Gitpod - a Theia-based IDE for GitHub](doc/Developing.md#run-the-browser-example-with-gitpod)
+- [Develop a Theia application - your own IDE](https://www.theia-ide.org/doc/Composing_Applications.html)
+- [Develop a Theia plugin - a VS Code like extension](https://www.theia-ide.org/doc/Authoring_Plugins.html)
+- [Develop a Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.html)
 - [Package a desktop Theia application with Electron](https://github.com/theia-ide/yangster-electron)
 
 ## Contributing
