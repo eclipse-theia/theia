@@ -56,7 +56,11 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         }
 
         for (const grammarProvider of this.grammarProviders.getContributions()) {
-            grammarProvider.registerTextmateLanguage(this.textmateRegistry);
+            try {
+                grammarProvider.registerTextmateLanguage(this.textmateRegistry);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         this.grammarRegistry = new Registry({
