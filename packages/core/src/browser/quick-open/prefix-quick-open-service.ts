@@ -154,7 +154,9 @@ export class PrefixQuickOpenService {
     protected currentHandler: QuickOpenHandler | undefined;
 
     protected async setCurrentHandler(prefix: string, handler: QuickOpenHandler | undefined): Promise<void> {
-        this.toDisposeCurrent.dispose();
+        if (handler !== this.currentHandler) {
+            this.toDisposeCurrent.dispose();
+        }
         this.currentHandler = handler;
         this.toDisposeCurrent.push(Disposable.create(() => {
             const closingHandler = handler && handler.getOptions().onClose;
