@@ -263,6 +263,8 @@
 
 .t-siw-search-container .resultLine .match {
     background: var(--theia-word-highlight-match-color1);
+    display: inline-block;
+    line-height: normal;
 }
 
 .t-siw-search-container .resultLine .match.strike-through {
