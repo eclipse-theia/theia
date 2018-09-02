@@ -156,14 +156,14 @@ export class PrefixQuickOpenService {
     protected async setCurrentHandler(prefix: string, handler: QuickOpenHandler | undefined): Promise<void> {
         if (handler !== this.currentHandler) {
             this.toDisposeCurrent.dispose();
+            this.currentHandler = handler;
+            this.toDisposeCurrent.push(Disposable.create(() => {
+                const closingHandler = handler && handler.getOptions().onClose;
+                if (closingHandler) {
+                    closingHandler(true);
+                }
+            }));
         }
-        this.currentHandler = handler;
-        this.toDisposeCurrent.push(Disposable.create(() => {
-            const closingHandler = handler && handler.getOptions().onClose;
-            if (closingHandler) {
-                closingHandler(true);
-            }
-        }));
         if (!handler) {
             this.doOpen();
             return;
