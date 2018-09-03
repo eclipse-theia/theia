@@ -55,8 +55,7 @@ export class PreferencesDecorator implements TreeDecorator {
                     {
                         data: ' ' + preferenceValue.description,
                         fontData: {color: 'var(--theia-ui-font-color2)'}
-                    }],
-                fontData: this.preferencesService.get(preferenceName) !== undefined ? {style: 'bold'} : undefined
+                    }]
             }] as [string, TreeDecoration.Data];
         }));
         this.emitter.fire(() => this.preferencesDecorations);
