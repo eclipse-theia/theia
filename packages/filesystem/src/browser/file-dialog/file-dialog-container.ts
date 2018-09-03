@@ -38,7 +38,7 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
     return child;
 }
 
-export function createOpenFileDialog(parent: interfaces.Container, props: OpenFileDialogProps): OpenFileDialog {
+export function createOpenFileDialogContainer(parent: interfaces.Container, props: OpenFileDialogProps): Container {
     const container = createFileDialogContainer(parent);
     container.rebind(TreeProps).toConstantValue({
         ...defaultTreeProps,
@@ -48,14 +48,14 @@ export function createOpenFileDialog(parent: interfaces.Container, props: OpenFi
     container.bind(OpenFileDialogProps).toConstantValue(props);
     container.bind(OpenFileDialog).toSelf();
 
-    return container.get(OpenFileDialog);
+    return container;
 }
 
-export function createSaveFileDialog(parent: interfaces.Container, props: SaveFileDialogProps): SaveFileDialog {
+export function createSaveFileDialogContainer(parent: interfaces.Container, props: SaveFileDialogProps): Container {
     const container = createFileDialogContainer(parent);
 
     container.bind(SaveFileDialogProps).toConstantValue(props);
     container.bind(SaveFileDialog).toSelf();
 
-    return container.get(SaveFileDialog);
+    return container;
 }

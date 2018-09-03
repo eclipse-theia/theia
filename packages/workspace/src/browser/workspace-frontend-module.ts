@@ -22,8 +22,10 @@ import {
     SaveFileDialogFactory,
     OpenFileDialogProps,
     SaveFileDialogProps,
-    createOpenFileDialog,
-    createSaveFileDialog
+    createOpenFileDialogContainer,
+    createSaveFileDialogContainer,
+    OpenFileDialog,
+    SaveFileDialog
 } from '@theia/filesystem/lib/browser';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
@@ -58,12 +60,12 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(OpenFileDialogFactory).toFactory(ctx =>
         (props: OpenFileDialogProps) =>
-            createOpenFileDialog(ctx.container, props)
+            createOpenFileDialogContainer(ctx.container, props).get(OpenFileDialog)
     );
 
     bind(SaveFileDialogFactory).toFactory(ctx =>
         (props: SaveFileDialogProps) =>
-            createSaveFileDialog(ctx.container, props)
+            createSaveFileDialogContainer(ctx.container, props).get(SaveFileDialog)
     );
 
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
