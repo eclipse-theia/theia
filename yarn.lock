@@ -6346,20 +6346,20 @@ monaco-css@^2.0.1:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-2.2.0.tgz#644e6e45d05f7704a4e1f563883bef4af9badb1f"
 
-monaco-editor-core@^0.13.2:
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.13.2.tgz#3e0ec54207c891e949dd7ad7851009ca422f7a76"
+monaco-editor-core@^0.14.6:
+  version "0.14.6"
+  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.14.6.tgz#25fae6a2e7c7da6eb2a3bba653a283627dc624e4"
 
 monaco-html@^2.0.2:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.2.0.tgz#435f2f4ce6e5c7f707fb57e7c8a05b41e5cd1aa0"
 
-monaco-languageclient@^0.7.3:
-  version "0.7.3"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.7.3.tgz#4903c044da26b46e0c5c2a641446af7b84aca497"
+monaco-languageclient@0.8.0-next.4:
+  version "0.8.0-next.4"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.8.0-next.4.tgz#9afe93b0b8c37110f455609d8914295900ae7a9b"
   dependencies:
     glob-to-regexp "^0.3.0"
-    monaco-editor-core "^0.13.2"
+    monaco-editor-core "^0.14.6"
     vscode-base-languageclient "4.4.0"
     vscode-jsonrpc "^3.6.2"
     vscode-uri "^1.0.5"

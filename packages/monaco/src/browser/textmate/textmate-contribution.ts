@@ -24,6 +24,5 @@ export interface LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry): void;
 }
 export function getEncodedLanguageId(languageId: string): number {
-    const identifier = monaco.services.StaticServices.modeService.get().getLanguageIdentifier(languageId);
-    return identifier && identifier.id;
+    return monaco.languages.getEncodedLanguageId(languageId);
 }

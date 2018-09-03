@@ -42,12 +42,11 @@ import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 import IIdentifiedSingleEditOperation = monaco.editor.IIdentifiedSingleEditOperation;
 import IBoxSizing = ElementExt.IBoxSizing;
-import IEditorReference = monaco.editor.IEditorReference;
 import SuggestController = monaco.suggestController.SuggestController;
 import CommonFindController = monaco.findController.CommonFindController;
 import RenameController = monaco.rename.RenameController;
 
-export class MonacoEditor implements TextEditor, IEditorReference {
+export class MonacoEditor implements TextEditor {
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -114,24 +113,23 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.toDispose.push(codeEditor.onDidChangeCursorSelection(e => {
             this.onSelectionChangedEmitter.fire(this.selection);
         }));
-        this.toDispose.push(codeEditor.onDidFocusEditor(() => {
+        this.toDispose.push(codeEditor.onDidFocusEditorText(() => {
             this.onFocusChangedEmitter.fire(this.isFocused());
         }));
-        this.toDispose.push(codeEditor.onDidBlurEditor(() =>
+        this.toDispose.push(codeEditor.onDidBlurEditorText(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));
         this.toDispose.push(codeEditor.onMouseDown(e => {
-            const { lineNumber, column } = e.target.position;
-            const event = {
+            const { position, range } = e.target;
+            this.onMouseDownEmitter.fire({
                 target: {
                     ...e.target,
                     mouseColumn: this.m2p.asPosition(undefined, e.target.mouseColumn).character,
-                    range: this.m2p.asRange(e.target.range),
-                    position: this.m2p.asPosition(lineNumber, column),
+                    range: range && this.m2p.asRange(range),
+                    position: position && this.m2p.asPosition(position.lineNumber, position.column)
                 },
                 event: e.event.browserEvent
-            };
-            this.onMouseDownEmitter.fire(event);
+            });
         }));
     }
 
@@ -222,7 +220,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     }
 
     isFocused(): boolean {
-        return this.editor.isFocused();
+        return this.editor.hasTextFocus();
     }
 
     get onFocusChanged(): Event<boolean> {
@@ -450,7 +448,7 @@ export namespace MonacoEditor {
         return get(manager.activeEditor);
     }
 
-    export function get(editorWidget: EditorWidget | undefined) {
+    export function get(editorWidget: EditorWidget | undefined): MonacoEditor | undefined {
         if (editorWidget && editorWidget.editor instanceof MonacoEditor) {
             return editorWidget.editor;
         }
@@ -459,5 +457,15 @@ export namespace MonacoEditor {
 
     export function findByDocument(manager: EditorManager, document: MonacoEditorModel): MonacoEditor[] {
         return getAll(manager).filter(editor => editor.documents.has(document));
+    }
+
+    export function getWidgetFor(manager: EditorManager, control: monaco.editor.ICodeEditor | undefined): EditorWidget | undefined {
+        if (!control) {
+            return undefined;
+        }
+        return manager.all.find(widget => {
+            const editor = get(widget);
+            return !!editor && editor.getControl() === control;
+        });
     }
 }

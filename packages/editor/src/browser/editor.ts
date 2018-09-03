@@ -126,7 +126,7 @@ export interface MouseTarget {
     /**
      * The 'approximate' editor position
      */
-    readonly position: Position;
+    readonly position?: Position;
     /**
      * Desired mouse column (e.g. when position.column gets clamped to text length -- clicking after text on a line).
      */
@@ -134,7 +134,7 @@ export interface MouseTarget {
     /**
      * The 'approximate' editor range
      */
-    readonly range: Range;
+    readonly range?: Range;
     /**
      * Some extra detail.
      */

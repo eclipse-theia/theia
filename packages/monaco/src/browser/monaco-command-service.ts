@@ -27,7 +27,7 @@ export interface MonacoCommandServiceFactory {
 @injectable()
 export class MonacoCommandService implements ICommandService {
 
-    protected readonly onWillExecuteCommandEmitter = new Emitter<ICommandEvent>();
+    readonly _onWillExecuteCommand = new Emitter<ICommandEvent>();
 
     protected delegate: ICommandService | undefined;
     protected readonly delegateListeners = new DisposableCollection();
@@ -37,15 +37,15 @@ export class MonacoCommandService implements ICommandService {
     ) { }
 
     get onWillExecuteCommand(): monaco.IEvent<ICommandEvent> {
-        return this.onWillExecuteCommandEmitter.event;
+        return this._onWillExecuteCommand.event;
     }
 
     setDelegate(delegate: ICommandService | undefined) {
         this.delegateListeners.dispose();
         this.delegate = delegate;
         if (this.delegate) {
-            this.delegateListeners.push(this.delegate.onWillExecuteCommand(event =>
-                this.onWillExecuteCommandEmitter.fire(event)
+            this.delegateListeners.push(this.delegate._onWillExecuteCommand.event(event =>
+                this._onWillExecuteCommand.fire(event)
             ));
         }
     }
@@ -54,7 +54,7 @@ export class MonacoCommandService implements ICommandService {
         const handler = this.commandRegistry.getActiveHandler(commandId, ...args);
         if (handler) {
             try {
-                this.onWillExecuteCommandEmitter.fire({ commandId });
+                this._onWillExecuteCommand.fire({ commandId });
                 return monaco.Promise.wrap(handler.execute(...args));
             } catch (err) {
                 return monaco.Promise.wrapError(err);

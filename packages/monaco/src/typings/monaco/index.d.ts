@@ -52,7 +52,7 @@ declare module monaco.editor {
     }
 
     export interface IEditorOverrideServices {
-        editorService?: IEditorService;
+        codeEditorService?: ICodeEditorService;
         textModelService?: ITextModelService;
         contextMenuService?: IContextMenuService;
         commandService?: monaco.commands.ICommandService;
@@ -91,8 +91,9 @@ declare module monaco.editor {
     export interface IEditorOptions {
     }
 
-    export interface IEditorService {
-        openEditor(input: IResourceInput, sideBySide?: boolean): monaco.Promise<IEditorReference | undefined>;
+    export interface ICodeEditorService {
+        getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
+        openCodeEditor(input: monaco.editor.IResourceInput, source?: monaco.editor.ICodeEditor, sideBySide?: boolean): monaco.Promise<monaco.editor.CommonCodeEditor | undefined>;
     }
 
     export interface IReference<T> extends monaco.IDisposable {
@@ -180,7 +181,7 @@ declare module monaco.commands {
     }
 
     export interface ICommandService {
-        onWillExecuteCommand: monaco.IEvent<ICommandEvent>;
+        readonly _onWillExecuteCommand: monaco.Emitter<ICommandEvent>;
         executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
         executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
@@ -313,9 +314,16 @@ declare module monaco.keybindings {
 }
 
 declare module monaco.services {
+
+    export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
+        abstract getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
+        abstract openCodeEditor(input: monaco.editor.IResourceInput, source?: monaco.editor.ICodeEditor,
+            sideBySide?: boolean): monaco.Promise<monaco.editor.CommonCodeEditor | undefined>;
+    }
+
     export class StandaloneCommandService implements monaco.commands.ICommandService {
         constructor(instantiationService: monaco.instantiation.IInstantiationService);
-        onWillExecuteCommand: monaco.IEvent<monaco.commands.ICommandEvent>;
+        readonly _onWillExecuteCommand: monaco.Emitter<ICommandEvent>;
         executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
         executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
@@ -366,13 +374,8 @@ declare module monaco.services {
         readonly id: LanguageId;
     }
 
-    export interface IModeService {
-        getLanguageIdentifier(modeId: string | LanguageId): LanguageIdentifier;
-    }
-
     export module StaticServices {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
-        export const modeService: LazyStaticService<IModeService>;
     }
 }
 
@@ -412,7 +415,7 @@ declare module monaco.referenceSearch {
         _widget: ReferenceWidget
         _model: ReferencesModel | undefined
         _ignoreModelChangeEvent: boolean;
-        _editorService: monaco.editor.IEditorService;
+        _editorService: monaco.editor.ICodeEditorService;
         closeWidget(): void;
         _gotoReference(ref: Location): void
         toggleWidget(range: IRange, modelPromise: Promise<ReferencesModel> & { cancel: () => void }, options: RequestOptions): void;
@@ -422,19 +425,28 @@ declare module monaco.referenceSearch {
 
 declare module monaco.quickOpen {
 
+    export interface IMessage {
+        content: string;
+        formatContent?: boolean; // defaults to false
+        type?: 1 /* INFO */ | 2  /* WARNING */ | 3 /* ERROR */;
+    }
+
+    export class InputBox {
+        inputElement: HTMLInputElement;
+        setPlaceHolder(placeHolder: string): void;
+        showMessage(message: IMessage): void;
+        hideMessage(): void;
+    }
+
     export class QuickOpenWidget implements IDisposable {
+        inputBox?: InputBox;
         constructor(container: HTMLElement, callbacks: IQuickOpenCallbacks, options: IQuickOpenOptions, usageLogger?: IQuickOpenUsageLogger);
         dispose(): void;
         create(): HTMLElement;
-        setPlaceHolder(placeHolder: string): void;
         setInput(input: IModel<any>, autoFocus: IAutoFocus, ariaLabel?: string): void;
         layout(dimension: monaco.editor.IDimension): void;
         show(prefix: string, options?: IShowOptions): void;
         hide(reason?: HideReason): void;
-        refresh(input?: IModel<any>, autoFocus?: IAutoFocus): void;
-        setPassword(isPassword: boolean): void;
-        showInputDecoration(decoration: Severity): void;
-        clearInputDecoration(): void;
     }
 
     export enum HideReason {
@@ -652,42 +664,6 @@ declare module monaco.modes {
         readonly onDidChange: monaco.IEvent<number>;
     }
 
-    export enum SymbolKind {
-        File = 0,
-        Module = 1,
-        Namespace = 2,
-        Package = 3,
-        Class = 4,
-        Method = 5,
-        Property = 6,
-        Field = 7,
-        Constructor = 8,
-        Enum = 9,
-        Interface = 10,
-        Function = 11,
-        Variable = 12,
-        Constant = 13,
-        String = 14,
-        Number = 15,
-        Boolean = 16,
-        Array = 17,
-        Object = 18,
-        Key = 19,
-        Null = 20,
-        EnumMember = 21,
-        Struct = 22,
-        Event = 23,
-        Operator = 24,
-        TypeParameter = 25
-    }
-
-    export interface SymbolInformation {
-        name: string;
-        containerName?: string;
-        kind: SymbolKind;
-        location: monaco.languages.Location;
-    }
-
     export const DocumentSymbolProviderRegistry: LanguageFeatureRegistry<monaco.languages.DocumentSymbolProvider>;
 }
 
@@ -765,6 +741,8 @@ declare module monaco.rename {
 
 declare module monaco.snippetParser {
     export class SnippetParser {
-        text(value: string): string;
+        parse(value: string): TextmateSnippet;
+    }
+    export class TextmateSnippet {
     }
 }
