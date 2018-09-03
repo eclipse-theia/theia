@@ -38,7 +38,7 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
     }
 
     protected replaceVariables(textmateSnippet: string): string {
-        return new monaco.snippetParser.SnippetParser().text(textmateSnippet);
+        return new monaco.snippetParser.SnippetParser().parse(textmateSnippet).toString();
     }
 
     provideCompletionItems(document: monaco.editor.ITextModel,

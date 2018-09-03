@@ -15,12 +15,13 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import SymbolInformation = monaco.modes.SymbolInformation;
-import SymbolKind = monaco.modes.SymbolKind;
+import DocumentSymbol = monaco.languages.DocumentSymbol;
+import SymbolKind = monaco.languages.SymbolKind;
 import { FrontendApplicationContribution, FrontendApplication, TreeNode } from '@theia/core/lib/browser';
 import { Range, EditorManager } from '@theia/editor/lib/browser';
 import DocumentSymbolProviderRegistry = monaco.modes.DocumentSymbolProviderRegistry;
 import CancellationTokenSource = monaco.cancellation.CancellationTokenSource;
+import CancellationToken = monaco.cancellation.CancellationToken;
 import { DisposableCollection } from '@theia/core';
 import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
@@ -32,7 +33,6 @@ import debounce = require('lodash.debounce');
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
 
-    protected cancellationSource: CancellationTokenSource;
     protected readonly toDisposeOnClose = new DisposableCollection();
     protected readonly toDisposeOnEditor = new DisposableCollection();
 
@@ -56,8 +56,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         });
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
-                const uri = new URI(node.uri);
-                await this.editorManager.open(uri, {
+                await this.editorManager.open(node.uri, {
                     mode: 'reveal',
                     selection: node.range
                 });
@@ -65,7 +64,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         });
         this.outlineViewService.onDidOpen(node => {
             if (MonacoOutlineSymbolInformationNode.is(node)) {
-                this.editorManager.open(new URI(node.uri), {
+                this.editorManager.open(node.uri, {
                     selection: <Range>{
                         start: node.range.start
                     }
@@ -88,56 +87,60 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.updateOutline();
     }
 
+    protected tokenSource = new CancellationTokenSource();
     protected async updateOutline(): Promise<void> {
-        const editor = this.editorManager.currentEditor;
-        if (editor) {
-            const model = MonacoEditor.get(editor)!.getControl().getModel();
-            this.publish(await this.computeSymbolInformations(model));
-        } else {
-            this.publish([]);
+        this.tokenSource.cancel();
+        this.tokenSource = new CancellationTokenSource();
+        const token = this.tokenSource.token;
+
+        const editor = MonacoEditor.get(this.editorManager.currentEditor);
+        const model = editor && editor.getControl().getModel();
+        const roots = model && await this.createRoots(model, token);
+        if (token.isCancellationRequested) {
+            return;
         }
+        this.outlineViewService.publish(roots || []);
     }
 
-    protected async computeSymbolInformations(model: monaco.editor.IModel): Promise<SymbolInformation[]> {
-        const entries: SymbolInformation[] = [];
-        const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
-
-        if (this.cancellationSource) {
-            this.cancellationSource.cancel();
+    protected async createRoots(model: monaco.editor.IModel, token: CancellationToken): Promise<MonacoOutlineSymbolInformationNode[]> {
+        const providers = await DocumentSymbolProviderRegistry.all(model);
+        if (token.isCancellationRequested) {
+            return [];
         }
-        this.cancellationSource = new CancellationTokenSource();
-        const token = this.cancellationSource.token;
-        for (const documentSymbolProvider of documentSymbolProviders) {
+        const roots = [];
+        const uri = new URI(model.uri.toString());
+        for (const provider of providers) {
             try {
-                const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, token);
+                const symbols = await provider.provideDocumentSymbols(model, token);
                 if (token.isCancellationRequested) {
                     return [];
                 }
-                if (Array.isArray(symbolInformation)) {
-                    entries.push(...symbolInformation);
-                }
+                const nodes = this.createNodes(uri, symbols);
+                roots.push(...nodes);
             } catch {
-                // happens if `provideDocumentSymbols` promise is rejected.
-                return [];
+                /* collect symbols from other providers */
             }
         }
-
-        return entries;
+        return roots;
     }
 
-    protected publish(symbolInformations: SymbolInformation[]): void {
+    protected createNodes(uri: URI, symbols: DocumentSymbol[]): MonacoOutlineSymbolInformationNode[] {
         let rangeBased = false;
         const ids = new Map();
-        const nodesByName = symbolInformations.sort(this.orderByPosition).reduce((result, symbol) => {
-            rangeBased = rangeBased || symbol.location.range.startLineNumber !== symbol.location.range.endLineNumber;
-            const values = result.get(symbol.name) || [];
-            const node = this.createNode(symbol, ids);
-            values.push({ symbol, node });
-            result.set(symbol.name, values);
+        const roots: MonacoOutlineSymbolInformationNode[] = [];
+        const nodesByName = symbols.sort(this.orderByPosition).reduce((result, symbol) => {
+            const node = this.createNode(uri, symbol, ids);
+            if (symbol.children) {
+                roots.push(node);
+            } else {
+                rangeBased = rangeBased || symbol.range.startLineNumber !== symbol.range.endLineNumber;
+                const values = result.get(symbol.name) || [];
+                values.push({ symbol, node });
+                result.set(symbol.name, values);
+            }
             return result;
         }, new Map<string, MonacoOutlineContribution.NodeAndSymbol[]>());
 
-        const roots = [];
         for (const nodes of nodesByName.values()) {
             for (const { node, symbol } of nodes) {
                 if (!symbol.containerName) {
@@ -155,19 +158,17 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                 }
             }
         }
-        if (roots.length === 0) {
+        if (!roots.length) {
             const nodes = nodesByName.values().next().value;
             if (nodes && !nodes[0].node.parent) {
-                this.outlineViewService.publish([nodes[0].node]);
-            } else {
-                this.outlineViewService.publish([]);
+                return [nodes[0].node];
             }
-        } else {
-            this.outlineViewService.publish(roots);
+            return [];
         }
+        return roots;
     }
 
-    protected parentContains(symbol: SymbolInformation, parent: SymbolInformation, rangeBased: boolean): boolean {
+    protected parentContains(symbol: DocumentSymbol, parent: DocumentSymbol, rangeBased: boolean): boolean {
         const symbolRange = this.getRangeFromSymbolInformation(symbol);
         const nodeRange = this.getRangeFromSymbolInformation(parent);
         const sameStartLine = symbolRange.start.line === nodeRange.start.line;
@@ -180,32 +181,39 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             (sameEndLine && endColSmallerOrEqual || endLineSmaller)) || !rangeBased);
     }
 
-    protected getRangeFromSymbolInformation(symbolInformation: SymbolInformation): Range {
+    protected getRangeFromSymbolInformation(symbolInformation: DocumentSymbol): Range {
         return {
             end: {
-                character: symbolInformation.location.range.endColumn - 1,
-                line: symbolInformation.location.range.endLineNumber - 1
+                character: symbolInformation.range.endColumn - 1,
+                line: symbolInformation.range.endLineNumber - 1
             },
             start: {
-                character: symbolInformation.location.range.startColumn - 1,
-                line: symbolInformation.location.range.startLineNumber - 1
+                character: symbolInformation.range.startColumn - 1,
+                line: symbolInformation.range.startLineNumber - 1
             }
         };
     }
 
-    protected createNode(symbol: SymbolInformation, ids: Map<string, number>): MonacoOutlineSymbolInformationNode {
+    protected createNode(uri: URI, symbol: DocumentSymbol, ids: Map<string, number>, parent?: MonacoOutlineSymbolInformationNode): MonacoOutlineSymbolInformationNode {
         const id = this.createId(symbol.name, ids);
-        return {
-            children: [],
+        const children: MonacoOutlineSymbolInformationNode[] = [];
+        const node: MonacoOutlineSymbolInformationNode = {
+            children,
             id,
             iconClass: SymbolKind[symbol.kind].toString().toLowerCase(),
             name: symbol.name,
-            parent: undefined,
-            uri: symbol.location.uri.toString(),
+            parent,
+            uri,
             range: this.getRangeFromSymbolInformation(symbol),
             selected: false,
             expanded: this.shouldExpand(symbol)
         };
+        if (symbol.children) {
+            for (const child of symbol.children) {
+                children.push(this.createNode(uri, child, ids, node));
+            }
+        }
+        return node;
     }
 
     protected createId(name: string, ids: Map<string, number>): string {
@@ -215,7 +223,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         return name + '_' + index;
     }
 
-    protected shouldExpand(symbol: SymbolInformation): boolean {
+    protected shouldExpand(symbol: DocumentSymbol): boolean {
         return [SymbolKind.Class,
         SymbolKind.Enum, SymbolKind.File,
         SymbolKind.Interface, SymbolKind.Module,
@@ -223,32 +231,32 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         SymbolKind.Package, SymbolKind.Struct].indexOf(symbol.kind) !== -1;
     }
 
-    protected orderByPosition(symbol1: SymbolInformation, symbol2: SymbolInformation): number {
-        const startLineComparison = symbol1.location.range.startLineNumber - symbol2.location.range.startLineNumber;
+    protected orderByPosition(symbol: DocumentSymbol, symbol2: DocumentSymbol): number {
+        const startLineComparison = symbol.range.startLineNumber - symbol2.range.startLineNumber;
         if (startLineComparison !== 0) {
             return startLineComparison;
         }
-        const startOffsetComparison = symbol1.location.range.startColumn - symbol2.location.range.startColumn;
+        const startOffsetComparison = symbol.range.startColumn - symbol2.range.startColumn;
         if (startOffsetComparison !== 0) {
             return startOffsetComparison;
         }
-        const endLineComparison = symbol1.location.range.endLineNumber - symbol2.location.range.endLineNumber;
+        const endLineComparison = symbol.range.endLineNumber - symbol2.range.endLineNumber;
         if (endLineComparison !== 0) {
             return endLineComparison;
         }
-        return symbol1.location.range.endColumn - symbol2.location.range.endColumn;
+        return symbol.range.endColumn - symbol2.range.endColumn;
     }
 
 }
 export namespace MonacoOutlineContribution {
     export interface NodeAndSymbol {
         node: MonacoOutlineSymbolInformationNode;
-        symbol: SymbolInformation
+        symbol: DocumentSymbol
     }
 }
 
 export interface MonacoOutlineSymbolInformationNode extends OutlineSymbolInformationNode {
-    uri: string;
+    uri: URI;
     range: Range;
 }
 

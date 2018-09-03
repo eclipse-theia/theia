@@ -67,14 +67,16 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/contrib/find/findController',
                 'vs/editor/contrib/rename/rename',
                 'vs/editor/contrib/snippet/snippetParser',
+                'vs/editor/browser/services/codeEditorServiceImpl'
             ], (css: any, html: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
-                filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any, snippetParser: any) => {
+                filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any, snippetParser: any,
+                codeEditorServiceImpl: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
                     global.monaco.keybindings = Object.assign({}, registry, resolver, resolvedKeybinding, keyCodes);
-                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices);
+                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices, codeEditorServiceImpl);
                     global.monaco.quickOpen = Object.assign({}, quickOpen, quickOpenWidget, quickOpenModel);
                     global.monaco.filters = filters;
                     global.monaco.theme = styler;

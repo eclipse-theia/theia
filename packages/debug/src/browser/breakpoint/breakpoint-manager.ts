@@ -274,7 +274,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 case MouseTargetType.GUTTER_GLYPH_MARGIN:
                 case MouseTargetType.GUTTER_VIEW_ZONE: {
                     const source = DebugUtils.toSource(editor.uri, undefined);
-                    if (DebugUtils.checkPattern(source, this.supportedFilePatterns)) {
+                    if (DebugUtils.checkPattern(source, this.supportedFilePatterns) && event.target.position) {
                         this.toggleBreakpoint(editor, event.target.position);
                     }
                     break;
