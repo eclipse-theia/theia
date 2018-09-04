@@ -18,7 +18,7 @@ import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
-import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager } from '../api/plugin-api';
+import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager, PluginAPIFactory } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
@@ -68,7 +68,7 @@ import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 
-export function createAPI(rpc: RPCProtocol, pluginManager: PluginManager): typeof theia {
+export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager): PluginAPIFactory {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
@@ -85,269 +85,271 @@ export function createAPI(rpc: RPCProtocol, pluginManager: PluginManager): typeo
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
 
-    const commands: typeof theia.commands = {
-        // tslint:disable-next-line:no-any
-        registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
-            return commandRegistryExt.registerCommand(command, handler);
-        },
-        // tslint:disable-next-line:no-any
-        executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined> {
-            return commandRegistryExt.executeCommand<T>(commandId, args);
-        },
-        // tslint:disable-next-line:no-any
-        registerTextEditorCommand(command: theia.Command, callback: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void): Disposable {
-            throw new Error('Function registerTextEditorCommand is not implemented');
-        },
-        // tslint:disable-next-line:no-any
-        registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable {
-            return commandRegistryExt.registerHandler(commandId, handler);
-        }
-    };
-
-    const window: typeof theia.window = {
-        get activeTextEditor() {
-            return editors.getActiveEditor();
-        },
-        get visibleTextEditors() {
-            return editors.getVisibleTextEditors();
-        },
-        onDidChangeActiveTextEditor(listener, thisArg?, disposables?) {
-            return editors.onDidChangeActiveTextEditor(listener, thisArg, disposables);
-        },
-        onDidChangeVisibleTextEditors(listener, thisArg?, disposables?) {
-            return editors.onDidChangeVisibleTextEditors(listener, thisArg, disposables);
-        },
-        onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
-            return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
-        },
-        onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
-            return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
-        },
-        onDidChangeTextEditorViewColumn(listener, thisArg?, disposables?) {
-            return editors.onDidChangeTextEditorViewColumn(listener, thisArg, disposables);
-        },
-        onDidChangeTextEditorVisibleRanges(listener, thisArg?, disposables?) {
-            return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
-        },
-        // tslint:disable-next-line:no-any
-        showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
-            if (token) {
-                const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
-                const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
-                return quickOpenExt.showQuickPick(items, options, coreCancellationToken);
-            } else {
-                return quickOpenExt.showQuickPick(items, options);
-            }
-        },
-        showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions) {
-            return workspaceExt.pickWorkspaceFolder(options);
-        },
-        showInformationMessage(message: string,
-            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+    return function (plugin: InternalPlugin): typeof theia {
+        const commands: typeof theia.commands = {
             // tslint:disable-next-line:no-any
-            ...items: any[]): PromiseLike<any> {
-            return messageRegistryExt.showInformationMessage(message, optionsOrFirstItem, items);
-        },
-        showWarningMessage(message: string,
-            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+            registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
+                return commandRegistryExt.registerCommand(command, handler);
+            },
             // tslint:disable-next-line:no-any
-            ...items: any[]): PromiseLike<any> {
-            return messageRegistryExt.showWarningMessage(message, optionsOrFirstItem, items);
-        },
-        showErrorMessage(message: string,
-            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+            executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined> {
+                return commandRegistryExt.executeCommand<T>(commandId, args);
+            },
             // tslint:disable-next-line:no-any
-            ...items: any[]): PromiseLike<any> {
-            return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
-        },
-        showOpenDialog(options: theia.OpenDialogOptions): PromiseLike<Uri[] | undefined> {
-            return dialogsExt.showOpenDialog(options);
-        },
-        showSaveDialog(options: theia.SaveDialogOptions): PromiseLike<Uri | undefined> {
-            return dialogsExt.showSaveDialog(options);
-        },
-        // tslint:disable-next-line:no-any
-        setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
-            return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
-        },
-        showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken) {
-            if (token) {
-                const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
-                const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
-                return quickOpenExt.showInput(options, coreCancellationToken);
-            } else {
-                return quickOpenExt.showInput(options);
+            registerTextEditorCommand(command: theia.Command, callback: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void): Disposable {
+                throw new Error('Function registerTextEditorCommand is not implemented');
+            },
+            // tslint:disable-next-line:no-any
+            registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable {
+                return commandRegistryExt.registerHandler(commandId, handler);
             }
-        },
-        createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
-            return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
-        },
-        createOutputChannel(name: string): theia.OutputChannel {
-            return outputChannelRegistryExt.createOutputChannel(name);
-        },
+        };
 
-        get state(): theia.WindowState {
-            return windowStateExt.getWindowState();
-        },
-        onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
-            return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
-        },
+        const window: typeof theia.window = {
+            get activeTextEditor() {
+                return editors.getActiveEditor();
+            },
+            get visibleTextEditors() {
+                return editors.getVisibleTextEditors();
+            },
+            onDidChangeActiveTextEditor(listener, thisArg?, disposables?) {
+                return editors.onDidChangeActiveTextEditor(listener, thisArg, disposables);
+            },
+            onDidChangeVisibleTextEditors(listener, thisArg?, disposables?) {
+                return editors.onDidChangeVisibleTextEditors(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorViewColumn(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorViewColumn(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorVisibleRanges(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
+            },
+            // tslint:disable-next-line:no-any
+            showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
+                if (token) {
+                    const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
+                    const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
+                    return quickOpenExt.showQuickPick(items, options, coreCancellationToken);
+                } else {
+                    return quickOpenExt.showQuickPick(items, options);
+                }
+            },
+            showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions) {
+                return workspaceExt.pickWorkspaceFolder(options);
+            },
+            showInformationMessage(message: string,
+                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                // tslint:disable-next-line:no-any
+                ...items: any[]): PromiseLike<any> {
+                return messageRegistryExt.showInformationMessage(message, optionsOrFirstItem, items);
+            },
+            showWarningMessage(message: string,
+                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                // tslint:disable-next-line:no-any
+                ...items: any[]): PromiseLike<any> {
+                return messageRegistryExt.showWarningMessage(message, optionsOrFirstItem, items);
+            },
+            showErrorMessage(message: string,
+                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                // tslint:disable-next-line:no-any
+                ...items: any[]): PromiseLike<any> {
+                return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
+            },
+            showOpenDialog(options: theia.OpenDialogOptions): PromiseLike<Uri[] | undefined> {
+                return dialogsExt.showOpenDialog(options);
+            },
+            showSaveDialog(options: theia.SaveDialogOptions): PromiseLike<Uri | undefined> {
+                return dialogsExt.showSaveDialog(options);
+            },
+            // tslint:disable-next-line:no-any
+            setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
+                return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
+            },
+            showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken) {
+                if (token) {
+                    const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
+                    const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
+                    return quickOpenExt.showInput(options, coreCancellationToken);
+                } else {
+                    return quickOpenExt.showInput(options);
+                }
+            },
+            createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
+                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
+            },
+            createOutputChannel(name: string): theia.OutputChannel {
+                return outputChannelRegistryExt.createOutputChannel(name);
+            },
 
-        createTerminal(nameOrOptions: theia.TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): theia.Terminal {
-            return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
-        },
-        get onDidCloseTerminal(): theia.Event<theia.Terminal> {
-            return terminalExt.onDidCloseTerminal;
-        },
-        set onDidCloseTerminal(event: theia.Event<theia.Terminal>) {
-            terminalExt.onDidCloseTerminal = event;
-        },
+            get state(): theia.WindowState {
+                return windowStateExt.getWindowState();
+            },
+            onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
+                return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
+            },
 
-        createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
-            return editors.createTextEditorDecorationType(options);
-        }
-    };
+            createTerminal(nameOrOptions: theia.TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): theia.Terminal {
+                return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
+            },
+            get onDidCloseTerminal(): theia.Event<theia.Terminal> {
+                return terminalExt.onDidCloseTerminal;
+            },
+            set onDidCloseTerminal(event: theia.Event<theia.Terminal>) {
+                terminalExt.onDidCloseTerminal = event;
+            },
 
-    const workspace: typeof theia.workspace = {
-        get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
-            return workspaceExt.workspaceFolders;
-        },
-        get name(): string | undefined {
-            return workspaceExt.name;
-        },
-        onDidChangeWorkspaceFolders(listener, thisArg?, disposables?): theia.Disposable {
-            return workspaceExt.onDidChangeWorkspaceFolders(listener, thisArg, disposables);
-        },
-        get textDocuments() {
-            return documents.getAllDocumentData().map(data => data.document);
-        },
-        onDidChangeTextDocument(listener, thisArg?, disposables?) {
-            return documents.onDidChangeDocument(listener, thisArg, disposables);
-        },
-        onDidCloseTextDocument(listener, thisArg?, disposables?) {
-            return documents.onDidRemoveDocument(listener, thisArg, disposables);
-        },
-        onDidOpenTextDocument(listener, thisArg?, disposables?) {
-            return documents.onDidAddDocument(listener, thisArg, disposables);
-        },
-        getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
-            return preferenceRegistryExt.getConfiguration(section, resource);
-        },
-        onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
-            return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
-        },
-        openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }) {
-            let uriPromise: Promise<Uri>;
-
-            const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
-            if (typeof uriOrFileNameOrOptions === 'string') {
-                uriPromise = Promise.resolve(Uri.file(uriOrFileNameOrOptions));
-            } else if (uriOrFileNameOrOptions instanceof Uri) {
-                uriPromise = Promise.resolve(uriOrFileNameOrOptions);
-            } else if (!options || typeof options === 'object') {
-                uriPromise = documents.createDocumentData(options);
-            } else {
-                throw new Error('illegal argument - uriOrFileNameOrOptions');
+            createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
+                return editors.createTextEditorDecorationType(options);
             }
+        };
 
-            return uriPromise.then(uri =>
-                documents.ensureDocumentData(uri).then(() => {
-                    const data = documents.getDocumentData(uri);
-                    return data && data.document;
-                }));
-        }
-    };
+        const workspace: typeof theia.workspace = {
+            get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
+                return workspaceExt.workspaceFolders;
+            },
+            get name(): string | undefined {
+                return workspaceExt.name;
+            },
+            onDidChangeWorkspaceFolders(listener, thisArg?, disposables?): theia.Disposable {
+                return workspaceExt.onDidChangeWorkspaceFolders(listener, thisArg, disposables);
+            },
+            get textDocuments() {
+                return documents.getAllDocumentData().map(data => data.document);
+            },
+            onDidChangeTextDocument(listener, thisArg?, disposables?) {
+                return documents.onDidChangeDocument(listener, thisArg, disposables);
+            },
+            onDidCloseTextDocument(listener, thisArg?, disposables?) {
+                return documents.onDidRemoveDocument(listener, thisArg, disposables);
+            },
+            onDidOpenTextDocument(listener, thisArg?, disposables?) {
+                return documents.onDidAddDocument(listener, thisArg, disposables);
+            },
+            getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
+                return preferenceRegistryExt.getConfiguration(section, resource);
+            },
+            onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
+                return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
+            },
+            openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }) {
+                let uriPromise: Promise<Uri>;
 
-    const env: typeof theia.env = {
-        getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
-            return envExt.getEnvVariable(envVarName);
-        },
-        getQueryParameter(queryParamName: string): string | string[] | undefined {
-            return envExt.getQueryParameter(queryParamName);
-        },
-        getQueryParameters(): QueryParameters {
-            return envExt.getQueryParameters();
-        }
-    };
+                const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
+                if (typeof uriOrFileNameOrOptions === 'string') {
+                    uriPromise = Promise.resolve(Uri.file(uriOrFileNameOrOptions));
+                } else if (uriOrFileNameOrOptions instanceof Uri) {
+                    uriPromise = Promise.resolve(uriOrFileNameOrOptions);
+                } else if (!options || typeof options === 'object') {
+                    uriPromise = documents.createDocumentData(options);
+                } else {
+                    throw new Error('illegal argument - uriOrFileNameOrOptions');
+                }
 
-    const languages: typeof theia.languages = {
-        getLanguages(): PromiseLike<string[]> {
-            return languagesExt.getLanguages();
-        },
-        match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
-            return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
-        },
-        get onDidChangeDiagnostics(): theia.Event<theia.DiagnosticChangeEvent> {
-            return languagesExt.onDidChangeDiagnostics;
-        },
-        getDiagnostics(resource?: Uri) {
-            return <any>languagesExt.getDiagnostics(resource);
-        },
-        createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
-            return languagesExt.createDiagnosticCollection(name);
-        },
-        setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
-            return languagesExt.setLanguageConfiguration(language, configuration);
-        },
-        registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, ...triggerCharacters: string[]): theia.Disposable {
-            return languagesExt.registerCompletionItemProvider(selector, provider, triggerCharacters);
-        },
-    };
-
-    const plugins: typeof theia.plugins = {
-        get all(): theia.Plugin<any>[] {
-            return pluginManager.getAllPlugins().map(plg => new Plugin(pluginManager, plg));
-        },
-        getPlugin(pluginId: string): theia.Plugin<any> | undefined {
-            const plugin = pluginManager.getPluginById(pluginId);
-            if (plugin) {
-                return new Plugin(pluginManager, plugin);
+                return uriPromise.then(uri =>
+                    documents.ensureDocumentData(uri).then(() => {
+                        const data = documents.getDocumentData(uri);
+                        return data && data.document;
+                    }));
             }
-            return undefined;
-        }
-    };
+        };
 
-    return <typeof theia>{
-        version: require('../../package.json').version,
-        commands,
-        window,
-        workspace,
-        env,
-        languages,
-        plugins,
-        // Types
-        StatusBarAlignment: StatusBarAlignment,
-        Disposable: Disposable,
-        EventEmitter: Emitter,
-        CancellationTokenSource: CancellationTokenSource,
-        MarkdownString,
-        Position: Position,
-        Range: Range,
-        Selection: Selection,
-        ViewColumn: ViewColumn,
-        TextEditorSelectionChangeKind: TextEditorSelectionChangeKind,
-        Uri: Uri,
-        EndOfLine,
-        TextEditorRevealType,
-        TextEditorCursorStyle,
-        TextEditorLineNumbersStyle,
-        ThemeColor,
-        SnippetString,
-        DecorationRangeBehavior,
-        OverviewRulerLane,
-        ConfigurationTarget,
-        RelativePattern,
-        IndentAction,
-        CompletionItem,
-        CompletionItemKind,
-        CompletionList,
-        DiagnosticSeverity,
-        DiagnosticRelatedInformation,
-        Location,
-        DiagnosticTag,
-        Diagnostic,
-        CompletionTriggerKind,
-        TextEdit,
+        const env: typeof theia.env = {
+            getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
+                return envExt.getEnvVariable(envVarName);
+            },
+            getQueryParameter(queryParamName: string): string | string[] | undefined {
+                return envExt.getQueryParameter(queryParamName);
+            },
+            getQueryParameters(): QueryParameters {
+                return envExt.getQueryParameters();
+            }
+        };
+
+        const languages: typeof theia.languages = {
+            getLanguages(): PromiseLike<string[]> {
+                return languagesExt.getLanguages();
+            },
+            match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
+                return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
+            },
+            get onDidChangeDiagnostics(): theia.Event<theia.DiagnosticChangeEvent> {
+                return languagesExt.onDidChangeDiagnostics;
+            },
+            getDiagnostics(resource?: Uri) {
+                return <any>languagesExt.getDiagnostics(resource);
+            },
+            createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
+                return languagesExt.createDiagnosticCollection(name);
+            },
+            setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
+                return languagesExt.setLanguageConfiguration(language, configuration);
+            },
+            registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, ...triggerCharacters: string[]): theia.Disposable {
+                return languagesExt.registerCompletionItemProvider(selector, provider, triggerCharacters);
+            },
+        };
+
+        const plugins: typeof theia.plugins = {
+            get all(): theia.Plugin<any>[] {
+                return pluginManager.getAllPlugins().map(plg => new Plugin(pluginManager, plg));
+            },
+            getPlugin(pluginId: string): theia.Plugin<any> | undefined {
+                const plg = pluginManager.getPluginById(pluginId);
+                if (plg) {
+                    return new Plugin(pluginManager, plg);
+                }
+                return undefined;
+            }
+        };
+
+        return <typeof theia>{
+            version: require('../../package.json').version,
+            commands,
+            window,
+            workspace,
+            env,
+            languages,
+            plugins,
+            // Types
+            StatusBarAlignment: StatusBarAlignment,
+            Disposable: Disposable,
+            EventEmitter: Emitter,
+            CancellationTokenSource: CancellationTokenSource,
+            MarkdownString,
+            Position: Position,
+            Range: Range,
+            Selection: Selection,
+            ViewColumn: ViewColumn,
+            TextEditorSelectionChangeKind: TextEditorSelectionChangeKind,
+            Uri: Uri,
+            EndOfLine,
+            TextEditorRevealType,
+            TextEditorCursorStyle,
+            TextEditorLineNumbersStyle,
+            ThemeColor,
+            SnippetString,
+            DecorationRangeBehavior,
+            OverviewRulerLane,
+            ConfigurationTarget,
+            RelativePattern,
+            IndentAction,
+            CompletionItem,
+            CompletionItemKind,
+            CompletionList,
+            DiagnosticSeverity,
+            DiagnosticRelatedInformation,
+            Location,
+            DiagnosticTag,
+            Diagnostic,
+            CompletionTriggerKind,
+            TextEdit,
+        };
     };
 }
 
@@ -359,7 +361,7 @@ class Plugin<T> implements theia.Plugin<T> {
     pluginType: theia.PluginType;
     constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         this.id = plugin.model.id;
-        this.pluginPath = plugin.rawModel.packagePath;
+        this.pluginPath = plugin.pluginFolder;
         this.packageJSON = plugin.rawModel;
         this.isActive = true;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';

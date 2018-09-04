@@ -43,7 +43,7 @@ declare module '@theia/plugin' {
     export type PluginType = 'frontend' | 'backend';
 
     /**
-     * Represents an extension.
+     * Represents an plugin.
      *
      * To get an instance of an `Plugin` use [getPlugin](#plugins.getPlugin).
      */

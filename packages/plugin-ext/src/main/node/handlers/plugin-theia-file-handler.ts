@@ -16,7 +16,7 @@
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from '../../../common/plugin-protocol';
 import { injectable } from 'inversify';
-import * as os from 'os';
+import { getTempDir } from '../temp-dir-util';
 import * as path from 'path';
 
 @injectable()
@@ -24,7 +24,7 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
 
     private unpackedFolder: string;
     constructor() {
-        this.unpackedFolder = path.resolve(os.tmpdir(), 'theia-unpacked');
+        this.unpackedFolder = getTempDir('theia-unpacked');
     }
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {

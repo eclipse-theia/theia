@@ -17,12 +17,16 @@
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../api/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
-import { createAPI } from '../../../plugin/plugin-context';
+import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../api/plugin-api';
+import { createAPIFactory } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import * as theia from '@theia/plugin';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
+
+const pluginsApiImpl = new Map<string, typeof theia>();
+const pluginsModulesNames = new Map<string, Plugin>();
 
 const emitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -41,7 +45,7 @@ function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
 
 const pluginManager = new PluginManagerExtImpl({
     // tslint:disable-next-line:no-any
-    loadPlugin(contextPath: string, plugin: Plugin): any {
+    loadPlugin(plugin: Plugin): any {
         if (isElectron()) {
             ctx.importScripts(plugin.pluginPath);
         } else {
@@ -71,16 +75,19 @@ const pluginManager = new PluginManagerExtImpl({
                 }
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
-                    initPath: frontendInitPath,
+                    pluginFolder: plg.source.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
                     rawModel: plg.source
                 };
                 result.push(plugin);
+                const apiImpl = apiFactory(plugin);
+                pluginsApiImpl.set(plugin.model.id, apiImpl);
+                pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
             } else {
                 foreign.push({
                     pluginPath: pluginModel.entryPoint.backend!,
-                    initPath: pluginLifecycle.backendInitPath!,
+                    pluginFolder: plg.source.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
                     rawModel: plg.source
@@ -92,8 +99,26 @@ const pluginManager = new PluginManagerExtImpl({
     }
 });
 
-const theia = createAPI(rpc, pluginManager);
-ctx['theia'] = theia;
+const apiFactory = createAPIFactory(rpc, pluginManager);
+let defaultApi: typeof theia;
+
+const handler = {
+    get: (target: any, name: string) => {
+        const plugin = pluginsModulesNames.get(name);
+        if (plugin) {
+            const apiImpl = pluginsApiImpl.get(plugin.model.id);
+            return apiImpl;
+        }
+
+        if (!defaultApi) {
+            defaultApi = apiFactory(emptyPlugin);
+        }
+
+        return defaultApi;
+    }
+};
+// tslint:disable-next-line:no-null-keyword
+ctx['theia'] = new Proxy(Object.create(null), handler);
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 

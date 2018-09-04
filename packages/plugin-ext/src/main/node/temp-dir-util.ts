@@ -13,13 +13,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
-// Exports contribution point for uri postprocessor of hosted plugin manager.
-// This could be used to alter hosted instance uri, for example, change port.
-export * from '../hosted/node/hosted-plugin-uri-postprocessor';
+export function getTempDir(name: string): string {
+    let tempDir = path.resolve(os.tmpdir(), name);
+    // for mac os 'os.tmpdir()' return symlink, but we need real path
+    if (process.platform === 'darwin') {
+        tempDir = fs.realpathSync(tempDir);
+    }
 
-// Here we expose types from @theia/plugin, so it becames a direct dependency
-export * from '../common/plugin-protocol';
-export * from '../plugin/plugin-context';
-export * from '../api/plugin-api';
-export * from '../main/node/temp-dir-util';
+    return tempDir;
+}

@@ -14,39 +14,58 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { createAPI } from '../../../plugin/plugin-context';
+import * as theia from '@theia/plugin';
 import { BackendInitializationFn } from '../../../common/plugin-protocol';
-import { PluginManager } from '../../../api/plugin-api';
+import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../api/plugin-api';
 
-export const doInitialization: BackendInitializationFn = (rpc: any, manager: PluginManager) => {
-    const theia = createAPI(rpc, manager);
+const pluginsApiImpl = new Map<string, typeof theia>();
+const plugins = new Array<Plugin>();
+let defaultApi: typeof theia;
+let isLoadOverride = false;
+let pluginApiFactory: PluginAPIFactory;
 
-    // add theia into global goal
-    const g = global as any;
-    g['theia'] = theia;
+export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
 
-    const NODE_MODULE_NAMES = ['@theia/plugin', '@wiptheia/plugin'];
+    const apiImpl = apiFactory(plugin);
+    pluginsApiImpl.set(plugin.model.id, apiImpl);
+
+    plugins.push(plugin);
+
+    if (!isLoadOverride) {
+        overrideInternalLoad();
+        isLoadOverride = true;
+        pluginApiFactory = apiFactory;
+    }
+
+};
+
+function overrideInternalLoad(): void {
     const module = require('module');
-
-    // add theia object as module into npm cache
-    NODE_MODULE_NAMES.forEach(moduleName => {
-        require.cache[moduleName] = {
-            id: moduleName,
-            filename: moduleName,
-            loaded: true,
-            exports: theia
-        };
-    });
-
-    // save original resolve method
-    const internalResolve = module._resolveFilename;
+    // save original load method
+    const internalLoad = module._load;
 
     // if we try to resolve theia module, return the filename entry to use cache.
-    module._resolveFilename = (request: string, parent: {}) => {
-        if (NODE_MODULE_NAMES.indexOf(request) !== -1) {
-            return request;
+    // tslint:disable-next-line:no-any
+    module._load = function (request: string, parent: any, isMain: {}) {
+        if (request !== '@theia/plugin') {
+            return internalLoad.apply(this, arguments);
         }
-        const retVal = internalResolve(request, parent);
-        return retVal;
+
+        const plugin = findPlugin(parent.filename);
+        if (plugin) {
+            const apiImpl = pluginsApiImpl.get(plugin.model.id);
+            return apiImpl;
+        }
+
+        if (!defaultApi) {
+            console.warn(`Could not identify plugin for 'Theia' require call from ${parent.filename}`);
+            defaultApi = pluginApiFactory(emptyPlugin);
+        }
+
+        return defaultApi;
     };
-};
+}
+
+function findPlugin(filePath: string): Plugin | undefined {
+    return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+}

@@ -19,7 +19,7 @@ import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
 import { PluginMetadata } from '../../common/plugin-protocol';
-
+import { createAPIFactory } from '../../plugin/plugin-context';
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
 const emitter = new Emitter();
@@ -41,19 +41,19 @@ process.on('message', (message: string) => {
 });
 
 // tslint:disable-next-line:no-any
-function initialize(contextPath: string, pluginMetadata: PluginMetadata): any {
+function initialize(contextPath: string, plugin: Plugin): any {
     console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + contextPath + ')');
-    const backendInit = require(contextPath);
-    backendInit.doInitialization(rpc, pluginManager, pluginMetadata);
+    try {
+        const backendInit = require(contextPath);
+        backendInit.doInitialization(apiFactory, plugin);
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 const pluginManager = new PluginManagerExtImpl({
-    loadPlugin(contextPath: string, plugin: Plugin): void {
+    loadPlugin(plugin: Plugin): void {
         console.log('PLUGIN_HOST(' + process.pid + '): loadPlugin(' + plugin.pluginPath + ')');
-        const backendInit = require(contextPath);
-        if (backendInit.doLoad) {
-            backendInit.doLoad(rpc, plugin);
-        }
         try {
             return require(plugin.pluginPath);
         } catch (e) {
@@ -69,23 +69,26 @@ const pluginManager = new PluginManagerExtImpl({
             if (pluginModel.entryPoint!.backend) {
 
                 let backendInitPath = pluginLifecycle.backendInitPath;
-                if (backendInitPath) {
-                    initialize(backendInitPath, plg);
-                } else {
-                    backendInitPath = '';
+                // if no init path, try to init as regular Theia plugin
+                if (!backendInitPath) {
+                    backendInitPath = __dirname + '/scanners/backend-init-theia.js';
                 }
+
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.backend!,
-                    initPath: backendInitPath,
+                    pluginFolder: plg.source.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
                     rawModel: plg.source
                 };
+
+                initialize(backendInitPath, plugin);
+
                 result.push(plugin);
             } else {
                 foreign.push({
                     pluginPath: pluginModel.entryPoint.frontend!,
-                    initPath: pluginLifecycle.frontendInitPath!,
+                    pluginFolder: plg.source.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
                     rawModel: plg.source
@@ -98,3 +101,4 @@ const pluginManager = new PluginManagerExtImpl({
 });
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
+const apiFactory = createAPIFactory(rpc, pluginManager);
