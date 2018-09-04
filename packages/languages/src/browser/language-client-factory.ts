@@ -65,6 +65,7 @@ export class LanguageClientFactory {
         clientOptions.initializationFailedHandler = e => !!initializationFailedHandler && initializationFailedHandler(e);
         connection.onDispose(() => initializationFailedHandler = () => false);
         return new MonacoLanguageClient({
+            id: contribution.id,
             name: contribution.name,
             clientOptions,
             connectionProvider: {
