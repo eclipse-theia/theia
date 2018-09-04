@@ -28,7 +28,7 @@ export class HttpOpenHandler implements OpenHandler {
     }
 
     open(uri: URI): Window | undefined {
-        return window.open(uri.toString()) || undefined;
+        return window.open(uri.toString(true)) || undefined;
     }
 
 }
