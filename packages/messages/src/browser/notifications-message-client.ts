@@ -33,10 +33,22 @@ export class NotificationsMessageClient extends MessageClient {
         return this.show(message);
     }
 
+    protected visibleMessages = new Set<string>();
     protected show(message: Message): Promise<string | undefined> {
+        const key = this.getKey(message);
+        if (this.visibleMessages.has(key)) {
+            return Promise.resolve(undefined);
+        }
         return new Promise(resolve => {
-            this.showToast(message, a => resolve(a));
+            this.showToast(message, a => {
+                this.visibleMessages.delete(key);
+                resolve(a);
+            });
         });
+    }
+
+    protected getKey(m: Message): string {
+        return `${m.type}-${m.text}-${m.actions ? m.actions.join('|') : '|'}`;
     }
 
     protected showToast(message: Message, onCloseFn: (action: string | undefined) => void): void {
