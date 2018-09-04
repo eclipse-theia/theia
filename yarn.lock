@@ -6354,9 +6354,9 @@ monaco-html@^2.0.2:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.2.0.tgz#435f2f4ce6e5c7f707fb57e7c8a05b41e5cd1aa0"
 
-monaco-languageclient@0.8.0-next.4:
-  version "0.8.0-next.4"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.8.0-next.4.tgz#9afe93b0b8c37110f455609d8914295900ae7a9b"
+monaco-languageclient@^0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.8.0.tgz#54889dba2c427110320434896ff0259534fd46f2"
   dependencies:
     glob-to-regexp "^0.3.0"
     monaco-editor-core "^0.14.6"

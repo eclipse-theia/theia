@@ -43,6 +43,7 @@ import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bind
 import { QuickInputService } from './monaco-quick-input-service';
 import { MonacoSemanticHighlightingService } from './monaco-semantic-highlighting-service';
 import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
+import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -64,6 +65,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoWorkspace).toSelf().inSingletonScope();
     bind(Workspace).toService(MonacoWorkspace);
 
+    bind(MonacoBulkEditService).toSelf().inSingletonScope();
     bind(MonacoEditorService).toSelf().inSingletonScope();
     bind(MonacoTextModelService).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();

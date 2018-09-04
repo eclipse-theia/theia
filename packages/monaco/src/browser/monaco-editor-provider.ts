@@ -31,11 +31,15 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoWorkspace } from './monaco-workspace';
+import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 
 @injectable()
 export class MonacoEditorProvider {
+
+    @inject(MonacoBulkEditService)
+    protected readonly bulkEditService: MonacoBulkEditService;
 
     constructor(
         @inject(MonacoEditorService) protected readonly codeEditorService: MonacoEditorService,
@@ -47,7 +51,7 @@ export class MonacoEditorProvider {
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
-        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
+        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory
     ) { }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
@@ -61,12 +65,14 @@ export class MonacoEditorProvider {
 
         const commandService = this.commandServiceFactory();
         const { codeEditorService, textModelService, contextMenuService } = this;
+        const IWorkspaceEditService = this.bulkEditService;
         const toDispose = new DisposableCollection();
         const editor = await this.createEditor(uri, {
             codeEditorService,
             textModelService,
             contextMenuService,
-            commandService
+            commandService,
+            IWorkspaceEditService
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 

@@ -227,6 +227,13 @@ export class MonacoWorkspace implements lang.Workspace {
 
     async applyEdit(changes: lang.WorkspaceEdit): Promise<boolean> {
         const workspaceEdit = this.p2m.asWorkspaceEdit(changes);
+        await this.applyBulkEdit(workspaceEdit);
+        return true;
+    }
+
+    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit): monaco.Promise<monaco.editor.IBulkEditResult> {
+        let totalEdits = 0;
+        let totalFiles = 0;
         const uri2Edits = this.groupEdits(workspaceEdit);
         for (const uri of uri2Edits.keys()) {
             const editorWidget = await this.editorManager.open(new URI(uri));
@@ -246,9 +253,21 @@ export class MonacoWorkspace implements lang.Workspace {
                 model.pushEditOperations(currentSelections, editOperations, (undoEdits: monaco.editor.IIdentifiedSingleEditOperation[]) => currentSelections);
                 // push again to make this change an undoable operation
                 model.pushStackElement();
+                totalFiles += 1;
+                totalEdits += editOperations.length;
             }
         }
-        return true;
+        const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
+        return { ariaSummary };
+    }
+    protected getAriaSummary(totalEdits: number, totalFiles: number): string {
+        if (totalEdits === 0) {
+            return 'Made no edits';
+        }
+        if (totalEdits > 1 && totalFiles > 1) {
+            return `Made ${totalEdits} text edits in ${totalFiles} files`;
+        }
+        return `Made ${totalEdits} text edits in one file`;
     }
 
     protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit) {

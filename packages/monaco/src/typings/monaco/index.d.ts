@@ -23,6 +23,14 @@ declare module monaco.instantiation {
 
 declare module monaco.editor {
 
+    export interface IBulkEditResult {
+        ariaSummary: string;
+    }
+
+    export interface IBulkEditService {
+        apply(edit: monaco.languages.WorkspaceEdit): monaco.Promise<IBulkEditResult>;
+    }
+
     export interface IDiffNavigator {
         readonly ranges: IDiffRange[];
         readonly nextIdx: number;
@@ -56,6 +64,7 @@ declare module monaco.editor {
         textModelService?: ITextModelService;
         contextMenuService?: IContextMenuService;
         commandService?: monaco.commands.ICommandService;
+        IWorkspaceEditService?: IBulkEditService;
     }
 
     export interface IResourceInput {
@@ -323,7 +332,7 @@ declare module monaco.services {
 
     export class StandaloneCommandService implements monaco.commands.ICommandService {
         constructor(instantiationService: monaco.instantiation.IInstantiationService);
-        readonly _onWillExecuteCommand: monaco.Emitter<ICommandEvent>;
+        readonly _onWillExecuteCommand: monaco.Emitter<monaco.commands.ICommandEvent>;
         executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
         executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
