@@ -66,7 +66,7 @@ export class YamlContribution implements LanguageGrammarDefinitionContribution {
             }
         });
 
-        const grammar = require('../../data/shell.tmLanguage.json');
+        const grammar = require('../../data/yaml.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
