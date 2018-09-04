@@ -72,8 +72,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     private cancelIndicator = new CancellationTokenSource();
 
-    protected changeEmitter: Emitter<Map<string, SearchInWorkspaceResultNode>>;
-    protected focusInputEmitter: Emitter<any>;
+    protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceResultNode>>();
+    protected focusInputEmitter = new Emitter<any>();
 
     @inject(SearchInWorkspaceService) protected readonly searchService: SearchInWorkspaceService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
@@ -105,6 +105,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
         }));
 
+        this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
         this.toDispose.push(model.onNodeRefreshed(() => this.changeEmitter.fire(this.resultTree)));
     }
 
@@ -121,8 +122,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
         });
 
-        this.changeEmitter = new Emitter();
-        this.focusInputEmitter = new Emitter();
+        this.toDispose.push(this.changeEmitter);
+        this.toDispose.push(this.focusInputEmitter);
 
         this.toDispose.push(this.editorManager.onActiveEditorChanged(() => {
             this.updateCurrentEditorDecorations();
