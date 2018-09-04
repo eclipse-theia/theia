@@ -39,7 +39,7 @@ export interface PluginInitData {
 
 export interface Plugin {
     pluginPath: string;
-    initPath: string;
+    pluginFolder: string;
     model: PluginModel;
     rawModel: PluginPackage;
     lifecycle: PluginLifecycle;
@@ -56,6 +56,46 @@ export interface PluginManager {
     isRunning(pluginId: string): boolean;
     activatePlugin(pluginId: string): PromiseLike<void>;
 }
+
+export interface PluginAPIFactory {
+    (plugin: Plugin): typeof theia;
+}
+
+export const emptyPlugin: Plugin = {
+    lifecycle: {
+        startMethod: 'empty',
+        stopMethod: 'empty'
+    },
+    model: {
+        id: 'emptyPlugin',
+        name: 'emptyPlugin',
+        publisher: 'Theia',
+        version: 'empty',
+        displayName: 'empty',
+        description: 'empty',
+        engine: {
+            type: 'empty',
+            version: 'empty'
+        },
+        entryPoint: {
+
+        }
+    },
+    pluginPath: 'empty',
+    pluginFolder: 'empty',
+    rawModel: {
+        name: 'emptyPlugin',
+        publisher: 'Theia',
+        version: 'empty',
+        displayName: 'empty',
+        description: 'empty',
+        engines: {
+            type: 'empty',
+            version: 'empty'
+        },
+        packagePath: 'empty'
+    }
+};
 
 export interface PluginManagerExt {
     $stopPlugin(contextPath: string): PromiseLike<void>;

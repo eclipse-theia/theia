@@ -16,15 +16,15 @@
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from '@theia/plugin-ext';
 import { injectable } from 'inversify';
-import * as os from 'os';
 import * as path from 'path';
+import { getTempDir } from '@theia/plugin-ext';
 
 @injectable()
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
 
     private unpackedFolder: string;
     constructor() {
-        this.unpackedFolder = path.resolve(os.tmpdir(), 'vscode-unpacked');
+        this.unpackedFolder = getTempDir('vscode-unpacked');
     }
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {

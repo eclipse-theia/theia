@@ -24,7 +24,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 export interface PluginHost {
 
     // tslint:disable-next-line:no-any
-    loadPlugin(contextPath: string, plugin: Plugin): any;
+    loadPlugin(plugin: Plugin): any;
 
     init(data: PluginMetadata[]): [Plugin[], Plugin[]];
 }
@@ -76,7 +76,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
         // run plugins
         for (const plugin of plugins) {
-            const pluginMain = this.host.loadPlugin(plugin.initPath, plugin);
+            const pluginMain = this.host.loadPlugin(plugin);
             this.startPlugin(plugin, pluginMain);
         }
 
