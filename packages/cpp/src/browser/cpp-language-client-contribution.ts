@@ -67,16 +67,21 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         this.cppBuildConfigurationsStatusBarElement.show();
     }
 
-    private createClangdConfigurationParams(config: CppBuildConfiguration | undefined): ClangdConfigurationParamsChange {
-        const clangdParams: ClangdConfigurationParamsChange = {
-            compilationDatabasePath: config ? config.directory : ''
-        };
+    private createClangdConfigurationParams(config: CppBuildConfiguration | undefined, isInitialize: boolean): ClangdConfigurationParamsChange {
+        const clangdParams: ClangdConfigurationParamsChange = {};
+
+        // During initialization, we don't need to send the compile commands
+        // path if there isn't one specified (it's clangd's default).
+        if (!isInitialize || config) {
+            clangdParams.compilationDatabasePath = config ? config.directory : '';
+        }
+
         return clangdParams;
     }
 
     async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
         const interfaceParams: DidChangeConfigurationParams = {
-            settings: this.createClangdConfigurationParams(config)
+            settings: this.createClangdConfigurationParams(config, false)
         };
 
         const languageClient = await this.languageClient;
@@ -104,7 +109,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     protected createOptions(): LanguageClientOptions {
         const clientOptions = super.createOptions();
-        clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig());
+        clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig(), true);
 
         clientOptions.initializationFailedHandler = () => {
             const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
