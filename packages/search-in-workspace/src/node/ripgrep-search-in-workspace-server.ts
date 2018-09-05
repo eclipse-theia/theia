@@ -21,6 +21,41 @@ import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process
 import { rgPath } from 'vscode-ripgrep';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
+/**
+ * Typing for ripgrep's arbitrary data object:
+ *
+ *   https://docs.rs/grep-printer/0.1.0/grep_printer/struct.JSON.html#object-arbitrary-data
+ */
+interface RipGrepArbitraryData {
+    text?: string;
+    bytes?: string;
+}
+
+/**
+ * Convert the length of a range in `text` expressed in bytes to a number of
+ * characters (or more precisely, code points).  The range starts at character
+ * `charStart` in `text`.
+ */
+function byteRangeLengthToCharacterLength(text: string, charStart: number, byteLength: number): number {
+    let char: number = charStart;
+    for (let byteIdx = 0; byteIdx < byteLength; char++) {
+        const codePoint: number = text.charCodeAt(char);
+        if (codePoint < 0x7F) {
+            byteIdx++;
+        } else if (codePoint < 0x7FF) {
+            byteIdx += 2;
+        } else if (codePoint < 0xFFFF) {
+            byteIdx += 3;
+        } else if (codePoint < 0x10FFFF) {
+            byteIdx += 4;
+        } else {
+            throw new Error('Invalid UTF-8 string');
+        }
+    }
+
+    return char - charStart;
+}
+
 @injectable()
 export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
@@ -32,19 +67,6 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
     private client: SearchInWorkspaceClient | undefined;
 
-    // Highlighted red
-    private readonly FILENAME_START = '^\x1b\\[0?m\x1b\\[31m';
-    private readonly FILENAME_END = '\x1b\\[0?m:';
-    // Highlighted green
-    private readonly LINE_START = '^\x1b\\[0?m\x1b\\[32m';
-    private readonly LINE_END = '\x1b\\[0?m:';
-    // Highlighted yellow
-    private readonly CHARACTER_START = '^\x1b\\[0?m\x1b\\[33m';
-    private readonly CHARACTER_END = '\x1b\\[0?m:';
-    // Highlighted blue
-    private readonly MATCH_START = '\x1b\\[0?m\x1b\\[34m';
-    private readonly MATCH_END = '\x1b\\[0?m';
-
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
@@ -55,18 +77,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
-        const args = ['--vimgrep', '--color=always',
-            '--colors=path:none',
-            '--colors=line:none',
-            '--colors=column:none',
-            '--colors=match:none',
-            '--colors=path:fg:red',
-            '--colors=line:fg:green',
-            '--colors=column:fg:yellow',
-            '--colors=match:fg:blue',
-            '--sort-files',
-            '--max-count=100',
-            '--max-columns=250'];
+        const args = ['--json', '--max-count=100'];
         args.push(options && options.matchCase ? '--case-sensitive' : '--ignore-case');
         if (options && options.matchWholeWord) {
             args.push('--word-regexp');
@@ -128,12 +139,6 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // Buffer to accumulate incoming output.
         let databuf: string = '';
 
-        const lastMatch = {
-            file: '',
-            line: 0,
-            index: 0,
-        };
-
         process.output.on('data', (chunk: string) => {
             // We might have already reached the max number of
             // results, sent a TERM signal to rg, but we still get
@@ -155,118 +160,49 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 }
 
                 // Get and remove the line from the data buffer.
-                let lineBuf = databuf.slice(0, eolIdx);
+                const lineBuf = databuf.slice(0, eolIdx);
                 databuf = databuf.slice(eolIdx + 1);
 
                 // Extract the various fields using the ANSI
                 // control characters for colors as guides.
+                const obj = JSON.parse(lineBuf);
 
-                // Extract filename (magenta).
-                const filenameRE = new RegExp(`${this.FILENAME_START}(.+?)${this.FILENAME_END}`);
-                let match = filenameRE.exec(lineBuf);
-                if (!match) {
-                    continue;
-                }
+                if (obj['type'] === 'match') {
+                    const data = obj['data'];
+                    const file = (<RipGrepArbitraryData>data['path']).text;
+                    const line = data['line_number'];
+                    const lineText = (<RipGrepArbitraryData>data['lines']).text;
 
-                const filename = match[1];
-                lineBuf = lineBuf.slice(match[0].length);
-
-                // Extract line number (green).
-                const lineRE = new RegExp(`${this.LINE_START}(\\d+)${this.LINE_END}`);
-                match = lineRE.exec(lineBuf);
-                if (!match) {
-                    continue;
-                }
-
-                const line = +match[1];
-                lineBuf = lineBuf.slice(match[0].length);
-
-                // Extract character number (column), but don't
-                // do anything with it.  ripgrep reports the
-                // offset in bytes, which is not good when
-                // dealing with multi-byte UTF-8 characters.
-                const characterNumRE = new RegExp(`${this.CHARACTER_START}(\\d+)${this.CHARACTER_END}`);
-                match = characterNumRE.exec(lineBuf);
-                if (!match) {
-                    continue;
-                }
-
-                lineBuf = lineBuf.slice(match[0].length);
-
-                // If there are two matches in a line,
-                // --vimgrep will make rg output two lines, but
-                // both matches will be highlighted in both
-                // lines.  If we have consecutive matches at
-                // the same file / line, make sure to pick the
-                // right highlighted match.
-                if (lastMatch.file === filename && lastMatch.line === line) {
-                    lastMatch.index++;
-                } else {
-                    lastMatch.file = filename;
-                    lastMatch.line = line;
-                    lastMatch.index = 0;
-                }
-
-                // Extract the match text (red).
-                const matchRE = new RegExp(`${this.MATCH_START}(.*?)${this.MATCH_END}`);
-
-                let characterNum = 0;
-
-                let matchWeAreLookingFor: RegExpMatchArray | undefined = undefined;
-                for (let i = 0; ; i++) {
-                    const nextMatch = lineBuf.match(matchRE);
-
-                    if (!nextMatch) {
-                        break;
+                    if (file === undefined || lineText === undefined) {
+                        continue;
                     }
 
-                    // Just to make typescript happy.
-                    if (nextMatch.index === undefined) {
-                        break;
+                    for (const submatch of data['submatches']) {
+                        const startByte = submatch['start'];
+                        const endByte = submatch['end'];
+                        const character = byteRangeLengthToCharacterLength(lineText, 0, startByte);
+                        const length = byteRangeLengthToCharacterLength(lineText, character, endByte - startByte);
+
+                        const result: SearchInWorkspaceResult = {
+                            file,
+                            line,
+                            character: character + 1,
+                            length,
+                            lineText: lineText.replace(/[\r\n]+$/, ''),
+                        };
+
+                        numResults++;
+                        if (this.client) {
+                            this.client.onResult(searchId, result);
+                        }
+
+                        // Did we reach the maximum number of results?
+                        if (opts && opts.maxResults && numResults >= opts.maxResults) {
+                            process.kill();
+                            this.wrapUpSearch(searchId);
+                            break;
+                        }
                     }
-
-                    if (i === lastMatch.index) {
-                        matchWeAreLookingFor = nextMatch;
-                        characterNum = nextMatch.index + 1;
-                    }
-
-                    // Remove the control characters around the match.  This allows to:
-
-                    //   - prepare the line text so it can be returned to the client without control characters
-                    //   - get the character index of subsequent matches right
-
-                    lineBuf =
-                        lineBuf.slice(0, nextMatch.index)
-                        + nextMatch[1]
-                        + lineBuf.slice(nextMatch.index + nextMatch[0].length);
-                }
-
-                if (!matchWeAreLookingFor || characterNum === 0) {
-                    continue;
-                }
-
-                if (matchWeAreLookingFor[1].length === 0) {
-                    continue;
-                }
-
-                const result: SearchInWorkspaceResult = {
-                    file: filename,
-                    line: line,
-                    character: characterNum,
-                    length: matchWeAreLookingFor[1].length,
-                    lineText: lineBuf,
-                };
-
-                numResults++;
-                if (this.client) {
-                    this.client.onResult(searchId, result);
-                }
-
-                // Did we reach the maximum number of results?
-                if (opts && opts.maxResults && numResults >= opts.maxResults) {
-                    process.kill();
-                    this.wrapUpSearch(searchId);
-                    break;
                 }
             }
         });
