@@ -90,7 +90,7 @@
     padding: 0 5px;
     text-align: center;
     font-size: calc(var(--theia-ui-font-size0) * 0.8);
-    color: var(--theia-ui-icon-font-color);
+    color: var(--theia-inverse-ui-font-color0);
     font-weight: 400;
     min-width: 8px;
     height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
