@@ -98,6 +98,10 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         ];
     }
 
+    protected get configurationSection(): string[] {
+        return [this.id];
+    }
+
     protected createOptions(): LanguageClientOptions {
         const clientOptions = super.createOptions();
         clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig());
