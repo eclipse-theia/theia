@@ -154,6 +154,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
+        this.resultTree.clear();
         this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
@@ -168,7 +169,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     return;
                 }
                 const { name, path } = this.filenameAndPath(result.file);
-                let resultElement = this.resultTree.get(result.file);
+                const tree = this.resultTree;
+                let resultElement = tree.get(result.file);
 
                 if (resultElement) {
                     const resultLine = this.createResultLineNode(result, resultElement);
@@ -192,7 +194,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             file: result.file
                         };
                         resultElement.children.push(this.createResultLineNode(result, resultElement));
-                        this.resultTree.set(result.file, resultElement);
+                        tree.set(result.file, resultElement);
                     }
                 }
             },
