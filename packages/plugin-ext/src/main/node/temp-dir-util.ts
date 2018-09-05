@@ -18,11 +18,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export function getTempDir(name: string): string {
-    let tempDir = path.resolve(os.tmpdir(), name);
+    let tempDir = os.tmpdir();
     // for mac os 'os.tmpdir()' return symlink, but we need real path
     if (process.platform === 'darwin') {
         tempDir = fs.realpathSync(tempDir);
     }
-
-    return tempDir;
+    return path.resolve(tempDir, name);
 }
