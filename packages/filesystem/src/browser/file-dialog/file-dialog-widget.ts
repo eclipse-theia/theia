@@ -15,14 +15,17 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { ContextMenuRenderer, TreeProps } from '@theia/core/lib/browser';
-import { FileTreeWidget } from '../file-tree';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, SELECTED_CLASS, FOCUS_CLASS } from '@theia/core/lib/browser';
+import { FileTreeWidget, FileStatNode } from '../file-tree';
 import { FileDialogModel } from './file-dialog-model';
 
 export const FILE_DIALOG_CLASS = 'theia-FileDialog';
+export const NOT_SELECTABLE_CLASS = 'theia-mod-not-selectable';
 
 @injectable()
 export class FileDialogWidget extends FileTreeWidget {
+
+    private _disableFileSelection: boolean = false;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -33,4 +36,39 @@ export class FileDialogWidget extends FileTreeWidget {
         this.addClass(FILE_DIALOG_CLASS);
     }
 
+    set disableFileSelection(isSelectable: boolean) {
+        this._disableFileSelection = isSelectable;
+        this.model.disableFileSelection = isSelectable;
+    }
+
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+        const attr = super.createNodeAttributes(node, props) as any;
+        if (this.shouldDisableSelection(node)) {
+            const keys = Object.keys(attr);
+            keys.forEach(k => {
+                if (['className', 'style', 'title'].indexOf(k) < 0) {
+                    delete attr[k];
+                }
+            });
+        }
+        return attr;
+    }
+
+    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+        const classNames = super.createNodeClassNames(node, props);
+        if (this.shouldDisableSelection(node)) {
+            [SELECTED_CLASS, FOCUS_CLASS].forEach(name => {
+                const ind = classNames.indexOf(name);
+                if (ind >= 0) {
+                    classNames.splice(ind, 1);
+                }
+            });
+            classNames.push(NOT_SELECTABLE_CLASS);
+        }
+        return classNames;
+    }
+
+    protected shouldDisableSelection(node: TreeNode): boolean {
+        return FileStatNode.is(node) && !node.fileStat.isDirectory && this._disableFileSelection;
+    }
 }
