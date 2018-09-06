@@ -237,6 +237,9 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         @inject(FileDialogWidget) readonly widget: FileDialogWidget
     ) {
         super(props, widget);
+        if (props.canSelectFiles !== undefined) {
+            this.widget.disableFileSelection = !props.canSelectFiles;
+        }
     }
 
     protected getAcceptButtonLabel(): string {
@@ -244,45 +247,9 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
     }
 
     protected isValid(value: MaybeArray<FileStatNode>): string {
-        if (value) {
-            if (this.props.canSelectMany) {
-                if (Array.isArray(value)) {
-                    const results: Readonly<FileStatNode>[] = value;
-                    for (let i = 0; i < results.length; i++) {
-                        const error = this.validateNode(results[i]);
-                        if (error) {
-                            return error;
-                        }
-                    }
-                } else {
-                    const error = this.validateNode(value);
-                    if (error) {
-                        return error;
-                    }
-                }
-            } else {
-                if (value instanceof Array) {
-                    return 'You can select only one item';
-                }
-
-                return this.validateNode(value);
-            }
+        if (value && !this.props.canSelectMany && value instanceof Array) {
+            return 'You can select only one item';
         }
-
-        return '';
-    }
-
-    protected validateNode(node: Readonly<FileStatNode>): string {
-        if (typeof this.props.canSelectFiles === 'boolean'
-            && !this.props.canSelectFiles && !node.fileStat.isDirectory) {
-            return 'Files cannot be selected';
-        }
-
-        if (typeof this.props.canSelectFolders === 'boolean'
-            && !this.props.canSelectFolders && node.fileStat.isDirectory) {
-            return 'Folders cannot be selected';
-        }
-
         return '';
     }
 
@@ -294,6 +261,13 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         }
     }
 
+    protected accept(): void {
+        if (this.props.canSelectFolders === false && !Array.isArray(this.value)) {
+            this.widget.model.openNode(this.value);
+            return;
+        }
+        super.accept();
+    }
 }
 
 @injectable()
