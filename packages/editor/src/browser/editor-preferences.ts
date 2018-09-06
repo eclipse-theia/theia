@@ -23,6 +23,7 @@ import {
     PreferenceSchema,
     PreferenceChangeEvent
 } from '@theia/core/lib/browser/preferences';
+import { isOSX } from '@theia/core/lib/common/os';
 
 export const editorPreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -35,7 +36,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         'editor.fontSize': {
             'type': 'number',
-            'default': 12,
+            'default': (isOSX) ? 12 : 14,
             'description': 'Configure the editor font size'
         },
         'editor.lineNumbers': {
