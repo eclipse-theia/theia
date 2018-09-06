@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/// <reference types='monaco-editor-core/monaco'/>
+/// <reference types='@typefox/monaco-editor-core/monaco'/>
 declare module monaco.editor {
     export interface IStandaloneCodeEditor extends CommonCodeEditor {
         setDecorations(decorationTypeKey: string, ranges: IDecorationOptions[]): void;
