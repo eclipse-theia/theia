@@ -131,7 +131,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         const nodesByName = symbols.sort(this.orderByPosition).reduce((result, symbol) => {
             const node = this.createNode(uri, symbol, ids);
             if (symbol.children) {
-                roots.push(node);
+                MonacoOutlineSymbolInformationNode.insert(roots, node);
             } else {
                 rangeBased = rangeBased || symbol.range.startLineNumber !== symbol.range.endLineNumber;
                 const values = result.get(symbol.name) || [];
@@ -144,15 +144,14 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         for (const nodes of nodesByName.values()) {
             for (const { node, symbol } of nodes) {
                 if (!symbol.containerName) {
-                    roots.push(node);
+                    MonacoOutlineSymbolInformationNode.insert(roots, node);
                 } else {
                     const possibleParents = nodesByName.get(symbol.containerName);
                     if (possibleParents) {
                         const parent = possibleParents.find(possibleParent => this.parentContains(symbol, possibleParent.symbol, rangeBased));
                         if (parent) {
-                            const parentNode = parent.node;
-                            Object.assign(node, { parent: parentNode });
-                            (parentNode.children as TreeNode[]).push(node);
+                            node.parent = parent.node;
+                            MonacoOutlineSymbolInformationNode.insert(parent.node.children, node);
                         }
                     }
                 }
@@ -210,7 +209,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         };
         if (symbol.children) {
             for (const child of symbol.children) {
-                children.push(this.createNode(uri, child, ids, node));
+                MonacoOutlineSymbolInformationNode.insert(children, this.createNode(uri, child, ids, node));
             }
         }
         return node;
@@ -258,10 +257,35 @@ export namespace MonacoOutlineContribution {
 export interface MonacoOutlineSymbolInformationNode extends OutlineSymbolInformationNode {
     uri: URI;
     range: Range;
+    parent: MonacoOutlineSymbolInformationNode | undefined;
+    children: MonacoOutlineSymbolInformationNode[];
 }
 
 export namespace MonacoOutlineSymbolInformationNode {
     export function is(node: TreeNode): node is MonacoOutlineSymbolInformationNode {
         return OutlineSymbolInformationNode.is(node) && 'uri' in node && 'range' in node;
+    }
+    export function insert(nodes: MonacoOutlineSymbolInformationNode[], node: MonacoOutlineSymbolInformationNode): void {
+        const index = nodes.findIndex(current => compare(node, current) < 0);
+        if (index === -1) {
+            nodes.push(node);
+        } else {
+            nodes.splice(index, 0, node);
+        }
+    }
+    export function compare(node: MonacoOutlineSymbolInformationNode, node2: MonacoOutlineSymbolInformationNode): number {
+        const startLineComparison = node.range.start.line - node2.range.start.line;
+        if (startLineComparison !== 0) {
+            return startLineComparison;
+        }
+        const startColumnComparison = node.range.start.character - node2.range.start.character;
+        if (startColumnComparison !== 0) {
+            return startColumnComparison;
+        }
+        const endLineComparison = node2.range.end.line - node.range.end.line;
+        if (endLineComparison !== 0) {
+            return endLineComparison;
+        }
+        return node2.range.end.character - node.range.end.character;
     }
 }
