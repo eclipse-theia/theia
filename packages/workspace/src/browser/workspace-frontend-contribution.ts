@@ -83,7 +83,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
 
     protected showFileDialog(props: OpenFileDialogProps): void {
         this.workspaceService.roots.then(async roots => {
-            const node = await this.fileDialogService.show(props, roots[0]);
+            const node = await this.fileDialogService.showOpenDialog(props, roots[0]);
             this.openFile(node);
         });
     }

@@ -20,31 +20,50 @@ import { MaybeArray } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '../common';
 import { FileStatNode, DirNode } from './file-tree';
-import { OpenFileDialogFactory, OpenFileDialogProps } from './file-dialog';
+import { OpenFileDialogFactory, OpenFileDialogProps, SaveFileDialogFactory, SaveFileDialogProps } from './file-dialog';
 
 @injectable()
 export class FileDialogService {
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(OpenFileDialogFactory) protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(SaveFileDialogFactory) protected readonly saveFileDialogFactory: SaveFileDialogFactory;
 
-    async show(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined>;
-    async show(props: OpenFileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined>;
-    async show(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined> {
+    async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined>;
+    async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<FileStatNode | undefined>;
+    async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<FileStatNode> | undefined> {
         const title = props.title || 'Open';
-        const folderToOpen = folder || await this.fileSystem.getCurrentUserHome();
-        if (folderToOpen) {
-            const rootUri = new URI(folderToOpen.uri).parent;
+        const rootNode = await this.getRootNode(folder);
+        if (rootNode) {
+            const dialog = this.openFileDialogFactory(Object.assign(props, { title }));
+            dialog.model.navigateTo(rootNode);
+            return await dialog.open();
+        }
+        return undefined;
+    }
+
+    async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
+        const title = props.title || 'Save';
+        const rootNode = await this.getRootNode(folder);
+        if (rootNode) {
+            const dialog = this.saveFileDialogFactory(Object.assign(props, { title }));
+            dialog.model.navigateTo(rootNode);
+            return await dialog.open();
+        }
+        return undefined;
+    }
+
+    protected async getRootNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
+        const folder = folderToOpen || await this.fileSystem.getCurrentUserHome();
+        if (folder) {
+            const rootUri = new URI(folder.uri).parent;
             const name = this.labelProvider.getName(rootUri);
             const [rootStat, label] = await Promise.all([
                 this.fileSystem.getFileStat(rootUri.toString()),
-                this.labelProvider.getIcon(folderToOpen)
+                this.labelProvider.getIcon(folder)
             ]);
             if (rootStat) {
-                const rootNode = DirNode.createRoot(rootStat, name, label);
-                const dialog = this.openFileDialogFactory(Object.assign(props, { title }));
-                dialog.model.navigateTo(rootNode);
-                return await dialog.open();
+                return DirNode.createRoot(rootStat, name, label);
             }
         }
         return undefined;
