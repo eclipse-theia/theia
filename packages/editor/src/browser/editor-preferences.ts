@@ -44,6 +44,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'on',
                 'off'
             ],
+            'default': 'on',
             'description': 'Control the rendering of line numbers'
         },
         'editor.renderWhitespace': {
@@ -52,6 +53,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'boundary',
                 'all'
             ],
+            'default': 'none',
             'description': 'Control the rendering of whitespaces in the editor'
         },
         'editor.autoSave': {
@@ -244,6 +246,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         'editor.emptySelectionClipboard': {
             'type': 'boolean',
+            'default': true,
             'description': 'Copying without a selection copies the current line.'
         },
         'editor.wordBasedSuggestions': {
@@ -298,6 +301,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         'editor.useTabStops': {
             'type': 'boolean',
+            'default': true,
             'description': 'Inserting and deleting whitespace follows tab stops.'
         },
         'editor.insertSpaces': {
