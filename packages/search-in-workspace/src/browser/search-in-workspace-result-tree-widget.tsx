@@ -31,7 +31,7 @@ import {
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { TreeProps } from '@theia/core/lib/browser';
-import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
+import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path, CancellationTokenSource, Emitter, Event } from '@theia/core';
@@ -426,7 +426,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         } else {
             fileUri = new URI(node.file).withScheme('file');
         }
-        const editorWidget = await this.editorManager.open(fileUri, {
+
+        const opts: EditorOpenerOptions | undefined = !DiffUris.isDiffUri(fileUri) ? {
             selection: {
                 start: {
                     line: node.line - 1,
@@ -438,9 +439,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 }
             },
             mode: 'reveal'
-        });
+        } : undefined;
 
-        this.decorateEditor(resultNode, editorWidget);
+        const editorWidget = await this.editorManager.open(fileUri, opts);
+
+        if (!DiffUris.isDiffUri(fileUri)) {
+            this.decorateEditor(resultNode, editorWidget);
+        }
 
         return editorWidget;
     }
@@ -464,14 +469,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected decorateEditor(node: SearchInWorkspaceResultNode | undefined, editorWidget: EditorWidget) {
-        const key = `${editorWidget.editor.uri.toString()}#search-in-workspace-matches`;
-        const oldDecorations = this.appliedDecorations.get(key) || [];
-        const newDecorations = this.createEditorDecorations(node);
-        const appliedDecorations = editorWidget.editor.deltaDecorations({
-            newDecorations,
-            oldDecorations,
-        });
-        this.appliedDecorations.set(key, appliedDecorations);
+        if (!DiffUris.isDiffUri(editorWidget.editor.uri)) {
+            const key = `${editorWidget.editor.uri.toString()}#search-in-workspace-matches`;
+            const oldDecorations = this.appliedDecorations.get(key) || [];
+            const newDecorations = this.createEditorDecorations(node);
+            const appliedDecorations = editorWidget.editor.deltaDecorations({
+                newDecorations,
+                oldDecorations,
+            });
+            this.appliedDecorations.set(key, appliedDecorations);
+        }
     }
 
     protected createEditorDecorations(resultNode: SearchInWorkspaceResultNode | undefined): EditorDecoration[] {
