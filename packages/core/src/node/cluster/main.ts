@@ -24,10 +24,17 @@ process.on('unhandledRejection', (reason, promise) => {
     throw reason;
 });
 
-const args = require('yargs').help(false).argv;
+import yargs = require('yargs');
+const args = yargs.option(MasterProcess.startupTimeoutOption, {
+    description: 'The number of milliseconds to wait for the server to start up. Pass a negative number to disable the timeout.',
+    type: 'number',
+    default: 5000
+}).help(false).argv;
 const noCluster = args['cluster'] === false;
 const isMaster = !noCluster && cluster.isMaster;
 const development = process.env.NODE_ENV === 'development';
+
+const startupTimeout = args[MasterProcess.startupTimeoutOption] as number;
 
 if (isMaster && development) {
     // https://github.com/Microsoft/vscode/issues/3201
@@ -44,12 +51,13 @@ export interface Address {
 
 export async function start(serverPath: string): Promise<Address> {
     if (isMaster) {
-        const master = new MasterProcess();
+        const master = new MasterProcess(startupTimeout);
         master.onexit(process.exit);
         try {
             const worker = await master.start();
             return worker.listening;
         } catch (error) {
+            console.error(error.message);
             process.exit(error.returnCode);
         }
     }
