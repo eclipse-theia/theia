@@ -71,10 +71,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         }
 
         const wsUri = await this.workspacePreferenceProvider.getUri();
-        if (!wsUri) {
-            return;
-        }
-        if (!(await this.filesystem.exists(wsUri.toString()))) {
+        if (wsUri && !await this.filesystem.exists(wsUri.toString())) {
             await this.filesystem.createFile(wsUri.toString());
         }
 
