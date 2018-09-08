@@ -126,8 +126,13 @@ export class DebugAdapterSessionManager {
     create(config: DebugConfiguration): DebugAdapterSession {
         const sessionId = UUID.uuid4();
 
-        const executable = this.registry.provideDebugAdapterExecutable(config);
-        const communicationProvider = this.debugAdapterFactory.start(executable);
+        let communicationProvider;
+        if ('debugServer' in config) {
+            communicationProvider = this.debugAdapterFactory.connect(config.debugServer);
+        } else {
+            const executable = this.registry.provideDebugAdapterExecutable(config);
+            communicationProvider = this.debugAdapterFactory.start(executable);
+        }
 
         const sessionFactory = this.registry.debugAdapterSessionFactory(config.type) || this.debugAdapterSessionFactory;
         const session = sessionFactory.get(sessionId, communicationProvider);
