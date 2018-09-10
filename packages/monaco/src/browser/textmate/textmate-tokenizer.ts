@@ -57,44 +57,22 @@ export namespace TokenizerOption {
     };
 }
 
-export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.TokensProvider {
+export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.EncodedTokensProvider {
     if (options.lineLimit !== undefined && (options.lineLimit <= 0 || !Number.isInteger(options.lineLimit))) {
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
     }
     return {
         getInitialState: () => new TokenizerState(INITIAL),
-        tokenize(line: string, state: TokenizerState) {
+        tokenizeEncoded(line: string, state: TokenizerState) {
+            let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized
-                return { tokens: [], endState: state };
+                processedLine = line.substr(0, options.lineLimit);
             }
-            const result = grammar.tokenizeLine(line, state.ruleStack);
-            const tokenTheme = monaco.services.StaticServices.standaloneThemeService.get().getTheme().tokenTheme;
-            const defaultResult = tokenTheme.match(undefined, 'should.return.default');
-            const defaultForeground = monaco.modes.TokenMetadata.getForeground(defaultResult);
+            const result = grammar.tokenizeLine2(processedLine, state.ruleStack);
             return {
                 endState: new TokenizerState(result.ruleStack),
-                tokens: result.tokens.map(token => {
-                    const scopes = token.scopes.slice(0);
-
-                    // TODO monaco doesn't allow to pass multiple scopes and have their styles merged yet. See https://github.com/Microsoft/monaco-editor/issues/929
-                    // As a workaround we go through the scopes backwards and pick the first for which the tokenTheme has a special foreground color.
-                    for (let i = scopes.length - 1; i >= 0; i--) {
-                        const scope = scopes[i];
-                        const match = tokenTheme.match(undefined, scope);
-                        const foregroundColor = monaco.modes.TokenMetadata.getForeground(match);
-                        if (defaultForeground !== foregroundColor) {
-                            return {
-                                ...token,
-                                scopes: scope!
-                            };
-                        }
-                    }
-                    return {
-                        ...token,
-                        scopes: scopes[0]!,
-                    };
-                }),
+                tokens: result.tokens
             };
         }
     };

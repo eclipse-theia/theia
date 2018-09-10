@@ -19,10 +19,10 @@ import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/co
 import { bindContributionProvider } from '@theia/core';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { BuiltinTextmateThemeProvider } from './monaco-textmate-builtin-theme-provider';
-import { BuiltinMonacoThemeProvider } from './monaco-builtin-theme-provider';
 import { TextmateRegistry } from './textmate-registry';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
 import { MonacoTextmateService, OnigasmPromise } from './monaco-textmate-service';
+import { MonacoThemeRegistry } from './monaco-theme-registry';
 import { loadWASM } from 'onigasm';
 
 export function fetchOnigasm(): Promise<ArrayBuffer> {
@@ -54,8 +54,8 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
     bind(TextmateRegistry).toSelf().inSingletonScope();
+    bind(MonacoThemeRegistry).toDynamicValue(() => MonacoThemeRegistry.SINGLETON).inSingletonScope();
 
     const themeService = ThemeService.get();
-    BuiltinMonacoThemeProvider.compileMonacoThemes();
     themeService.register(...BuiltinTextmateThemeProvider.theiaTextmateThemes);
 };

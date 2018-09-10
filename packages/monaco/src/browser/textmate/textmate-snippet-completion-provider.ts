@@ -27,6 +27,8 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
                 label: textmateSnippet.prefix,
                 detail: textmateSnippet.description,
                 kind: monaco.languages.CompletionItemKind.Snippet,
+                // templates shall get a very low priority
+                sortText : 'ZZZ' + textmateSnippet.prefix,
                 documentation: {
                     value: '```' + this.mdLanguage + '\n' + this.replaceVariables(insertText) + '```'
                 },

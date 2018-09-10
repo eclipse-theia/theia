@@ -15,17 +15,18 @@
  ********************************************************************************/
 
 import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
+import { MonacoThemeRegistry } from './monaco-theme-registry';
 
 export class BuiltinTextmateThemeProvider {
 
     static readonly theiaTextmateThemes = [
         {
             ...BuiltinThemeProvider.darkTheme,
-            editorTheme: 'dark-plus',
+            editorTheme: MonacoThemeRegistry.DARK_DEFAULT_THEME,
         },
         {
             ...BuiltinThemeProvider.lightTheme,
-            editorTheme: 'light-plus',
+            editorTheme: MonacoThemeRegistry.LIGHT_DEFAULT_THEME,
         },
     ];
 
