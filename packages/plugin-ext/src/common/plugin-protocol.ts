@@ -53,6 +53,19 @@ export interface PluginPackage {
 export interface PluginPackageContribution {
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
+    viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
+    views?: { [location: string]: PluginPackageView[] };
+}
+
+export interface PluginPackageViewContainer {
+    id: string;
+    title: string;
+    icon: string;
+}
+
+export interface PluginPackageView {
+	id: string;
+	name: string;
 }
 
 export interface PluginPackageGrammarsContribution {
@@ -276,6 +289,8 @@ export interface PluginModel {
 export interface PluginContribution {
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
+    viewsContainers?: { [location: string]: ViewContainer[] };
+    views?: { [location: string]: View[] };
 }
 
 export interface GrammarsContribution {
@@ -335,6 +350,23 @@ export interface FoldingMarkers {
 export interface FoldingRules {
     offSide?: boolean;
     markers?: FoldingMarkers;
+}
+
+/**
+ * Views Containers contribution
+ */
+export interface ViewContainer {
+    id: string;
+    title: string;
+    icon: string;
+}
+
+/**
+ * View contribution
+ */
+export interface View {
+	id: string;
+	name: string;
 }
 
 /**
