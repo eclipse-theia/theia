@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
 import { TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
 import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'monaco-textmate';
+import { ViewRegistry } from './view/view-registry';
 
 @injectable()
 export class PluginContributionHandler {
@@ -26,9 +27,9 @@ export class PluginContributionHandler {
 
     @inject(TextmateRegistry)
     private readonly grammarsRegistry: TextmateRegistry;
-    constructor() {
 
-    }
+    @inject(ViewRegistry)
+    private readonly viewRegistry: ViewRegistry;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.languages) {
@@ -85,6 +86,24 @@ export class PluginContributionHandler {
                         embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages),
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                     });
+                }
+            }
+        }
+
+        if (contributions.viewsContainers) {
+            for (const location in contributions.viewsContainers) {
+                if (contributions.viewsContainers!.hasOwnProperty(location)) {
+                    const viewContainers = contributions.viewsContainers[location];
+                    viewContainers.forEach(container => this.viewRegistry.registerViewContainer(location, container));
+                }
+            }
+        }
+
+        if (contributions.views) {
+            for (const location in contributions.views) {
+                if (contributions.views.hasOwnProperty(location)) {
+                    const views = contributions.views[location];
+                    views.forEach(view => this.viewRegistry.registerView(location, view));
                 }
             }
         }

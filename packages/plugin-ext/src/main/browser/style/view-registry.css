@@ -1,0 +1,106 @@
+/********************************************************************************
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+ 
+.theia-views-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--theia-layout-color0);
+}
+
+.theia-views-container:focus {
+    border: none;
+    outline: none;
+}
+
+.theia-views-container-title {
+    height: 26px;
+    line-height: 26px;
+    padding: 0px 10px;
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    text-transform:  uppercase;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.theia-views-container-section {
+    width: 100%;
+}
+
+.theia-views-container-section-title {
+    position: relative;
+    height: 22px;
+    background-color: var(--theia-layout-color2);
+    line-height: 22px;
+    overflow: hidden;
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size0);
+    text-transform:  uppercase;
+    cursor: pointer;
+    user-select: none;
+}
+
+.theia-views-container-section-title:hover {
+    background-color: var(--theia-layout-color1);
+}
+
+.theia-views-container-section-control {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 15px;
+    height: 22px;
+    padding: 0px 5px;
+    box-sizing: border-box;
+}
+
+.theia-views-container-section-control[role='opened']:before {
+    font-family: FontAwesome;
+    font-size: calc(var(--theia-content-font-size) * 0.8);
+    content: "\F0D7";
+}
+
+.theia-views-container-section-control[role='closed']:before {
+    font-family: FontAwesome;
+    font-size: calc(var(--theia-content-font-size) * 0.8);
+    content: "\F0DA";
+}
+
+.theia-views-container-section-label {
+    position: absolute;
+    left: 15px;
+    right: 0px;
+    top: 0px;
+    height: 22px;
+    line-height: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.theia-views-container-section-content {
+    min-height: 30px;
+    text-align: center;
+    color: var(--theia-ui-font-color3);
+    font-size: var(--theia-ui-font-size3);
+    padding: 20px 0px;
+}
+
+.theia-views-container-section-content[role='closed'] {
+    display: none;
+}
