@@ -225,7 +225,7 @@ export class DebugViewContribution extends AbstractViewContribution<DebugWidget>
                 rank: 500
             },
             toggleCommandId: 'debug.view.toggle',
-            toggleKeybinding: 'ctrlcmd+alt+d'
+            toggleKeybinding: 'ctrlcmd+shift+d'
         });
     }
 }
