@@ -16,13 +16,17 @@
 
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../api/rpc-protocol';
-import { HostedPluginManagerExtImpl } from '../../plugin/hosted-plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
-import { createAPI, startPlugin } from '../../../plugin/plugin-context';
+import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
+import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../api/plugin-api';
+import { createAPIFactory } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import * as theia from '@theia/plugin';
 
+// tslint:disable-next-line:no-any
 const ctx = self as any;
-const plugins = new Map<string, () => void>();
+
+const pluginsApiImpl = new Map<string, typeof theia>();
+const pluginsModulesNames = new Map<string, Plugin>();
 
 const emitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -31,18 +35,17 @@ const rpc = new RPCProtocolImpl({
         ctx.postMessage(m);
     }
 });
+// tslint:disable-next-line:no-any
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);
 });
+function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
+    ctx.importScripts('/context/' + contextPath);
+}
 
-const theia = createAPI(rpc);
-ctx['theia'] = theia;
-
-rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
-    initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-        ctx.importScripts('/context/' + contextPath);
-    },
-    loadPlugin(contextPath: string, plugin: Plugin): void {
+const pluginManager = new PluginManagerExtImpl({
+    // tslint:disable-next-line:no-any
+    loadPlugin(plugin: Plugin): any {
         if (isElectron()) {
             ctx.importScripts(plugin.pluginPath);
         } else {
@@ -54,19 +57,70 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
                 console.error(`WebWorker: Cannot start plugin "${plugin.model.name}". Frontend plugin not found: "${plugin.lifecycle.frontendModuleName}"`);
                 return;
             }
-            startPlugin(plugin, ctx[plugin.lifecycle.frontendModuleName], plugins);
+            return ctx[plugin.lifecycle.frontendModuleName];
         }
     },
-    stopPlugins(contextPath: string, pluginIds: string[]): void {
-        pluginIds.forEach(pluginId => {
-            const stopPluginMethod = plugins.get(pluginId);
-            if (stopPluginMethod) {
-                stopPluginMethod();
-                plugins.delete(pluginId);
+    init(rawPluginData: PluginMetadata[]): [Plugin[], Plugin[]] {
+        const result: Plugin[] = [];
+        const foreign: Plugin[] = [];
+        for (const plg of rawPluginData) {
+            const pluginModel = plg.model;
+            const pluginLifecycle = plg.lifecycle;
+            if (pluginModel.entryPoint!.frontend) {
+                let frontendInitPath = pluginLifecycle.frontendInitPath;
+                if (frontendInitPath) {
+                    initialize(frontendInitPath, plg);
+                } else {
+                    frontendInitPath = '';
+                }
+                const plugin: Plugin = {
+                    pluginPath: pluginModel.entryPoint.frontend!,
+                    pluginFolder: plg.source.packagePath,
+                    model: pluginModel,
+                    lifecycle: pluginLifecycle,
+                    rawModel: plg.source
+                };
+                result.push(plugin);
+                const apiImpl = apiFactory(plugin);
+                pluginsApiImpl.set(plugin.model.id, apiImpl);
+                pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
+            } else {
+                foreign.push({
+                    pluginPath: pluginModel.entryPoint.backend!,
+                    pluginFolder: plg.source.packagePath,
+                    model: pluginModel,
+                    lifecycle: pluginLifecycle,
+                    rawModel: plg.source
+                });
             }
-        });
+        }
+
+        return [result, foreign];
     }
-}));
+});
+
+const apiFactory = createAPIFactory(rpc, pluginManager);
+let defaultApi: typeof theia;
+
+const handler = {
+    get: (target: any, name: string) => {
+        const plugin = pluginsModulesNames.get(name);
+        if (plugin) {
+            const apiImpl = pluginsApiImpl.get(plugin.model.id);
+            return apiImpl;
+        }
+
+        if (!defaultApi) {
+            defaultApi = apiFactory(emptyPlugin);
+        }
+
+        return defaultApi;
+    }
+};
+// tslint:disable-next-line:no-null-keyword
+ctx['theia'] = new Proxy(Object.create(null), handler);
+
+rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 
 function isElectron() {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {

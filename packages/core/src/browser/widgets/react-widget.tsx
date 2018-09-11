@@ -24,12 +24,12 @@ import { BaseWidget, Message } from './widget';
 export abstract class ReactWidget extends BaseWidget {
 
     protected readonly onRender = new DisposableCollection();
-    protected scrollOptions = {
-        suppressScrollX: true
-    };
 
     constructor() {
         super();
+        this.scrollOptions = {
+            suppressScrollX: true
+        };
         this.toDispose.push(Disposable.create(() => {
             ReactDOM.unmountComponentAtNode(this.node);
         }));

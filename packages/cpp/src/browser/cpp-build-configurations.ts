@@ -24,7 +24,10 @@ import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 
 export interface CppBuildConfiguration {
+    /** Human-readable configuration name.  */
     name: string;
+
+    /** Base directory of this build.  */
     directory: string;
 }
 

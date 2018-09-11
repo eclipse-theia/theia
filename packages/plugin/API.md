@@ -2,6 +2,48 @@
 
 ## Theia Plugin system description
 
+### Plugin API
+
+Namespace for dealing with installed plug-ins. Plug-ins are represented
+by an Plugin-interface which enables reflection on them.
+Plug-in writers can provide APIs to other plug-ins by returning their API public
+surface from the `start`-call.
+
+For example some plugin exports it's API:
+
+```javascript
+export function start() {
+    let api = {
+        sum(a, b) {
+            return a + b;
+        },
+        mul(a, b) {
+            return a * b;
+        }
+    };
+    // 'export' public api-surface
+    return api;
+}
+```
+
+Another plugin can use that API:
+
+```javascript
+let mathExt = theia.plugins.getPlugin('genius.math');
+let importedApi = mathExt.exports;
+console.log(importedApi.mul(42, 1));
+```
+
+Also plugin API allows access to plugin `package.json` content.
+
+Example:
+
+```javascript
+const fooPlugin = plugins.getPlugin('publisher.plugin_name');
+const fooPluginPackageJson = fooPlugin.packageJSON;
+console.log(fooPluginPackageJson.someField);
+```
+
 ### Command API
 
  A command is a unique identifier of a function which
@@ -141,11 +183,11 @@ Simple example that show a status bar message with statusBarItem:
 #### Output channel API
 
  It is possible to show a container for readonly textual information:
- 
+
 ```typescript
    const channel = theia.window.createOutputChannel('test channel');
          channel.appendLine('test output');
-      
+
 ```
 
 #### Environment API
@@ -287,3 +329,82 @@ preferences.onDidChangeConfiguration(e => {
 
 preferences.update('tabSize', 2);
 ```
+
+### Languages API
+
+#### Diagnostics
+
+To get all existing diagnostics one should use `getDiagnostics` call. If diagnostics are needed for specific URI they could be obtain with following call:
+
+```typescript
+const diagnostics = theia.languages.getDiagnostics(uriToResource)
+```
+
+To get all diagnostics use:
+```typescript
+const diagnostics =  theia.languages.getDiagnostics()
+```
+
+For example, following code will get diagnostics for current file in the editor (supposed one is already opened):
+
+```typescript
+const diagnosticsForCurrentFile = theia.languages.getDiagnostics(theia.window.activeTextEditor.document.uri)
+```
+
+If no diagnostics found empty array will be returned.
+
+Note, that returned array from `getDiagnostics` call are readonly.
+
+To tracks changes in diagnostics `onDidChangeDiagnostics` event should be used. Within event handler list of uris with changed diadgnostics is available. Example:
+
+```typescript
+disposables.push(
+    theia.languages.onDidChangeDiagnostics((event: theia.DiagnosticChangeEvent) => {
+        // handler code here
+    }
+);
+```
+
+Also it is possible to add own diagnostics. To do this, one should create diagnostics collection first:
+
+```typescript
+const diagnosticsCollection = theia.languages.createDiagnosticCollection(collectionName);
+```
+
+Collection name can be ommited. In such case the name will be auto-generated.
+
+When collection is created, one could operate with diagnostics. The collection object exposes all needed methods: `get`, `set`, `has`, `delete`, `clear`, `forEach` and `dispose`.
+
+`get`, `has` and `delete` performs corresponding operation by given resource uri. `clear` removes all diagnostics for all uris in the collection.
+
+Behavior of `set` is more complicated. To replace all diagnostics for given uri the following call should be used:
+
+```typescript
+diagnosticsCollection.set(uri, newDiagnostics)
+```
+
+if `undefined` is passed instead of diagnostics array the call will clear diagnostics for given uri in this collection (the same as `delete`).
+Also it is possible to set all diagnostics at once (it will replace existed ones). To do this, array of tuples in format `[uri, diagnostics]` should be passed as argument for `set`:
+
+```typescript
+const changes: [Uri, Diagnostic[] | undefined][] = [];
+
+changes.push([uri1, diagnostics1]);
+changes.push([uri2, diagnostics2]);
+changes.push([uri3, undefined]);
+changes.push([uri1, diagnostics4]); // uri1 again
+
+diagnosticsCollection.set(changes);
+```
+
+If the same uri is used a few times, corresponding diagnostics will be merged. In case of `undefined` all previous, but not following, diagnostics will be cleared. If `undefined` is given insted of tuples array the whole collection will be cleared.
+
+To iterate over all diagnostics within the collection `forEach` method could be used:
+
+```typescript
+diagnosticsCollection.forEach((uri, diagnostics) => {
+    // code here
+}
+```
+
+`dispose` method should be used when the collection is not needed any more. In case of attempt to do an operaton after disposing an error will be thrown.

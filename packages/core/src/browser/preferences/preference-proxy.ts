@@ -16,14 +16,10 @@
 
 // tslint:disable:no-any
 
-import { Disposable, DisposableCollection, Event, Emitter, deepFreeze } from '../../common';
+import { Disposable, DisposableCollection, Event, Emitter } from '../../common';
 import { PreferenceService, PreferenceChange } from './preference-service';
 import { PreferenceSchema } from './preference-contribution';
-import * as Ajv from 'ajv';
 
-export interface Configuration {
-    [preferenceName: string]: any;
-}
 export interface PreferenceChangeEvent<T> {
     readonly preferenceName: keyof T
     readonly newValue?: T[keyof T]
@@ -35,46 +31,22 @@ export interface PreferenceEventEmitter<T> {
 }
 
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
-export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
-    const configuration = createConfiguration<T>(schema);
-    const ajv = new Ajv();
-    const validateFunction = ajv.compile(schema);
-    const validate = (name: string, value: any) => validateFunction({ [name]: value });
+export function createPreferenceProxy<T>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
-        if (e.preferenceName in configuration) {
-            if (e.newValue !== undefined) {
-                if (validate(e.preferenceName, e.newValue)) {
-                    onPreferenceChangedEmitter.fire(e);
-                } else {
-                    onPreferenceChangedEmitter.fire({
-                        preferenceName: e.preferenceName,
-                        newValue: configuration[e.preferenceName]
-                    });
-                }
-            } else {
-                onPreferenceChangedEmitter.fire({
-                    preferenceName: e.preferenceName,
-                    newValue: configuration[e.preferenceName],
-                    oldValue: e.oldValue
-                });
-            }
+        if (schema.properties[e.preferenceName]) {
+            onPreferenceChangedEmitter.fire(e);
         }
     }));
-    const unsupportedOperation = (_: any, property: string) => {
+    const unsupportedOperation = (_: any, __: string) => {
         throw new Error('Unsupported operation');
     };
-    return new Proxy(configuration as any, {
+    return new Proxy({}, {
         get: (_, property: string) => {
-            if (property in configuration) {
-                const preference = preferences.get(property, configuration[property]);
-                if (validate(property, preference)) {
-                    return preference;
-                } else {
-                    return configuration[property];
-                }
+            if (schema.properties[property]) {
+                return preferences.get(property);
             }
             if (property === 'onPreferenceChanged') {
                 return onPreferenceChangedEmitter.event;
@@ -87,17 +59,18 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
             }
             throw new Error('unexpected property: ' + property);
         },
+        ownKeys: () => Object.keys(schema.properties),
+        getOwnPropertyDescriptor: (_, property: string) => {
+            if (schema.properties[property]) {
+                return {
+                    enumerable: true,
+                    configurable: true
+                };
+            }
+            return {};
+        },
         set: unsupportedOperation,
         deleteProperty: unsupportedOperation,
         defineProperty: unsupportedOperation
     });
-}
-
-function createConfiguration<T extends Configuration>(schema: PreferenceSchema): T {
-    const configuration = {} as T;
-    // tslint:disable-next-line:forin
-    for (const property in schema.properties) {
-        configuration[property] = deepFreeze(schema.properties[property].default);
-    }
-    return configuration;
 }

@@ -118,6 +118,10 @@
   dependencies:
     samsam "1.3.0"
 
+"@typefox/monaco-editor-core@^0.14.6":
+  version "0.14.6"
+  resolved "https://registry.yarnpkg.com/@typefox/monaco-editor-core/-/monaco-editor-core-0.14.6.tgz#32e378f3430913504ea9c7063944444a04429892"
+
 "@types/base64-arraybuffer@0.1.0":
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/@types/base64-arraybuffer/-/base64-arraybuffer-0.1.0.tgz#739eea0a974d13ae831f96d97d882ceb0b187543"
@@ -6346,20 +6350,15 @@ monaco-css@^2.0.1:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-2.2.0.tgz#644e6e45d05f7704a4e1f563883bef4af9badb1f"
 
-monaco-editor-core@^0.13.2:
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.13.2.tgz#3e0ec54207c891e949dd7ad7851009ca422f7a76"
-
 monaco-html@^2.0.2:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.2.0.tgz#435f2f4ce6e5c7f707fb57e7c8a05b41e5cd1aa0"
 
-monaco-languageclient@next:
-  version "0.8.0-next.3"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.8.0-next.3.tgz#4dda6d8a193a2a62471d36d04f370d6f3fd996dc"
+monaco-languageclient@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.9.0.tgz#4b65684e277edab07625e76eb3d3d93e8f2130fa"
   dependencies:
     glob-to-regexp "^0.3.0"
-    monaco-editor-core "^0.13.2"
     vscode-base-languageclient "4.4.0"
     vscode-jsonrpc "^3.6.2"
     vscode-uri "^1.0.5"
@@ -9384,9 +9383,9 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-language-server@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.0.tgz#f9594408ae7db2b21c1d2179d9470ed65c4b9906"
+typescript-language-server@^0.3.2:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.2.tgz#e7e934b058ebdae6d0de0979c3e37e4fd5e471b2"
   dependencies:
     command-exists "1.2.6"
     commander "^2.11.0"

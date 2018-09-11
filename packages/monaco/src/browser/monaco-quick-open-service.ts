@@ -58,22 +58,39 @@ export class MonacoQuickOpenService extends QuickOpenService {
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
         this.opts = opts;
         this.previousActiveElement = window.document.activeElement;
+        this.widget.show(this.opts.prefix || '');
+        this.setPlaceHolder(opts.inputAriaLabel);
+        this.setPassword(opts.password ? true : false);
+    }
+
+    setPlaceHolder(placeHolder: string): void {
         const widget = this.widget;
-        widget.show(this.opts.prefix || '');
-        widget.setPlaceHolder(opts.inputAriaLabel);
-        if (opts.password) {
-            widget.setPassword(opts.password);
-        } else {
-            widget.setPassword(false);
+        if (widget.inputBox) {
+            widget.inputBox.setPlaceHolder(placeHolder);
+        }
+    }
+
+    setPassword(isPassword: boolean): void {
+        const widget = this.widget;
+        if (widget.inputBox) {
+            widget.inputBox.inputElement.type = isPassword ? 'password' : 'text';
+        }
+    }
+
+    showInputDecoration(decoration: monaco.MarkerSeverity): void {
+        const widget = this.widget;
+        if (widget.inputBox) {
+            const type = decoration === monaco.MarkerSeverity.Info ? 1 :
+                decoration === monaco.MarkerSeverity.Warning ? 2 : 3;
+            widget.inputBox.showMessage({ type, content: '' });
         }
     }
 
     clearInputDecoration(): void {
-        this.widget.clearInputDecoration();
-    }
-
-    showInputDecoration(severity: monaco.Severity): void {
-        this.widget.showInputDecoration(severity);
+        const widget = this.widget;
+        if (widget.inputBox) {
+            widget.inputBox.hideMessage();
+        }
     }
 
     protected get widget(): monaco.quickOpen.QuickOpenWidget {

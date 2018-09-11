@@ -27,6 +27,7 @@ import { MonacoEditorCommandHandlers } from './monaco-command';
 import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoLanguages } from './monaco-languages';
 import { MonacoWorkspace } from './monaco-workspace';
+import { MonacoConfigurations } from './monaco-configurations';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
@@ -42,6 +43,7 @@ import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bind
 import { QuickInputService } from './monaco-quick-input-service';
 import { MonacoSemanticHighlightingService } from './monaco-semantic-highlighting-service';
 import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
+import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -57,11 +59,13 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
 
     bind(MonacoLanguages).toSelf().inSingletonScope();
-    bind(Languages).toDynamicValue(ctx => ctx.container.get(MonacoLanguages));
+    bind(Languages).toService(MonacoLanguages);
 
+    bind(MonacoConfigurations).toSelf().inSingletonScope();
     bind(MonacoWorkspace).toSelf().inSingletonScope();
-    bind(Workspace).toDynamicValue(ctx => ctx.container.get(MonacoWorkspace));
+    bind(Workspace).toService(MonacoWorkspace);
 
+    bind(MonacoBulkEditService).toSelf().inSingletonScope();
     bind(MonacoEditorService).toSelf().inSingletonScope();
     bind(MonacoTextModelService).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();

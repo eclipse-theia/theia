@@ -84,7 +84,7 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
         });
 
         const grammar = require('../../data/html.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

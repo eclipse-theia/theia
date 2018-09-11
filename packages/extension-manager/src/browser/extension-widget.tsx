@@ -120,7 +120,7 @@ export class ExtensionWidget extends ReactWidget {
         const extensionButtonContainer = !extension.dependent ?
             <div className='extensionButtonContainer flexcontainer'> {this.createButton(extension)}</div> : 'installed via ' + extension.dependent;
 
-        return <div key={extension.name} className={this.createExtensionClassName(extension)} onClick={() => this.extensionClick(extension)}>
+        return <div key={extension.name} className={this.createExtensionClassName(extension)} onClick={() => this.extensionClick(extension)} title={this.getTooltip(extension)}>
             <div className={'column flexcontainer extensionInformationContainer'}>
                 <div className='row flexcontainer'>
                     <div className='extensionName noWrapInfo'>{extension.name}</div>
@@ -182,5 +182,9 @@ export class ExtensionWidget extends ReactWidget {
             }}>
             {extension.busy ? <i className='fa fa-spinner fa-pulse fa-fw' /> : btnLabel}
         </div >;
+    }
+
+    protected getTooltip(extension: Extension): string {
+        return `${extension.name}\n${extension.description}`;
     }
 }

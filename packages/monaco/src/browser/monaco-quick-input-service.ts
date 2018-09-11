@@ -121,7 +121,7 @@ export class QuickInputService {
         if (isValid) {
             this.quickOpenService.clearInputDecoration();
         } else {
-            this.quickOpenService.showInputDecoration(monaco.Severity.Error);
+            this.quickOpenService.showInputDecoration(monaco.MarkerSeverity.Error);
         }
     }
 }

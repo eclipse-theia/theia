@@ -63,7 +63,7 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         monaco.languages.setLanguageConfiguration(C_LANGUAGE_ID, this.config);
 
         const platformGrammar = require('../../data/platform.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.c.platform', {
+        registry.registerTextmateGrammarScope('source.c.platform', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -73,7 +73,7 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         });
 
         const cGrammar = require('../../data/c.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.c', {
+        registry.registerTextmateGrammarScope('source.c', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',
@@ -93,7 +93,7 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         monaco.languages.setLanguageConfiguration(CPP_LANGUAGE_ID, this.config);
 
         const cppGrammar = require('../../data/cpp.tmLanguage.json');
-        registry.registerTextMateGrammarScope('source.cpp', {
+        registry.registerTextmateGrammarScope('source.cpp', {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

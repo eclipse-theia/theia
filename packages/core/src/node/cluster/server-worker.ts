@@ -54,15 +54,16 @@ export class ServerWorker {
         this.exit.then(() => console.log(`Server worker has been stopped. ${workerIdentifier}`));
     }
 
-    async stop(): Promise<void> {
+    async stop(): Promise<number> {
         if (this.worker.isConnected) {
             this.worker.disconnect();
             await this.disconnect;
         }
-        if (!this.worker.isDead) {
-            this.worker.kill();
-            await this.exit;
+        if (this.worker.isDead) {
+            return 1;
         }
+        this.worker.kill();
+        return await this.exit;
     }
 
 }

@@ -54,8 +54,8 @@ export class HandlebarsContribution implements LanguageGrammarDefinitionContribu
                 { open: '\'', close: '\'' }
             ]
         });
-        const grammar = require('../../data/csharp.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        const grammar = require('../../data/handlebars.tmLanguage.json');
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

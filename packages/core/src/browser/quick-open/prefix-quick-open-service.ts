@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { QuickOpenService, QuickOpenOptions } from './quick-open-service';
 import { Disposable, DisposableCollection } from '../../common/disposable';
@@ -49,7 +49,7 @@ export interface QuickOpenHandler {
      * the quick open widget matches this handler's prefix.
      * Allows to initialize the model with some initial data.
      */
-    init(): void;
+    init?(): void;
 
     /**
      * A model that should be used by the quick open widget when this handler's prefix is used.
@@ -129,78 +129,15 @@ export class QuickOpenHandlerRegistry implements Disposable {
     }
 }
 
-/**
- * The quick open model just delegates all the calls to another model depending on the used prefix.
- */
-class PrefixModel implements QuickOpenModel {
-
-    /**
-     * Stores the current handler for the quick open widget opened in a prefix-aware mode.
-     * Allows to detect that another model is called.
-     */
-    protected currentHandler: QuickOpenHandler;
-
-    constructor(
-        protected readonly handlers: QuickOpenHandlerRegistry,
-        protected readonly openService: PrefixQuickOpenService
-    ) { }
-
-    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-        const handler = this.handlers.getHandlerOrDefault(lookFor);
-        if (handler === undefined) {
-            const items: QuickOpenItem[] = [];
-            items.push(new QuickOpenItem({
-                label: lookFor.length === 0 ? 'No default handler is registered' : `No handlers matches the prefix ${lookFor} and no default handler is registered.`
-            }));
-            acceptor(items);
-        } else if (handler !== this.currentHandler) {
-            this.onHandlerChanged(handler, lookFor);
-        } else {
-            const handlerModel = handler.getModel();
-            const searchValue = this.handlers.isDefaultHandler(handler) ? lookFor : lookFor.substr(handler.prefix.length);
-            handlerModel.onType(searchValue, items => acceptor(items));
-        }
-    }
-
-    /**
-     * Handles changing the currently used handler as a result of user's typing.
-     * @param handler quick open handler that should be used
-     * @param prefix value that is currently typed in the quick open widget
-     */
-    protected async onHandlerChanged(handler: QuickOpenHandler, prefix: string): Promise<void> {
-        // need to notify the previous handler's model about closing the quick open widget
-        if (this.currentHandler) {
-            const closingHandler = this.currentHandler.getOptions().onClose;
-            if (closingHandler) {
-                closingHandler(true);
-            }
-        }
-        this.currentHandler = handler;
-        await handler.init();
-        // a prefix has been changed, so the quick open widget needs to be reopened with the new options
-        this.openService.open(prefix);
-    }
-}
-
 /** Prefix-based quick open service. */
 @injectable()
 export class PrefixQuickOpenService {
-
-    /**
-     * The internal model which is used when the quick open widget is opened in handling prefix mode.
-     */
-    protected model: QuickOpenModel;
 
     @inject(QuickOpenHandlerRegistry)
     protected readonly handlers: QuickOpenHandlerRegistry;
 
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
-
-    @postConstruct()
-    init() {
-        this.model = new PrefixModel(this.handlers, this);
-    }
 
     /**
      * Opens a quick open widget with the model that handles the known prefixes.
@@ -210,26 +147,67 @@ export class PrefixQuickOpenService {
      */
     open(prefix: string): void {
         const handler = this.handlers.getHandlerOrDefault(prefix);
-        if (handler === undefined) {
-            this.quickOpenService.open(this.model);
+        this.setCurrentHandler(prefix, handler);
+    }
+
+    protected toDisposeCurrent = new DisposableCollection();
+    protected currentHandler: QuickOpenHandler | undefined;
+
+    protected async setCurrentHandler(prefix: string, handler: QuickOpenHandler | undefined): Promise<void> {
+        if (handler !== this.currentHandler) {
+            this.toDisposeCurrent.dispose();
+            this.currentHandler = handler;
+            this.toDisposeCurrent.push(Disposable.create(() => {
+                const closingHandler = handler && handler.getOptions().onClose;
+                if (closingHandler) {
+                    closingHandler(true);
+                }
+            }));
+        }
+        if (!handler) {
+            this.doOpen();
             return;
         }
-
+        if (handler.init) {
+            await handler.init();
+        }
         let optionsPrefix = prefix;
-        // cut the prefix for a default handler
         if (this.handlers.isDefaultHandler(handler) && prefix.startsWith(handler.prefix)) {
             optionsPrefix = prefix.substr(handler.prefix.length);
         }
         const skipPrefix = this.handlers.isDefaultHandler(handler) ? 0 : handler.prefix.length;
-        const handlerOptions = QuickOpenOptions.resolve(handler.getOptions());
-        const placeholder = handlerOptions.placeholder || "Type '?' to get help on the actions you can take from here";
-        const options = QuickOpenOptions.resolve({
+        const handlerOptions = handler.getOptions();
+        this.doOpen({
             prefix: optionsPrefix,
-            placeholder,
-            skipPrefix
-        }, handlerOptions);
-        this.quickOpenService.open(this.model, options);
+            placeholder: "Type '?' to get help on the actions you can take from here",
+            skipPrefix,
+            ...handlerOptions
+        });
     }
+
+    protected doOpen(options?: QuickOpenOptions): void {
+        this.quickOpenService.open({
+            onType: (lookFor, acceptor) => this.onType(lookFor, acceptor)
+        }, options);
+    }
+
+    protected onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+        const handler = this.handlers.getHandlerOrDefault(lookFor);
+        if (handler === undefined) {
+            const items: QuickOpenItem[] = [];
+            items.push(new QuickOpenItem({
+                label: lookFor.length === 0 ? 'No default handler is registered' : `No handlers matches the prefix ${lookFor} and no default handler is registered.`
+            }));
+            acceptor(items);
+        } else if (handler !== this.currentHandler) {
+            this.setCurrentHandler(lookFor, handler);
+        } else {
+            const handlerModel = handler.getModel();
+            const searchValue = this.handlers.isDefaultHandler(handler) ? lookFor : lookFor.substr(handler.prefix.length);
+            handlerModel.onType(searchValue, items => acceptor(items));
+        }
+    }
+
 }
 
 @injectable()

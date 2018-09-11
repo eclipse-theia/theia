@@ -230,7 +230,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
                 isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
                 execute: async uris => {
-                    const node = await this.fileDialogService.show({ title: WorkspaceCommands.ADD_FOLDER.label! });
+                    const node = await this.fileDialogService.showOpenDialog({ title: WorkspaceCommands.ADD_FOLDER.label! });
                     this.addFolderToWorkspace(node);
                 }
             }));

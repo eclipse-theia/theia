@@ -20,13 +20,11 @@ import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
-import { PluginWorker } from './plugin-worker';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
 import { HostedPluginLogViewer } from '../../hosted/browser/hosted-plugin-log-viewer';
 import { HostedPluginManagerClient } from '../../hosted/browser/hosted-plugin-manager-client';
 import { PluginApiFrontendContribution } from './plugin-frontend-contribution';
-import { setUpPluginApi } from './main-context';
 import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from '../../common/plugin-protocol';
 import { ModalNotification } from './dialogs/modal-notification';
 import { PluginWidget } from './plugin-ext-widget';
@@ -42,13 +40,13 @@ import { TextEditorService, TextEditorServiceImpl } from './text-editor-service'
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
 import { PluginContributionHandler } from './plugin-contribution-handler';
+import { ViewRegistry } from './view/view-registry';
 
 export default new ContainerModule(bind => {
     bindHostedPluginPreferences(bind);
 
     bind(ModalNotification).toSelf().inSingletonScope();
 
-    bind(PluginWorker).toSelf().inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
     bind(HostedPluginLogViewer).toSelf().inSingletonScope();
@@ -68,9 +66,6 @@ export default new ContainerModule(bind => {
 
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         onStart(app: FrontendApplication): MaybePromise<void> {
-            const worker = ctx.container.get(PluginWorker);
-
-            setUpPluginApi(worker.rpc, ctx.container);
             ctx.container.get(HostedPluginSupport).checkAndLoadPlugin(ctx.container);
         }
     }));
@@ -94,6 +89,7 @@ export default new ContainerModule(bind => {
         return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
     }).inSingletonScope();
 
-    bind(PluginContributionHandler).toSelf().inSingletonScope();
+    bind(ViewRegistry).toSelf().inSingletonScope();
 
+    bind(PluginContributionHandler).toSelf().inSingletonScope();
 });

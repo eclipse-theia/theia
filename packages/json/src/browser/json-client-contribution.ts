@@ -21,8 +21,8 @@ import {
     Languages,
     LanguageClientFactory,
     ILanguageClient,
-    DidChangeConfigurationNotification,
-    DocumentSelector } from '@theia/languages/lib/browser';
+    DocumentSelector
+} from '@theia/languages/lib/browser';
 import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME, JSONC_LANGUAGE_ID } from '../common';
 import { ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
@@ -53,6 +53,10 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         return [this.id, JSONC_LANGUAGE_ID];
     }
 
+    protected get configurationSection(): string[] {
+        return [this.id];
+    }
+
     protected onReady(languageClient: ILanguageClient): void {
         // handle content request
         languageClient.onRequest('vscode/content', async (uriPath: string) => {
@@ -62,23 +66,7 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
             return text;
         });
         super.onReady(languageClient);
-        setTimeout(() => {
-            this.enableFormatting();
-            this.initializeJsonSchemaAssociations();
-        });
-    }
-
-    protected async enableFormatting(): Promise<void> {
-        const client = await this.languageClient;
-        client.sendNotification(DidChangeConfigurationNotification.type, {
-            settings: {
-                json: {
-                    format: {
-                        enable: true
-                    }
-                }
-            }
-        });
+        setTimeout(() => this.initializeJsonSchemaAssociations());
     }
 
     protected async initializeJsonSchemaAssociations(): Promise<void> {

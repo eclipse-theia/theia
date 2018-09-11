@@ -31,7 +31,7 @@ import {
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { TreeProps } from '@theia/core/lib/browser';
-import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
+import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path, CancellationTokenSource, Emitter, Event } from '@theia/core';
@@ -72,8 +72,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     private cancelIndicator = new CancellationTokenSource();
 
-    protected changeEmitter: Emitter<Map<string, SearchInWorkspaceResultNode>>;
-    protected focusInputEmitter: Emitter<any>;
+    protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceResultNode>>();
+    protected focusInputEmitter = new Emitter<any>();
 
     @inject(SearchInWorkspaceService) protected readonly searchService: SearchInWorkspaceService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
@@ -105,6 +105,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
         }));
 
+        this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
         this.toDispose.push(model.onNodeRefreshed(() => this.changeEmitter.fire(this.resultTree)));
     }
 
@@ -121,8 +122,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
         });
 
-        this.changeEmitter = new Emitter();
-        this.focusInputEmitter = new Emitter();
+        this.toDispose.push(this.changeEmitter);
+        this.toDispose.push(this.focusInputEmitter);
 
         this.toDispose.push(this.editorManager.onActiveEditorChanged(() => {
             this.updateCurrentEditorDecorations();
@@ -153,6 +154,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
+        this.resultTree.clear();
         this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
@@ -167,7 +169,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     return;
                 }
                 const { name, path } = this.filenameAndPath(result.file);
-                let resultElement = this.resultTree.get(result.file);
+                const tree = this.resultTree;
+                let resultElement = tree.get(result.file);
 
                 if (resultElement) {
                     const resultLine = this.createResultLineNode(result, resultElement);
@@ -191,7 +194,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             file: result.file
                         };
                         resultElement.children.push(this.createResultLineNode(result, resultElement));
-                        this.resultTree.set(result.file, resultElement);
+                        tree.set(result.file, resultElement);
                     }
                 }
             },
@@ -423,7 +426,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         } else {
             fileUri = new URI(node.file).withScheme('file');
         }
-        const editorWidget = await this.editorManager.open(fileUri, {
+
+        const opts: EditorOpenerOptions | undefined = !DiffUris.isDiffUri(fileUri) ? {
             selection: {
                 start: {
                     line: node.line - 1,
@@ -435,9 +439,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 }
             },
             mode: 'reveal'
-        });
+        } : undefined;
 
-        this.decorateEditor(resultNode, editorWidget);
+        const editorWidget = await this.editorManager.open(fileUri, opts);
+
+        if (!DiffUris.isDiffUri(fileUri)) {
+            this.decorateEditor(resultNode, editorWidget);
+        }
 
         return editorWidget;
     }
@@ -461,14 +469,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected decorateEditor(node: SearchInWorkspaceResultNode | undefined, editorWidget: EditorWidget) {
-        const key = `${editorWidget.editor.uri.toString()}#search-in-workspace-matches`;
-        const oldDecorations = this.appliedDecorations.get(key) || [];
-        const newDecorations = this.createEditorDecorations(node);
-        const appliedDecorations = editorWidget.editor.deltaDecorations({
-            newDecorations,
-            oldDecorations,
-        });
-        this.appliedDecorations.set(key, appliedDecorations);
+        if (!DiffUris.isDiffUri(editorWidget.editor.uri)) {
+            const key = `${editorWidget.editor.uri.toString()}#search-in-workspace-matches`;
+            const oldDecorations = this.appliedDecorations.get(key) || [];
+            const newDecorations = this.createEditorDecorations(node);
+            const appliedDecorations = editorWidget.editor.deltaDecorations({
+                newDecorations,
+                oldDecorations,
+            });
+            this.appliedDecorations.set(key, appliedDecorations);
+        }
     }
 
     protected createEditorDecorations(resultNode: SearchInWorkspaceResultNode | undefined): EditorDecoration[] {

@@ -56,7 +56,7 @@ describe('master-process', () => {
      */
     it('start', async function () {
         this.timeout(10000);
-        const master = new MasterProcess();
+        const master = new MasterProcess(5000);
 
         prepareTestWorker('restart');
         const restartWorker = await master.start();

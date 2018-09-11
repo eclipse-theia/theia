@@ -1,9 +1,9 @@
 {
   "name": "@theia/textmate-grammars",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Theia - Textmate Grammars",
   "dependencies": {
-    "@theia/monaco": "^0.3.13"
+    "@theia/monaco": "^0.3.14"
   },
   "publishConfig": {
     "access": "public"
@@ -39,7 +39,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.13"
+    "@theia/ext-scripts": "^0.3.14"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

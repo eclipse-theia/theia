@@ -62,7 +62,7 @@ export class CoffeescriptContribution implements LanguageGrammarDefinitionContri
             }
         });
         const grammar = require('../../data/coffeescript.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

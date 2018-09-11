@@ -33,5 +33,4 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
-
 }

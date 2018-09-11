@@ -59,7 +59,7 @@ export class LuaContribution implements LanguageGrammarDefinitionContribution {
             }
         });
         const grammar = require('../../data/lua.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

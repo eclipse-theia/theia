@@ -16,16 +16,27 @@
 
 import { injectable } from 'inversify';
 import { RegistryOptions, IGrammarConfiguration } from 'monaco-textmate';
+import { TokenizerOption } from './textmate-tokenizer';
+
+export interface TextmateGrammarConfiguration extends IGrammarConfiguration {
+
+    /**
+     * Optional options to further refine the tokenization of the grammar.
+     */
+    readonly tokenizerOption?: TokenizerOption;
+
+}
 
 @injectable()
 export class TextmateRegistry {
+
     readonly scopeToProvider = new Map<string, RegistryOptions>();
-    readonly languageToConfig = new Map<string, IGrammarConfiguration>();
+    readonly languageToConfig = new Map<string, TextmateGrammarConfiguration>();
     readonly languageIdToScope = new Map<string, string>();
 
-    registerTextMateGrammarScope(scope: string, provider: RegistryOptions): void {
+    registerTextmateGrammarScope(scope: string, provider: RegistryOptions): void {
         if (this.scopeToProvider.has(scope)) {
-            console.warn(new Error(`a registered grammar provider for '${scope}' scope is overriden`));
+            console.warn(new Error(`a registered grammar provider for '${scope}' scope is overridden`));
         }
         this.scopeToProvider.set(scope, provider);
     }
@@ -46,14 +57,14 @@ export class TextmateRegistry {
         return this.languageIdToScope.get(languageId);
     }
 
-    registerGrammarConfiguration(languageId: string, config: IGrammarConfiguration): void {
+    registerGrammarConfiguration(languageId: string, config: TextmateGrammarConfiguration): void {
         if (this.languageToConfig.has(languageId)) {
-            console.warn(new Error(`a registered grammar configuration for '${languageId}' language is overriden`));
+            console.warn(new Error(`a registered grammar configuration for '${languageId}' language is overridden`));
         }
         this.languageToConfig.set(languageId, config);
     }
 
-    getGrammarConfiguration(languageId: string): IGrammarConfiguration {
+    getGrammarConfiguration(languageId: string): TextmateGrammarConfiguration {
         return this.languageToConfig.get(languageId) || {};
     }
 }

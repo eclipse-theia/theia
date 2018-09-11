@@ -50,13 +50,12 @@ export class PreferencesDecorator implements TreeDecorator {
                 tooltip: preferenceValue.description,
                 captionSuffixes: [
                     {
-                        data: storedValue || preferenceValue.default ? ': ' + (storedValue || preferenceValue.default) : undefined,
+                        data: storedValue !== undefined ? ': ' + storedValue : preferenceValue.default !== undefined ? ': ' + preferenceValue.default : undefined,
                     },
                     {
                         data: ' ' + preferenceValue.description,
                         fontData: {color: 'var(--theia-ui-font-color2)'}
-                    }],
-                fontData: this.preferencesService.get(preferenceName) ? {style: 'bold'} : undefined
+                    }]
             }] as [string, TreeDecoration.Data];
         }));
         this.emitter.fire(() => this.preferencesDecorations);

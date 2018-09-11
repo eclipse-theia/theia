@@ -15,6 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
+import { UriComponents } from '../common/uri-components';
+
 // Should contains internal Plugin API types
 
 export interface Range {
@@ -134,4 +136,37 @@ export interface CompletionDto extends Completion {
 export interface CompletionResultDto extends IdObject {
     completions: CompletionDto[];
     incomplete?: boolean;
+}
+
+export interface MarkerData {
+    code?: string;
+    severity: MarkerSeverity;
+    message: string;
+    source?: string;
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+    relatedInformation?: RelatedInformation[];
+    tags?: MarkerTag[];
+}
+
+export interface RelatedInformation {
+    resource: UriComponents;
+    message: string;
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+}
+
+export enum MarkerSeverity {
+    Hint = 1,
+    Info = 2,
+    Warning = 4,
+    Error = 8,
+}
+
+export enum MarkerTag {
+    Unnecessary = 1,
 }

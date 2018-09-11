@@ -26,8 +26,11 @@ import { TypescriptGrammarContribution } from './typescript-language-config';
 import { JavascriptGrammarContribution } from './javascript-language-config';
 import { TypeScriptFrontendContribution } from './typescript-frontend-contribution';
 import { TypeScriptEditorTextFocusContext } from './typescript-keybinding-contexts';
+import { bindTypescriptPreferences } from './typescript-preferences';
 
 export default new ContainerModule(bind => {
+    bindTypescriptPreferences(bind);
+
     bind(TypeScriptClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toService(TypeScriptClientContribution);
 

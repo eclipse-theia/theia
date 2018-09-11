@@ -1,14 +1,14 @@
 {
   "name": "@theia/task",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Theia - Task extension. This extension adds support for executing raw or terminal processes in the backend.",
   "dependencies": {
-    "@theia/core": "^0.3.13",
-    "@theia/markers": "^0.3.13",
-    "@theia/process": "^0.3.13",
-    "@theia/terminal": "^0.3.13",
-    "@theia/variable-resolver": "^0.3.13",
-    "@theia/workspace": "^0.3.13",
+    "@theia/core": "^0.3.14",
+    "@theia/markers": "^0.3.14",
+    "@theia/process": "^0.3.14",
+    "@theia/terminal": "^0.3.14",
+    "@theia/variable-resolver": "^0.3.14",
+    "@theia/workspace": "^0.3.14",
     "jsonc-parser": "^1.0.1"
   },
   "publishConfig": {
@@ -45,7 +45,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.13"
+    "@theia/ext-scripts": "^0.3.14"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

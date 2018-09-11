@@ -63,7 +63,7 @@ export class PowershellContribution implements LanguageGrammarDefinitionContribu
             }
         });
         const grammar = require('../../data/powershell.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

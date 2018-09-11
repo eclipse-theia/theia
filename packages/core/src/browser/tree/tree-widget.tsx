@@ -30,7 +30,7 @@ import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
-import { List, ListRowRenderer } from 'react-virtualized';
+import { List, ListRowRenderer, ScrollParams } from 'react-virtualized';
 import { TopDownTreeIterator } from './tree-iterator';
 
 const debounce = require('lodash.debounce');
@@ -241,10 +241,15 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 getNodeRowHeight={this.getNodeRowHeight}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
+                handleScroll={this.handleScroll}
             />;
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
+    }
+
+    protected readonly handleScroll = (info: ScrollParams) => {
+        this.node.scrollTop = info.scrollTop;
     }
 
     protected readonly renderNodeRow = (row: TreeWidget.NodeRow) => this.doRenderNodeRow(row);
@@ -418,9 +423,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }
             const style = this.applyFontStyles({}, affix.fontData);
             const className = classes.join(' ');
+            const key = node.id + '_' + i;
             const attrs = {
                 className,
-                style
+                style,
+                key
             };
             children.push(React.createElement('div', attrs, affix.data));
         }
@@ -565,6 +572,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addKeyListener(this.node, up, event => this.handleUp(event));
         this.addKeyListener(this.node, down, event => this.handleDown(event));
         this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
+        this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
+            if (this.view && this.view.list && this.view.list.Grid) {
+                const { scrollTop } = e.target;
+                this.view.list.Grid.handleScrollEvent({ scrollTop });
+            }
+        });
     }
 
     protected async handleLeft(event: KeyboardEvent): Promise<void> {
@@ -751,13 +764,14 @@ export namespace TreeWidget {
         height: number
         scrollToRow?: number
         rows: NodeRow[]
+        handleScroll: (info: ScrollParams) => void
         getNodeRowHeight: (row: NodeRow) => number
         renderNodeRow: (row: NodeRow) => React.ReactNode
     }
     export class View extends React.Component<ViewProps> {
         list: List | undefined;
         render(): React.ReactNode {
-            const { rows, width, height, scrollToRow } = this.props;
+            const { rows, width, height, scrollToRow, handleScroll } = this.props;
             return <List
                 ref={list => this.list = (list || undefined)}
                 width={width}
@@ -766,7 +780,12 @@ export namespace TreeWidget {
                 rowHeight={this.getNodeRowHeight}
                 rowRenderer={this.renderTreeRow}
                 scrollToIndex={scrollToRow}
+                onScroll={handleScroll}
                 tabIndex={-1}
+                style={{
+                    overflowY: 'visible',
+                    overflowX: 'visible'
+                }}
             />;
         }
         protected renderTreeRow: ListRowRenderer = ({ key, index, style }) => {

@@ -27,7 +27,7 @@ import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
     PreferenceService, PreferenceScope,
-    PreferenceProviders, PreferenceServiceImpl, PreferenceProvider
+    PreferenceProviderProvider, PreferenceServiceImpl, PreferenceProvider, bindPreferenceSchemaProvider
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -62,11 +62,12 @@ const mockWorkspacePreferenceEmitter = new Emitter<void>();
 
 before(async () => {
     testContainer = new Container();
+    bindPreferenceSchemaProvider(testContainer.bind.bind(testContainer));
 
     testContainer.bind(UserPreferenceProvider).toSelf().inSingletonScope();
     testContainer.bind(WorkspacePreferenceProvider).toSelf().inSingletonScope();
 
-    testContainer.bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => {
+    testContainer.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
         const userProvider = ctx.container.get(UserPreferenceProvider);
         const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
 
@@ -143,7 +144,7 @@ describe('Preference Service', function () {
     beforeEach(() => {
         prefService = testContainer.get<PreferenceService>(PreferenceService);
         const impl = testContainer.get(PreferenceServiceImpl);
-        impl.onStart();
+        impl.initialize();
     });
 
     afterEach(() => {
@@ -319,10 +320,12 @@ describe('Preference Service', function () {
         }
 
         const container = new Container();
-        container.bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => new SlowProvider());
+        bindPreferenceSchemaProvider(container.bind.bind(container));
+        container.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => new SlowProvider());
         container.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
         const service = container.get<PreferenceServiceImpl>(PreferenceServiceImpl);
+        service.initialize();
         await service.ready;
         const n = service.getNumber('mypref');
         expect(n).to.equal(2);

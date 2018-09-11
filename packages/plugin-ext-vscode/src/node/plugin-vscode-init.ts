@@ -14,15 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { BackendInitializationFn, createAPI, PluginMetadata } from '@theia/plugin-ext';
+import * as theia from '@theia/plugin';
+import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 
-export const doInitialization: BackendInitializationFn = (rpc: any, pluginMetadata: PluginMetadata) => {
-    const module = require('module');
-    const vscodeModuleName = 'vscode';
-    const vscode = createAPI(rpc);
+const pluginsApiImpl = new Map<string, typeof theia>();
+const plugins = new Array<Plugin>();
+let defaultApi: typeof theia;
+let isLoadOverride = false;
+let pluginApiFactory: PluginAPIFactory;
+
+export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
+    const vscode = apiFactory(plugin);
 
     // register the commands that are in the package.json file
-    const contributes: any = pluginMetadata.source.contributes;
+    const contributes: any = plugin.rawModel.contributes;
     if (contributes && contributes.commands) {
         contributes.commands.forEach((commandItem: any) => {
             vscode.commands.registerCommand({ id: commandItem.command, label: commandItem.title });
@@ -37,27 +42,54 @@ export const doInitialization: BackendInitializationFn = (rpc: any, pluginMetada
         }
     };
 
-    // add theia into global goal as 'vscode'
-    const g = global as any;
-    g[vscodeModuleName] = vscode;
-
-    // add vscode object as module into npm cache
-    require.cache[vscodeModuleName] = {
-        id: vscodeModuleName,
-        filename: vscodeModuleName,
-        loaded: true,
-        exports: g[vscodeModuleName]
-    };
-
-    // save original resolve method
-    const internalResolve = module._resolveFilename;
-
-    // if we try to resolve vscode module, return the filename entry to use cache.
-    module._resolveFilename = (request: string, parent: {}) => {
-        if (vscodeModuleName === request) {
-            return request;
+    // use Theia plugin api instead vscode extensions
+    (<any>vscode).extensions = {
+        get all(): any[] {
+            return vscode.plugins.all;
+        },
+        getExtension(pluginId: string): any | undefined {
+            return vscode.plugins.getPlugin(pluginId);
         }
-        const retVal = internalResolve(request, parent);
-        return retVal;
     };
+
+    pluginsApiImpl.set(plugin.model.id, vscode);
+    plugins.push(plugin);
+
+    if (!isLoadOverride) {
+        overrideInternalLoad();
+        isLoadOverride = true;
+        pluginApiFactory = apiFactory;
+    }
 };
+
+function overrideInternalLoad(): void {
+    const module = require('module');
+    const vscodeModuleName = 'vscode';
+    // save original load method
+    const internalLoad = module._load;
+
+    // if we try to resolve theia module, return the filename entry to use cache.
+    // tslint:disable-next-line:no-any
+    module._load = function (request: string, parent: any, isMain: {}) {
+        if (request !== vscodeModuleName) {
+            return internalLoad.apply(this, arguments);
+        }
+
+        const plugin = findPlugin(parent.filename);
+        if (plugin) {
+            const apiImpl = pluginsApiImpl.get(plugin.model.id);
+            return apiImpl;
+        }
+
+        if (!defaultApi) {
+            console.warn(`Could not identify plugin for 'Theia' require call from ${parent.filename}`);
+            defaultApi = pluginApiFactory(emptyPlugin);
+        }
+
+        return defaultApi;
+    };
+}
+
+function findPlugin(filePath: string): Plugin | undefined {
+    return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+}

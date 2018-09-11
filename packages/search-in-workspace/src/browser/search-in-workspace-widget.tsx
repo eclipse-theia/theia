@@ -20,6 +20,7 @@ import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { Disposable } from '@theia/core/lib/common';
 
 export interface SearchFieldState {
     className: string;
@@ -109,6 +110,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.toDispose.push(this.resultTreeWidget.onFocusInput(b => {
             this.focusInputField();
         }));
+
+        this.toDispose.push(this.resultTreeWidget);
     }
 
     storeState(): object {
@@ -156,6 +159,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         super.onAfterAttach(msg);
         ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}</React.Fragment>, this.searchFormContainer);
         Widget.attach(this.resultTreeWidget, this.contentNode);
+        this.toDisposeOnDetach.push(Disposable.create(() => {
+            Widget.detach(this.resultTreeWidget);
+        }));
     }
 
     protected onUpdateRequest(msg: Message) {

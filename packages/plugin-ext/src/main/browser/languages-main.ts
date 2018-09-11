@@ -1,4 +1,3 @@
-
 /********************************************************************************
  * Copyright (C) 2018 Red Hat, Inc. and others.
  *
@@ -23,9 +22,10 @@ import {
     MAIN_RPC_CONTEXT,
     LanguagesExt
 } from '../../api/plugin-api';
-import { SerializedDocumentFilter } from '../../api/model';
+import { SerializedDocumentFilter, MarkerData } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
+import { UriComponents } from '@theia/plugin-ext/src/common/uri-components';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
@@ -80,8 +80,58 @@ export class LanguagesMainImpl implements LanguagesMain {
                 ? (model, position, suggestion, token) => Promise.resolve(this.proxy.$resolveCompletionItem(handle, model.uri, position, suggestion))
                 : undefined
         }));
-
     }
+
+    $clearDiagnostics(id: string): void {
+        const markers = monaco.editor.getModelMarkers({ owner: id });
+        const clearedEditors = new Set<string>(); // uri to resource
+        for (const marker of markers) {
+            const uri = marker.resource;
+            const uriString = uri.toString();
+            if (!clearedEditors.has(uriString)) {
+                const textModel = monaco.editor.getModel(uri);
+                monaco.editor.setModelMarkers(textModel, id, []);
+                clearedEditors.add(uriString);
+            }
+        }
+    }
+
+    $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void {
+        for (const [uriComponents, markers] of delta) {
+            const uri = monaco.Uri.revive(uriComponents);
+            const textModel = monaco.editor.getModel(uri);
+            monaco.editor.setModelMarkers(textModel, id, markers.map(reviveMarker));
+        }
+    }
+}
+
+function reviveMarker(marker: MarkerData): monaco.editor.IMarkerData {
+    const monacoMarker: monaco.editor.IMarkerData = {
+        code: marker.code,
+        severity: marker.severity,
+        message: marker.message,
+        source: marker.source,
+        startLineNumber: marker.startLineNumber,
+        startColumn: marker.startColumn,
+        endLineNumber: marker.endLineNumber,
+        endColumn: marker.endColumn,
+        relatedInformation: undefined
+    };
+    if (marker.relatedInformation) {
+        monacoMarker.relatedInformation = [];
+        for (const ri of marker.relatedInformation) {
+            monacoMarker.relatedInformation.push({
+                resource: monaco.Uri.revive(ri.resource),
+                message: ri.message,
+                startLineNumber: ri.startLineNumber,
+                startColumn: ri.startColumn,
+                endLineNumber: ri.endLineNumber,
+                endColumn: ri.endColumn
+            });
+        }
+    }
+
+    return monacoMarker;
 }
 
 function reviveRegExp(regExp?: SerializedRegExp): RegExp | undefined {

@@ -60,7 +60,7 @@ export class VbContribution implements LanguageGrammarDefinitionContribution {
             }
         });
         const grammar = require('../../data/vb.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

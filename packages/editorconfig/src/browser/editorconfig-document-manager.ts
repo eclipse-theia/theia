@@ -14,8 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { injectable, inject, postConstruct } from 'inversify';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { TextDocumentSaveReason } from '@theia/languages/lib/browser';
 import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { EditorconfigService } from '../common/editorconfig-interface';
 import { KnownProps } from 'editorconfig';
@@ -66,7 +67,7 @@ export class EditorconfigDocumentManager {
                     const properties = this.properties[uri];
 
                     const edits = [];
-                    edits.push(...this.getEditsTrimmingTrailingWhitespaces(monacoEditor, properties));
+                    edits.push(...this.getEditsTrimmingTrailingWhitespaces(monacoEditor, properties, event.reason));
 
                     const edit = this.getEditInsertingFinalNewLine(monacoEditor, properties);
                     if (edit) {
@@ -216,8 +217,16 @@ export class EditorconfigDocumentManager {
      * @param editor editor
      * @param properties editorconfig properties
      */
-    private getEditsTrimmingTrailingWhitespaces(editor: MonacoEditor, properties: KnownProps): monaco.editor.IIdentifiedSingleEditOperation[] {
+    private getEditsTrimmingTrailingWhitespaces(editor: MonacoEditor, properties: KnownProps, saveReason?: TextDocumentSaveReason): monaco.editor.IIdentifiedSingleEditOperation[] {
         const edits = [];
+
+        if (MonacoEditor.get(this.editorManager.activeEditor) === editor) {
+            const trimReason = (saveReason !== TextDocumentSaveReason.Manual) ? 'auto-save' : undefined;
+            editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
+                reason: trimReason
+            });
+            return [];
+        }
 
         if (this.isSet(properties.trim_trailing_whitespace)) {
             const lines = editor.document.lineCount;

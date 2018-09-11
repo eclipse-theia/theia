@@ -1,9 +1,9 @@
 {
   "name": "@theia/plugin-ext-vscode",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Theia - Plugin Extension for VsCode",
   "dependencies": {
-    "@theia/plugin-ext": "^0.3.13"
+    "@theia/plugin-ext": "^0.3.14"
   },
   "publishConfig": {
     "access": "public"
@@ -38,7 +38,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.13"
+    "@theia/ext-scripts": "^0.3.14"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

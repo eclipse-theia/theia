@@ -87,6 +87,7 @@ export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
  */
 export interface DebugAdapterFactory {
     start(executable: DebugAdapterExecutable): CommunicationProvider;
+    connect(debugServerPort: number): CommunicationProvider;
 }
 
 /**

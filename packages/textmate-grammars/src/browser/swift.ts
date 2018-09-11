@@ -57,7 +57,7 @@ export class SwiftContribution implements LanguageGrammarDefinitionContribution 
             ]
         });
         const grammar = require('../../data/swift.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

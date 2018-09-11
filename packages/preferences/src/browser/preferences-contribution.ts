@@ -67,25 +67,15 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         const userUri = this.userPreferenceProvider.getUri();
         const content = await this.userStorageService.readContents(userUri);
         if (content === '') {
-            await this.userStorageService.saveContents(userUri, this.getPreferenceTemplateForScope('user'));
+            await this.userStorageService.saveContents(userUri, '');
         }
 
         const wsUri = await this.workspacePreferenceProvider.getUri();
-        if (!wsUri) {
-            return;
-        }
-        if (!(await this.filesystem.exists(wsUri.toString()))) {
-            await this.filesystem.createFile(wsUri.toString(), { content: this.getPreferenceTemplateForScope('workspace') });
+        if (wsUri && !await this.filesystem.exists(wsUri.toString())) {
+            await this.filesystem.createFile(wsUri.toString());
         }
 
         super.openView({ activate: true });
     }
 
-    private getPreferenceTemplateForScope(scope: string): string {
-        return `/*
-Preference file for ${scope} scope
-
-Please refer to the documentation online (https://github.com/theia-ide/theia/blob/master/packages/preferences/README.md) to learn how preferences work in Theia
-*/`;
-    }
 }

@@ -14,11 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { JSONExt } from '@phosphor/coreutils';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { FrontendApplicationContribution } from '../../browser';
 import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
+import { Deferred } from '../../common/promise-util';
 import { PreferenceProvider } from './preference-provider';
+import { PreferenceSchemaProvider } from './preference-contribution';
 
 export enum PreferenceScope {
     User,
@@ -35,6 +39,10 @@ export interface PreferenceChange {
     readonly oldValue?: any;
 }
 
+export interface PreferenceChanges {
+    [preferenceName: string]: PreferenceChange
+}
+
 export const PreferenceService = Symbol('PreferenceService');
 export interface PreferenceService extends Disposable {
     readonly ready: Promise<void>;
@@ -45,104 +53,123 @@ export interface PreferenceService extends Disposable {
     onPreferenceChanged: Event<PreferenceChange>;
 }
 
-export const PreferenceProviders = Symbol('PreferenceProviders');
-export type PreferenceProviders = (scope: PreferenceScope) => PreferenceProvider;
+/**
+ * We cannot load providers directly in the case if they depend on `PreferenceService` somehow.
+ * It allows to load them lazilly after DI is configured.
+ */
+export const PreferenceProviderProvider = Symbol('PreferenceProviderProvider');
+export type PreferenceProviderProvider = (scope: PreferenceScope) => PreferenceProvider;
 
 @injectable()
 export class PreferenceServiceImpl implements PreferenceService, FrontendApplicationContribution {
 
     protected preferences: { [key: string]: any } = {};
 
-    protected readonly toDispose = new DisposableCollection();
     protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     readonly onPreferenceChanged = this.onPreferenceChangedEmitter.event;
 
-    @inject(PreferenceProviders)
-    protected readonly getPreferenceProvider: PreferenceProviders;
+    protected readonly onPreferencesChangedEmitter = new Emitter<PreferenceChanges>();
+    readonly onPreferencesChanged = this.onPreferencesChangedEmitter.event;
 
-    constructor() {
-        this.toDispose.push(this.onPreferenceChangedEmitter);
-    }
+    protected readonly toDispose = new DisposableCollection(this.onPreferenceChangedEmitter, this.onPreferencesChangedEmitter);
 
-    protected _preferenceProviders: PreferenceProvider[] | undefined;
-    protected get preferenceProviders(): PreferenceProvider[] {
-        if (!this._preferenceProviders) {
-            this._preferenceProviders = [
-                this.getPreferenceProvider(PreferenceScope.User),
-                this.getPreferenceProvider(PreferenceScope.Workspace)
-            ];
-        }
-        return this._preferenceProviders;
-    }
+    @inject(PreferenceSchemaProvider)
+    protected readonly schema: PreferenceSchemaProvider;
 
-    onStart() {
-        // tslint:disable-next-line:no-unused-expression
-        this.ready;
-    }
+    @inject(PreferenceProviderProvider)
+    protected readonly providerProvider: PreferenceProviderProvider;
 
-    protected _ready: Promise<void> | undefined;
-    get ready(): Promise<void> {
-        if (!this._ready) {
-            this._ready = new Promise(async (resolve, reject) => {
-                this.toDispose.push(Disposable.create(() => reject()));
-                for (const preferenceProvider of this.preferenceProviders) {
-                    this.toDispose.push(preferenceProvider);
-                    preferenceProvider.onDidPreferencesChanged(event => this.reconcilePreferences());
-                }
+    protected readonly providers: PreferenceProvider[] = [];
 
-                // Wait until all the providers are ready to provide preferences.
-                await Promise.all(this.preferenceProviders.map(p => p.ready));
-
-                this.reconcilePreferences();
-                resolve();
-            });
-        }
-        return this._ready;
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(Disposable.create(() => this._ready.reject()));
+        this.providers.push(this.schema);
+        this.preferences = this.parsePreferences();
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    protected reconcilePreferences(): void {
-        const preferenceChanges: { [preferenceName: string]: PreferenceChange } = {};
-        const deleted = new Set(Object.keys(this.preferences));
+    protected readonly _ready = new Deferred<void>();
+    get ready(): Promise<void> {
+        return this._ready.promise;
+    }
 
-        for (const preferenceProvider of this.preferenceProviders) {
-            const preferences = preferenceProvider.getPreferences();
+    initialize(): void {
+        this.initializeProviders();
+    }
+    protected async initializeProviders(): Promise<void> {
+        try {
+            const providers = this.createProviders();
+            this.toDispose.pushAll(providers);
+            await Promise.all(providers.map(p => p.ready));
+            if (this.toDispose.disposed) {
+                return;
+            }
+            this.providers.push(...providers);
+            for (const provider of providers) {
+                provider.onDidPreferencesChanged(_ => this.reconcilePreferences());
+            }
+            this.reconcilePreferences();
+            this._ready.resolve();
+        } catch (e) {
+            this._ready.reject(e);
+        }
+    }
+    protected createProviders(): PreferenceProvider[] {
+        return [
+            this.providerProvider(PreferenceScope.User),
+            this.providerProvider(PreferenceScope.Workspace)
+        ];
+    }
+
+    protected reconcilePreferences(): void {
+        const changes: PreferenceChanges = {};
+        const deleted = new Set(Object.keys(this.preferences));
+        const preferences = this.parsePreferences();
+        // tslint:disable-next-line:forin
+        for (const preferenceName in preferences) {
+            deleted.delete(preferenceName);
+            const oldValue = this.preferences[preferenceName];
+            const newValue = preferences[preferenceName];
+            if (oldValue !== undefined) {
+                if (!JSONExt.deepEqual(oldValue, newValue)) {
+                    changes[preferenceName] = { preferenceName, newValue, oldValue };
+                    this.preferences[preferenceName] = deepFreeze(newValue);
+                }
+            } else {
+                changes[preferenceName] = { preferenceName, newValue };
+                this.preferences[preferenceName] = deepFreeze(newValue);
+            }
+        }
+        for (const preferenceName of deleted) {
+            const oldValue = this.preferences[preferenceName];
+            changes[preferenceName] = { preferenceName, oldValue };
+            this.preferences[preferenceName] = undefined;
+        }
+        this.onPreferencesChangedEmitter.fire(changes);
+        // tslint:disable-next-line:forin
+        for (const preferenceName in changes) {
+            this.onPreferenceChangedEmitter.fire(changes[preferenceName]);
+        }
+    }
+    protected parsePreferences(): { [name: string]: any } {
+        const result: { [name: string]: any } = {};
+        for (const provider of this.providers) {
+            const preferences = provider.getPreferences();
             // tslint:disable-next-line:forin
             for (const preferenceName in preferences) {
-                deleted.delete(preferenceName);
-                const oldValue = this.preferences[preferenceName];
-                const newValue = deepFreeze(preferences[preferenceName]);
-                if (oldValue !== undefined) {
-                    /* Value changed */
-                    if (!JSONExt.deepEqual(oldValue, newValue)) {
-                        preferenceChanges[preferenceName] = { preferenceName, newValue, oldValue };
-                        this.preferences[preferenceName] = newValue;
-                    }
-                    /* Value didn't change - Do nothing */
-                } else {
-                    /* New value without old value */
-                    preferenceChanges[preferenceName] = { preferenceName, newValue };
-                    this.preferences[preferenceName] = newValue;
+                if (this.schema.validate(preferenceName, preferences[preferenceName])) {
+                    result[preferenceName] = preferences[preferenceName];
                 }
             }
         }
-
-        /* Deleted values */
-        for (const preferenceName of deleted) {
-            const oldValue = this.preferences[preferenceName];
-            preferenceChanges[preferenceName] = { preferenceName, oldValue };
-            this.preferences[preferenceName] = undefined;
-        }
-        // tslint:disable-next-line:forin
-        for (const preferenceName in preferenceChanges) {
-            this.onPreferenceChangedEmitter.fire(preferenceChanges[preferenceName]);
-        }
+        return result;
     }
 
-    getPreferences(): { [key: string]: any } {
+    getPreferences(): { [key: string]: Object | undefined } {
         return this.preferences;
     }
 
@@ -158,7 +185,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     }
 
     set(preferenceName: string, value: any, scope: PreferenceScope = PreferenceScope.User): Promise<void> {
-        return this.getPreferenceProvider(scope).setPreference(preferenceName, value);
+        return this.providerProvider(scope).setPreference(preferenceName, value);
     }
 
     getBoolean(preferenceName: string): boolean | undefined;

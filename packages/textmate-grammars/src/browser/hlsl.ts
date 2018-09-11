@@ -53,7 +53,7 @@ export class HlslContribution implements LanguageGrammarDefinitionContribution {
             ]
         });
         const grammar = require('../../data/hlsl.tmLanguage.json');
-        registry.registerTextMateGrammarScope(this.scopeName, {
+        registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
                     format: 'json',

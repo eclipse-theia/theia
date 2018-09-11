@@ -27,6 +27,7 @@ export class VsCodePluginScanner implements PluginScanner {
 
     getModel(plugin: PluginPackage): PluginModel {
         return {
+            id: `${plugin.publisher}.${plugin.name}`,
             name: plugin.name,
             publisher: plugin.publisher,
             version: plugin.version,

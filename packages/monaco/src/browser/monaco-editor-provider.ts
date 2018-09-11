@@ -31,14 +31,18 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoWorkspace } from './monaco-workspace';
+import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 
 @injectable()
 export class MonacoEditorProvider {
 
+    @inject(MonacoBulkEditService)
+    protected readonly bulkEditService: MonacoBulkEditService;
+
     constructor(
-        @inject(MonacoEditorService) protected readonly editorService: MonacoEditorService,
+        @inject(MonacoEditorService) protected readonly codeEditorService: MonacoEditorService,
         @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService,
         @inject(MonacoContextMenuService) protected readonly contextMenuService: MonacoContextMenuService,
         @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
@@ -47,7 +51,7 @@ export class MonacoEditorProvider {
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
-        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
+        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory
     ) { }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
@@ -60,16 +64,16 @@ export class MonacoEditorProvider {
         await this.editorPreferences.ready;
 
         const commandService = this.commandServiceFactory();
-        const { editorService, textModelService, contextMenuService } = this;
-        const override = {
-            editorService,
+        const { codeEditorService, textModelService, contextMenuService } = this;
+        const IWorkspaceEditService = this.bulkEditService;
+        const toDispose = new DisposableCollection();
+        const editor = await this.createEditor(uri, {
+            codeEditorService,
             textModelService,
             contextMenuService,
-            commandService
-        };
-
-        const toDispose = new DisposableCollection();
-        const editor = await this.createEditor(uri, override, toDispose);
+            commandService,
+            IWorkspaceEditService
+        }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
@@ -198,18 +202,18 @@ export class MonacoEditorProvider {
             referencesController._widget.hide();
 
             referencesController._ignoreModelChangeEvent = true;
-            const { uri, range } = ref;
+            const range = monaco.Range.lift(ref.range).collapseToStart();
 
-            referencesController._editorService.openEditor({
-                resource: uri,
+            referencesController._editorService.openCodeEditor({
+                resource: ref.uri,
                 options: { selection: range }
-            }).done(openedEditor => {
+            }, control).done(openedEditor => {
                 referencesController._ignoreModelChangeEvent = false;
                 if (!openedEditor) {
                     referencesController.closeWidget();
                     return;
                 }
-                if (openedEditor.getControl() !== control) {
+                if (openedEditor !== control) {
                     const model = referencesController._model;
                     // to preserve the references model
                     referencesController._model = undefined;
@@ -222,7 +226,7 @@ export class MonacoEditorProvider {
 
                     const modelPromise = Promise.resolve(model) as any;
                     modelPromise.cancel = () => { };
-                    openedEditor.getControl()._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, {
+                    openedEditor._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, {
                         getMetaTitle: m => m.references.length > 1 ? ` – ${m.references.length} references` : ''
                     });
                     return;

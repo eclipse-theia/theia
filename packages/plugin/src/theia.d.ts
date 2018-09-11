@@ -40,6 +40,105 @@ declare module '@theia/plugin' {
 
     }
 
+    export type PluginType = 'frontend' | 'backend';
+
+    /**
+     * Represents an plugin.
+     *
+     * To get an instance of an `Plugin` use [getPlugin](#plugins.getPlugin).
+     */
+    export interface Plugin<T> {
+
+        /**
+         * The canonical plug-in identifier in the form of: `publisher.name`.
+         */
+        readonly id: string;
+
+        /**
+         * The absolute file path of the directory containing this plug-in.
+         */
+        readonly pluginPath: string;
+
+        /**
+         * `true` if the plug-in has been activated.
+         */
+        readonly isActive: boolean;
+
+        /**
+         * The parsed contents of the plug-in's package.json.
+         */
+        readonly packageJSON: any;
+
+        /**
+         * 
+         */
+        readonly pluginType : PluginType;
+
+        /**
+         * The public API exported by this plug-in. It is an invalid action
+         * to access this field before this plug-in has been activated.
+         */
+        readonly exports: T;
+
+        /**
+         * Activates this plug-in and returns its public API.
+         *
+         * @return A promise that will resolve when this plug-in has been activated.
+         */
+        activate(): PromiseLike<T>;
+    }
+
+    /**
+     * Namespace for dealing with installed plug-ins. Plug-ins are represented
+     * by an [plug-in](#Plugin)-interface which enables reflection on them.
+     *
+     * Plug-in writers can provide APIs to other plug-ins by returning their API public
+     * surface from the `start`-call.
+     *
+     * ```javascript
+     * export function start() {
+     *     let api = {
+     *         sum(a, b) {
+     *             return a + b;
+     *         },
+     *         mul(a, b) {
+     *             return a * b;
+     *         }
+     *     };
+     *     // 'export' public api-surface
+     *     return api;
+     * }
+     * ```
+     * ```javascript
+     * let mathExt = plugins.getPlugin('genius.math');
+     * let importedApi = mathExt.exports;
+     *
+     * console.log(importedApi.mul(42, 1));
+     * ```
+     */
+    export namespace plugins {
+        /**
+         * Get an plug-in by its full identifier in the form of: `publisher.name`.
+         *
+         * @param pluginId An plug-in identifier.
+         * @return An plug-in or `undefined`.
+         */
+        export function getPlugin(pluginId: string): Plugin<any> | undefined;
+
+        /**
+         * Get an plug-in its full identifier in the form of: `publisher.name`.
+         *
+         * @param pluginId An plug-in identifier.
+         * @return An plug-in or `undefined`.
+         */
+        export function getPlugin<T>(pluginId: string): Plugin<T> | undefined;
+
+        /**
+         * All plug-ins currently known to the system.
+         */
+        export let all: Plugin<any>[];
+    }
+
     /**
      * A command is a unique identifier of a function
      * which can be executed by a user via a keyboard shortcut,
@@ -1485,19 +1584,19 @@ declare module '@theia/plugin' {
         onDidSelectItem?(item: QuickPickItem | string): any;
     }
 
-	/**
-	 * Options to configure the behaviour of the [workspace folder](#WorkspaceFolder) pick UI.
-	 */
+    /**
+     * Options to configure the behaviour of the [workspace folder](#WorkspaceFolder) pick UI.
+     */
     export interface WorkspaceFolderPickOptions {
 
-		/**
-		 * An optional string to show as place holder in the input box to guide the user what to pick on.
-		 */
+        /**
+         * An optional string to show as place holder in the input box to guide the user what to pick on.
+         */
         placeHolder?: string;
 
-		/**
-		 * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
-		 */
+        /**
+         * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
+         */
         ignoreFocusOut?: boolean;
     }
 
@@ -1919,6 +2018,22 @@ declare module '@theia/plugin' {
     }
 
     /**
+	 * A plug-in context is a collection of utilities private to a
+	 * plug-in.
+	 *
+	 * An instance of a `PluginContext` is provided as the first
+	 * parameter to the `start` of a plug-in.
+	 */
+    export interface PluginContext {
+
+		/**
+		 * An array to which disposables can be added. When this
+		 * extension is deactivated the disposables will be disposed.
+		 */
+        subscriptions: { dispose(): any }[];
+    }
+
+    /**
      * Common namespace for dealing with window and editor, showing messages and user input.
      */
     export namespace window {
@@ -1994,13 +2109,13 @@ declare module '@theia/plugin' {
          */
         export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
 
-		/**
-		 * Shows a selection list of [workspace folders](#workspace.workspaceFolders) to pick from.
-		 * Returns `undefined` if no folder is open.
-		 *
-		 * @param options Configures the behavior of the workspace folder list.
-		 * @return A promise that resolves to the workspace folder or `undefined`.
-		 */
+        /**
+         * Shows a selection list of [workspace folders](#workspace.workspaceFolders) to pick from.
+         * Returns `undefined` if no folder is open.
+         *
+         * @param options Configures the behavior of the workspace folder list.
+         * @return A promise that resolves to the workspace folder or `undefined`.
+         */
         export function showWorkspaceFolderPick(options?: WorkspaceFolderPickOptions): PromiseLike<WorkspaceFolder | undefined>;
 
         /**
@@ -3115,7 +3230,243 @@ declare module '@theia/plugin' {
         resolveCompletionItem?(item: CompletionItem, token?: CancellationToken): ProviderResult<CompletionItem>;
     }
 
+    /**
+	 * Represents a location inside a resource, such as a line
+	 * inside a text file.
+	 */
+    export class Location {
 
+		/**
+		 * The resource identifier of this location.
+		 */
+        uri: Uri;
+
+		/**
+		 * The document range of this location.
+		 */
+        range: Range;
+
+		/**
+		 * Creates a new location object.
+		 *
+		 * @param uri The resource identifier.
+		 * @param rangeOrPosition The range or position. Positions will be converted to an empty range.
+		 */
+        constructor(uri: Uri, rangeOrPosition: Range | Position);
+    }
+
+    /**
+     * The event that is fired when diagnostics change.
+     */
+    export interface DiagnosticChangeEvent {
+
+        /**
+         * An array of resources for which diagnostics have changed.
+         */
+        readonly uris: Uri[];
+    }
+
+    /**
+     * Represents the severity of diagnostics.
+     */
+    export enum DiagnosticSeverity {
+
+        /**
+         * Something not allowed by the rules of a language or other means.
+         */
+        Error = 0,
+
+        /**
+         * Something suspicious but allowed.
+         */
+        Warning = 1,
+
+        /**
+         * Something to inform about but not a problem.
+         */
+        Information = 2,
+
+        /**
+         * Something to hint to a better way of doing it, like proposing
+         * a refactoring.
+         */
+        Hint = 3
+    }
+
+    /**
+     * Represents a related message and source code location for a diagnostic. This should be
+     * used to point to code locations that cause or related to a diagnostics, e.g when duplicating
+     * a symbol in a scope.
+     */
+    export class DiagnosticRelatedInformation {
+
+        /**
+         * The location of this related diagnostic information.
+         */
+        location: Location;
+
+        /**
+         * The message of this related diagnostic information.
+         */
+        message: string;
+
+        /**
+         * Creates a new related diagnostic information object.
+         *
+         * @param location The location.
+         * @param message The message.
+         */
+        constructor(location: Location, message: string);
+    }
+
+    /**
+     * Additional metadata about the type of a diagnostic.
+     */
+    export enum DiagnosticTag {
+        /**
+         * Unused or unnecessary code.
+         *
+         * Diagnostics with this tag are rendered faded out. The amount of fading
+         * is controlled by the `"editorUnnecessaryCode.opacity"` theme color. For
+         * example, `"editorUnnecessaryCode.opacity": "#000000c0"` will render the
+         * code with 75% opacity. For high contrast themes, use the
+         * `"editorUnnecessaryCode.border"` theme color to underline unnecessary code
+         * instead of fading it out.
+         */
+        Unnecessary = 1,
+    }
+
+    /**
+     * Represents a diagnostic, such as a compiler error or warning. Diagnostic objects
+     * are only valid in the scope of a file.
+     */
+    export class Diagnostic {
+
+        /**
+         * The range to which this diagnostic applies.
+         */
+        range: Range;
+
+        /**
+         * The human-readable message.
+         */
+        message: string;
+
+        /**
+         * The severity, default is [error](#DiagnosticSeverity.Error).
+         */
+        severity: DiagnosticSeverity;
+
+        /**
+         * A human-readable string describing the source of this
+         * diagnostic, e.g. 'typescript' or 'super lint'.
+         */
+        source?: string;
+
+        /**
+         * A code or identifier for this diagnostics. Will not be surfaced
+         * to the user, but should be used for later processing, e.g. when
+         * providing [code actions](#CodeActionContext).
+         */
+        code?: string | number;
+
+        /**
+         * An array of related diagnostic information, e.g. when symbol-names within
+         * a scope collide all definitions can be marked via this property.
+         */
+        relatedInformation?: DiagnosticRelatedInformation[];
+
+        /**
+         * Additional metadata about the diagnostic.
+         */
+        tags?: DiagnosticTag[];
+
+        /**
+         * Creates a new diagnostic object.
+         *
+         * @param range The range to which this diagnostic applies.
+         * @param message The human-readable message.
+         * @param severity The severity, default is [error](#DiagnosticSeverity.Error).
+         */
+        constructor(range: Range, message: string, severity?: DiagnosticSeverity);
+    }
+
+    export interface DiagnosticCollection {
+
+        /**
+         * The name of this diagnostic collection, for instance `typescript`. Every diagnostic
+         * from this collection will be associated with this name. Also, the task framework uses this
+         * name when defining [problem matchers](https://code.visualstudio.com/docs/editor/tasks#_defining-a-problem-matcher).
+         */
+        readonly name: string;
+
+        /**
+         * Assign diagnostics for given resource. Will replace
+         * existing diagnostics for that resource.
+         *
+         * @param uri A resource identifier.
+         * @param diagnostics Array of diagnostics or `undefined`
+         */
+        set(uri: Uri, diagnostics: Diagnostic[] | undefined): void;
+
+        /**
+         * Replace all entries in this collection for given uris.
+         *
+         * Diagnostics of multiple tuples of the same uri will be merged, e.g
+         * `[[file1, [d1]], [file1, [d2]]]` is equivalent to `[[file1, [d1, d2]]]`.
+         * If a diagnostics item is `undefined` as in `[file1, undefined]`
+         * all previous but not subsequent diagnostics are removed.
+         *
+         * @param entries An array of tuples, like `[[file1, [d1, d2]], [file2, [d3, d4, d5]]]`, or `undefined`.
+         */
+        set(entries: [Uri, Diagnostic[] | undefined][] | undefined): void;
+
+        /**
+         * Remove all diagnostics from this collection that belong
+         * to the provided `uri`. The same as `#set(uri, undefined)`.
+         *
+         * @param uri A resource identifier.
+         */
+        delete(uri: Uri): void;
+
+        /**
+         * Remove all diagnostics from this collection. The same
+         * as calling `#set(undefined)`;
+         */
+        clear(): void;
+
+        /**
+         * Iterate over each entry in this collection.
+         *
+         * @param callback Function to execute for each entry.
+         * @param thisArg The `this` context used when invoking the handler function.
+         */
+        forEach(callback: (uri: Uri, diagnostics: Diagnostic[], collection: DiagnosticCollection) => any, thisArg?: any): void;
+
+        /**
+         * Get the diagnostics for a given resource. *Note* that you cannot
+         * modify the diagnostics-array returned from this call.
+         *
+         * @param uri A resource identifier.
+         * @returns An immutable array of [diagnostics](#Diagnostic) or `undefined`.
+         */
+        get(uri: Uri): Diagnostic[] | undefined;
+
+        /**
+         * Check if this collection contains diagnostics for a
+         * given resource.
+         *
+         * @param uri A resource identifier.
+         * @returns `true` if this collection has diagnostic for the given resource.
+         */
+        has(uri: Uri): boolean;
+
+        /**
+         * Dispose and free associated resources. Calls
+         * [clear](#DiagnosticCollection.clear).
+         */
+        dispose(): void;
+    }
 
     export namespace languages {
         /**
@@ -3162,6 +3513,37 @@ declare module '@theia/plugin' {
          * @return A number `>0` when the selector matches and `0` when the selector does not match.
          */
         export function match(selector: DocumentSelector, document: TextDocument): number;
+
+        /**
+         * An [event](#Event) which fires when the global set of diagnostics changes. This is
+         * newly added and removed diagnostics.
+         */
+        export const onDidChangeDiagnostics: Event<DiagnosticChangeEvent>;
+
+        /**
+         * Get all diagnostics for a given resource. *Note* that this includes diagnostics from
+         * all extensions but *not yet* from the task framework.
+         *
+         * @param resource A resource
+         * @returns An array of [diagnostics](#Diagnostic) objects or an empty array.
+         */
+        export function getDiagnostics(resource: Uri): Diagnostic[];
+
+        /**
+         * Get all diagnostics. *Note* that this includes diagnostics from
+         * all extensions but *not yet* from the task framework.
+         *
+         * @returns An array of uri-diagnostics tuples or an empty array.
+         */
+        export function getDiagnostics(): [Uri, Diagnostic[]][];
+
+        /**
+         * Create a diagnostics collection.
+         *
+         * @param name The [name](#DiagnosticCollection.name) of the collection.
+         * @return A new diagnostic collection.
+         */
+        export function createDiagnosticCollection(name?: string): DiagnosticCollection;
 
         /**
          * Set a [language configuration](#LanguageConfiguration) for a language.

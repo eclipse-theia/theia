@@ -19,11 +19,15 @@
 }
 
 .theia-git .commitListElement {
-    border-bottom: 1px solid var(--theia-layout-color4);
+    border-top: 1px solid var(--theia-layout-color4);
+}
+
+.theia-git .commitListElement.first {
+    border: none;
 }
 
 .theia-git .commitListElement .containerHead {
-    width: 100%;
+    width: calc(100% - 5px);
     height: 50px;
     display: flex;
     align-items: center;
@@ -95,6 +99,14 @@
 .theia-git .commitTime {
     color: var(--theia-ui-font-color2);
     font-size: smaller;
+}
+
+.theia-git .git-diff-container .listContainer {
+    flex: 1;
+}
+
+.theia-git .git-diff-container .listContainer .commitList {
+    height: 100%;
 }
 
 .theia-git .git-diff-container .history-lazy-loading {
@@ -183,4 +195,21 @@
 .tab-git-icon {
     width: 20px!important;
     height: 20px;
+}
+
+.no-history-message {
+    background-color: var(--theia-warn-color0) !important;
+    color: var(--theia-warn-font-color0);
+    padding: 5px;
+}
+
+.no-history-message div {
+    margin: 5px;
+}
+
+.message-container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
