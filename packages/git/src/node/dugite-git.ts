@@ -550,7 +550,7 @@ export class DugiteGit implements Git {
                 [CommitPlaceholders.SHORT_HASH, ...CommitDetailsParser.DEFAULT_PLACEHOLDERS.slice(1)] : CommitDetailsParser.DEFAULT_PLACEHOLDERS;
         args.push(...['--name-status', '--date=unix', `--format=${this.commitDetailsParser.getFormat(...placeholders)}`, '-z', '--']);
         if (options && options.uri) {
-            const file = Path.relative(this.getFsPath(repository), this.getFsPath(options.uri));
+            const file = Path.relative(this.getFsPath(repository), this.getFsPath(options.uri)) || '.';
             args.push(...[file]);
         }
         const result = await this.exec(repository, args);
