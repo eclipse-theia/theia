@@ -774,6 +774,41 @@ describe('git', async function () {
 
 });
 
+describe('log', () => {
+
+    async function testLogFromRepoRoot(testLocalGit: string) {
+        const savedValue = process.env.USE_LOCAL_GIT;
+        try {
+            process.env.USE_LOCAL_GIT = testLocalGit;
+            const root = await createTestRepository(track.mkdirSync('log-test'));
+            const localUri = FileUri.create(root).toString();
+            const repository = { localUri };
+            const git = await createGit();
+            const result = await git.log(repository, { uri: localUri });
+            expect(result.length === 1).to.be.true;
+            expect(result[0].author.email === 'jon@doe.com').to.be.true;
+        } catch (err) {
+            throw err;
+        } finally {
+            process.env.USE_LOCAL_GIT = savedValue;
+        }
+    }
+
+    // See https://github.com/theia-ide/theia/issues/2143
+    it('should not fail with embedded git when executed from the repository root', async () => {
+        await testLogFromRepoRoot('false');
+    });
+
+    // See https://github.com/theia-ide/theia/issues/2143
+    it('should not fail with local git when executed from the repository root', async () => {
+        await testLogFromRepoRoot('true');
+    });
+
+    // THE ABOVE TEST SHOULD ALWAYS BE THE LAST GIT TEST RUN.
+    // It changes the underlying git to be the local git, which can't be
+    // undone. (See https://github.com/theia-ide/theia/issues/2246).
+});
+
 function toPathSegment(repository: Repository, uri: string): string {
     return upath.relative(FileUri.fsPath(repository.localUri), FileUri.fsPath(uri));
 }
