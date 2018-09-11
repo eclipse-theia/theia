@@ -6909,6 +6909,10 @@ p-cancelable@^0.4.0:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/p-cancelable/-/p-cancelable-0.4.1.tgz#35f363d67d52081c8d9585e37bcceb7e0bbcb2a0"
 
+p-debounce@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/p-debounce/-/p-debounce-1.0.0.tgz#cb7f2cbeefd87a09eba861e112b67527e621e2fd"
+
 p-each-series@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/p-each-series/-/p-each-series-1.0.0.tgz#930f3d12dd1f50e7434457a22cd6f04ac6ad7f71"
@@ -9383,14 +9387,14 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-language-server@^0.3.2:
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.2.tgz#e7e934b058ebdae6d0de0979c3e37e4fd5e471b2"
+typescript-language-server@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.3.tgz#5b37764b204a852b5b8a01626eb43db764255568"
   dependencies:
     command-exists "1.2.6"
     commander "^2.11.0"
     fs-extra "^7.0.0"
-    lodash.debounce "^4.0.8"
+    p-debounce "^1.0.0"
     tempy "^0.2.1"
     vscode-languageserver "^4.4.0"
     vscode-uri "^1.0.5"
