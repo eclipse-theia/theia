@@ -66,7 +66,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     async setPreference(key: string, value: any): Promise<void> {
         const resource = await this.resource;
         if (resource.saveContents) {
-            const content = await resource.readContents();
+            const content = await this.readContents();
             const formattingOptions = { tabSize: 3, insertSpaces: true, eol: '' };
             const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
             const result = jsoncparser.applyEdits(content, edits);

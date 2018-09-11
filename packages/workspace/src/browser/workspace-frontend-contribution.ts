@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog } from '@theia/core/lib/browser';
+import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry } from '@theia/core/lib/browser';
 import { FileStatNode, FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
@@ -78,6 +78,21 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
             commandId: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id,
             order: 'a20'
+        });
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry) {
+        keybindings.registerKeybinding({
+            command: WorkspaceCommands.OPEN.id,
+            keybinding: 'ctrlcmd+alt+o'
+        });
+        keybindings.registerKeybinding({
+            command: WorkspaceCommands.OPEN_WORKSPACE.id,
+            keybinding: 'ctrlcmd+alt+w'
+        });
+        keybindings.registerKeybinding({
+            command: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id,
+            keybinding: 'ctrlcmd+alt+r'
         });
     }
 

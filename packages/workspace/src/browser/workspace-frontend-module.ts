@@ -16,7 +16,7 @@
 
 import { ContainerModule, interfaces } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
     SaveFileDialogFactory,
@@ -52,7 +52,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     }).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, MenuContribution]) {
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {
         bind(identifier).toDynamicValue(ctx =>
             ctx.container.get(WorkspaceFrontendContribution)
         ).inSingletonScope();
