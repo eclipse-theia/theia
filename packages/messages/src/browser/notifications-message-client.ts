@@ -39,6 +39,7 @@ export class NotificationsMessageClient extends MessageClient {
         if (this.visibleMessages.has(key)) {
             return Promise.resolve(undefined);
         }
+        this.visibleMessages.add(key);
         return new Promise(resolve => {
             this.showToast(message, a => {
                 this.visibleMessages.delete(key);
