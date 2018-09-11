@@ -114,9 +114,7 @@ export class ShellLayoutRestorer implements CommandContribution {
         return JSON.stringify(data, (property: string, value) => {
             if (this.isWidgetProperty(property)) {
                 const description = this.convertToDescription(value as Widget);
-                if (description) {
-                    return description;
-                }
+                return description;
             } else if (this.isWidgetsProperty(property)) {
                 const descriptions: WidgetDescription[] = [];
                 for (const widget of (value as Widget[])) {
