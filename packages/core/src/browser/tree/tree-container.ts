@@ -23,6 +23,10 @@ import { TreeSelectionServiceImpl } from './tree-selection-impl';
 import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
+import { TreeSearch } from './tree-search';
+import { FuzzySearch } from './fuzzy-search';
+import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
+import { SearchBoxDebounce } from './search-box-debounce';
 
 export function createTreeContainer(parent: interfaces.Container): Container {
     const child = new Container({ defaultScope: 'Singleton' });
@@ -44,6 +48,15 @@ export function createTreeContainer(parent: interfaces.Container): Container {
 
     child.bind(TreeWidget).toSelf();
     child.bind(TreeProps).toConstantValue(defaultTreeProps);
+
+    child.bind(TreeSearch).toSelf().inSingletonScope();
+    child.bind(FuzzySearch).toSelf().inSingletonScope();
+    child.bind(SearchBoxFactory).toFactory(context =>
+        (options: SearchBoxProps) => {
+            const debounce = new SearchBoxDebounce(options);
+            return new SearchBox(options, debounce);
+        }
+    );
 
     child.bind(TreeDecoratorService).to(NoopTreeDecoratorService).inSingletonScope();
     return child;

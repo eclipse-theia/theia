@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { KeyCode, Key } from '@theia/core/lib/browser';
-import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
-import { Event, Emitter } from '@theia/core/lib/common/event';
-import { SearchBoxDebounce, SearchBoxDebounceOptions } from './search-box-debounce';
+import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-debounce';
+import { BaseWidget } from '../widgets/widget';
+import { Emitter, Event } from '../../common/event';
+import { KeyCode, Key } from '../keys';
 
 /**
  * Initializer properties for the search box widget.
@@ -25,7 +25,7 @@ import { SearchBoxDebounce, SearchBoxDebounceOptions } from './search-box-deboun
 export interface SearchBoxProps extends SearchBoxDebounceOptions {
 
     /**
-     * If `true`, the `Previous`, `Next`, and `Clone` buttons will be visible. Otherwise, `false`. Defaults to `false`.
+     * If `true`, the `Previous`, `Next`, and `Close` buttons will be visible. Otherwise, `false`. Defaults to `false`.
      */
     readonly showButtons?: boolean;
 
@@ -45,7 +45,7 @@ export namespace SearchBoxProps {
  */
 export class SearchBox extends BaseWidget {
 
-    private static SPECIAL_KEYS = [
+    protected static SPECIAL_KEYS = [
         Key.ESCAPE,
         Key.BACKSPACE
     ];

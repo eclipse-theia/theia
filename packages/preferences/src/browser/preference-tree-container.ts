@@ -17,13 +17,20 @@
 import { interfaces } from 'inversify';
 import { PreferencesDecorator } from './preferences-decorator';
 import { PreferencesDecoratorService } from './preferences-decorator-service';
-import { createTreeContainer, TreeDecoratorService, TreeWidget} from '@theia/core/lib/browser';
+import {
+    createTreeContainer,
+    defaultTreeProps,
+    TreeDecoratorService,
+    TreeProps,
+    TreeWidget
+} from '@theia/core/lib/browser';
 import { PreferencesTreeWidget } from './preferences-tree-widget';
 
 export function createPreferencesTreeWidget(parent: interfaces.Container): PreferencesTreeWidget {
     const child = createTreeContainer(parent);
 
     child.bind(PreferencesTreeWidget).toSelf();
+    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: true });
     child.rebind(TreeWidget).toDynamicValue(ctx => ctx.container.get(PreferencesTreeWidget));
 
     bindPreferencesDecorator(child);

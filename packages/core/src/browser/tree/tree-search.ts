@@ -15,17 +15,15 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Event, Emitter } from '@theia/core/lib/common/event';
-import { Tree, TreeNode } from '@theia/core/lib/browser/tree/tree';
-import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
-import { TopDownTreeIterator } from '@theia/core/lib/browser';
+import { Disposable, DisposableCollection } from '../../common/disposable';
+import { Event, Emitter } from '../../common/event';
+import { Tree, TreeNode } from './tree';
+import { TreeDecoration } from './tree-decorator';
 import { FuzzySearch } from './fuzzy-search';
+import { TopDownTreeIterator } from './tree-iterator';
 
 @injectable()
-export class FileNavigatorSearch implements Disposable, TreeDecorator {
-
-    readonly id = 'theia-navigator-search-decorator';
+export class TreeSearch implements Disposable {
 
     @inject(Tree)
     protected readonly tree: Tree;
@@ -34,7 +32,6 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
     protected readonly fuzzySearch: FuzzySearch;
 
     protected readonly disposables = new DisposableCollection();
-    protected readonly decorationEmitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
     protected readonly filteredNodesEmitter = new Emitter<ReadonlyArray<Readonly<TreeNode>>>();
 
     protected _filterResult: FuzzySearch.Match<TreeNode>[] = [];
@@ -42,15 +39,11 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
 
     @postConstruct()
     init() {
-        this.disposables.pushAll([
-            this.decorationEmitter,
-            this.filteredNodesEmitter,
-            this.tree.onChanged(() => this.filter(undefined))
-        ]);
+        this.disposables.push(this.filteredNodesEmitter);
     }
 
-    async decorations(): Promise<Map<string, TreeDecoration.Data>> {
-        return new Map(this._filterResult.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data]));
+    getHighlights(): Map<string, TreeDecoration.CaptionHighlight> {
+        return new Map(this._filterResult.map(m => [m.item.id, this.toCaptionHighlight(m)] as [string, TreeDecoration.CaptionHighlight]));
     }
 
     /**
@@ -61,7 +54,6 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
         if (!pattern || !root) {
             this._filterResult = [];
             this._filteredNodes = [];
-            this.fireDidChangeDecorations(() => new Map());
             this.fireFilteredNodesChanged(this._filteredNodes);
             return [];
         }
@@ -73,13 +65,8 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
             transform
         });
         this._filteredNodes = this._filterResult.map(match => match.item);
-        this.fireDidChangeDecorations(() => new Map(this._filterResult.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data])));
         this.fireFilteredNodesChanged(this._filteredNodes);
         return this._filteredNodes!.slice();
-    }
-
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
-        return this.decorationEmitter.event;
     }
 
     /**
@@ -100,19 +87,13 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
         this.disposables.dispose();
     }
 
-    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
-        this.decorationEmitter.fire(event);
-    }
-
     protected fireFilteredNodesChanged(nodes: ReadonlyArray<Readonly<TreeNode>>): void {
         this.filteredNodesEmitter.fire(nodes);
     }
 
-    protected toDecorator(match: FuzzySearch.Match<TreeNode>): TreeDecoration.Data {
+    protected toCaptionHighlight(match: FuzzySearch.Match<TreeNode>): TreeDecoration.CaptionHighlight {
         return {
-            highlight: {
-                ranges: match.ranges.map(this.mapRange.bind(this))
-            }
+            ranges: match.ranges.map(this.mapRange.bind(this))
         };
     }
 

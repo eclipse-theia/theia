@@ -18,7 +18,14 @@ import { ContainerModule, interfaces } from 'inversify';
 import { OutlineViewService } from './outline-view-service';
 import { OutlineViewContribution } from './outline-view-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { FrontendApplicationContribution, createTreeContainer, TreeWidget, bindViewContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution,
+    createTreeContainer,
+    TreeWidget,
+    bindViewContribution,
+    TreeProps,
+    defaultTreeProps
+} from '@theia/core/lib/browser';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
 
 export default new ContainerModule(bind => {
@@ -35,6 +42,8 @@ export default new ContainerModule(bind => {
 
 function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {
     const child = createTreeContainer(parent);
+
+    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: true });
 
     child.unbind(TreeWidget);
     child.bind(OutlineViewWidget).toSelf();
