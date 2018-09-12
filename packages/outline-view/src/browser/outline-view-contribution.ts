@@ -14,15 +14,34 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutlineViewWidget } from './outline-view-widget';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
+import { ApplicationShell, ShellLayoutRestorer } from '@theia/core/lib/browser';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { TestWidget } from './test-widget';
+import { MessageService } from '@theia/core';
 
 export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 
 @injectable()
 export class OutlineViewContribution extends AbstractViewContribution<OutlineViewWidget> implements FrontendApplicationContribution {
+
+    @inject(ApplicationShell)
+    protected applicationShell: ApplicationShell;
+
+    @inject(FrontendApplicationStateService)
+    protected applicationStateService: FrontendApplicationStateService;
+
+    @inject(MessageService)
+    protected messageService: MessageService;
+
+    @inject(FrontendApplication)
+    protected frontendApplication: FrontendApplication;
+
+    @inject(ShellLayoutRestorer)
+    protected shellLayoutRestorer: ShellLayoutRestorer;
 
     constructor() {
         super({
@@ -33,6 +52,23 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
                 rank: 500
             },
             toggleCommandId: 'outlineView:toggle'
+        });
+    }
+
+    /**
+     * COMMENT THIS METHOD TO DISABLE ADDING A TEST WIDGET !!!!!!!!!
+     */
+    @postConstruct()
+    init() {
+        this.applicationStateService.reachedState('ready').then(() => {
+            setTimeout(() => {
+                const widget = new TestWidget(this.messageService, this.frontendApplication, this.shellLayoutRestorer);
+                this.applicationShell.addWidget(widget, {
+                    area: 'right'
+                });
+                this.applicationShell.activateWidget(widget.id);
+
+            }, 1);
         });
     }
 
