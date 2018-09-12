@@ -253,7 +253,7 @@ export class PreferencesEditorsContainer extends DockPanel {
         this.onInitEmitter.fire(undefined);
     }
 
-    public activatePreferenceEditor(preferenceScope: PreferenceScope) {
+    activatePreferenceEditor(preferenceScope: PreferenceScope) {
         this.preferenceScope = preferenceScope;
         for (const widget of toArray(this.widgets())) {
             const preferenceEditor = widget as PreferencesEditorWidget;
