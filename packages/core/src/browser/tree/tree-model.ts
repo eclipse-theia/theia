@@ -20,7 +20,8 @@ import { Tree, TreeNode, CompositeTreeNode } from './tree';
 import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
-import { TreeIterator, BottomUpTreeIterator, TopDownTreeIterator } from './tree-iterator';
+import { TreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator';
+import { TreeSearch } from './tree-search';
 
 /**
  * The tree model.
@@ -132,6 +133,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     @inject(TreeSelectionService) protected readonly selectionService: TreeSelectionService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
     @inject(TreeNavigationService) protected readonly navigationService: TreeNavigationService;
+    @inject(TreeSearch) protected readonly treeSearch: TreeSearch;
 
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly onOpenNodeEmitter = new Emitter<TreeNode>();
@@ -156,6 +158,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
         this.toDispose.push(this.onOpenNodeEmitter);
         this.toDispose.push(this.onChangedEmitter);
+        this.toDispose.push(this.treeSearch);
     }
 
     dispose() {
@@ -279,11 +282,25 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     protected createBackwardIterator(node: TreeNode | undefined): TreeIterator | undefined {
-        return node ? new BottomUpTreeIterator(node!, { pruneCollapsed: true }) : undefined;
+        const { filteredNodes } = this.treeSearch;
+        if (filteredNodes.length === 0) {
+            return node ? new BottomUpTreeIterator(node!, { pruneCollapsed: true }) : undefined;
+        }
+        if (node && filteredNodes.indexOf(node) === -1) {
+            return undefined;
+        }
+        return Iterators.cycle(filteredNodes.slice().reverse(), node);
     }
 
     protected createIterator(node: TreeNode | undefined): TreeIterator | undefined {
-        return node ? new TopDownTreeIterator(node!, { pruneCollapsed: true }) : undefined;
+        const { filteredNodes } = this.treeSearch;
+        if (filteredNodes.length === 0) {
+            return node ? new TopDownTreeIterator(node!, { pruneCollapsed: true }) : undefined;
+        }
+        if (node && filteredNodes.indexOf(node) === -1) {
+            return undefined;
+        }
+        return Iterators.cycle(filteredNodes, node);
     }
 
     openNode(raw?: TreeNode | undefined): void {

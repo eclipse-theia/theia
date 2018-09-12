@@ -42,7 +42,8 @@ export function createOpenFileDialogContainer(parent: interfaces.Container, prop
     const container = createFileDialogContainer(parent);
     container.rebind(TreeProps).toConstantValue({
         ...defaultTreeProps,
-        multiSelect: props.canSelectMany
+        multiSelect: props.canSelectMany,
+        search: true
     });
 
     container.bind(OpenFileDialogProps).toConstantValue(props);

@@ -16,6 +16,8 @@
 
 import { expect } from 'chai';
 import { Container } from 'inversify';
+import { TreeSearch } from './tree-search';
+import { FuzzySearch } from './fuzzy-search';
 import { Tree, TreeImpl } from './tree';
 import { MockTreeModel } from './test/mock-tree-model';
 import { TreeSelectionState } from './tree-selection-state';
@@ -445,6 +447,8 @@ describe('tree-selection-state', () => {
         container.bind(TreeNavigationService).toSelf();
         container.bind(TreeModelImpl).toSelf();
         container.bind(TreeModel).toService(TreeModelImpl);
+        container.bind(TreeSearch).toSelf();
+        container.bind(FuzzySearch).toSelf();
         return container.get(TreeModel);
     }
 

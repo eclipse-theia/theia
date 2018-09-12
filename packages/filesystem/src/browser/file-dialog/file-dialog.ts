@@ -25,6 +25,7 @@ import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters } from './file-dialog-tree-filters-renderer';
 import URI from '@theia/core/lib/common/uri';
+import { Panel } from '@phosphor/widgets';
 
 export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
 export interface OpenFileDialogFactory {
@@ -110,13 +111,16 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
     protected readonly forward: HTMLSpanElement;
     protected readonly locationListRenderer: LocationListRenderer;
     protected readonly treeFiltersRenderer: FileDialogTreeFiltersRenderer | undefined;
+    protected readonly treePanel: Panel;
 
     constructor(
         @inject(FileDialogProps) readonly props: FileDialogProps,
         @inject(FileDialogWidget) readonly widget: FileDialogWidget
     ) {
         super(props);
-        this.toDispose.push(widget);
+        this.treePanel = new Panel();
+        this.treePanel.addWidget(this.widget);
+        this.toDispose.push(this.treePanel);
         this.toDispose.push(this.model.onChanged(() => this.update()));
         this.toDispose.push(this.model.onDidOpenFile(() => this.accept()));
         this.toDispose.push(this.model.onSelectionChanged(() => this.update()));
@@ -183,9 +187,9 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
     }
 
     protected onAfterAttach(msg: Message): void {
-        Widget.attach(this.widget, this.contentNode);
+        Widget.attach(this.treePanel, this.contentNode);
         this.toDisposeOnDetach.push(Disposable.create(() => {
-            Widget.detach(this.widget);
+            Widget.detach(this.treePanel);
             this.locationListRenderer.dispose();
             if (this.treeFiltersRenderer) {
                 this.treeFiltersRenderer.dispose();

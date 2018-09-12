@@ -19,7 +19,7 @@ import { Message } from '@phosphor/messaging';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
 import { PreferencesDecorator } from './preferences-decorator';
 import { toArray } from '@phosphor/algorithm';
-import { DockPanel, SplitPanel, Widget } from '@phosphor/widgets';
+import { BoxPanel, DockPanel, SplitPanel, Widget } from '@phosphor/widgets';
 import {
     ApplicationShell,
     ContextMenuRenderer,
@@ -164,7 +164,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             this.currentEditor = editor;
         });
 
-        this.addWidget(this.treeWidget);
+        const treePanel = new BoxPanel();
+        treePanel.addWidget(this.treeWidget);
+        this.addWidget(treePanel);
         this.addWidget(this.editorsContainer);
         this.treeWidget.activate();
         super.onAfterAttach(msg);

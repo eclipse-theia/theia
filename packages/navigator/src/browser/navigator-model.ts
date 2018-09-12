@@ -17,10 +17,8 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
-import { TreeIterator, Iterators } from '@theia/core/lib/browser/tree/tree-iterator';
 import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
-import { FileNavigatorSearch } from './navigator-search';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
@@ -28,7 +26,6 @@ export class FileNavigatorModel extends FileTreeModel {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
-    @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
@@ -141,33 +138,5 @@ export class FileNavigatorModel extends FileTreeModel {
             ? nodes.reduce((node1, node2) => // return the node closest to the workspace root
                 node1.id.length >= node2.id.length ? node1 : node2
             ) : undefined;
-    }
-
-    protected createBackwardIterator(node: TreeNode | undefined): TreeIterator | undefined {
-        if (node === undefined) {
-            return undefined;
-        }
-        const { filteredNodes } = this.navigatorSearch;
-        if (filteredNodes.length === 0) {
-            return super.createBackwardIterator(node);
-        }
-        if (filteredNodes.indexOf(node) === -1) {
-            return undefined;
-        }
-        return Iterators.cycle(filteredNodes.slice().reverse(), node);
-    }
-
-    protected createIterator(node: TreeNode | undefined): TreeIterator | undefined {
-        if (node === undefined) {
-            return undefined;
-        }
-        const { filteredNodes } = this.navigatorSearch;
-        if (filteredNodes.length === 0) {
-            return super.createIterator(node);
-        }
-        if (filteredNodes.indexOf(node) === -1) {
-            return undefined;
-        }
-        return Iterators.cycle(filteredNodes, node);
     }
 }

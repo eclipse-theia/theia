@@ -30,7 +30,7 @@ export const NavigatorTreeDecorator = Symbol('NavigatorTreeDecorator');
 export class NavigatorDecoratorService extends AbstractTreeDecoratorService {
 
     constructor(@inject(ContributionProvider) @named(NavigatorTreeDecorator) protected readonly contributions: ContributionProvider<TreeDecorator>) {
-        super(contributions.getContributions(true));
+        super(contributions.getContributions());
     }
 
 }

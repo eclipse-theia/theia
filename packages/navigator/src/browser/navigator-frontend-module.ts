@@ -23,9 +23,6 @@ import { createFileNavigatorWidget } from './navigator-container';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindFileNavigatorPreferences } from './navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
-import { FuzzySearch } from './fuzzy-search';
-import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
-import { SearchBoxDebounce } from './search-box-debounce';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
@@ -36,14 +33,6 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(FileNavigatorContribution);
 
     bind(KeybindingContext).to(NavigatorActiveContext).inSingletonScope();
-
-    bind(FuzzySearch).toSelf().inSingletonScope();
-    bind(SearchBoxFactory).toFactory(context =>
-        (options: SearchBoxProps) => {
-            const debounce = new SearchBoxDebounce(options);
-            return new SearchBox(options, debounce);
-        }
-    );
 
     bind(FileNavigatorWidget).toDynamicValue(ctx =>
         createFileNavigatorWidget(ctx.container)
