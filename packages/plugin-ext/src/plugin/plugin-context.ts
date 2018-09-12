@@ -55,6 +55,9 @@ import {
     DiagnosticSeverity,
     DiagnosticTag,
     Location,
+    ParameterInformation,
+    SignatureInformation,
+    SignatureHelp,
     Hover
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -283,6 +286,7 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
                 return languagesExt.onDidChangeDiagnostics;
             },
             getDiagnostics(resource?: Uri) {
+                // tslint:disable-next-line:no-any
                 return <any>languagesExt.getDiagnostics(resource);
             },
             createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
@@ -293,6 +297,9 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             },
             registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, ...triggerCharacters: string[]): theia.Disposable {
                 return languagesExt.registerCompletionItemProvider(selector, provider, triggerCharacters);
+            },
+            registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, ...triggerCharacters: string[]): theia.Disposable {
+                return languagesExt.registerSignatureHelpProvider(selector, provider, ...triggerCharacters);
             },
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider);
@@ -353,6 +360,9 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             Diagnostic,
             CompletionTriggerKind,
             TextEdit,
+            ParameterInformation,
+            SignatureInformation,
+            SignatureHelp,
             Hover,
         };
     };
