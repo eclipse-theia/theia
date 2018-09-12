@@ -24,6 +24,7 @@ import {
 } from '@theia/core/lib/common';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/src/browser/keybinding';
 export namespace KeymapsCommands {
     export const OPEN_KEYMAPS: Command = {
         id: 'keymaps:open',
@@ -32,7 +33,7 @@ export namespace KeymapsCommands {
 }
 
 @injectable()
-export class KeymapsFrontendContribution implements CommandContribution, MenuContribution {
+export class KeymapsFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(KeymapsService)
     protected readonly keymaps: KeymapsService;
@@ -48,6 +49,13 @@ export class KeymapsFrontendContribution implements CommandContribution, MenuCon
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: KeymapsCommands.OPEN_KEYMAPS.id,
             order: 'a20'
+        });
+    }
+
+    registerKeybindings(keybidings: KeybindingRegistry): void {
+        keybidings.registerKeybinding({
+            command: KeymapsCommands.OPEN_KEYMAPS.id,
+            keybinding: 'ctrl+alt+,'
         });
     }
 

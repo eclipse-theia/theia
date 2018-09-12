@@ -21,7 +21,8 @@ import {
     PreferenceScope,
     PreferenceProvider,
     AbstractViewContribution,
-    CommonCommands
+    CommonCommands,
+    KeybindingRegistry
 } from '@theia/core/lib/browser';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -56,6 +57,13 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: CommonCommands.OPEN_PREFERENCES.id,
             order: 'a10'
+        });
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
+            command: CommonCommands.OPEN_PREFERENCES.id,
+            keybinding: 'ctrl+,'
         });
     }
 

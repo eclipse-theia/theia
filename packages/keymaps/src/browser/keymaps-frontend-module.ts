@@ -18,6 +18,7 @@ import { ContainerModule, } from 'inversify';
 import { KeymapsService } from './keymaps-service';
 import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { KeymapsParser } from './keymaps-parser';
 
 import './monaco-contribution';
@@ -27,5 +28,6 @@ export default new ContainerModule(bind => {
     bind(KeymapsService).toSelf().inSingletonScope();
     bind(KeymapsFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(KeymapsFrontendContribution);
+    bind(KeybindingContribution).toService(KeymapsFrontendContribution);
     bind(MenuContribution).toService(KeymapsFrontendContribution);
 });
