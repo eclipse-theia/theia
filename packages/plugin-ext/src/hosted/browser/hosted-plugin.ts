@@ -55,12 +55,10 @@ export class HostedPluginSupport {
     }
 
     public initPlugins(): void {
-        const backendMetadata = this.server.getDeployedBackendMetadata();
-        const frontendMetadata = this.server.getDeployedFrontendMetadata();
-        Promise.all([backendMetadata, frontendMetadata, this.server.getHostedPlugin()]).then(metadata => {
-            const plugins = [...metadata['0'], ...metadata['1']];
-            if (metadata['2']) {
-                plugins.push(metadata['2']!);
+        Promise.all([this.server.getDeployedMetadata(), this.server.getHostedPlugin()]).then(metadata => {
+            const plugins = [...metadata['0']];
+            if (metadata['1']) {
+                plugins.push(metadata['1']!);
             }
             this.loadPlugins(plugins, this.container);
         });

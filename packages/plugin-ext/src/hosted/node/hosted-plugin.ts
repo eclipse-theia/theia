@@ -41,6 +41,11 @@ export class HostedPluginSupport {
     private cp: cp.ChildProcess | undefined;
 
     setClient(client: HostedPluginClient): void {
+        if (this.client) {
+            if (this.cp) {
+                this.runPluginServer();
+            }
+        }
         this.client = client;
     }
 
