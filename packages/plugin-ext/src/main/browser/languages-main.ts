@@ -85,6 +85,18 @@ export class LanguagesMainImpl implements LanguagesMain {
         }));
     }
 
+    $registerSignatureHelpSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const signatureHelpProvider = this.createSignatureHelpProvider(handle, languageSelector, triggerCharacters);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerSignatureHelpProvider(language, signatureHelpProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
     $clearDiagnostics(id: string): void {
         const markers = monaco.editor.getModelMarkers({ owner: id });
         const clearedEditors = new Set<string>(); // uri to resource
@@ -126,6 +138,18 @@ export class LanguagesMainImpl implements LanguagesMain {
                     return undefined!;
                 }
                 return this.proxy.$provideHover(handle, model.uri, position).then(v => v!);
+            }
+        };
+    }
+
+    protected createSignatureHelpProvider(handle: number, selector: LanguageSelector | undefined, triggerCharacters: string[]): monaco.languages.SignatureHelpProvider {
+        return {
+            signatureHelpTriggerCharacters: triggerCharacters,
+            provideSignatureHelp: (model, position, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideSignatureHelp(handle, model.uri, position).then(v => v!);
             }
         };
     }

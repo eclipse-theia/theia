@@ -31,12 +31,20 @@ import { Disposable } from './types-impl';
 import URI from 'vscode-uri/lib/umd';
 import { match as matchGlobPattern } from '../common/glob';
 import { UriComponents } from '../common/uri-components';
-import { CompletionContext, CompletionResultDto, Completion, SerializedDocumentFilter, Hover } from '../api/model';
+import {
+    CompletionContext,
+    CompletionResultDto,
+    Completion,
+    SerializedDocumentFilter,
+    SignatureHelp,
+    Hover
+} from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
+import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
 
-type Adapter = CompletionAdapter | HoverAdapter;
+type Adapter = CompletionAdapter | SignatureHelpAdapter | HoverAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -156,6 +164,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId);
     }
     // ### Completion end
+
+    // ### Signature help begin
+    $provideSignatureHelp(handle: number, resource: UriComponents, position: Position): Promise<SignatureHelp | undefined> {
+        return this.withAdapter(handle, SignatureHelpAdapter, adapter => adapter.provideSignatureHelp(URI.revive(resource), position));
+    }
+
+    registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, ...triggerCharacters: string[]): theia.Disposable {
+        const callId = this.addNewAdapter(new SignatureHelpAdapter(provider, this.documents));
+        this.proxy.$registerSignatureHelpSupport(callId, this.transformDocumentSelector(selector), triggerCharacters);
+        return this.createDisposable(callId);
+    }
+    // ### Signature help end
 
     // ### Diagnostics begin
     getDiagnostics(resource?: URI): theia.Diagnostic[] | [URI, theia.Diagnostic[]][] {

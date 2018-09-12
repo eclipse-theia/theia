@@ -409,6 +409,70 @@ diagnosticsCollection.forEach((uri, diagnostics) => {
 
 `dispose` method should be used when the collection is not needed any more. In case of attempt to do an operaton after disposing an error will be thrown.
 
+#### Signature help
+
+To provide signature help form plugin it is required to register provider. For registration 3 items are needed:
+- Documents selector to describe for which files it should be applied
+- Handler which will do the work
+- Trigger characters after typing of which the handler should be invoked. Often symbols `(` and `,` are used.
+
+Example of signature help provider registration:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const handler = { provideSignatureHelp: signatureHelpHandler };
+const triggerChars = '(,';
+
+const disposable = theia.languages.registerSignatureHelpProvider(documentsSelector, handler, ...triggerChars);
+
+...
+
+function signatureHelpHandler(document: theia.TextDocument, position: theia.Position): theia.ProviderResult<theia.SignatureHelp> {
+    // code here
+}
+```
+
+Example of signature information:
+
+```typescript
+{
+    activeSignature: 0,
+    activeParameter: 0,
+    signatures: [
+        {
+            label: 'functionName(param1: number, param2: string, param3: boolean)',
+            documentation: new theia.MarkdownString('What **this** function does'),
+            parameters: [
+                {
+                    label: 'param1: number',
+                    documentation: new theia.MarkdownString('Some number. Should not be `undefined`')
+                },
+                {
+                    label: 'param2: string',
+                    documentation: 'Some string'
+                },
+                {
+                    label: 'param3: boolean',
+                    documentation: 'Some flag'
+                }
+            ]
+        }
+    ]
+}
+```
+
+Note, that:
+- `activeSignature` and `activeParameter` are zero based.
+- label is usually full method signature.
+- for documentation fields markdown partially supported (Tags aren't supported).
+- label of a parameter should be substring of the signature label. In such case the substring will be highlighted in main label when parameter is active. Otherwise has no effect.
+
+When signature help popup is shown then the handler will be invoked on each parameter edit or even cursor moving inside signature. If you have large objects it would be wise to cache them of at least reuse some parts.
+
+To hide your popup just return `undefined` from provider.
+
+In case if a few providers are registered the chain will be executed until one of the providers returns result. Next providers will be ignored for the call.
+
 #### Hover Message
 
 To contribute a hover it is only needed to provide a function that can be called with a `TextDocument` and a `Position` returning hover info. Registration is done using a document selector which either a language id ('typescript', 'javascript' etc.) or a more complex filter like `{scheme: 'file', language: 'typescript'}`.

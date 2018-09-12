@@ -90,10 +90,10 @@ export class Position {
     private _character: number;
     constructor(line: number, char: number) {
         if (line < 0) {
-            throw new Error('line must be greater than 0');
+            throw new Error('line number cannot be negative');
         }
         if (char < 0) {
-            throw new Error('char must be greater than 0');
+            throw new Error('char number cannot be negative');
         }
         this._line = line;
         this._character = char;
@@ -808,6 +808,33 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+}
+
+export class ParameterInformation {
+    label: string;
+    documentation?: string | MarkdownString;
+
+    constructor(label: string, documentation?: string | MarkdownString) {
+        this.label = label;
+        this.documentation = documentation;
+    }
+}
+
+export class SignatureInformation {
+    label: string;
+    documentation?: string | MarkdownString;
+    parameters: ParameterInformation[];
+
+    constructor(label: string, documentation?: string | MarkdownString) {
+        this.label = label;
+        this.documentation = documentation;
+    }
+}
+
+export class SignatureHelp {
+    signatures: SignatureInformation[];
+    activeSignature: number;
+    activeParameter: number;
 }
 
 export class Hover {

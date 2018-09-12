@@ -70,9 +70,9 @@ declare module '@theia/plugin' {
         readonly packageJSON: any;
 
         /**
-         * 
+         *
          */
-        readonly pluginType : PluginType;
+        readonly pluginType: PluginType;
 
         /**
          * The public API exported by this plug-in. It is an invalid action
@@ -1922,30 +1922,30 @@ declare module '@theia/plugin' {
         filters?: { [name: string]: string[] };
     }
 
-	/**
-	 * Options to configure the behaviour of a file save dialog.
-	 */
+    /**
+     * Options to configure the behaviour of a file save dialog.
+     */
     export interface SaveDialogOptions {
-		/**
-		 * The resource the dialog shows when opened.
-		 */
+        /**
+         * The resource the dialog shows when opened.
+         */
         defaultUri?: Uri;
 
-		/**
-		 * A human-readable string for the save button.
-		 */
+        /**
+         * A human-readable string for the save button.
+         */
         saveLabel?: string;
 
-		/**
-		 * A set of file filters that are used by the dialog. Each entry is a human readable label,
-		 * like "TypeScript", and an array of extensions, e.g.
-		 * ```ts
-		 * {
-		 * 	'Images': ['png', 'jpg']
-		 * 	'TypeScript': ['ts', 'tsx']
-		 * }
-		 * ```
-		 */
+        /**
+         * A set of file filters that are used by the dialog. Each entry is a human readable label,
+         * like "TypeScript", and an array of extensions, e.g.
+         * ```ts
+         * {
+         * 	'Images': ['png', 'jpg']
+         * 	'TypeScript': ['ts', 'tsx']
+         * }
+         * ```
+         */
         filters?: { [name: string]: string[] };
     }
 
@@ -2018,18 +2018,18 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * A plug-in context is a collection of utilities private to a
-	 * plug-in.
-	 *
-	 * An instance of a `PluginContext` is provided as the first
-	 * parameter to the `start` of a plug-in.
-	 */
+     * A plug-in context is a collection of utilities private to a
+     * plug-in.
+     *
+     * An instance of a `PluginContext` is provided as the first
+     * parameter to the `start` of a plug-in.
+     */
     export interface PluginContext {
 
-		/**
-		 * An array to which disposables can be added. When this
-		 * extension is deactivated the disposables will be disposed.
-		 */
+        /**
+         * An array to which disposables can be added. When this
+         * extension is deactivated the disposables will be disposed.
+         */
         subscriptions: { dispose(): any }[];
     }
 
@@ -2254,13 +2254,13 @@ declare module '@theia/plugin' {
          */
         export function showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined>;
 
-		/**
-		 * Shows a file save dialog to the user which allows to select a file
-		 * for saving-purposes.
-		 *
-		 * @param options Options that control the dialog.
-		 * @returns A promise that resolves to the selected resource or `undefined`.
-		 */
+        /**
+         * Shows a file save dialog to the user which allows to select a file
+         * for saving-purposes.
+         *
+         * @param options Options that control the dialog.
+         * @returns A promise that resolves to the selected resource or `undefined`.
+         */
         export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
 
         /**
@@ -2904,6 +2904,107 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Represents a parameter of a callable-signature. A parameter can
+     * have a label and a doc-comment.
+     */
+    export class ParameterInformation {
+
+        /**
+         * The label of this signature. Will be shown in
+         * the UI.
+         */
+        label: string;
+
+        /**
+         * The human-readable doc-comment of this signature. Will be shown
+         * in the UI but can be omitted.
+         */
+        documentation?: string | MarkdownString;
+
+        /**
+         * Creates a new parameter information object.
+         *
+         * @param label A label string.
+         * @param documentation A doc string.
+         */
+        constructor(label: string, documentation?: string | MarkdownString);
+    }
+
+    /**
+     * Represents the signature of something callable. A signature
+     * can have a label, like a function-name, a doc-comment, and
+     * a set of parameters.
+     */
+    export class SignatureInformation {
+
+        /**
+         * The label of this signature. Will be shown in
+         * the UI.
+         */
+        label: string;
+
+        /**
+         * The human-readable doc-comment of this signature. Will be shown
+         * in the UI but can be omitted.
+         */
+        documentation?: string | MarkdownString;
+
+        /**
+         * The parameters of this signature.
+         */
+        parameters: ParameterInformation[];
+
+        /**
+         * Creates a new signature information object.
+         *
+         * @param label A label string.
+         * @param documentation A doc string.
+         */
+        constructor(label: string, documentation?: string | MarkdownString);
+    }
+
+    /**
+     * Signature help represents the signature of something
+     * callable. There can be multiple signatures but only one
+     * active and only one active parameter.
+     */
+    export class SignatureHelp {
+
+        /**
+         * One or more signatures.
+         */
+        signatures: SignatureInformation[];
+
+        /**
+         * The active signature.
+         */
+        activeSignature: number;
+
+        /**
+         * The active parameter of the active signature.
+         */
+        activeParameter: number;
+    }
+
+    /**
+     * The signature help provider interface defines the contract between extensions and
+     * the [parameter hints](https://code.visualstudio.com/docs/editor/intellisense)-feature.
+     */
+    export interface SignatureHelpProvider {
+
+        /**
+         * Provide help for the signature at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @return Signature help or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<SignatureHelp>;
+    }
+
+    /**
      * How a [completion provider](#CompletionItemProvider) was triggered
      */
     export enum CompletionTriggerKind {
@@ -3231,27 +3332,27 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * Represents a location inside a resource, such as a line
-	 * inside a text file.
-	 */
+     * Represents a location inside a resource, such as a line
+     * inside a text file.
+     */
     export class Location {
 
-		/**
-		 * The resource identifier of this location.
-		 */
+        /**
+         * The resource identifier of this location.
+         */
         uri: Uri;
 
-		/**
-		 * The document range of this location.
-		 */
+        /**
+         * The document range of this location.
+         */
         range: Range;
 
-		/**
-		 * Creates a new location object.
-		 *
-		 * @param uri The resource identifier.
-		 * @param rangeOrPosition The range or position. Positions will be converted to an empty range.
-		 */
+        /**
+         * Creates a new location object.
+         *
+         * @param uri The resource identifier.
+         * @param rangeOrPosition The range or position. Positions will be converted to an empty range.
+         */
         constructor(uri: Uri, rangeOrPosition: Range | Position);
     }
 
@@ -3569,6 +3670,21 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerCompletionItemProvider(selector: DocumentSelector, provider: CompletionItemProvider, ...triggerCharacters: string[]): Disposable;
+
+        /**
+         * Register a signature help provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are sorted
+         * by their [score](#languages.match) and called sequentially until a provider returns a
+         * valid result.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A signature help provider.
+         * @param triggerCharacters Trigger signature help when the user types one of the characters, like `,` or `(`.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): Disposable;
+
 
         /**
          * Register a hover provider.
