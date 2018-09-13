@@ -3231,23 +3231,23 @@ dtrace-provider@~0.8:
   dependencies:
     nan "^2.10.0"
 
-dugite-extra@0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.1.tgz#29f866b6de30c2ab64635c0749888ee9218fd885"
+dugite-extra@0.1.5:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.5.tgz#82b149adf311f9dd93a3c62bae8128c46373eff5"
   dependencies:
     byline "^5.0.0"
-    dugite "1.52.0"
+    dugite "1.74.0"
     find-git-exec "0.0.1-alpha.2"
     upath "^1.0.0"
 
-dugite@1.52.0:
-  version "1.52.0"
-  resolved "https://registry.yarnpkg.com/dugite/-/dugite-1.52.0.tgz#7607ebb2cd7809e933b4ccf05c20807d4d34d42e"
+dugite@1.74.0:
+  version "1.74.0"
+  resolved "https://registry.yarnpkg.com/dugite/-/dugite-1.74.0.tgz#20f6439242750d12966ab534aebd52d78911d241"
   dependencies:
     checksum "^0.1.1"
     mkdirp "^0.5.1"
     progress "^2.0.0"
-    request "^2.83.0"
+    request "^2.88.0"
     rimraf "^2.5.4"
     tar "^4.0.2"
 
@@ -8082,7 +8082,7 @@ request@2.87.0:
     tunnel-agent "^0.6.0"
     uuid "^3.1.0"
 
-request@^2.45.0, request@^2.82.0, request@^2.83.0, request@^2.87.0:
+request@^2.45.0, request@^2.82.0, request@^2.87.0, request@^2.88.0:
   version "2.88.0"
   resolved "https://registry.yarnpkg.com/request/-/request-2.88.0.tgz#9c2fca4f7d35b592efe57c7f0a55e81052124fef"
   dependencies:
