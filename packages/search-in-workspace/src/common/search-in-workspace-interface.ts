@@ -116,7 +116,7 @@ export interface SearchInWorkspaceServer extends JsonRpcServer<SearchInWorkspace
     /**
      * Start a search for WHAT in directory ROOT.  Return a unique search id.
      */
-    search(what: string, root: string, opts?: SearchInWorkspaceOptions): Promise<number>;
+    search(what: string, rootUri: string, opts?: SearchInWorkspaceOptions): Promise<number>;
 
     /**
      * Cancel an ongoing search.

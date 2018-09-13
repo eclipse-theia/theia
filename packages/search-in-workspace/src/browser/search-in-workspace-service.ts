@@ -17,7 +17,6 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { SearchInWorkspaceServer, SearchInWorkspaceClient, SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core';
 
 /**
@@ -112,8 +111,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
             throw new Error('Search failed: no workspace root.');
         }
 
-        const rootUri = new URI(root.uri);
-        const searchId = await this.searchServer.search(what, rootUri.path.toString(), opts);
+        const searchId = await this.searchServer.search(what, root.uri, opts);
         this.pendingSearches.set(searchId, callbacks);
         this.lastKnownSearchId = searchId;
 

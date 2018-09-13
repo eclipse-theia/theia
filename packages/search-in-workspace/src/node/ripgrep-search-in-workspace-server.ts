@@ -19,6 +19,7 @@ import { ILogger } from '@theia/core';
 import { inject, injectable } from 'inversify';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
 import { rgPath } from 'vscode-ripgrep';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()
 export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
@@ -78,7 +79,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     // Search for the string WHAT in directory ROOT.  Return the assigned search id.
-    search(what: string, root: string, opts?: SearchInWorkspaceOptions): Promise<number> {
+    search(what: string, rootUri: string, opts?: SearchInWorkspaceOptions): Promise<number> {
         // Start the rg process.  Use --vimgrep to get one result per
         // line, --color=always to get color control characters that
         // we'll use to parse the lines.
@@ -101,7 +102,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         }
         const processOptions: RawProcessOptions = {
             command: rgPath,
-            args: [...args, what, ...globs, root]
+            args: [...args, what, ...globs, FileUri.fsPath(rootUri)]
         };
         const process: RawProcess = this.rawProcessFactory(processOptions);
         this.ongoingSearches.set(searchId, process);

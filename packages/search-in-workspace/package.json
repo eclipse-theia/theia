@@ -5,6 +5,10 @@
   "dependencies": {
     "@theia/core": "^0.3.14",
     "@theia/editor": "^0.3.14",
+    "@theia/workspace": "^0.3.14",
+    "@theia/filesystem": "^0.3.14",
+    "@theia/navigator": "^0.3.14",
+    "@theia/process": "^0.3.14",
     "vscode-ripgrep": "^1.0.1"
   },
   "publishConfig": {
