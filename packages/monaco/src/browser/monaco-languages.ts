@@ -19,6 +19,7 @@ import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, Mona
 import { Languages, DiagnosticCollection, Language } from '@theia/languages/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
+import { Mutable } from '@theia/core/lib/common/types';
 import { WorkspaceSymbolProvider } from 'monaco-languageclient/lib/services';
 import { Disposable } from 'vscode-jsonrpc';
 
@@ -70,11 +71,43 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
     }
 
     get languages(): Language[] {
-        const monacoLanguages: monaco.languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages();
-        return monacoLanguages.map((monacoLang: monaco.languages.ILanguageExtensionPoint) => ({
-            id: monacoLang.id,
-            name: monacoLang.aliases && monacoLang.aliases.length > 0 ? monacoLang.aliases[0] : monacoLang.id
-        }));
+        return [...this.mergeLanguages(monaco.languages.getLanguages()).values()];
+    }
+
+    getLanguage(languageId: string): Language | undefined {
+        return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
+    }
+
+    protected mergeLanguages(registered: monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {
+        const languages = new Map<string, Mutable<Language>>();
+        for (const { id, aliases, extensions, filenames } of registered) {
+            const merged = languages.get(id) || {
+                id,
+                name: '',
+                extensions: new Set(),
+                filenames: new Set()
+            };
+            if (!merged.name && aliases && aliases.length) {
+                merged.name = aliases[0];
+            }
+            if (extensions && extensions.length) {
+                for (const extension of extensions) {
+                    merged.extensions.add(extension);
+                }
+            }
+            if (filenames && filenames.length) {
+                for (const filename of filenames) {
+                    merged.filenames.add(filename);
+                }
+            }
+            languages.set(id, merged);
+        }
+        for (const [id, language] of languages) {
+            if (!language.name) {
+                language.name = id;
+            }
+        }
+        return languages;
     }
 
 }

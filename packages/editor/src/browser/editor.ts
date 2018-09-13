@@ -210,6 +210,9 @@ export interface TextEditor extends Disposable, TextEditorSelection {
 
     storeViewState(): object;
     restoreViewState(state: object): void;
+
+    setLanguage(languageId: string): void;
+    readonly onLanguageChanged: Event<string>;
 }
 
 export interface Dimension {

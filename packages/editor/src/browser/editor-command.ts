@@ -14,9 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {inject, injectable} from 'inversify';
-import {CommandContribution, CommandRegistry, Command} from '@theia/core/lib/common';
-import {CommonCommands, PreferenceService} from '@theia/core/lib/browser';
+import { inject, injectable } from 'inversify';
+import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider } from '@theia/core/lib/browser';
+import { Languages, Language } from '@theia/languages/lib/browser';
+import { EditorManager } from './editor-manager';
 
 export namespace EditorCommands {
 
@@ -39,6 +42,10 @@ export namespace EditorCommands {
     export const INDENT_USING_TABS: Command = {
         id: 'textEditor.commands.indentUsingTabs',
         label: 'Indent Using Tabs'
+    };
+    export const CHANGE_LANGUAGE: Command = {
+        id: 'textEditor.change.language',
+        label: 'Change Language Mode'
     };
 
     /**
@@ -72,11 +79,28 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
+    @inject(QuickPickService)
+    protected readonly quickPick: QuickPickService;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(Languages)
+    protected readonly languages: Languages;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
         registry.registerCommand(EditorCommands.CONFIG_INDENTATION);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
+        registry.registerCommand(EditorCommands.CHANGE_LANGUAGE, {
+            isEnabled: () => this.canConfigureLanguage(),
+            isVisible: () => this.canConfigureLanguage(),
+            execute: () => this.configureLanguage()
+        });
 
         registry.registerCommand(EditorCommands.GO_BACK);
         registry.registerCommand(EditorCommands.GO_FORWARD);
@@ -88,11 +112,55 @@ export class EditorCommandContribution implements CommandContribution {
         });
     }
 
+    protected canConfigureLanguage(): boolean {
+        const widget = this.editorManager.currentEditor;
+        const editor = widget && widget.editor;
+        return !!editor && !!this.languages.languages;
+    }
+    protected async configureLanguage(): Promise<void> {
+        const widget = this.editorManager.currentEditor;
+        const editor = widget && widget.editor;
+        if (!editor || !this.languages.languages) {
+            return;
+        }
+        const current = editor.document.languageId;
+        const languages: QuickPickItem<string>[] = (await Promise.all(this.languages.languages.map(
+            language => this.toQuickPickLanguage(language, current)
+        ))).sort((e, e2) => e.value.localeCompare(e2.value));
+
+        const selected = await this.quickPick.show(languages, {
+            placeholder: 'Select Language Mode'
+        });
+        if (selected) {
+            editor.setLanguage(selected);
+        }
+    }
+    protected async toQuickPickLanguage(language: Language, current: string): Promise<QuickPickItem<string>> {
+        const languageUri = this.toLanguageUri(language);
+        const iconClass = await this.labelProvider.getIcon(languageUri) + ' file-icon';
+        return {
+            value: language.id,
+            label: language.name,
+            description: `(${language.id})${current === language.id ? ' - Configured Language' : ''}`,
+            iconClass
+        };
+    }
+    protected toLanguageUri(language: Language): URI {
+        const extension = language.extensions.values().next();
+        if (extension.value) {
+            return new URI('file:///' + extension.value);
+        }
+        const filename = language.filenames.values().next();
+        if (filename.value) {
+            return new URI('file:///' + filename.value);
+        }
+        return new URI('file:///.txt');
+    }
+
     private isAutoSaveOn(): boolean {
         const autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE);
         return autoSave === 'on' || autoSave === undefined;
     }
-
     private async toggleAutoSave(): Promise<void> {
         this.preferencesService.set(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'on');
     }

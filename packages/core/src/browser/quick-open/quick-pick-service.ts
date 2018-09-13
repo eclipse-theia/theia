@@ -19,8 +19,10 @@ import { QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { QuickOpenService } from './quick-open-service';
 
 export interface QuickPickItem<T> {
-    label: string,
+    label: string
     value: T
+    description?: string
+    iconClass?: string
 }
 
 export interface QuickPickOptions {
@@ -46,8 +48,12 @@ export class QuickPickService {
             const items = elements.map(element => {
                 const label = typeof element === 'string' ? element : element.label;
                 const value = typeof element === 'string' ? element : element.value;
+                const description = typeof element === 'string' ? undefined : element.description;
+                const iconClass = typeof element === 'string' ? undefined : element.iconClass;
                 return new QuickOpenItem({
                     label,
+                    description,
+                    iconClass,
                     run: mode => {
                         if (mode !== QuickOpenMode.OPEN) {
                             return false;
