@@ -25,6 +25,7 @@ import { ILogger, isWindows } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
 import * as path from 'path';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 // Allow creating temporary files, but remove them when we are done.
 const track = temp.track();
@@ -169,7 +170,7 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
         if (lines) {
             const line = lines[e.line - 1];
             e.lineText = line;
-            e.file = path.join(rootDir, e.file);
+            e.file = FileUri.fsPath(path.join(rootDir, e.file));
 
             expect(a).deep.eq(e);
         } else {
