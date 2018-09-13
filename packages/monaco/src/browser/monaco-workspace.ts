@@ -127,12 +127,25 @@ export class MonacoWorkspace implements lang.Workspace {
     }
 
     protected fireDidOpen(model: MonacoEditorModel): void {
-        this.onDidOpenTextDocumentEmitter.fire(model);
+        this.doFireDidOpen(model);
+        model.textEditorModel.onDidChangeLanguage(e => {
+            model.setLanguageId(e.oldLanguage);
+            try {
+                this.fireDidClose(model);
+            } finally {
+                model.setLanguageId(undefined);
+            }
+            this.doFireDidOpen(model);
+        });
         model.onDidChangeContent(event => this.fireDidChangeContent(event));
         model.onDidSaveModel(() => this.fireDidSave(model));
         model.onWillSaveModel(event => this.fireWillSave(event));
         model.onDirtyChanged(() => this.openEditorIfDirty(model));
         model.onDispose(() => this.fireDidClose(model));
+    }
+
+    protected doFireDidOpen(model: MonacoEditorModel): void {
+        this.onDidOpenTextDocumentEmitter.fire(model);
     }
 
     protected fireDidClose(model: MonacoEditorModel): void {

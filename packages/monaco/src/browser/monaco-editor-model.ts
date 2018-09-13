@@ -107,8 +107,15 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.model.uri.toString();
     }
 
+    protected _languageId: string | undefined;
     get languageId(): string {
-        return this.model.getModeId();
+        return this._languageId !== undefined ? this._languageId : this.model.getModeId();
+    }
+    /**
+     * It's a hack to dispatch close notification with an old language id, don't use it.
+     */
+    setLanguageId(languageId: string | undefined) {
+        this._languageId = languageId;
     }
 
     get version(): number {
