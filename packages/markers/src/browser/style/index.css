@@ -96,3 +96,7 @@
     height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
     line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
 }
+
+.problem-tab-icon::before {
+    content: "\f06a"
+}

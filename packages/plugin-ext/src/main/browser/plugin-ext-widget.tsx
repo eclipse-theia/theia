@@ -37,6 +37,8 @@ export class PluginWidget extends ReactWidget {
         super();
         this.id = 'plugins';
         this.title.label = 'Plugins';
+        this.title.caption = 'Plugins';
+        this.title.iconClass = 'fa plugins-tab-icon';
         this.addClass('theia-plugins');
 
         this.update();

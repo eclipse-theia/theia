@@ -319,3 +319,7 @@
  .no-select:focus {
     outline: none;
  }
+
+.git-tab-icon::before {
+    content: "\f126"
+}

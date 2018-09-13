@@ -93,3 +93,7 @@
     align-items: center;
     flex: 3;
 }
+
+.extensions-tab-icon::before {
+    content: "\f12e"
+}

@@ -60,7 +60,7 @@ export class DebugWidget extends BaseWidget {
         this.title.label = debugSession.configuration.name;
         this.title.caption = debugSession.configuration.name;
         this.title.closable = true;
-        this.title.iconClass = 'fa fa-bug';
+        this.title.iconClass = 'fa debug-tab-icon';
         this.addClass(DebugStyles.DEBUG_CONTAINER);
         this.widgets = [this.toolbar, this.variables, this.threads, this.frames, this.breakpoints];
     }

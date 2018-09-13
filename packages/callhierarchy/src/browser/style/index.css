@@ -60,3 +60,7 @@
     text-overflow: ellipsis;
     color: var(--theia-ui-font-color2);
 }
+
+.call-hierarchy-tab-icon::before {
+    content: "\f0ab"
+}
