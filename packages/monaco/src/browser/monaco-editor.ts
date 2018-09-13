@@ -59,6 +59,8 @@ export class MonacoEditor implements TextEditor {
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
     protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
+    protected readonly onLanguageChangedEmitter = new Emitter<string>();
+    readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -76,7 +78,8 @@ export class MonacoEditor implements TextEditor {
             this.onSelectionChangedEmitter,
             this.onFocusChangedEmitter,
             this.onDocumentContentChangedEmitter,
-            this.onMouseDownEmitter
+            this.onMouseDownEmitter,
+            this.onLanguageChangedEmitter
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -101,8 +104,11 @@ export class MonacoEditor implements TextEditor {
     }
 
     protected addHandlers(codeEditor: IStandaloneCodeEditor): void {
-        this.toDispose.push(codeEditor.onDidChangeConfiguration(e => this.refresh()));
-        this.toDispose.push(codeEditor.onDidChangeModel(e => this.refresh()));
+        this.toDispose.push(codeEditor.onDidChangeModelLanguage(e =>
+            this.onLanguageChangedEmitter.fire(e.newLanguage)
+        ));
+        this.toDispose.push(codeEditor.onDidChangeConfiguration(() => this.refresh()));
+        this.toDispose.push(codeEditor.onDidChangeModel(() => this.refresh()));
         this.toDispose.push(codeEditor.onDidChangeModelContent(e => {
             this.refresh();
             this.onDocumentContentChangedEmitter.fire({ document: this.document, contentChanges: e.changes.map(this.mapModelContentChange.bind(this)) });
@@ -110,12 +116,12 @@ export class MonacoEditor implements TextEditor {
         this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
             this.onCursorPositionChangedEmitter.fire(this.cursor)
         ));
-        this.toDispose.push(codeEditor.onDidChangeCursorSelection(e => {
-            this.onSelectionChangedEmitter.fire(this.selection);
-        }));
-        this.toDispose.push(codeEditor.onDidFocusEditorText(() => {
-            this.onFocusChangedEmitter.fire(this.isFocused());
-        }));
+        this.toDispose.push(codeEditor.onDidChangeCursorSelection(() =>
+            this.onSelectionChangedEmitter.fire(this.selection)
+        ));
+        this.toDispose.push(codeEditor.onDidFocusEditorText(() =>
+            this.onFocusChangedEmitter.fire(this.isFocused())
+        ));
         this.toDispose.push(codeEditor.onDidBlurEditorText(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));
@@ -412,6 +418,12 @@ export class MonacoEditor implements TextEditor {
 
     restoreViewState(state: object): void {
         this.editor.restoreViewState(state as monaco.editor.ICodeEditorViewState);
+    }
+
+    setLanguage(languageId: string): void {
+        for (const document of this.documents) {
+            monaco.editor.setModelLanguage(document.textEditorModel, languageId);
+        }
     }
 
 }

@@ -23,12 +23,15 @@ export * from '../common';
 export interface Language {
     readonly id: string;
     readonly name: string;
+    readonly extensions: Set<string>;
+    readonly filenames: Set<string>;
 }
 
 export const Languages = Symbol('Languages');
 export interface Languages extends services.Languages {
     readonly workspaceSymbolProviders?: services.WorkspaceSymbolProvider[];
     readonly languages?: Language[]
+    getLanguage?(languageId: string): Language | undefined;
 }
 
 export const Workspace = Symbol('Workspace');

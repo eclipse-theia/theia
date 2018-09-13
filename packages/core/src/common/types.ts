@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+
 export type Deferred<T> = {
     [P in keyof T]: Promise<T[P]>
 };

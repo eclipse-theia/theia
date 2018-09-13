@@ -18,10 +18,10 @@ import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
 import { injectable, inject } from 'inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { Position } from 'vscode-languageserver-types';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Languages } from '@theia/languages/lib/browser';
 import { DisposableCollection } from '@theia/core';
+import { EditorCommands } from './editor-command';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution {
@@ -40,32 +40,40 @@ export class EditorContribution implements FrontendApplicationContribution {
         this.toDisposeOnCurrentEditorChanged.dispose();
 
         const widget = this.editorManager.currentEditor;
-        if (widget) {
-            const languageId = widget.editor.document.languageId;
-            const languages = this.languages.languages || [];
-            const language = languages.find(l => l.id === languageId);
-            const languageName = language ? language.name : '';
-            this.statusBar.setElement('editor-status-language', {
-                text: languageName,
-                alignment: StatusBarAlignment.RIGHT,
-                priority: 1
-            });
-
-            this.setCursorPositionStatus(widget.editor.cursor, widget.editor);
-            this.toDisposeOnCurrentEditorChanged.push(
-                widget.editor.onCursorPositionChanged(position =>
-                    this.setCursorPositionStatus(position, widget.editor)
-                )
-            );
-        } else {
-            this.statusBar.removeElement('editor-status-language');
-            this.statusBar.removeElement('editor-status-cursor-position');
+        const editor = widget && widget.editor;
+        this.updateLanguageStatus(editor);
+        this.setCursorPositionStatus(editor);
+        if (editor) {
+            this.toDisposeOnCurrentEditorChanged.pushAll([
+                editor.onLanguageChanged(() => this.updateLanguageStatus(editor)),
+                editor.onCursorPositionChanged(() => this.setCursorPositionStatus(editor))
+            ]);
         }
     }
 
-    protected setCursorPositionStatus(position: Position, editor: TextEditor): void {
+    protected updateLanguageStatus(editor: TextEditor | undefined): void {
+        if (!editor) {
+            this.statusBar.removeElement('editor-status-language');
+            return;
+        }
+        const language = this.languages.getLanguage && this.languages.getLanguage(editor.document.languageId);
+        const languageName = language ? language.name : '';
+        this.statusBar.setElement('editor-status-language', {
+            text: languageName,
+            alignment: StatusBarAlignment.RIGHT,
+            priority: 1,
+            command: EditorCommands.CHANGE_LANGUAGE.id
+        });
+    }
+
+    protected setCursorPositionStatus(editor: TextEditor | undefined): void {
+        if (!editor) {
+            this.statusBar.removeElement('editor-status-cursor-position');
+            return;
+        }
+        const { cursor } = editor;
         this.statusBar.setElement('editor-status-cursor-position', {
-            text: `Ln ${position.line + 1}, Col ${editor.getVisibleColumn(position)}`,
+            text: `Ln ${cursor.line + 1}, Col ${editor.getVisibleColumn(cursor)}`,
             alignment: StatusBarAlignment.RIGHT,
             priority: 100
         });
