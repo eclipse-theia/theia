@@ -213,3 +213,7 @@
     align-items: center;
     justify-content: center;
 }
+
+.git-history-tab-icon::before {
+    content: "\f1da"
+}

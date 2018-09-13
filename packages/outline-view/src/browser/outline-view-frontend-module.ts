@@ -27,6 +27,7 @@ import {
     defaultTreeProps
 } from '@theia/core/lib/browser';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
+import '../../src/browser/styles/index.css';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>

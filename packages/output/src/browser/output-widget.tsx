@@ -36,7 +36,8 @@ export class OutputWidget extends ReactWidget {
         super();
         this.id = OUTPUT_WIDGET_KIND;
         this.title.label = 'Output';
-        this.title.iconClass = 'fa fa-flag';
+        this.title.caption = 'Output';
+        this.title.iconClass = 'fa output-tab-icon';
         this.title.closable = true;
         this.addClass('theia-output');
     }

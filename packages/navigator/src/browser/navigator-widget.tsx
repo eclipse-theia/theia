@@ -52,6 +52,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
+        this.title.caption = LABEL;
+        this.title.iconClass = 'fa navigator-tab-icon';
         this.addClass(CLASS);
         this.initialize();
     }

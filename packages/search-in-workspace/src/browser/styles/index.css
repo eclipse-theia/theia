@@ -398,3 +398,7 @@
 .replace-all-button.disabled {
     opacity: 0.5;
 }
+
+.search-in-workspace-tab-icon::before {
+    content: "\f002"
+}

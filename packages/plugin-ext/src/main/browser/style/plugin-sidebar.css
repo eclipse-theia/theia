@@ -65,3 +65,7 @@
     flex: 5;
     align-items: center;
 }
+
+.plugins-tab-icon::before {
+    content: "\f0fe"
+}

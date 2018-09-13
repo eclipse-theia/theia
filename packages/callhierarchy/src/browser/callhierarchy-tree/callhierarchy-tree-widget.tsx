@@ -46,7 +46,8 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
         this.id = CALLHIERARCHY_ID;
         this.title.label = 'Call Hierarchy';
-        this.title.iconClass = 'fa fa-arrow-circle-down';
+        this.title.caption = 'Call Hierarchy';
+        this.title.iconClass = 'fa call-hierarchy-tab-icon';
         this.title.closable = true;
         this.addClass(HIERARCHY_TREE_CLASS);
         this.toDispose.push(this.model.onSelectionChanged(selection => {

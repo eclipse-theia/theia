@@ -235,3 +235,7 @@ div[orientation='vertical'] > .theia-debug-entry > .theia-TreeContainer > div > 
     background: var(--theia-layout-color0);
     height: 380px
 }
+
+.debug-tab-icon::before {
+    content: "\f188"
+}

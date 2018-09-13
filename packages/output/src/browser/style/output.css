@@ -45,3 +45,7 @@
     padding-left: 3px;
     padding-right: 15px;
 }
+
+.output-tab-icon::before {
+    content: "\f024"
+}
