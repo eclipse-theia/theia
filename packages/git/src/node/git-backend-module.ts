@@ -26,6 +26,7 @@ import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepository
 import { GitLocator } from './git-locator/git-locator-protocol';
 import { GitLocatorClient } from './git-locator/git-locator-client';
 import { GitLocatorImpl } from './git-locator/git-locator-impl';
+import { GitExecProvider } from './git-exec-provider';
 
 export interface GitBindingOptions {
     readonly bindManager: (binding: interfaces.BindingToSyntax<{}>) => interfaces.BindingWhenOnSyntax<{}>;
@@ -59,12 +60,13 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     } else {
         bind(GitLocator).to(GitLocatorClient);
     }
-    bind(DugiteGit).toSelf();
-    bind(OutputParser).toSelf();
-    bind(NameStatusParser).toSelf();
-    bind(CommitDetailsParser).toSelf();
-    bind(GitBlameParser).toSelf();
-    bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit));
+    bind(DugiteGit).toSelf().inSingletonScope();
+    bind(OutputParser).toSelf().inSingletonScope();
+    bind(NameStatusParser).toSelf().inSingletonScope();
+    bind(CommitDetailsParser).toSelf().inSingletonScope();
+    bind(GitBlameParser).toSelf().inSingletonScope();
+    bind(GitExecProvider).toSelf().inSingletonScope();
+    bind(Git).toService(DugiteGit);
 }
 
 export function bindRepositoryWatcher(bind: interfaces.Bind): void {

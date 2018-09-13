@@ -362,7 +362,7 @@ export interface GitResult {
 /**
  * The Git errors which can be parsed from failed Git commands.
  */
-export declare enum GitError {
+export enum GitError {
     SSHKeyAuditUnverified = 0,
     SSHAuthenticationFailed = 1,
     SSHPermissionDenied = 2,
@@ -393,13 +393,21 @@ export declare enum GitError {
     NotAGitRepository = 27,
     CannotMergeUnrelatedHistories = 28,
     LFSAttributeDoesNotMatch = 29,
-    PushWithFileSizeExceedingLimit = 30,
-    HexBranchNameRejected = 31,
-    ForcePushRejected = 32,
-    InvalidRefLength = 33,
-    ProtectedBranchRequiresReview = 34,
-    ProtectedBranchForcePush = 35,
-    PushWithPrivateEmail = 36
+    BranchRenameFailed = 30,
+    PathDoesNotExist = 31,
+    InvalidObjectName = 32,
+    OutsideRepository = 33,
+    LockFileAlreadyExists = 34,
+    // GitHub-specific error codes
+    PushWithFileSizeExceedingLimit = 35,
+    HexBranchNameRejected = 36,
+    ForcePushRejected = 37,
+    InvalidRefLength = 38,
+    ProtectedBranchRequiresReview = 39,
+    ProtectedBranchForcePush = 40,
+    ProtectedBranchDeleteRejected = 41,
+    ProtectedBranchRequiredStatus = 42,
+    PushWithPrivateEmail = 43
 }
 
 export interface GitFileBlame {
