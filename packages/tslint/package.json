@@ -1,23 +1,13 @@
 {
-  "name": "@theia/typescript",
+  "name": "@theia/tslint",
   "version": "0.3.14",
-  "description": "Theia - Typescript Extension",
-  "dependencies": {
-    "@theia/callhierarchy": "^0.3.14",
-    "@theia/core": "^0.3.14",
-    "@theia/languages": "^0.3.14",
-    "@theia/monaco": "^0.3.14",
-    "typescript-language-server": "^0.3.5"
-  },
+  "description": "Theia - TSLint Extension",
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/typescript-frontend-module",
-      "backend": "lib/node/typescript-backend-module"
-    }
-  ],
+  "dependencies": {
+    "tslint-language-service": "^0.9.9"
+  },
   "keywords": [
     "theia-extension"
   ],
@@ -48,5 +38,12 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
   }
 }
