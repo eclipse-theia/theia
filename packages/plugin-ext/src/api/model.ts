@@ -197,6 +197,17 @@ export interface HoverProvider {
     provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
 }
 
+export interface FormattingOptions {
+    tabSize: number;
+    insertSpaces: boolean;
+}
+
+export interface TextEdit {
+    range: Range;
+    text?: string;
+    eol?: monaco.editor.EndOfLineSequence;
+}
+
 export interface Location {
     uri: UriComponents;
     range: Range;
