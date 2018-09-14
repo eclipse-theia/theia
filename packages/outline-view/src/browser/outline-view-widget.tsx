@@ -76,8 +76,8 @@ export class OutlineViewWidget extends TreeWidget {
             if (OutlineSymbolInformationNode.is(node)) {
                 const treeNode = this.model.getNode(node.id);
                 if (treeNode && OutlineSymbolInformationNode.is(treeNode)) {
-                    node.expanded = treeNode.expanded;
-                    node.selected = treeNode.selected;
+                    treeNode.expanded = node.expanded;
+                    treeNode.selected = node.selected;
                 }
                 this.reconcileTreeState(Array.from(node.children));
             }
