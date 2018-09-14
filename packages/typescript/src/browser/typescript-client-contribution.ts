@@ -70,8 +70,8 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         ];
     }
 
-    protected get initializationOptions(): TypeScriptInitializationOptions {
-        const options: TypeScriptInitializationOptions = {};
+    protected get initializationOptions(): Partial<TypeScriptInitializationOptions> {
+        const options: Partial<TypeScriptInitializationOptions> = {};
         const logVerbosity = this.preferences['typescript.server.log'];
         if (logVerbosity !== 'off') {
             options.logVerbosity = logVerbosity;

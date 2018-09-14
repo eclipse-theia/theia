@@ -37,6 +37,7 @@
     "@theia/task": "^0.3.14",
     "@theia/terminal": "^0.3.14",
     "@theia/textmate-grammars": "^0.3.14",
+    "@theia/tslint": "^0.3.14",
     "@theia/typescript": "^0.3.14",
     "@theia/userstorage": "^0.3.14",
     "@theia/variable-resolver": "^0.3.14",

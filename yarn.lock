@@ -9387,9 +9387,9 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-language-server@^0.3.3:
-  version "0.3.3"
-  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.3.tgz#5b37764b204a852b5b8a01626eb43db764255568"
+typescript-language-server@^0.3.5:
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.3.5.tgz#1d07237b014df40fdad1588a151c0190668db313"
   dependencies:
     command-exists "1.2.6"
     commander "^2.11.0"
