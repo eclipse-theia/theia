@@ -26,6 +26,9 @@ import { SerializedDocumentFilter, MarkerData } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
 import { UriComponents } from '@theia/plugin-ext/src/common/uri-components';
+import { LanguageSelector } from '../../plugin/languages';
+import { DocumentFilter, MonacoModelIdentifier, testGlob, getLanguages } from 'monaco-languageclient/lib';
+import { DisposableCollection } from '@theia/core';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
@@ -105,10 +108,57 @@ export class LanguagesMainImpl implements LanguagesMain {
     }
 
     $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void {
-        this.disposables.set(handle, monaco.modes.HoverProviderRegistry.register(selector, {
-            provideHover: (model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken) =>
-                this.proxy.$provideHover(handle, model.uri, position)
-        }));
+        const languageSelector = fromLanguageSelector(selector);
+        const hoverProvider = this.createHoverProvider(handle, languageSelector);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerHoverProvider(language, hoverProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createHoverProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.HoverProvider {
+        return {
+            provideHover: (model, position, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideHover(handle, model.uri, position).then(v => v!);
+            }
+        };
+    }
+
+    protected matchModel(selector: LanguageSelector | undefined, model: MonacoModelIdentifier): boolean {
+        if (Array.isArray(selector)) {
+            return selector.some(filter => this.matchModel(filter, model));
+        }
+        if (DocumentFilter.is(selector)) {
+            if (!!selector.language && selector.language !== model.languageId) {
+                return false;
+            }
+            if (!!selector.scheme && selector.scheme !== model.uri.scheme) {
+                return false;
+            }
+            if (!!selector.pattern && !testGlob(selector.pattern, model.uri.path)) {
+                return false;
+            }
+            return true;
+        }
+        return selector === model.languageId;
+    }
+
+    protected matchLanguage(selector: LanguageSelector | undefined, languageId: string): boolean {
+        if (Array.isArray(selector)) {
+            return selector.some(filter => this.matchLanguage(filter, languageId));
+        }
+
+        if (DocumentFilter.is(selector)) {
+            return !selector.language || selector.language === languageId;
+        }
+
+        return selector === languageId;
     }
 }
 

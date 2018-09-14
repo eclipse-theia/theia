@@ -80,7 +80,7 @@ export function fromPosition(position: types.Position): Position {
 }
 
 export function toPosition(position: Position): types.Position {
-    return new types.Position(position.lineNumber, position.column);
+    return new types.Position(position.lineNumber - 1, position.column - 1);
 }
 
 // tslint:disable-next-line:no-any

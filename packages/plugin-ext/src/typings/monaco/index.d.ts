@@ -335,10 +335,4 @@ declare module monaco.modes {
     export const SuggestRegistry: LanguageFeatureRegistry<ISuggestSupport>;
 
     export type ProviderResult<T> = T | undefined | PromiseLike<T | undefined>;
-
-    export interface HoverProvider {
-        provideHover(document: monaco.editor.ITextModel, position: Position, token: CancellationToken | undefined): ProviderResult<monaco.languages.Hover>;
-    }
-
-    export const HoverProviderRegistry: LanguageFeatureRegistry<HoverProvider>;
 }
