@@ -18,5 +18,3 @@ export interface MetricsContribution {
     startCollecting(): void;
     getMetrics(): string;
 }
-
-export const MetricsProjectPath = Symbol('MetricsProjectPath');

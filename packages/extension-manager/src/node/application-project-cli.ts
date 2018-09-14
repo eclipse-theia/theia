@@ -15,14 +15,13 @@
  ********************************************************************************/
 
 import * as yargs from 'yargs';
-import { injectable } from 'inversify';
-import { CliContribution } from '@theia/core/lib/node';
+import { injectable, inject } from 'inversify';
+import { CliContribution, BackendApplicationCliContribution } from '@theia/core/lib/node';
 import { ApplicationProjectOptions } from './application-project';
 import { NpmClientOptions } from './npm-client';
 
 export type ApplicationProjectArgs = ApplicationProjectOptions & NpmClientOptions;
 
-const appProjectPath = 'app-project-path';
 const appNpmClient = 'app-npm-client';
 const appAutoInstall = 'app-auto-install';
 const appWatchRegistry = 'app-watch-registry';
@@ -30,16 +29,15 @@ const appWatchRegistry = 'app-watch-registry';
 @injectable()
 export class ApplicationProjectCliContribution implements CliContribution {
 
+    @inject(BackendApplicationCliContribution)
+    protected readonly applicationCli: BackendApplicationCliContribution;
+
     protected _args: ApplicationProjectArgs;
     get args(): ApplicationProjectArgs {
         return this._args;
     }
 
     configure(conf: yargs.Argv): void {
-        conf.option(appProjectPath, {
-            description: 'Sets the application project directory',
-            default: process.cwd()
-        });
         conf.option(appNpmClient, {
             description: 'Sets the application npm client',
             choices: ['npm', 'yarn'],
@@ -57,8 +55,9 @@ export class ApplicationProjectCliContribution implements CliContribution {
     }
 
     setArguments(args: yargs.Arguments): void {
+        const { projectPath } = this.applicationCli;
         this._args = {
-            projectPath: args[appProjectPath],
+            projectPath,
             npmClient: args[appNpmClient],
             autoInstall: args[appAutoInstall],
             watchRegistry: args[appWatchRegistry]

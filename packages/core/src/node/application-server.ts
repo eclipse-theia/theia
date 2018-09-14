@@ -14,17 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { ApplicationServer, ExtensionInfo, ApplicationInfo } from '../common/application-protocol';
 import { ApplicationPackage } from '@theia/application-package';
 
 @injectable()
 export class ApplicationServerImpl implements ApplicationServer {
 
+    @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
-    constructor() {
-        this.applicationPackage = new ApplicationPackage({ projectPath: process.cwd() });
-    }
 
     getExtensionsInfos(): Promise<ExtensionInfo[]> {
         const extensions = this.applicationPackage.extensionPackages;
@@ -33,7 +31,7 @@ export class ApplicationServerImpl implements ApplicationServer {
     }
 
     getApplicationInfo(): Promise<ApplicationInfo | undefined> {
-        const pck = this.applicationPackage.pck;
+        const pck = this.applicationPackage.pck.pck;
         if (pck.name && pck.version) {
             const name = pck.name;
             const version = pck.version;
