@@ -7,16 +7,27 @@ Plugin runtime is a JavaScript runtime for Theia plugins, for now we have two ty
 1. WebWorker - for frontend plugins
 2. Separate Node.JS instance - for backend plugins
 
+## plugin-ext structure
 
-# plugin-ext structure
+[api](../src/api) - protocol and model objects for communication between Theia client and plugins runtime
 
-[api](./src/api) - protocol and model objects for communication between Theia client and plugins runtime
+[main](../src/main) - Theia part if plugin API. Code inside this directory is simple Theia extension and can use all functionality provided by Theia like `inversify`;
 
-[main](./src/main) - Theia part if plugin API. Code inside this directory is simple Theia extension and can use all functionality provided by Theia like `inversify`;
+[plugin](../src/plugin) - Plugin runtime part of the Plugin API. Here place for all types and namespaces described in [theia.d.ts](../../plugin/src/theia.d.ts)
 
-[plugin](./src/plugin) - Plugin runtime part of the Plugin API. Here place for all types and namespaces described in [theia.d.ts](../../plugin/src/theia.d.ts)
+## How to add new Plugin API
 
-# How to add new Plugin API
+### Add new method/namespace to [theia.d.ts](../../plugin/src/theia.d.ts).
 
-1. Add new method/namespace to [theia.d.ts](../../plugin/src/theia.d.ts). You can copy from `vscode.d.ts` or provide your own.
+You can copy from `vscode.d.ts` or provide your own.
 
+### Add implementation of your API
+
+All implementations is stored in [plugin-context.ts](../src/plugin/plugin-context.ts)
+`plugin-contaxt.ts` contains `createAPIFactory` function which returns factory function which return own instance of Theia Plugin API for plugin.
+
+#### Namespace handling - TODO
+
+#### New type adding - TODO
+
+### Working with RPC proxy - TODO
