@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,7 +24,9 @@ import {
 } from '@theia/core/lib/common';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/src/browser/keybinding';
+import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
+import { AbstractViewContribution } from '@theia/core/lib/browser';
+import { KeybindingWidget } from './keybindings-widget';
 export namespace KeymapsCommands {
     export const OPEN_KEYMAPS: Command = {
         id: 'keymaps:open',
@@ -33,15 +35,25 @@ export namespace KeymapsCommands {
 }
 
 @injectable()
-export class KeymapsFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
+export class KeymapsFrontendContribution extends AbstractViewContribution<KeybindingWidget> implements CommandContribution, MenuContribution {
 
     @inject(KeymapsService)
     protected readonly keymaps: KeymapsService;
 
+    constructor() {
+        super({
+            widgetId: KeybindingWidget.ID,
+            widgetName: 'Keyboard Shortcuts',
+            defaultWidgetOptions: {
+                area: 'main'
+            },
+        });
+    }
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS, {
             isEnabled: () => true,
-            execute: () => this.keymaps.open()
+            execute: () => this.openView({ activate: true })
         });
     }
 

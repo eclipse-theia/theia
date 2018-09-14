@@ -214,6 +214,10 @@ export class KeybindingRegistry {
         return false;
     }
 
+    containsKeybindingInScope(binding: Keybinding, scope = KeybindingScope.USER): boolean {
+        return this.containsKeybinding(this.keymaps[scope], binding);
+    }
+
     /**
      * Converts special `ctrlcmd` modifier back to `ctrl` for non-OSX users in a keybinding string.
      * (`ctrlcmd` is mapped to the same actual key as `ctrl` under non-OSX users)

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, } from 'inversify';
+import { ContainerModule } from 'inversify';
 import { KeymapsService } from './keymaps-service';
 import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
@@ -22,6 +22,10 @@ import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { KeymapsParser } from './keymaps-parser';
 
 import './monaco-contribution';
+import { WidgetFactory } from '@theia/core/lib/browser';
+import { KeybindingWidget } from './keybindings-widget';
+
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bind(KeymapsParser).toSelf().inSingletonScope();
@@ -30,4 +34,9 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(KeymapsFrontendContribution);
     bind(KeybindingContribution).toService(KeymapsFrontendContribution);
     bind(MenuContribution).toService(KeymapsFrontendContribution);
+    bind(KeybindingWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: KeybindingWidget.ID,
+        createWidget: () => context.container.get<KeybindingWidget>(KeybindingWidget),
+    })).inSingletonScope();
 });
