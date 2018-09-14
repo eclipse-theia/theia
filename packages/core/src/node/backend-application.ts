@@ -42,6 +42,8 @@ const defaultPort = BackendProcess.electron ? 0 : 3000;
 const defaultHost = 'localhost';
 const defaultSSL = false;
 
+const appProjectPath = 'app-project-path';
+
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
 
@@ -50,6 +52,7 @@ export class BackendApplicationCliContribution implements CliContribution {
     ssl: boolean | undefined;
     cert: string | undefined;
     certkey: string | undefined;
+    projectPath: string;
 
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
@@ -57,6 +60,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
+        conf.option(appProjectPath, { description: 'Sets the application project directory', default: process.cwd() });
     }
 
     setArguments(args: yargs.Arguments): void {
@@ -65,6 +69,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         this.ssl = args.ssl;
         this.cert = args.cert;
         this.certkey = args.certkey;
+        this.projectPath = args[appProjectPath];
     }
 }
 

@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
-import { ApplicationPackageManager } from '@theia/application-manager';
+import { injectable, postConstruct, inject } from 'inversify';
+import { ApplicationPackage } from '@theia/application-package';
 import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME } from '../common';
 import { TypeScriptPlugin, TypeScriptInitializeParams, TypeScriptInitializationOptions } from 'typescript-language-server/lib/ts-protocol';
@@ -30,14 +30,12 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
 
     protected readonly plugins: TypeScriptPlugin[] = [];
 
-    constructor() {
-        super();
-        // TODO: ApplicationPackageManager should be injected
-        const manager = new ApplicationPackageManager({
-            // TODO: configure project path via CLI
-            projectPath: process.cwd()
-        });
-        for (const extension of manager.pck.extensionPackages) {
+    @inject(ApplicationPackage)
+    protected readonly applicationPackage: ApplicationPackage;
+
+    @postConstruct()
+    protected init(): void {
+        for (const extension of this.applicationPackage.extensionPackages) {
             const { contributes, installed } = extension.raw;
             if (installed && contributes && contributes.typescriptServerPlugins && Array.isArray(contributes.typescriptServerPlugins)) {
                 for (const plugin of contributes.typescriptServerPlugins) {

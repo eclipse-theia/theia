@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject } from 'inversify';
-import { MetricsContribution, MetricsProjectPath } from './metrics-contribution';
-import { ApplicationPackageManager } from '@theia/application-manager';
+import { MetricsContribution } from './metrics-contribution';
+import { ApplicationPackage } from '@theia/application-package';
 import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
 
 const metricsName = 'theia_extension_version';
@@ -23,19 +23,17 @@ const metricsName = 'theia_extension_version';
 @injectable()
 export class ExtensionMetricsContribution implements MetricsContribution {
     private metrics: string = '';
-    readonly applicationPackageManager: ApplicationPackageManager;
 
-    constructor(@inject(MetricsProjectPath) readonly appProjectPath: string) { }
+    @inject(ApplicationPackage)
+    protected readonly applicationPackage: ApplicationPackage;
 
     getMetrics(): string {
         return this.metrics;
     }
 
     startCollecting(): void {
-        const projectPath = this.appProjectPath;
         let latestMetrics = '';
-        const app = new ApplicationPackageManager({ projectPath });
-        const installedExtensions = app.pck.extensionPackages;
+        const installedExtensions = this.applicationPackage.extensionPackages;
         latestMetrics += `# HELP ${metricsName} Theia extension version info.\n`;
         latestMetrics += `# TYPE ${metricsName} gauge\n`;
         installedExtensions.forEach(extensionInfo => {

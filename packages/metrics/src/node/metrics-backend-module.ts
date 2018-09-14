@@ -15,35 +15,18 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { bindContributionProvider } from '@theia/core/lib/common';
-import {
-    MetricsContribution,
-    NodeMetricsContribution,
-    MetricsProjectPath,
-    MetricsBackendApplicationContribution,
-    ExtensionMetricsContribution,
-    MetricsCliContribution
-} from './';
+import { MetricsContribution } from './metrics-contribution';
+import { NodeMetricsContribution } from './node-metrics-contribution';
+import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
+import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
 
 export default new ContainerModule(bind => {
-
-    bind(MetricsCliContribution).toSelf().inSingletonScope();
-    bind(CliContribution).toService(MetricsCliContribution);
-
-    bind(MetricsProjectPath).toDynamicValue(ctx => {
-        const contrib = ctx.container.get(MetricsCliContribution);
-        if (contrib.applicationPath) {
-            return contrib.applicationPath;
-        } else {
-            return process.cwd();
-        }
-    }).inSingletonScope();
-
     bindContributionProvider(bind, MetricsContribution);
-    bind(MetricsContribution).to(NodeMetricsContribution);
-    bind(MetricsContribution).to(ExtensionMetricsContribution);
+    bind(MetricsContribution).to(NodeMetricsContribution).inSingletonScope();
+    bind(MetricsContribution).to(ExtensionMetricsContribution).inSingletonScope();
 
-    bind(BackendApplicationContribution).to(MetricsBackendApplicationContribution);
+    bind(BackendApplicationContribution).to(MetricsBackendApplicationContribution).inSingletonScope();
 
 });
