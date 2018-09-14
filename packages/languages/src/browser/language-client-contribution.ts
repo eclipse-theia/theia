@@ -102,6 +102,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                     return;
                 }
                 toDeactivate.push(messageConnection);
+                this.toRestart = messageConnection;
 
                 const languageClient = this.createLanguageClient(messageConnection);
                 this.onWillStart(languageClient);
@@ -115,9 +116,12 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     get running(): boolean {
         return this.state === State.Running;
     }
+
+    protected toRestart: Disposable | undefined;
     restart(): void {
-        if (this._languageClient) {
-            this._languageClient.stop();
+        if (this.toRestart) {
+            this.toRestart.dispose();
+            this.toRestart = undefined;
         }
     }
 
