@@ -307,6 +307,9 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider);
             },
+            registerDocumentFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentFormattingEditProvider): theia.Disposable {
+                return languagesExt.registerDocumentFormattingEditProvider(selector, provider);
+            }
         };
 
         const plugins: typeof theia.plugins = {

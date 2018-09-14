@@ -33,6 +33,8 @@ import {
     MarkerData,
     SignatureHelp,
     Hover,
+    FormattingOptions,
+    SingleEditOperation as ModelSingleEditOperation,
     Definition,
     DefinitionLink
 } from './model';
@@ -645,6 +647,7 @@ export interface LanguagesExt {
     $provideDefinition(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined>;
     $provideSignatureHelp(handle: number, resource: UriComponents, position: Position): Promise<SignatureHelp | undefined>;
     $provideHover(handle: number, resource: UriComponents, position: Position): Promise<Hover | undefined>;
+    $provideDocumentFormattingEdits(handle: number, resource: UriComponents, options: FormattingOptions): Promise<ModelSingleEditOperation[] | undefined>;
 }
 
 export interface LanguagesMain {
@@ -658,6 +661,7 @@ export interface LanguagesMain {
 
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
+    $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {
