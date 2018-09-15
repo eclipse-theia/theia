@@ -16,10 +16,9 @@
 
 import { injectable, inject, named } from 'inversify';
 import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
-import { ILogger, DisposableCollection, ContributionProvider } from '@theia/core';
+import { ILogger, ContributionProvider } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { MonacoTextModelService } from '../monaco-text-model-service';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
 import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
@@ -31,9 +30,6 @@ export type OnigasmPromise = Promise<IOnigLib>;
 @injectable()
 export class MonacoTextmateService implements FrontendApplicationContribution {
 
-    protected readonly toDispose = new DisposableCollection();
-
-    protected readonly activatedLanguages = new Set<string>();
     protected grammarRegistry: Registry;
 
     @inject(ContributionProvider) @named(LanguageGrammarDefinitionContribution)
@@ -41,9 +37,6 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
     @inject(TextmateRegistry)
     protected readonly textmateRegistry: TextmateRegistry;
-
-    @inject(MonacoTextModelService)
-    protected readonly monacoModelService: MonacoTextModelService;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -97,22 +90,23 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
         });
 
-        this.toDispose.push(this.themeService.onThemeChange(themeChange => {
+        this.themeService.onThemeChange(themeChange => {
             const theme = this.monacoThemeRegistry.getTheme(themeChange.newTheme.editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME);
             if (theme) {
                 this.grammarRegistry.setTheme(theme);
             }
-        }));
+        });
 
-        this.toDispose.push(this.monacoModelService.onDidCreate(model => {
-            if (!this.activatedLanguages.has(model.languageId)) {
-                this.activatedLanguages.add(model.languageId);
-                this.activateLanguage(model.languageId);
+        const registered = new Set<string>();
+        for (const { id } of monaco.languages.getLanguages()) {
+            if (!registered.has(id)) {
+                monaco.languages.onLanguage(id, () => this.activateLanguage(id));
+                registered.add(id);
             }
-        }));
+        }
     }
 
-    async activateLanguage(languageId: string) {
+    protected async activateLanguage(languageId: string) {
         const scopeName = this.textmateRegistry.getScope(languageId);
         if (!scopeName) {
             return;
@@ -133,13 +127,5 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         } catch (error) {
             this.logger.warn('No grammar for this language id', languageId, error);
         }
-    }
-
-    resetLanguage(languageId: string) {
-        this.activatedLanguages.delete(languageId);
-    }
-
-    onStop(): void {
-        this.toDispose.dispose();
     }
 }
