@@ -38,6 +38,10 @@ export class MarkerCollection<T> {
         public readonly kind: string
     ) { }
 
+    get empty(): boolean {
+        return !this.owner2Markers.size;
+    }
+
     getOwners(): string[] {
         return Array.from(this.owner2Markers.keys());
     }
@@ -151,10 +155,10 @@ export abstract class MarkerManager<D extends object> {
         const uriString = uri.toString();
         const collection = this.uri2MarkerCollection.get(uriString) || new MarkerCollection<D>(uri, this.getKind());
         const oldMarkers = collection.setMarkers(owner, data);
-        if (data.length > 0) {
-            this.uri2MarkerCollection.set(uriString, collection);
-        } else {
+        if (collection.empty) {
             this.uri2MarkerCollection.delete(uri.toString());
+        } else {
+            this.uri2MarkerCollection.set(uriString, collection);
         }
         this.fireOnDidChangeMarkers(uri);
         return oldMarkers;
