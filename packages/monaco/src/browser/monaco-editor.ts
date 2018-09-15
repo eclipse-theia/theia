@@ -420,6 +420,14 @@ export class MonacoEditor implements TextEditor {
         this.editor.restoreViewState(state as monaco.editor.ICodeEditorViewState);
     }
 
+    async detectLanguage(): Promise<void> {
+        const filename = this.uri.path.toString();
+        const modeService = monaco.services.StaticServices.modeService.get();
+        const firstLine = this.document.textEditorModel.getLineContent(1);
+        const mode = await modeService.getOrCreateModeByFilenameOrFirstLine(filename, firstLine);
+        this.setLanguage(mode.getId());
+    }
+
     setLanguage(languageId: string): void {
         for (const document of this.documents) {
             monaco.editor.setModelLanguage(document.textEditorModel, languageId);

@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue } from '@theia/core/lib/browser';
 import { Languages, Language } from '@theia/languages/lib/browser';
 import { EditorManager } from './editor-manager';
 
@@ -124,24 +124,29 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         const current = editor.document.languageId;
-        const languages: QuickPickItem<string>[] = (await Promise.all(this.languages.languages.map(
-            language => this.toQuickPickLanguage(language, current)
-        ))).sort((e, e2) => e.value.localeCompare(e2.value));
-
-        const selected = await this.quickPick.show(languages, {
+        const items: QuickPickItem<'autoDetect' | Language>[] = [
+            { label: 'Auto Detect', value: 'autoDetect' },
+            { type: 'separator', label: 'languages (identifier)' },
+            ... (await Promise.all(this.languages.languages.map(
+                language => this.toQuickPickLanguage(language, current)
+            ))).sort((e, e2) => e.label.localeCompare(e2.label))
+        ];
+        const selected = await this.quickPick.show(items, {
             placeholder: 'Select Language Mode'
         });
-        if (selected) {
-            editor.setLanguage(selected);
+        if (selected === 'autoDetect') {
+            editor.detectLanguage();
+        } else if (selected) {
+            editor.setLanguage(selected.id);
         }
     }
-    protected async toQuickPickLanguage(language: Language, current: string): Promise<QuickPickItem<string>> {
-        const languageUri = this.toLanguageUri(language);
+    protected async toQuickPickLanguage(value: Language, current: string): Promise<QuickPickValue<Language>> {
+        const languageUri = this.toLanguageUri(value);
         const iconClass = await this.labelProvider.getIcon(languageUri) + ' file-icon';
         return {
-            value: language.id,
-            label: language.name,
-            description: `(${language.id})${current === language.id ? ' - Configured Language' : ''}`,
+            value,
+            label: value.name,
+            description: `(${value.id})${current === value.id ? ' - Configured Language' : ''}`,
             iconClass
         };
     }
