@@ -383,8 +383,21 @@ declare module monaco.services {
         readonly id: LanguageId;
     }
 
+    export interface IModeService {
+        getOrCreateModeByFilenameOrFirstLine(filename: string, firstLine?: string): monaco.Promise<IMode>;
+    }
+
+    export interface IMode {
+
+        getId(): string;
+
+        getLanguageIdentifier(): LanguageIdentifier;
+
+    }
+
     export module StaticServices {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
+        export const modeService: LazyStaticService<IModeService>;
     }
 }
 

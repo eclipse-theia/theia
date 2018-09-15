@@ -15,10 +15,22 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenItem, QuickOpenMode } from './quick-open-model';
+import { QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, QuickOpenItemOptions } from './quick-open-model';
 import { QuickOpenService } from './quick-open-service';
 
-export interface QuickPickItem<T> {
+export type QuickPickItem<T> = QuickPickValue<T> | QuickPickSeparator;
+
+export interface QuickPickSeparator {
+    type: 'separator'
+    label: string
+}
+export namespace QuickPickSeparator {
+    export function is(item: string | QuickPickItem<Object>): item is QuickPickSeparator {
+        return typeof item === 'object' && 'type' in item && item['type'] === 'separator';
+    }
+}
+
+export interface QuickPickValue<T> {
     label: string
     value: T
     description?: string
@@ -26,7 +38,15 @@ export interface QuickPickItem<T> {
 }
 
 export interface QuickPickOptions {
-    placeholder?: string;
+    placeholder?: string
+    /**
+     * default: true
+     */
+    fuzzyMatchLabel?: boolean
+    /**
+     * default: true
+     */
+    fuzzyMatchDescription?: boolean
 }
 
 @injectable()
@@ -45,30 +65,49 @@ export class QuickPickService {
             return elements[0];
         }
         return new Promise<Object | undefined>(resolve => {
-            const items = elements.map(element => {
-                const label = typeof element === 'string' ? element : element.label;
-                const value = typeof element === 'string' ? element : element.value;
-                const description = typeof element === 'string' ? undefined : element.description;
-                const iconClass = typeof element === 'string' ? undefined : element.iconClass;
-                return new QuickOpenItem({
-                    label,
-                    description,
-                    iconClass,
-                    run: mode => {
-                        if (mode !== QuickOpenMode.OPEN) {
-                            return false;
-                        }
-                        resolve(value);
-                        return true;
-                    }
-                });
-            });
-            this.quickOpenService.open({
-                onType: (lookFor, acceptor) => acceptor(items)
-            }, Object.assign({
-                onClose: () => resolve(undefined)
+            const items = this.toItems(elements, resolve);
+            this.quickOpenService.open({ onType: (_, acceptor) => acceptor(items) }, Object.assign({
+                onClose: () => resolve(undefined),
+                fuzzyMatchLabel: true,
+                fuzzyMatchDescription: true
             }, options));
         });
+    }
+    protected toItems(elements: (string | QuickPickItem<Object>)[], resolve: (element: Object) => void): QuickOpenItem[] {
+        const items: QuickOpenItem[] = [];
+        let groupLabel: string | undefined;
+        for (const element of elements) {
+            if (QuickPickSeparator.is(element)) {
+                groupLabel = element.label;
+            } else {
+                const options = this.toItemOptions(element, resolve);
+                if (groupLabel) {
+                    items.push(new QuickOpenGroupItem(Object.assign(options, { groupLabel, showBorder: true })));
+                    groupLabel = undefined;
+                } else {
+                    items.push(new QuickOpenItem(options));
+                }
+            }
+        }
+        return items;
+    }
+    protected toItemOptions(element: string | QuickPickValue<Object>, resolve: (element: Object) => void): QuickOpenItemOptions {
+        const label = typeof element === 'string' ? element : element.label;
+        const value = typeof element === 'string' ? element : element.value;
+        const description = typeof element === 'string' ? undefined : element.description;
+        const iconClass = typeof element === 'string' ? undefined : element.iconClass;
+        return {
+            label,
+            description,
+            iconClass,
+            run: mode => {
+                if (mode !== QuickOpenMode.OPEN) {
+                    return false;
+                }
+                resolve(value);
+                return true;
+            }
+        };
     }
 
 }
