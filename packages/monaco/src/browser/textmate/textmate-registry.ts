@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { RegistryOptions, IGrammarConfiguration } from 'monaco-textmate';
+import { IGrammarConfiguration } from 'vscode-textmate';
 import { TokenizerOption } from './textmate-tokenizer';
 
 export interface TextmateGrammarConfiguration extends IGrammarConfiguration {
@@ -27,21 +27,31 @@ export interface TextmateGrammarConfiguration extends IGrammarConfiguration {
 
 }
 
+export interface GrammarDefinitionProvider {
+    getGrammarDefinition(): Promise<GrammarDefinition>;
+    getInjections?(scopeName: string): string[];
+}
+
+export interface GrammarDefinition {
+    format: 'json' | 'plist';
+    content: object | string;
+}
+
 @injectable()
 export class TextmateRegistry {
 
-    readonly scopeToProvider = new Map<string, RegistryOptions>();
+    readonly scopeToProvider = new Map<string, GrammarDefinitionProvider>();
     readonly languageToConfig = new Map<string, TextmateGrammarConfiguration>();
     readonly languageIdToScope = new Map<string, string>();
 
-    registerTextmateGrammarScope(scope: string, provider: RegistryOptions): void {
+    registerTextmateGrammarScope(scope: string, description: GrammarDefinitionProvider): void {
         if (this.scopeToProvider.has(scope)) {
             console.warn(new Error(`a registered grammar provider for '${scope}' scope is overridden`));
         }
-        this.scopeToProvider.set(scope, provider);
+        this.scopeToProvider.set(scope, description);
     }
 
-    getProvider(scope: string): RegistryOptions | undefined {
+    getProvider(scope: string): GrammarDefinitionProvider | undefined {
         return this.scopeToProvider.get(scope);
     }
 
@@ -55,6 +65,15 @@ export class TextmateRegistry {
 
     getScope(languageId: string): string | undefined {
         return this.languageIdToScope.get(languageId);
+    }
+
+    getLanguageId(scope: string): string | undefined {
+        for (const key of this.languageIdToScope.keys()) {
+            if (this.languageIdToScope.get(key) === scope) {
+                return key;
+            }
+        }
+        return undefined;
     }
 
     registerGrammarConfiguration(languageId: string, config: TextmateGrammarConfiguration): void {

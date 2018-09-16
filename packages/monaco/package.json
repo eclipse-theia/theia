@@ -12,7 +12,7 @@
     "@theia/workspace": "^0.3.14",
     "monaco-css": "^2.0.1",
     "monaco-html": "^2.0.2",
-    "monaco-textmate": "^3.0.0",
+    "vscode-textmate": "^4.0.1",
     "onigasm": "^2.1.0"
   },
   "publishConfig": {
