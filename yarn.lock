@@ -3761,10 +3761,6 @@ fast-levenshtein@~2.0.4:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
 
-fast-plist@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/fast-plist/-/fast-plist-0.1.2.tgz#a45aff345196006d406ca6cdcd05f69051ef35b8"
-
 fast-safe-stringify@^2.0.4:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-safe-stringify/-/fast-safe-stringify-2.0.6.tgz#04b26106cc56681f51a044cfc0d76cf0008ac2c2"
@@ -6363,12 +6359,6 @@ monaco-languageclient@^0.9.0:
     vscode-jsonrpc "^3.6.2"
     vscode-uri "^1.0.5"
 
-monaco-textmate@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/monaco-textmate/-/monaco-textmate-3.0.0.tgz#abfbce7d7ff000954ae3206e512f325db6e7b8a8"
-  dependencies:
-    fast-plist "^0.1.2"
-
 moo-server@*, moo-server@1.3.x:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/moo-server/-/moo-server-1.3.0.tgz#5dc79569565a10d6efed5439491e69d2392e58f1"
@@ -6825,6 +6815,12 @@ onigasm@^2.1.0:
   resolved "https://registry.yarnpkg.com/onigasm/-/onigasm-2.2.1.tgz#d56da809d63d3bb25510e8b8e447ffe98e56bebb"
   dependencies:
     lru-cache "^4.1.1"
+
+oniguruma@^7.0.0:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/oniguruma/-/oniguruma-7.0.1.tgz#76230211e96bb27b10cf2a7ccb99a6057ff1b9bf"
+  dependencies:
+    nan "^2.10.0"
 
 optimist@^0.6.1, optimist@~0.6.1:
   version "0.6.1"
@@ -9770,6 +9766,12 @@ vscode-nsfw@^1.0.17:
 vscode-ripgrep@^1.0.1:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/vscode-ripgrep/-/vscode-ripgrep-1.1.0.tgz#93c1e39d88342ee1b15530a12898ce930d511948"
+
+vscode-textmate@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-4.0.1.tgz#6c36f28e9059ce12bc34907f7a33ea43166b26a8"
+  dependencies:
+    oniguruma "^7.0.0"
 
 vscode-uri@^1.0.1, vscode-uri@^1.0.3, vscode-uri@^1.0.5:
   version "1.0.6"

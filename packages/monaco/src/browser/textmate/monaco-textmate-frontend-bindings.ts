@@ -19,11 +19,12 @@ import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/co
 import { bindContributionProvider } from '@theia/core';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { BuiltinTextmateThemeProvider } from './monaco-textmate-builtin-theme-provider';
-import { BuiltinMonacoThemeProvider } from './monaco-builtin-theme-provider';
 import { TextmateRegistry } from './textmate-registry';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
 import { MonacoTextmateService, OnigasmPromise } from './monaco-textmate-service';
-import { loadWASM } from 'onigasm';
+import { MonacoThemeRegistry } from './monaco-theme-registry';
+import { loadWASM, OnigScanner, OnigString } from 'onigasm';
+import { IOnigLib } from 'vscode-textmate';
 
 export function fetchOnigasm(): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
@@ -46,16 +47,28 @@ export function fetchOnigasm(): Promise<ArrayBuffer> {
     });
 }
 
+export class OnigasmLib implements IOnigLib {
+    createOnigScanner(sources: string[]): OnigScanner {
+        return new OnigScanner(sources);
+    }
+    createOnigString(sources: string): OnigString {
+        return new OnigString(sources);
+    }
+}
+
 export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-    const onigasmPromise = isBasicWasmSupported ? fetchOnigasm().then(buffer => loadWASM(buffer)) : Promise.reject(new Error('wasm not supported'));
+    const onigasmPromise: Promise<IOnigLib> = isBasicWasmSupported ? fetchOnigasm().then(async buffer => {
+        await loadWASM(buffer);
+        return new OnigasmLib();
+    }) : Promise.reject(new Error('wasm not supported'));
     bind(OnigasmPromise).toConstantValue(onigasmPromise);
 
     bind(MonacoTextmateService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
     bind(TextmateRegistry).toSelf().inSingletonScope();
+    bind(MonacoThemeRegistry).toDynamicValue(() => MonacoThemeRegistry.SINGLETON).inSingletonScope();
 
     const themeService = ThemeService.get();
-    BuiltinMonacoThemeProvider.compileMonacoThemes();
     themeService.register(...BuiltinTextmateThemeProvider.theiaTextmateThemes);
 };

@@ -15,16 +15,18 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { Registry } from 'monaco-textmate';
+import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
 import { ILogger, DisposableCollection, ContributionProvider } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MonacoTextModelService } from '../monaco-text-model-service';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
 import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
+import { MonacoThemeRegistry } from './monaco-theme-registry';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
-export type OnigasmPromise = Promise<void>;
+export type OnigasmPromise = Promise<IOnigLib>;
 
 @injectable()
 export class MonacoTextmateService implements FrontendApplicationContribution {
@@ -49,6 +51,12 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     @inject(OnigasmPromise)
     protected readonly onigasmPromise: OnigasmPromise;
 
+    @inject(ThemeService)
+    protected readonly themeService: ThemeService;
+
+    @inject(MonacoThemeRegistry)
+    protected readonly monacoThemeRegistry: MonacoThemeRegistry;
+
     initialize() {
         if (!isBasicWasmSupported) {
             console.log('Textmate support deactivated because WebAssembly is not detected.');
@@ -64,17 +72,37 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         }
 
         this.grammarRegistry = new Registry({
-            getGrammarDefinition: async (scopeName: string, dependentScope: string) => {
+            getOnigLib: () => this.onigasmPromise,
+            theme: this.monacoThemeRegistry.getTheme(MonacoThemeRegistry.DARK_DEFAULT_THEME),
+            loadGrammar: async (scopeName: string) => {
                 const provider = this.textmateRegistry.getProvider(scopeName);
                 if (provider) {
-                    return await provider!.getGrammarDefinition(scopeName, dependentScope);
+                    const definition = await provider.getGrammarDefinition();
+                    let rawGrammar: IRawGrammar;
+                    if (typeof definition.content === 'string') {
+                        rawGrammar = parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
+                    } else {
+                        rawGrammar = definition.content as IRawGrammar;
+                    }
+                    return rawGrammar;
                 }
-                return {
-                    format: 'json',
-                    content: '{}'
-                };
+                return undefined;
+            },
+            getInjections: (scopeName: string) => {
+                const provider = this.textmateRegistry.getProvider(scopeName);
+                if (provider && provider.getInjections) {
+                    return provider.getInjections(scopeName);
+                }
+                return [];
             }
         });
+
+        this.toDispose.push(this.themeService.onThemeChange(themeChange => {
+            const theme = this.monacoThemeRegistry.getTheme(themeChange.newTheme.editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME);
+            if (theme) {
+                this.grammarRegistry.setTheme(theme);
+            }
+        }));
 
         this.toDispose.push(this.monacoModelService.onDidCreate(model => {
             if (!this.activatedLanguages.has(model.languageId)) {

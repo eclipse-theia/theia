@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
 import { TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
-import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'monaco-textmate';
+import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-textmate';
 import { ViewRegistry } from './view/view-registry';
 
 @injectable()
