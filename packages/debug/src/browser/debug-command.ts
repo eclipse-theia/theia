@@ -63,22 +63,22 @@ export namespace DEBUG_COMMANDS {
 
     export const OPEN_CONFIGURATION = {
         id: 'debug.configuration.open',
-        label: 'Open configuration'
+        label: 'Open Configuration'
     };
 
     export const ADD_CONFIGURATION = {
         id: 'debug.configuration.add',
-        label: 'Add configuration'
+        label: 'Add Configuration'
     };
 
     export const SUSPEND_THREAD = {
         id: 'debug.thread.suspend',
-        label: 'Suspend thread'
+        label: 'Suspend Thread'
     };
 
     export const RESUME_THREAD = {
         id: 'debug.thread.resume',
-        label: 'Resume thread'
+        label: 'Resume Thread'
     };
     export const SUSPEND_ALL_THREADS = {
         id: 'debug.thread.suspend.all',
@@ -107,12 +107,12 @@ export namespace DEBUG_COMMANDS {
 
     export const STEPIN = {
         id: 'debug.thread.stepin',
-        label: 'Step in'
+        label: 'Step In'
     };
 
     export const STEPOUT = {
         id: 'debug.thread.stepout',
-        label: 'Step out'
+        label: 'Step Out'
     };
 }
 
