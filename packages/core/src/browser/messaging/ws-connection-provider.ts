@@ -50,7 +50,7 @@ export class WebSocketConnectionProvider {
             const channels = [...this.channels.values()];
             this.channels.clear();
             for (const channel of channels) {
-                channel.fireClose(code, reason);
+                channel.close(code, reason);
             }
         };
         socket.onmessage = ({ data }) => {
@@ -86,50 +86,49 @@ export class WebSocketConnectionProvider {
      * Install a connection handler for the given path.
      */
     listen(handler: ConnectionHandler, options?: WebSocketOptions): void {
+        this.openChannel(handler.path, channel => {
+            const connection = createWebSocketConnection(channel, this.createLogger());
+            handler.onConnection(connection);
+        }, options);
+    }
+
+    openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
         if (this.socket.readyState === WebSocket.OPEN) {
-            this.openChannel(handler, options);
+            this.doOpenChannel(path, handler, options);
         } else {
             const openChannel = () => {
                 this.socket.removeEventListener('open', openChannel);
-                this.openChannel(handler, options);
+                this.openChannel(path, handler, options);
             };
             this.socket.addEventListener('open', openChannel);
         }
     }
 
-    protected openChannel(handler: ConnectionHandler, options?: WebSocketOptions): void {
+    protected doOpenChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
         const id = this.channelIdSeq++;
         const channel = this.createChannel(id);
         this.channels.set(id, channel);
-        channel.onOpen(() => {
-            const connection = createWebSocketConnection(channel, this.createLogger());
-            connection.onDispose(() => this.closeChannel(id, handler, options));
-            handler.onConnection(connection);
+        channel.onClose(() => {
+            this.channels.delete(channel.id);
+            const { reconnecting } = { reconnecting: true, ...options };
+            if (reconnecting) {
+                this.openChannel(path, handler, options);
+            }
         });
-        channel.open(handler.path);
+        channel.onOpen(() => handler(channel));
+        channel.open(path);
     }
 
     protected createChannel(id: number): WebSocketChannel {
-        return new WebSocketChannel(id, content => this.socket.send(content));
+        return new WebSocketChannel(id, content => {
+            if (this.socket.readyState < WebSocket.CLOSING) {
+                this.socket.send(content);
+            }
+        });
     }
 
     protected createLogger(): Logger {
         return new ConsoleLogger();
-    }
-
-    protected closeChannel(id: number, handler: ConnectionHandler, options?: WebSocketOptions): void {
-        const channel = this.channels.get(id);
-        if (channel) {
-            this.channels.delete(id);
-            if (this.socket.readyState < WebSocket.CLOSING) {
-                channel.close();
-            }
-            channel.dispose();
-        }
-        const { reconnecting } = { reconnecting: true, ...options };
-        if (reconnecting) {
-            this.listen(handler, options);
-        }
     }
 
     /**

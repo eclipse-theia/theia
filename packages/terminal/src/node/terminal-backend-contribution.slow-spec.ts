@@ -50,7 +50,7 @@ describe('Terminal Backend Contribution', function () {
             channel.onClose((code, reason) => reject(`channel is closed with '${code}' code and '${reason}' reason`));
             channel.onOpen(() => {
                 resolve();
-                channel.dispose();
+                channel.close();
             });
         });
     });

@@ -21,7 +21,6 @@
 
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
-import * as WebSocket from 'ws';
 import * as net from 'net';
 import { injectable, inject } from 'inversify';
 import { ILogger, DisposableCollection, Disposable } from '@theia/core';
@@ -47,6 +46,7 @@ import {
 } from './debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { EventEmitter } from 'events';
+import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 
 /**
  * The container for [Messaging Service](#MessagingService).
@@ -117,7 +117,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 
     private readonly toDispose = new DisposableCollection();
     private pendingRequests = new Map<number, DebugProtocol.Request>();
-    private ws: WebSocket;
+    private ws: WebSocketChannel |  undefined;
     private contentLength: number;
     private buffer: Buffer;
 
@@ -138,16 +138,21 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
     start(): Promise<void> {
         const path = DebugAdapterPath + '/' + this.id;
         return this.messagingServiceContainer.getService().then(service => {
-            service.ws(path, (params: MessagingService.PathParams, ws: WebSocket) => {
+            service.wsChannel(path, (params: MessagingService.PathParams, ws: WebSocketChannel) => {
                 this.ws = ws;
-                this.toDispose.push(Disposable.create(() => this.ws.close()));
+                this.toDispose.push(Disposable.create(() => {
+                    if (this.ws === ws)  {
+                        ws.close();
+                        this.ws = undefined;
+                    }
+                }));
 
                 this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
                 this.communicationProvider.output.on('close', () => this.onDebugAdapterClosed());
                 this.communicationProvider.output.on('error', (error: Error) => this.onDebugAdapterError(error));
                 this.communicationProvider.input.on('error', (error: Error) => this.onDebugAdapterError(error));
 
-                this.ws.on('message', (data: string) => this.proceedRequest(data));
+                this.ws.onMessage((data: string) => this.proceedRequest(data));
             });
         });
     }
@@ -214,7 +219,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         this.logger.debug(`DAP event: ${rawData}`);
 
         this.emit(event.event, event);
-        if (this.ws.readyState === WebSocket.OPEN) {
+        if (this.ws) {
             this.ws.send(rawData);
         }
     }
@@ -225,7 +230,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         const request = this.pendingRequests.get(response.request_seq);
 
         this.pendingRequests.delete(response.request_seq);
-        if (this.ws.readyState === WebSocket.OPEN) {
+        if (this.ws) {
             this.ws.send(rawData);
         }
 
@@ -310,8 +315,8 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(data, 'utf8')}\r\n\r\n${data}`, 'utf8');
     }
 
-    stop(): Promise<void> {
-        return Promise.resolve(this.toDispose.dispose());
+    async stop(): Promise<void> {
+        await this.toDispose.dispose();
     }
 }
 
