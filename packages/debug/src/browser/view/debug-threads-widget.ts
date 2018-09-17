@@ -23,6 +23,7 @@ import { DEBUG_SESSION_THREAD_CONTEXT_MENU } from '../debug-command';
 import { DebugSelection } from './debug-selection-service';
 import { DebugUtils } from '../debug-utils';
 import { Disposable } from '@theia/core';
+import { DebugStyles } from './base/debug-styles';
 
 /**
  * Is it used to display list of threads.
@@ -46,12 +47,15 @@ export class DebugThreadsWidget extends VirtualWidget {
     protected init() {
         const threadEventListener = (event: DebugProtocol.ThreadEvent) => this.onThreadEvent(event);
         const connectedEventListener = () => this.updateThreads();
+        const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
 
         this.debugSession.on('thread', threadEventListener);
         this.debugSession.on('connected', connectedEventListener);
+        this.debugSession.on('terminated', terminatedEventListener);
 
-        this.toDisposeOnDetach.push(Disposable.create(() => this.debugSession.removeListener('thread', threadEventListener)));
-        this.toDisposeOnDetach.push(Disposable.create(() => this.debugSession.removeListener('connected', connectedEventListener)));
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('thread', threadEventListener)));
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('connected', connectedEventListener)));
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
 
         if (this.debugSession.state.isConnected) {
             this.updateThreads();
@@ -72,7 +76,7 @@ export class DebugThreadsWidget extends VirtualWidget {
         const items: h.Child = [];
 
         for (const thread of this.threads) {
-            const className = Styles.THREAD_ITEM + (DebugUtils.isEqual(this.debugSelection.thread, thread) ? ` ${SELECTED_CLASS}` : '');
+            const className = DebugStyles.DEBUG_ITEM + (DebugUtils.isEqual(this.debugSelection.thread, thread) ? ` ${SELECTED_CLASS}` : '');
             const id = this.createId(thread);
 
             const item =
@@ -102,14 +106,14 @@ export class DebugThreadsWidget extends VirtualWidget {
         if (currentThread) {
             const element = document.getElementById(this.createId(currentThread));
             if (element) {
-                element.className = Styles.THREAD_ITEM;
+                element.className = DebugStyles.DEBUG_ITEM;
             }
         }
 
         if (newThread) {
             const element = document.getElementById(this.createId(newThread));
             if (element) {
-                element.className = `${Styles.THREAD_ITEM} ${SELECTED_CLASS}`;
+                element.className = `${DebugStyles.DEBUG_ITEM} ${SELECTED_CLASS}`;
             }
         }
 
@@ -118,6 +122,10 @@ export class DebugThreadsWidget extends VirtualWidget {
 
     private createId(thread?: DebugProtocol.Thread): string {
         return `debug-threads-${this.debugSession.sessionId}` + (thread ? `-${thread.id}` : '');
+    }
+
+    protected onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
+        this.threads = [];
     }
 
     private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
@@ -141,5 +149,4 @@ export class DebugThreadsWidget extends VirtualWidget {
 
 namespace Styles {
     export const THREADS = 'theia-debug-threads';
-    export const THREAD_ITEM = 'theia-debug-thread-item';
 }
