@@ -18,17 +18,16 @@ import { ContainerModule, interfaces, Container } from 'inversify';
 import { DebugCommandHandlers, DEBUG_VARIABLE_CONTEXT_MENU } from './debug-command';
 import { DebugConfigurationManager } from './debug-configuration';
 import {
-    DebugViewContribution,
-    DebugWidget,
     DEBUG_FACTORY_ID,
-    DebugTargetWidget,
-} from './view/debug-view-contribution';
+    DebugWidget,
+    DebugFrontendContribution,
+    DebugWidgetOptions,
+} from './view/debug-frontend-contribution';
 import { DebugPath, DebugService } from '../common/debug-common';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import {
     WidgetFactory,
-    bindViewContribution,
     WebSocketConnectionProvider,
     createTreeContainer,
     TreeImpl,
@@ -72,9 +71,9 @@ export const DEBUG_VARIABLES_PROPS = <TreeProps>{
 };
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-    bindDebugSession(bind);
+    bindDebugSessionManager(bind);
     bindBreakpointsManager(bind);
-    bindDebugView(bind);
+    bindDebugWidget(bind);
 
     bind(MenuContribution).to(DebugCommandHandlers);
     bind(CommandContribution).to(DebugCommandHandlers);
@@ -85,23 +84,19 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(ResourceResolver).toService(DebugResourceResolver);
 });
 
-function bindDebugView(bind: interfaces.Bind): void {
+function bindDebugWidget(bind: interfaces.Bind): void {
     bind(DebugWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: DEBUG_FACTORY_ID,
-        createWidget: () => context.container.get<DebugWidget>(DebugWidget)
+        createWidget: (options: DebugWidgetOptions) => {
+            const container = createDebugTargetContainer(context, options.debugSession);
+            return container.get<DebugWidget>(DebugWidget);
+        }
     })).inSingletonScope();
 
-    bindViewContribution(bind, DebugViewContribution);
-    bind(DebugTargetWidget).toSelf();
+    bind(DebugFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(DebugFrontendContribution));
     bind(DebugSelectionService).toSelf().inSingletonScope();
-
-    bind<interfaces.Factory<DebugTargetWidget>>('Factory<DebugTargetWidget>').toFactory<DebugTargetWidget>(context =>
-        (debugSession: DebugSession) => {
-            const container = createDebugTargetContainer(context, debugSession);
-            return container.get<DebugTargetWidget>(DebugTargetWidget);
-        }
-    );
 }
 
 function bindBreakpointsManager(bind: interfaces.Bind): void {
@@ -115,7 +110,7 @@ function bindBreakpointsManager(bind: interfaces.Bind): void {
     bind(SourceOpener).toSelf().inSingletonScope();
 }
 
-function bindDebugSession(bind: interfaces.Bind): void {
+function bindDebugSessionManager(bind: interfaces.Bind): void {
     bindContributionProvider(bind, DebugSessionContribution);
     bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();

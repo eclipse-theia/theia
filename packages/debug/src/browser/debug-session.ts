@@ -366,6 +366,10 @@ export class DebugSessionManager {
      * @param sessionId The session identifier
      */
     setActiveDebugSession(sessionId: string | undefined) {
+        if (sessionId && this.find(sessionId) === undefined) {
+            return;
+        }
+
         const oldActiveSessionSession = this.activeDebugSessionId ? this.find(this.activeDebugSessionId) : undefined;
 
         if (this.activeDebugSessionId !== sessionId) {

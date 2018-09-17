@@ -61,11 +61,16 @@ export class DebugVariablesWidget extends TreeWidget {
     protected init() {
         super.init();
 
-        this.toDisposeOnDetach.push(Disposable.create(() => this.debugSession.removeListener('variableUpdated', variableUpdateListener)));
-
         const variableUpdateListener = (event: ExtDebugProtocol.VariableUpdatedEvent) => this.onVariableUpdated(event);
+        const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+
         this.debugSession.on('variableUpdated', variableUpdateListener);
-        this.toDisposeOnDetach.push(this.debugSelection.onDidSelectFrame(frame => this.onFrameSelected(frame)));
+        this.debugSession.on('terminated', terminatedEventListener);
+
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('variableUpdated', variableUpdateListener)));
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
+
+        this.toDispose.push(this.debugSelection.onDidSelectFrame(frame => this.onFrameSelected(frame)));
     }
 
     protected onFrameSelected(frame: DebugProtocol.StackFrame | undefined) {
@@ -75,6 +80,9 @@ export class DebugVariablesWidget extends TreeWidget {
         }
     }
 
+    protected onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
+        this.model.root = undefined;
+    }
     protected onVariableUpdated(event: ExtDebugProtocol.VariableUpdatedEvent) {
         const id = VariableNode.getId(this.debugSession.sessionId, event.body.name, event.body.parentVariablesReference);
         const variableNode = this.model.getNode(id) as VariableNode;
@@ -96,7 +104,7 @@ export class DebugVariablesWidget extends TreeWidget {
     }
 
     protected decorateVariableCaption(node: VariableNode): React.ReactNode {
-        return <div>{node.extVariable.name} = {node.extVariable.value}</div>;
+        return <div className='theia-debug-item'>{node.extVariable.name} = {node.extVariable.value}</div>;
     }
 
     protected decorateScopeCaption(node: ScopeNode): React.ReactNode {
