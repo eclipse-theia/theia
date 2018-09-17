@@ -18,9 +18,12 @@ import { inject, injectable, named } from 'inversify';
 import { ILogger, ContributionProvider } from '@theia/core/lib/common';
 import { QuickOpenTask } from './quick-open-task';
 import { MAIN_MENU_BAR, CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { FrontendApplication, FrontendApplicationContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution, QuickOpenContribution, QuickOpenHandlerRegistry, ApplicationShell } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
+import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TERMINAL_CONTEXT_MENU } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TaskService } from './task-service';
 
 export namespace TaskCommands {
     // Task menu
@@ -42,10 +45,17 @@ export namespace TaskCommands {
         id: 'task:attach',
         label: 'Tasks: Attach...'
     };
+
+    export const TASK_RE_RUN: Command = {
+        id: 'task:rerun',
+        label: 'Tasks: Re-Run task'
+    };
 }
 
 @injectable()
 export class TaskFrontendContribution implements CommandContribution, MenuContribution, FrontendApplicationContribution, QuickOpenContribution {
+    protected currentTerminal: TerminalWidget | undefined = undefined;
+
     @inject(QuickOpenTask)
     protected readonly quickOpenTask: QuickOpenTask;
 
@@ -67,7 +77,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
     onStart(): void {
+        this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
+
         this.contributionProvider.getContributions().forEach(contrib => {
             if (contrib.registerResolvers) {
                 contrib.registerResolvers(this.taskResolverRegistry);
@@ -76,6 +94,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 contrib.registerProviders(this.taskProviderRegistry);
             }
         });
+    }
+
+    protected updateCurrentTerminal(): void {
+        const widget = this.shell.currentWidget;
+        if (widget instanceof TerminalWidget) {
+            this.currentTerminal = widget as TerminalWidget;
+        } else {
+            this.currentTerminal = undefined;
+        }
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -93,6 +120,20 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 execute: () => this.quickOpenTask.attach()
             }
         );
+        registry.registerCommand(
+            TaskCommands.TASK_RE_RUN,
+            {
+                isEnabled: () => this.currentTerminal !== undefined && this.currentTerminal.getExecutedTask() !== undefined,
+                execute: () => {
+                    if (this.currentTerminal !== undefined) {
+                        const task = this.currentTerminal.getExecutedTask();
+                        if (task !== undefined) {
+                            this.taskService.run(task.type, task.label, this.currentTerminal);
+                        }
+                    }
+                }
+            }
+        );
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -108,6 +149,10 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             commandId: TaskCommands.TASK_ATTACH.id,
             label: TaskCommands.TASK_ATTACH.label ? TaskCommands.TASK_ATTACH.label.slice('Tasks: '.length) : TaskCommands.TASK_ATTACH.label,
             order: '1'
+        });
+
+        menus.registerMenuAction(TERMINAL_CONTEXT_MENU, {
+            commandId: TaskCommands.TASK_RE_RUN.id
         });
     }
 

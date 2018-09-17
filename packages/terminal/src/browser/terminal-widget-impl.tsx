@@ -18,19 +18,18 @@ import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop } from '@theia/core/lib/browser';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, ContextMenuRenderer, ApplicationShell } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { TerminalWidgetOptions, TerminalWidget, TerminalAction } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { LabelParser, LabelIcon } from '@theia/core/lib/browser/label-parser';
+import { TERMINAL_CONTEXT_MENU } from './terminal-frontend-contribution';
+import { TaskConfiguration } from '@theia/task/lib/common';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -66,8 +65,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
-    protected terminalActionItems: TerminalAction.Item[];
-    protected terminalActionItemsToolBar: HTMLElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -77,7 +74,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
     @inject('terminal-dom-id') public readonly id: string;
-    @inject(LabelParser) protected readonly entryService: LabelParser;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -149,11 +147,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.onTermDidClose);
 
-        this.terminalActionItems = this.options.actionItems ?
-        this.getDefaultTerminalActionitems().concat(this.options.actionItems) : this.getDefaultTerminalActionitems();
-        this.terminalActionItemsToolBar = document.createElement('div');
-        this.terminalActionItemsToolBar.classList.add('terminal-container-toolbar');
-        this.node.appendChild(this.terminalActionItemsToolBar);
+        this.node.addEventListener('contextmenu', event => {
+            event.stopPropagation();
+            event.preventDefault();
+            this.shell.activateWidget(this.id);
+            this.contextMenuRenderer.render(TERMINAL_CONTEXT_MENU, {x: event.clientX, y: event.clientY});
+        });
     }
 
     clearOutput(): void {
@@ -171,7 +170,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
-            this.terminalActionItems = this.getDefaultTerminalActionitems();
             this.start(state.terminalId);
         }
     }
@@ -298,23 +296,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.update();
     }
 
-    protected renderTerminalActionItem(entry: TerminalAction.Item): JSX.Element {
-        const childStrings = this.entryService.parse(entry.getLabel());
-        const children: JSX.Element[] = [];
-
-        childStrings.forEach((val, idx) => {
-            const key = entry.getLabel() + '-' + idx;
-            if (!(typeof val === 'string') && LabelIcon.is(val)) {
-                const classStr = `control-button fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`;
-                children.push(<span key={key} onClick={() => entry.run()} title={entry.getTooltip()} className={classStr}></span>);
-            } else {
-                children.push(<span key={key} className='control-button-label'>{val}</span>);
-            }
-        });
-
-        return React.createElement('div', { key: entry.getLabel() + entry.getTooltip(), className: 'control-button-holder' }, children);
-    }
-
     protected onResize(msg: Widget.ResizeMessage): void {
         this.needsResize = true;
         this.update();
@@ -326,12 +307,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (!this.isVisible || !this.isAttached) {
             return;
         }
-
-        const terminalActions: JSX.Element[] = [];
-        this.terminalActionItems.forEach(item => {
-            terminalActions.push(this.renderTerminalActionItem(item));
-        });
-        ReactDOM.render(<React.Fragment>{terminalActions}</React.Fragment>, this.terminalActionItemsToolBar);
 
         this.open();
 
@@ -438,15 +413,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
 
-    protected getDefaultTerminalActionitems(): TerminalAction.Item[] {
-        const clearTerminalOutput = new TerminalAction.Item({
-            label: '$(trash)',
-            tooltip: 'Clear terminal output',
-            run: () => {
-                this.clearOutput();
-            }
-        });
-
-        return [clearTerminalOutput];
+    getExecutedTask(): TaskConfiguration | undefined {
+        return this.options.taskConfiguration;
     }
 }

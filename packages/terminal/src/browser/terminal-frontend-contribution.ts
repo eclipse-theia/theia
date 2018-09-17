@@ -33,6 +33,9 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './term
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { MenuPath } from '@theia/core/lib/common/menu';
+
+export const TERMINAL_CONTEXT_MENU: MenuPath = ['terminal-context-menu'];
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -48,11 +51,24 @@ export namespace TerminalCommands {
 @injectable()
 export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution {
 
+    protected currentTerminal: TerminalWidget | undefined = undefined;
+
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
-    ) { }
+    ) {
+        this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
+    }
+
+    protected updateCurrentTerminal(): void {
+        const widget = this.shell.currentWidget;
+        if (widget instanceof TerminalWidget) {
+            this.currentTerminal = widget as TerminalWidget;
+        } else {
+            this.currentTerminal = undefined;
+        }
+    }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TerminalCommands.NEW);
@@ -67,14 +83,22 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
         commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
-            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
-            execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
+            isEnabled: () => this.currentTerminal !== undefined,
+            execute: () => {
+                if (this.currentTerminal !== undefined) {
+                    this.currentTerminal.clearOutput();
+                }
+            }
         });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: TerminalCommands.NEW.id
+        });
+
+        menus.registerMenuAction(TERMINAL_CONTEXT_MENU, {
+            commandId: TerminalCommands.TERMINAL_CLEAR.id
         });
     }
 

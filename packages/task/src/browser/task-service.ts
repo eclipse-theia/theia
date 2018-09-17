@@ -19,7 +19,7 @@ import { ILogger } from '@theia/core/lib/common';
 import { FrontendApplication, ApplicationShell } from '@theia/core/lib/browser';
 import { TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
-import { TerminalWidget, TerminalAction } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
@@ -177,7 +177,7 @@ export class TaskService implements TaskConfigurationClient {
      * Runs a task, by task type and task configuration label.
      * It looks for configured and provided tasks.
      */
-    async run(type: string, taskLabel: string): Promise<void> {
+    async run(type: string, taskLabel: string, terminalWidget?: TerminalWidget): Promise<void> {
         let task = await this.getProvidedTask(type, taskLabel);
         if (!task) {
             task = this.taskConfigurations.getTask(taskLabel);
@@ -210,32 +210,16 @@ export class TaskService implements TaskConfigurationClient {
 
         // open terminal widget if the task is based on a terminal process (type: shell)
         if (taskInfo.terminalId !== undefined) {
-            const widget = await this.attach(taskInfo.terminalId, taskInfo.taskId, [new TerminalAction.Item({
-                label: `$(repeat) ${this.getHumanReadableCommand(taskInfo)}`,
-                tooltip: `Re-run current task: ${resolvedTask.label}`,
-                run: async () => {
-                    try {
-                        taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
-                        if (taskInfo.terminalId !== undefined) {
-                            widget.clearOutput();
-                            widget.start(taskInfo.terminalId);
-                        }
-                    } catch (error) {
-                        this.logger.error(`Error launching task '${taskLabel}': ${error}`);
-                        this.messageService.error(`Error launching task '${taskLabel}': ${error}`);
-                        return;
-                    }
-                }
-            })]);
+            if (terminalWidget !== undefined) {
+                terminalWidget.clearOutput();
+                terminalWidget.start(taskInfo.terminalId);
+            } else {
+                await this.attach(taskInfo.terminalId, taskInfo.taskId, task);
+            }
         }
     }
 
-    protected getHumanReadableCommand(taskInfo: TaskInfo): string {
-        const args = taskInfo.config.args ? taskInfo.config.args.join(' ') : '';
-        return taskInfo.config.command ? `${taskInfo.config.command} ${args}` : '';
-    }
-
-    async attach(terminalId: number, taskId: number, terminalActions?: TerminalAction.Item[]): Promise<TerminalWidget> {
+    async attach(terminalId: number, taskId: number, taskConfiguration?: TaskConfiguration): Promise<TerminalWidget> {
         // create terminal widget to display an execution output of a Task that was launched as a command inside a shell
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
             TERMINAL_WIDGET_FACTORY_ID,
@@ -245,7 +229,7 @@ export class TaskService implements TaskConfigurationClient {
                 caption: `Task #${taskId}`,
                 label: `Task #${taskId}`,
                 destroyTermOnClose: true,
-                actionItems: terminalActions
+                taskConfiguration: taskConfiguration
             });
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
