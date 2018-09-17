@@ -30,6 +30,7 @@ import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoConfigurations } from './monaco-configurations';
+import { ProblemManager } from '@theia/markers/lib/browser';
 
 export interface MonacoDidChangeTextDocumentParams extends lang.DidChangeTextDocumentParams {
     readonly textDocument: MonacoEditorModel;
@@ -93,6 +94,9 @@ export class MonacoWorkspace implements lang.Workspace {
     @inject(MonacoConfigurations)
     readonly configurations: MonacoConfigurations;
 
+    @inject(ProblemManager)
+    protected readonly problems: ProblemManager;
+
     @postConstruct()
     protected init(): void {
         this.workspaceService.roots.then(roots => {
@@ -129,6 +133,7 @@ export class MonacoWorkspace implements lang.Workspace {
     protected fireDidOpen(model: MonacoEditorModel): void {
         this.doFireDidOpen(model);
         model.textEditorModel.onDidChangeLanguage(e => {
+            this.problems.cleanAllMarkers(new URI(model.uri));
             model.setLanguageId(e.oldLanguage);
             try {
                 this.fireDidClose(model);
