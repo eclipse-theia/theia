@@ -18,19 +18,19 @@
 
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 import { Disposable, DisposableCollection } from '../disposable';
+import { Emitter } from '../event';
 
 export class WebSocketChannel implements IWebSocket {
 
     static wsPath = '/services';
 
-    protected readonly toDispose = new DisposableCollection();
+    protected readonly closeEmitter = new Emitter<[number, string]>();
+    protected readonly toDispose = new DisposableCollection(this.closeEmitter);
 
     constructor(
         readonly id: number,
         protected readonly doSend: (content: string) => void
-    ) {
-        this.toDispose.push(Disposable.NULL);
-    }
+    ) { }
 
     dispose(): void {
         this.toDispose.dispose();
@@ -48,7 +48,7 @@ export class WebSocketChannel implements IWebSocket {
         } else if (message.kind === 'data') {
             this.fireMessage(message.content);
         } else if (message.kind === 'close') {
-            this.fireClose(1000, '');
+            this.fireClose(message.code, message.reason);
         }
     }
 
@@ -78,12 +78,15 @@ export class WebSocketChannel implements IWebSocket {
         }));
     }
 
-    close(): void {
+    close(code: number = 1000, reason: string = ''): void {
         this.checkNotDisposed();
         this.doSend(JSON.stringify(<WebSocketChannel.CloseMessage>{
             kind: 'close',
-            id: this.id
+            id: this.id,
+            code,
+            reason
         }));
+        this.fireClose(code, reason);
     }
 
     protected fireOpen: () => void = () => { };
@@ -107,11 +110,13 @@ export class WebSocketChannel implements IWebSocket {
         this.toDispose.push(Disposable.create(() => this.fireError = () => { }));
     }
 
-    fireClose: (code: number, reason: string) => void = () => { };
-    onClose(cb: (code: number, reason: string) => void): void {
+    protected fireClose(code: number, reason: string): void {
+        this.closeEmitter.fire([code, reason]);
+        this.dispose();
+    }
+    onClose(cb: (code: number, reason: string) => void): Disposable {
         this.checkNotDisposed();
-        this.fireClose = cb;
-        this.toDispose.push(Disposable.create(() => this.fireClose = () => { }));
+        return this.closeEmitter.event(([code, reason]) => cb(code, reason));
     }
 
 }
@@ -133,6 +138,8 @@ export namespace WebSocketChannel {
     export interface CloseMessage {
         kind: 'close'
         id: number
+        code: number
+        reason: string
     }
     export type Message = OpenMessage | ReadyMessage | DataMessage | CloseMessage;
 }

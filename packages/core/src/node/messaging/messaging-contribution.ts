@@ -57,17 +57,21 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     listen(spec: string, callback: (params: MessagingService.PathParams, connection: MessageConnection) => void): void {
-        return this.channelHandlers.push(spec, (params, channel) => {
+        return this.wsChannel(spec, (params, channel) => {
             const connection = createWebSocketConnection(channel, new ConsoleLogger());
             callback(params, connection);
         });
     }
 
     forward(spec: string, callback: (params: MessagingService.PathParams, connection: IConnection) => void): void {
-        return this.channelHandlers.push(spec, (params, channel) => {
+        return this.wsChannel(spec, (params, channel) => {
             const connection = launch.createWebSocketConnection(channel);
             callback(params, connection);
         });
+    }
+
+    wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: WebSocketChannel) => void): void {
+        return this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
     }
 
     ws(spec: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void {
@@ -109,27 +113,29 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     protected handleChannels(socket: ws): void {
         const channels = new Map<number, WebSocketChannel>();
         socket.on('message', data => {
-            const message: WebSocketChannel.Message = JSON.parse(data.toString());
-            if (message.kind === 'open') {
-                const { id, path } = message;
-                const channel = this.createChannel(id, socket);
-                if (this.channelHandlers.route(path, channel)) {
-                    channel.ready();
-                    channels.set(id, channel);
-                } else {
-                    console.error('Cannot find a service for the path: ' + path);
-                }
-            } else {
-                const { id } = message;
-                const channel = channels.get(id);
-                if (channel) {
-                    if (message.kind === 'close') {
-                        channels.delete(id);
+            try {
+                const message: WebSocketChannel.Message = JSON.parse(data.toString());
+                if (message.kind === 'open') {
+                    const { id, path } = message;
+                    const channel = this.createChannel(id, socket);
+                    if (this.channelHandlers.route(path, channel)) {
+                        channel.ready();
+                        channels.set(id, channel);
+                        channel.onClose(() => channels.delete(id));
+                    } else {
+                        console.error('Cannot find a service for the path: ' + path);
                     }
-                    channel.handleMessage(message);
                 } else {
-                    console.error('The ws channel does not exist', id);
+                    const { id } = message;
+                    const channel = channels.get(id);
+                    if (channel) {
+                        channel.handleMessage(message);
+                    } else {
+                        console.error('The ws channel does not exist', id);
+                    }
                 }
+            } catch (error) {
+                console.error('Failed to handle message', { error, data });
             }
         });
         socket.on('error', err => {
@@ -138,8 +144,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             }
         });
         socket.on('close', (code, reason) => {
-            for (const channel of channels.values()) {
-                channel.fireClose(code, reason);
+            for (const channel of [...channels.values()]) {
+                channel.close(code, reason);
             }
             channels.clear();
         });
