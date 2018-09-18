@@ -67,12 +67,21 @@ export interface DebugService extends Disposable {
     resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
 
     /**
-     * Starts a new [debug adapter session](#DebugAdapterSession).
-     * Returning the value 'undefined' means the debug adapter session can't be started.
+     * Creates a new [debug adapter session](#DebugAdapterSession).
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The identifier of the created [debug adapter session](#DebugAdapterSession).
      */
-    start(config: DebugConfiguration): Promise<string>;
+    create(config: DebugConfiguration): Promise<string>;
+
+    /**
+     * Stop a running session for the given session id.
+     */
+    stop(sessionId: string): Promise<void>;
+
+    /**
+     * Stop all running sessions.
+     */
+    stop(): Promise<void>;
 }
 
 /**

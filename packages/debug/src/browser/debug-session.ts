@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { Endpoint } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import {
     DebugAdapterPath,
     DebugConfiguration,
@@ -24,12 +24,13 @@ import {
 } from '../common/debug-common';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Emitter, Event, DisposableCollection, ContributionProvider, Resource, ResourceResolver } from '@theia/core';
+import { Emitter, Event, DisposableCollection, ContributionProvider, Resource, ResourceResolver, Disposable } from '@theia/core';
 import { EventEmitter } from 'events';
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { DebugSession, DebugSessionFactory, DebugSessionContribution } from './debug-model';
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
+import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 
 /**
  * Stack frame format.
@@ -63,37 +64,39 @@ const INITIALIZE_ARGUMENTS = {
  * DebugSession implementation.
  */
 export class DebugSessionImpl extends EventEmitter implements DebugSession {
-    protected readonly toDispose = new DisposableCollection();
     protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
+    protected readonly connection: Promise<WebSocketChannel>;
 
-    protected websocket: Promise<WebSocket>;
+    protected readonly toDispose = new DisposableCollection(
+        Disposable.create(() => this.callbacks.clear())
+    );
 
     private sequence: number;
 
     constructor(
         public readonly sessionId: string,
         public readonly configuration: DebugConfiguration,
-        public readonly state: DebugSessionState) {
-
+        public readonly state: DebugSessionState,
+        protected readonly connectionProvider: WebSocketConnectionProvider
+    ) {
         super();
         this.state = new DebugSessionStateAccumulator(this, state);
-        this.websocket = this.createWebSocket();
+        this.connection = this.createConnection();
         this.sequence = 1;
     }
 
-    private createWebSocket(): Promise<WebSocket> {
-        const path = DebugAdapterPath + '/' + this.sessionId;
-        const url = new Endpoint({ path }).getWebSocketUrl().toString();
-        const websocket = new WebSocket(url);
-
-        const initialized = new Deferred<WebSocket>();
-
-        websocket.onopen = () => initialized.resolve(websocket);
-        websocket.onclose = () => this.onClose();
-        websocket.onerror = () => initialized.reject(`Failed to establish connection with debug adapter by url: '${url}'`);
-        websocket.onmessage = (event: MessageEvent): void => this.handleMessage(event);
-
-        return initialized.promise;
+    protected createConnection(): Promise<WebSocketChannel> {
+        return new Promise<WebSocketChannel>(resolve =>
+            this.connectionProvider.openChannel(`${DebugAdapterPath}/${this.sessionId}`, channel => {
+                if (this.toDispose.disposed) {
+                    channel.close();
+                } else {
+                    this.toDispose.push(Disposable.create(() => channel.close()));
+                    channel.onMessage(data => this.handleMessage(data));
+                    resolve(channel);
+                }
+            }, { reconnecting: false })
+        );
     }
 
     initialize(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.InitializeResponse> {
@@ -179,8 +182,8 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest('stepOut', args);
     }
 
-    protected handleMessage(event: MessageEvent) {
-        const message: DebugProtocol.ProtocolMessage = JSON.parse(event.data);
+    protected handleMessage(data: string) {
+        const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
         if (message.type === 'response') {
             this.proceedResponse(message as DebugProtocol.Response);
         } else if (message.type === 'event') {
@@ -188,7 +191,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         }
     }
 
-    protected proceedRequest<T extends DebugProtocol.Response>(command: string, args?: {}): Promise<T> {
+    protected async proceedRequest<T extends DebugProtocol.Response>(command: string, args?: {}): Promise<T> {
         const result = new Deferred<T>();
 
         const request: DebugProtocol.Request = {
@@ -206,9 +209,9 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
             }
         });
 
-        return this.websocket
-            .then(websocket => websocket.send(JSON.stringify(request)))
-            .then(() => result.promise);
+        const connection = await this.connection;
+        connection.send(JSON.stringify(request));
+        return result.promise;
     }
 
     protected proceedResponse(response: DebugProtocol.Response): void {
@@ -234,16 +237,17 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         }
     }
 
-    dispose() {
-        this.callbacks.clear();
-        this.websocket
-            .then(websocket => websocket.close())
-            .catch(error => console.error(error));
+    dispose(): void {
+        this.toDispose.dispose();
     }
 }
 
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
+
+    @inject(WebSocketConnectionProvider)
+    protected readonly connectionProvider: WebSocketConnectionProvider;
+
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         const state: DebugSessionState = {
             isConnected: false,
@@ -253,7 +257,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             allThreadsStopped: false,
             capabilities: {}
         };
-        return new DebugSessionImpl(sessionId, debugConfiguration, state);
+        return new DebugSessionImpl(sessionId, debugConfiguration, state, this.connectionProvider);
     }
 }
 

@@ -26,35 +26,29 @@ import {
     DebugService
 } from '../common/debug-common';
 import {
-    MessagingServiceContainer,
     LaunchBasedDebugAdapterFactory,
-    DebugAdapterSessionImpl,
     DebugAdapterSessionFactoryImpl
 } from './debug-adapter';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import {
     DebugAdapterContribution,
     DebugAdapterSessionFactory,
-    DebugAdapterSession,
     DebugAdapterFactory
 } from './debug-model';
 
 export default new ContainerModule(bind => {
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
-    bind(DebugAdapterSession).to(DebugAdapterSessionImpl);
+    bind(MessagingService.Contribution).toService(DebugService);
+
     bind(DebugAdapterSessionFactory).to(DebugAdapterSessionFactoryImpl).inSingletonScope();
     bind(DebugAdapterFactory).to(LaunchBasedDebugAdapterFactory).inSingletonScope();
     bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
     bind(DebugAdapterSessionManager).toSelf().inSingletonScope();
-    bind(MessagingServiceContainer).toSelf().inSingletonScope();
-    bind(MessagingService.Contribution).toDynamicValue(c => c.container.get(MessagingServiceContainer));
     bindContributionProvider(bind, DebugAdapterContribution);
 
     bind(ConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler(DebugPath, client => {
-            const service = context.container.get<DebugService>(DebugService);
-            client.onDidCloseConnection(() => service.dispose());
-            return service;
-        })
+        new JsonRpcConnectionHandler(DebugPath, () =>
+            context.container.get<DebugService>(DebugService)
+        )
     ).inSingletonScope();
 });

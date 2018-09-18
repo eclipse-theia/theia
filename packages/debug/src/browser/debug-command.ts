@@ -24,6 +24,7 @@ import { DebugSelectionService } from './view/debug-selection-service';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { BreakpointsDialog } from './view/debug-breakpoints-widget';
+import { DebugSession } from './debug-model';
 
 export const DEBUG_SESSION_CONTEXT_MENU: MenuPath = ['debug-session-context-menu'];
 export const DEBUG_SESSION_THREAD_CONTEXT_MENU: MenuPath = ['debug-session-thread-context-menu'];
@@ -209,17 +210,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
     }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(DEBUG_COMMANDS.START);
-        registry.registerHandler(DEBUG_COMMANDS.START.id, {
-            execute: () => {
-                this.debugConfigurationManager.selectConfiguration()
-                    .then(configuration => this.debug.resolveDebugConfiguration(configuration))
-                    .then(configuration => this.debug.start(configuration).then(sessionId => ({ sessionId, configuration })))
-                    .then(({ sessionId, configuration }) => this.debugSessionManager.create(sessionId, configuration))
-                    .catch(error => console.log(error));
-            },
-            isEnabled: () => true,
-            isVisible: () => true
+        registry.registerCommand(DEBUG_COMMANDS.START, {
+            execute: () => this.start()
         });
 
         registry.registerCommand(DEBUG_COMMANDS.STOP);
@@ -407,6 +399,13 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 return !!selection && !!selection.variable;
             }
         });
+    }
+
+    async start(): Promise<DebugSession> {
+        const configuration = await this.debugConfigurationManager.selectConfiguration();
+        await this.debug.resolveDebugConfiguration(configuration);
+        const session = await this.debug.create(configuration);
+        return await this.debugSessionManager.create(session, configuration);
     }
 
     private isSelectedThreadSuspended(): boolean {
