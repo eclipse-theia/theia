@@ -18,12 +18,16 @@ import * as os from 'os';
 import * as path from 'path';
 import * as glob from 'glob';
 import { Socket } from 'net';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
+import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 import { createSocketConnection } from 'vscode-ws-jsonrpc/lib/server';
 import { DEBUG_MODE } from '@theia/core/lib/node';
 import { IConnection, BaseLanguageServerContribution } from '@theia/languages/lib/node';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { JavaCliContribution } from './java-cli-contribution';
+import { ContributionProvider } from '@theia/core';
+import { JavaExtensionContribution } from './java-extension-model';
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -34,11 +38,21 @@ configurations.set('linux', 'config_linux');
 @injectable()
 export class JavaContribution extends BaseLanguageServerContribution {
 
-    @inject(JavaCliContribution)
-    protected readonly cli: JavaCliContribution;
-
+    private javaBundles: string[] | undefined;
     readonly id = JAVA_LANGUAGE_ID;
     readonly name = JAVA_LANGUAGE_NAME;
+
+    constructor(
+        @inject(JavaCliContribution) protected readonly cli: JavaCliContribution,
+        @inject(ContributionProvider) @named(JavaExtensionContribution)
+        protected readonly contributions: ContributionProvider<JavaExtensionContribution>
+    ) {
+        super();
+        this.javaBundles = [];
+        for (const contrib of this.contributions.getContributions()) {
+            this.javaBundles = this.javaBundles.concat(contrib.getExtensionBundles());
+        }
+    }
 
     start(clientConnection: IConnection): void {
 
@@ -98,5 +112,16 @@ export class JavaContribution extends BaseLanguageServerContribution {
             this.createProcessSocketConnection(socket, socket, command, args, { env })
                 .then(serverConnection => this.forward(clientConnection, serverConnection));
         });
+    }
+
+    protected map(message: Message): Message {
+        if (isRequestMessage(message)) {
+            if (message.method === InitializeRequest.type.method) {
+                const initializeParams = message.params as InitializeParams;
+                const initializeOptions = initializeParams.initializationOptions;
+                initializeOptions.bundles = this.javaBundles;
+            }
+        }
+        return super.map(message);
     }
 }

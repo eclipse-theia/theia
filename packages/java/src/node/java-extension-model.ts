@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from '../common';
-export * from './java-contribution';
-export * from './java-extension-model';
-export * from './java-backend-module';
+/**
+ * JavaExtensionContribution symbol for DI.
+ */
+export const JavaExtensionContribution = Symbol('JavaExtensionContribution');
+
+/**
+ * A contribution point for extensions to jdt.ls.
+ */
+export interface JavaExtensionContribution {
+    /**
+     * Returns an array of paths to the bundle jar files.
+     * The paths should be absolute.
+     */
+    getExtensionBundles(): string[];
+}
