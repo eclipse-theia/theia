@@ -60,7 +60,15 @@ export class ExtensionPackageCollector {
         }
         this.visited.set(name, true);
 
-        const packagePath = this.resolveModule(name + '/package.json');
+        let packagePath: string | undefined;
+        try {
+            packagePath = this.resolveModule(name + '/package.json');
+        } catch (error) {
+            console.console.warn(`Failed to resolve module: ${name}`);
+        }
+        if (!packagePath) {
+            return;
+        }
         const pck: NodePackage = readJsonFile(packagePath);
         if (RawExtensionPackage.is(pck)) {
             const parent = this.parent;
