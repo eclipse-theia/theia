@@ -9,7 +9,6 @@
     "@theia/filesystem": "^0.3.14",
     "@theia/monaco": "^0.3.14",
     "@theia/plugin": "^0.3.14",
-    "@theia/terminal": "^0.3.14",
     "@theia/workspace": "^0.3.14",
     "decompress": "^4.2.0",
     "lodash.clonedeep": "^4.5.0",
