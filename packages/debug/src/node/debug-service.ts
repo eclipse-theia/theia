@@ -18,11 +18,13 @@ import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '@theia/core';
 import {
     DebugService,
-    DebugConfiguration
+    DebugConfiguration,
+    DebugAdapterPath
 } from '../common/debug-common';
 
 import { UUID } from '@phosphor/coreutils';
 import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
+import { MessagingService } from '@theia/core/lib/node';
 
 /**
  * Contributions registry.
@@ -160,11 +162,11 @@ export class DebugAdapterSessionManager {
     }
 
     /**
-     * Finds all instantiated debug adapter sessions.
+     * Returns all instantiated debug adapter sessions.
      * @returns An array of debug adapter sessions
      */
-    findAll(): DebugAdapterSession[] {
-        return Array.from(this.sessions.values());
+    getAll(): IterableIterator<DebugAdapterSession> {
+        return this.sessions.values();
     }
 }
 
@@ -172,12 +174,28 @@ export class DebugAdapterSessionManager {
  * DebugService implementation.
  */
 @injectable()
-export class DebugServiceImpl implements DebugService {
-    constructor(
-        @inject(DebugAdapterSessionManager)
-        protected readonly sessionManager: DebugAdapterSessionManager,
-        @inject(DebugAdapterContributionRegistry)
-        protected readonly registry: DebugAdapterContributionRegistry) { }
+export class DebugServiceImpl implements DebugService, MessagingService.Contribution {
+
+    @inject(DebugAdapterSessionManager)
+    protected readonly sessionManager: DebugAdapterSessionManager;
+
+    @inject(DebugAdapterContributionRegistry)
+    protected readonly registry: DebugAdapterContributionRegistry;
+
+    dispose(): void {
+        this.stop();
+    }
+
+    configure(service: MessagingService): void {
+        service.wsChannel(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, channel) => {
+            const session = this.sessionManager.find(id);
+            if (!session) {
+                channel.close();
+                return;
+            }
+            session.start(channel);
+        });
+    }
 
     async debugTypes(): Promise<string[]> {
         return this.registry.debugTypes();
@@ -191,19 +209,29 @@ export class DebugServiceImpl implements DebugService {
         return this.registry.resolveDebugConfiguration(config);
     }
 
-    async start(config: DebugConfiguration): Promise<string> {
+    async create(config: DebugConfiguration): Promise<string> {
         const session = this.sessionManager.create(config);
-        return session.start().then(() => session.id);
+        return session.id;
     }
 
-    async dispose(sessionId?: string): Promise<void> {
+    async stop(sessionId?: string): Promise<void> {
         if (sessionId) {
             const debugSession = this.sessionManager.find(sessionId);
             if (debugSession) {
-                debugSession.stop();
+                await debugSession.stop();
             }
         } else {
-            this.sessionManager.findAll().forEach(debugSession => debugSession.stop());
+            const promises: Promise<void>[] = [];
+            for (const session of this.sessionManager.getAll()) {
+                promises.push((async () => {
+                    try {
+                        await session.stop();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                })());
+            }
+            await Promise.all(promises);
         }
     }
 }

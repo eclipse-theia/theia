@@ -24,9 +24,7 @@
 import * as net from 'net';
 import { injectable, inject } from 'inversify';
 import { ILogger, DisposableCollection, Disposable } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
-    DebugAdapterPath,
     DebugSessionState,
     DebugSessionStateAccumulator,
     ExtDebugProtocol
@@ -36,7 +34,6 @@ import {
     ProcessManager,
     RawProcess
 } from '@theia/process/lib/node';
-import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import {
     DebugAdapterExecutable,
     CommunicationProvider,
@@ -47,22 +44,6 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { EventEmitter } from 'events';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
-
-/**
- * The container for [Messaging Service](#MessagingService).
- */
-@injectable()
-export class MessagingServiceContainer implements MessagingService.Contribution {
-    protected service = new Deferred<MessagingService>();
-
-    getService(): Promise<MessagingService> {
-        return this.service.promise;
-    }
-
-    configure(service: MessagingService): void {
-        this.service.resolve(service);
-    }
-}
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -117,15 +98,15 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 
     private readonly toDispose = new DisposableCollection();
     private pendingRequests = new Map<number, DebugProtocol.Request>();
-    private ws: WebSocketChannel |  undefined;
+    private channel: WebSocketChannel | undefined;
     private contentLength: number;
     private buffer: Buffer;
 
     constructor(
         readonly id: string,
         protected readonly communicationProvider: CommunicationProvider,
-        protected readonly logger: ILogger,
-        protected readonly messagingServiceContainer: MessagingServiceContainer) {
+        protected readonly logger: ILogger
+    ) {
         super();
 
         this.contentLength = -1;
@@ -133,28 +114,23 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         this.state = new DebugSessionStateAccumulator(this);
         this.toDispose.push(this.communicationProvider);
         this.toDispose.push(Disposable.create(() => this.pendingRequests.clear()));
+        // Node.js process crashes if there is no listeners for error event
+        this.on('error', console.error);
     }
 
-    start(): Promise<void> {
-        const path = DebugAdapterPath + '/' + this.id;
-        return this.messagingServiceContainer.getService().then(service => {
-            service.wsChannel(path, (params: MessagingService.PathParams, ws: WebSocketChannel) => {
-                this.ws = ws;
-                this.toDispose.push(Disposable.create(() => {
-                    if (this.ws === ws)  {
-                        ws.close();
-                        this.ws = undefined;
-                    }
-                }));
+    async start(channel: WebSocketChannel): Promise<void> {
+        if (this.channel) {
+            throw new Error('The session has already been started, id: ' + this.id);
+        }
+        this.channel = channel;
+        this.channel.onClose(() => this.channel = undefined);
 
-                this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
-                this.communicationProvider.output.on('close', () => this.onDebugAdapterClosed());
-                this.communicationProvider.output.on('error', (error: Error) => this.onDebugAdapterError(error));
-                this.communicationProvider.input.on('error', (error: Error) => this.onDebugAdapterError(error));
+        this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
+        this.communicationProvider.output.on('close', () => this.onDebugAdapterClosed());
+        this.communicationProvider.output.on('error', (error: Error) => this.onDebugAdapterError(error));
+        this.communicationProvider.input.on('error', (error: Error) => this.onDebugAdapterError(error));
 
-                this.ws.onMessage((data: string) => this.proceedRequest(data));
-            });
-        });
+        this.channel.onMessage((data: string) => this.proceedRequest(data));
     }
 
     protected onDebugAdapterClosed(): void {
@@ -219,8 +195,8 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         this.logger.debug(`DAP event: ${rawData}`);
 
         this.emit(event.event, event);
-        if (this.ws) {
-            this.ws.send(rawData);
+        if (this.channel) {
+            this.channel.send(rawData);
         }
     }
 
@@ -230,8 +206,8 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         const request = this.pendingRequests.get(response.request_seq);
 
         this.pendingRequests.delete(response.request_seq);
-        if (this.ws) {
-            this.ws.send(rawData);
+        if (this.channel) {
+            this.channel.send(rawData);
         }
 
         if (response.success) {
@@ -326,17 +302,14 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 @injectable()
 export class DebugAdapterSessionFactoryImpl implements DebugAdapterSessionFactory {
 
-    constructor(
-        @inject(ILogger)
-        protected readonly logger: ILogger,
-        @inject(MessagingServiceContainer)
-        protected readonly messagingServiceContainer: MessagingServiceContainer) { }
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     get(sessionId: string, communicationProvider: CommunicationProvider): DebugAdapterSession {
         return new DebugAdapterSessionImpl(
             sessionId,
             communicationProvider,
-            this.logger,
-            this.messagingServiceContainer);
+            this.logger
+        );
     }
 }

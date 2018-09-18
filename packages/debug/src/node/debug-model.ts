@@ -24,6 +24,7 @@
 
 import { Disposable } from '@theia/core';
 import * as stream from 'stream';
+import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { DebugConfiguration, DebugSessionState } from '../common/debug-common';
 
 /**
@@ -38,7 +39,7 @@ export interface DebugAdapterSession {
     id: string;
     state: DebugSessionState;
 
-    start(): Promise<void>
+    start(channel: WebSocketChannel): Promise<void>
     stop(): Promise<void>
 }
 
