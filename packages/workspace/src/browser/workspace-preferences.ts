@@ -35,13 +35,19 @@ export const workspacePreferenceSchema: PreferenceSchema = {
             description: 'Enable the multi-root workspace support to test this feature internally',
             type: 'boolean',
             default: false
+        },
+        'workspace.displayStartingPage': {
+            description: 'Enable the display of a starting page on startup',
+            type: 'boolean',
+            default: true
         }
     }
 };
 
 export interface WorkspaceConfiguration {
     'workspace.preserveWindow': boolean,
-    'workspace.supportMultiRootWorkspace': boolean
+    'workspace.supportMultiRootWorkspace': boolean,
+    'workspace.displayStartingPage': boolean,
 }
 
 export const WorkspacePreferences = Symbol('WorkspacePreferences');
