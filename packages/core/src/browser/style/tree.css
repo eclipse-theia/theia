@@ -32,7 +32,7 @@
 
 .theia-TreeContainer {
     height: 100%;
-}   
+}
 
 .theia-TreeNode {
     line-height: var(--theia-private-horizontal-tab-height);
@@ -62,11 +62,11 @@
     content: "\f0d7";
 }
 
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected {
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
     background: var(--theia-accent-color3);
 }
 
-.theia-Tree:not(:focus) .theia-TreeNode.theia-mod-selected {
+.theia-Tree .ReactVirtualized__List .theia-TreeNode.theia-mod-selected {
     background: var(--theia-accent-color4);
 }
 
