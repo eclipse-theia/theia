@@ -42,6 +42,7 @@ import { HtmlContribution } from './html';
 import { LessContribution } from './less';
 import { MarkdownContribution } from './markdown';
 import { ShellContribution } from './shell';
+import { TclContribution } from './tcl';
 import { XmlContribution } from './xml';
 import { XslContribution } from './xsl';
 import { YamlContribution } from './yaml';
@@ -128,6 +129,9 @@ export default new ContainerModule(bind => {
 
     bind(ShellContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(ShellContribution);
+
+    bind(TclContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(TclContribution);
 
     bind(XmlContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(XmlContribution);

@@ -119,7 +119,11 @@ module.exports = {
                 test: /\.wasm$/,
                 loader: "file-loader",
                 type: "javascript/auto",
-            }
+            },
+            {
+                test: /\\.plist$/,
+                loader: "file-loader",
+            },
         ]
     },
     resolve: {
