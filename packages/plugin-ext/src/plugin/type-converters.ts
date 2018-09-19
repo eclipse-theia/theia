@@ -15,7 +15,17 @@
  ********************************************************************************/
 
 import { EditorPosition, Selection, Position, DecorationOptions } from '../api/plugin-api';
-import { Range, Hover, MarkdownString, CompletionType, SingleEditOperation, MarkerData, RelatedInformation } from '../api/model';
+import {
+    Range,
+    Hover,
+    MarkdownString,
+    CompletionType,
+    SingleEditOperation,
+    MarkerData,
+    RelatedInformation,
+    Location,
+    DefinitionLink
+} from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
@@ -71,6 +81,20 @@ export function fromRange(range: theia.Range | undefined): Range | undefined {
         startLineNumber: start.line,
         startColumn: start.character + 1,
         endLineNumber: end.line,
+        endColumn: end.character + 1
+    };
+}
+
+// TODO make this primary converter, see https://github.com/theia-ide/theia/issues/2910
+export function fromRange_(range: theia.Range | undefined): Range | undefined {
+    if (!range) {
+        return undefined;
+    }
+    const { start, end } = range;
+    return {
+        startLineNumber: start.line + 1,
+        startColumn: start.character + 1,
+        endLineNumber: end.line + 1,
         endColumn: end.character + 1
     };
 }
@@ -351,5 +375,21 @@ export function fromHover(hover: theia.Hover): Hover {
     return <Hover>{
         range: fromRange(hover.range),
         contents: fromManyMarkdown(hover.contents)
+    };
+}
+
+export function fromLocation(location: theia.Location): Location {
+    return <Location>{
+        uri: location.uri,
+        range: fromRange_(location.range)
+    };
+}
+
+export function fromDefinitionLink(definitionLink: theia.DefinitionLink): DefinitionLink {
+    return <DefinitionLink>{
+        uri: definitionLink.targetUri,
+        range: fromRange_(definitionLink.targetRange),
+        origin: definitionLink.originSelectionRange ? fromRange_(definitionLink.originSelectionRange) : undefined,
+        selectionRange: definitionLink.targetSelectionRange ? fromRange_(definitionLink.targetSelectionRange) : undefined
     };
 }

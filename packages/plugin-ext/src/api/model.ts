@@ -196,3 +196,21 @@ export interface Hover {
 export interface HoverProvider {
     provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
 }
+
+export interface Location {
+    uri: UriComponents;
+    range: Range;
+}
+
+export type Definition = Location | Location[];
+
+export interface DefinitionLink {
+    uri: UriComponents;
+    range: Range;
+    origin?: Range;
+    selectionRange?: Range;
+}
+
+export interface DefinitionProvider {
+    provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | DefinitionLink[] | undefined;
+}

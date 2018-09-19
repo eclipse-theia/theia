@@ -543,6 +543,66 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Information about where a symbol is defined.
+     *
+     * Provides additional metadata over normal [location](#Location) definitions, including the range of
+     * the defining symbol
+     */
+    export interface DefinitionLink {
+        /**
+         * Span of the symbol being defined in the source file.
+         *
+         * Used as the underlined span for mouse definition hover. Defaults to the word range at
+         * the definition position.
+         */
+        originSelectionRange?: Range;
+
+        /**
+         * The resource identifier of the definition.
+         */
+        targetUri: Uri;
+
+        /**
+         * The full range of the definition.
+         *
+         * For a class definition for example, this would be the entire body of the class definition.
+         */
+        targetRange: Range;
+
+        /**
+         * The span of the symbol definition.
+         *
+         * For a class definition, this would be the class name itself in the class definition.
+         */
+        targetSelectionRange?: Range;
+    }
+
+    /**
+     * The definition of a symbol represented as one or many [locations](#Location).
+     * For most programming languages there is only one location at which a symbol is
+     * defined.
+     */
+    export type Definition = Location | Location[];
+
+    /**
+     * The definition provider interface defines the contract between extensions and
+     * the [go to definition](https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition)
+     * and peek definition features.
+     */
+    export interface DefinitionProvider {
+        /**
+         * Provide the definition of the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @return A definition or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideDefinition(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<Definition | DefinitionLink[]>;
+    }
+
+    /**
      * The MarkdownString represents human readable text that supports formatting via the
      * markdown syntax. Standard markdown is supported, also tables, but no embedded html.
      */
@@ -3672,6 +3732,19 @@ declare module '@theia/plugin' {
         export function registerCompletionItemProvider(selector: DocumentSelector, provider: CompletionItemProvider, ...triggerCharacters: string[]): Disposable;
 
         /**
+         * Register a definition provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A definition provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Disposable;
+
+        /**
          * Register a signature help provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
@@ -3684,7 +3757,6 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): Disposable;
-
 
         /**
          * Register a hover provider.

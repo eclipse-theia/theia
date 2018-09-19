@@ -298,6 +298,9 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, ...triggerCharacters: string[]): theia.Disposable {
                 return languagesExt.registerCompletionItemProvider(selector, provider, triggerCharacters);
             },
+            registerDefinitionProvider(selector: theia.DocumentSelector, provider: theia.DefinitionProvider): theia.Disposable {
+                return languagesExt.registerDefinitionProvider(selector, provider);
+            },
             registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, ...triggerCharacters: string[]): theia.Disposable {
                 return languagesExt.registerSignatureHelpProvider(selector, provider, ...triggerCharacters);
             },
