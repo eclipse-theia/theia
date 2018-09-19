@@ -17,4 +17,3 @@ examples/*/webpack.config.js
 package-backup.json
 .history
 .Trash-*
-.theia

@@ -17,62 +17,68 @@
 import { injectable, inject } from 'inversify';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import URI from '@theia/core/lib/common/uri';
-import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { QuickOpenService, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser';
+import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
 import { DebugService, DebugConfiguration } from '../common/debug-common';
+import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 
 @injectable()
 export class DebugConfigurationManager {
     private static readonly CONFIG = '.theia/launch.json';
 
     @inject(FileSystem)
+    // TODO: use MonacoTextModelService instead
     protected readonly fileSystem: FileSystem;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
     @inject(DebugService)
     protected readonly debug: DebugService;
-    @inject(QuickOpenService)
-    protected readonly quickOpenService: QuickOpenService;
+    @inject(QuickPickService)
+    protected readonly quickPick: QuickPickService;
+    @inject(VariableResolverService)
+    protected readonly variableResolver: VariableResolverService;
 
     /**
      * Opens configuration file in the editor.
      */
-    openConfigurationFile(): Promise<EditorWidget> {
-        return this.resolveConfigurationFile().then(configFile => this.editorManager.open(new URI(configFile.uri)));
+    async openConfigurationFile(): Promise<void> {
+        const configFile = await this.resolveConfigurationFile();
+        await open(this.openerService, new URI(configFile.uri));
     }
 
     /**
      * Adds a new configuration to the configuration file.
      */
-    addConfiguration(): Promise<void> {
-        return this.provideDebugTypes()
-            .then(debugType => this.provideDebugConfigurations(debugType))
-            .then(newDebugConfiguration => this.readConfigurations().then(configurations => configurations.concat(newDebugConfiguration)))
-            .then(configurations => this.writeConfigurations(configurations))
-            .then(() => this.openConfigurationFile())
-            .then(() => { });
+    async addConfiguration(): Promise<void> {
+        const debugType = await this.selectDebugType();
+        if (!debugType) {
+            return;
+        }
+        const newDebugConfiguration = await this.selectDebugConfiguration(debugType);
+        if (!newDebugConfiguration) {
+            return;
+        }
+        const configurations = await this.readConfigurations();
+        configurations.concat(newDebugConfiguration);
+        await this.writeConfigurations(configurations);
+        this.openConfigurationFile();
     }
 
     /**
      * Selects the debug configuration to start debug adapter.
      */
-    selectConfiguration(): Promise<DebugConfiguration> {
-        const result = new Deferred<DebugConfiguration>();
-
-        return this.readConfigurations()
-            .then(configurations => {
-                if (configurations.length !== 0) {
-                    const items = configurations.map(configuration => this.toQuickOpenItem(configuration.type + ' : ' + configuration.name, result, configuration));
-                    return Promise.resolve(items);
-                }
-                return Promise.reject('There are no provided debug configurations.');
-            })
-            .then(items => this.doOpen(items))
-            .then(() => result.promise);
+    async selectConfiguration(): Promise<DebugConfiguration | undefined> {
+        const configurations = await this.readConfigurations();
+        const configuration = await this.quickPick.show(configurations.map(value => ({
+            label: value.type + ' : ' + value.name,
+            value
+        })), {
+                placeholder: 'Select launch configuration'
+            });
+        const resolvedConfiguration = configuration && await this.debug.resolveDebugConfiguration(configuration);
+        return resolvedConfiguration && this.variableResolver.resolve(resolvedConfiguration);
     }
 
     readConfigurations(): Promise<DebugConfiguration[]> {
@@ -84,6 +90,7 @@ export class DebugConfigurationManager {
                 }
 
                 try {
+                    // TODO use jsonc-parser instead
                     return JSON.parse(content);
                 } catch (error) {
                     return Promise.reject('Configuration file bad format.');
@@ -94,6 +101,7 @@ export class DebugConfigurationManager {
     writeConfigurations(configurations: DebugConfiguration[]): Promise<void> {
         return this.resolveConfigurationFile()
             .then(configFile => {
+                // TODO use jsonc-parser instead
                 const jsonPretty = JSON.stringify(configurations, (key, value) => value, 2);
                 return this.fileSystem.setContent(configFile, jsonPretty);
             })
@@ -104,7 +112,7 @@ export class DebugConfigurationManager {
      * Creates and returns configuration file.
      * @returns [configuration file](#FileStat).
      */
-    resolveConfigurationFile(): Promise<FileStat> {
+    protected resolveConfigurationFile(): Promise<FileStat> {
         const root = this.workspaceService.tryGetRoots()[0];
         if (!root) {
             return Promise.reject('Workspace is not opened yet.');
@@ -126,54 +134,17 @@ export class DebugConfigurationManager {
             });
     }
 
-    private provideDebugTypes(): Promise<string> {
-        const result = new Deferred<string>();
-
-        return this.debug.debugTypes()
-            .then(debugTypes => {
-                if (debugTypes.length !== 0) {
-                    const items = debugTypes.map(debugType => this.toQuickOpenItem(debugType, result, debugType));
-                    return Promise.resolve(items);
-                }
-                return Promise.reject('There are no registered debug adapters.');
-            })
-            .then(items => this.doOpen(items))
-            .then(() => result.promise);
+    protected async selectDebugType(): Promise<string | undefined> {
+        const debugTypes = await this.debug.debugTypes();
+        return this.quickPick.show(debugTypes, { placeholder: 'Select Debug Type' });
     }
 
-    private provideDebugConfigurations(debugType: string): Promise<DebugConfiguration> {
-        const result = new Deferred<DebugConfiguration>();
-
-        return this.debug.provideDebugConfigurations(debugType)
-            .then(configurations => {
-                if (configurations) {
-                    const items = configurations.map(configuration => this.toQuickOpenItem(configuration.name, result, configuration));
-                    return Promise.resolve(items);
-                }
-                return Promise.reject(`There are no provided debug configurations for ${debugType}`);
-            })
-            .then(items => this.doOpen(items))
-            .then(() => result.promise);
+    protected async selectDebugConfiguration(debugType: string): Promise<DebugConfiguration | undefined> {
+        const configurations = await this.debug.provideDebugConfigurations(debugType);
+        return this.quickPick.show(configurations.map(value => ({
+            label: value.name,
+            value
+        }), { placeholder: 'Select Debug Configuration' }));
     }
 
-    private toQuickOpenItem<T>(label: string, result: Deferred<T>, value: T): QuickOpenItem {
-        return new QuickOpenItem({
-            label: label,
-            run(mode: QuickOpenMode): boolean {
-                if (mode === QuickOpenMode.OPEN) {
-                    result.resolve(value);
-                    return true;
-                }
-                return false;
-            }
-        });
-    }
-
-    private doOpen(items: QuickOpenItem[]): void {
-        this.quickOpenService.open({
-            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                acceptor(items);
-            }
-        });
-    }
 }
