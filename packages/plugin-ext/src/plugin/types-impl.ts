@@ -859,3 +859,5 @@ export class Hover {
         this.range = range;
     }
 }
+
+export type Definition = Location | Location[];

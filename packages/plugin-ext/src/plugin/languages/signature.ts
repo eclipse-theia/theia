@@ -16,8 +16,8 @@
 
 import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
-import * as types from '../types-impl';
 import { DocumentsExtImpl } from '../documents';
+import * as Converter from '../type-converters';
 import { Position } from '../../api/plugin-api';
 import { SignatureHelp } from '../../api/model';
 
@@ -36,7 +36,7 @@ export class SignatureHelpAdapter {
         }
 
         const document = documentData.document;
-        const zeroBasedPosition = new types.Position(position.lineNumber - 1, position.column - 1);
+        const zeroBasedPosition = Converter.toPosition(position);
 
         return Promise.resolve(this.delegate.provideSignatureHelp(document, zeroBasedPosition, undefined));
     }
