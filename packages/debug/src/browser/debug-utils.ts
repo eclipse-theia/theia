@@ -192,19 +192,4 @@ export namespace DebugUtils {
         return toUri(breakpoint.source!).toString() === uri.toString();
     }
 
-    /**
-     * Indicates if given source fits any of patterns.
-     */
-    export function checkPattern(source: DebugProtocol.Source, filePatterns: string[]): boolean {
-        for (const pattern of filePatterns) {
-            // Every source returned from the debug adapter has a name
-            const name = source.name!;
-
-            if (new RegExp(pattern).test(name)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }
