@@ -99,7 +99,7 @@ describe('Task server / back-end', function () {
                 } else {
                     reject(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual: "${msg.toString()}"`);
                 }
-                channel.dispose();
+                channel.close();
             });
         });
     });
