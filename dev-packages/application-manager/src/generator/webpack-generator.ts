@@ -90,7 +90,7 @@ module.exports = {
                 loader: 'url-loader?limit=10000&mimetype=image/svg+xml'
             },
             {
-                test: /\.(jpg|png|gif)$/,
+                test: /\\.(jpg|png|gif)$/,
                 loader: 'file-loader',
                 options: {
                     name: '[path][name].[hash].[ext]',
@@ -116,7 +116,7 @@ module.exports = {
                 use: { loader: 'umd-compat-loader' }
             },
             {
-                test: /\.wasm$/,
+                test: /\\.wasm$/,
                 loader: "file-loader",
                 type: "javascript/auto",
             },
