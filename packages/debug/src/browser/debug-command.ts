@@ -59,7 +59,8 @@ export namespace DEBUG_COMMANDS {
 
     export const STOP = {
         id: 'debug.stop',
-        label: 'Stop'
+        label: 'Stop',
+        iconClass: 'theia-debug-stop'
     };
 
     export const OPEN_CONFIGURATION = {
@@ -83,12 +84,14 @@ export namespace DEBUG_COMMANDS {
     };
     export const SUSPEND_ALL_THREADS = {
         id: 'debug.thread.suspend.all',
-        label: 'Suspend'
+        label: 'Suspend',
+        iconClass: 'theia-debug-thread-suspend-all'
     };
 
     export const RESUME_ALL_THREADS = {
         id: 'debug.thread.resume.all',
-        label: 'Resume'
+        label: 'Resume',
+        iconClass: 'theia-debug-thread-resume-all'
     };
 
     export const MODIFY_VARIABLE = {
@@ -103,17 +106,20 @@ export namespace DEBUG_COMMANDS {
 
     export const STEP = {
         id: 'debug.thread.next',
-        label: 'Step'
+        label: 'Step',
+        iconClass: 'theia-debug-step-over'
     };
 
     export const STEPIN = {
         id: 'debug.thread.stepin',
-        label: 'Step In'
+        label: 'Step In',
+        iconClass: 'theia-debug-step-in'
     };
 
     export const STEPOUT = {
         id: 'debug.thread.stepout',
-        label: 'Step Out'
+        label: 'Step Out',
+        iconClass: 'theia-debug-step-out'
     };
 }
 

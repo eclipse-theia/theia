@@ -63,6 +63,7 @@ import { BreakpointsManager } from './breakpoint/breakpoint-manager';
 import { BreakpointStorage } from './breakpoint/breakpoint-marker';
 import { SourceOpener } from './debug-utils';
 import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
+import { DebugToolBar } from './view/debug-toolbar-widget';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -125,6 +126,7 @@ function createDebugTargetContainer(context: interfaces.Context, debugSession: D
     child.bind(DebugSession).toConstantValue(debugSession);
     child.bind(DebugSelection).toConstantValue(selection);
     child.bind(DebugThreadsWidget).toSelf();
+    child.bind(DebugToolBar).toSelf();
     child.bind(DebugStackFramesWidget).toSelf();
     child.bind(DebugBreakpointsWidget).toSelf();
 

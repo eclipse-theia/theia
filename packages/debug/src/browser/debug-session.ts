@@ -224,6 +224,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
     protected proceedEvent(event: DebugProtocol.Event): void {
         this.emit(event.event, event);
+        this.emit('*', event);
     }
 
     protected onClose(): void {

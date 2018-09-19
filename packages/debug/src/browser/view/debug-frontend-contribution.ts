@@ -32,6 +32,7 @@ import { DebugVariablesWidget } from './debug-variables-widget';
 import { ExtDebugProtocol } from '@theia/debug/src/common/debug-common';
 import { Disposable } from '@theia/core';
 import { DebugStyles } from './base/debug-styles';
+import { DebugToolBar } from './debug-toolbar-widget';
 
 export const DEBUG_FACTORY_ID = 'debug';
 
@@ -50,7 +51,8 @@ export class DebugWidget extends BaseWidget {
         @inject(DebugThreadsWidget) protected readonly threads: DebugThreadsWidget,
         @inject(DebugStackFramesWidget) protected readonly frames: DebugStackFramesWidget,
         @inject(DebugBreakpointsWidget) protected readonly breakpoints: DebugBreakpointsWidget,
-        @inject(DebugVariablesWidget) protected readonly variables: DebugVariablesWidget
+        @inject(DebugVariablesWidget) protected readonly variables: DebugVariablesWidget,
+        @inject(DebugToolBar) protected readonly toolbar: DebugToolBar
     ) {
         super();
 
@@ -60,7 +62,7 @@ export class DebugWidget extends BaseWidget {
         this.title.closable = true;
         this.title.iconClass = 'fa fa-bug';
         this.addClass(DebugStyles.DEBUG_CONTAINER);
-        this.widgets = [this.variables, this.threads, this.frames, this.breakpoints];
+        this.widgets = [this.toolbar, this.variables, this.threads, this.frames, this.breakpoints];
     }
 
     @postConstruct()
@@ -104,11 +106,6 @@ export class DebugWidget extends BaseWidget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.widgets.forEach(w => w.activate());
-    }
-
-    protected onCloseRequest(msg: Message): void {
-        this.widgets.forEach(w => w.close());
-        super.onCloseRequest(msg);
     }
 }
 
