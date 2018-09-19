@@ -14,8 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable, inject } from 'inversify';
-import { Variable, VariableRegistry } from './variable';
+import { VariableRegistry } from './variable';
 
 /**
  * The variable resolver service should be used to resolve variables in strings.
@@ -25,70 +27,105 @@ export class VariableResolverService {
 
     protected static VAR_REGEXP = /\$\{(.*?)\}/g;
 
-    constructor(
-        @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry
-    ) { }
-
-    /**
-     * Resolve the variables in the given string.
-     * @returns promise resolved to the provided string with already resolved variables.
-     * Never reject.
-     */
-    async resolve(text: string): Promise<string> {
-        const variablesToValues = await this.resolveVariables(this.searchVariables(text));
-        const resolvedText = text.replace(VariableResolverService.VAR_REGEXP, (match: string, varName: string) => {
-            const value = variablesToValues.get(varName);
-            return value ? value : match;
-        });
-        return resolvedText;
-    }
+    @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry;
 
     /**
      * Resolve the variables in the given string array.
      * @returns promise resolved to the provided string array with already resolved variables.
      * Never reject.
      */
-    async resolveArray(arr: string[]): Promise<string[]> {
-        const result: string[] = [];
-        for (let i = 0; i < arr.length; i++) {
-            result[i] = await this.resolve(arr[i]);
+    resolveArray(value: string[]): Promise<string[]> {
+        return this.resolve(value);
+    }
+
+    /**
+     * Resolve the variables in the given string.
+     * @returns promise resolved to the provided string with already resolved variables.
+     * Never reject.
+     */
+    async resolve<T>(value: T): Promise<T> {
+        const context = new VariableResolverService.Context(this.variableRegistry);
+        const resolved = await this.doResolve(value, context);
+        return resolved as any;
+    }
+
+    protected doResolve(value: Object | undefined, context: VariableResolverService.Context): Object | undefined {
+        if (typeof value === 'string') {
+            return this.doResolveString(value, context);
+        }
+        if (Array.isArray(value)) {
+            return this.doResolveArray(value, context);
+        }
+        if (typeof value === 'object') {
+            return this.doResolveObject(value, context);
+        }
+        return value;
+    }
+
+    protected async doResolveObject(obj: object, context: VariableResolverService.Context): Promise<object> {
+        const result: {
+            [prop: string]: Object | undefined
+        } = {};
+        for (const name of Object.keys(obj)) {
+            const value = (obj as any)[name];
+            const resolved = await this.doResolve(value, context);
+            result[name] = resolved;
         }
         return result;
     }
 
-    /**
-     * Finds all variables in the given string.
-     */
-    protected searchVariables(text: string): Variable[] {
-        const variables: Variable[] = [];
-        let match;
-        while ((match = VariableResolverService.VAR_REGEXP.exec(text)) !== null) {
-            const variableName = match[1];
-            const variable = this.variableRegistry.getVariable(variableName);
-            if (variable) {
-                variables.push(variable);
-            }
+    protected async doResolveArray(values: Array<Object | undefined>, context: VariableResolverService.Context): Promise<Array<Object | undefined>> {
+        const result: (Object | undefined)[] = [];
+        for (const value of values) {
+            const resolved = await this.doResolve(value, context);
+            result.push(resolved);
         }
-        return variables;
+        return result;
     }
 
-    /**
-     * Resolve the given variables.
-     * @returns promise resolved to the map of the variable name to its value.
-     * Never reject.
-     */
-    protected async resolveVariables(variables: Variable[]): Promise<Map<string, string>> {
-        const resolvedVariables: Map<string, string> = new Map();
-        const promises: Promise<any>[] = [];
-        variables.forEach(variable => {
-            const promise = Promise.resolve(variable.resolve()).then(value => {
-                if (value) {
-                    resolvedVariables.set(variable.name, value);
-                }
-            });
-            promises.push(promise);
+    protected async doResolveString(value: string, context: VariableResolverService.Context): Promise<string> {
+        await this.resolveVariables(value, context);
+        return value.replace(VariableResolverService.VAR_REGEXP, (match: string, varName: string) => {
+            const varValue = context.get(varName);
+            return varValue !== undefined ? varValue : match;
         });
-        await Promise.all(promises);
-        return resolvedVariables;
+    }
+
+    protected async resolveVariables(value: string, context: VariableResolverService.Context): Promise<void> {
+        let match;
+        while ((match = VariableResolverService.VAR_REGEXP.exec(value)) !== null) {
+            const variableName = match[1];
+            await context.resolve(variableName);
+        }
+    }
+
+}
+export namespace VariableResolverService {
+    export class Context {
+
+        protected readonly resolved = new Map<string, string | undefined>();
+
+        constructor(
+            protected readonly variableRegistry: VariableRegistry
+        ) { }
+
+        get(name: string): string | undefined {
+            return this.resolved.get(name);
+        }
+
+        async resolve(name: string): Promise<void> {
+            if (this.resolved.has(name)) {
+                return;
+            }
+            try {
+                const variable = await this.variableRegistry.getVariable(name);
+                const value = variable && await variable.resolve();
+                this.resolved.set(name, value);
+            } catch (e) {
+                console.error(`Failed to resolved '${name}' variable`, e);
+                this.resolved.set(name, undefined);
+            }
+        }
+
     }
 }

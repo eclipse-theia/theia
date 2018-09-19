@@ -24,7 +24,6 @@ import { DebugSelectionService } from './view/debug-selection-service';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { BreakpointsDialog } from './view/debug-breakpoints-widget';
-import { DebugSession } from './debug-model';
 
 export const DEBUG_SESSION_CONTEXT_MENU: MenuPath = ['debug-session-context-menu'];
 export const DEBUG_SESSION_THREAD_CONTEXT_MENU: MenuPath = ['debug-session-thread-context-menu'];
@@ -407,11 +406,13 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         });
     }
 
-    async start(): Promise<DebugSession> {
+    async start(): Promise<void> {
         const configuration = await this.debugConfigurationManager.selectConfiguration();
-        await this.debug.resolveDebugConfiguration(configuration);
+        if (!configuration) {
+            return;
+        }
         const session = await this.debug.create(configuration);
-        return await this.debugSessionManager.create(session, configuration);
+        await this.debugSessionManager.create(session, configuration);
     }
 
     private isSelectedThreadSuspended(): boolean {

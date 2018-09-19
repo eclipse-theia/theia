@@ -1,0 +1,22 @@
+[
+  {
+    "type": "node",
+    "request": "launch",
+    "protocol": "inspector",
+    "name": "Run Mocha Test",
+    "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+    "args": [
+      "${file}",
+      "--no-timeouts",
+      "--colors",
+      "--opts",
+      "${workspaceFolder}/configs/mocha.opts"
+    ],
+    "env": {
+      "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+    },
+    "sourceMaps": true,
+    "smartStep": true,
+    "outputCapture": "std"
+  }
+]

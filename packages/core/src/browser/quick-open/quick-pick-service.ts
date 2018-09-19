@@ -58,14 +58,16 @@ export class QuickPickService {
     show(elements: string[], options?: QuickPickOptions): Promise<string | undefined>;
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
     async show(elements: (string | QuickPickItem<Object>)[], options?: QuickPickOptions): Promise<Object | undefined> {
-        if (elements.length === 0) {
-            return undefined;
-        }
-        if (elements.length === 1) {
-            return elements[0];
-        }
         return new Promise<Object | undefined>(resolve => {
             const items = this.toItems(elements, resolve);
+            if (items.length === 0) {
+                resolve(undefined);
+                return;
+            }
+            if (items.length === 1) {
+                items[0].run(QuickOpenMode.OPEN);
+                return;
+            }
             this.quickOpenService.open({ onType: (_, acceptor) => acceptor(items) }, Object.assign({
                 onClose: () => resolve(undefined),
                 fuzzyMatchLabel: true,

@@ -192,7 +192,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
     }
 
     protected proceedEvent(rawData: string, event: DebugProtocol.Event): void {
-        this.logger.debug(`DAP event: ${rawData}`);
+        this.logger.debug(log => log(`DAP event:\n${JSON.stringify(event, undefined, 2)}`));
 
         this.emit(event.event, event);
         if (this.channel) {
@@ -201,7 +201,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
     }
 
     protected proceedResponse(rawData: string, response: DebugProtocol.Response): void {
-        this.logger.debug(`DAP Response: ${rawData}`);
+        this.logger.debug(log => log(`DAP Response:\n${JSON.stringify(response, undefined, 2)}`));
 
         const request = this.pendingRequests.get(response.request_seq);
 
@@ -283,11 +283,10 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
     }
 
     protected proceedRequest(data: string): void {
-        this.logger.debug(`DAP Request: ${data}`);
-
         const request = JSON.parse(data) as DebugProtocol.Request;
-        this.pendingRequests.set(request.seq, request);
+        this.logger.debug(log => log(`DAP Request:\n${JSON.stringify(request, undefined, 2)}`));
 
+        this.pendingRequests.set(request.seq, request);
         this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(data, 'utf8')}\r\n\r\n${data}`, 'utf8');
     }
 
