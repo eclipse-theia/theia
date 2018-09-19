@@ -1,7 +1,12 @@
 root = true
 
-[*.{json,js,ts,md,yml}]
+[*]
 insert_final_newline = true
+end_of_line = lf
+indent_style = space
 
-[.gitignore]
-insert_final_newline = true
+[*.{js,ts,md}]
+indent_size = 4
+
+[*.{json,yml}]
+indent_size = 2
