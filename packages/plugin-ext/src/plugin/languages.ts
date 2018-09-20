@@ -38,6 +38,7 @@ import {
     SerializedDocumentFilter,
     SignatureHelp,
     Hover,
+    Range,
     SingleEditOperation,
     FormattingOptions,
     Definition,
@@ -48,9 +49,10 @@ import { Diagnostics } from './languages/diagnostics';
 import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
+import { RangeFormattingAdapter } from './languages/range-formatting';
 import { DefinitionAdapter } from './languages/definition';
 
-type Adapter = CompletionAdapter | SignatureHelpAdapter | HoverAdapter | DocumentFormattingAdapter | DefinitionAdapter;
+type Adapter = CompletionAdapter | SignatureHelpAdapter | HoverAdapter | DocumentFormattingAdapter | RangeFormattingAdapter | DefinitionAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -228,6 +230,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentFormattingAdapter, adapter => adapter.provideDocumentFormattingEdits(URI.revive(resource), options));
     }
     // ### Document Formatting Edit end
+
+    // ### Document Range Formatting Edit begin
+    registerDocumentRangeFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeFormattingEditProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new RangeFormattingAdapter(provider, this.documents));
+        this.proxy.$registerRangeFormattingProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range, options: FormattingOptions): Promise<SingleEditOperation[] | undefined> {
+        return this.withAdapter(handle, RangeFormattingAdapter, adapter => adapter.provideDocumentRangeFormattingEdits(URI.revive(resource), range, options));
+    }
+    // ### Document Range Formatting Edit end
 
 }
 

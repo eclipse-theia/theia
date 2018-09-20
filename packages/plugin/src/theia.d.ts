@@ -3650,6 +3650,34 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
+    export interface DocumentRangeFormattingEditProvider {
+
+        /**
+         * Provide formatting edits for a range in a document.
+         *
+         * The given range is a hint and providers can decide to format a smaller
+         * or larger range. Often this is done by adjusting the start and end
+         * of the range to full syntax nodes.
+         *
+         * @param document The document in which the command was invoked.
+         * @param range The range which should be formatted.
+         * @param options Options controlling formatting.
+         * @param token A cancellation token.
+         * @return A set of text edits or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideDocumentRangeFormattingEdits(
+            document: TextDocument,
+            range: Range,
+            options: FormattingOptions,
+            token: CancellationToken | undefined
+        ): ProviderResult<TextEdit[] | undefined>;
+    }
+
+    /**
      * Value-object describing what options formatting should use.
      */
     export interface FormattingOptions {
@@ -3824,6 +3852,23 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerDocumentFormattingEditProvider(selector: DocumentSelector, provider: DocumentFormattingEditProvider): Disposable;
+
+        /**
+         * Register a formatting provider for a document range.
+         *
+         * *Note:* A document range provider is also a [document formatter](#DocumentFormattingEditProvider)
+         * which means there is no need to [register](registerDocumentFormattingEditProvider) a document
+         * formatter when also registering a range provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are sorted
+         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * of the selected provider will cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A document range formatting edit provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerDocumentRangeFormattingEditProvider(selector: DocumentSelector, provider: DocumentRangeFormattingEditProvider): Disposable;
     }
 
     /**
