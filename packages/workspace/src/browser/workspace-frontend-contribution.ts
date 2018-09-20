@@ -16,15 +16,21 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
+import {
+    open, OpenerService, CommonMenus,
+    StorageService, LabelProvider, ConfirmDialog,
+    KeybindingRegistry, KeybindingContribution, AbstractViewContribution, CommonCommands
+} from '@theia/core/lib/browser';
 import { FileStatNode, FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
+import { StartingPageWidget } from './starting-page-widget';
 
 @injectable()
-export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
+export class WorkspaceFrontendContribution extends AbstractViewContribution<StartingPageWidget>
+    implements CommandContribution, KeybindingContribution, MenuContribution {
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -34,7 +40,15 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace,
         @inject(FileDialogService) protected readonly fileDialogService: FileDialogService
-    ) { }
+    ) {
+        super({
+            widgetId: StartingPageWidget.ID,
+            widgetName: 'Starting Page Widget',
+            defaultWidgetOptions: {
+                area: 'main'
+            },
+        });
+    }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(WorkspaceCommands.OPEN, {
@@ -60,6 +74,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         commands.registerCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE, {
             isEnabled: () => this.workspaceService.hasHistory,
             execute: () => this.quickOpenWorkspace.select()
+        });
+        commands.registerCommand(CommonCommands.VIEW_STARTING_PAGE, {
+            isEnabled: () => true,
+            execute: () => this.openView(),
         });
     }
 
@@ -94,6 +112,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             command: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id,
             keybinding: 'ctrlcmd+alt+r',
         });
+    }
+
+    async openView(): Promise<StartingPageWidget> {
+        const widget = await super.openView();
+        return widget;
     }
 
     protected showFileDialog(props: OpenFileDialogProps): void {

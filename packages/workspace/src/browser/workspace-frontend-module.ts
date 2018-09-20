@@ -16,7 +16,7 @@
 
 import { ContainerModule, interfaces } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution, WidgetFactory } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
     SaveFileDialogFactory,
@@ -40,6 +40,9 @@ import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribut
 import { bindWorkspacePreferences } from './workspace-preferences';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
+import { StartingPageWidget } from './starting-page-widget';
+
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -79,4 +82,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(VariableContribution).to(WorkspaceVariableContribution).inSingletonScope();
 
     bind(QuickOpenWorkspace).toSelf().inSingletonScope();
+
+    bind(StartingPageWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: StartingPageWidget.ID,
+        createWidget: () => context.container.get<StartingPageWidget>(StartingPageWidget),
+    })).inSingletonScope();
+
 });

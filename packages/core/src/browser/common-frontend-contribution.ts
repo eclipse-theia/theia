@@ -158,6 +158,16 @@ export namespace CommonCommands {
         label: 'Open Preferences'
     };
 
+    export const OPEN_KEYMAPS: Command = {
+        id: 'keymaps:open',
+        label: 'Open Keyboard Shortcuts'
+    };
+
+    export const VIEW_STARTING_PAGE: Command = {
+        id: 'open.starting.page.widget',
+        label: 'View Starting Page'
+    };
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');

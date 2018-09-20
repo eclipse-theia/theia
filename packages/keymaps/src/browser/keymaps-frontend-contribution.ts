@@ -17,20 +17,13 @@
 import { inject, injectable } from 'inversify';
 import {
     CommandContribution,
-    Command,
     CommandRegistry,
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
-import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
+import { CommonMenus, CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/src/browser/keybinding';
-export namespace KeymapsCommands {
-    export const OPEN_KEYMAPS: Command = {
-        id: 'keymaps:open',
-        label: 'Open Keyboard Shortcuts'
-    };
-}
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 
 @injectable()
 export class KeymapsFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
@@ -39,7 +32,7 @@ export class KeymapsFrontendContribution implements CommandContribution, Keybind
     protected readonly keymaps: KeymapsService;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS, {
+        commands.registerCommand(CommonCommands.OPEN_KEYMAPS, {
             isEnabled: () => true,
             execute: () => this.keymaps.open()
         });
@@ -47,14 +40,14 @@ export class KeymapsFrontendContribution implements CommandContribution, Keybind
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
-            commandId: KeymapsCommands.OPEN_KEYMAPS.id,
+            commandId: CommonCommands.OPEN_KEYMAPS.id,
             order: 'a20'
         });
     }
 
     registerKeybindings(keybidings: KeybindingRegistry): void {
         keybidings.registerKeybinding({
-            command: KeymapsCommands.OPEN_KEYMAPS.id,
+            command: CommonCommands.OPEN_KEYMAPS.id,
             keybinding: 'ctrl+alt+,'
         });
     }

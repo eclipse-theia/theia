@@ -20,11 +20,12 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution, CommonCommands } from '@theia/core/lib/browser';
 import { Disposable, Emitter, Event, DisposableCollection } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { WorkspacePreferences } from './workspace-preferences';
+import { CommandRegistry } from '@theia/core';
 
 /**
  * The workspace service.
@@ -38,6 +39,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
     private deferredRoots = new Deferred<FileStat[]>();
 
     private hasWorkspace: boolean = false;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
@@ -74,6 +78,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.updateWorkspace();
             }
         });
+        await this.commandRegistry.executeCommand(CommonCommands.VIEW_STARTING_PAGE.id);
     }
 
     get roots(): Promise<FileStat[]> {
