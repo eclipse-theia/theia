@@ -286,7 +286,7 @@ export function toCompletionItemKind(type?: CompletionType): types.CompletionIte
 export function fromTextEdit(edit: theia.TextEdit): SingleEditOperation {
     return <SingleEditOperation>{
         text: edit.newText,
-        range: fromRange(edit.range)
+        range: fromRange_(edit.range)
     };
 }
 
