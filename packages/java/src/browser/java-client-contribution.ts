@@ -106,8 +106,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         const options = super.createOptions();
         options.initializationOptions = {
             extendedClientCapabilities: {
-                classFileContentsSupport: true,
-                semanticHighlighting: true
+                classFileContentsSupport: true
             }
         };
         return options;
