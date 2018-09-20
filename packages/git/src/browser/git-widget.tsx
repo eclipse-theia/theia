@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, CommandService, MenuPath } from '@theia/core';
-import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message, SELECTED_CLASS, Key, ConfirmDialog } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
@@ -26,9 +26,9 @@ import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitAvatarService } from './history/git-avatar-service';
-import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 import { GitErrorHandler } from './git-error-handler';
+import { GitDiffWidget } from './diff/git-diff-widget';
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -46,7 +46,7 @@ export namespace GitFileChangeNode {
 }
 
 @injectable()
-export class GitWidget extends ReactWidget implements StatefulWidget {
+export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     private static MESSAGE_BOX_MIN_HEIGHT = 25;
 
@@ -61,6 +61,9 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
     protected lastCommit: { commit: CommitWithChanges, avatar: string } | undefined;
     protected lastHead: string | undefined;
+    protected lastSelectedNode?: { id: number, node: GitFileChangeNode };
+    protected listContainer: GitChangesListContainer | undefined;
+    protected readonly selectChange = (change: GitFileChangeNode) => this.selectNode(change);
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -95,6 +98,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
             this.initialize(repository)
         ));
         this.initialize(this.repositoryProvider.selectedRepository);
+        this.gitNodes = [];
         this.update();
     }
 
@@ -115,7 +119,18 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
+    protected addGitListKeyListeners = (id: string) => this.doAddGitListKeyListeners(id);
+    protected doAddGitListKeyListeners(id: string) {
+        const container = document.getElementById(id);
+        if (container) {
+            this.addGitListNavigationKeyListeners(container);
+            this.addKeyListener(container, Key.SPACE, this.stageOrUnstage);
+            this.addKeyListener(container, Key.BACKSPACE, this.handleBackspace);
+        }
+    }
+
     onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
         const messageInput = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLInputElement;
         if (messageInput) {
             messageInput.focus();
@@ -137,6 +152,36 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         // Do not restore the validation message if the commit message is undefined or empty.
         this.commitMessageValidationResult = this.message ? oldState.commitMessageValidationResult : undefined;
         this.messageBoxHeight = oldState.messageBoxHeight || GitWidget.MESSAGE_BOX_MIN_HEIGHT;
+    }
+
+    protected stageOrUnstage = () => this.doStageOrUnstage();
+    protected doStageOrUnstage(): void {
+        const change = this.getSelected();
+        if (change && this.repositoryProvider.selectedRepository) {
+            this.setLastSelectedNode(change);
+            const repository = this.repositoryProvider.selectedRepository;
+            if (!change.staged) {
+                this.stage(repository, change);
+            } else {
+                this.unstage(repository, change);
+            }
+        }
+    }
+
+    protected handleBackspace = () => this.doHandleBackspace();
+    protected async doHandleBackspace() {
+        const change = this.getSelected();
+        if (change && this.repositoryProvider.selectedRepository) {
+            this.setLastSelectedNode(change);
+            await this.discard(this.repositoryProvider.selectedRepository, change);
+        }
+    }
+
+    protected setLastSelectedNode(change: GitFileChangeNode) {
+        this.lastSelectedNode = {
+            id: this.indexOfSelected,
+            node: change
+        };
     }
 
     protected async amend(): Promise<void> {
@@ -231,7 +276,30 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         this.stagedChanges = stagedChanges.sort(sort);
         this.unstagedChanges = unstagedChanges.sort(sort);
         this.mergeChanges = mergeChanges.sort(sort);
+        this.gitNodes = [...this.mergeChanges, ...this.stagedChanges, ...this.unstagedChanges];
+        this.setNodeSelection();
         this.update();
+    }
+
+    protected setNodeSelection(): void {
+        if (this.lastSelectedNode) {
+            let newId = this.lastSelectedNode.id;
+            if (this.lastSelectedNode.node.staged) {
+                newId -= 1;
+                if (newId < 0) {
+                    newId = 0;
+                }
+                this.gitNodes[newId].selected = true;
+            } else {
+                if (this.gitNodes[newId] && this.gitNodes[newId].staged && this.gitNodes[newId + 1]) {
+                    newId += 1;
+                } else if (!this.gitNodes[newId]) {
+                    newId = this.gitNodes.length - 1;
+                }
+                this.gitNodes[newId].selected = true;
+            }
+            this.lastSelectedNode = undefined;
+        }
     }
 
     protected renderCommitMessage(): React.ReactNode {
@@ -245,7 +313,8 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 onInput={this.onCommitMessageChange.bind(this)}
                 placeholder='Commit message'
                 id={GitWidget.Styles.COMMIT_MESSAGE}
-                defaultValue={this.message}>
+                defaultValue={this.message}
+                tabIndex={1}>
             </textarea>
             <div
                 className={
@@ -320,11 +389,21 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                         There are too many active changes, only a subset is shown.</div>
                     : ''
             }
-            <div className={GitWidget.Styles.CHANGES_CONTAINER} id={this.scrollContainer}>
-                {this.renderMergeChanges(repository) || ''}
-                {this.renderStagedChanges(repository) || ''}
-                {this.renderUnstagedChanges(repository) || ''}
-            </div>
+            <GitChangesListContainer
+                ref={ref => this.listContainer = ref || undefined}
+                id={this.scrollContainer}
+                repository={repository}
+                openChange={this.handleOpenChange}
+                selectChange={this.selectChange}
+                discard={this.discard}
+                unstage={this.unstage}
+                stage={this.stage}
+                mergeChanges={this.mergeChanges}
+                stagedChanges={this.stagedChanges}
+                unstagedChanges={this.unstagedChanges}
+                addGitListKeyListeners={this.addGitListKeyListeners}
+                onFocus={this.handleListFocus}
+            />
             {
                 this.lastCommit ?
                     <div>
@@ -335,6 +414,14 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                     : ''
             }
         </div>;
+    }
+
+    protected readonly handleListFocus = (e: React.FocusEvent) => this.doHandleListFocus(e);
+    protected doHandleListFocus(e: React.FocusEvent) {
+        const selected = this.getSelected();
+        if (!selected && this.gitNodes.length > 0) {
+            this.selectNode(this.gitNodes[0]);
+        }
     }
 
     protected async getLastCommit(): Promise<{ commit: CommitWithChanges, avatar: string } | undefined> {
@@ -446,9 +533,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         return [username, email];
     }
 
-    protected readonly unstage = (repository: Repository, change: GitFileChange) => {
-        this.doUnstage(repository, change);
-    }
+    protected readonly unstage = (repository: Repository, change: GitFileChange) => this.doUnstage(repository, change);
     protected async doUnstage(repository: Repository, change: GitFileChange) {
         try {
             await this.git.unstage(repository, change.uri);
@@ -457,120 +542,40 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected readonly discard = (repository: Repository, change: GitFileChange) => {
-        this.doDiscard(repository, change);
-    }
+    protected readonly discard = (repository: Repository, change: GitFileChange) => this.doDiscard(repository, change);
     protected async doDiscard(repository: Repository, change: GitFileChange) {
         // Allow deletion, only iff the same file is not yet in the Git index.
         if (await this.git.lsFiles(repository, change.uri, { errorUnmatch: true })) {
-            try {
-                await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'working-tree' });
-            } catch (error) {
-                this.gitErrorHandler.handleError(error);
+            if (await this.confirm(change.uri)) {
+                try {
+                    await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'working-tree' });
+                } catch (error) {
+                    this.gitErrorHandler.handleError(error);
+                }
             }
         } else {
-            this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
+            await this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
+        }
+        if (this.listContainer) {
+            this.listContainer.focus();
         }
     }
 
-    protected readonly stage = (repository: Repository, change: GitFileChange) => {
-        this.doStage(repository, change);
+    protected confirm(path: string): Promise<boolean | undefined> {
+        const uri = new URI(path);
+        return new ConfirmDialog({
+            title: 'Discard changes',
+            msg: `Do you really want to discard changes in ${uri.displayName}`
+        }).open();
     }
+
+    protected readonly stage = (repository: Repository, change: GitFileChange) => this.doStage(repository, change);
     protected async doStage(repository: Repository, change: GitFileChange) {
         try {
             await this.git.add(repository, change.uri);
         } catch (error) {
             this.gitErrorHandler.handleError(error);
         }
-    }
-
-    protected renderGitItemButtons(repository: Repository, change: GitFileChange): React.ReactNode {
-        return <div className='buttons'>
-            {
-                change.staged ?
-                    <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstage(repository, change)}>
-                        <i className='fa fa-minus' />
-                    </a> :
-                    <React.Fragment>
-                        <a className='toolbar-button' title='Discard Changes' onClick={() => this.discard(repository, change)}>
-                            <i className='fa fa-undo' />
-                        </a>
-                        <a className='toolbar-button' title='Stage Changes' onClick={() => this.stage(repository, change)}>
-                            <i className='fa fa-plus' />
-                        </a>
-                    </React.Fragment>
-            }
-        </div>;
-    }
-
-    protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): React.ReactNode {
-        if (!repository) {
-            return '';
-        }
-        return <div className='gitItem noselect' key={change.uri + change.status}>
-            <div className='noWrapInfo' onClick={() => this.openChange(change)}>
-                <span className={change.icon + ' file-icon'}></span>
-                <span className='name'>{change.label + ' '}</span>
-                <span className='path'>{change.description}</span>
-            </div>
-            <div className='itemButtonsContainer'>
-                <div className='buttons'>
-                    {
-                        change.staged ?
-                            <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstage(repository, change)}>
-                                <i className='fa fa-minus' />
-                            </a> :
-                            <React.Fragment>
-                                <a className='toolbar-button' title='Discard Changes' onClick={() => this.discard(repository, change)}>
-                                    <i className='fa fa-undo' />
-                                </a>
-                                <a className='toolbar-button' title='Stage Changes' onClick={() => this.stage(repository, change)}>
-                                    <i className='fa fa-plus' />
-                                </a>
-                            </React.Fragment>
-                    }
-                </div>
-                <div title={GitFileStatus.toString(change.status, change.staged)}
-                    className={`status ${change.staged ? 'staged ' : ''} ${GitFileStatus[change.status].toLowerCase()}`}>
-                    {GitFileStatus.toAbbreviation(change.status, change.staged)}
-                </div>
-            </div>
-        </div>;
-    }
-
-    protected renderMergeChanges(repository: Repository | undefined): React.ReactNode | undefined {
-        if (this.mergeChanges.length > 0) {
-            return <div id='mergeChanges' className='changesContainer'>
-                <div className='theia-header'>Merge Changes</div>
-                {this.mergeChanges.map(change => this.renderGitItem(repository, change))}
-            </div>;
-        } else {
-            return undefined;
-        }
-    }
-
-    protected renderStagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
-        if (this.stagedChanges.length > 0) {
-            return <div id='stagedChanges' className='changesContainer'>
-                <div className='theia-header'>
-                    Staged Changes
-            </div>
-                {this.stagedChanges.map(change => this.renderGitItem(repository, change))}
-            </div>;
-        } else {
-            return undefined;
-        }
-    }
-
-    protected renderUnstagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
-        if (this.unstagedChanges.length > 0) {
-            return <div id='unstagedChanges' className='changesContainer'>
-                <div className='theia-header'>Changes</div>
-                {this.unstagedChanges.map(change => this.renderGitItem(repository, change))}
-            </div>;
-        }
-
-        return undefined;
     }
 
     findChange(uri: URI): GitFileChange | undefined {
@@ -586,12 +591,9 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         return this.stagedChanges.find(c => c.uri.toString() === stringUri);
     }
 
-    async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
-        const changeUri = this.createChangeUri(change);
-        return this.editorManager.open(changeUri, options);
-    }
+    handleOpenChange = async (change: GitFileChange, options?: EditorOpenerOptions) => this.openChange(change, options);
 
-    protected createChangeUri(change: GitFileChange): URI {
+    protected getUriToOpen(change: GitFileChange): URI {
         const changeUri: URI = new URI(change.uri);
         if (change.status !== GitFileStatus.New) {
             if (change.staged) {
@@ -660,4 +662,160 @@ export namespace GitWidget {
         export const NO_SELECT = 'no-select';
     }
 
+}
+
+export namespace GitItem {
+    export interface Props {
+        change: GitFileChangeNode
+        repository: Repository
+        openChange: (change: GitFileChange, options?: EditorOpenerOptions) => Promise<EditorWidget | undefined>
+        selectChange: (change: GitFileChange) => void
+        unstage: (repository: Repository, change: GitFileChange) => void
+        stage: (repository: Repository, change: GitFileChange) => void
+        discard: (repository: Repository, change: GitFileChange) => void
+    }
+}
+
+export class GitItem extends React.Component<GitItem.Props> {
+
+    protected readonly openChange = () => this.props.openChange(this.props.change, { mode: 'reveal' });
+    protected readonly selectChange = () => this.props.selectChange(this.props.change);
+    protected readonly doGitAction = (action: 'stage' | 'unstage' | 'discard') => this.props[action](this.props.repository, this.props.change);
+
+    render() {
+        const { change } = this.props;
+        return <div className={`gitItem ${GitWidget.Styles.NO_SELECT}${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
+            <div className='noWrapInfo' onDoubleClick={this.openChange} onClick={this.selectChange}>
+                <span className={change.icon + ' file-icon'}></span>
+                <span className='name'>{change.label + ' '}</span>
+                <span className='path'>{change.description}</span>
+            </div>
+            <div className='itemButtonsContainer'>
+                {this.renderGitItemButtons()}
+                <div title={GitFileStatus.toString(change.status, change.staged)}
+                    className={`status ${change.staged ? 'staged ' : ''} ${GitFileStatus[change.status].toLowerCase()}`}>
+                    {GitFileStatus.toAbbreviation(change.status, change.staged)}
+                </div>
+            </div>
+        </div>;
+    }
+
+    protected renderGitItemButtons(): React.ReactNode {
+        return <div className='buttons'>
+            {
+                this.props.change.staged ?
+                    <a className='toolbar-button' title='Unstage Changes' onClick={() => this.doGitAction('unstage')}>
+                        <i className='fa fa-minus' />
+                    </a> :
+                    <React.Fragment>
+                        <a className='toolbar-button' title='Discard Changes' onClick={() => this.doGitAction('discard')}>
+                            <i className='fa fa-undo' />
+                        </a>
+                        <a className='toolbar-button' title='Stage Changes' onClick={() => this.doGitAction('stage')}>
+                            <i className='fa fa-plus' />
+                        </a>
+                    </React.Fragment>
+            }
+        </div>;
+    }
+}
+
+export namespace GitChangesListContainer {
+    export interface Props {
+        id: string
+        repository: Repository | undefined
+        openChange: (change: GitFileChange, options?: EditorOpenerOptions) => Promise<EditorWidget | undefined>
+        selectChange: (change: GitFileChange) => void
+        unstage: (repository: Repository, change: GitFileChange) => void
+        stage: (repository: Repository, change: GitFileChange) => void
+        discard: (repository: Repository, change: GitFileChange) => void
+        mergeChanges: GitFileChangeNode[]
+        stagedChanges: GitFileChangeNode[]
+        unstagedChanges: GitFileChangeNode[]
+        addGitListKeyListeners: (id: string) => void
+        onFocus: (e: React.FocusEvent) => void
+    }
+}
+
+export class GitChangesListContainer extends React.Component<GitChangesListContainer.Props> {
+    protected listContainer: HTMLDivElement | undefined;
+
+    render() {
+        return (
+            <div
+                ref={ref => this.listContainer = ref || undefined}
+                className={GitWidget.Styles.CHANGES_CONTAINER}
+                id={this.props.id}
+                onFocus={this.handleOnFocus}
+                tabIndex={2}>
+                {this.renderMergeChanges(this.props.repository) || ''}
+                {this.renderStagedChanges(this.props.repository) || ''}
+                {this.renderUnstagedChanges(this.props.repository) || ''}
+            </div>
+        );
+    }
+
+    componentDidMount() {
+        this.props.addGitListKeyListeners(this.props.id);
+    }
+
+    focus() {
+        if (this.listContainer) {
+            this.listContainer.focus();
+        }
+    }
+
+    protected handleOnFocus = (e: React.FocusEvent) => {
+        this.props.onFocus(e);
+    }
+
+    protected renderGitItem(change: GitFileChangeNode, repository?: Repository): React.ReactNode {
+        if (!repository) {
+            return '';
+        }
+        return <GitItem key={change.uri + change.status}
+            repository={repository}
+            change={change}
+            openChange={this.props.openChange}
+            discard={this.props.discard}
+            stage={this.props.stage}
+            unstage={this.props.unstage}
+            selectChange={this.props.selectChange}
+        />;
+    }
+
+    protected renderMergeChanges(repository: Repository | undefined): React.ReactNode | undefined {
+        if (this.props.mergeChanges.length > 0) {
+            return <div id='mergeChanges' className='changesContainer'>
+                <div className='theia-header'>Merge Changes</div>
+                {this.props.mergeChanges.map(change => this.renderGitItem(change, repository))}
+            </div>;
+        } else {
+            return undefined;
+        }
+    }
+
+    protected renderStagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
+        if (this.props.stagedChanges.length > 0) {
+            return <div id='stagedChanges' className='changesContainer'>
+                <div className='theia-header'>
+                    Staged Changes
+            </div>
+                {this.props.stagedChanges.map(change => this.renderGitItem(change, repository))}
+            </div>;
+        } else {
+            return undefined;
+        }
+    }
+
+    protected renderUnstagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
+        if (this.props.unstagedChanges.length > 0) {
+            return <div id='unstagedChanges' className='changesContainer'>
+                <div className='theia-header'>Changed</div>
+                {this.props.unstagedChanges.map(change => this.renderGitItem(change, repository))}
+            </div>;
+        }
+
+        return undefined;
+    }
 }
