@@ -168,6 +168,8 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
                             this.proceedEvent(rawData, message as DebugProtocol.Event);
                         } else if (message.type === 'response') {
                             this.proceedResponse(rawData, message as DebugProtocol.Response);
+                        } else if (this.channel) {
+                            this.channel.send(rawData);
                         }
                     }
                     continue;	// there may be more complete messages to process

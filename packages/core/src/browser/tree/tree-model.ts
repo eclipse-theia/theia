@@ -42,6 +42,12 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
     collapseNode(node?: Readonly<ExpandableTreeNode>): Promise<boolean>;
 
     /**
+     * Collapses recursively. If the `node` argument is `undefined`, then collapses the currently selected tree node.
+     * If multiple tree nodes are selected, collapses the most recently selected tree node.
+     */
+    collapseAll(node?: Readonly<CompositeTreeNode>): Promise<boolean>;
+
+    /**
      * Toggles the expansion state of the given node. If not give, then it toggles the expansion state of the currently selected node.
      * If multiple nodes are selected, then the most recently selected tree node's expansion state will be toggled.
      */
@@ -232,6 +238,17 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
             if (ExpandableTreeNode.is(node)) {
                 return await this.expansionService.collapseNode(node);
             }
+        }
+        return false;
+    }
+
+    async collapseAll(raw?: Readonly<CompositeTreeNode>): Promise<boolean> {
+        const node = raw || this.selectedNodes[0];
+        if (SelectableTreeNode.is(node)) {
+            this.selectNode(node);
+        }
+        if (CompositeTreeNode.is(node)) {
+            return await this.expansionService.collapseAll(node);
         }
         return false;
     }

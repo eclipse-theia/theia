@@ -30,7 +30,7 @@ import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
-import { List, ListRowRenderer, ScrollParams } from 'react-virtualized';
+import { List, ListRowRenderer, ScrollParams, CellMeasurer, CellMeasurerCache } from 'react-virtualized';
 import { TopDownTreeIterator } from './tree-iterator';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
@@ -158,7 +158,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
-            this.model.onSelectionChanged(() => this.updateScrollToRow()),
+            this.model.onSelectionChanged(() => this.updateScrollToRow({ resize: false })),
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
@@ -201,12 +201,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected scrollToRow: number | undefined;
-    protected updateScrollToRow(): void {
+    protected updateScrollToRow(updateOptions?: TreeWidget.ForceUpdateOptions): void {
         const selected = this.model.selectedNodes;
         const node: TreeNode | undefined = selected.find(SelectableTreeNode.hasFocus) || selected[0];
         const row = node && this.rows.get(node.id);
         this.scrollToRow = row && row.index;
-        this.forceUpdate();
+        this.forceUpdate(updateOptions);
     }
 
     protected readonly updateDecorations = debounce(() => this.doUpdateDecorations(), 150);
@@ -216,12 +216,17 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     /**
-     * Force deep rendering of rows.
-     * https://github.com/bvaughn/react-virtualized/blob/master/docs/List.md#forceupdategrid
+     * Force deep resizing and rendering of rows.
+     * https://github.com/bvaughn/react-virtualized/blob/master/docs/List.md#recomputerowheights-index-number
      */
-    protected forceUpdate(): void {
+    protected forceUpdate({ resize }: TreeWidget.ForceUpdateOptions = { resize: true }): void {
         if (this.view && this.view.list) {
-            this.view.list.forceUpdateGrid();
+            if (resize) {
+                this.view.cache.clearAll();
+                this.view.list.recomputeRowHeights();
+            } else {
+                this.view.list.forceUpdateGrid();
+            }
         }
         this.update();
     }
@@ -251,7 +256,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        this.update();
+        this.forceUpdate();
     }
 
     protected render(): React.ReactNode {
@@ -276,7 +281,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 width={this.node.offsetWidth}
                 height={this.node.offsetHeight}
                 rows={Array.from(this.rows.values())}
-                getNodeRowHeight={this.getNodeRowHeight}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
                 handleScroll={this.handleScroll}
@@ -293,11 +297,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected readonly renderNodeRow = (row: TreeWidget.NodeRow) => this.doRenderNodeRow(row);
     protected doRenderNodeRow({ index, node, depth }: TreeWidget.NodeRow): React.ReactNode {
         return this.renderNode(node, { depth });
-    }
-
-    protected readonly getNodeRowHeight = (row: TreeWidget.NodeRow) => this.doGetNodeRowHeight(row);
-    protected doGetNodeRowHeight({ index, node, depth }: TreeWidget.NodeRow): number {
-        return TreeNode.isVisible(node) ? 20 : 0;
     }
 
     protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
@@ -385,7 +384,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             };
         }
         const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment) => {
-            const {data} = fragment;
+            const { data } = fragment;
             if (fragment.highligh) {
                 return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style}>{data}</mark>;
             } else {
@@ -807,6 +806,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
 }
 export namespace TreeWidget {
+    export interface ForceUpdateOptions {
+        resize: boolean
+    }
     export interface NodeRow {
         index: number
         node: TreeNode
@@ -821,11 +823,13 @@ export namespace TreeWidget {
         scrollToRow?: number
         rows: NodeRow[]
         handleScroll: (info: ScrollParams) => void
-        getNodeRowHeight: (row: NodeRow) => number
         renderNodeRow: (row: NodeRow) => React.ReactNode
     }
     export class View extends React.Component<ViewProps> {
         list: List | undefined;
+        readonly cache = new CellMeasurerCache({
+            fixedWidth: true
+        });
         render(): React.ReactNode {
             const { rows, width, height, scrollToRow, handleScroll } = this.props;
             return <List
@@ -833,7 +837,7 @@ export namespace TreeWidget {
                 width={width}
                 height={height}
                 rowCount={rows.length}
-                rowHeight={this.getNodeRowHeight}
+                rowHeight={this.cache.rowHeight}
                 rowRenderer={this.renderTreeRow}
                 scrollToIndex={scrollToRow}
                 onScroll={handleScroll}
@@ -844,13 +848,16 @@ export namespace TreeWidget {
                 }}
             />;
         }
-        protected renderTreeRow: ListRowRenderer = ({ key, index, style }) => {
+        protected renderTreeRow: ListRowRenderer = ({ key, index, style, parent }) => {
             const row = this.props.rows[index]!;
-            return <div key={key} style={style}>{this.props.renderNodeRow(row)}</div>;
-        }
-        protected getNodeRowHeight = ({ index }: { index: number }) => {
-            const row = this.props.rows[index]!;
-            return this.props.getNodeRowHeight(row);
+            return <CellMeasurer
+                cache={this.cache}
+                columnIndex={0}
+                key={key}
+                parent={parent}
+                rowIndex={index}>
+                <div key={key} style={style}>{this.props.renderNodeRow(row)}</div>
+            </CellMeasurer>;
         }
     }
 }

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './widget';
-export * from './virtual-renderer';
-export * from './virtual-widget';
-export * from './react-renderer';
-export * from './react-widget';
+/* note: this bogus test file is required so that
+   we are able to run mocha unit tests on this
+   package, without having any actual unit tests in it.
+   This way a coverage report will be generated,
+   showing 0% coverage, instead of no report.
+   This file can be removed once we have real unit
+   tests in place. */
+
+describe('console package', () => {
+
+    it('support code coverage statistics', () => true);
+});

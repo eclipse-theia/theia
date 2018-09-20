@@ -33,14 +33,11 @@ import { MonacoEditor } from './monaco-editor';
 export class MonacoStrictEditorTextFocusContext extends StrictEditorTextFocusContext {
 
     protected canHandle(widget: EditorWidget): boolean {
-        if (!super.canHandle(widget)) {
-            return false;
-        }
         const { editor } = widget;
         if (editor instanceof MonacoEditor) {
-            return !editor.isSuggestWidgetVisible() && !editor.isFindWidgetVisible() && !editor.isRenameInputVisible();
+            return editor.isFocused({ strict: true });
         }
-        return false;
+        return super.canHandle(widget);
     }
 
 }

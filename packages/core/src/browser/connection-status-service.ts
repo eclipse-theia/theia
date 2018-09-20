@@ -108,7 +108,6 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
         if (this.timer) {
             this.clearTimeout(this.timer);
         }
-        this.logger.trace(success ? 'Connected to the backend.' : 'Cannot reach the backend.');
         const previousStatus = this.connectionStatus;
         const newStatus = success ? ConnectionStatus.ONLINE : ConnectionStatus.OFFLINE;
         if (previousStatus !== newStatus) {

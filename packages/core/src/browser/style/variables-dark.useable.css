@@ -74,7 +74,8 @@ is not optimized for dense, information rich UIs.
   --theia-code-font-size: 13px;
   --theia-code-line-height: 17px;
   --theia-code-padding: 5px;
-  --theia-code-font-family: monospace;
+  --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+  --theia-terminal-font-family: monospace;
   --theia-ui-padding: 6px;
 
   /* Main layout colors (dark to bright)
@@ -217,4 +218,32 @@ is not optimized for dense, information rich UIs.
   --theia-ui-dialog-header-font-color: var(--theia-ui-font-color1);
   --theia-ui-dialog-color: var(--theia-layout-color4);
   --theia-ui-dialog-font-color: var(--theia-ui-font-color1);
+
+  /* Variables */
+  --theia-variable-name-color: #C586C0;
+  --theia-variable-value-color: rgba(204, 204, 204, 0.6);
+  --theia-number-variable-color: #B5CEA8;
+  --theia-boolean-variable-color: #4E94CE;
+  --theia-string-variable-color: #CE9178;
+
+  /* ANSI color */
+  --theia-ansi-black-color: #A0A0A0;
+  --theia-ansi-red-color: #A74747;
+  --theia-ansi-green-color: #348F34;
+  --theia-ansi-yellow-color: #5F4C29;
+  --theia-ansi-blue-color: #6286BB;
+  --theia-ansi-magenta-color: #914191;
+  --theia-ansi-cyan-color: #218D8D;
+  --theia-ansi-white-color: #707070;
+
+  /* ANSI background color */
+  --theia-ansi-black-background-color: #A0A0A0;
+  --theia-ansi-red-background-color: #A74747;
+  --theia-ansi-green-background-color: #348F34;
+  --theia-ansi-yellow-background-color: #5F4C29;
+  --theia-ansi-blue-background-color: #6286BB;
+  --theia-ansi-magenta-background-color: #914191;
+  --theia-ansi-cyan-background-color: #218D8D;
+  --theia-ansi-white-background-color: #707070;
+
 }

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './widget';
-export * from './virtual-renderer';
-export * from './virtual-widget';
-export * from './react-renderer';
-export * from './react-widget';
+import { injectable, inject } from 'inversify';
+import { ApplicationShell } from '@theia/core/lib/browser';
+import { ConsoleWidget } from './console-widget';
+
+@injectable()
+export class ConsoleManager {
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    get activeConsole(): ConsoleWidget | undefined {
+        const widget = this.shell.activeWidget;
+        return widget instanceof ConsoleWidget ? widget : undefined;
+    }
+
+    get currentConsole(): ConsoleWidget | undefined {
+        const widget = this.shell.currentWidget;
+        return widget instanceof ConsoleWidget ? widget : undefined;
+    }
+
+}

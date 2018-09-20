@@ -42,6 +42,12 @@ export interface TreeExpansionService extends Disposable {
      */
     collapseNode(node: Readonly<ExpandableTreeNode>): Promise<boolean>;
     /**
+     * If the given node is valid then collapse it recursively.
+     *
+     * Return true if a node has been collapsed; otherwise false.
+     */
+    collapseAll(node: Readonly<CompositeTreeNode>): Promise<boolean>;
+    /**
      * If the given node is invalid then does nothing.
      * If the given node is collapsed then expand it; otherwise collapse it.
      */
@@ -118,13 +124,28 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
 
     async collapseNode(raw: ExpandableTreeNode): Promise<boolean> {
         const node = this.tree.validateNode(raw);
-        if (ExpandableTreeNode.isExpanded(node)) {
-            return this.doCollapseNode(node);
-        }
-        return false;
+        return this.doCollapseNode(node);
     }
 
-    protected doCollapseNode(node: ExpandableTreeNode): boolean {
+    async collapseAll(raw: CompositeTreeNode): Promise<boolean> {
+        const node = this.tree.validateNode(raw);
+        return this.doCollapseAll(node);
+    }
+
+    protected doCollapseAll(node: TreeNode | undefined): boolean {
+        let result = false;
+        if (CompositeTreeNode.is(node)) {
+            for (const child of node.children) {
+                result = this.doCollapseAll(child) || result;
+            }
+        }
+        return this.doCollapseNode(node) || result;
+    }
+
+    protected doCollapseNode(node: TreeNode | undefined): boolean {
+        if (!ExpandableTreeNode.isExpanded(node)) {
+            return false;
+        }
         node.expanded = false;
         this.fireExpansionChanged(node);
         return true;
