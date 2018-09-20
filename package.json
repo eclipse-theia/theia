@@ -46,7 +46,8 @@
     "webdriverio": "4.9.2"
   },
   "scripts": {
-    "prepare": "yarn rebuild:clean && yarn build:clean",
+    "prepare": "yarn prepare:travis && yarn rebuild:clean && yarn build:clean",
+    "prepare:travis": "node scripts/prepare-travis",
     "build": "run build",
     "build:clean": "run prepare",
     "docs": "run docs \"@theia/!(example-)*\"",
