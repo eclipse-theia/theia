@@ -148,7 +148,7 @@ export class NavigationLocationUpdater {
                 text
             };
         }
-        throw new Error(`Unexpected navigation location: ${candidate}.`);
+        throw new Error(`Unexpected navigation location: ${NavigationLocation.toString(candidate)}.`);
     }
 
     protected handleBefore(candidate: NavigationLocation, modification: Range, lineDiff: number, startCharacter: number, endCharacter: number): NavigationLocation.Context {
@@ -178,7 +178,7 @@ export class NavigationLocationUpdater {
                 text
             };
         }
-        throw new Error(`Unexpected navigation location: ${candidate}.`);
+        throw new Error(`Unexpected navigation location: ${NavigationLocation.toString(candidate)}.`);
     }
 
     protected shiftLine(position: Position, diff: number): Position;

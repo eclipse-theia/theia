@@ -183,6 +183,13 @@ export namespace NavigationLocation {
         };
     }
 
+    /**
+     * Returns with the human-consumable (JSON) string representation of the location argument.
+     */
+    export function toString(location: NavigationLocation): string {
+        return JSON.stringify(toObject(location));
+    }
+
     function toUri(arg: URI | { uri: URI } | string): URI {
         if (arg instanceof URI) {
             return arg;
