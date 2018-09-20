@@ -121,14 +121,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
         });
 
-        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
-                this.title.label = '<terminal error>';
+                if (!this.title.label.endsWith('<error>')) {
+                    this.title.label = `${this.title.label} <error>`;
+                }
             }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
-                this.title.label = '<terminated>';
+                if (!this.title.label.endsWith('<terminated>')) {
+                    this.title.label = `${this.title.label} <terminated>`;
+                }
                 this.onTermDidClose.fire(this);
                 this.onTermDidClose.dispose();
             }
@@ -181,7 +185,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         /* Get the CSS properties of <html> (aka :root in css).  */
         const htmlElementProps = getComputedStyle(document.documentElement);
 
-        const fontFamily = lookup(htmlElementProps, '--theia-code-font-family');
+        const fontFamily = lookup(htmlElementProps, '--theia-terminal-font-family');
         const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');
         const foreground = lookup(htmlElementProps, '--theia-ui-font-color1');
         const background = lookup(htmlElementProps, '--theia-layout-color0');

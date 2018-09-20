@@ -163,3 +163,4 @@ button[disabled], .theia-button[disabled] {
 @import './tree-decorators.css';
 @import './about.css';
 @import './search-box.css';
+@import './ansi.css';

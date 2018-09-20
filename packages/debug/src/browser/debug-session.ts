@@ -35,7 +35,6 @@ import {
     Disposable
 } from '@theia/core';
 import { EventEmitter } from 'events';
-import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import {
     DebugSession,
     DebugSessionFactory,
@@ -48,15 +47,21 @@ import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { NotificationsMessageClient } from '@theia/messages/lib/browser/notifications-message-client';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 /**
  * DebugSession implementation.
  */
+// FIXME: get rid of Node.js EventEmitter from browser modulde, replace with core Emitter
 export class DebugSessionImpl extends EventEmitter implements DebugSession {
     protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
     protected readonly connection: Promise<WebSocketChannel>;
 
+    protected readonly onDidOutputEmitter = new Emitter<DebugProtocol.OutputEvent>();
+    readonly onDidOutput: Event<DebugProtocol.OutputEvent> = this.onDidOutputEmitter.event;
+
     protected readonly toDispose = new DisposableCollection(
+        this.onDidOutputEmitter,
         Disposable.create(() => this.callbacks.clear())
     );
 
@@ -66,7 +71,8 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         public readonly sessionId: string,
         public readonly configuration: DebugConfiguration,
         public readonly state: DebugSessionState,
-        protected readonly connectionProvider: WebSocketConnectionProvider
+        protected readonly connectionProvider: WebSocketConnectionProvider,
+        protected readonly terminalServer: TerminalService
     ) {
         super();
         this.state = new DebugSessionStateAccumulator(this, state);
@@ -88,20 +94,22 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         );
     }
 
-    initialize(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.InitializeResponse> {
-        return this.proceedRequest('initialize', args);
+    async initialize(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.InitializeResponse> {
+        const response: DebugProtocol.InitializeResponse = await this.sendRequest('initialize', args);
+        this.state.capabilities = response.body || {};
+        return response;
     }
 
     attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse> {
-        return this.proceedRequest('attach', args);
+        return this.sendRequest('attach', args);
     }
 
     launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse> {
-        return this.proceedRequest('launch', args);
+        return this.sendRequest('launch', args);
     }
 
     threads(): Promise<DebugProtocol.ThreadsResponse> {
-        return this.proceedRequest('threads');
+        return this.sendRequest('threads');
     }
 
     pauseAll(): Promise<DebugProtocol.PauseResponse[]> {
@@ -109,7 +117,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     pause(args: DebugProtocol.PauseArguments): Promise<DebugProtocol.PauseResponse> {
-        return this.proceedRequest('pause', args);
+        return this.sendRequest('pause', args);
     }
 
     resumeAll(): Promise<DebugProtocol.ContinueResponse[]> {
@@ -117,74 +125,80 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     resume(args: DebugProtocol.ContinueArguments): Promise<DebugProtocol.ContinueResponse> {
-        return this.proceedRequest('continue', args);
+        return this.sendRequest('continue', args);
     }
 
     stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse> {
         if (!args.format) {
             args.format = DEFAULT_STACK_FRAME_FORMAT;
         }
-        return this.proceedRequest('stackTrace', args);
+        return this.sendRequest('stackTrace', args);
     }
 
     configurationDone(): Promise<DebugProtocol.ConfigurationDoneResponse> {
-        return this.proceedRequest('configurationDone');
+        return this.sendRequest('configurationDone');
     }
 
     disconnect(): Promise<DebugProtocol.DisconnectResponse> {
-        return this.proceedRequest('disconnect', { terminateDebuggee: true });
+        return this.sendRequest('disconnect', { terminateDebuggee: true });
     }
 
     scopes(args: DebugProtocol.ScopesArguments): Promise<DebugProtocol.ScopesResponse> {
-        return this.proceedRequest('scopes', args);
+        return this.sendRequest('scopes', args);
     }
 
     variables(args: DebugProtocol.VariablesArguments): Promise<DebugProtocol.VariablesResponse> {
-        return this.proceedRequest('variables', args);
+        return this.sendRequest('variables', args);
     }
 
     setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse> {
-        return this.proceedRequest('setVariable', args);
+        return this.sendRequest('setVariable', args);
     }
 
     evaluate(args: DebugProtocol.EvaluateArguments): Promise<DebugProtocol.EvaluateResponse> {
-        return this.proceedRequest('evaluate', args);
+        return this.sendRequest('evaluate', args);
     }
 
     source(args: DebugProtocol.SourceArguments): Promise<DebugProtocol.SourceResponse> {
-        return this.proceedRequest('source', args);
+        return this.sendRequest('source', args);
     }
 
     setBreakpoints(args: DebugProtocol.SetBreakpointsArguments): Promise<DebugProtocol.SetBreakpointsResponse> {
-        return this.proceedRequest('setBreakpoints', args);
+        return this.sendRequest('setBreakpoints', args);
     }
 
     next(args: DebugProtocol.NextArguments): Promise<DebugProtocol.NextResponse> {
-        return this.proceedRequest('next', args);
+        return this.sendRequest('next', args);
     }
 
     stepIn(args: DebugProtocol.StepInArguments): Promise<DebugProtocol.StepInResponse> {
-        return this.proceedRequest('stepIn', args);
+        return this.sendRequest('stepIn', args);
     }
 
     stepOut(args: DebugProtocol.StepOutArguments): Promise<DebugProtocol.StepOutResponse> {
-        return this.proceedRequest('stepOut', args);
+        return this.sendRequest('stepOut', args);
     }
 
     loadedSources(args: DebugProtocol.LoadedSourcesRequest): Promise<DebugProtocol.LoadedSourcesResponse> {
-        return this.proceedRequest('loadedSources', args);
+        return this.sendRequest('loadedSources', args);
+    }
+
+    completions(args: DebugProtocol.CompletionsArguments): Promise<DebugProtocol.CompletionsResponse> {
+        return this.sendRequest('completions', args);
     }
 
     protected handleMessage(data: string) {
         const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
-        if (message.type === 'response') {
-            this.proceedResponse(message as DebugProtocol.Response);
+        if (message.type === 'request') {
+            this.handleRequest(message as DebugProtocol.Request);
+        } else if (message.type === 'response') {
+            this.handleResponse(message as DebugProtocol.Response);
         } else if (message.type === 'event') {
-            this.proceedEvent(message as DebugProtocol.Event);
+            this.handleEvent(message as DebugProtocol.Event);
         }
     }
 
-    protected async proceedRequest<T extends DebugProtocol.Response>(command: string, args?: {}): Promise<T> {
+    protected async sendRequest<T extends DebugProtocol.Response>(command: string, args?: {}): Promise<T> {
         const result = new Deferred<T>();
 
         const request: DebugProtocol.Request = {
@@ -202,12 +216,16 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
             }
         });
 
-        const connection = await this.connection;
-        connection.send(JSON.stringify(request));
+        await this.send(request);
         return result.promise;
     }
 
-    protected proceedResponse(response: DebugProtocol.Response): void {
+    protected async send(message: DebugProtocol.ProtocolMessage): Promise<void> {
+        const connection = await this.connection;
+        connection.send(JSON.stringify(message));
+    }
+
+    protected handleResponse(response: DebugProtocol.Response): void {
         const callback = this.callbacks.get(response.request_seq);
         if (callback) {
             this.callbacks.delete(response.request_seq);
@@ -215,7 +233,39 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         }
     }
 
-    protected proceedEvent(event: DebugProtocol.Event): void {
+    protected async handleRequest(request: DebugProtocol.Request): Promise<void> {
+        const response: DebugProtocol.Response = {
+            type: 'response',
+            seq: 0,
+            command: request.command,
+            request_seq: request.seq,
+            success: true,
+        };
+        if (request.command === 'runInTerminal') {
+            try {
+                response.body = await this.runInTerminal(<DebugProtocol.RunInTerminalRequest>request);
+            } catch (err) {
+                response.success = false;
+                response.message = err.message;
+            }
+        } else {
+            console.error('Unhandled request', request);
+        }
+        await this.send(response);
+    }
+
+    protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
+        const terminal = await this.terminalServer.newTerminal({ title, cwd, shellPath: args[0], shellArgs: args.slice(1), env });
+        this.terminalServer.activateTerminal(terminal);
+        const processId = await terminal.start();
+        return { processId };
+    }
+
+    protected handleEvent(event: DebugProtocol.Event): void {
+        if (event.event === 'output') {
+            this.onDidOutputEmitter.fire(<DebugProtocol.OutputEvent>event);
+        }
+        // FIXME: replace with core events
         this.emit(event.event, event);
         this.emit('*', event);
     }
@@ -227,7 +277,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
                 type: 'event',
                 seq: -1,
             };
-            this.proceedEvent(event);
+            this.handleEvent(event);
         }
     }
 
@@ -242,6 +292,9 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     @inject(WebSocketConnectionProvider)
     protected readonly connectionProvider: WebSocketConnectionProvider;
 
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
+
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         const state: DebugSessionState = {
             isConnected: false,
@@ -251,7 +304,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             allThreadsStopped: false,
             capabilities: {}
         };
-        return new DebugSessionImpl(sessionId, debugConfiguration, state, this.connectionProvider);
+        return new DebugSessionImpl(sessionId, debugConfiguration, state, this.connectionProvider, this.terminalService);
     }
 }
 
@@ -269,7 +322,6 @@ export class DebugSessionManager {
 
     constructor(
         @inject(DebugSessionFactory) protected readonly debugSessionFactory: DebugSessionFactory,
-        @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager,
         @inject(ContributionProvider) @named(DebugSessionContribution) protected readonly contributions: ContributionProvider<DebugSessionContribution>,
         @inject(BreakpointsApplier) protected readonly breakpointApplier: BreakpointsApplier,
         @inject(DebugService) protected readonly debugService: DebugService,
@@ -296,11 +348,6 @@ export class DebugSessionManager {
 
         this.onDidCreateDebugSessionEmitter.fire(session);
 
-        const channel = this.outputChannelManager.getChannel(debugConfiguration.name);
-        session.on('output', event => {
-            const outputEvent = (event as DebugProtocol.OutputEvent);
-            channel.appendLine(outputEvent.body.output);
-        });
         session.on('terminated', () => this.destroy(sessionId));
 
         const initializeArgs: DebugProtocol.InitializeRequestArguments = {

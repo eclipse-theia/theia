@@ -47,7 +47,7 @@
 div[orientation='horizontal'] > .theia-debug-entry {
     width: 25%;
     float: left;
-    border-left: 1px solid var(--theia-border-color1);      
+    border-left: 1px solid var(--theia-border-color1);
     height: inherit;
 }
 
@@ -58,10 +58,10 @@ div[orientation='horizontal'] > .debug-toolbar {
 }
 
 div[orientation='horizontal'] > .theia-debug-entry.theia-Tree {
-    position: absolute; 
-    top: 30px; 
+    position: absolute;
+    top: 30px;
     height: calc(100% - 30px);
-} 
+}
 
 div[orientation='horizontal'] > .theia-debug-entry > div {
     height: inherit;
@@ -101,9 +101,9 @@ div[orientation='horizontal'] > .theia-debug-entry > .theia-TreeContainer > div 
 div[orientation='vertical'] > .theia-debug-entry {
     width: inherit;
     float: left;
-    border-left: 1px solid var(--theia-border-color1);      
+    border-left: 1px solid var(--theia-border-color1);
     height: 25%;
-} 
+}
 
 div[orientation='vertical'] > .debug-toolbar {
     width: inherit;
@@ -113,7 +113,7 @@ div[orientation='vertical'] > .debug-toolbar {
 
 div[orientation='vertical'] > .theia-debug-entry.theia-Tree {
     height: calc(25% - 30px);
-} 
+}
 
 div[orientation='vertical'] > .theia-debug-entry > div {
     height: 100%;
@@ -209,4 +209,38 @@ div[orientation='vertical'] > .theia-debug-entry > .theia-TreeContainer > div > 
 
 .debug-tab-icon::before {
     content: "\f188"
+}
+
+.theia-debug-console-unavailable {
+    font-style: italic;
+}
+
+.theia-debug-console-expression {
+    display: flex;
+    flex-direction: column;
+    white-space: pre-wrap;
+}
+
+.theia-debug-console-variable {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--theia-variable-value-color);
+}
+
+.theia-debug-console-variable.number {
+    color: var(--theia-number-variable-color);
+}
+
+.theia-debug-console-variable.boolean {
+    color: var(--theia-boolean-variable-color);
+}
+
+.theia-debug-console-variable.string {
+    color: var(--theia-string-variable-color);
+}
+
+.theia-debug-console-variable .name {
+    color: var(--theia-variable-name-color);
 }

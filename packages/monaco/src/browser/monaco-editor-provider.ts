@@ -62,12 +62,15 @@ export class MonacoEditorProvider {
 
     async get(uri: URI): Promise<MonacoEditor> {
         await this.editorPreferences.ready;
+        return this.doCreateEditor((override, toDispose) => this.createEditor(uri, override, toDispose));
+    }
 
+    protected async doCreateEditor(factory: (override: IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>): Promise<MonacoEditor> {
         const commandService = this.commandServiceFactory();
         const { codeEditorService, textModelService, contextMenuService } = this;
         const IWorkspaceEditService = this.bulkEditService;
         const toDispose = new DisposableCollection();
-        const editor = await this.createEditor(uri, {
+        const editor = await factory({
             codeEditorService,
             textModelService,
             contextMenuService,
@@ -80,7 +83,6 @@ export class MonacoEditorProvider {
         commandService.setDelegate(standaloneCommandService);
         this.installQuickOpenService(editor);
         this.installReferencesController(editor);
-
         return editor;
     }
 
@@ -248,5 +250,58 @@ export class MonacoEditorProvider {
         }
         return MonacoDiffNavigatorFactory.nullNavigator;
     }
+
+    async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions): Promise<MonacoEditor> {
+        return this.doCreateEditor(async (override, toDispose) => {
+            override.contextMenuService = {
+                showContextMenu: () => {/* no-op*/ }
+            };
+            const document = new MonacoEditorModel({
+                uri,
+                readContents: async () => '',
+                dispose: () => { }
+            }, this.m2p, this.p2m);
+            toDispose.push(document);
+            const model = (await document.load()).textEditorModel;
+            return new MonacoEditor(
+                uri,
+                document,
+                node,
+                this.m2p,
+                this.p2m,
+                Object.assign({
+                    model,
+                    isSimpleWidget: true,
+                    autoSizing: false,
+                    minHeight: 1,
+                    maxHeight: 1
+                }, MonacoEditorProvider.inlineOptions, options),
+                override
+            );
+        });
+    }
+
+    static inlineOptions: monaco.editor.IEditorConstructionOptions = {
+        wordWrap: 'on',
+        overviewRulerLanes: 0,
+        glyphMargin: false,
+        lineNumbers: 'off',
+        folding: false,
+        selectOnLineNumbers: false,
+        hideCursorInOverviewRuler: true,
+        selectionHighlight: false,
+        scrollbar: {
+            horizontal: 'hidden'
+        },
+        lineDecorationsWidth: 0,
+        overviewRulerBorder: false,
+        scrollBeyondLastLine: false,
+        renderLineHighlight: 'none',
+        fixedOverflowWidgets: true,
+        acceptSuggestionOnEnter: 'smart',
+        minimap: {
+            enabled: false
+        }
+    };
 
 }

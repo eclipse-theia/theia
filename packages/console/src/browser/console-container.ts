@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './widget';
-export * from './virtual-renderer';
-export * from './virtual-widget';
-export * from './react-renderer';
-export * from './react-widget';
+import { interfaces, Container } from 'inversify';
+import { ConsoleWidget, ConsoleOptions } from './console-widget';
+import { ConsoleHistory } from './console-history';
+import { createConsoleContentContainer } from './content/console-content-container';
+
+export namespace ConsoleContainer {
+    export function create(parent: interfaces.Container, options: ConsoleOptions): Container {
+        const child = createConsoleContentContainer(parent);
+        child.bind(ConsoleHistory).toSelf();
+        child.bind(ConsoleOptions).toConstantValue(options);
+        child.bind(ConsoleWidget).toSelf();
+        return child;
+    }
+}

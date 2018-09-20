@@ -43,9 +43,7 @@ export class TerminalProcess extends Process {
     ) {
         super(processManager, logger, ProcessType.Terminal, options);
 
-        this.logger.debug(`Starting terminal process: ${options.command},`
-            + ` with args : ${options.args}, `
-            + ` options ${JSON.stringify(options.options)}`);
+        this.logger.debug('Starting terminal process', JSON.stringify(options, undefined, 2));
 
         this.terminal = spawn(
             options.command,

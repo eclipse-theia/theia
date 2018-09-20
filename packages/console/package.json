@@ -1,33 +1,21 @@
 {
-  "name": "@theia/debug",
+  "name": "@theia/console",
   "version": "0.3.15",
-  "description": "Theia - Debug Extension",
+  "description": "Theia - Console Extension",
   "dependencies": {
-    "@theia/console": "^0.3.15",
-    "@theia/core": "^0.3.15",
-    "@theia/editor": "^0.3.15",
-    "@theia/filesystem": "^0.3.15",
-    "@theia/markers": "^0.3.15",
-    "@theia/messages": "^0.3.15",
     "@theia/monaco": "^0.3.15",
-    "@theia/process": "^0.3.15",
-    "@theia/terminal": "^0.3.15",
-    "@theia/variable-resolver": "^0.3.15",
-    "@theia/workspace": "^0.3.15",
-    "jsonc-parser": "^2.0.2",
-    "vscode-debugprotocol": "^1.26.0"
+    "anser": "^1.4.7"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/debug-frontend-module",
-      "backend": "lib/node/debug-backend-module"
+      "frontend": "lib/browser/console-frontend-module"
     }
   ],
   "keywords": [
-    "theia-extension, debug"
+    "theia-extension"
   ],
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
