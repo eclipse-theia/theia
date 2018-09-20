@@ -81,6 +81,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+        this.addGitListNavigationKeyListeners(this.node);
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.listView && this.listView.list && this.listView.list.Grid) {
                 const { scrollTop } = e.target;

@@ -40,6 +40,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        this.update();
         this.node.focus();
     }
 
@@ -90,13 +91,12 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         return result;
     }
 
-    protected onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.navigateLeft());
-        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.navigateRight());
-        this.addKeyListener(this.node, Key.ARROW_UP, () => this.navigateUp());
-        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.navigateDown());
-        this.addKeyListener(this.node, Key.ENTER, () => this.handleListEnter());
+    protected addGitListNavigationKeyListeners(container: HTMLElement) {
+        this.addKeyListener(container, Key.ARROW_LEFT, () => this.navigateLeft());
+        this.addKeyListener(container, Key.ARROW_RIGHT, () => this.navigateRight());
+        this.addKeyListener(container, Key.ARROW_UP, () => this.navigateUp());
+        this.addKeyListener(container, Key.ARROW_DOWN, () => this.navigateDown());
+        this.addKeyListener(container, Key.ENTER, () => this.handleListEnter());
     }
 
     protected navigateLeft(): void {

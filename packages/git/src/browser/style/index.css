@@ -176,7 +176,7 @@
     width: 100%;
 }
 
-.theia-git:focus .theia-mod-selected{
+.theia-git div:focus .theia-mod-selected{
     background: var(--theia-accent-color3);
 }
 
@@ -315,7 +315,7 @@
     -ms-user-select: none;
     -o-user-select: none;
  }
- 
+
  .no-select:focus {
     outline: none;
  }
