@@ -58,7 +58,7 @@ export class NavigationLocationService {
                     this._lastEditLocation = location;
                 }
                 const current = this.currentLocation();
-                this.debug(`Registering new location: ${NavigationLocation.toObject(location)}.`);
+                this.debug(`Registering new location: ${NavigationLocation.toString(location)}.`);
                 if (!this.isSimilar(current, location)) {
                     this.debug('Before location registration.');
                     this.debug(this.stackDump);
@@ -79,11 +79,11 @@ export class NavigationLocationService {
                         const candidate = this.stack[i];
                         const update = this.updater.affects(candidate, location);
                         if (update === undefined) {
-                            this.debug(`Erasing obsolete location: ${NavigationLocation.toObject(candidate)}.`);
+                            this.debug(`Erasing obsolete location: ${NavigationLocation.toString(candidate)}.`);
                             this.stack.splice(i, 1);
                             this.pointer--;
                         } else if (typeof update !== 'boolean') {
-                            this.debug(`Updating location at index: ${i} => ${NavigationLocation.toObject(candidate)}.`);
+                            this.debug(`Updating location at index: ${i} => ${NavigationLocation.toString(candidate)}.`);
                             this.stack[i] = update;
                         }
                     }
@@ -91,7 +91,7 @@ export class NavigationLocationService {
                     this.debug(this.stackDump);
                 } else {
                     if (current) {
-                        this.debug(`The new location ${NavigationLocation.toObject(location)} is similar to the current one: ${NavigationLocation.toObject(current)}. Aborting.`);
+                        this.debug(`The new location ${NavigationLocation.toString(location)} is similar to the current one: ${NavigationLocation.toString(current)}. Aborting.`);
                     }
                 }
             });
@@ -177,7 +177,7 @@ export class NavigationLocationService {
             const options = this.toOpenerOptions(location);
             await open(this.openerService, uri, options);
         } catch (e) {
-            this.logger.error(`Error occurred while revealing location: ${location}.`, e);
+            this.logger.error(`Error occurred while revealing location: ${NavigationLocation.toString(location)}.`, e);
         } finally {
             this.canRegister = true;
         }
