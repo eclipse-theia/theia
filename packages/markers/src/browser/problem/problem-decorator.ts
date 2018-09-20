@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -103,7 +103,8 @@ export class ProblemDecorator implements TreeDecorator {
             .map(uri => this.problemManager.findMarkers({ uri }))
             .map(markers => markers.sort(this.compare.bind(this)))
             .map(markers => markers.shift())
-            .filter(notEmpty);
+            .filter(notEmpty)
+            .filter(this.filterMarker.bind(this));
     }
 
     protected toDecorator(marker: Marker<Diagnostic>): TreeDecoration.Data {
@@ -141,6 +142,17 @@ export class ProblemDecorator implements TreeDecorator {
             case 3: return 'var(--theia-info-color0)';
             default: return 'var(--theia-success-color0)';
         }
+    }
+
+    /**
+     * Returns `true` if the diagnostic (`data`) of the marker argument has `Error`, `Warning`, or `Information` severity.
+     * Otherwise, returns `false`.
+     */
+    protected filterMarker(marker: Marker<Diagnostic>): boolean {
+        const { severity } = marker.data;
+        return severity === DiagnosticSeverity.Error
+            || severity === DiagnosticSeverity.Warning
+            || severity === DiagnosticSeverity.Information;
     }
 
     protected compare(left: Marker<Diagnostic>, right: Marker<Diagnostic>): number {
