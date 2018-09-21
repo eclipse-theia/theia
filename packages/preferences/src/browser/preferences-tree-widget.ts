@@ -45,6 +45,8 @@ import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import { UserStorageUri, THEIA_USER_STORAGE_FOLDER } from '@theia/userstorage/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { JSONC_LANGUAGE_ID } from '@theia/json/lib/common';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export interface PreferencesEditorWidget extends EditorWidget {
     scope?: PreferenceScope;
@@ -77,6 +79,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected _preferenceScope: PreferenceScope = PreferenceScope.User;
 
@@ -163,6 +168,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
             this.currentEditor = editor;
         });
+        this.toDispose.push(this.workspaceService.onSavedLocationChanged(workspaceFile => {
+            this.editorsContainer.refreshWorkspacePreferenceEditor();
+        }));
 
         const treePanel = new BoxPanel();
         treePanel.addWidget(this.treeWidget);
@@ -213,6 +221,7 @@ export class PreferencesEditorsContainer extends DockPanel {
     protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
 
     private preferenceScope: PreferenceScope;
+    private _workspacePreferenceWidget: EditorWidget | undefined;
 
     private readonly onInitEmitter = new Emitter<void>();
     readonly onInit: Event<void> = this.onInitEmitter.event;
@@ -242,26 +251,46 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
+        this.addWidget(await this.getUserPreferenceWidget());
+        await this.refreshWorkspacePreferenceEditor();
+
+        this.activatePreferenceEditor(this.preferenceScope);
+        super.onAfterAttach(msg);
+        this.onInitEmitter.fire(undefined);
+    }
+
+    async refreshWorkspacePreferenceEditor(): Promise<void> {
+        if (this._workspacePreferenceWidget) {
+            this._workspacePreferenceWidget.close();
+            this._workspacePreferenceWidget.dispose();
+        }
+        this._workspacePreferenceWidget = await this.getWorkspacePreferenceWidget();
+        if (this._workspacePreferenceWidget) {
+            this.addWidget(this._workspacePreferenceWidget);
+        }
+    }
+
+    protected async getUserPreferenceWidget(): Promise<EditorWidget> {
         const userPreferenceUri = this.userPreferenceProvider.getUri();
         const userPreferences = await this.editorManager.getOrCreateByUri(userPreferenceUri) as PreferencesEditorWidget;
         userPreferences.title.label = 'User Preferences';
         userPreferences.title.caption = await this.getPreferenceEditorCaption(userPreferenceUri);
         userPreferences.scope = PreferenceScope.User;
-        this.addWidget(userPreferences);
+        return userPreferences;
+    }
 
+    protected async getWorkspacePreferenceWidget(): Promise<EditorWidget | undefined> {
         const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
         const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri) as PreferencesEditorWidget;
 
         if (workspacePreferences) {
             workspacePreferences.title.label = 'Workspace Preferences';
             workspacePreferences.title.caption = await this.getPreferenceEditorCaption(workspacePreferenceUri!);
+            workspacePreferences.title.icon = 'database-icon medium-yellow file-icon';
+            workspacePreferences.editor.setLanguage(JSONC_LANGUAGE_ID);
             workspacePreferences.scope = PreferenceScope.Workspace;
-            this.addWidget(workspacePreferences);
         }
-
-        this.activatePreferenceEditor(this.preferenceScope);
-        super.onAfterAttach(msg);
-        this.onInitEmitter.fire(undefined);
+        return workspacePreferences;
     }
 
     activatePreferenceEditor(preferenceScope: PreferenceScope) {

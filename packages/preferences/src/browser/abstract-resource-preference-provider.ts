@@ -68,13 +68,17 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (resource.saveContents) {
             const content = await this.readContents();
             const formattingOptions = { tabSize: 3, insertSpaces: true, eol: '' };
-            const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
+            const edits = jsoncparser.modify(content, this.getPath(key), value, { formattingOptions });
             const result = jsoncparser.applyEdits(content, edits);
 
             await resource.saveContents(result);
             this.preferences[key] = value;
             this.onDidPreferencesChangedEmitter.fire(undefined);
         }
+    }
+
+    protected getPath(preferenceName: string): string[] {
+        return [preferenceName];
     }
 
     protected async readPreferences(): Promise<void> {
