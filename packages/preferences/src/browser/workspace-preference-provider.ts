@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/workspace-service';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import * as jsoncparser from 'jsonc-parser';
 
 @injectable()
 export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvider {
@@ -25,13 +26,45 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @postConstruct()
+    protected async init(): Promise<void> {
+        super.init();
+        this.workspaceService.onSavedLocationChanged(workspaceFile => {
+            if (workspaceFile && !workspaceFile.isDirectory) {
+                this.toDispose.dispose();
+                super.init();
+            }
+        });
+    }
+
     async getUri(): Promise<URI | undefined> {
-        const workspaceFolder = (await this.workspaceService.roots)[0];
-        if (workspaceFolder) {
-            const rootUri = new URI(workspaceFolder.uri);
-            return rootUri.resolve('.theia').resolve('settings.json');
+        await this.workspaceService.roots;
+        const workspace = this.workspaceService.workspace;
+        if (workspace) {
+            const uri = new URI(workspace.uri);
+            return workspace.isDirectory ? uri.resolve('.theia').resolve('settings.json') : uri;
         }
-        return undefined;
+    }
+
+    protected async readPreferences(): Promise<void> {
+        const newContent = await this.readContents();
+        const strippedContent = jsoncparser.stripComments(newContent);
+        const data = jsoncparser.parse(strippedContent);
+        if (this.workspaceService.saved) {
+            if (WorkspaceData.is(data)) {
+                this.preferences = data.settings || {};
+            }
+        } else {
+            this.preferences = data || {};
+        }
+        this.onDidPreferencesChangedEmitter.fire(undefined);
+    }
+
+    protected getPath(preferenceName: string): string[] {
+        if (this.workspaceService.saved) {
+            return ['settings', preferenceName];
+        }
+        return super.getPath(preferenceName);
     }
 
 }

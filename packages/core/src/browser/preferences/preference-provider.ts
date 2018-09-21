@@ -33,12 +33,9 @@ export class PreferenceProvider implements Disposable {
      */
     protected readonly _ready = new Deferred<void>();
 
-    constructor() {
-        this.toDispose.push(this.onDidPreferencesChangedEmitter);
-    }
-
     dispose(): void {
         this.toDispose.dispose();
+        this.onDidPreferencesChangedEmitter.dispose();
     }
 
     protected fireOnDidPreferencesChanged(): void {

@@ -254,7 +254,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }));
         this.preferences.ready.then(() => {
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+                isEnabled: () => this.workspaceService.supportMultiRootWorkspace,
                 isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
                 execute: async uris => {
                     const node = await this.fileDialogService.showOpenDialog({
@@ -282,7 +282,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             }));
             registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
                 execute: uris => this.removeFolderFromWorkspace(uris),
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+                isEnabled: () => this.workspaceService.supportMultiRootWorkspace,
                 isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
             }));
         });
@@ -396,7 +396,7 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
 
     protected getUri(): URI | undefined {
         const uri = super.getUri();
-        if (this.workspaceService.isMultiRootWorkspaceOpened) {
+        if (this.workspaceService.supportMultiRootWorkspace) {
             return uri;
         }
         if (uri) {

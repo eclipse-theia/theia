@@ -40,8 +40,10 @@ import {
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
+import { JSONC_LANGUAGE_ID } from '@theia/json/lib/common';
 import { DisposableCollection, Emitter, Event, MessageService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export interface PreferencesEditorWidget extends EditorWidget {
     scope?: PreferenceScope;
@@ -83,6 +85,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
 
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
     protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected _preferenceScope: PreferenceScope = PreferenceScope.User;
 
@@ -167,6 +172,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
             this.currentEditor = editor;
         });
+        this.toDispose.push(this.workspaceService.onSavedLocationChanged(workspaceFile => {
+            this.editorsContainer.refreshWorkspacePreferenceEditor();
+        }));
 
         const treePanel = new BoxPanel();
         treePanel.addWidget(this.treeWidget);
@@ -200,6 +208,8 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
 }
 
 export class PreferencesEditorsContainer extends DockPanel {
+
+    private _workspacePreferenceWidget: EditorWidget | undefined;
 
     private readonly onInitEmitter = new Emitter<void>();
     readonly onInit: Event<void> = this.onInitEmitter.event;
@@ -238,23 +248,43 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
+        this.addWidget(await this.getUserPreferenceWidget());
+        await this.refreshWorkspacePreferenceEditor();
+
+        this.activatePreferenceEditor(this.preferenceScope);
+        super.onAfterAttach(msg);
+        this.onInitEmitter.fire(undefined);
+    }
+
+    async refreshWorkspacePreferenceEditor(): Promise<void> {
+        if (this._workspacePreferenceWidget) {
+            this._workspacePreferenceWidget.close();
+            this._workspacePreferenceWidget.dispose();
+        }
+        this._workspacePreferenceWidget = await this.getWorkspacePreferenceWidget();
+        if (this._workspacePreferenceWidget) {
+            this.addWidget(this._workspacePreferenceWidget);
+        }
+    }
+
+    protected async getUserPreferenceWidget(): Promise<EditorWidget> {
         const userPreferences = await this.editorManager.getOrCreateByUri(this.userPreferenceProvider.getUri()) as PreferencesEditorWidget;
         userPreferences.title.label = 'User Preferences';
         userPreferences.scope = PreferenceScope.User;
-        this.addWidget(userPreferences);
+        return userPreferences;
+    }
 
+    protected async getWorkspacePreferenceWidget(): Promise<EditorWidget | undefined> {
         const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
         const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri) as PreferencesEditorWidget;
 
         if (workspacePreferences) {
             workspacePreferences.title.label = 'Workspace Preferences';
+            workspacePreferences.title.icon = 'database-icon medium-yellow file-icon';
+            workspacePreferences.editor.setLanguage(JSONC_LANGUAGE_ID);
             workspacePreferences.scope = PreferenceScope.Workspace;
-            this.addWidget(workspacePreferences);
         }
-
-        this.activatePreferenceEditor(this.preferenceScope);
-        super.onAfterAttach(msg);
-        this.onInitEmitter.fire(undefined);
+        return workspacePreferences;
     }
 
     activatePreferenceEditor(preferenceScope: PreferenceScope) {
