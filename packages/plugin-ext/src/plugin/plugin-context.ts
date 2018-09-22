@@ -312,7 +312,15 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             },
             registerDocumentRangeFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeFormattingEditProvider): theia.Disposable {
                 return languagesExt.registerDocumentRangeFormattingEditProvider(selector, provider);
-            }
+            },
+            registerOnTypeFormattingEditProvider(
+                selector: theia.DocumentSelector,
+                provider: theia.OnTypeFormattingEditProvider,
+                firstTriggerCharacter: string,
+                ...moreTriggerCharacters: string[]
+            ): theia.Disposable {
+                return languagesExt.registerOnTypeFormattingEditProvider(selector, provider, [firstTriggerCharacter].concat(moreTriggerCharacters));
+            },
         };
 
         const plugins: typeof theia.plugins = {

@@ -649,6 +649,13 @@ export interface LanguagesExt {
     $provideHover(handle: number, resource: UriComponents, position: Position): Promise<Hover | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents, options: FormattingOptions): Promise<ModelSingleEditOperation[] | undefined>;
     $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range, options: FormattingOptions): Promise<ModelSingleEditOperation[] | undefined>;
+    $provideOnTypeFormattingEdits(
+        handle: number,
+        resource: UriComponents,
+        position: Position,
+        ch: string,
+        options: FormattingOptions
+    ): Promise<ModelSingleEditOperation[] | undefined>;
 }
 
 export interface LanguagesMain {
@@ -664,6 +671,7 @@ export interface LanguagesMain {
     $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerRangeFormattingProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {
