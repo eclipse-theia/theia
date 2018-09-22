@@ -242,6 +242,34 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
     }
 
+    $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const onTypeFormattingProvider = this.createOnTypeFormattingProvider(handle, languageSelector, autoFormatTriggerCharacters);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerOnTypeFormattingEditProvider(language, onTypeFormattingProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createOnTypeFormattingProvider(
+        handle: number,
+        selector: LanguageSelector | undefined,
+        autoFormatTriggerCharacters: string[]
+    ): monaco.languages.OnTypeFormattingEditProvider {
+        return {
+            autoFormatTriggerCharacters,
+            provideOnTypeFormattingEdits: (model, position, ch, options) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options).then(v => v!);
+            }
+        };
+    }
+
     protected matchModel(selector: LanguageSelector | undefined, model: MonacoModelIdentifier): boolean {
         if (Array.isArray(selector)) {
             return selector.some(filter => this.matchModel(filter, model));

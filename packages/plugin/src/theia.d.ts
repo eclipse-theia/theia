@@ -3698,6 +3698,35 @@ declare module '@theia/plugin' {
         [key: string]: boolean | number | string;
     }
 
+    /**
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
+    export interface OnTypeFormattingEditProvider {
+
+        /**
+         * Provide formatting edits after a character has been typed.
+         *
+         * The given position and character should hint to the provider
+         * what range the position to expand to, like find the matching `{`
+         * when `}` has been entered.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param ch The character that has been typed.
+         * @param options Options controlling formatting.
+         * @param token A cancellation token.
+         * @return A set of text edits or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideOnTypeFormattingEdits(document: TextDocument,
+            position: Position,
+            ch: string,
+            options: FormattingOptions,
+            token: CancellationToken | undefined
+        ): ProviderResult<TextEdit[] | undefined>;
+    }
+
     export namespace languages {
         /**
          * Return the identifiers of all known languages.
@@ -3869,6 +3898,26 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerDocumentRangeFormattingEditProvider(selector: DocumentSelector, provider: DocumentRangeFormattingEditProvider): Disposable;
+
+        /**
+         * Register a formatting provider that works on type. The provider is active when the user enables the setting `editor.formatOnType`.
+         *
+         * Multiple providers can be registered for a language. In that case providers are sorted
+         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * of the selected provider will cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider An on type formatting edit provider.
+         * @param firstTriggerCharacter A character on which formatting should be triggered, like `}`.
+         * @param moreTriggerCharacter More trigger characters.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerOnTypeFormattingEditProvider(
+            selector: DocumentSelector,
+            provider: OnTypeFormattingEditProvider,
+            firstTriggerCharacter: string,
+            ...moreTriggerCharacter: string[]
+        ): Disposable;
     }
 
     /**

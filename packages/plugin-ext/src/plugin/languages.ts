@@ -50,9 +50,10 @@ import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
+import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
 import { DefinitionAdapter } from './languages/definition';
 
-type Adapter = CompletionAdapter | SignatureHelpAdapter | HoverAdapter | DocumentFormattingAdapter | RangeFormattingAdapter | DefinitionAdapter;
+type Adapter = CompletionAdapter | SignatureHelpAdapter | HoverAdapter | DocumentFormattingAdapter | RangeFormattingAdapter | OnTypeFormattingAdapter | DefinitionAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -242,6 +243,22 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, RangeFormattingAdapter, adapter => adapter.provideDocumentRangeFormattingEdits(URI.revive(resource), range, options));
     }
     // ### Document Range Formatting Edit end
+
+    // ### On Type Formatting Edit begin
+    registerOnTypeFormattingEditProvider(
+        selector: theia.DocumentSelector,
+        provider: theia.OnTypeFormattingEditProvider,
+        triggerCharacters: string[]
+    ): theia.Disposable {
+        const callId = this.addNewAdapter(new OnTypeFormattingAdapter(provider, this.documents));
+        this.proxy.$registerOnTypeFormattingProvider(callId, this.transformDocumentSelector(selector), triggerCharacters);
+        return this.createDisposable(callId);
+    }
+
+    $provideOnTypeFormattingEdits(handle: number, resource: UriComponents, position: Position, ch: string, options: FormattingOptions): Promise<SingleEditOperation[] | undefined> {
+        return this.withAdapter(handle, OnTypeFormattingAdapter, adapter => adapter.provideOnTypeFormattingEdits(URI.revive(resource), position, ch, options));
+    }
+    // ### On Type Formatting Edit end
 
 }
 
