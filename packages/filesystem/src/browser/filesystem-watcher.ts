@@ -16,9 +16,8 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
-import { ConfirmDialog } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileStat } from '../common/filesystem';
+import { FileSystem, FileShouldOverwrite } from '../common/filesystem';
 import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
 import { FileSystemPreferences } from './filesystem-preferences';
 
@@ -98,6 +97,11 @@ export class FileSystemWatcher implements Disposable {
     @inject(FileSystem)
     protected readonly filesystem: FileSystem;
 
+    // This is injected so we can avoid including UI stuff and make this class
+    // unit-testable.
+    @inject(FileShouldOverwrite)
+    protected readonly shouldOverwrite: FileShouldOverwrite;
+
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.onFileChangedEmitter);
@@ -173,16 +177,6 @@ export class FileSystemWatcher implements Disposable {
         const patterns = this.preferences['files.watcherExclude'];
 
         return Promise.resolve(Object.keys(patterns).filter(pattern => patterns[pattern]));
-    }
-
-    protected async shouldOverwrite(file: FileStat, stat: FileStat): Promise<boolean> {
-        const dialog = new ConfirmDialog({
-            title: `The file '${file.uri}' has been changed on the file system.`,
-            msg: 'Do you want to overwrite the changes made on the file system?',
-            ok: 'Yes',
-            cancel: 'No'
-        });
-        return !!await dialog.open();
     }
 
     protected fireDidMove(sourceUri: string, targetUri: string): void {

@@ -14,10 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-
-const disableJSDOM = enableJSDOM();
-
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
@@ -26,7 +22,7 @@ import { UserStorageResource } from './user-storage-resource';
 import { Emitter, } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common/';
+import { FileSystem, FileStat, FileShouldOverwrite } from '@theia/filesystem/lib/common/';
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileSystemWatcher, FileChange, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { PreferenceService } from '@theia/core/lib/browser/preferences';
@@ -35,8 +31,6 @@ import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem
 import { MockFilesystem, MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test';
 import { UserStorageUri } from './user-storage-uri';
 import URI from '@theia/core/lib/common/uri';
-
-disableJSDOM();
 
 import * as sinon from 'sinon';
 
@@ -77,6 +71,8 @@ before(async () => {
         );
         return watcher;
     });
+    testContainer.bind(FileShouldOverwrite).toFunction(
+        async (originalStat: FileStat, currentStat: FileStat): Promise<boolean> => true);
 
     /* Mock logger binding*/
     testContainer.bind(ILogger).to(MockLogger);
