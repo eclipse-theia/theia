@@ -17,25 +17,25 @@
 import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
-import { WorkspaceService } from './workspace-service';
+import { IWorkspaceService } from './workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { MaybePromise } from '@theia/core';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
-    @inject(WorkspaceService)
-    protected workspaceService: WorkspaceService;
+    @inject(IWorkspaceService)
+    protected workspaceService: IWorkspaceService;
     @inject(FileSystem)
     protected fileSystem: FileSystem;
 
-    wsRoot: string;
+    wsRoot: URI;
 
     @postConstruct()
     protected async init(): Promise<void> {
         const root = (await this.workspaceService.roots)[0];
         if (root) {
-            this.wsRoot = new URI(root.uri).toString(true);
+            this.wsRoot = new URI(root.uri);
         }
     }
 
@@ -94,15 +94,15 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
      */
     getLongName(element: URI | FileStat): string {
         const uri = this.getUri(element);
-        const uriStr = uri.toString(true);
-        if (!this.wsRoot || !uriStr.startsWith(this.wsRoot)) {
-            return super.getLongName(uri);
+
+        if (this.wsRoot) {
+            const relativeUri = this.wsRoot.relative(uri);
+            if (relativeUri) {
+                return relativeUri.toString();
+            }
+
         }
 
-        const short = uriStr.substr(this.wsRoot.length);
-        if (short[0] === '/') {
-            return short.substr(1);
-        }
-        return short;
+        return super.getLongName(uri);
     }
 }
