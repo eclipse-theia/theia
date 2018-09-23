@@ -32,6 +32,12 @@ export class PythonClientContribution extends BaseLanguageClientContribution {
         super(workspace, languages, languageClientFactory);
     }
 
+    protected getServicePath(): string {
+        let path = super.getServicePath();
+        path += '?virtualenv=%2Fhome%2Fsimark%2Fsrc%2Fpytoutv-env';
+        return path;
+    }
+
     protected get globPatterns() {
         return [
             '**/*.py'

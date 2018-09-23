@@ -37,11 +37,11 @@ export {
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
 export interface LanguageServerContribution extends LanguageContribution {
     start(clientConnection: IConnection): void;
+    getServicePath(): string;
 }
 
 @injectable()
 export abstract class BaseLanguageServerContribution implements LanguageServerContribution {
-
     abstract readonly id: string;
     abstract readonly name: string;
 
@@ -125,4 +125,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         });
     }
 
+    getServicePath(): string {
+        return LanguageContribution.getPath(this);
+    }
 }

@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '@theia/core/lib/common';
-import { LanguageServerContribution, LanguageContribution } from './language-server-contribution';
+import { LanguageServerContribution } from './language-server-contribution';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
@@ -31,7 +31,7 @@ export class LanguagesBackendContribution implements MessagingService.Contributi
 
     configure(service: MessagingService): void {
         for (const contribution of this.contributors.getContributions()) {
-            const path = LanguageContribution.getPath(contribution);
+            const path = contribution.getServicePath();
             service.forward(path, (params, connection) => {
                 try {
                     contribution.start(connection);

@@ -94,8 +94,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         toDeactivate.push(Disposable.create(() => {
             options.reconnecting = false;
         }));
+
         this.connectionProvider.listen({
-            path: LanguageContribution.getPath(this),
+            path: this.getServicePath(),
             onConnection: messageConnection => {
                 if (toDeactivate.disposed) {
                     messageConnection.dispose();
@@ -110,6 +111,16 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
             }
         }, options);
         return toDeactivate;
+    }
+
+    /**
+     * Get the path for the service through which the LSP messages will be
+     * transferred between the frontend and backend.  This may be overriden to
+     * add a query string, in order to pass parameters to the backend affecting
+     * how the language server is spawned.
+     */
+    protected getServicePath(): string {
+        return LanguageContribution.getPath(this);
     }
 
     protected state: State | undefined;
