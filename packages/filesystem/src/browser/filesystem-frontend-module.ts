@@ -16,8 +16,8 @@
 
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { FileSystem, fileSystemPath } from '../common';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog } from '@theia/core/lib/browser';
+import { FileSystem, fileSystemPath, FileShouldOverwrite, FileStat } from '../common';
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
@@ -38,6 +38,15 @@ export default new ContainerModule(bind => {
     );
     bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer);
     bind(FileSystemWatcher).toSelf().inSingletonScope();
+    bind(FileShouldOverwrite).toFunction(async function(file: FileStat, stat: FileStat): Promise<boolean> {
+        const dialog = new ConfirmDialog({
+            title: `The file '${file.uri}' has been changed on the file system.`,
+            msg: 'Do you want to overwrite the changes made on the file system?',
+            ok: 'Yes',
+            cancel: 'No'
+        });
+        return !!await dialog.open();
+    });
 
     bind(FileSystem).toDynamicValue(ctx =>
         WebSocketConnectionProvider.createProxy<FileSystem>(ctx.container, fileSystemPath)
