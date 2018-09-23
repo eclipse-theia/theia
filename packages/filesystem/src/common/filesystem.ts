@@ -124,13 +124,25 @@ export interface FileDeleteOptions {
     moveToTrash?: boolean
 }
 
+/**
+ * A callback type, called when we try to save a file but realize it has been
+ * modified by somebody else since we have opened it.  `originalStat` is the
+ * stat at the moment we opened the file, `currentStat` is the stat at the
+ * moment we try to save it (after the externl modification).  The callback
+ * should return true if we still want to save the file, false otherwise.
+ */
+export const FileShouldOverwrite = Symbol('FileShouldOverwrite');
+export interface FileShouldOverwrite {
+    (originalStat: FileStat, currentStat: FileStat): Promise<boolean>;
+}
+
 export interface FileSystemClient {
 
     /**
      * Tests whether the given file can be overwritten
      * in the case if it is out of sync with the given file stat.
      */
-    shouldOverwrite(file: FileStat, stat: FileStat): Promise<boolean>;
+    shouldOverwrite: FileShouldOverwrite;
 
     onDidMove(sourceUri: string, targetUri: string): void;
 

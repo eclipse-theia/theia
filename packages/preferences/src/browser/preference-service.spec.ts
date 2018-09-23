@@ -29,7 +29,7 @@ import {
     PreferenceService, PreferenceScope,
     PreferenceProviderProvider, PreferenceServiceImpl, PreferenceProvider, bindPreferenceSchemaProvider
 } from '@theia/core/lib/browser/preferences';
-import { FileSystem } from '@theia/filesystem/lib/common/';
+import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
@@ -125,6 +125,9 @@ before(async () => {
     testContainer.bind(FileSystemWatcher).toSelf().onActivation((_, watcher) =>
         watcher
     );
+    testContainer.bind(FileShouldOverwrite).toFunction(
+        async (originalStat: FileStat, currentStat: FileStat): Promise<boolean> => true);
+
     testContainer.bind(FileSystem).to(MockFilesystem);
 
     /* Logger mock */
