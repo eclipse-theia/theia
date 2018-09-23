@@ -29,6 +29,7 @@ import { MaybePromise } from '@theia/core/lib/common';
 import { LanguageContribution } from '../common';
 import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
 import { ProcessManager } from '@theia/process/lib/node/process-manager';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 export {
     LanguageContribution, IConnection, Message
@@ -36,7 +37,7 @@ export {
 
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
 export interface LanguageServerContribution extends LanguageContribution {
-    start(clientConnection: IConnection): void;
+    start(params: MessagingService.PathParams, clientConnection: IConnection): void;
     getServicePath(): string;
 }
 
@@ -51,7 +52,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     @inject(ProcessManager)
     protected readonly processManager: ProcessManager;
 
-    abstract start(clientConnection: IConnection): void;
+    abstract start(cparams: MessagingService.PathParams, lientConnection: IConnection): void;
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
         forward(clientConnection, serverConnection, this.map.bind(this));

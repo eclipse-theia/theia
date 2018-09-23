@@ -17,12 +17,16 @@
 import { injectable, inject } from 'inversify';
 import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '@theia/languages/lib/browser';
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
+import { PythonPreferences } from './python-preferences';
 
 @injectable()
 export class PythonClientContribution extends BaseLanguageClientContribution {
 
     readonly id = PYTHON_LANGUAGE_ID;
     readonly name = PYTHON_LANGUAGE_NAME;
+
+    @inject(PythonPreferences)
+    protected pythonPreferences: PythonPreferences;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -34,7 +38,10 @@ export class PythonClientContribution extends BaseLanguageClientContribution {
 
     protected getServicePath(): string {
         let path = super.getServicePath();
-        path += '?virtualenv=%2Fhome%2Fsimark%2Fsrc%2Fpytoutv-env';
+        const venv = this.pythonPreferences['python.virtualenv'] || 'calisse';
+        const encodedVenv = encodeURIComponent(venv);
+        path += '?virtualenv=' + encodedVenv;
+
         return path;
     }
 

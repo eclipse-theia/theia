@@ -21,6 +21,7 @@ import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME } from '../common';
 import { TypeScriptPlugin, TypeScriptInitializeParams, TypeScriptInitializationOptions } from 'typescript-language-server/lib/ts-protocol';
 import { isRequestMessage, Message } from 'vscode-ws-jsonrpc';
 import { InitializeRequest } from 'vscode-languageserver-protocol';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 @injectable()
 export class TypeScriptContribution extends BaseLanguageServerContribution {
@@ -48,7 +49,7 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         }
     }
 
-    start(clientConnection: IConnection): void {
+    start(params: MessagingService.PathParams, clientConnection: IConnection): void {
         const command = 'node';
         const args: string[] = [
             __dirname + '/startserver.js',

@@ -34,7 +34,7 @@ export class LanguagesBackendContribution implements MessagingService.Contributi
             const path = contribution.getServicePath();
             service.forward(path, (params, connection) => {
                 try {
-                    contribution.start(connection);
+                    contribution.start(params, connection);
                 } catch (e) {
                     this.logger.error(`Error occurred while starting language contribution. ${path}.`, e);
                     connection.dispose();

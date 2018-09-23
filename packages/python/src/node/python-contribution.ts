@@ -19,6 +19,8 @@ import { BaseLanguageServerContribution, IConnection, LanguageContribution } fro
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { SpawnOptions } from 'child_process';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
+import * as path from 'path';
 
 @injectable()
 export class PythonContribution extends BaseLanguageServerContribution {
@@ -26,22 +28,33 @@ export class PythonContribution extends BaseLanguageServerContribution {
     readonly id = PYTHON_LANGUAGE_ID;
     readonly name = PYTHON_LANGUAGE_NAME;
 
-    start(clientConnection: IConnection): void {
+    start(params: MessagingService.PathParams, clientConnection: IConnection): void {
+        const virtualenv: string | undefined = 'virtualenv' in params ? params['virtualenv'] :  undefined;
         let command = 'python';
+        if (virtualenv && virtualenv !== 'calisse') {
+            command = path.join(params['virtualenv'], 'bin', 'python');
+        }
+
         let args = ['-m', 'pyls'];
         const pythonLsCommand = process.env.PYTHON_LS_COMMAND;
         if (pythonLsCommand) {
             command = pythonLsCommand;
             args = parseArgs(process.env.PYTHON_LS_ARGS || '');
         }
-        const serverConnection = this.createProcessStreamConnection(command, args, this.getSpawnOptions());
+
+        const opts = this.getSpawnOptions() || {};
+        if (virtualenv && virtualenv !== 'calisse') {
+            opts.env = opts.env || {...process.env};
+            opts.env.VIRTUAL_ENV = params['virtualenv'];
+        }
+        const serverConnection = this.createProcessStreamConnection(command, args, opts);
         this.forward(clientConnection, serverConnection);
     }
 
     getServicePath(): string {
-        let path = LanguageContribution.getPath(this);
-        path += '?virtualenv=:virtualenv';
-        return path;
+        let servicePath = LanguageContribution.getPath(this);
+        servicePath += '?virtualenv=:virtualenv';
+        return servicePath;
     }
 
     protected getSpawnOptions(): SpawnOptions | undefined {

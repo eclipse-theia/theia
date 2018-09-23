@@ -19,10 +19,12 @@ import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { PythonClientContribution } from './python-client-contribution';
 import { PythonGrammarContribution } from './python-grammar-contribution';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
+import { bindPythonPreferences } from './python-preferences';
 
 export default new ContainerModule(bind => {
     bind(PythonClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(PythonClientContribution));
 
     bind(LanguageGrammarDefinitionContribution).to(PythonGrammarContribution).inSingletonScope();
+    bindPythonPreferences(bind);
 });

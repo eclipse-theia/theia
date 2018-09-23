@@ -28,6 +28,7 @@ import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { JavaCliContribution } from './java-cli-contribution';
 import { ContributionProvider } from '@theia/core';
 import { JavaExtensionContribution } from './java-extension-model';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -54,7 +55,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
         }
     }
 
-    start(clientConnection: IConnection): void {
+    start(params: MessagingService.PathParams, clientConnection: IConnection): void {
 
         const socketPort = this.cli.lsPort();
         if (socketPort) {

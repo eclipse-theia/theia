@@ -18,6 +18,7 @@ import { injectable } from 'inversify';
 import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
 import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME } from '../common';
 import * as path from 'path';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 @injectable()
 export class JsonContribution extends BaseLanguageServerContribution {
@@ -25,7 +26,7 @@ export class JsonContribution extends BaseLanguageServerContribution {
     readonly id = JSON_LANGUAGE_ID;
     readonly name = JSON_LANGUAGE_NAME;
 
-    start(clientConnection: IConnection): void {
+    start(params: MessagingService.PathParams, clientConnection: IConnection): void {
         const command = 'node';
         const args: string[] = [
             path.resolve(__dirname, './json-starter'),

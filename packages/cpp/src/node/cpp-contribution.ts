@@ -18,6 +18,7 @@ import { injectable } from 'inversify';
 import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 export const CLANGD_COMMAND_DEFAULT = 'clangd';
 
@@ -27,7 +28,7 @@ export class CppContribution extends BaseLanguageServerContribution {
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
 
-    public start(clientConnection: IConnection): void {
+    public start(params: MessagingService.PathParams, clientConnection: IConnection): void {
         const envCommand = process.env.CPP_CLANGD_COMMAND;
         const command = envCommand ? envCommand : CLANGD_COMMAND_DEFAULT;
 
