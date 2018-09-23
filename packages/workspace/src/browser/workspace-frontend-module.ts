@@ -32,7 +32,7 @@ import { LabelProviderContribution } from '@theia/core/lib/browser/label-provide
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService, IWorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
@@ -45,6 +45,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bindWorkspacePreferences(bind);
 
     bind(WorkspaceService).toSelf().inSingletonScope();
+    bind(IWorkspaceService).toService(WorkspaceService);
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceService));
     bind(WorkspaceServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
