@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
 import { WorkspaceService } from './workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { MaybePromise } from '@theia/core';
+import { MaybePromise, Path } from '@theia/core';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
@@ -36,6 +36,9 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         const root = (await this.workspaceService.roots)[0];
         if (root) {
             this.wsRoot = new URI(root.uri).toString(true);
+            if (!this.wsRoot.endsWith(Path.separator)) {
+                this.wsRoot += Path.separator;
+            }
         }
     }
 
@@ -99,10 +102,6 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
             return super.getLongName(uri);
         }
 
-        const short = uriStr.substr(this.wsRoot.length);
-        if (short[0] === '/') {
-            return short.substr(1);
-        }
-        return short;
+        return uriStr.substr(this.wsRoot.length);
     }
 }

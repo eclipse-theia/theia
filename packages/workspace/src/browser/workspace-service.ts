@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
@@ -29,6 +29,11 @@ import * as Ajv from 'ajv';
 
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
+
+export const IWorkspaceService = Symbol('IWorkspaceService');
+export interface IWorkspaceService {
+    roots: Promise<FileStat[]>;
+}
 
 /**
  * The workspace service.
