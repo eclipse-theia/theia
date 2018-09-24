@@ -16,10 +16,10 @@
 
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager } from './problem-manager';
-import { MarkerNode, MarkerTree, MarkerOptions } from '../marker-tree';
+import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode } from '../marker-tree';
 import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from 'inversify';
-import { OpenerOptions } from '@theia/core/lib/browser';
+import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
 import { Diagnostic } from 'vscode-languageserver-types';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
@@ -36,6 +36,8 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
 @injectable()
 export class ProblemTreeModel extends MarkerTreeModel {
 
+    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
+
     protected getOpenerOptionsByMarker(node: MarkerNode): OpenerOptions | undefined {
         if (ProblemMarker.is(node.marker)) {
             return {
@@ -43,5 +45,17 @@ export class ProblemTreeModel extends MarkerTreeModel {
             };
         }
         return undefined;
+    }
+
+    removeNode(node: TreeNode) {
+        if (MarkerInfoNode.is(node)) {
+            this.problemManager.cleanAllMarkers(node.uri);
+        }
+        if (MarkerNode.is(node)) {
+            const { uri } = node;
+            const { owner } = node.marker;
+            const diagnostics = this.problemManager.findMarkers({ uri, owner, dataFilter: data => node.marker.data !== data }).map(({ data }) => data);
+            this.problemManager.setMarkers(uri, owner, diagnostics);
+        }
     }
 }

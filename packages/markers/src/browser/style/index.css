@@ -19,10 +19,6 @@
     color: var(--theia-ui-font-color1);
 }
 
-.theia-marker-container .theia-TreeNode {
-    width: 100%;
-}
-
 .theia-marker-container .theia-ExpansionToggle {
     min-width: 16px;
 }
@@ -99,4 +95,22 @@
 
 .problem-tab-icon::before {
     content: "\f06a"
+}
+
+.theia-marker-container .row-button-container {
+    display: none;
+}
+
+.theia-marker-container .theia-TreeNodeContent:hover .row-button-container {
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+    align-items: center;
+    align-self: center;
+}
+
+.theia-marker-container .row-button-container .remove-node {
+    background-image: var(--theia-icon-close);
+    width: 15px;
+    height: 15px;
 }

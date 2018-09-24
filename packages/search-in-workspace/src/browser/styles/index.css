@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- :root { 
+ :root {
   --theia-current-search-match-color: var(--theia-word-highlight-color0);
   --theia-range-highlight: var(--theia-word-highlight-color1);
  }
@@ -106,15 +106,15 @@
 
 .t-siw-search-container .searchHeader .search-field .option.match-case {
     background-image: var(--theia-icon-case-sensitive);
-}    
+}
 
 .t-siw-search-container .searchHeader .search-field .option.whole-word {
     background-image: var(--theia-icon-whole-word);
-}    
+}
 
 .t-siw-search-container .searchHeader .search-field .option.use-regexp {
     background-image: var(--theia-icon-regex);
-}    
+}
 
 .t-siw-search-container .searchHeader .search-field .option-buttons {
     height: 23px;
@@ -161,7 +161,7 @@
     justify-content: flex-end;
 }
 
-.t-siw-search-container .searchHeader .search-field .option, 
+.t-siw-search-container .searchHeader .search-field .option,
 .t-siw-search-container .searchHeader .button-container .btn {
     width: 21px;
     height: 21px;
@@ -224,12 +224,12 @@
 
 .t-siw-search-container .resultContainer {
     height: 100%;
-} 
+}
 
 .t-siw-search-container .result {
     overflow: hidden;
     width: 100%;
-} 
+}
 
 .t-siw-search-container .result .result-head {
     display:flex;
@@ -370,7 +370,7 @@
 
 .replace-field {
     display: flex;
-    margin-top: 5px;    
+    margin-top: 5px;
 }
 
 .replace-field.hidden {
