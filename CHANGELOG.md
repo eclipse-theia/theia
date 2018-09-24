@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.3.15
+- [plug-in] added `menus` contribution point
+
 ## v0.3.13
 - [cpp] Add a status bar button to select an active cpp build configuration
 - Recently opened workspaces history 
