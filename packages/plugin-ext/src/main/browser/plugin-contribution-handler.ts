@@ -15,10 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
-import { TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
 import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-textmate';
+import { TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
+import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
+import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
 
 @injectable()
 export class PluginContributionHandler {
@@ -30,6 +31,9 @@ export class PluginContributionHandler {
 
     @inject(ViewRegistry)
     private readonly viewRegistry: ViewRegistry;
+
+    @inject(MenusContributionPointHandler)
+    private readonly menusContributionHandler: MenusContributionPointHandler;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.languages) {
@@ -107,6 +111,8 @@ export class PluginContributionHandler {
                 }
             }
         }
+
+        this.menusContributionHandler.handle(contributions);
     }
 
     private createRegex(value: string | undefined): RegExp | undefined {

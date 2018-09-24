@@ -6,8 +6,10 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.3.14",
+    "@theia/editor": "^0.3.14",
     "@theia/filesystem": "^0.3.14",
     "@theia/monaco": "^0.3.14",
+    "@theia/navigator": "^0.3.14",
     "@theia/plugin": "^0.3.14",
     "@theia/workspace": "^0.3.14",
     "decompress": "^4.2.0",
