@@ -39,6 +39,7 @@ import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
+import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
 
@@ -90,6 +91,7 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
 
     bind(ViewRegistry).toSelf().inSingletonScope();
+    bind(MenusContributionPointHandler).toSelf().inSingletonScope();
 
     bind(PluginContributionHandler).toSelf().inSingletonScope();
 });
