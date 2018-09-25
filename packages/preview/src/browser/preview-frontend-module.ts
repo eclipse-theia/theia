@@ -44,7 +44,7 @@ export default new ContainerModule(bind => {
             const { container } = ctx;
             const resource = await container.get<ResourceProvider>(ResourceProvider)(new URI(options.uri));
             const child = container.createChild();
-            child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource });
+            child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource, container });
             return child.get(PreviewWidget);
         }
     })).inSingletonScope();

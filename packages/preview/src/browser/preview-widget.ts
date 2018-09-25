@@ -13,8 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import { Resource, MaybePromise } from '@theia/core';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { BaseWidget, Message, addEventListener } from '@theia/core/lib/browser';
@@ -24,6 +23,10 @@ import { Workspace, Location, Range } from '@theia/languages/lib/browser';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from '@theia/editor/lib/browser';
+import * as jsoncparser from 'jsonc-parser';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { ResourceProvider } from '@theia/core';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 import throttle = require('lodash.throttle');
 
@@ -35,7 +38,8 @@ let widgetCounter: number = 0;
 
 export const PreviewWidgetOptions = Symbol('PreviewWidgetOptions');
 export interface PreviewWidgetOptions {
-    resource: Resource
+    resource: Resource,
+    container: interfaces.Container
 }
 
 @injectable()
@@ -43,6 +47,8 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
 
     protected readonly uri: URI;
     protected readonly resource: Resource;
+    protected catalog: Resource;
+    protected readonly container: interfaces.Container;
     protected previewHandler: PreviewHandler | undefined;
     protected firstUpdate: (() => void) | undefined = undefined;
     protected readonly onDidScrollEmitter = new Emitter<number>();
@@ -55,9 +61,14 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         @inject(ThemeService) protected readonly themeService: ThemeService,
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
+        @inject(WorkspaceService)
+        protected readonly workspaceService: WorkspaceService,
+        @inject(FileSystem)
+        protected readonly fileSystem: FileSystem,
     ) {
         super();
         this.resource = this.options.resource;
+        this.container = this.options.container;
         this.uri = this.resource.uri;
         this.id = 'preview-widget-' + widgetCounter++;
         this.title.closable = true;
@@ -194,11 +205,55 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         }
     }
 
+    protected async catalogAvailable(): Promise<boolean> {
+        const workspaceFolder = (await this.workspaceService.roots)[0];
+        const catalogURI = new URI(workspaceFolder.uri + '/catalog.json');
+        if (await this.fileSystem.exists(catalogURI.toString())) { // File catalog.json if available should be found at the workspace root level
+            const newCatalog = await this.container.get<ResourceProvider>(ResourceProvider)(catalogURI);
+            this.catalog = newCatalog;
+            return true;
+        }
+        return false;
+
+    }
+
     protected async render(content: string, originUri: URI): Promise<HTMLElement | undefined> {
         if (!this.previewHandler || !this.resource) {
             return undefined;
         }
+        if (await this.catalogAvailable()) {
+            const catalogContent = await this.catalog.readContents();
+            content = this.replaceContent(content, catalogContent);
+        }
         return this.previewHandler.renderContent({ content, originUri });
+    }
+
+    private replaceContent(content: string, catalog: string): string {
+
+        const res: Map<string, string> = jsoncparser.parse(catalog);
+        const catalogMap = new Map<string, string>();
+        JSON.parse(JSON.stringify(res), (key: string, value: string) => {
+            if (key !== '') {
+                catalogMap.set(`{{${key}}}`, value); // Add {{ }} aound the key definition
+            }
+        });
+
+        const regex = [];
+        for (const [key] of catalogMap.entries()) {
+            if (key !== '') {
+                regex.push(key);
+            }
+        }
+        const newRregex = new RegExp(regex.join('|'), 'g');
+        content = content.replace(newRregex, function (word) {
+            const modValue = catalogMap.get(word);
+            if (modValue) {
+                return modValue;
+            }
+            return 'NOT FOUND';
+        });
+
+        return content;
     }
 
     protected revealFragment(uri: URI): void {
