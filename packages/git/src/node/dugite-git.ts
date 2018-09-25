@@ -535,10 +535,13 @@ export class DugiteGit implements Git {
             let opts = {};
             if (options) {
                 opts = {
-                    ...options,
-                    exec
+                    ...options
                 };
             }
+            opts = {
+                ...opts,
+                exec
+            };
             return (await git(args, repositoryPath, name, opts));
         });
     }
