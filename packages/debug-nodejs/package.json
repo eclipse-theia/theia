@@ -9,11 +9,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "backend": "lib/node/debug-nodejs-backend-module"
-    }
-  ],
+  "theiaExtensions": [{
+    "backend": "lib/node/debug-nodejs-backend-module"
+  }],
   "keywords": [
     "theia-extension, debug, nodejs"
   ],
