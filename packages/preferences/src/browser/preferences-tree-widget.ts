@@ -129,6 +129,10 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
+        if (this.widgets.length > 0) {
+            return;
+        }
+
         this.treeWidget = await this.widgetManager.getOrCreateWidget<PreferencesTreeWidget>(PreferencesTreeWidget.ID);
         this.treeWidget.onPreferenceSelected(value => {
             const preferenceName = Object.keys(value)[0];
