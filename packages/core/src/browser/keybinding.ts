@@ -173,7 +173,7 @@ export class KeybindingRegistry {
 
     protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT) {
         try {
-            if (!this.containsKeybinding(this.keymaps[scope], binding)) {
+            if (this.containsKeybinding(this.keymaps[scope], binding)) {
                 throw new Error(`"${binding.keybinding}" is in collision with something else [scope:${scope}]`);
             }
             this.keymaps[scope].push(binding);
@@ -197,21 +197,21 @@ export class KeybindingRegistry {
             this.logger.warn('Collided keybinding is ignored; ',
                 Keybinding.stringify(binding), ' collided with ',
                 collisions.full.map(b => Keybinding.stringify(b)).join(', '));
-            return false;
+            return true;
         }
         if (collisions.partial.length > 0) {
             this.logger.warn('Shadowing keybinding is ignored; ',
                 Keybinding.stringify(binding), ' shadows ',
                 collisions.partial.map(b => Keybinding.stringify(b)).join(', '));
-            return false;
+            return true;
         }
         if (collisions.shadow.length > 0) {
             this.logger.warn('Shadowed keybinding is ignored; ',
                 Keybinding.stringify(binding), ' would be shadowed by ',
                 collisions.shadow.map(b => Keybinding.stringify(b)).join(', '));
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
