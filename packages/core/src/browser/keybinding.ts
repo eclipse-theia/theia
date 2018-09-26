@@ -55,6 +55,11 @@ export namespace Keybinding {
         const keyCodesString = keybinding.keybinding.split(' ');
         return KeySequence.acceleratorFor(keyCodesString.map(k => KeyCode.parse(k)), separator);
     }
+
+    /* Determine whether object is a KeyBinding */
+    export function is(arg: Keybinding | any): arg is Keybinding {
+        return !!arg && 'command' in arg && 'keybinding' in arg;
+    }
 }
 
 export interface Keybinding {
@@ -163,6 +168,31 @@ export class KeybindingRegistry {
      */
     registerKeybindings(...bindings: Keybinding[]): void {
         this.doRegisterKeybindings(bindings, KeybindingScope.DEFAULT);
+    }
+
+    /**
+     * Unregister keybinding from the registry
+     *
+     * @param binding
+     */
+    unregisterKeybinding(binding: Keybinding): void;
+    /**
+     * Unregister keybinding from the registry
+     *
+     * @param key
+     */
+    unregisterKeybinding(key: string): void;
+    unregisterKeybinding(keyOrBinding: Keybinding | string): void {
+        const key = Keybinding.is(keyOrBinding) ? keyOrBinding.keybinding : keyOrBinding;
+        const keymap = this.keymaps[KeybindingScope.DEFAULT];
+        const bindings = keymap.filter(el => el.keybinding === key);
+
+        bindings.forEach(binding => {
+            const idx = keymap.indexOf(binding);
+            if (idx >= 0) {
+                keymap.splice(idx, 1);
+            }
+        });
     }
 
     protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT) {
