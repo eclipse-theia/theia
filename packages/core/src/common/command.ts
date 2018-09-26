@@ -37,6 +37,14 @@ export interface Command {
      */
     iconClass?: string;
 }
+
+export namespace Command {
+    /* Determine whether object is a Command */
+    export function is(arg: Command | any): arg is Command {
+        return !!arg && 'id' in arg;
+    }
+}
+
 /**
  * A command handler is an implementation of a command.
  *
@@ -134,6 +142,26 @@ export class CommandRegistry implements CommandService {
                 delete this._commands[command.id];
             }
         };
+    }
+
+    /**
+     * Unregister command from the registry
+     *
+     * @param command
+     */
+    unregisterCommand(command: Command): void;
+    /**
+     * Unregister command from the registry
+     *
+     * @param id
+     */
+    unregisterCommand(id: string): void;
+    unregisterCommand(commandOrId: Command | string): void {
+        const id = Command.is(commandOrId) ? commandOrId.id : commandOrId;
+
+        if (this._commands[id]) {
+            delete this._commands[id];
+        }
     }
 
     /**
