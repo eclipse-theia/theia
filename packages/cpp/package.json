@@ -14,12 +14,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/cpp-frontend-module",
-      "backend": "lib/node/cpp-backend-module"
-    }
-  ],
+  "theiaExtensions": [{
+    "frontend": "lib/browser/cpp-frontend-module",
+    "backend": "lib/node/cpp-backend-module"
+  }],
   "keywords": [
     "theia-extension"
   ],
@@ -28,6 +26,7 @@
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
   },
+
   "bugs": {
     "url": "https://github.com/theia-ide/theia/issues"
   },
@@ -40,7 +39,7 @@
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "build": "theiaext build",
+    "build": "concurrently -n download,build -c red,blue \"node ./scripts/download-code-debug.js\" \"theiaext build\"",
     "watch": "theiaext watch",
     "test": "theiaext test",
     "docs": "theiaext docs"
@@ -50,5 +49,9 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "debugAdapter": {
+    "downloadUrl": "https://github.com/marechal-p/code-debug/releases/download/v0.22.0/code-debug.tar.gz",
+    "dir": "lib/adapter"
   }
 }
