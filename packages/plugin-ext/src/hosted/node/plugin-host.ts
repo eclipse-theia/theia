@@ -15,11 +15,8 @@
  ********************************************************************************/
 
 import { Emitter } from '@theia/core/lib/common/event';
-import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
-import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
-import { PluginMetadata } from '../../common/plugin-protocol';
-import { createAPIFactory } from '../../plugin/plugin-context';
+import { PluginHostRPC } from './plugin-host-rpc';
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
 const emitter = new Emitter();
@@ -40,65 +37,5 @@ process.on('message', (message: string) => {
     }
 });
 
-// tslint:disable-next-line:no-any
-function initialize(contextPath: string, plugin: Plugin): any {
-    console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + contextPath + ')');
-    try {
-        const backendInit = require(contextPath);
-        backendInit.doInitialization(apiFactory, plugin);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-const pluginManager = new PluginManagerExtImpl({
-    loadPlugin(plugin: Plugin): void {
-        console.log('PLUGIN_HOST(' + process.pid + '): loadPlugin(' + plugin.pluginPath + ')');
-        try {
-            return require(plugin.pluginPath);
-        } catch (e) {
-            console.error(e);
-        }
-    },
-    init(raw: PluginMetadata[]): [Plugin[], Plugin[]] {
-        const result: Plugin[] = [];
-        const foreign: Plugin[] = [];
-        for (const plg of raw) {
-            const pluginModel = plg.model;
-            const pluginLifecycle = plg.lifecycle;
-            if (pluginModel.entryPoint!.backend) {
-
-                let backendInitPath = pluginLifecycle.backendInitPath;
-                // if no init path, try to init as regular Theia plugin
-                if (!backendInitPath) {
-                    backendInitPath = __dirname + '/scanners/backend-init-theia.js';
-                }
-
-                const plugin: Plugin = {
-                    pluginPath: pluginModel.entryPoint.backend!,
-                    pluginFolder: plg.source.packagePath,
-                    model: pluginModel,
-                    lifecycle: pluginLifecycle,
-                    rawModel: plg.source
-                };
-
-                initialize(backendInitPath, plugin);
-
-                result.push(plugin);
-            } else {
-                foreign.push({
-                    pluginPath: pluginModel.entryPoint.frontend!,
-                    pluginFolder: plg.source.packagePath,
-                    model: pluginModel,
-                    lifecycle: pluginLifecycle,
-                    rawModel: plg.source
-                });
-            }
-        }
-
-        return [result, foreign];
-    }
-});
-
-rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
-const apiFactory = createAPIFactory(rpc, pluginManager);
+const pluginHostRPC = new PluginHostRPC(rpc);
+pluginHostRPC.initialize();
