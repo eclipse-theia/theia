@@ -16,8 +16,11 @@
 
 import { ContainerModule } from 'inversify';
 import { LanguageServerContribution } from '@theia/languages/lib/node';
+import { DebugAdapterContribution } from '@theia/debug/lib/node/debug-model';
+import { GdbDebugAdapterContribution } from './debug/cpp-debug-contribution';
 import { CppContribution } from './cpp-contribution';
 
 export default new ContainerModule(bind => {
     bind(LanguageServerContribution).to(CppContribution).inSingletonScope();
+    bind(DebugAdapterContribution).to(GdbDebugAdapterContribution).inSingletonScope();
 });
