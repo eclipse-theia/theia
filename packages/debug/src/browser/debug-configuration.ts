@@ -61,7 +61,7 @@ export class DebugConfigurationManager {
             return;
         }
         const configurations = await this.readConfigurations();
-        configurations.concat(newDebugConfiguration);
+        configurations.push(newDebugConfiguration);
         await this.writeConfigurations(configurations);
         this.openConfigurationFile();
     }
