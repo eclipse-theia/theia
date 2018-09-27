@@ -50,6 +50,9 @@ export class VariableResolverService {
     }
 
     protected doResolve(value: Object | undefined, context: VariableResolverService.Context): Object | undefined {
+        if (value === undefined || value === null) {
+            return value;
+        }
         if (typeof value === 'string') {
             return this.doResolveString(value, context);
         }
