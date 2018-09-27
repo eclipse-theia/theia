@@ -91,14 +91,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
             execute: async uri => this.showWidget(uri.toString()),
-            isEnabled: (uri: URI) => {
-                for (const repo of this.repositoryProvider.allRepositories) {
-                    if (new URI(repo.localUri).isEqualOrParent(uri)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
+            isEnabled: (uri: URI) => !!this.repositoryProvider.findRepository(uri)
         }));
         commands.registerCommand(GitHistoryCommands.OPEN_BRANCH_HISTORY, {
             execute: () => this.showWidget(undefined)
