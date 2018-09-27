@@ -88,6 +88,7 @@ export class WebSocketConnectionProvider {
     listen(handler: ConnectionHandler, options?: WebSocketOptions): void {
         this.openChannel(handler.path, channel => {
             const connection = createWebSocketConnection(channel, this.createLogger());
+            connection.onDispose(() => channel.close());
             handler.onConnection(connection);
         }, options);
     }

@@ -102,11 +102,14 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                     return;
                 }
                 toDeactivate.push(messageConnection);
-                this.toRestart = messageConnection;
 
                 const languageClient = this.createLanguageClient(messageConnection);
                 this.onWillStart(languageClient);
                 languageClient.start();
+                this.toRestart.push(Disposable.create(async () => {
+                    await languageClient.onReady();
+                    languageClient.stop();
+                }));
             }
         }, options);
         return toDeactivate;
@@ -117,12 +120,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this.state === State.Running;
     }
 
-    protected toRestart: Disposable | undefined;
+    protected readonly toRestart = new DisposableCollection();
     restart(): void {
-        if (this.toRestart) {
-            this.toRestart.dispose();
-            this.toRestart = undefined;
-        }
+        this.toRestart.dispose();
     }
 
     protected onWillStart(languageClient: ILanguageClient): void {
