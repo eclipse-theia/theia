@@ -57,7 +57,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected listView: GitHistoryList | undefined;
     protected hasMoreCommits: boolean;
     protected allowScrollToSelected: boolean;
-    protected pathIsUnderVersionControl: boolean;
+    protected errorMessage: React.ReactNode;
 
     constructor(
         @inject(OpenerService) protected readonly openerService: OpenerService,
@@ -87,11 +87,6 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 this.listView.list.Grid.handleScrollEvent({ scrollTop });
             }
         });
-    }
-
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.update();
     }
 
     update(): void {
@@ -126,12 +121,16 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected async addCommits(options?: Git.Options.Log): Promise<void> {
         const repository = this.repositoryProvider.selectedRepository;
         let resolver: () => void;
-
+        this.errorMessage = undefined;
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
         if (repository) {
             const log = this.git.log(repository, options);
+            log.catch((reason: Error) => {
+                this.errorMessage = reason.message;
+                resolver();
+            });
             log.then(async changes => {
                 if (token.isCancellationRequested || !this.hasMoreCommits) {
                     return;
@@ -164,7 +163,11 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     }
                     this.commits.push(...commits);
                 } else if (options && options.uri) {
-                    this.pathIsUnderVersionControl = await this.git.lsFiles(repository, options.uri, { errorUnmatch: true });
+                    const pathIsUnderVersionControl = await this.git.lsFiles(repository, options.uri, { errorUnmatch: true });
+                    if (!pathIsUnderVersionControl) {
+                        const relPath = this.relativePath(options.uri);
+                        this.errorMessage = <React.Fragment><i>/{decodeURIComponent(relPath)}</i> is not under version control.</React.Fragment>;
+                    }
                 }
                 resolver();
             });
@@ -239,18 +242,18 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 {this.renderHistoryHeader()}
                 {this.renderCommitList()}
             </React.Fragment>;
-        } else if (this.ready) {
+        } else if (this.errorMessage) {
             let path: React.ReactNode = '';
-            let notInVC: React.ReactNode;
+            let reason: React.ReactNode;
+            reason = this.errorMessage;
             if (this.options.uri) {
                 const relPath = this.relativePath(this.options.uri);
-                path = <React.Fragment> for <i>/{relPath}</i></React.Fragment>;
-                notInVC = !this.pathIsUnderVersionControl ? <div><i>/{relPath}</i> is not under version control.</div> : '';
+                path = <React.Fragment> for <i>/{decodeURIComponent(relPath)}</i></React.Fragment>;
             }
             content = <div className='message-container'>
                 <div className='no-history-message'>
                     <div>There is no Git history available{path}.</div>
-                    {notInVC}
+                    <div>{reason}</div>
                 </div>
             </div>;
         } else {
