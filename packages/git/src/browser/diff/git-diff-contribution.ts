@@ -28,6 +28,7 @@ import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { Git } from '../../common';
+import { GitRepositoryProvider } from '../git-repository-provider';
 
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
@@ -46,7 +47,8 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(OpenerService) protected openerService: OpenerService,
-        @inject(MessageService) protected readonly notifications: MessageService
+        @inject(MessageService) protected readonly notifications: MessageService,
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
     ) {
         super({
             widgetId: GIT_DIFF,
@@ -80,18 +82,18 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                         if (fileStat) {
                             if (fileStat.isDirectory) {
                                 this.showWidget(options);
-                            }
-                        } else {
-                            const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
-                            const toURI = fileUri;
-                            const diffUri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
-                            if (diffUri) {
-                                open(this.openerService, diffUri).catch(e => {
-                                    this.notifications.error(e.message);
-                                });
+                            } else {
+                                const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
+                                const toURI = fileUri;
+                                const diffUri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
+                                if (diffUri) {
+                                    open(this.openerService, diffUri).catch(e => {
+                                        this.notifications.error(e.message);
+                                    });
+                                }
                             }
                         }
-                    });
+                    }, this.repositoryProvider.findRepository(fileUri));
             }
         }));
     }
