@@ -88,4 +88,9 @@ export class MockFilesystem implements FileSystem {
     setClient(client: FileSystemClient) {
 
     }
+
+    async getDrives(): Promise<string[]> {
+        return [];
+    }
+
 }

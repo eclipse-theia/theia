@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
-import { FileSystem, } from '../../common';
+import { FileSystem } from '../../common';
 import { FileSystemWatcher, FileChangeType, FileChange, FileMoveEvent } from '../filesystem-watcher';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
@@ -58,6 +58,16 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             });
         } else {
             this.navigateTo(undefined);
+        }
+    }
+
+    async drives(): Promise<URI[]> {
+        try {
+            const drives = await this.fileSystem.getDrives();
+            return drives.map(uri => new URI(uri));
+        } catch (e) {
+            this.logger.error('Error when loading drives.', e);
+            return [];
         }
     }
 

@@ -114,6 +114,11 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      */
     getCurrentUserHome(): Promise<FileStat | undefined>;
 
+    /**
+     * Resolves to an array of URIs pointing to the available drives on the filesystem.
+     */
+    getDrives(): Promise<string[]>;
+
 }
 
 export interface FileMoveOptions {

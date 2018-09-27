@@ -20,6 +20,7 @@ import * as paths from 'path';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as touch from 'touch';
+import * as drivelist from 'drivelist';
 import { injectable, inject, optional } from 'inversify';
 import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
@@ -327,6 +328,42 @@ export class FileSystemNode implements FileSystem {
 
     async getCurrentUserHome(): Promise<FileStat | undefined> {
         return this.getFileStat(FileUri.create(os.homedir()).toString());
+    }
+
+    getDrives(): Promise<string[]> {
+        return new Promise<string[]>((resolve, reject) => {
+            drivelist.list((error: Error, drives: { readonly mountpoints: { readonly path: string; }[] }[]) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                const uris = drives
+                    .map(drive => drive.mountpoints)
+                    .reduce((prev, curr) => prev.concat(curr), [])
+                    .map(mountpoint => mountpoint.path)
+                    .filter(this.filterMountpointPath.bind(this))
+                    .map(path => FileUri.create(path))
+                    .map(uri => uri.toString());
+
+                resolve(uris);
+            });
+        });
+    }
+
+    /**
+     * Filters hidden and system partitions.
+     */
+    protected filterMountpointPath(path: string): boolean {
+        // OS X: This is your sleep-image. When your Mac goes to sleep it writes the contents of its memory to the hard disk. (https://bit.ly/2R6cztl)
+        if (path === '/private/var/vm') {
+            return false;
+        }
+        // Ubuntu: This system partition is simply the boot partition created when the computers mother board runs UEFI rather than BIOS. (https://bit.ly/2N5duHr)
+        if (path === '/boot/efi') {
+            return false;
+        }
+        return true;
     }
 
     dispose(): void {
