@@ -23,7 +23,7 @@ import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRa
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
-import { GitFileStatus, Git, GitFileChange } from '../../common';
+import { GitFileStatus, Git, GitFileChange, Repository } from '../../common';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitDiffContribution } from '../diff/git-diff-contribution';
 import { GitAvatarService } from './git-avatar-service';
@@ -120,7 +120,10 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected async addCommits(options?: Git.Options.Log): Promise<void> {
-        const repository = this.repositoryProvider.selectedRepository;
+        let repository: Repository | undefined;
+        if (options && options.uri) {
+            repository = this.repositoryProvider.findRepository(new URI(options.uri));
+        }
         let resolver: () => void;
         this.errorMessage = undefined;
         this.cancelIndicator.cancel();
@@ -163,7 +166,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                         });
                     }
                     this.commits.push(...commits);
-                } else if (options && options.uri) {
+                } else if (options && options.uri && repository) {
                     const pathIsUnderVersionControl = await this.git.lsFiles(repository, options.uri, { errorUnmatch: true });
                     if (!pathIsUnderVersionControl) {
                         const relPath = this.relativePath(options.uri);

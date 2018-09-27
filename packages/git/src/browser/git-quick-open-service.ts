@@ -200,10 +200,10 @@ export class GitQuickOpenService {
         }
     }
 
-    async chooseTagsAndBranches(execFunc: (branchName: string, currentBranchName: string) => void): Promise<void> {
-        const repository = this.getRepository();
+    async chooseTagsAndBranches(execFunc: (branchName: string, currentBranchName: string) => void, repo?: Repository): Promise<void> {
+        const repository = repo || this.getRepository();
         if (repository) {
-            const [branches, tags, currentBranch] = await Promise.all([this.getBranches(), this.getTags(), this.getCurrentBranch()]);
+            const [branches, tags, currentBranch] = await Promise.all([this.getBranches(repository), this.getTags(repository), this.getCurrentBranch(repository)]);
             const execute = async (item: GitQuickOpenItem<Branch | Tag>) => {
                 execFunc(item.ref.name, currentBranch ? currentBranch.name : '');
             };
@@ -283,8 +283,8 @@ export class GitQuickOpenService {
         }
     }
 
-    private async getTags(): Promise<Tag[]> {
-        const repository = this.getRepository();
+    private async getTags(repo?: Repository): Promise<Tag[]> {
+        const repository = repo || this.getRepository();
         if (repository) {
             const result = await this.git.exec(repository, ['tag', '--sort=-creatordate']);
             return result.stdout.trim().split('\n').map(tag => ({ name: tag }));
@@ -292,8 +292,8 @@ export class GitQuickOpenService {
         return [];
     }
 
-    private async getBranches(): Promise<Branch[]> {
-        const repository = this.getRepository();
+    private async getBranches(repo?: Repository): Promise<Branch[]> {
+        const repository = repo || this.getRepository();
         if (!repository) {
             return [];
         }
@@ -309,8 +309,8 @@ export class GitQuickOpenService {
         }
     }
 
-    private async getCurrentBranch(): Promise<Branch | undefined> {
-        const repository = this.getRepository();
+    private async getCurrentBranch(repo?: Repository): Promise<Branch | undefined> {
+        const repository = repo || this.getRepository();
         if (!repository) {
             return undefined;
         }
