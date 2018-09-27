@@ -19,6 +19,8 @@ import { Container } from 'inversify';
 import { TreeSearch } from './tree-search';
 import { FuzzySearch } from './fuzzy-search';
 import { Tree, TreeImpl } from './tree';
+import { ILogger } from '../../common/logger';
+import { MockLogger } from '../../common/test/mock-logger';
 import { MockTreeModel } from './test/mock-tree-model';
 import { TreeSelectionState } from './tree-selection-state';
 import { TreeNavigationService } from './tree-navigation';
@@ -449,6 +451,8 @@ describe('tree-selection-state', () => {
         container.bind(TreeModel).toService(TreeModelImpl);
         container.bind(TreeSearch).toSelf();
         container.bind(FuzzySearch).toSelf();
+        container.bind(MockLogger).toSelf();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         return container.get(TreeModel);
     }
 

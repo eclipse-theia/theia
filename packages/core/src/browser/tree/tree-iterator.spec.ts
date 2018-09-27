@@ -17,6 +17,8 @@
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { notEmpty } from '../../common/objects';
+import { ILogger } from '../../common/logger';
+import { MockLogger } from '../../common/test/mock-logger';
 import { TreeSearch } from './tree-search';
 import { FuzzySearch } from './fuzzy-search';
 import { Tree, TreeImpl } from './tree';
@@ -129,6 +131,8 @@ describe('tree-iterator', () => {
         container.bind(TreeModel).toService(TreeModelImpl);
         container.bind(TreeSearch).toSelf();
         container.bind(FuzzySearch).toSelf();
+        container.bind(MockLogger).toSelf();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         return container.get(TreeModel);
     }
 

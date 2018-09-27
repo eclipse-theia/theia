@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { DisposableCollection, Event, Emitter, SelectionProvider } from '../../common';
+import { DisposableCollection, Event, Emitter, SelectionProvider, ILogger } from '../../common';
 import { Tree, TreeNode, CompositeTreeNode } from './tree';
 import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';
@@ -129,6 +129,7 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
 @injectable()
 export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray<Readonly<SelectableTreeNode>>> {
 
+    @inject(ILogger) protected readonly logger: ILogger;
     @inject(Tree) protected readonly tree: Tree;
     @inject(TreeSelectionService) protected readonly selectionService: TreeSelectionService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
