@@ -27,6 +27,7 @@ import * as moment from 'moment';
 export class QuickOpenWorkspace implements QuickOpenModel {
 
     protected items: QuickOpenGroupItem[];
+    protected opened: boolean;
 
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
@@ -58,7 +59,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
                 description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
-                groupLabel: (workspace === workspaces[0]) ? 'Current Workspace' : `Modified ${lastModification}`,
+                groupLabel: (workspace === workspaces[0] && this.opened) ? 'Current Workspace' : `Modified ${lastModification}`,
                 iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
@@ -89,6 +90,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
 
     select() {
         this.items = [];
+        this.opened = this.workspaceService.opened;
         this.workspaceService.recentWorkspaces().then(workspaceRoots => {
             if (workspaceRoots) {
                 this.open(workspaceRoots);
