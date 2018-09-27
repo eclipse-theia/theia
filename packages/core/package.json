@@ -16,9 +16,9 @@
     "@types/react-dom": "^16.0.6",
     "@types/react-virtualized": "^9.18.3",
     "@types/route-parser": "^0.1.1",
-    "@types/ws": "^3.0.2",
-    "@types/yargs": "^8.0.2",
-    "ajv": "^5.2.2",
+    "@types/ws": "^5.1.2",
+    "@types/yargs": "^11.1.0",
+    "ajv": "^6.5.3",
     "body-parser": "^1.17.2",
     "electron": "1.8.2-beta.5",
     "es6-promise": "^4.2.4",
@@ -40,8 +40,8 @@
     "vscode-nsfw": "^1.0.17",
     "vscode-uri": "^1.0.1",
     "vscode-ws-jsonrpc": "^0.0.2-1",
-    "ws": "^3.0.0",
-    "yargs": "^9.0.1"
+    "ws": "^5.2.2",
+    "yargs": "^11.1.0"
   },
   "publishConfig": {
     "access": "public"

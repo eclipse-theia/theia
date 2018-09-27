@@ -7,19 +7,21 @@
     "@theia/filesystem": "^0.3.15",
     "@theia/variable-resolver": "^0.3.15",
     "@types/fs-extra": "^4.0.2",
-    "ajv": "^6.5.4",
+    "ajv": "^6.5.3",
     "fs-extra": "^4.0.2",
-    "jsonc-parser": "^1.0.1",
+    "jsonc-parser": "^2.0.2",
     "moment": "^2.21.0",
     "valid-filename": "^2.0.1"
   },
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [{
-    "frontend": "lib/browser/workspace-frontend-module",
-    "backend": "lib/node/workspace-backend-module"
-  }],
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/workspace-frontend-module",
+      "backend": "lib/node/workspace-backend-module"
+    }
+  ],
   "keywords": [
     "theia-extension"
   ],
