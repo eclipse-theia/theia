@@ -1,27 +1,29 @@
 {
   "name": "@theia/debug",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "description": "Theia - Debug Extension",
   "dependencies": {
-    "@theia/core": "^0.3.14",
-    "@theia/editor": "^0.3.14",
-    "@theia/filesystem": "^0.3.14",
-    "@theia/markers": "^0.3.14",
-    "@theia/monaco": "^0.3.14",
-    "@theia/output": "^0.3.14",
-    "@theia/process": "^0.3.14",
-    "@theia/variable-resolver": "^0.3.14",
-    "@theia/workspace": "^0.3.14",
-    "vscode-debugprotocol": "^1.26.0",
-    "jsonc-parser": "^2.0.2"
+    "@theia/core": "^0.3.15",
+    "@theia/editor": "^0.3.15",
+    "@theia/filesystem": "^0.3.15",
+    "@theia/markers": "^0.3.15",
+    "@theia/monaco": "^0.3.15",
+    "@theia/output": "^0.3.15",
+    "@theia/process": "^0.3.15",
+    "@theia/variable-resolver": "^0.3.15",
+    "@theia/workspace": "^0.3.15",
+    "jsonc-parser": "^2.0.2",
+    "vscode-debugprotocol": "^1.26.0"
   },
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [{
-    "frontend": "lib/browser/debug-frontend-module",
-    "backend": "lib/node/debug-backend-module"
-  }],
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/debug-frontend-module",
+      "backend": "lib/node/debug-backend-module"
+    }
+  ],
   "keywords": [
     "theia-extension, debug"
   ],
@@ -47,7 +49,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.14"
+    "@theia/ext-scripts": "^0.3.15"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

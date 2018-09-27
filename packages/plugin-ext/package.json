@@ -1,17 +1,17 @@
 {
   "name": "@theia/plugin-ext",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "description": "Theia - Plugin Extension",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
-    "@theia/core": "^0.3.14",
-    "@theia/editor": "^0.3.14",
-    "@theia/filesystem": "^0.3.14",
-    "@theia/monaco": "^0.3.14",
-    "@theia/navigator": "^0.3.14",
-    "@theia/plugin": "^0.3.14",
-    "@theia/workspace": "^0.3.14",
+    "@theia/core": "^0.3.15",
+    "@theia/editor": "^0.3.15",
+    "@theia/filesystem": "^0.3.15",
+    "@theia/monaco": "^0.3.15",
+    "@theia/navigator": "^0.3.15",
+    "@theia/plugin": "^0.3.15",
+    "@theia/workspace": "^0.3.15",
     "decompress": "^4.2.0",
     "lodash.clonedeep": "^4.5.0",
     "ps-tree": "1.1.0",
@@ -52,7 +52,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.14",
+    "@theia/ext-scripts": "^0.3.15",
     "@types/decompress": "^4.2.2",
     "@types/lodash.clonedeep": "^4.5.3"
   },
