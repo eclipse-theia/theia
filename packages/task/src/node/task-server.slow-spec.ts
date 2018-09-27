@@ -55,8 +55,6 @@ describe('Task server / back-end', function () {
     let taskWatcher: TaskWatcher;
 
     beforeEach(async () => {
-        process.argv.push(`--root-dir=${wsRoot}`);
-
         const testContainer = createTaskTestContainer();
         taskWatcher = testContainer.get(TaskWatcher);
         taskServer = testContainer.get(TaskServer);
@@ -65,7 +63,6 @@ describe('Task server / back-end', function () {
     });
 
     afterEach(() => {
-        process.argv.pop();
         taskServer = undefined!;
         taskWatcher = undefined!;
         const s = server;
