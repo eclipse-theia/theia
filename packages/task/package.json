@@ -9,7 +9,7 @@
     "@theia/terminal": "^0.3.15",
     "@theia/variable-resolver": "^0.3.15",
     "@theia/workspace": "^0.3.15",
-    "jsonc-parser": "^1.0.1"
+    "jsonc-parser": "^2.0.2"
   },
   "publishConfig": {
     "access": "public"

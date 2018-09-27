@@ -22,10 +22,11 @@
     "chai": "^4.1.0",
     "chai-string": "^1.4.0",
     "concurrently": "^3.5.0",
+    "cross-env": "^5.2.0",
     "electron-mocha": "~3.5.0",
     "ignore-styles": "^5.0.1",
     "istanbul": "^0.4.5",
-    "istanbul-instrumenter-loader": "^3.0.0",
+    "istanbul-instrumenter-loader": "^3.0.1",
     "jsdom": "^11.5.1",
     "lerna": "^2.2.0",
     "mocha": "^3.4.2",
@@ -46,8 +47,9 @@
     "webdriverio": "4.9.2"
   },
   "scripts": {
-    "prepare": "yarn prepare:travis && yarn rebuild:clean && yarn build:clean",
+    "prepare": "yarn prepare:travis && yarn prepare:hoisting && yarn rebuild:clean && yarn build:clean",
     "prepare:travis": "node scripts/prepare-travis",
+    "prepare:hoisting": "node scripts/check-hoisting",
     "build": "run build",
     "build:clean": "run prepare",
     "docs": "run docs \"@theia/!(example-)*\"",
