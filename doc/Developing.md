@@ -328,6 +328,8 @@ You need to have the Xcode command line tools installed in order to build and ru
     xcode-select --install
 
 If you already have Xcode installed, but you see the `xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance` error, you need to run the following command to fix it: `sudo xcode-select --switch /Library/Developer/CommandLineTools`.
+
+The solution is the same if you have updated to `10.14` (Mojave) and you can see the `gyp: No Xcode or CLT version detected!` error. More details [here](https://github.com/nodejs/node-gyp#on-macos).
  
 ### Root privileges errors
 When trying to install with root privileges, you might encounter errors such as
