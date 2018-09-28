@@ -45,8 +45,8 @@ export class RightPanel {
         return (this.isPanelVisible() && this.driver.isExisting('#outline-view'));
     }
 
-    waitForOutlineView(): void {
-        this.driver.waitForExist('#outline-view');
+    waitForOutlineViewVisible(): void {
+        this.driver.waitForVisible('#outline-view');
         // Wait for animations to finish
         this.driver.pause(300);
     }
