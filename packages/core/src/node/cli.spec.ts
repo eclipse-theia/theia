@@ -20,21 +20,10 @@ import { CliManager, CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 
 class TestCliManager extends CliManager {
-
-    args: string[];
-
     constructor(...contribs: CliContribution[]) {
         super({
             getContributions() { return contribs; }
         });
-    }
-
-    setArgs(...args: string[]) {
-        this.args = args;
-    }
-
-    getArgs() {
-        return this.args;
     }
 }
 
@@ -54,8 +43,7 @@ describe('CliManager', () => {
                 value.resolve(args['foo']);
             }
         });
-        mnr.setArgs('-f', 'bla');
-        await mnr.initializeCli();
+        await mnr.initializeCli(['-f', 'bla']);
         chai.assert.equal(await value.promise, 'bla');
     });
 
@@ -70,16 +58,14 @@ describe('CliManager', () => {
                 value.resolve(args['bar']);
             }
         });
-        mnr.setArgs('--foo');
-        await mnr.initializeCli();
+        await mnr.initializeCli(['--foo']);
         chai.assert.equal(await value.promise, 'my-default');
     });
 
     it('prints help and exits', async () =>
         await assertExits(async () => {
             const mnr = new TestCliManager();
-            mnr.setArgs('--help');
-            await mnr.initializeCli();
+            await mnr.initializeCli(['--help']);
         })
     );
 });

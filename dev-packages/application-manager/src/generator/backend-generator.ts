@@ -47,9 +47,13 @@ function load(raw) {
     )
 }
 
-function start(port, host) {
+function start(port, host, argv) {
+    if (argv === undefined) {
+        argv = process.argv;
+    }
+
     const cliManager = container.get(CliManager);
-    return cliManager.initializeCli().then(function () {
+    return cliManager.initializeCli(argv).then(function () {
         const application = container.get(BackendApplication);
         application.use(express.static(path.join(__dirname, '../../lib'), {
             index: 'index.html'
@@ -58,8 +62,8 @@ function start(port, host) {
     });
 }
 
-module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImports(backendModules)}
-    .then(() => start(port, host)).catch(reason => {
+module.exports = (port, host, argv) => Promise.resolve()${this.compileBackendModuleImports(backendModules)}
+    .then(() => start(port, host, argv)).catch(reason => {
         console.error('Failed to start the backend application.');
         if (reason) {
             console.error(reason);
