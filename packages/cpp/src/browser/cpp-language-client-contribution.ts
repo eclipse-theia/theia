@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import {
     BaseLanguageClientContribution, LanguageClientFactory,
     LanguageClientOptions,
     ILanguageClient
 } from '@theia/languages/lib/browser';
-import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from '@theia/languages/lib/browser';
+import { Languages, Workspace } from '@theia/languages/lib/browser';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
@@ -58,34 +58,33 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         super(workspace, languages, languageClientFactory);
     }
 
+    @postConstruct()
+    protected init() {
+        this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
+    }
+
     protected onReady(languageClient: ILanguageClient): void {
         super.onReady(languageClient);
-
-        this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
 
         // Display the C/C++ build configurations status bar element to select active build config
         this.cppBuildConfigurationsStatusBarElement.show();
     }
 
-    private createClangdConfigurationParams(config: CppBuildConfiguration | undefined, isInitialize: boolean): ClangdConfigurationParamsChange {
+    private createClangdConfigurationParams(config: CppBuildConfiguration | undefined): ClangdConfigurationParamsChange {
         const clangdParams: ClangdConfigurationParamsChange = {};
 
-        // During initialization, we don't need to send the compile commands
-        // path if there isn't one specified (it's clangd's default).
-        if (!isInitialize || config) {
-            clangdParams.compilationDatabasePath = config ? config.directory : '';
+        if (config) {
+            clangdParams.compilationDatabasePath = config.directory;
         }
 
         return clangdParams;
     }
 
     async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
-        const interfaceParams: DidChangeConfigurationParams = {
-            settings: this.createClangdConfigurationParams(config, false)
-        };
-
-        const languageClient = await this.languageClient;
-        languageClient.sendNotification(DidChangeConfigurationNotification.type, interfaceParams);
+        // Restart clangd.  The new config will be picked up when
+        // createOptions will be called to send the initialize request
+        // to the new instance of clangd.
+        this.restart();
     }
 
     protected get documentSelector() {
@@ -109,7 +108,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     protected createOptions(): LanguageClientOptions {
         const clientOptions = super.createOptions();
-        clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig(), true);
+        clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig());
 
         clientOptions.initializationFailedHandler = () => {
             const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
