@@ -52,6 +52,32 @@ export class LeftPanel {
         this.driver.pause(300);
     }
 
+    /**
+     * Click on the first node named `name` in the files view to expand or
+     * collapse it.  No check is done to make sure this node actually exists or
+     * represents a directory.
+     */
+    toggleDirectoryInFilesView(name: string) {
+        this.waitForFilesViewVisible();
+        const files = this.driver.element('#files');
+        const element = files.element('div=' + name);
+        element.click();
+        this.driver.pause(300);
+    }
+
+    /**
+     * Double click on the first node named `name` in the files view to open
+     * it.  Not check is done to make sure this node actually exists or
+     * represents a file.
+     */
+    openFileInFilesView(name: string) {
+        this.waitForFilesViewVisible();
+        const files = this.driver.element('#files');
+        const element = files.element('div=' + name);
+        element.doubleClick();
+        this.driver.pause(300);
+    }
+
     isGitContainerVisible(): boolean {
         return (this.driver.isExisting('#theia-gitContainer') && this.driver.element('#theia-gitContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
             && this.isPanelVisible());
