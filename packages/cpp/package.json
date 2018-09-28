@@ -40,7 +40,7 @@
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "build": "concurrently -n download,build -c red,blue \"node ./scripts/download-code-debug.js\" \"theiaext build\"",
+    "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
     "docs": "theiaext docs"
@@ -50,9 +50,5 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  },
-  "debugAdapter": {
-    "downloadUrl": "https://github.com/marechal-p/code-debug/releases/download/v0.22.0/code-debug.tar.gz",
-    "dir": "lib/adapter"
   }
 }
