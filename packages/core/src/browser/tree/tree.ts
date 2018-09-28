@@ -287,8 +287,22 @@ export class TreeImpl implements Tree {
         }
     }
 
+    protected getRootNode(node: TreeNode): TreeNode {
+        if (node.parent === undefined) {
+            return node;
+        } else {
+            return this.getRootNode(node.parent);
+        }
+    }
+
     protected addNode(node: TreeNode | undefined): void {
         if (node) {
+            const root = this.getRootNode(node);
+            if (this.nodes[root.id] && this.nodes[root.id] !== root) {
+                console.debug('Child node does not belong to this tree. Resetting root.');
+                this.root = root;
+                return;
+            }
             this.nodes[node.id] = node;
         }
         if (CompositeTreeNode.is(node)) {
