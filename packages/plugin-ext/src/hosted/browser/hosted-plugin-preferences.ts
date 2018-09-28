@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema, PreferenceScope } from '@theia/core/lib/browser';
 
 export const HostedPluginConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -23,7 +23,8 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
         'hosted-plugin.watchMode': {
             type: 'boolean',
             description: 'Run watcher on plugin under development',
-            default: true
+            default: true,
+            scopes: PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         }
     }
 };

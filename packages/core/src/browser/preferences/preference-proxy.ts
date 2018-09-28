@@ -17,29 +17,37 @@
 // tslint:disable:no-any
 
 import { Disposable, DisposableCollection, Event, Emitter } from '../../common';
-import { PreferenceService, PreferenceChange } from './preference-service';
+import { PreferenceService, PreferenceDataChange } from './preference-service';
 import { PreferenceSchema } from './preference-contribution';
 
 export interface PreferenceChangeEvent<T> {
-    readonly preferenceName: keyof T
-    readonly newValue?: T[keyof T]
-    readonly oldValue?: T[keyof T]
+    readonly preferenceName: keyof T;
+    readonly newValue?: T[keyof T];
+    readonly oldValue?: T[keyof T];
+    canAffect(resourceUri?: string): boolean;
 }
+
 export interface PreferenceEventEmitter<T> {
     readonly onPreferenceChanged: Event<PreferenceChangeEvent<T>>;
     readonly ready: Promise<void>;
 }
 
-export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
+export interface PreferenceRetrieval<T> {
+    get<K extends keyof T>(preferenceName: K, defaultValue?: T[K], resourceUri?: string): T[K];
+}
+
+export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T> & PreferenceRetrieval<T>;
+
 export function createPreferenceProxy<T>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
-    const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
+    const onPreferenceChangedEmitter = new Emitter<PreferenceDataChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
         if (schema.properties[e.preferenceName]) {
             onPreferenceChangedEmitter.fire(e);
         }
     }));
+
     const unsupportedOperation = (_: any, __: string) => {
         throw new Error('Unsupported operation');
     };
@@ -57,7 +65,10 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
             if (property === 'ready') {
                 return preferences.ready;
             }
-            throw new Error('unexpected property: ' + property);
+            if (property === 'get') {
+                return preferences.get.bind(preferences);
+            }
+            throw new Error(`unexpected property: ${property}`);
         },
         ownKeys: () => Object.keys(schema.properties),
         getOwnPropertyDescriptor: (_, property: string) => {

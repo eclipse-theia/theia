@@ -20,7 +20,8 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
+    PreferenceContribution,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
@@ -29,19 +30,14 @@ export const workspacePreferenceSchema: PreferenceSchema = {
         'workspace.preserveWindow': {
             description: 'Enable opening workspaces in current window',
             type: 'boolean',
-            default: false
-        },
-        'workspace.supportMultiRootWorkspace': {
-            description: 'Enable the multi-root workspace support to test this feature internally',
-            type: 'boolean',
-            default: false
+            default: false,
+            scopes: PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         }
     }
 };
 
 export interface WorkspaceConfiguration {
-    'workspace.preserveWindow': boolean,
-    'workspace.supportMultiRootWorkspace': boolean
+    'workspace.preserveWindow': boolean
 }
 
 export const WorkspacePreferences = Symbol('WorkspacePreferences');

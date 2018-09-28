@@ -21,7 +21,8 @@ import {
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema,
-    PreferenceChangeEvent
+    PreferenceChangeEvent,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 
 export const typescriptPreferenceSchema: PreferenceSchema = {
@@ -35,7 +36,8 @@ export const typescriptPreferenceSchema: PreferenceSchema = {
                 'verbose'
             ],
             'default': 'off',
-            'description': 'Enable/disable tracing communications with the TS language server.'
+            'description': 'Enable/disable tracing communications with the TS language server.',
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         },
         'typescript.server.log': {
             'type': 'string',
@@ -47,7 +49,8 @@ export const typescriptPreferenceSchema: PreferenceSchema = {
             ],
             'default': 'off',
             // tslint:disable:max-line-length
-            'description': 'Enables logging of the TS server to a file. This log can be used to diagnose TS Server issues. The log may contain file paths, source code, and other potentially sensitive information from your project.'
+            'description': 'Enables logging of the TS server to a file. This log can be used to diagnose TS Server issues. The log may contain file paths, source code, and other potentially sensitive information from your project.',
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         }
     }
 };

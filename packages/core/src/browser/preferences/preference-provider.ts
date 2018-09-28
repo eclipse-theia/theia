@@ -19,11 +19,13 @@
 import { injectable } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
 import { Deferred } from '../../common/promise-util';
+import { PreferenceScope, PreferenceChange } from './preference-service';
 
 @injectable()
 export class PreferenceProvider implements Disposable {
-    protected readonly onDidPreferencesChangedEmitter = new Emitter<void>();
-    readonly onDidPreferencesChanged: Event<void> = this.onDidPreferencesChangedEmitter.event;
+
+    protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceChange>();
+    readonly onDidPreferencesChanged: Event<PreferenceChange> = this.onDidPreferencesChangedEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -38,12 +40,15 @@ export class PreferenceProvider implements Disposable {
         this.onDidPreferencesChangedEmitter.dispose();
     }
 
-    protected fireOnDidPreferencesChanged(): void {
-        this.onDidPreferencesChangedEmitter.fire(undefined);
+    get<T>(preferenceName: string, resourceUri?: string): T | undefined {
+        const value = this.getPreferences(resourceUri)[preferenceName];
+        if (value !== undefined && value !== null) {
+            return value;
+        }
     }
 
-    getPreferences(): { [p: string]: any } {
-        return [];
+    getPreferences(resourceUri?: string): { [p: string]: any } {
+        return {};
     }
 
     setPreference(key: string, value: any): Promise<void> {
@@ -53,5 +58,13 @@ export class PreferenceProvider implements Disposable {
     /** See `_ready`.  */
     get ready() {
         return this._ready.promise;
+    }
+
+    canProvide(preferenceName: string, resourceUri?: string): number {
+        return -1;
+    }
+
+    protected getScope() {
+        return PreferenceScope.Default;
     }
 }

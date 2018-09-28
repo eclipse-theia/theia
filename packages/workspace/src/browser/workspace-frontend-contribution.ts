@@ -22,7 +22,6 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService, THEIA_EXT, VSCODE_EXT } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
-import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -35,8 +34,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         @inject(StorageService) protected readonly workspaceStorage: StorageService,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace,
-        @inject(FileDialogService) protected readonly fileDialogService: FileDialogService,
-        @inject(WorkspacePreferences) protected preferences: WorkspacePreferences
+        @inject(FileDialogService) protected readonly fileDialogService: FileDialogService
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -57,7 +55,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             execute: () => this.quickOpenWorkspace.select()
         });
         commands.registerCommand(WorkspaceCommands.SAVE_WORKSPACE_AS, {
-            isEnabled: () => this.workspaceService.supportMultiRootWorkspace,
+            isEnabled: () => this.workspaceService.opened,
             execute: () => this.saveWorkspaceAs()
         });
     }
@@ -128,14 +126,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             canSelectFiles: false,
             canSelectFolders: true,
         };
-        await this.preferences.ready;
-        if (this.preferences['workspace.supportMultiRootWorkspace']) {
-            option.canSelectFiles = true;
-            option.filters = {
-                'Theia Workspace (*.theia-workspace)': [THEIA_EXT],
-                'VS Code Workspace (*.code-workspace)': [VSCODE_EXT]
-            };
-        }
+        option.canSelectFiles = true;
+        option.filters = {
+            'Theia Workspace (*.theia-workspace)': [THEIA_EXT],
+            'VS Code Workspace (*.code-workspace)': [VSCODE_EXT]
+        };
         const selected = await this.fileDialogService.showOpenDialog(option);
         if (selected) {
             // open the selected directory, or recreate a workspace from the selected file

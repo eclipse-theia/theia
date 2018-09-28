@@ -20,7 +20,8 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
+    PreferenceContribution,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
@@ -35,13 +36,14 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
                 '**/.git/objects/**': true,
                 '**/.git/subtree-cache/**': true,
                 '**/node_modules/**': true
-            }
+            },
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace | PreferenceScope.Folders
         }
     }
 };
 
 export interface FileSystemConfiguration {
-    'files.watcherExclude': { [globPattern: string]: boolean }
+    'files.watcherExclude': { [globPattern: string]: boolean };
 }
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');

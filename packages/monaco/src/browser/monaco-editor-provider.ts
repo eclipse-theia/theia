@@ -98,17 +98,25 @@ export class MonacoEditorProvider {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
         const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, options, override);
-        toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoEditorOptions(editor, event)));
+        toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
+            if (event.canAffect(uri.toString())) {
+                this.updateMonacoEditorOptions(editor, event);
+            }
+        }));
         return editor;
     }
     protected createMonacoEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
-        const options = this.createOptions(this.preferencePrefixes);
+        const options = this.createOptions(this.preferencePrefixes, model.uri);
         options.model = model.textEditorModel;
         options.readOnly = model.readOnly;
         return options;
     }
     protected updateMonacoEditorOptions(editor: MonacoEditor, event: EditorPreferenceChange): void {
-        const { preferenceName, newValue } = event;
+        const preferenceName = event.preferenceName;
+        let newValue = event.newValue;
+        if (newValue === undefined || newValue === null) {
+            newValue = this.editorPreferences.get(preferenceName, undefined, editor.uri.toString());
+        }
         editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
     }
 
@@ -129,23 +137,31 @@ export class MonacoEditorProvider {
             this.diffNavigatorFactory,
             options,
             override);
-        toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoDiffEditorOptions(editor, event)));
+        toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
+            if (event.canAffect(uri.toString())) {
+                this.updateMonacoDiffEditorOptions(editor, event);
+            }
+        }));
         return editor;
     }
     protected createMonacoDiffEditorOptions(original: MonacoEditorModel, modified: MonacoEditorModel): MonacoDiffEditor.IOptions {
-        const options = this.createOptions(this.diffPreferencePrefixes);
+        const options = this.createOptions(this.diffPreferencePrefixes, modified.uri);
         options.originalEditable = !original.readOnly;
         options.readOnly = modified.readOnly;
         return options;
     }
     protected updateMonacoDiffEditorOptions(editor: MonacoDiffEditor, event: EditorPreferenceChange): void {
-        const { preferenceName, newValue } = event;
+        const preferenceName = event.preferenceName;
+        let newValue = event.newValue;
+        if (newValue === undefined || newValue === null) {
+            newValue = this.editorPreferences.get(preferenceName, undefined, editor.uri.toString());
+        }
         editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
     }
 
-    protected createOptions(prefixes: string[]): { [name: string]: any } {
+    protected createOptions(prefixes: string[], uri: string): { [name: string]: any } {
         return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
-            const value = (<any>this.editorPreferences)[preferenceName];
+            const value = (<any>this.editorPreferences).get(preferenceName, undefined, uri);
             return this.setOption(preferenceName, value, prefixes, options);
         }, {});
     }

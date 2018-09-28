@@ -17,6 +17,7 @@
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import { PreferenceScope } from '@theia/core/lib/browser';
 
 @injectable()
 export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
@@ -25,4 +26,15 @@ export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
         return new URI().withScheme('user_storage').withPath('settings.json');
     }
 
+    canProvide(preferenceName: string, resourceUri?: string): number {
+        const value = this.get(preferenceName);
+        if (value === undefined || value === null) {
+            return super.canProvide(preferenceName, resourceUri);
+        }
+        return 1;
+    }
+
+    protected getScope() {
+        return PreferenceScope.User;
+    }
 }

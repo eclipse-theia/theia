@@ -16,6 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
+import { PreferenceScope } from '@theia/core/lib/browser';
 import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/workspace-service';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 import * as jsoncparser from 'jsonc-parser';
@@ -28,7 +29,7 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
 
     @postConstruct()
     protected async init(): Promise<void> {
-        super.init();
+        await super.init();
         this.workspaceService.onSavedLocationChanged(workspaceFile => {
             if (workspaceFile && !workspaceFile.isDirectory) {
                 this.toDispose.dispose();
@@ -46,18 +47,32 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
         }
     }
 
-    protected async readPreferences(): Promise<void> {
-        const newContent = await this.readContents();
-        const strippedContent = jsoncparser.stripComments(newContent);
-        const data = jsoncparser.parse(strippedContent);
+    canProvide(preferenceName: string, resourceUri?: string): number {
+        const value = this.get(preferenceName);
+        if (value === undefined || value === null) {
+            return super.canProvide(preferenceName, resourceUri);
+        }
+        if (resourceUri) {
+            const folderPaths = this.getFolderUris().map(f => new URI(f).path);
+            if (folderPaths.every(p => p.relativity(new URI(resourceUri).path) < 0)) {
+                return super.canProvide(preferenceName, resourceUri);
+            }
+        }
+
+        return 2;
+    }
+
+    protected getParsedContent(content: string): { [key: string]: any } {
+        const strippedContent = jsoncparser.stripComments(content);
+        const data = jsoncparser.parse(strippedContent) || {};
         if (this.workspaceService.saved) {
             if (WorkspaceData.is(data)) {
-                this.preferences = data.settings || {};
+                return data.settings || {};
             }
         } else {
-            this.preferences = data || {};
+            return data || {};
         }
-        this.onDidPreferencesChangedEmitter.fire(undefined);
+        return {};
     }
 
     protected getPath(preferenceName: string): string[] {
@@ -67,4 +82,15 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
         return super.getPath(preferenceName);
     }
 
+    protected getScope() {
+        return PreferenceScope.Workspace;
+    }
+
+    protected getFolderUris(): string[] {
+        const workspace = this.workspaceService.workspace;
+        if (workspace) {
+            return workspace.isDirectory ? [workspace.uri] : this.workspaceService.tryGetRoots().map(r => r.uri);
+        }
+        return [];
+    }
 }

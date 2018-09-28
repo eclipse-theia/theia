@@ -20,7 +20,8 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceContribution,
-    PreferenceSchema
+    PreferenceSchema,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 
 export const OutputConfigSchema: PreferenceSchema = {
@@ -29,7 +30,8 @@ export const OutputConfigSchema: PreferenceSchema = {
         'output.maxChannelHistory': {
             'type': 'number',
             'description': 'The maximum number of entries in an output channel.',
-            'default': 1000
+            'default': 1000,
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         }
     }
 };

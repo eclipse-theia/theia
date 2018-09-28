@@ -48,7 +48,7 @@ import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import {
     PreferenceProviderProvider, PreferenceProvider, PreferenceScope, PreferenceService,
-    PreferenceServiceImpl, bindPreferenceSchemaProvider
+    PreferenceServiceImpl, bindPreferenceSchemaProvider, bindDefaultPreferenceProvider
 } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
@@ -150,8 +150,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 
+    bindDefaultPreferenceProvider(bind);
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
+    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folders);
     bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);

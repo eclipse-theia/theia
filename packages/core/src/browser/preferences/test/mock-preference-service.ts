@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { PreferenceService, PreferenceChange } from '../';
+import { PreferenceService, PreferenceDataChange } from '../';
 import { Emitter, Event } from '../../../common';
 
 @injectable()
@@ -24,10 +24,11 @@ export class MockPreferenceService implements PreferenceService {
     dispose() { }
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
-    get<T>(preferenceName: string, defaultValue?: T): T | undefined {
+    get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;
+    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
         return undefined;
     }
     set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
     ready: Promise<void> = Promise.resolve();
-    readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
+    readonly onPreferenceChanged: Event<PreferenceDataChange> = new Emitter<PreferenceDataChange>().event;
 }

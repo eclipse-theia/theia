@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
+import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
 import { CppBuildConfiguration } from './cpp-build-configurations';
 
@@ -42,11 +42,13 @@ export const cppPreferencesSchema: PreferenceSchema = {
                     directory: ''
                 }
             ],
+            scopes: PreferenceScope.Default & PreferenceScope.User & PreferenceScope.Workspace
         },
         'cpp.experimentalCommands': {
             description: 'Enable experimental commands mostly intended for Clangd developers.',
             default: false,
-            type: 'boolean'
+            type: 'boolean',
+            scopes: PreferenceScope.Default & PreferenceScope.User & PreferenceScope.Workspace
         },
         'cpp.trace.server': {
             type: 'string',
@@ -56,7 +58,8 @@ export const cppPreferencesSchema: PreferenceSchema = {
                 'verbose'
             ],
             default: 'off',
-            description: 'Enable/disable tracing communications with the C/C++ language server'
+            description: 'Enable/disable tracing communications with the C/C++ language server',
+            scopes: PreferenceScope.Default & PreferenceScope.User & PreferenceScope.Workspace
         }
     }
 };

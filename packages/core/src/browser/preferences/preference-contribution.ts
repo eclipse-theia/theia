@@ -17,7 +17,7 @@
 import * as Ajv from 'ajv';
 import { inject, injectable, named, interfaces } from 'inversify';
 import { ContributionProvider, bindContributionProvider } from '../../common';
-import { PreferenceProvider } from './preference-provider';
+import { PreferenceScope } from './preference-service';
 
 // tslint:disable:no-any
 
@@ -37,13 +37,12 @@ export interface PreferenceSchema {
 
 export interface PreferenceProperty {
     description: string;
+    scopes: PreferenceScope;
     type?: JsonType | JsonType[];
     minimum?: number;
-    // tslint:disable-next-line:no-any
     default?: any;
     enum?: string[];
     additionalProperties?: object;
-    // tslint:disable-next-line:no-any
     [name: string]: any;
 }
 
@@ -55,17 +54,15 @@ export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
 }
 
 @injectable()
-export class PreferenceSchemaProvider extends PreferenceProvider {
+export class PreferenceSchemaProvider {
 
     protected readonly combinedSchema: PreferenceSchema = { properties: {} };
-    protected readonly preferences: { [name: string]: any } = {};
     protected readonly validateFunction: Ajv.ValidateFunction;
 
     constructor(
         @inject(ContributionProvider) @named(PreferenceContribution)
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
     ) {
-        super();
         const schema = this.combinedSchema;
         this.preferenceContributions.getContributions().forEach(contrib => {
             for (const property in contrib.schema.properties) {
@@ -76,12 +73,8 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                 }
             }
         });
+        schema.additionalProperties = false;
         this.validateFunction = new Ajv().compile(schema);
-        // tslint:disable-next-line:forin
-        for (const property in schema.properties) {
-            this.preferences[property] = schema.properties[property].default;
-        }
-        this._ready.resolve();
     }
 
     validate(name: string, value: any): boolean {
@@ -92,12 +85,11 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return this.combinedSchema;
     }
 
-    getPreferences(): { [name: string]: any } {
-        return this.preferences;
+    isValidInScope(prefName: string, scope: PreferenceScope): boolean {
+        const schemaProps = this.combinedSchema.properties[prefName];
+        if (schemaProps) {
+            return (schemaProps.scopes & scope) > 0;
+        }
+        return false;
     }
-
-    async setPreference(): Promise<void> {
-        throw new Error('Unsupported');
-    }
-
 }

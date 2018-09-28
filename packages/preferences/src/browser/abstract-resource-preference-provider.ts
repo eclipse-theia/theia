@@ -14,22 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { JSONExt } from '@phosphor/coreutils';
 import { inject, injectable, postConstruct } from 'inversify';
 import * as jsoncparser from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger, Resource, ResourceProvider, MaybePromise } from '@theia/core/lib/common';
-import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
+import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope } from '@theia/core/lib/browser/preferences';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
 
     protected preferences: { [key: string]: any } = {};
+    protected resource: Promise<Resource>;
 
     @inject(ILogger) protected readonly logger: ILogger;
-
     @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
-
-    protected resource: Promise<Resource>;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -53,17 +53,21 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const resource = await this.resource;
         this.toDispose.push(resource);
         if (resource.onDidChangeContents) {
-            this.toDispose.push(resource.onDidChangeContents(content => this.readPreferences()));
+            this.toDispose.push(resource.onDidChangeContents(content => {
+                this.readPreferences();
+            }));
         }
     }
 
-    abstract getUri(): MaybePromise<URI | undefined>;
+    abstract getUri(root?: URI): MaybePromise<URI | undefined>;
 
-    getPreferences(): { [key: string]: any } {
+    getPreferences(resourceUri?: string): { [key: string]: any } {
         return this.preferences;
     }
 
     async setPreference(key: string, value: any): Promise<void> {
+        // TODO who called this function? should have a scope, or call from the concrete class
+        // Maybe we don't need to worry about it in this patch - only change read(), as UI functionalities will be done in the next
         const resource = await this.resource;
         if (resource.saveContents) {
             const content = await this.readContents();
@@ -72,8 +76,19 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             const result = jsoncparser.applyEdits(content, edits);
 
             await resource.saveContents(result);
+            const oldValue = this.preferences[key];
+            if (JSONExt.deepEqual(value, oldValue)) {
+                return;
+            }
             this.preferences[key] = value;
-            this.onDidPreferencesChangedEmitter.fire(undefined);
+            this.onDidPreferencesChangedEmitter.fire({
+                preferenceName: key,
+                newValue: value,
+                oldValue,
+                scope: this.getScope(),
+                folderUris: this.getFolderUris()
+            });
+            this.emitPreferenceChangedEvent(key, value, oldValue);
         }
     }
 
@@ -83,9 +98,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     protected async readPreferences(): Promise<void> {
         const newContent = await this.readContents();
-        const strippedContent = jsoncparser.stripComments(newContent);
-        this.preferences = jsoncparser.parse(strippedContent) || {};
-        this.onDidPreferencesChangedEmitter.fire(undefined);
+        const newPrefs = this.getParsedContent(newContent);
+        await this.handlePreferenceChanges(newPrefs);
     }
 
     protected async readContents(): Promise<string> {
@@ -97,4 +111,61 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         }
     }
 
+    protected getParsedContent(content: string): { [key: string]: any } {
+        const strippedContent = jsoncparser.stripComments(content);
+        const newPrefs = jsoncparser.parse(strippedContent) || {};
+        return newPrefs;
+    }
+
+    protected async handlePreferenceChanges(newPrefs: { [key: string]: any }): Promise<void> {
+        const oldPrefs = Object.assign({}, this.preferences);
+        this.preferences = newPrefs;
+        const prefNames = new Set([...Object.keys(oldPrefs), ...Object.keys(newPrefs)]);
+        for (const prefName of prefNames.values()) {
+            const oldValue = oldPrefs[prefName];
+            const newValue = newPrefs[prefName];
+            const prefNameAndFile = `Preference ${prefName} in ${(await this.resource).uri.toString()}`;
+            if (!this.schemaProvider.validate(prefName, newValue) && newValue !== undefined) { // do not emit the change event if pref is not defined in schema
+                this.logger.warn(`${prefNameAndFile} is invalid.`);
+                continue;
+            }
+            const schemaProperties = this.schemaProvider.getCombinedSchema().properties[prefName];
+            if (schemaProperties) {
+                const scopes = schemaProperties.scopes;
+                // do not emit the change event if the change is made out of the defined preference scope
+                if (!this.schemaProvider.isValidInScope(prefName, this.getScope())) {
+                    this.logger.warn(`${prefNameAndFile} can only be defined in scopes: ${PreferenceScope.getScopeNames(scopes).join(', ')}.`);
+                    continue;
+                }
+            }
+
+            if (!JSONExt.deepEqual(oldValue, newValue)) { // do not emit the change event if the pref value is not changed
+                this.emitPreferenceChangedEvent(prefName, newValue, oldValue);
+            }
+        }
+    }
+
+    protected emitPreferenceChangedEvent(preferenceName: string, newValue: any, oldValue: any): void {
+        this.onDidPreferencesChangedEmitter.fire({
+            preferenceName,
+            newValue,
+            oldValue,
+            scope: this.getScope(),
+            folderUris: this.getFolderUris()
+        });
+    }
+
+    protected getFolderUris(): string[] {
+        return [];
+    }
+
+    dispose(): void {
+        for (const prefName of Object.keys(this.preferences)) {
+            const value = this.preferences[prefName];
+            if (value !== undefined || value !== null) {
+                this.emitPreferenceChangedEvent(prefName, undefined, value);
+            }
+        }
+        super.dispose();
+    }
 }

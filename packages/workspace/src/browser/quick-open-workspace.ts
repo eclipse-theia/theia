@@ -17,7 +17,6 @@
 import { injectable, inject } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService, getTemporaryWorkspaceFileUri } from './workspace-service';
-import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import * as moment from 'moment';
@@ -32,7 +31,6 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
@@ -42,13 +40,11 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         if (home) {
             tempWorkspaceFile = getTemporaryWorkspaceFileUri(new URI(home));
         }
-        await this.preferences.ready;
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
             const stat = await this.fileSystem.getFileStat(workspace);
-            if (!stat ||
-                !this.preferences['workspace.supportMultiRootWorkspace'] && !stat.isDirectory) {
-                continue; // skip the workspace files if multi root is not supported
+            if (!stat) {
+                continue;
             }
             if (tempWorkspaceFile && uri.toString() === tempWorkspaceFile.toString()) {
                 continue; // skip the temporary workspace files

@@ -28,7 +28,6 @@ import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/co
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { WorkspacePreferences } from './workspace-preferences';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
@@ -116,7 +115,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FrontendApplication) protected readonly app: FrontendApplication;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(WorkspacePreferences) protected readonly preferences: WorkspacePreferences;
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
 
@@ -252,40 +250,38 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             }
         }));
-        this.preferences.ready.then(() => {
-            registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
-                isEnabled: () => this.workspaceService.supportMultiRootWorkspace,
-                isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
-                execute: async uris => {
-                    const node = await this.fileDialogService.showOpenDialog({
-                        title: WorkspaceCommands.ADD_FOLDER.label!,
-                        canSelectFiles: false,
-                        canSelectFolders: true
-                    });
-                    if (!node) {
-                        return;
-                    }
-                    const workspaceSavedBeforeAdding = this.workspaceService.saved;
-                    await this.addFolderToWorkspace(node);
-                    if (!workspaceSavedBeforeAdding) {
-                        const saveCommand = registry.getCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id);
-                        if (saveCommand && await new ConfirmDialog({
-                            title: 'Folder added to Workspace',
-                            msg: 'A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?',
-                            ok: 'Yes',
-                            cancel: 'No'
-                        }).open()) {
-                            registry.executeCommand(saveCommand.id);
-                        }
+        registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
+            isEnabled: () => this.workspaceService.opened,
+            isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
+            execute: async uris => {
+                const node = await this.fileDialogService.showOpenDialog({
+                    title: WorkspaceCommands.ADD_FOLDER.label!,
+                    canSelectFiles: false,
+                    canSelectFolders: true
+                });
+                if (!node) {
+                    return;
+                }
+                const workspaceSavedBeforeAdding = this.workspaceService.saved;
+                await this.addFolderToWorkspace(node);
+                if (!workspaceSavedBeforeAdding) {
+                    const saveCommand = registry.getCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id);
+                    if (saveCommand && await new ConfirmDialog({
+                        title: 'Folder added to Workspace',
+                        msg: 'A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?',
+                        ok: 'Yes',
+                        cancel: 'No'
+                    }).open()) {
+                        registry.executeCommand(saveCommand.id);
                     }
                 }
-            }));
-            registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
-                execute: uris => this.removeFolderFromWorkspace(uris),
-                isEnabled: () => this.workspaceService.supportMultiRootWorkspace,
-                isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
-            }));
-        });
+            }
+        }));
+        registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
+            execute: uris => this.removeFolderFromWorkspace(uris),
+            isEnabled: () => this.workspaceService.opened,
+            isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
+        }));
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
@@ -396,10 +392,7 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
 
     protected getUri(): URI | undefined {
         const uri = super.getUri();
-        if (this.workspaceService.supportMultiRootWorkspace) {
-            return uri;
-        }
-        if (uri) {
+        if (this.workspaceService.opened || uri) {
             return uri;
         }
         const root = this.workspaceService.tryGetRoots()[0];

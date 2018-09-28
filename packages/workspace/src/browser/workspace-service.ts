@@ -20,7 +20,10 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplication, FrontendApplicationContribution,
+    PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider
+} from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -66,6 +69,12 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;
 
+    @inject(PreferenceServiceImpl)
+    protected readonly preferenceImpl: PreferenceServiceImpl;
+
+    @inject(PreferenceSchemaProvider)
+    protected readonly schemaProvider: PreferenceSchemaProvider;
+
     @postConstruct()
     protected async init(): Promise<void> {
         const workspaceUri = await this.server.getMostRecentlyUsedWorkspace();
@@ -74,12 +83,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
         this.watcher.onFilesChanged(event => {
             if (this._workspace && FileChangeEvent.isAffected(event, new URI(this._workspace.uri))) {
-                this.updateWorkspace();
-            }
-        });
-        this.preferences.onPreferenceChanged(event => {
-            const multiRootPrefName = 'workspace.supportMultiRootWorkspace';
-            if (event.preferenceName === multiRootPrefName) {
                 this.updateWorkspace();
             }
         });
@@ -219,14 +222,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
      */
     get opened(): boolean {
         return !!this._workspace;
-    }
-
-    /**
-     * Returns `true` if there is an opened workspace or folder in theia, and theia supports having more than one root.
-     * @returns {boolean}
-     */
-    get supportMultiRootWorkspace(): boolean {
-        return this.opened && this.preferences['workspace.supportMultiRootWorkspace'];
     }
 
     /**
@@ -428,8 +423,20 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!await this.fileSystem.exists(uriStr)) {
             await this.fileSystem.createFile(uriStr);
         }
+        const workspaceData: WorkspaceData = { folders: [], settings: {} };
+        if (!this.saved) {
+            for (const p of Object.keys(this.schemaProvider.getCombinedSchema().properties)) {
+                if (this.schemaProvider.isValidInScope(p, PreferenceScope.Folders)) {
+                    continue;
+                }
+                const value = this.preferenceImpl.inspect(p).values.get(PreferenceScope.Workspace);
+                if (value) {
+                    workspaceData.settings![p] = value;
+                }
+            }
+        }
         let stat = await this.toFileStat(uriStr);
-        const workspaceData = await this.getWorkspaceDataFromFile();
+        Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
         stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(await this.roots, workspaceData ? workspaceData.settings : undefined));
         await this.server.setMostRecentlyUsedWorkspace(uriStr);
         await this.setWorkspace(stat);

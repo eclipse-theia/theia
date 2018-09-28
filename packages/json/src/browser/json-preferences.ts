@@ -21,7 +21,8 @@ import {
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema,
-    PreferenceChangeEvent
+    PreferenceChangeEvent,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 
 export const jsonPreferenceSchema: PreferenceSchema = {
@@ -55,12 +56,14 @@ export const jsonPreferenceSchema: PreferenceSchema = {
                         'description': 'An array of file patterns to match against when resolving JSON files to schemas.'
                     }
                 }
-            }
+            },
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         },
         'json.format.enable': {
             'type': 'boolean',
             'default': true,
-            'description': 'Enable/disable default JSON formatter'
+            'description': 'Enable/disable default JSON formatter',
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         },
         'json.trace.server': {
             'type': 'string',
@@ -70,7 +73,8 @@ export const jsonPreferenceSchema: PreferenceSchema = {
                 'verbose'
             ],
             'default': 'off',
-            'description': 'Enable/disable tracing communications with the JSON language server'
+            'description': 'Enable/disable tracing communications with the JSON language server',
+            'scopes': PreferenceScope.Default | PreferenceScope.User | PreferenceScope.Workspace
         }
     }
 };
