@@ -18,7 +18,7 @@ install:
   - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4444
 
 before_build:
-  - node --version && npm --version && yarn --version && python --version
+  - node --version && npm --version && yarn --version && python --version && git --version
 
 build_script:
   - yarn
