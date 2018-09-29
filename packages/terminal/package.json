@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.3.15",
     "@theia/filesystem": "^0.3.15",
+    "@theia/navigator": "^0.3.15",
     "@theia/process": "^0.3.15",
     "@theia/workspace": "^0.3.15",
     "xterm": "~3.5.0"
