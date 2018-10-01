@@ -19,6 +19,35 @@ import { Disposable } from '@theia/core';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
 /**
+ * Stack frame format.
+ */
+export const DEFAULT_STACK_FRAME_FORMAT: DebugProtocol.StackFrameFormat = {
+    parameters: true,
+    parameterTypes: true,
+    parameterNames: true,
+    parameterValues: true,
+    line: true,
+    module: true,
+    includeAll: true,
+    hex: false
+};
+
+/**
+ * Initialize requests arguments.
+ */
+export const INITIALIZE_ARGUMENTS = {
+    clientID: 'Theia',
+    clientName: 'Theia IDE',
+    locale: 'en-US',
+    linesStartAt1: true,
+    columnsStartAt1: true,
+    pathFormat: 'path',
+    supportsVariableType: false,
+    supportsVariablePaging: false,
+    supportsRunInTerminalRequest: false
+};
+
+/**
  * DebugSession symbol for DI.
  */
 export const DebugSession = Symbol('DebugSession');
@@ -51,6 +80,7 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     next(args: DebugProtocol.NextArguments): Promise<DebugProtocol.NextResponse>;
     stepIn(args: DebugProtocol.StepInArguments): Promise<DebugProtocol.StepInResponse>;
     stepOut(args: DebugProtocol.StepOutArguments): Promise<DebugProtocol.StepOutResponse>;
+    loadedSources(args: DebugProtocol.LoadedSourcesArguments): Promise<DebugProtocol.LoadedSourcesResponse>;
 }
 
 /**

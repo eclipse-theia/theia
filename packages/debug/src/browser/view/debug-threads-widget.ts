@@ -50,11 +50,11 @@ export class DebugThreadsWidget extends VirtualWidget {
         const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
 
         this.debugSession.on('thread', threadEventListener);
-        this.debugSession.on('connected', connectedEventListener);
+        this.debugSession.on('configurationDone', connectedEventListener);
         this.debugSession.on('terminated', terminatedEventListener);
 
         this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('thread', threadEventListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('connected', connectedEventListener)));
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('configurationDone', connectedEventListener)));
         this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
 
         if (this.debugSession.state.isConnected) {

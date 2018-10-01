@@ -35,6 +35,8 @@ import { BreakpointsApplier } from './breakpoint-applier';
 
 /**
  * The breakpoint manager implementation.
+ * When debug session is created then breakpoints are assigned to the session.
+ * When session is terminated then breakpoints are unassigned from the session.
  */
 @injectable()
 export class BreakpointsManager implements FrontendApplicationContribution {
@@ -128,6 +130,10 @@ export class BreakpointsManager implements FrontendApplicationContribution {
         debugSession.on('configurationDone', event => this.onConfigurationDone(debugSession, event));
         debugSession.on('breakpoint', event => this.onBreakpoint(debugSession, event));
 
+        this.assignBreakpointsToSession(debugSession);
+    }
+
+    private assignBreakpointsToSession(debugSession: DebugSession) {
         const breakpoints = this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
             .filter(b => b.sessionId === undefined)
             .map(b => {
@@ -135,7 +141,6 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 b.created = undefined;
                 return b;
             });
-
         this.breakpointStorage.update(breakpoints);
         this.onDidChangeBreakpointsEmitter.fire(undefined);
     }
@@ -147,7 +152,11 @@ export class BreakpointsManager implements FrontendApplicationContribution {
 
     private onTerminated(debugSession: DebugSession, event: DebugProtocol.TerminatedEvent): void {
         this.lineDecorator.applyDecorations();
+        this.unassignBreakpointsFromSession(debugSession);
+        this.breakpointDecorator.applyDecorations();
+    }
 
+    private unassignBreakpointsFromSession(debugSession: DebugSession) {
         const breakpoints = this.breakpointStorage.get(DebugUtils.isSourceBreakpoint)
             .filter(b => b.sessionId === debugSession.sessionId)
             .map(b => {
@@ -157,7 +166,6 @@ export class BreakpointsManager implements FrontendApplicationContribution {
             });
 
         this.breakpointStorage.update(breakpoints);
-        this.breakpointDecorator.applyDecorations();
         this.onDidChangeBreakpointsEmitter.fire(undefined);
     }
 
@@ -192,9 +200,9 @@ export class BreakpointsManager implements FrontendApplicationContribution {
             case 'changed': {
                 if (sourceBreakpoint) {
                     sourceBreakpoint.created = breakpoint;
-                    return this.breakpointStorage.update(sourceBreakpoint);
+                    this.breakpointStorage.update(sourceBreakpoint);
                 } else {
-                    return this.breakpointStorage.update({
+                    this.breakpointStorage.update({
                         sessionId: debugSession.sessionId,
                         source: breakpoint.source,
                         created: breakpoint,
@@ -204,11 +212,13 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                         }
                     });
                 }
+                break;
             }
             case 'removed': {
                 if (sourceBreakpoint) {
-                    return this.breakpointStorage.delete(sourceBreakpoint);
+                    this.breakpointStorage.delete(sourceBreakpoint);
                 }
+                break;
             }
         }
 
