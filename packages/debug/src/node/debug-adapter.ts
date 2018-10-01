@@ -265,6 +265,24 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
                     break;
                 }
 
+                case 'loadedSources': {
+                    const loadedSourcesResponse = response as DebugProtocol.LoadedSourcesResponse;
+
+                    for (const source of loadedSourcesResponse.body.sources) {
+                        const event: DebugProtocol.LoadedSourceEvent = {
+                            type: 'event',
+                            seq: -1,
+                            event: 'loadedSource',
+                            body: {
+                                source,
+                                reason: 'new'
+                            }
+                        };
+                        this.proceedEvent(JSON.stringify(event), event);
+                    }
+                    break;
+                }
+
                 case 'initialized': {
                     const initializeResponse = response as DebugProtocol.InitializeResponse;
                     const event: DebugProtocol.CapabilitiesEvent = {

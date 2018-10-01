@@ -27,9 +27,7 @@ import { DebugSession } from '../debug-model';
 export class BreakpointsApplier {
     constructor(@inject(BreakpointStorage) protected readonly storage: BreakpointStorage) { }
 
-    applySessionBreakpoints(debugSession: DebugSession, source?: DebugProtocol.Source): Promise<void> {
-        const promises: Promise<void>[] = [];
-
+    async applySessionBreakpoints(debugSession: DebugSession, source?: DebugProtocol.Source): Promise<void> {
         const breakpoints = this.storage.get(DebugUtils.isSourceBreakpoint)
             .filter(b => b.sessionId === debugSession.sessionId)
             .filter(b => source ? DebugUtils.checkUri(b, DebugUtils.toUri(source)) : true);
@@ -44,19 +42,16 @@ export class BreakpointsApplier {
 
             // The array elements are in the same order as the elements
             // of the 'breakpoints' in the SetBreakpointsArguments.
-            promises.push(debugSession.setBreakpoints(args)
-                .then(response => {
-                    for (const i in breakpointsBySource) {
-                        if (breakpointsBySource) {
-                            if (response.body.breakpoints) {
-                                breakpointsBySource[i].created = response.body.breakpoints[i];
-                            }
-                        }
+            const response = await debugSession.setBreakpoints(args);
+            for (const i in breakpointsBySource) {
+                if (breakpointsBySource) {
+                    if (response.body.breakpoints) {
+                        breakpointsBySource[i].created = response.body.breakpoints[i];
                     }
-                    return breakpointsBySource;
-                }).then(result => this.storage.update(result)));
-        }
+                }
+            }
 
-        return Promise.all(promises).then(() => { });
+            this.storage.update(breakpointsBySource);
+        }
     }
 }

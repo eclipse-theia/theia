@@ -20,45 +20,34 @@ import {
     DebugAdapterPath,
     DebugConfiguration,
     DebugSessionState,
-    DebugSessionStateAccumulator
+    DebugSessionStateAccumulator,
+    DebugService
 } from '../common/debug-common';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Emitter, Event, DisposableCollection, ContributionProvider, Resource, ResourceResolver, Disposable } from '@theia/core';
+import {
+    Emitter,
+    Event,
+    DisposableCollection,
+    ContributionProvider,
+    Resource,
+    ResourceResolver,
+    Disposable
+} from '@theia/core';
 import { EventEmitter } from 'events';
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
-import { DebugSession, DebugSessionFactory, DebugSessionContribution } from './debug-model';
+import {
+    DebugSession,
+    DebugSessionFactory,
+    DebugSessionContribution,
+    DEFAULT_STACK_FRAME_FORMAT,
+    INITIALIZE_ARGUMENTS
+} from './debug-model';
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
-
-/**
- * Stack frame format.
- */
-const DEFAULT_STACK_FRAME_FORMAT: DebugProtocol.StackFrameFormat = {
-    parameters: true,
-    parameterTypes: true,
-    parameterNames: true,
-    parameterValues: true,
-    line: true,
-    module: true,
-    includeAll: true,
-    hex: false
-};
-
-/**
- * Initialize requests arguments.
- */
-const INITIALIZE_ARGUMENTS = {
-    clientID: 'Theia',
-    locale: '',
-    linesStartAt1: true,
-    columnsStartAt1: true,
-    pathFormat: 'path',
-    supportsVariableType: false,
-    supportsVariablePaging: false,
-    supportsRunInTerminalRequest: false
-};
+import { NotificationsMessageClient } from '@theia/messages/lib/browser/notifications-message-client';
+import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 
 /**
  * DebugSession implementation.
@@ -182,6 +171,10 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest('stepOut', args);
     }
 
+    loadedSources(args: DebugProtocol.LoadedSourcesRequest): Promise<DebugProtocol.LoadedSourcesResponse> {
+        return this.proceedRequest('loadedSources', args);
+    }
+
     protected handleMessage(data: string) {
         const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
         if (message.type === 'response') {
@@ -278,7 +271,9 @@ export class DebugSessionManager {
         @inject(DebugSessionFactory) protected readonly debugSessionFactory: DebugSessionFactory,
         @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager,
         @inject(ContributionProvider) @named(DebugSessionContribution) protected readonly contributions: ContributionProvider<DebugSessionContribution>,
-        @inject(BreakpointsApplier) protected readonly breakpointApplier: BreakpointsApplier) {
+        @inject(BreakpointsApplier) protected readonly breakpointApplier: BreakpointsApplier,
+        @inject(DebugService) protected readonly debugService: DebugService,
+        @inject(NotificationsMessageClient) protected readonly notification: NotificationsMessageClient) {
 
         for (const contrib of this.contributions.getContributions()) {
             this.contribs.set(contrib.debugType, contrib);
@@ -291,7 +286,7 @@ export class DebugSessionManager {
      * @param configuration The debug configuration
      * @returns The debug session
      */
-    create(sessionId: string, debugConfiguration: DebugConfiguration): Promise<DebugSession> {
+    async create(sessionId: string, debugConfiguration: DebugConfiguration): Promise<DebugSession> {
         this.onDidPreCreateDebugSessionEmitter.fire(sessionId);
 
         const contrib = this.contribs.get(debugConfiguration.type);
@@ -313,24 +308,62 @@ export class DebugSessionManager {
             adapterID: debugConfiguration.type
         };
 
-        return session.initialize(initializeArgs)
-            .then(() => {
-                const request = debugConfiguration.request;
-                switch (request) {
-                    case 'attach': {
-                        const attachArgs: DebugProtocol.AttachRequestArguments = Object.assign(debugConfiguration, { __restart: false });
-                        return session.attach(attachArgs);
-                    }
-                    case 'launch': {
-                        const launchArgs: DebugProtocol.LaunchRequestArguments = Object.assign(debugConfiguration, { __restart: false, noDebug: false });
-                        return session.launch(launchArgs);
-                    }
-                    default: return Promise.reject(`Unsupported request '${request}' type.`);
-                }
-            })
-            .then(() => this.breakpointApplier.applySessionBreakpoints(session))
-            .then(() => session.configurationDone())
-            .then(() => session);
+        session.once('initialized', () => this.onSessionInitialized(session));
+        const request = session.configuration.request;
+
+        switch (request) {
+            case 'attach': {
+                this.attach(session, initializeArgs);
+                break;
+            }
+            case 'launch': {
+                this.launch(session, initializeArgs);
+                break;
+            }
+            default: throw new Error(`Unsupported request '${request}' type.`);
+        }
+
+        return session;
+    }
+
+    private async attach(session: DebugSession, initializeArgs: DebugProtocol.InitializeRequestArguments): Promise<void> {
+        await session.initialize(initializeArgs);
+
+        const attachArgs: DebugProtocol.AttachRequestArguments = Object.assign(session.configuration, { __restart: false });
+        try {
+            await session.attach(attachArgs);
+        } catch (cause) {
+            this.onSessionInitializationFailed(session, cause as DebugProtocol.Response);
+            throw cause;
+        }
+    }
+
+    private async launch(session: DebugSession, initializeArgs: DebugProtocol.InitializeRequestArguments): Promise<void> {
+        await session.initialize(initializeArgs);
+
+        const launchArgs: DebugProtocol.LaunchRequestArguments = Object.assign(session.configuration, { __restart: false, noDebug: false });
+        try {
+            await session.launch(launchArgs);
+        } catch (cause) {
+            this.onSessionInitializationFailed(session, cause as DebugProtocol.Response);
+            throw cause;
+        }
+    }
+
+    private async onSessionInitialized(session: DebugSession): Promise<void> {
+        await this.breakpointApplier.applySessionBreakpoints(session);
+        await session.configurationDone();
+    }
+
+    private async onSessionInitializationFailed(session: DebugSession, cause: DebugProtocol.Response): Promise<void> {
+        this.destroy(session.sessionId);
+        await this.notification.showMessage({
+            type: MessageType.Error,
+            text: cause.message || 'Debug session initialization failed. See console for details.',
+            options: {
+                timeout: 10000
+            }
+        });
     }
 
     /**
@@ -410,6 +443,8 @@ export class DebugSessionManager {
     }
 
     private doDestroy(session: DebugSession): void {
+        this.debugService.stop(session.sessionId);
+
         session.dispose();
         this.remove(session.sessionId);
         this.onDidDestroyDebugSessionEmitter.fire(session);

@@ -227,7 +227,10 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                     debugSession.disconnect();
                 }
             },
-            isEnabled: () => this.debugSessionManager.getActiveDebugSession() !== undefined,
+            isEnabled: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                return !!debugSession && debugSession.state.isConnected;
+            },
             isVisible: () => true
         });
 
