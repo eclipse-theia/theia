@@ -1,6 +1,6 @@
 # Theia - Extension Manager
 
-See [here](https://github.com/theia-ide/theia) for a detailed documentation.
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## Theia Extension
 

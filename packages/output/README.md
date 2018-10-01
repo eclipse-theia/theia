@@ -5,7 +5,7 @@ This output is usually comes from external commands run by the backend, e.g. `gi
 This deserves a bit more of the user's attention than log messages. As opposed to UI messages, it tends 
 to be more verbose and a does not require the user to react on it.
 
-See [here](https://github.com/theia-ide/theia) for a detailed documentation on Theia.
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation on Theia.
 
 ## License
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)

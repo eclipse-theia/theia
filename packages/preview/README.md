@@ -2,7 +2,7 @@
 
 Shows a preview of supported resources. It comes with built-in support for rendering markdown files.
 
-See [here](https://github.com/theia-ide/theia).
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## License
 
