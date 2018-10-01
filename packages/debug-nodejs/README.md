@@ -1,6 +1,6 @@
 # Theia - NodeJS Debug Extension
 
-See [here](https://github.com/theia-ide/theia) for a detailed documentation.
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## License
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)

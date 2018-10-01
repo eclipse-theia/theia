@@ -1,6 +1,6 @@
 # Theia - Java Extension
 
-See [here](https://github.com/theia-ide/theia) for a detailed documentation.
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## jdt.ls versions
 Update  'jdt.ls.download.path in 'package.json' to update the jdt.ls used by the extension

@@ -114,7 +114,7 @@ The variables are supported in the following properties, using `${variableName}`
 - `windows.command`
 - `windows.args`
 
-See [here](https://github.com/theia-ide/theia) for other Theia documentation.
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## Contribution points
 The extension provides contribution points:

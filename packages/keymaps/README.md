@@ -1,6 +1,6 @@
 # Theia - Keymaps Extension
 
-See [here](https://github.com/theia-ide/theia) for a detailed documentation.
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 An extension that allows the user to reconfigure default keybindings with custom keymaps. By modifying the appropriate `keymaps.json`, the user can modify existing keybindings, or add keybindings to commands that do not yet have a keybinding associated to them.
 

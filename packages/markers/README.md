@@ -3,10 +3,10 @@
 The markers extension adds support for file markers to Theia.
 It includes the following concrete features:
 
+See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
+
 # Problem View
 The problem view shows any diagnostics issued by language servers in a view.
-
-See [here](https://github.com/theia-ide/theia).
 
 ## License
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
