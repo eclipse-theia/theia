@@ -54,6 +54,7 @@ cache:
   - packages/typescript/node_modules
   - packages/userstorage/node_modules
   - packages/variable-resolver/node_modules
+  - packages/workbench/node_modules
   - packages/workspace/node_modules
 # end_cache_directories
 branches:

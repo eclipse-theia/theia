@@ -37,6 +37,9 @@
       "@theia/workspace/lib/*": [
         "packages/workspace/src/*"
       ],
+      "@theia/workbench/lib/*": [
+        "packages/workbench/src/*"
+      ],
       "@theia/terminal/lib/*": [
         "packages/terminal/src/*"
       ],
