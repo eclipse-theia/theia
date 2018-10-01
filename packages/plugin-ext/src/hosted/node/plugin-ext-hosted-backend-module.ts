@@ -28,6 +28,7 @@ import { TheiaPluginScanner } from './scanners/scanner-theia';
 import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
 import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath } from '../../common/plugin-protocol';
 import { GrammarsReader } from './scanners/grammars-reader';
+import { HostedPluginProcess } from './hosted-plugin-process';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
@@ -35,6 +36,8 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(MetadataScanner).toSelf().inSingletonScope();
     bind(HostedPluginsManager).to(HostedPluginsManagerImpl).inSingletonScope();
+
+    bind(HostedPluginProcess).toSelf().inSingletonScope();
 
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(HostedPluginReader)).inSingletonScope();
 

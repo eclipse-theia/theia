@@ -13,16 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import * as path from 'path';
-import * as cp from 'child_process';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, multiInject, postConstruct, optional } from 'inversify';
 import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
-import { Emitter } from '@theia/core/lib/common/event';
-import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
-import { HostedPluginClient, PluginModel } from '../../common/plugin-protocol';
-import { RPCProtocolImpl } from '../../api/rpc-protocol';
-import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { HostedPluginClient, PluginModel, ServerPluginRunner } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
+import { HostedPluginProcess } from './hosted-plugin-process';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -38,15 +33,30 @@ export class HostedPluginSupport {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    private cp: cp.ChildProcess | undefined;
+    @inject(HostedPluginProcess)
+    protected readonly hostedPluginProcess: HostedPluginProcess;
+
+    /**
+     * Optional runners to delegate some work
+     */
+    @optional()
+    @multiInject(ServerPluginRunner)
+    private readonly pluginRunners: ServerPluginRunner[];
+
+    @postConstruct()
+    protected init(): void {
+        this.pluginRunners.forEach(runner => {
+            runner.setDefault(this.hostedPluginProcess);
+        });
+    }
 
     setClient(client: HostedPluginClient): void {
-        if (this.client) {
-            if (this.cp) {
-                this.runPluginServer();
-            }
-        }
-        this.client = client;
+        this.hostedPluginProcess.setClient(client);
+        this.pluginRunners.forEach(runner => runner.setClient(client));
+    }
+
+    clientClosed(): void {
+        this.terminatePluginServer();
     }
 
     runPlugin(plugin: PluginModel): void {
@@ -56,84 +66,29 @@ export class HostedPluginSupport {
     }
 
     onMessage(message: string): void {
-        if (this.cp) {
-            this.cp.send(message);
-        }
-    }
-
-    clientClosed(): void {
-        if (this.cp) {
-            this.terminatePluginServer(this.cp);
-            this.cp = undefined;
-        }
-    }
-
-    private terminatePluginServer(childProcess: cp.ChildProcess) {
-        const emitter = new Emitter();
-        childProcess.on('message', message => {
-            emitter.fire(JSON.parse(message));
-        });
-        const rpc = new RPCProtocolImpl({
-            onMessage: emitter.event,
-            send: (m: {}) => {
-                if (childProcess.send) {
-                    childProcess.send(JSON.stringify(m));
+        // need to perform routing
+        const jsonMessage: any = JSON.parse(message);
+        if (this.pluginRunners.length > 0) {
+            this.pluginRunners.forEach(runner => {
+                if (runner.acceptMessage(jsonMessage)) {
+                    runner.onMessage(jsonMessage);
                 }
-            }
-        });
-        const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-        hostedPluginManager.$stopPlugin('').then(() => {
-            emitter.dispose();
-            childProcess.kill();
-        });
+            });
+        } else {
+            this.hostedPluginProcess.onMessage(jsonMessage.content);
+        }
+    }
+
+    private terminatePluginServer(): void {
+        this.hostedPluginProcess.terminatePluginServer();
     }
 
     public runPluginServer(): void {
-        if (this.cp) {
-            this.terminatePluginServer(this.cp);
-        }
-        this.cp = this.fork({
-            serverName: 'hosted-plugin',
-            logger: this.logger,
-            args: []
-        });
-        this.cp.on('message', message => {
-            if (this.client) {
-                this.client.postMessage(message);
-            }
-        });
-
+        this.hostedPluginProcess.runPluginServer();
     }
 
     public sendLog(logPart: LogPart): void {
         this.client.log(logPart);
     }
 
-    private fork(options: IPCConnectionOptions): cp.ChildProcess {
-
-        // create env and add PATH to it so any executable from root process is available
-        const env = createIpcEnv();
-        env.PATH = process.env.PATH;
-
-        const forkOptions: cp.ForkOptions = {
-            silent: true,
-            env: env,
-            execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
-        };
-        const inspectArgPrefix = `--${options.serverName}-inspect`;
-        const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
-        if (inspectArg !== undefined) {
-            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
-        }
-
-        const childProcess = cp.fork(path.resolve(__dirname, 'plugin-host.js'), options.args, forkOptions);
-        childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
-        childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
-
-        this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
-        childProcess.once('exit', () => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC exited`));
-
-        return childProcess;
-    }
 }

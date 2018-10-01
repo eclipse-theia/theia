@@ -480,3 +480,11 @@ export interface PluginServer {
      */
     deploy(pluginEntry: string): Promise<void>
 }
+
+export const ServerPluginRunner = Symbol('ServerPluginRunner');
+export interface ServerPluginRunner {
+    acceptMessage(jsonMessage: any): boolean;
+    onMessage(jsonMessage: any): void;
+    setClient(client: HostedPluginClient): void;
+    setDefault(defaultRunner: ServerPluginRunner): void;
+}
