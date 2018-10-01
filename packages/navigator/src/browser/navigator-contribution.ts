@@ -139,6 +139,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             commandId: WorkspaceCommands.FILE_DELETE.id
         });
         registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: WorkspaceCommands.FILE_DUPLICATE.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
             commandId: FileDownloadCommands.DOWNLOAD.id,
             label: 'Download',
             order: 'z' // Should be the last item in the "move" menu group.
