@@ -48,14 +48,17 @@ export class DebugThreadsWidget extends VirtualWidget {
         const threadEventListener = (event: DebugProtocol.ThreadEvent) => this.onThreadEvent(event);
         const connectedEventListener = () => this.updateThreads();
         const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+        const stoppedEventListener = (event: DebugProtocol.StoppedEvent) => this.onStoppedEvent(event);
 
         this.debugSession.on('thread', threadEventListener);
         this.debugSession.on('configurationDone', connectedEventListener);
         this.debugSession.on('terminated', terminatedEventListener);
+        this.debugSession.on('stopped', stoppedEventListener);
 
         this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('thread', threadEventListener)));
         this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('configurationDone', connectedEventListener)));
         this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
+        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('stopped', stoppedEventListener)));
 
         if (this.debugSession.state.isConnected) {
             this.updateThreads();
@@ -126,6 +129,10 @@ export class DebugThreadsWidget extends VirtualWidget {
 
     protected onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
         this.threads = [];
+    }
+
+    protected onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
+        this.updateThreads();
     }
 
     private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
