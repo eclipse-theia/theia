@@ -94,7 +94,7 @@ export interface TerminalWidgetOptions {
     readonly id?: string;
 
     /**
-     * Terminal attributes. Can be usefull to apply some implementation specific information.
+     * Terminal attributes. Can be useful to apply some implementation specific information.
      */
     readonly attributes?: { [key: string]: string | null };
 }

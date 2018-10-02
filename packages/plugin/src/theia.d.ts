@@ -2077,7 +2077,7 @@ declare module '@theia/plugin' {
         env?: { [key: string]: string | null };
 
         /**
-         * Terminal attributes. Can be usefull to apply some implementation specific information.
+         * Terminal attributes. Can be useful to apply some implementation specific information.
          */
         attributes?: { [key: string]: string | null };
     }
