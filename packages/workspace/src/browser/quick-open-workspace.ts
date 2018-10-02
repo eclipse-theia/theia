@@ -19,7 +19,6 @@ import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, Qu
 import { WorkspaceService, getTemporaryWorkspaceFileUri } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
-import { MessageService } from '@theia/core/lib/common';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import * as moment from 'moment';
 
@@ -31,7 +30,6 @@ export class QuickOpenWorkspace implements QuickOpenModel {
 
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
@@ -55,11 +53,10 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             if (tempWorkspaceFile && uri.toString() === tempWorkspaceFile.toString()) {
                 continue; // skip the temporary workspace files
             }
-            const lastModification = moment(stat.lastModification).fromNow();
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
                 description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
-                groupLabel: (workspace === workspaces[0] && this.opened) ? 'Current Workspace' : `Modified ${lastModification}`,
+                groupLabel: `last modified ${moment(stat.lastModification).fromNow()}`,
                 iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
@@ -67,9 +64,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
                     }
                     const current = this.workspaceService.workspace;
                     const uriToOpen = new URI(workspace);
-                    if (current && current.uri === workspace) {
-                        this.messageService.info(`Using the same workspace [ ${uriToOpen.displayName} ]`);
-                    } else {
+                    if (current && current.uri !== workspace) {
                         this.workspaceService.open(uriToOpen);
                     }
                     return true;
