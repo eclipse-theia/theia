@@ -57,7 +57,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         throw new Error('Method not implemented.');
     }
 
-    $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
+    $executeCommand<T>(id: string, args: any[]): PromiseLike<T> {
         if (this.commands.has(id)) {
             return this.executeLocalCommand(id, args);
         } else {
@@ -73,7 +73,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
-    private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
+    private executeLocalCommand<T>(id: string, args: any[]): PromiseLike<T> {
         const handler = this.commands.get(id);
         if (handler) {
             return Promise.resolve(handler(args));
