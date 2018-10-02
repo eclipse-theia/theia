@@ -195,6 +195,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler(this.deleteHandler));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
             isVisible: uris => uris.length === 2,
+            isEnabled: uris => uris.length === 2,
             execute: async uris => {
                 const [left, right] = uris;
                 const [leftExists, rightExists] = await Promise.all([
