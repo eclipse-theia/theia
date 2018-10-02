@@ -2075,6 +2075,11 @@ declare module '@theia/plugin' {
          * Environment variables for terminal in format key - value.
          */
         env?: { [key: string]: string | null };
+
+        /**
+         * Terminal attributes. Can be usefull to apply some implementation specific information.
+         */
+        attributes?: { [key: string]: string | null };
     }
 
     /**
