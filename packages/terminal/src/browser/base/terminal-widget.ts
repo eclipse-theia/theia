@@ -92,4 +92,9 @@ export interface TerminalWidgetOptions {
      * Terminal id. Should be unique for all DOM.
      */
     readonly id?: string;
+
+    /**
+     * Terminal attributes. Can be usefull to apply some implementation specific information.
+     */
+    readonly attributes?: { [key: string]: string | null };
 }
