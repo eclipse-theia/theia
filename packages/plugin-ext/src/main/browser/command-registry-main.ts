@@ -49,7 +49,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
     }
     $executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined> {
         try {
-            return Promise.resolve(this.delegate.executeCommand(id, args));
+            return Promise.resolve(this.delegate.executeCommand(id, ...args));
         } catch (e) {
             return Promise.reject(e);
         }
