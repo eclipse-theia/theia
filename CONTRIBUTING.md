@@ -1,11 +1,14 @@
-# Contributing to Theia
+# Contributing to Eclipse Theia
+Thanks for your interest in this project.
 
-Theia is a young open-source project with a modular architecture. One of the
-goals is to make sure that we can customize and enhance any Theia application
-through extensions.  So while the main Theia repository contains some common
-functionality for IDE-like applications, like a file system or a navigator
-view, most functionality doesn't necessarily need to be put into the core
-repository but can be developed separately.
+## Project description
+
+Eclipse Theia is an extensible platform to develop full-fledged, multi-language,
+cloud & desktop IDE-like products with state-of-the-art web technologies. It is
+implemented in TypeScript, CSS and HTML.
+
+* https://projects.eclipse.org/projects/ecd.theia
+
 
 ## How Can I Contribute?
 
@@ -13,7 +16,7 @@ In the following some of the typical ways of contribution are described.
 
 ### Asking Questions
 
-It's totally fine to ask questions by opening an issue in the Theia GitHub
+It's totally fine to ask questions by opening an issue in the Eclipse Theia GitHub
 repository. We will close it once it's answered and tag it with the 'question'
 label. Please check if the question has been asked before there or on [Stack
 Overflow](https://stackoverflow.com).
@@ -37,15 +40,32 @@ behind it.
 ### Pull Requests
 
 Before you get started investing significant time in something you want to get
-merged and maintained as part of Theia, you should talk with the team through
+merged and maintained as part of Eclipse Theia, you should talk with the team through
 an issue. Simply choose the issue you would want to work on, and tell everyone
 that you are willing to do so and how you would approach it. The team will be
 happy to guide you and give feedback.
 
-## Coding Guidelines
+### Coding Guidelines
 
 We follow the coding guidelines described
-[here](https://github.com/theia-ide/theia/wiki/Coding-Guidelines).
+[here](https://github.com/eclipse/theia/wiki/Coding-Guidelines).
+
+
+## Developer resources
+
+Information regarding source code management, builds, coding standards, and
+more.
+
+* https://projects.eclipse.org/projects/ecd.theia/developer
+
+The project maintains the following source code repositories
+
+* https://github.com/eclipse/theia-generator-plugin
+* https://github.com/eclipse/theia-yeoman-plugin
+* https://github.com/eclipse/theia-plugin-packager
+* https://github.com/eclipse/theia-cpp-extension
+* https://github.com/eclipse/theia-python-extension
+* https://github.com/eclipse/theia-java-extension
 
 ## Eclipse Contributor Agreement
 
@@ -63,58 +83,7 @@ Contributor Agreement (ECA) on file.
 For more information, please see the Eclipse Committer Handbook:
 https://www.eclipse.org/projects/handbook/#resources-commit
 
-## Sign your work
+## Contact
 
-The sign-off is a simple line at the end of the explanation for the patch. Your
-signature certifies that you wrote the patch or otherwise have the right to
-pass it on as an open-source patch. The rules are pretty simple: if you can
-certify the below (from
-[developercertificate.org](http://developercertificate.org/)):
+Contact the project developers via the project's "dev" list, on gitter or GitHub.
 
-```
-Developer Certificate of Origin
-Version 1.1
-
-Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
-1 Letterman Drive
-Suite D4700
-San Francisco, CA, 94129
-
-Everyone is permitted to copy and distribute verbatim copies of this
-license document, but changing it is not allowed.
-
-Developer's Certificate of Origin 1.1
-
-By making a contribution to this project, I certify that:
-
-(a) The contribution was created in whole or in part by me and I
-    have the right to submit it under the open source license
-    indicated in the file; or
-
-(b) The contribution is based upon previous work that, to the best
-    of my knowledge, is covered under an appropriate open source
-    license and I have the right under that license to submit that
-    work with modifications, whether created in whole or in part
-    by me, under the same open source license (unless I am
-    permitted to submit under a different license), as indicated
-    in the file; or
-
-(c) The contribution was provided directly to me by some other
-    person who certified (a), (b) or (c) and I have not modified
-    it.
-
-(d) I understand and agree that this project and the contribution
-    are public and that a record of the contribution (including all
-    personal information I submit with it, including my sign-off) is
-    maintained indefinitely and may be redistributed consistent with
-    this project or the open source license(s) involved.
-```
-
-Then you just add a line to every git commit message:
-
-    Signed-off-by: Joe Smith <joe.smith@email.com>
-
-Use your real name (sorry, no pseudonyms or anonymous contributions.)
-
-If you set your `user.name` and `user.email` git configs, you can sign your
-commit automatically with `git commit -s`.
