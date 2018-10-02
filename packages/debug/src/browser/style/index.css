@@ -196,7 +196,23 @@ div[orientation='vertical'] > .theia-debug-entry > .theia-TreeContainer > div > 
 }
 
 .theia-debug-active-line {
-    background-color: rgba(255, 120, 100, 0.5);
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+.active-breakpoint,
+.inactive-breakpoint {
+    display: inline-flex;
+    justify-content: flex-end;
+    position:  relative !important;
+    text-align: right;
+}
+
+.active-breakpoint {
+    color: rgb(255, 0, 0);
+}
+
+.inactive-breakpoint {
+    color: var(--theia-ui-font-color2);
 }
 
 /** Miscellaneous */
