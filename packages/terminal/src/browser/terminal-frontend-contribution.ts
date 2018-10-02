@@ -21,7 +21,8 @@ import {
     CommandRegistry,
     MenuContribution,
     MenuModelRegistry,
-    isOSX
+    isOSX,
+    SelectionService
 } from '@theia/core/lib/common';
 import {
     CommonMenus, ApplicationShell, KeybindingContribution, KeyCode, Key,
@@ -32,6 +33,11 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './term
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import { FileSystem } from '@theia/filesystem/lib/common';
+import URI from '@theia/core/lib/common/uri';
+
+const NAVIGATOR_CONTEXT_MENU_NEW = ['navigator-context-menu', '4_new'];
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -42,6 +48,10 @@ export namespace TerminalCommands {
         id: 'terminal:clear',
         label: 'Terminal: Clear'
     };
+    export const TERMINAL_CONTEXT: Command = {
+        id: 'terminal:context',
+        label: 'Open in Terminal'
+    };
 }
 
 @injectable()
@@ -49,7 +59,9 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -68,11 +80,32 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
             execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
         });
+
+        commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
+            execute: async uri => {
+                // Determine folder path of URI
+                const stat = await this.fileSystem.getFileStat(uri.toString());
+                if (!stat) {
+                    return;
+                }
+
+                // Use folder if a file was selected
+                const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
+
+                // Open terminal
+                const termWidget = await this.newTerminal({ cwd });
+                termWidget.start();
+                this.activateTerminal(termWidget);
+            }
+        }));
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: TerminalCommands.NEW.id
+        });
+        menus.registerMenuAction(NAVIGATOR_CONTEXT_MENU_NEW, {
+            commandId: TerminalCommands.TERMINAL_CONTEXT.id
         });
     }
 
