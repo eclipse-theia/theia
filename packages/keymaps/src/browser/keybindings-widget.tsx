@@ -68,7 +68,7 @@ export class KeybindingWidget extends ReactWidget {
         post: '</match>',
     };
 
-    protected readonly searchKeybindings = debounce(() => this.doSearchKeybindings(), 50);
+    protected readonly searchKeybindings: () => void = debounce(() => this.doSearchKeybindings(), 50);
 
     constructor() {
         super();
