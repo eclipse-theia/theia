@@ -1,8 +1,10 @@
 {
   "rules": {
+    "await-promise": true,
     "no-any": {
       "severity": "warning",
       "options": true
-    }
+    },
+    "no-return-await": true
   }
 }
