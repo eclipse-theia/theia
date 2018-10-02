@@ -90,12 +90,12 @@ export class ActiveLineDecorator extends EditorDecorator {
 
 const InactiveBreakpointDecoration = <EditorDecorationOptions>{
     isWholeLine: false,
-    glyphMarginClassName: 'theia-debug-inactive-breakpoint',
+    glyphMarginClassName: 'fa fa-circle-o inactive-breakpoint',
 };
 
 const ActiveBreakpointDecoration = <EditorDecorationOptions>{
     isWholeLine: false,
-    glyphMarginClassName: 'theia-debug-active-breakpoint',
+    glyphMarginClassName: 'fa fa-circle active-breakpoint',
 };
 
 /**
