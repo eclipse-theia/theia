@@ -6,8 +6,10 @@
     "@theia/core": "^0.3.15",
     "@theia/filesystem": "^0.3.15",
     "@types/mime-types": "^2.1.0",
+    "@types/fs-extra": "^4.0.2",
     "mime-types": "^2.1.18",
-    "pdfobject": "^2.0.201604172"
+    "pdfobject": "^2.0.201604172",
+    "fs-extra": "^4.0.2"
   },
   "publishConfig": {
     "access": "public"
