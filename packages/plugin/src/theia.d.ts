@@ -5667,6 +5667,18 @@ declare module '@theia/plugin' {
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable;
 
         /**
+         * Register a workspace symbol provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param provider A workspace symbol provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable;
+
+        /**
          * Register a document highlight provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
@@ -6626,5 +6638,45 @@ declare module '@theia/plugin' {
          * @param value A value. MUST not contain cyclic references.
          */
         update(key: string, value: any): PromiseLike<void>;
+    }
+
+    /* The workspace symbol provider interface defines the contract between extensions
+    * and the [symbol search](https://code.visualstudio.com/docs/editor/intellisense)-feature.
+    */
+    export interface WorkspaceSymbolProvider {
+
+        /**
+         * Project-wide search for a symbol matching the given query string.
+         *
+         * The query-parameter should be interpreted in a relaxed way as the editor will apply its own
+         * highlighting and scoring on the results. A good rule of thumb is to match case-insensitive and to
+         * simply check that the characters of query appear in their order in a candidate symbol. Don't use
+         * prefix, substring, or similar strict matching.
+         *
+         * To improve performance implementors can implement resolveWorkspaceSymbol and then provide
+         * symbols with partial location-objects, without a range defined. The editor will then call
+         * resolveWorkspaceSymbol for selected symbols only, e.g. when opening a workspace symbol.
+         *
+         * @param query A non-empty query string.
+         * @param token A cancellation token.
+         * @return An array of document highlights or a thenable that
+         * resolves to such. The lack of a result can be signaled by
+         * returning undefined, null, or an empty array.
+         */
+        provideWorkspaceSymbols(query: string, token: CancellationToken | undefined): ProviderResult<SymbolInformation[]>;
+
+        /**
+         * Given a symbol fill in its [location](#SymbolInformation.location). This method is called whenever a symbol
+         * is selected in the UI. Providers can implement this method and return incomplete symbols from
+         * [`provideWorkspaceSymbols`](#WorkspaceSymbolProvider.provideWorkspaceSymbols) which often helps to improve
+         * performance.
+         *
+         * @param symbol The symbol that is to be resolved. Guaranteed to be an instance of an object returned from an
+         * earlier call to `provideWorkspaceSymbols`.
+         * @param token A cancellation token.
+         * @return The resolved symbol or a thenable that resolves to that. When no result is returned,
+         * the given `symbol` is used.
+         */
+        resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken | undefined): ProviderResult<SymbolInformation>;
     }
 }

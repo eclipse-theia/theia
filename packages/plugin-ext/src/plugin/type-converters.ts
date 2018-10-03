@@ -24,6 +24,7 @@ import URI from 'vscode-uri';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
+import { SymbolInformation, Range as R, Position as P, SymbolKind as S } from 'vscode-languageserver-types';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -525,7 +526,7 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     }
 
     if (taskDefinition.type === 'process') {
-        return fromProcessExecution(<theia.ProcessExecution> execution, processTaskDto);
+        return fromProcessExecution(<theia.ProcessExecution>execution, processTaskDto);
     }
 
     return processTaskDto;
@@ -592,4 +593,42 @@ export function getShellArgs(args: undefined | (string | theia.ShellQuotedString
     });
 
     return result;
+}
+
+export function fromSymbolInformation(symbolInformation: theia.SymbolInformation): SymbolInformation | undefined {
+    if (!symbolInformation) {
+        return undefined;
+    }
+
+    if (symbolInformation.location && symbolInformation.location.range) {
+        const p1 = P.create(symbolInformation.location.range.start.line, symbolInformation.location.range.start.character);
+        const p2 = P.create(symbolInformation.location.range.end.line, symbolInformation.location.range.end.character);
+        return SymbolInformation.create(symbolInformation.name, symbolInformation.kind++ as S, R.create(p1, p2),
+            symbolInformation.location.uri.toString(), symbolInformation.containerName);
+    }
+
+    return <SymbolInformation>{
+        name: symbolInformation.name,
+        containerName: symbolInformation.containerName,
+        kind: symbolInformation.kind++ as S,
+        location: {
+            uri: symbolInformation.location.uri.toString()
+        }
+    };
+}
+
+export function toSymbolInformation(symbolInformation: SymbolInformation): theia.SymbolInformation | undefined {
+    if (!symbolInformation) {
+        return undefined;
+    }
+
+    return <theia.SymbolInformation>{
+        name: symbolInformation.name,
+        containerName: symbolInformation.containerName,
+        kind: symbolInformation.kind,
+        location: {
+            uri: URI.parse(symbolInformation.location.uri),
+            range: symbolInformation.location.range
+        }
+    };
 }

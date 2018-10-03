@@ -657,3 +657,39 @@ function provideSymbols(document: theia.TextDocument): theia.ProviderResult<thei
     // code here
 }
 ```
+
+#### Workspace Symbol Provider
+
+A workspace symbol provider allows you register symbols for the symbol search feature.
+
+resolveWorkspaceSymbol is not needed if all SymbolInformation's returned from 
+provideWorkspaceSymbols have a location. Otherwise resolveWorkspaceSymbol is needed 
+in order to resolve the location of the SymbolInformation.
+
+Example of workspace symbol provider registration:
+
+```typescript
+theia.languages.registerWorkspaceSymbolProvider({
+    provideWorkspaceSymbols(query: string): theia.SymbolInformation[] {
+        return [new theia.SymbolInformation('my symbol', 4, new theia.Range(new theia.Position(0, 0), new theia.Position(0, 0)), theia.Uri.parse("some_uri_to_file"))];
+    }
+} as theia.WorkspaceSymbolProvider);
+```
+
+In this case resolveWorkspaceSymbol is not needed because we have provided the location for every
+symbol returned from provideWorkspaceSymbols
+
+```typescript
+theia.languages.registerWorkspaceSymbolProvider({
+    provideWorkspaceSymbols(query: string): theia.SymbolInformation[] {
+        return [new theia.SymbolInformation('my symbol', 4, 'my container name', new theia.Location(theia.Uri.parse("some_uri_to_file"), undefined))];
+    },
+    resolveWorkspaceSymbol(symbolInformation: theia.SymbolInformation): theia.SymbolInformation {
+        symbolInformation.location.range = new theia.Range(new theia.Position(0, 0), new theia.Position(0, 0));
+        return symbolInformation;
+    }
+} as theia.WorkspaceSymbolProvider);
+```
+
+resolveWorkspaceSymbol is needed here because we have not provided the location for every
+symbol return from provideWorkspaceSymbol
