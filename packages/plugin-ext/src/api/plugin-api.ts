@@ -59,6 +59,8 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
+import { SymbolInformation } from 'vscode-languageserver-types';
+
 export interface PluginInitData {
     plugins: PluginMetadata[];
     preferences: { [key: string]: any };
@@ -841,6 +843,8 @@ export interface LanguagesExt {
         context: monaco.languages.CodeActionContext
     ): Promise<monaco.languages.CodeAction[]>;
     $provideDocumentSymbols(handle: number, resource: UriComponents): Promise<DocumentSymbol[] | undefined>;
+    $provideWorkspaceSymbols(handle: number, query: string): PromiseLike<SymbolInformation[]>;
+    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation): PromiseLike<SymbolInformation>;
 }
 
 export interface LanguagesMain {
@@ -865,6 +869,7 @@ export interface LanguagesMain {
     $registerCodeLensSupport(handle: number, selector: SerializedDocumentFilter[], eventHandle?: number): void;
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
     $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerWorkspaceSymbolProvider(handle: number): void;
 }
 
 export interface WebviewPanelViewState {

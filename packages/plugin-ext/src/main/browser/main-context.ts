@@ -79,7 +79,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const outputChannelRegistryMain = new OutputChannelRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, outputChannelRegistryMain);
 
-    const languagesMain = new LanguagesMainImpl(rpc);
+    const languagesMain = new LanguagesMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, languagesMain);
 
     const webviewsMain = new WebviewsMainImpl(rpc, container);

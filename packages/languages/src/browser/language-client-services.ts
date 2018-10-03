@@ -27,9 +27,13 @@ export interface Language {
     readonly filenames: Set<string>;
 }
 
+export interface WorkspaceSymbolProvider extends services.WorkspaceSymbolProvider {
+    resolveWorkspaceSymbol?(symbol: services.SymbolInformation, token: services.CancellationToken): Thenable<services.SymbolInformation>
+}
+
 export const Languages = Symbol('Languages');
 export interface Languages extends services.Languages {
-    readonly workspaceSymbolProviders?: services.WorkspaceSymbolProvider[];
+    readonly workspaceSymbolProviders?: WorkspaceSymbolProvider[];
     readonly languages?: Language[]
     getLanguage?(languageId: string): Language | undefined;
 }
