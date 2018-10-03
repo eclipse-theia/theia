@@ -166,8 +166,8 @@ export class KeybindingWidget extends ReactWidget {
     protected renderRows(): React.ReactNode {
         return <React.Fragment>
             {
-                this.items.map(item =>
-                    <tr className='kb-item-row' key={item.id} onDoubleClick={a => this.editKeybinding(item)}>
+                this.items.map((item, index) =>
+                    <tr className='kb-item-row' key={index} onDoubleClick={a => this.editKeybinding(item)}>
                         <td>
                             <a href='#' onClick={a => this.editKeybinding(item)}>
                                 <i className='fa fa-pencil kb-edit'></i>
@@ -340,13 +340,9 @@ export class KeybindingWidget extends ReactWidget {
     protected renderMatchedData(item: string): React.ReactNode {
         if (this.query !== '') {
             const cellData = this.buildCellData(item);
-            let count = 0;
             return <React.Fragment>
                 {
-                    cellData.map(data => {
-                        count++;
-                        return (data.highlighted) ? <span key={count} className='fuzzy-match'>{data.value}</span> : <span key={data.value}>{data.value}</span>;
-                    })
+                    cellData.map((data, index) => (data.highlighted) ? <span key={index} className='fuzzy-match'>{data.value}</span> : <span key={index}>{data.value}</span>)
                 }
             </React.Fragment>;
         } else {
