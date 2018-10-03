@@ -225,3 +225,13 @@ export interface DefinitionLink {
 export interface DefinitionProvider {
     provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | DefinitionLink[] | undefined;
 }
+
+export interface DocumentLink {
+    range: Range;
+    url?: string;
+}
+
+export interface DocumentLinkProvider {
+    provideLinks(model: monaco.editor.ITextModel, token: monaco.CancellationToken): DocumentLink[] | undefined | PromiseLike<DocumentLink[] | undefined>;
+    resolveLink?: (link: DocumentLink, token: monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
+}

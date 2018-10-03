@@ -3698,7 +3698,7 @@ declare module '@theia/plugin' {
         [key: string]: boolean | number | string;
     }
 
-    /**
+	/**
      * The document formatting provider interface defines the contract between extensions and
      * the formatting-feature.
      */
@@ -3725,6 +3725,60 @@ declare module '@theia/plugin' {
             options: FormattingOptions,
             token: CancellationToken | undefined
         ): ProviderResult<TextEdit[] | undefined>;
+    }
+
+    /**
+     * A document link is a range in a text document that links to an internal or external resource, like another
+     * text document or a web site.
+     */
+    export class DocumentLink {
+
+        /**
+         * The range this link applies to.
+         */
+        range: Range;
+
+        /**
+         * The uri this link points to.
+         */
+        target?: Uri;
+
+        /**
+         * Creates a new document link.
+         *
+         * @param range The range the document link applies to. Must not be empty.
+         * @param target The uri the document link points to.
+         */
+        constructor(range: Range, target?: Uri);
+    }
+
+    /**
+     * The document link provider defines the contract between extensions and feature of showing
+     * links in the editor.
+     */
+    export interface DocumentLinkProvider {
+
+        /**
+         * Provide links for the given document. Note that the editor ships with a default provider that detects
+         * `http(s)` and `file` links.
+         *
+         * @param document The document in which the command was invoked.
+         * @param token A cancellation token.
+         * @return An array of [document links](#DocumentLink) or a thenable that resolves to such. The lack of a result
+         * can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideDocumentLinks(document: TextDocument, token: CancellationToken | undefined): ProviderResult<DocumentLink[]>;
+
+        /**
+         * Given a link fill in its [target](#DocumentLink.target). This method is called when an incomplete
+         * link is selected in the UI. Providers can implement this method and return incomplete links
+         * (without target) from the [`provideDocumentLinks`](#DocumentLinkProvider.provideDocumentLinks) method which
+         * often helps to improve performance.
+         *
+         * @param link The link that is to be resolved.
+         * @param token A cancellation token.
+         */
+        resolveDocumentLink?(link: DocumentLink, token: CancellationToken | undefined): ProviderResult<DocumentLink>;
     }
 
     export namespace languages {
@@ -3918,6 +3972,19 @@ declare module '@theia/plugin' {
             firstTriggerCharacter: string,
             ...moreTriggerCharacter: string[]
         ): Disposable;
+
+        /**
+		 * Register a document link provider.
+		 *
+		 * Multiple providers can be registered for a language. In that case providers are asked in
+		 * parallel and the results are merged. A failing provider (rejected promise or exception) will
+		 * not cause a failure of the whole operation.
+		 *
+		 * @param selector A selector that defines the documents this provider is applicable to.
+		 * @param provider A document link provider.
+		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 */
+        export function registerDocumentLinkProvider(selector: DocumentSelector, provider: DocumentLinkProvider): Disposable;
     }
 
     /**

@@ -24,7 +24,8 @@ import {
     MarkerData,
     RelatedInformation,
     Location,
-    DefinitionLink
+    DefinitionLink,
+    DocumentLink
 } from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
@@ -391,5 +392,12 @@ export function fromDefinitionLink(definitionLink: theia.DefinitionLink): Defini
         range: fromRange_(definitionLink.targetRange),
         origin: definitionLink.originSelectionRange ? fromRange_(definitionLink.originSelectionRange) : undefined,
         selectionRange: definitionLink.targetSelectionRange ? fromRange_(definitionLink.targetSelectionRange) : undefined
+    };
+}
+
+export function fromDocumentLink(definitionLink: theia.DocumentLink): DocumentLink {
+    return <DocumentLink>{
+        range: fromRange_(definitionLink.range),
+        url: definitionLink.target && definitionLink.target.toString()
     };
 }

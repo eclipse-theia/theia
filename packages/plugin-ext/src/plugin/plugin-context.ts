@@ -58,7 +58,8 @@ import {
     ParameterInformation,
     SignatureInformation,
     SignatureHelp,
-    Hover
+    Hover,
+    DocumentLink
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -321,6 +322,9 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             ): theia.Disposable {
                 return languagesExt.registerOnTypeFormattingEditProvider(selector, provider, [firstTriggerCharacter].concat(moreTriggerCharacters));
             },
+            registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
+                return languagesExt.registerLinkProvider(selector, provider);
+            }
         };
 
         const plugins: typeof theia.plugins = {
@@ -381,6 +385,7 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             SignatureInformation,
             SignatureHelp,
             Hover,
+            DocumentLink
         };
     };
 }
