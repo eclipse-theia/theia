@@ -29,7 +29,7 @@ import { DebugThreadsWidget } from './debug-threads-widget';
 import { DebugStackFramesWidget } from './debug-stack-frames-widget';
 import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
 import { DebugVariablesWidget } from './debug-variables-widget';
-import { ExtDebugProtocol } from '@theia/debug/src/common/debug-common';
+import { ExtDebugProtocol } from '../../common/debug-common';
 import { Disposable } from '@theia/core';
 import { DebugStyles } from './base/debug-styles';
 import { DebugToolBar } from './debug-toolbar-widget';
