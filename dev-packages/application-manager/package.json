@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@theia/application-package": "^0.3.15",
+    "@types/fs-extra": "^4.0.2",
     "bunyan": "^1.8.10",
     "circular-dependency-plugin": "^5.0.0",
     "copy-webpack-plugin": "^4.5.0",
@@ -38,6 +39,7 @@
     "electron-rebuild": "^1.5.11",
     "file-loader": "^1.1.11",
     "font-awesome-webpack": "0.0.5-beta.2",
+    "fs-extra": "^4.0.2",
     "ignore-loader": "^0.1.2",
     "less": "^2.7.2",
     "source-map-loader": "^0.2.1",
