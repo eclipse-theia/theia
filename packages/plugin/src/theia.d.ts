@@ -38,6 +38,16 @@ declare module '@theia/plugin' {
 
         static create(func: () => void): Disposable;
 
+        /**
+         * Combine many disposable-likes into one. Use this method
+         * when having objects with a dispose function which are not
+         * instances of Disposable.
+         *
+         * @param disposableLikes Objects that have at least a `dispose`-function member.
+         * @return Returns a new disposable which, upon dispose, will
+         * dispose all provided disposables.
+         */
+        static from(...disposableLikes: { dispose: () => any }[]): Disposable;
     }
 
     export type PluginType = 'frontend' | 'backend';

@@ -23,6 +23,18 @@ import { isMarkdownString } from './type-converters';
 export class Disposable {
     private disposable: undefined | (() => void);
 
+    static from(...disposables: { dispose(): any }[]): Disposable {
+        return new Disposable(() => {
+            if (disposables) {
+                for (const disposable of disposables) {
+                    if (disposable && typeof disposable.dispose === 'function') {
+                        disposable.dispose();
+                    }
+                }
+            }
+        });
+    }
+
     constructor(func: () => void) {
         this.disposable = func;
     }
