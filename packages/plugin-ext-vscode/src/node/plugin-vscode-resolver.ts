@@ -85,8 +85,8 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
                         reject('No extension');
                     }
                     let asset;
-                    if (wantedExtensionVersion !== null) {
-                        const extensionVersion = extension.versions.filter((value: any) => value.version === '0.0.1')[0];
+                    if (wantedExtensionVersion !== undefined) {
+                        const extensionVersion = extension.versions.filter((value: any) => value.version === wantedExtensionVersion)[0];
                         asset = extensionVersion.files.filter((f: any) => f.assetType === 'Microsoft.VisualStudio.Services.VSIXPackage')[0];
                     } else {
                         // take first one
