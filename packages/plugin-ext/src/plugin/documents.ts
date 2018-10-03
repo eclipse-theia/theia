@@ -29,12 +29,12 @@ export class DocumentsExtImpl implements DocumentsExt {
     private _onDidAddDocument = new Emitter<theia.TextDocument>();
     private _onDidRemoveDocument = new Emitter<theia.TextDocument>();
     private _onDidChangeDocument = new Emitter<theia.TextDocumentChangeEvent>();
-    private _onDidSaveDocument = new Emitter<theia.TextDocument>();
+    private _onDidSaveTextDocument = new Emitter<theia.TextDocument>();
 
     readonly onDidAddDocument: Event<theia.TextDocument> = this._onDidAddDocument.event;
     readonly onDidRemoveDocument: Event<theia.TextDocument> = this._onDidRemoveDocument.event;
     readonly onDidChangeDocument: Event<theia.TextDocumentChangeEvent> = this._onDidChangeDocument.event;
-    readonly onDidSaveDocument: Event<theia.TextDocument> = this._onDidSaveDocument.event;
+    readonly onDidSaveTextDocument: Event<theia.TextDocument> = this._onDidSaveTextDocument.event;
 
     private proxy: DocumentsMain;
     private documentLoader = new Map<string, Promise<DocumentDataExt | undefined>>();
@@ -74,7 +74,7 @@ export class DocumentsExtImpl implements DocumentsExt {
         const data = this.editorsAndDocuments.getDocument(uriString);
         this.$acceptDirtyStateChanged(strUrl, false);
         if (data) {
-            this._onDidSaveDocument.fire(data.document);
+            this._onDidSaveTextDocument.fire(data.document);
         }
     }
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void {

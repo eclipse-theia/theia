@@ -2663,6 +2663,11 @@ declare module '@theia/plugin' {
          */
         export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 
+		/**
+		 * An event that is emitted when a [text document](#TextDocument) is saved to disk.
+		 */
+        export const onDidSaveTextDocument: Event<TextDocument>;
+
         /**
          * Opens a document. Will return early if this document is already open. Otherwise
          * the document is loaded and the [didOpen](#workspace.onDidOpenTextDocument)-event fires.
