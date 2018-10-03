@@ -23,20 +23,25 @@ import {
     MAIN_RPC_CONTEXT,
     LanguagesExt
 } from '../../api/plugin-api';
-import { SerializedDocumentFilter, MarkerData, Range } from '../../api/model';
+import { interfaces } from 'inversify';
+import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
 import { UriComponents } from '../../common/uri-components';
 import { LanguageSelector } from '../../plugin/languages';
 import { DocumentFilter, MonacoModelIdentifier, testGlob, getLanguages } from 'monaco-languageclient/lib';
 import { DisposableCollection, Emitter } from '@theia/core';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
+    private ml: MonacoLanguages;
+
     private readonly proxy: LanguagesExt;
     private readonly disposables = new Map<number, monaco.IDisposable>();
-    constructor(rpc: RPCProtocol) {
+    constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.LANGUAGES_EXT);
+        this.ml = container.get(MonacoLanguages);
     }
 
     $getLanguages(): Promise<string[]> {
@@ -316,6 +321,20 @@ export class LanguagesMainImpl implements LanguagesMain {
                 });
 
             }
+        };
+    }
+
+    $registerWorkspaceSymbolProvider(handle: number): void {
+        const workspaceSymbolProvider = this.createWorkspaceSymbolProvider(handle);
+        const disposable = new DisposableCollection();
+        disposable.push(this.ml.registerWorkspaceSymbolProvider(workspaceSymbolProvider));
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createWorkspaceSymbolProvider(handle: number): WorkspaceSymbolProvider {
+        return {
+            provideWorkspaceSymbols: (params, token) => this.proxy.$provideWorkspaceSymbols(handle, params.query),
+            resolveWorkspaceSymbol: (symbol, token) => this.proxy.$resolveWorkspaceSymbol(handle, symbol)
         };
     }
 

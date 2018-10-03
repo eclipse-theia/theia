@@ -69,6 +69,8 @@ import { CodeLensAdapter } from './languages/lens';
 import { CommandRegistryImpl } from './command-registry';
 import { OutlineAdapter } from './languages/outline';
 import { ReferenceAdapter } from './languages/reference';
+import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
+import { SymbolInformation } from 'vscode-languageserver-types';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -85,7 +87,8 @@ type Adapter = CompletionAdapter |
     CodeActionAdapter |
     OutlineAdapter |
     LinkProviderAdapter |
-    ReferenceAdapter;
+    ReferenceAdapter |
+    WorkspaceSymbolAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -288,6 +291,22 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentHighlightAdapter, adapter => adapter.provideDocumentHighlights(URI.revive(resource), position));
     }
     // ### Document Highlight Provider end
+
+    // ### WorkspaceSymbol Provider begin
+    registerWorkspaceSymbolProvider(provider: theia.WorkspaceSymbolProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new WorkspaceSymbolAdapter(provider));
+        this.proxy.$registerWorkspaceSymbolProvider(callId);
+        return this.createDisposable(callId);
+    }
+
+    $provideWorkspaceSymbols(handle: number, query: string): PromiseLike<SymbolInformation[]> {
+        return this.withAdapter(handle, WorkspaceSymbolAdapter, adapter => adapter.provideWorkspaceSymbols(query));
+    }
+
+    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation): PromiseLike<SymbolInformation> {
+        return this.withAdapter(handle, WorkspaceSymbolAdapter, adapter => adapter.resolveWorkspaceSymbol(symbol));
+    }
+    // ### WorkspaceSymbol Provider end
 
     // ### Document Formatting Edit begin
     registerDocumentFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentFormattingEditProvider): theia.Disposable {

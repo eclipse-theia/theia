@@ -773,7 +773,7 @@ export class Location {
     uri: URI;
     range: Range;
 
-    constructor(uri: URI, rangeOrPosition: Range | Position) {
+    constructor(uri: URI, rangeOrPosition: Range | Position | undefined) {
         this.uri = uri;
         if (rangeOrPosition instanceof Range) {
             this.range = rangeOrPosition;

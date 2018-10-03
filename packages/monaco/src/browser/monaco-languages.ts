@@ -15,13 +15,15 @@
  ********************************************************************************/
 
 import { injectable, inject, decorate } from 'inversify';
-import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from 'monaco-languageclient';
-import { Languages, Diagnostic, DiagnosticCollection, Language } from '@theia/languages/lib/browser';
+import {
+    MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter,
+    MonacoToProtocolConverter
+} from 'monaco-languageclient';
+import { Languages, Diagnostic, DiagnosticCollection, Language, WorkspaceSymbolProvider } from '@theia/languages/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
 import { Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { WorkspaceSymbolProvider } from 'monaco-languageclient/lib/services';
 import { MonacoDiagnosticCollection } from 'monaco-languageclient/lib/monaco-diagnostic-collection';
 
 decorate(injectable(), BaseMonacoLanguages);

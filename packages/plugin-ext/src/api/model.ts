@@ -17,6 +17,7 @@
 import * as theia from '@theia/plugin';
 import { UriComponents } from '../common/uri-components';
 import { FileStat } from '@theia/filesystem/lib/common';
+import { SymbolInformation } from 'vscode-languageserver-types';
 
 // Should contains internal Plugin API types
 
@@ -415,4 +416,13 @@ export interface Breakpoint {
     readonly logMessage?: string;
     readonly location?: Location;
     readonly functionName?: string;
+}
+
+export interface WorkspaceSymbolProvider {
+    provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: monaco.CancellationToken): Thenable<SymbolInformation[]>;
+    resolveWorkspaceSymbol(symbol: SymbolInformation, token: monaco.CancellationToken): Thenable<SymbolInformation>
+}
+
+export interface WorkspaceSymbolParams {
+    query: string
 }
