@@ -236,6 +236,11 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             onDidOpenTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidAddDocument(listener, thisArg, disposables);
             },
+
+            onDidSaveTextDocument(listener, thisArg?, disposables?) {
+                return documents.onDidSaveTextDocument(listener, thisArg, disposables);
+            },
+
             getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
                 return preferenceRegistryExt.getConfiguration(section, resource);
             },
