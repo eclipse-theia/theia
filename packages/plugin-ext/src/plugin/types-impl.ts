@@ -861,3 +861,19 @@ export class Hover {
 }
 
 export type Definition = Location | Location[];
+
+export class DocumentLink {
+	range: Range;
+	target: URI;
+
+	constructor(range: Range, target: URI) {
+		if (target && !(target instanceof URI)) {
+			throw illegalArgument('target');
+		}
+		if (!Range.isRange(range) || range.isEmpty) {
+			throw illegalArgument('range');
+		}
+		this.range = range;
+		this.target = target;
+	}
+}

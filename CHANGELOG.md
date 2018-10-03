@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.3.16
+- [plug-in] added `DocumentLinkProvider` Plug-in API
+
+
 ## v0.3.15
 - [plug-in] added `menus` contribution point
 - [cpp] Add debugging for C/C++ programs

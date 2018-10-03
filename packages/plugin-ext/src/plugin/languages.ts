@@ -42,7 +42,8 @@ import {
     SingleEditOperation,
     FormattingOptions,
     Definition,
-    DefinitionLink
+    DefinitionLink,
+    DocumentLink
 } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -52,8 +53,16 @@ import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
 import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
 import { DefinitionAdapter } from './languages/definition';
+import { LinkProviderAdapter } from './languages/link-provider';
 
-type Adapter = CompletionAdapter | SignatureHelpAdapter | HoverAdapter | DocumentFormattingAdapter | RangeFormattingAdapter | OnTypeFormattingAdapter | DefinitionAdapter;
+type Adapter = CompletionAdapter |
+    SignatureHelpAdapter |
+    HoverAdapter |
+    DocumentFormattingAdapter |
+    RangeFormattingAdapter |
+    OnTypeFormattingAdapter |
+    DefinitionAdapter |
+    LinkProviderAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -260,6 +269,21 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### On Type Formatting Edit end
 
+    // ### Document Link Provider begin
+    $provideDocumentLinks(handle: number, resource: UriComponents): Promise<DocumentLink[] | undefined> {
+        return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.provideLinks(URI.revive(resource)));
+    }
+
+    $resolveDocumentLink(handle: number, link: DocumentLink): Promise<DocumentLink | undefined> {
+        return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.resolveLink(link));
+    }
+
+    registerLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new LinkProviderAdapter(provider, this.documents));
+        this.proxy.$registerDocumentLinkProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+    // ### Document Link Provider end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {

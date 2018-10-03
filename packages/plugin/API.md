@@ -518,3 +518,22 @@ function provideDefinitionHandler(document: theia.TextDocument, position: theia.
 
 The handler will be invoked each time when a user executes `Go To Definition` command.
 It is possible to return a few sources, but for most cases only one is enough. Return `undefined` to provide nothing.
+
+#### Document Link Provider
+
+A document link provider allows to add a custom link detection logic.
+
+Example of document link provider registration:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const provider = { provideDocumentLinks: provideLinks };
+
+const disposable = theia.languages.registerDocumentLinkProvider(documentsSelector, provider);
+
+...
+
+function provideLinks(document: theia.TextDocument): theia.ProviderResult<theia.DocumentLink> {
+    // code here
+}
+```

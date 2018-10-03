@@ -36,7 +36,8 @@ import {
     FormattingOptions,
     SingleEditOperation as ModelSingleEditOperation,
     Definition,
-    DefinitionLink
+    DefinitionLink,
+    DocumentLink
 } from './model';
 
 export interface PluginInitData {
@@ -656,6 +657,8 @@ export interface LanguagesExt {
         ch: string,
         options: FormattingOptions
     ): Promise<ModelSingleEditOperation[] | undefined>;
+    $provideDocumentLinks(handle: number, resource: UriComponents): Promise<DocumentLink[] | undefined>;
+    $resolveDocumentLink(handle: number, link: DocumentLink): Promise<DocumentLink | undefined>;
 }
 
 export interface LanguagesMain {
@@ -672,6 +675,7 @@ export interface LanguagesMain {
     $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerRangeFormattingProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
+    $registerDocumentLinkProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {
