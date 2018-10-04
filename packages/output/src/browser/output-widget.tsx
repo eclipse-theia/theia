@@ -100,16 +100,22 @@ export class OutputWidget extends ReactWidget {
     protected renderLines(): React.ReactNode[] {
         let id = 0;
         const result = [];
+
+        const style: React.CSSProperties = {
+            whiteSpace: 'pre',
+            fontFamily: 'monospace',
+        };
+
         if (this.selectedChannel) {
             for (const text of this.selectedChannel.getLines()) {
-                const lines = text.split(/([\n\r]+)/);
+                const lines = text.split(/[\n\r]+/);
                 for (const line of lines) {
-                    result.push(<div key={id++}>{line}</div>);
+                    result.push(<div style={style} key={id++}>{line}</div>);
                 }
             }
         }
         if (result.length === 0) {
-            result.push(<div key={id++}>{'<no output yet>'}</div>);
+            result.push(<div style={style} key={id++}>{'<no output yet>'}</div>);
         }
         return result;
     }
