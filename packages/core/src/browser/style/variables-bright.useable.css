@@ -77,7 +77,6 @@ is not optimized for dense, information rich UIs.
   --theia-code-font-family: monospace;
   --theia-ui-padding: 6px;
 
-
   /* Main layout colors (bright to dark)
     ------------------------------------ */
 
@@ -93,7 +92,7 @@ is not optimized for dense, information rich UIs.
   --theia-brand-color1: var(--md-blue-500);
   --theia-brand-color2: var(--md-blue-300);
   --theia-brand-color3: var(--md-blue-100);
-  
+
   /* Secondary Brand colors */
 
   --theia-secondary-brand-color0: var(--md-grey-700);
@@ -123,8 +122,8 @@ is not optimized for dense, information rich UIs.
   --theia-warn-color1: var(--md-amber-400);
   --theia-warn-color2: var(--md-amber-300);
   --theia-warn-color3: var(--md-amber-200);
-  
-  --theia-warn-font-color0: var(--md-grey-900); 
+
+  --theia-warn-font-color0: var(--md-grey-900);
 
   --theia-error-color0: var(--md-red-400);
   --theia-error-color1: var(--md-red-300);
@@ -139,7 +138,7 @@ is not optimized for dense, information rich UIs.
   --theia-success-color3: var(--md-green-50);
 
   --theia-success-font-color0: var(--md-grey-300);
-  
+
   --theia-info-color0: var(--md-cyan-700);
   --theia-info-color1: var(--md-cyan-500);
   --theia-info-color2: var(--md-cyan-300);
@@ -155,7 +154,10 @@ is not optimized for dense, information rich UIs.
   --theia-added-color0: rgba(0, 255, 0, 0.8);
   --theia-removed-color0: rgba(230, 0, 0, 0.8);
   --theia-modified-color0: rgba(0, 100, 150, 0.8);
-  
+
+  /* Background for selected text */
+  --theia-selected-text-background: var(--theia-accent-color3);
+
   /* Colors to highlight words in widgets like tree or editors */
 
   --theia-word-highlight-color0: rgba(168, 172, 148, 0.7);
@@ -209,7 +211,7 @@ is not optimized for dense, information rich UIs.
   /* Expand/collapse element */
   --theia-ui-expand-button-color: var(--theia-accent-color4);
   --theia-ui-expand-button-font-color: var(--theia-ui-font-color1);
-  
+
   /* Dialogs */
   --theia-ui-dialog-header-color: var(--theia-brand-color1);
   --theia-ui-dialog-header-font-color: var(--theia-inverse-ui-font-color0);
