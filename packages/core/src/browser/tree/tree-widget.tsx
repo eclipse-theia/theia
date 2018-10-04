@@ -838,10 +838,6 @@ export namespace TreeWidget {
                 scrollToIndex={scrollToRow}
                 onScroll={handleScroll}
                 tabIndex={-1}
-                style={{
-                    overflowY: 'visible',
-                    overflowX: 'visible'
-                }}
             />;
         }
         protected renderTreeRow: ListRowRenderer = ({ key, index, style }) => {
