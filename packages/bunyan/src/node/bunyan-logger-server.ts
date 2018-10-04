@@ -24,7 +24,7 @@ import { ILoggerServer, ILoggerClient, ILogLevelChangedEvent, LogLevel, rootLogg
 export class BunyanLoggerServer implements ILoggerServer {
 
     /* Root logger and all child logger array.  */
-    private loggers = new Map<string, bunyan>();
+    private readonly loggers = new Map<string, bunyan>();
 
     /* Logger client to send notifications to.  */
     private client: ILoggerClient | undefined = undefined;
