@@ -101,6 +101,10 @@ body {
   border-color: var(--theia-accent-color3);
 }
 
+::selection {
+    background: var(--theia-selected-text-background);
+}
+
 .p-Widget:focus {
     border: none;
 }
