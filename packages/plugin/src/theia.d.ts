@@ -1415,6 +1415,79 @@ declare module '@theia/plugin' {
         validatePosition(position: Position): Position;
     }
 
+    /**
+     * Represents reasons why a text document is saved.
+     */
+    export enum TextDocumentSaveReason {
+
+        /**
+         * Manually triggered, e.g. by the user pressing save, by starting debugging,
+         * or by an API call.
+         */
+        Manual = 1,
+
+        /**
+         * Automatic after a delay.
+         */
+        AfterDelay = 2,
+
+        /**
+         * When the editor lost focus.
+         */
+        FocusOut = 3
+    }
+
+    /**
+      * An event that is fired when a [document](#TextDocument) will be saved.
+      *
+      * To make modifications to the document before it is being saved, call the
+      * [`waitUntil`](#TextDocumentWillSaveEvent.waitUntil)-function with a thenable
+      * that resolves to an array of [text edits](#TextEdit).
+      */
+    export interface TextDocumentWillSaveEvent {
+
+        /**
+         * The document that will be saved.
+         */
+        document: TextDocument;
+
+        /**
+         * The reason why save was triggered.
+         */
+        reason: TextDocumentSaveReason;
+
+        /**
+         * Allows to pause the event loop and to apply [pre-save-edits](#TextEdit).
+         * Edits of subsequent calls to this function will be applied in order. The
+         * edits will be *ignored* if concurrent modifications of the document happened.
+         *
+         * *Note:* This function can only be called during event dispatch and not
+         * in an asynchronous manner:
+         *
+         * ```ts
+         * workspace.onWillSaveTextDocument(event => {
+         *  // async, will *throw* an error
+         *  setTimeout(() => event.waitUntil(promise));
+         *
+         *  // sync, OK
+         *  event.waitUntil(promise);
+         * })
+         * ```
+         *
+         * @param thenable A thenable that resolves to [pre-save-edits](#TextEdit).
+         */
+        waitUntil(thenable: Thenable<TextEdit[]>): void;
+
+        /**
+         * Allows to pause the event loop until the provided thenable resolved.
+         *
+         * *Note:* This function can only be called during event dispatch.
+         *
+         * @param thenable A thenable that delays saving.
+         */
+        waitUntil(thenable: Thenable<any>): void;
+    }
+
     export interface TextDocumentChangeEvent {
         document: TextDocument;
 
@@ -2011,8 +2084,8 @@ declare module '@theia/plugin' {
          * like "TypeScript", and an array of extensions, e.g.
          * ```ts
          * {
-         * 	'Images': ['png', 'jpg']
-         * 	'TypeScript': ['ts', 'tsx']
+         *  'Images': ['png', 'jpg']
+         *  'TypeScript': ['ts', 'tsx']
          * }
          * ```
          */
@@ -2673,9 +2746,9 @@ declare module '@theia/plugin' {
          */
         export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 
-		/**
-		 * An event that is emitted when a [text document](#TextDocument) is saved to disk.
-		 */
+        /**
+         * An event that is emitted when a [text document](#TextDocument) is saved to disk.
+         */
         export const onDidSaveTextDocument: Event<TextDocument>;
 
         /**
@@ -3648,6 +3721,164 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A code lens represents a [command](#Command) that should be shown along with
+     * source text, like the number of references, a way to run tests, etc.
+     *
+     * A code lens is _unresolved_ when no command is associated to it. For performance
+     * reasons the creation of a code lens and resolving should be done to two stages.
+     *
+     * @see [CodeLensProvider.provideCodeLenses](#CodeLensProvider.provideCodeLenses)
+     * @see [CodeLensProvider.resolveCodeLens](#CodeLensProvider.resolveCodeLens)
+     */
+    export class CodeLens {
+
+        /**
+         * The range in which this code lens is valid. Should only span a single line.
+         */
+        range: Range;
+
+        /**
+         * The command this code lens represents.
+         */
+        command?: Command;
+
+        /**
+         * `true` when there is a command associated.
+         */
+        readonly isResolved: boolean;
+
+        /**
+         * Creates a new code lens object.
+         *
+         * @param range The range to which this code lens applies.
+         * @param command The command associated to this code lens.
+         */
+        constructor(range: Range, command?: Command);
+    }
+
+    /**
+     * Kind of a code action.
+     *
+     * Kinds are a hierarchical list of identifiers separated by `.`, e.g. `"refactor.extract.function"`.
+     *
+     * Code action kinds are used by VS Code for UI elements such as the refactoring context menu. Users
+     * can also trigger code actions with a specific kind with the `editor.action.codeAction` command.
+     */
+    export class CodeActionKind {
+        /**
+         * Empty kind.
+         */
+        static readonly Empty: CodeActionKind;
+
+        /**
+         * Base kind for quickfix actions: `quickfix`.
+         *
+         * Quick fix actions address a problem in the code and are shown in the normal code action context menu.
+         */
+        static readonly QuickFix: CodeActionKind;
+
+        /**
+         * Base kind for refactoring actions: `refactor`
+         *
+         * Refactoring actions are shown in the refactoring context menu.
+         */
+        static readonly Refactor: CodeActionKind;
+
+        /**
+         * Base kind for refactoring extraction actions: `refactor.extract`
+         *
+         * Example extract actions:
+         *
+         * - Extract method
+         * - Extract function
+         * - Extract variable
+         * - Extract interface from class
+         * - ...
+         */
+        static readonly RefactorExtract: CodeActionKind;
+
+        /**
+         * Base kind for refactoring inline actions: `refactor.inline`
+         *
+         * Example inline actions:
+         *
+         * - Inline function
+         * - Inline variable
+         * - Inline constant
+         * - ...
+         */
+        static readonly RefactorInline: CodeActionKind;
+
+        /**
+         * Base kind for refactoring rewrite actions: `refactor.rewrite`
+         *
+         * Example rewrite actions:
+         *
+         * - Convert JavaScript function to class
+         * - Add or remove parameter
+         * - Encapsulate field
+         * - Make method static
+         * - Move method to base class
+         * - ...
+         */
+        static readonly RefactorRewrite: CodeActionKind;
+
+        /**
+         * Base kind for source actions: `source`
+         *
+         * Source code actions apply to the entire file and can be run on save
+         * using `editor.codeActionsOnSave`. They also are shown in `source` context menu.
+         */
+        static readonly Source: CodeActionKind;
+
+        /**
+         * Base kind for an organize imports source action: `source.organizeImports`.
+         */
+        static readonly SourceOrganizeImports: CodeActionKind;
+
+        private constructor(value: string);
+
+        /**
+         * String value of the kind, e.g. `"refactor.extract.function"`.
+         */
+        readonly value?: string;
+
+        /**
+         * Create a new kind by appending a more specific selector to the current kind.
+         *
+         * Does not modify the current kind.
+         */
+        append(parts: string): CodeActionKind;
+
+        /**
+         * Does this kind contain `other`?
+         *
+         * The kind `"refactor"` for example contains `"refactor.extract"` and ``"refactor.extract.function"`, but not `"unicorn.refactor.extract"` or `"refactory.extract"`
+         *
+         * @param other Kind to check.
+         */
+        contains(other: CodeActionKind): boolean;
+    }
+
+    /**
+     * Contains additional diagnostic information about the context in which
+     * a [code action](#CodeActionProvider.provideCodeActions) is run.
+     */
+    export interface CodeActionContext {
+        /**
+         * An array of diagnostics.
+         */
+        readonly diagnostics: Diagnostic[];
+
+        /**
+         * Requested kind of actions to return.
+         *
+         * Actions not of this kind are filtered out before being shown by the lightbulb.
+         */
+        readonly only?: CodeActionKind;
+    }
+
+    /**
      * The document formatting provider interface defines the contract between extensions and
      * the formatting-feature.
      */
@@ -3718,10 +3949,10 @@ declare module '@theia/plugin' {
         [key: string]: boolean | number | string;
     }
 
-	/**
-     * The document formatting provider interface defines the contract between extensions and
-     * the formatting-feature.
-     */
+    /**
+    * The document formatting provider interface defines the contract between extensions and
+    * the formatting-feature.
+    */
     export interface OnTypeFormattingEditProvider {
 
         /**
@@ -3994,16 +4225,16 @@ declare module '@theia/plugin' {
         ): Disposable;
 
         /**
-		 * Register a document link provider.
-		 *
-		 * Multiple providers can be registered for a language. In that case providers are asked in
-		 * parallel and the results are merged. A failing provider (rejected promise or exception) will
-		 * not cause a failure of the whole operation.
-		 *
-		 * @param selector A selector that defines the documents this provider is applicable to.
-		 * @param provider A document link provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-		 */
+        * Register a document link provider.
+        *
+        * Multiple providers can be registered for a language. In that case providers are asked in
+        * parallel and the results are merged. A failing provider (rejected promise or exception) will
+        * not cause a failure of the whole operation.
+        *
+        * @param selector A selector that defines the documents this provider is applicable to.
+        * @param provider A document link provider.
+        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+        */
         export function registerDocumentLinkProvider(selector: DocumentSelector, provider: DocumentLinkProvider): Disposable;
     }
 

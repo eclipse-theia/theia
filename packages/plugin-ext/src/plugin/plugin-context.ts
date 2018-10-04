@@ -59,7 +59,11 @@ import {
     SignatureInformation,
     SignatureHelp,
     Hover,
-    DocumentLink
+    DocumentLink,
+    CodeLens,
+    CodeActionKind,
+    CodeActionTrigger,
+    TextDocumentSaveReason
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -390,7 +394,11 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             SignatureInformation,
             SignatureHelp,
             Hover,
-            DocumentLink
+            DocumentLink,
+            CodeLens,
+            CodeActionKind,
+            CodeActionTrigger,
+            TextDocumentSaveReason,
         };
     };
 }
