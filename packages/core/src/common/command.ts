@@ -41,7 +41,7 @@ export interface Command {
 export namespace Command {
     /* Determine whether object is a Command */
     export function is(arg: Command | any): arg is Command {
-        return !!arg && 'id' in arg;
+        return !!arg && arg === Object(arg) && 'id' in arg;
     }
 }
 
