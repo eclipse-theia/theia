@@ -122,10 +122,10 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     protected getSelection(selection: RecursivePartial<Range>): Range | Position | undefined {
         const { start, end } = selection;
-        if (start && start.line !== undefined && start.line >= 0 &&
-            start.character !== undefined && start.character >= 0) {
-            if (end && end.line !== undefined && end.line >= 0 &&
-                end.character !== undefined && end.character >= 0) {
+        if (start && start.line !== undefined && start.line >= -1 &&
+            start.character !== undefined && start.character >= -1) {
+            if (end && end.line !== undefined && end.line >= -1 &&
+                end.character !== undefined && end.character >= -1) {
                 return selection as Range;
             }
             return start as Position;
