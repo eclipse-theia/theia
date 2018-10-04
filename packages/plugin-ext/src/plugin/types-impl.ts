@@ -19,6 +19,7 @@ import * as theia from '@theia/plugin';
 import URI from 'vscode-uri';
 import { relative } from '../common/paths-util';
 import { isMarkdownString } from './type-converters';
+import { startsWithIgnoreCase } from '../common/strings';
 
 export class Disposable {
     private disposable: undefined | (() => void);
@@ -875,17 +876,69 @@ export class Hover {
 export type Definition = Location | Location[];
 
 export class DocumentLink {
-	range: Range;
-	target: URI;
+    range: Range;
+    target: URI;
 
-	constructor(range: Range, target: URI) {
-		if (target && !(target instanceof URI)) {
-			throw illegalArgument('target');
-		}
-		if (!Range.isRange(range) || range.isEmpty) {
-			throw illegalArgument('range');
-		}
-		this.range = range;
-		this.target = target;
-	}
+    constructor(range: Range, target: URI) {
+        if (target && !(target instanceof URI)) {
+            throw illegalArgument('target');
+        }
+        if (!Range.isRange(range) || range.isEmpty) {
+            throw illegalArgument('range');
+        }
+        this.range = range;
+        this.target = target;
+    }
+}
+
+export class CodeLens {
+
+    range: Range;
+
+    command?: theia.Command;
+
+    get isResolved(): boolean {
+        return !!this.command;
+    }
+
+    constructor(range: Range, command?: theia.Command) {
+        this.range = range;
+        this.command = command;
+    }
+}
+
+export enum CodeActionTrigger {
+    Automatic = 1,
+    Manual = 2,
+}
+
+export class CodeActionKind {
+    private static readonly sep = '.';
+
+    public static readonly Empty = new CodeActionKind('');
+    public static readonly QuickFix = CodeActionKind.Empty.append('quickfix');
+    public static readonly Refactor = CodeActionKind.Empty.append('refactor');
+    public static readonly RefactorExtract = CodeActionKind.Refactor.append('extract');
+    public static readonly RefactorInline = CodeActionKind.Refactor.append('inline');
+    public static readonly RefactorRewrite = CodeActionKind.Refactor.append('rewrite');
+    public static readonly Source = CodeActionKind.Empty.append('source');
+    public static readonly SourceOrganizeImports = CodeActionKind.Source.append('organizeImports');
+
+    constructor(
+        public readonly value: string
+    ) { }
+
+    public append(parts: string): CodeActionKind {
+        return new CodeActionKind(this.value ? this.value + CodeActionKind.sep + parts : parts);
+    }
+
+    public contains(other: CodeActionKind): boolean {
+        return this.value === other.value || startsWithIgnoreCase(other.value, this.value + CodeActionKind.sep);
+    }
+}
+
+export enum TextDocumentSaveReason {
+    Manual = 1,
+    AfterDelay = 2,
+    FocusOut = 3
 }
