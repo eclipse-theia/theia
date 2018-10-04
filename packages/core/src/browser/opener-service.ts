@@ -40,7 +40,7 @@ export interface OpenHandler {
     readonly iconClass?: string;
     /**
      * Test whether this handler can open the given URI for given options.
-     * Return a positive number if this handler can open; otherwise it cannot.
+     * Return a nonzero number if this handler can open; otherwise it cannot.
      * Never reject.
      *
      * A returned value indicating a priority of this handler.
