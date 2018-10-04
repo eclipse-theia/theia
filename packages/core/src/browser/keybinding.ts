@@ -58,7 +58,7 @@ export namespace Keybinding {
 
     /* Determine whether object is a KeyBinding */
     export function is(arg: Keybinding | any): arg is Keybinding {
-        return !!arg && 'command' in arg && 'keybinding' in arg;
+        return !!arg && arg === Object(arg) && 'command' in arg && 'keybinding' in arg;
     }
 }
 

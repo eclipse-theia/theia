@@ -29,7 +29,7 @@ export interface MenuAction {
 export namespace MenuAction {
     /* Determine whether object is a MenuAction */
     export function is(arg: MenuAction | any): arg is MenuAction {
-        return !!arg && 'commandId' in arg;
+        return !!arg && arg === Object(arg) && 'commandId' in arg;
     }
 }
 
