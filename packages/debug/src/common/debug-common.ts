@@ -263,6 +263,7 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
 
         this.allThreadsContinued = body.allThreadsContinued;
         if (this.allThreadsContinued) {
+            this.allThreadsStopped = false;
             this.stoppedThreadIds.clear();
         } else {
             this.stoppedThreadIds.delete(body.threadId);
@@ -273,6 +274,9 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
         const body = event.body;
 
         this.allThreadsStopped = body.allThreadsStopped;
+        if (this.allThreadsStopped) {
+            this.allThreadsContinued = false;
+        }
         if (body.threadId) {
             this.stoppedThreadIds.add(body.threadId);
         }
