@@ -84,7 +84,7 @@ export class TheiaPluginScanner implements PluginScanner {
         };
     }
 
-    private readContributions(rawPlugin: PluginPackage): PluginContribution | undefined {
+    protected readContributions(rawPlugin: PluginPackage): PluginContribution | undefined {
         if (!rawPlugin.contributes) {
             return undefined;
         }
