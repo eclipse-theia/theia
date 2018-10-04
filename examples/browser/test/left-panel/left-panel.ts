@@ -46,8 +46,8 @@ export class LeftPanel {
             && this.isPanelVisible());
     }
 
-    waitForFilesView(): void {
-        this.driver.waitForExist('#files');
+    waitForFilesViewVisible(): void {
+        this.driver.waitForVisible('#files');
         // Wait for animations to finish
         this.driver.pause(300);
     }
@@ -57,8 +57,8 @@ export class LeftPanel {
             && this.isPanelVisible());
     }
 
-    waitForGitView(): void {
-        this.driver.waitForExist('#theia-gitContainer');
+    waitForGitViewVisible(): void {
+        this.driver.waitForVisible('#theia-gitContainer');
         // Wait for animations to finish
         this.driver.pause(300);
     }
@@ -67,8 +67,8 @@ export class LeftPanel {
         return this.driver.isExisting('#extensions') && (this.driver.element('#extensions').getAttribute('class').split(' ').indexOf('theia-extensions') !== -1);
     }
 
-    waitForExtensionsView(): void {
-        this.driver.waitForExist('#extensions');
+    waitForExtensionsViewVisible(): void {
+        this.driver.waitForVisible('#extensions');
         // Wait for animations to finish
         this.driver.pause(300);
     }
@@ -78,8 +78,8 @@ export class LeftPanel {
             && this.isPanelVisible());
     }
 
-    waitForGitHistoryView(): void {
-        this.driver.waitForExist('#git-history');
+    waitForGitHistoryViewVisible(): void {
+        this.driver.waitForVisible('#git-history');
         // Wait for animations to finish
         this.driver.pause(300);
     }
@@ -88,8 +88,8 @@ export class LeftPanel {
         return this.driver.isExisting('.p-Widget div.theia-output') && this.driver.element('#plugins').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
     }
 
-    waitForPluginsView(): void {
-        this.driver.waitForExist('#plugins');
+    waitForPluginsViewVisible(): void {
+        this.driver.waitForVisible('#plugins');
         // Wait for animations to finish
         this.driver.pause(300);
     }
@@ -98,8 +98,8 @@ export class LeftPanel {
         return this.driver.isExisting('#search-in-workspace') && this.driver.element('#search-in-workspace').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
     }
 
-    waitForSearchView(): void {
-        this.driver.waitForExist('#search-in-workspace');
+    waitForSearchViewVisible(): void {
+        this.driver.waitForVisible('#search-in-workspace');
         // Wait for animations to finish
         this.driver.pause(300);
     }
