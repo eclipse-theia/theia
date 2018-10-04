@@ -61,10 +61,14 @@ export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
 export const StatusBar = Symbol('StatusBar');
 
 export interface StatusBar {
-    setBackgroundColor(color?: string): Promise<void>;
-    setColor(color?: string): Promise<void>;
+    setClassName(name: StatusBarState): Promise<void>;
     setElement(id: string, entry: StatusBarEntry): Promise<void>;
     removeElement(id: string): Promise<void>;
+}
+
+export enum StatusBarState {
+    ONLINE = 'theia-statusBar-online',
+    OFFLINE = 'theia-statusBar-offline',
 }
 
 @injectable()
@@ -100,26 +104,13 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         this.update();
     }
 
-    async setBackgroundColor(color?: string): Promise<void> {
+    async setClassName(name: StatusBarState): Promise<void> {
         await this.ready;
-        this.internalSetBackgroundColor(color);
+        this.internalSetClassName(name);
     }
 
-    async setColor(color?: string): Promise<void> {
-        await this.ready;
-        this.internalSetColor(color);
-    }
-
-    protected internalSetBackgroundColor(color?: string): void {
-        this.backgroundColor = color;
-        // tslint:disable-next-line:no-null-keyword
-        this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
-    }
-
-    protected internalSetColor(color?: string): void {
-        this.color = color;
-        // tslint:disable-next-line:no-null-keyword
-        this.node.style.color = this.color ? this.color : null;
+    protected internalSetClassName(name: StatusBarState): void {
+        this.node.className = name;
     }
 
     protected render(): JSX.Element {

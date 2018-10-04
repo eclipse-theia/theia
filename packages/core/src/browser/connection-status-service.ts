@@ -18,7 +18,7 @@ import { inject, injectable, optional, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Event, Emitter } from '../common/event';
 import { DefaultFrontendApplicationContribution } from './frontend-application';
-import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
+import { StatusBar, StatusBarAlignment, StatusBarState } from './status-bar/status-bar';
 import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
 import { Disposable } from '../common';
 
@@ -199,13 +199,12 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
     private statusbarId = 'connection-status';
 
     protected handleOnline() {
-        this.statusBar.setBackgroundColor(undefined);
+        this.statusBar.setClassName(StatusBarState.ONLINE);
         this.statusBar.removeElement(this.statusbarId);
     }
 
     protected handleOffline() {
-        this.statusBar.setBackgroundColor('var(--theia-warn-color0)');
-        this.statusBar.setColor('var(--theia-warn-font-color0)');
+        this.statusBar.setClassName(StatusBarState.OFFLINE);
         this.statusBar.setElement(this.statusbarId, {
             alignment: StatusBarAlignment.LEFT,
             text: 'Offline',

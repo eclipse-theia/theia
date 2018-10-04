@@ -19,7 +19,6 @@
 }
 
 #theia-statusBar {
-    background: var(--theia-statusbar-color);
     display: flex;
     min-height: var(--theia-statusBar-height);
     white-space: nowrap;
@@ -42,7 +41,6 @@
 }
 
 #theia-statusBar .area .element {
-    color: var(--theia-statusBar-font-color);
     display: flex;
     align-items: center;
     padding: 0 4px;
@@ -50,7 +48,7 @@
 }
 
 #theia-statusBar .area .element.hasCommand:hover {
-    background-color: var(--theia-accent-color2);
+    background-color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
 }
 
@@ -60,4 +58,14 @@
 
 #theia-statusBar .area.right .element {
     margin-left: 15px;
+}
+
+.theia-statusBar-online {
+    background: var(--theia-statusbar-color);
+    color: var(--theia-ui-font-color0);
+}
+
+.theia-statusBar-offline {
+    background-color: var(--theia-warn-color0);
+    color: var(--theia-warn-font-color0);
 }
