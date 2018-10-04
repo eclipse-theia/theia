@@ -19,6 +19,7 @@ import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model
 import { QuickOpenService, QuickOpenOptions } from './quick-open-service';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ILogger } from '../../common/logger';
+import { MaybePromise } from '../../common/types';
 
 export const QuickOpenContribution = Symbol('QuickOpenContribution');
 /**
@@ -49,7 +50,7 @@ export interface QuickOpenHandler {
      * the quick open widget matches this handler's prefix.
      * Allows to initialize the model with some initial data.
      */
-    init?(): void;
+    init?(): MaybePromise<void>;
 
     /**
      * A model that should be used by the quick open widget when this handler's prefix is used.
