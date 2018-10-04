@@ -238,7 +238,8 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 case 'exception':
                 case 'breakpoint':
                 case 'entry':
-                case 'step': {
+                case 'step':
+                case 'user request': {
                     const activeDebugSession = this.debugSessionManager.getActiveDebugSession();
                     if (activeDebugSession && activeDebugSession.sessionId === debugSession.sessionId) {
                         const args: DebugProtocol.StackTraceArguments = {
