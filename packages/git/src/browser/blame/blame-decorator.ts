@@ -158,7 +158,7 @@ export class BlameDecorator implements HoverProvider {
         const when = commitTime.fromNow();
         const contentWidth = BlameDecorator.maxWidth - when.length - 2;
         let content = commit.summary.substring(0, contentWidth + 1);
-        content.replace('\n', '↩︎');
+        content = content.replace('\n', '↩︎');
         if (content.length > contentWidth) {
             let cropAt = content.lastIndexOf(' ', contentWidth - 4);
             if (cropAt < contentWidth / 2) {
