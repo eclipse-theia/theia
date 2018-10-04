@@ -565,7 +565,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     protected renderUnstagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.unstagedChanges.length > 0) {
             return <div id='unstagedChanges' className='changesContainer'>
-                <div className='theia-header'>Changed</div>
+                <div className='theia-header'>Changes</div>
                 {this.unstagedChanges.map(change => this.renderGitItem(repository, change))}
             </div>;
         }
