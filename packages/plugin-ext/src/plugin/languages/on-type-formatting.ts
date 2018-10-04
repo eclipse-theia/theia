@@ -20,6 +20,7 @@ import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
 import { FormattingOptions, SingleEditOperation } from '../../api/model';
 import { Position } from '../../api/plugin-api';
+import { createToken } from '../token-provider';
 
 export class OnTypeFormattingAdapter {
 
@@ -37,7 +38,7 @@ export class OnTypeFormattingAdapter {
         const doc = document.document;
         const pos = Converter.toPosition(position);
 
-        return Promise.resolve(this.provider.provideOnTypeFormattingEdits(doc, pos, ch, <any>options, undefined)).then(value => {
+        return Promise.resolve(this.provider.provideOnTypeFormattingEdits(doc, pos, ch, <any>options, createToken())).then(value => {
             if (Array.isArray(value)) {
                 return value.map(Converter.fromTextEdit);
             }

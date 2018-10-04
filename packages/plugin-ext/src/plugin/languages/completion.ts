@@ -22,6 +22,7 @@ import * as Converter from '../type-converters';
 import { mixin } from '../../common/types';
 import { Position } from '../../api/plugin-api';
 import { CompletionContext, CompletionResultDto, Completion, CompletionDto } from '../../api/model';
+import { createToken } from '../token-provider';
 
 export class CompletionAdapter {
     private cacheId = 0;
@@ -41,7 +42,7 @@ export class CompletionAdapter {
         const doc = document.document;
 
         const pos = Converter.toPosition(position);
-        return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, undefined, context)).then(value => {
+        return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, createToken(), context)).then(value => {
             const id = this.cacheId++;
             const result: CompletionResultDto = {
                 id,
