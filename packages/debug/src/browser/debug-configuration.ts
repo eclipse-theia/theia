@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
@@ -22,11 +22,11 @@ import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
 import { DebugService, DebugConfiguration, LaunchConfig } from '../common/debug-common';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import * as jsoncparser from 'jsonc-parser';
+import { Emitter, Event } from '@theia/core';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 
 @injectable()
 export class DebugConfigurationManager {
-    private static readonly CONFIG = '.theia/launch.json';
-
     @inject(FileSystem)
     // TODO: use MonacoTextModelService instead
     protected readonly fileSystem: FileSystem;
@@ -40,6 +40,26 @@ export class DebugConfigurationManager {
     protected readonly quickPick: QuickPickService;
     @inject(VariableResolverService)
     protected readonly variableResolver: VariableResolverService;
+    @inject(FileSystemWatcher)
+    protected readonly fileSystemWatcher: FileSystemWatcher;
+
+    protected readonly onDidConfigurationChangedEmitter = new Emitter<void>();
+
+    private static readonly CONFIG = '.theia/launch.json';
+    private uri: URI | undefined;
+
+    @postConstruct()
+    protected init() {
+        this.workspaceService.onWorkspaceChanged(roots => {
+            this.uri = roots.length > 0 ? new URI(roots[0].uri + '/' + DebugConfigurationManager.CONFIG) : undefined;
+        });
+
+        this.fileSystemWatcher.onFilesChanged(event => {
+            if (this.uri && FileChangeEvent.isUpdated(event, this.uri)) {
+                this.onDidConfigurationChangedEmitter.fire(undefined);
+            }
+        });
+    }
 
     /**
      * Opens configuration file in the editor.
@@ -78,6 +98,11 @@ export class DebugConfigurationManager {
         })), {
                 placeholder: 'Select launch configuration'
             });
+
+        return await this.resolveDebugConfiguration(configuration);
+    }
+
+    async resolveDebugConfiguration(configuration: DebugConfiguration | undefined): Promise<DebugConfiguration | undefined> {
         const resolvedConfiguration = configuration && await this.debug.resolveDebugConfiguration(configuration);
         return resolvedConfiguration && this.variableResolver.resolve(resolvedConfiguration);
     }
@@ -112,22 +137,26 @@ export class DebugConfigurationManager {
         await this.fileSystem.setContent(configFile, jsonPretty);
     }
 
+    get onDidConfigurationChanged(): Event<void> {
+        return this.onDidConfigurationChangedEmitter.event;
+    }
+
     /**
      * Creates and returns configuration file.
      * @returns [configuration file](#FileStat).
      */
     protected async resolveConfigurationFile(): Promise<FileStat> {
-        const root = this.workspaceService.tryGetRoots()[0];
-        if (!root) {
+        if (!this.uri) {
             throw new Error('Workspace is not opened yet.');
         }
-        const uri = root.uri + '/' + DebugConfigurationManager.CONFIG;
-        const configFile = await this.fileSystem.exists(uri)
+
+        const fileName = this.uri.toString();
+        const configFile = await this.fileSystem.exists(fileName)
             .then(exists => {
                 if (exists) {
-                    return this.fileSystem.getFileStat(uri);
+                    return this.fileSystem.getFileStat(fileName);
                 } else {
-                    return this.fileSystem.createFile(uri, { encoding: 'utf8' });
+                    return this.fileSystem.createFile(fileName, { encoding: 'utf8' });
                 }
             });
         if (!configFile) {

@@ -200,6 +200,7 @@ div[orientation='vertical'] > .theia-debug-entry > .theia-TreeContainer > div > 
     font-weight: 800;
     border: 4px solid;
     border-color: var(--theia-layout-color3);
+    margin: 2px;
 }
 
 .theia-debug-breakpoint-dialog .theia-debug-breakpoints {
@@ -243,4 +244,73 @@ div[orientation='vertical'] > .theia-debug-entry > .theia-TreeContainer > div > 
 
 .theia-debug-console-variable .name {
     color: var(--theia-variable-name-color);
+}
+
+
+/** Debug explorer */
+
+.theia-debug-explorer {
+    display: inline-table;
+    color: var(--theia-ui-font-color1);
+    background: var(--theia-layout-color0);
+    font-size: var(--theia-ui-font-size1);
+}
+
+.theia-debug-explorer .header-container {
+    background: var(--theia-layout-color3);
+    border: 4px solid;
+    border-color: var(--theia-layout-color3);
+    margin: 2px;
+    height: 15px;
+}
+
+.theia-debug-explorer .header-container .header {
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: var(--theia-ui-font-size0);
+    float: left;
+}
+
+.theia-debug-explorer .configuration-container {
+    line-height: var(--theia-private-horizontal-tab-height);
+}
+
+.theia-debug-explorer .configuration-container:hover {
+    background: var(--theia-accent-color4);
+}
+
+.theia-debug-explorer .configuration-container .configuration {
+    user-select: none;
+    padding-left: 5px;
+    float: left;
+}
+
+.theia-debug-explorer .button-container {
+    float: right;
+}
+
+.theia-debug-explorer .configuration-container .clear-float{
+    clear: both;
+}
+
+.theia-debug-explorer .button-container .btn {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    align-items: center;
+    user-select: none;
+    border: var(--theia-border-width) solid transparent;
+    opacity: 0.25;
+    pointer-events: none;
+    margin-right: 5px;
+}
+
+.theia-debug-explorer .button-container .btn.enabled {
+    opacity: 0.7;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.theia-debug-explorer .button-container .btn.enabled:hover {
+    opacity: 1;
 }
