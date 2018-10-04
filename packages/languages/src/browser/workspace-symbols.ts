@@ -49,8 +49,6 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         this.quickOpenService.open(this.prefix);
     }
 
-    init(): void { }
-
     getModel(): QuickOpenModel {
         return this;
     }
