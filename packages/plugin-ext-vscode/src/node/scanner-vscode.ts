@@ -16,17 +16,18 @@
 
 import { injectable } from 'inversify';
 import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle } from '@theia/plugin-ext';
+import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
 
 @injectable()
-export class VsCodePluginScanner implements PluginScanner {
-    private readonly _apiType: PluginEngine = 'vscode';
+export class VsCodePluginScanner extends TheiaPluginScanner implements PluginScanner {
+    private readonly VSCODE_TYPE: PluginEngine = 'vscode';
 
     get apiType(): PluginEngine {
-        return this._apiType;
+        return this.VSCODE_TYPE;
     }
 
     getModel(plugin: PluginPackage): PluginModel {
-        return {
+        const result: PluginModel = {
             id: `${plugin.publisher}.${plugin.name}`,
             name: plugin.name,
             publisher: plugin.publisher,
@@ -34,13 +35,15 @@ export class VsCodePluginScanner implements PluginScanner {
             displayName: plugin.displayName,
             description: plugin.description,
             engine: {
-                type: this._apiType,
-                version: plugin.engines[this._apiType]
+                type: this.VSCODE_TYPE,
+                version: plugin.engines[this.VSCODE_TYPE]
             },
             entryPoint: {
                 backend: plugin.main
             }
         };
+        result.contributes = this.readContributions(plugin);
+        return result;
     }
 
     getLifecycle(plugin: PluginPackage): PluginLifecycle {
