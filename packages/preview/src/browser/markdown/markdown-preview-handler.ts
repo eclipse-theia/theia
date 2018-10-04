@@ -123,7 +123,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
             }
         };
         const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
-        while (treeWalker.nextNode()) {
+        if (treeWalker.nextNode()) {
             const element = treeWalker.currentNode as HTMLElement;
             return element;
         }
