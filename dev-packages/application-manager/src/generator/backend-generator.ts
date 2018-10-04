@@ -35,9 +35,6 @@ const { BackendApplication, CliManager } = require('@theia/core/lib/node');
 const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
 const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
 const { loggerBackendModule } = require('@theia/core/lib/node/logger-backend-module');
-const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
-
-BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
 
 const container = new Container();
 container.load(backendApplicationModule);
@@ -73,6 +70,9 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
 
     protected compileMain(backendModules: Map<string, string>): string {
         return `// @ts-check
+const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
+BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
+
 const serverPath = require('path').resolve(__dirname, 'server');
 const address = require('@theia/core/lib/node/cluster/main').default(serverPath);
 address.then(function (address) {

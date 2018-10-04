@@ -245,16 +245,35 @@ export class ApplicationPackage {
      */
     get resolveModule(): ApplicationModuleResolver {
         if (!this._moduleResolver) {
-            const loaderPath = this.path('.application-module-loader.js');
-            fs.writeFileSync(loaderPath, 'module.exports = modulePath => require.resolve(modulePath);');
-            this._moduleResolver = require(loaderPath) as ApplicationModuleResolver;
-            fs.removeSync(loaderPath);
+            // If running a bundled electron application, we cannot create a file for the module on the fly.
+            // https://github.com/theia-ide/theia/issues/2992
+            if (this.runsInBundledElectron) {
+                this._moduleResolver = modulePath => require.resolve(modulePath);
+            } else {
+                const loaderPath = this.path('.application-module-loader.js');
+                fs.writeFileSync(loaderPath, 'module.exports = modulePath => require.resolve(modulePath);');
+                this._moduleResolver = require(loaderPath) as ApplicationModuleResolver;
+                fs.removeSync(loaderPath);
+            }
         }
         return this._moduleResolver!;
     }
 
     resolveModulePath(moduleName: string, ...segments: string[]): string {
         return paths.resolve(this.resolveModule(moduleName + '/package.json'), '..', ...segments);
+    }
+
+    /**
+     * `true` if the process (or `childProcess.fork`) is an electron process and it was started in production mode from a launcher.
+     * Otherwise, `false`.
+     */
+    protected get runsInBundledElectron(): boolean {
+        // tslint:disable-next-line:no-any
+        const p = process as any;
+        if (!!p.versions.electron || p.env.ELECTRON_RUN_AS_NODE) {
+            return p.defaultApp || /node_modules[/]electron[/]/.test(p.execPath);
+        }
+        return false;
     }
 
 }

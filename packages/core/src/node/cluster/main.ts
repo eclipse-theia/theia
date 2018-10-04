@@ -17,6 +17,7 @@
 import * as cluster from 'cluster';
 import { checkParentAlive } from '../messaging/ipc-protocol';
 import { MasterProcess } from './master-process';
+import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
 
 checkParentAlive();
 
@@ -28,13 +29,16 @@ import yargs = require('yargs');
 const args = yargs.option(MasterProcess.startupTimeoutOption, {
     description: 'The number of milliseconds to wait for the server to start up. Pass a negative number to disable the timeout.',
     type: 'number',
-    default: 5000
+    default: BackendApplicationConfigProvider.get().startupTimeout || MasterProcess.defaultStartupTimeoutOption
 }).help(false).argv;
 const noCluster = args['cluster'] === false;
 const isMaster = !noCluster && cluster.isMaster;
 const development = process.env.NODE_ENV === 'development';
 
 const startupTimeout = args[MasterProcess.startupTimeoutOption] as number;
+if (isMaster) {
+    console.log(`Starting the master backend process ${Number.isInteger(startupTimeout) && startupTimeout > 0 ? `with ${startupTimeout} (ms)` : 'without a'} timeout.`);
+}
 
 if (isMaster && development) {
     // https://github.com/Microsoft/vscode/issues/3201

@@ -18,12 +18,13 @@ import * as http from 'http';
 import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
+import * as path from 'path';
+import * as fs from 'fs-extra';
 import { inject, named, injectable } from 'inversify';
 import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { BackendProcess } from './backend-process';
-import * as fs from 'fs-extra';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 export interface BackendApplicationContribution {
@@ -60,7 +61,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
-        conf.option(appProjectPath, { description: 'Sets the application project directory', default: process.cwd() });
+        conf.option(appProjectPath, { description: 'Sets the application project directory', default: this.appProjectPath() });
     }
 
     setArguments(args: yargs.Arguments): void {
@@ -71,6 +72,20 @@ export class BackendApplicationCliContribution implements CliContribution {
         this.certkey = args.certkey;
         this.projectPath = args[appProjectPath];
     }
+
+    protected appProjectPath(): string {
+        const cwd = process.cwd();
+        if (BackendProcess.electron) {
+            // Check whether we are in bundled application or development mode.
+            const devMode = process.defaultApp || /node_modules[/]electron[/]/.test(process.execPath);
+            if (!devMode) {
+                // In a bundled electron application, the `package.json` is in `resources/app` by default.
+                return path.join(cwd, 'resources', 'app');
+            }
+        }
+        return cwd;
+    }
+
 }
 
 /**
