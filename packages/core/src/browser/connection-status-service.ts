@@ -205,6 +205,7 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
 
     protected handleOffline() {
         this.statusBar.setBackgroundColor('var(--theia-warn-color0)');
+        this.statusBar.setColor('var(--theia-warn-font-color0)');
         this.statusBar.setElement(this.statusbarId, {
             alignment: StatusBarAlignment.LEFT,
             text: 'Offline',
