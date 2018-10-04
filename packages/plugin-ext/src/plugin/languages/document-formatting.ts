@@ -19,6 +19,7 @@ import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
 import { FormattingOptions, SingleEditOperation } from '../../api/model';
+import { createToken } from '../token-provider';
 
 export class DocumentFormattingAdapter {
 
@@ -35,7 +36,7 @@ export class DocumentFormattingAdapter {
 
         const doc = document.document;
 
-        return Promise.resolve(this.provider.provideDocumentFormattingEdits(doc, <any>options, undefined)).then(value => {
+        return Promise.resolve(this.provider.provideDocumentFormattingEdits(doc, <any>options, createToken())).then(value => {
             if (Array.isArray(value)) {
                 return value.map(Converter.fromTextEdit);
             }

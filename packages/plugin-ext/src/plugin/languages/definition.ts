@@ -21,6 +21,7 @@ import * as types from '../types-impl';
 import * as Converter from '../type-converters';
 import { Position } from '../../api/plugin-api';
 import { Definition, DefinitionLink, Location } from '../../api/model';
+import { createToken } from '../token-provider';
 
 export class DefinitionAdapter {
 
@@ -39,7 +40,7 @@ export class DefinitionAdapter {
         const document = documentData.document;
         const zeroBasedPosition = Converter.toPosition(position);
 
-        return Promise.resolve(this.delegate.provideDefinition(document, zeroBasedPosition, undefined)).then(definition => {
+        return Promise.resolve(this.delegate.provideDefinition(document, zeroBasedPosition, createToken())).then(definition => {
             if (!definition) {
                 return undefined;
             }

@@ -20,6 +20,7 @@ import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import { Position } from '../../api/plugin-api';
 import { SignatureHelp } from '../../api/model';
+import { createToken } from '../token-provider';
 
 export class SignatureHelpAdapter {
 
@@ -38,7 +39,7 @@ export class SignatureHelpAdapter {
         const document = documentData.document;
         const zeroBasedPosition = Converter.toPosition(position);
 
-        return Promise.resolve(this.delegate.provideSignatureHelp(document, zeroBasedPosition, undefined));
+        return Promise.resolve(this.delegate.provideSignatureHelp(document, zeroBasedPosition, createToken()));
     }
 
 }

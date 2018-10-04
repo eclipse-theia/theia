@@ -19,6 +19,7 @@ import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
 import { FormattingOptions, SingleEditOperation, Range } from '../../api/model';
+import { createToken } from '../token-provider';
 
 export class RangeFormattingAdapter {
 
@@ -36,7 +37,7 @@ export class RangeFormattingAdapter {
         const doc = document.document;
         const ran = Converter.toRange(range);
 
-        return Promise.resolve(this.provider.provideDocumentRangeFormattingEdits(doc, ran, <any>options, undefined)).then(value => {
+        return Promise.resolve(this.provider.provideDocumentRangeFormattingEdits(doc, ran, <any>options, createToken())).then(value => {
             if (Array.isArray(value)) {
                 return value.map(Converter.fromTextEdit);
             }

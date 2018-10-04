@@ -20,6 +20,7 @@ import { DocumentsExtImpl } from '../documents';
 import { DocumentLink } from '../../api/model';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
+import { createToken } from '../token-provider';
 
 export class LinkProviderAdapter {
     private cacheId = 0;
@@ -38,7 +39,7 @@ export class LinkProviderAdapter {
 
         const doc = document.document;
 
-        return Promise.resolve(this.provider.provideDocumentLinks(doc, undefined)).then(links => {
+        return Promise.resolve(this.provider.provideDocumentLinks(doc, createToken())).then(links => {
             if (!Array.isArray(links)) {
                 return undefined;
             }
