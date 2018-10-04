@@ -24,7 +24,15 @@ class ProcessError extends Error {
 export type MasterProcessEvent = 'started' | 'restarted' | 'restarting';
 export class MasterProcess extends EventEmitter {
 
+    /**
+     * The option for the backend startup.
+     */
     static startupTimeoutOption = 'startup-timeout';
+
+    /**
+     * The default timeout (in milliseconds) for the backend startup.
+     */
+    static defaultStartupTimeoutOption = 5_000;
 
     protected serverWorker: ServerWorker | undefined;
     protected workerCount: number = 0;

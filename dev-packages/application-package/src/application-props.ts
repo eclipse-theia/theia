@@ -87,14 +87,24 @@ export interface ApplicationConfig {
  * Application configuration for the frontend. The following properties will be injected into the `index.html`.
  */
 export interface FrontendApplicationConfig extends ApplicationConfig {
+
     /**
      * The default theme for the application. If not give, defaults to `dark`. If invalid theme is given, also defaults to `dark`.
      */
     readonly defaultTheme?: string;
+
 }
 
 /**
  * Application configuration for the backend.
  */
 export interface BackendApplicationConfig extends ApplicationConfig {
+
+    /**
+     * The default backend startup timeout in milliseconds. If specified here, then this value will be used as opposed to the default timeout.
+     * If the `--startup-timeout` option is defined, this configuration value has no effect. A negative values will disable the timeout.
+     * For more details, see [`startupTimeoutOption`](MasterProcess#startupTimeoutOption).
+     */
+    readonly startupTimeout?: number;
+
 }
