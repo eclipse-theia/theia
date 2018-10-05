@@ -144,12 +144,12 @@
     display: flex;
 }
 
-.search-notification {
+.kb-search-notification {
     padding: 10px;
     display: flex;
 }
 
-.search-notification div {
+.kb-search-notification div {
     background-color: var(--theia-warn-color0);
     border-radius: 5px;
     color: var(--theia-warn-font-color0);

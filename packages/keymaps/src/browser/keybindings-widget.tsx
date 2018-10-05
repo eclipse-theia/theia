@@ -139,7 +139,7 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected renderMessage(): React.ReactNode {
-        return <div className='search-notification'><div>No results found!</div></div>;
+        return <div className='kb-search-notification'><div>No results found!</div></div>;
     }
 
     protected renderTable(): React.ReactNode {
