@@ -63,7 +63,8 @@ import {
     CodeLens,
     CodeActionKind,
     CodeActionTrigger,
-    TextDocumentSaveReason
+    TextDocumentSaveReason,
+    CodeAction,
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -339,7 +340,11 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             },
             registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
                 return languagesExt.registerLinkProvider(selector, provider);
+            },
+            registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
+                return languagesExt.registerCodeActionsProvider(selector, provider, metadata);
             }
+
         };
 
         const plugins: typeof theia.plugins = {
@@ -405,6 +410,7 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             CodeActionKind,
             CodeActionTrigger,
             TextDocumentSaveReason,
+            CodeAction,
         };
     };
 }

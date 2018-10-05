@@ -284,6 +284,13 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId);
     }
     // ### Document Link Provider end
+
+    // ### Code Actions Provider begin
+    registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
+        // FIXME: to implement
+        return new Disposable(() => { });
+    }
+    // ### Code Actions Provider end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {

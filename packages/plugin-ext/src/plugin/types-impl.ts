@@ -942,3 +942,18 @@ export enum TextDocumentSaveReason {
     AfterDelay = 2,
     FocusOut = 3
 }
+
+export class CodeAction {
+    title: string;
+
+    command?: theia.Command;
+
+    diagnostics?: Diagnostic[];
+
+    kind?: CodeActionKind;
+
+    constructor(title: string, kind?: CodeActionKind) {
+        this.title = title;
+        this.kind = kind;
+    }
+}
