@@ -1476,7 +1476,7 @@ declare module '@theia/plugin' {
          *
          * @param thenable A thenable that resolves to [pre-save-edits](#TextEdit).
          */
-        waitUntil(thenable: Thenable<TextEdit[]>): void;
+        waitUntil(thenable: PromiseLike<TextEdit[]>): void;
 
         /**
          * Allows to pause the event loop until the provided thenable resolved.
@@ -1485,7 +1485,7 @@ declare module '@theia/plugin' {
          *
          * @param thenable A thenable that delays saving.
          */
-        waitUntil(thenable: Thenable<any>): void;
+        waitUntil(thenable: PromiseLike<any>): void;
     }
 
     export interface TextDocumentChangeEvent {
