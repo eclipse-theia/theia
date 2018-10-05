@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WorkspaceFolder, WorkspaceFoldersChangeEvent, WorkspaceFolderPickOptions } from '@theia/plugin';
+import { WorkspaceFolder, WorkspaceFoldersChangeEvent, WorkspaceFolderPickOptions, GlobPattern, FileSystemWatcher } from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { WorkspaceExt, WorkspaceFolderPickOptionsMain } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
@@ -62,6 +62,11 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 resolve(value);
             });
         });
+    }
+
+    createFileSystemWatcher(globPattern: GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher {
+        // FIXME: to implement
+        return new Proxy(<FileSystemWatcher>{}, {});
     }
 
 }

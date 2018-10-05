@@ -1642,6 +1642,49 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A file system watcher notifies about changes to files and folders
+     * on disk.
+     *
+     * To get an instance of a `FileSystemWatcher` use
+     * [createFileSystemWatcher](#workspace.createFileSystemWatcher).
+     */
+    export interface FileSystemWatcher extends Disposable {
+
+        /**
+         * true if this file system watcher has been created such that
+         * it ignores creation file system events.
+         */
+        ignoreCreateEvents: boolean;
+
+        /**
+         * true if this file system watcher has been created such that
+         * it ignores change file system events.
+         */
+        ignoreChangeEvents: boolean;
+
+        /**
+         * true if this file system watcher has been created such that
+         * it ignores delete file system events.
+         */
+        ignoreDeleteEvents: boolean;
+
+        /**
+         * An event which fires on file/folder creation.
+         */
+        onDidCreate: Event<Uri>;
+
+        /**
+         * An event which fires on file/folder change.
+         */
+        onDidChange: Event<Uri>;
+
+        /**
+         * An event which fires on file/folder deletion.
+         */
+        onDidDelete: Event<Uri>;
+    }
+
+    /**
      * A cancellation token used to request cancellation on long running
      * or asynchronous task.
      */
@@ -2821,6 +2864,23 @@ declare module '@theia/plugin' {
          * An event that is emitted when the [configuration](#WorkspaceConfiguration) changed.
          */
         export const onDidChangeConfiguration: Event<ConfigurationChangeEvent>;
+
+        /*
+         * Creates a file system watcher.
+         *
+         * A glob pattern that filters the file events on their absolute path must be provided. Optionally,
+         * flags to ignore certain kinds of events can be provided. To stop listening to events the watcher must be disposed.
+         *
+         * *Note* that only files within the current [workspace folders](#workspace.workspaceFolders) can be watched.
+         *
+         * @param globPattern A [glob pattern](#GlobPattern) that is applied to the absolute paths of created, changed,
+         * and deleted files. Use a [relative pattern](#RelativePattern) to limit events to a certain [workspace folder](#WorkspaceFolder).
+         * @param ignoreCreateEvents Ignore when files have been created.
+         * @param ignoreChangeEvents Ignore when files have been changed.
+         * @param ignoreDeleteEvents Ignore when files have been deleted.
+         * @return A new file system watcher instance.
+         */
+        export function createFileSystemWatcher(globPattern: GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher;
     }
 
     export namespace env {
