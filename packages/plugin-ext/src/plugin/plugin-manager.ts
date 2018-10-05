@@ -110,7 +110,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                 this.pluginActivationPromises.delete(plugin.model.id);
             }
         } else {
-            console.log('there is no doStart method on plugin');
+            console.log(`There is no ${plugin.lifecycle.startMethod} method on plugin`);
         }
     }
 
