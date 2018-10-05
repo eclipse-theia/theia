@@ -26,7 +26,8 @@ import {
     CommandContribution, CommandRegistry, CommandService,
     MenuModelRegistry, MenuContribution,
     MessageService,
-    MessageClient
+    MessageClient,
+    InMemoryResources
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
@@ -59,6 +60,7 @@ import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
+import { JsonSchemaStore } from './json-schema-store';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -99,6 +101,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         uri => context.container.get(DefaultResourceProvider).get(uri)
     );
     bindContributionProvider(bind, ResourceResolver);
+    bind(InMemoryResources).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(InMemoryResources);
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope();
@@ -157,6 +161,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(PreferenceService).toService(PreferenceServiceImpl);
     bind(FrontendApplicationContribution).toService(PreferenceServiceImpl);
     bindPreferenceSchemaProvider(bind);
+
+    bind(JsonSchemaStore).toSelf().inSingletonScope();
 
     bind(PingService).toDynamicValue(ctx => {
         // let's reuse a simple and cheap service from this package

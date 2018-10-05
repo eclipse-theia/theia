@@ -25,7 +25,7 @@ import {
 import { SerializedDocumentFilter, MarkerData, Range } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
-import { UriComponents } from '@theia/plugin-ext/src/common/uri-components';
+import { UriComponents } from '../../common/uri-components';
 import { LanguageSelector } from '../../plugin/languages';
 import { DocumentFilter, MonacoModelIdentifier, testGlob, getLanguages } from 'monaco-languageclient/lib';
 import { DisposableCollection } from '@theia/core';

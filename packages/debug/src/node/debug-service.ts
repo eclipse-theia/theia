@@ -25,6 +25,7 @@ import {
 import { UUID } from '@phosphor/coreutils';
 import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
 import { MessagingService } from '@theia/core/lib/node';
+import { IJSONSchema } from '@theia/core/src/common/json-schema';
 
 /**
  * Contributions registry.
@@ -59,6 +60,19 @@ export class DebugAdapterContributionRegistry {
         const contrib = this.contribs.get(debugType);
         if (contrib) {
             return contrib.provideDebugConfigurations;
+        }
+        throw new Error(`Debug adapter '${debugType}' isn't registered.`);
+    }
+
+    /**
+     * Provides schema attributes.
+     * @param debugType The registered debug type
+     * @returns Schema attributes for the given debug type
+     */
+    getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
+        const contrib = this.contribs.get(debugType);
+        if (contrib) {
+            return contrib.getSchemaAttributes();
         }
         throw new Error(`Debug adapter '${debugType}' isn't registered.`);
     }
@@ -203,6 +217,10 @@ export class DebugServiceImpl implements DebugService, MessagingService.Contribu
 
     async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]> {
         return this.registry.provideDebugConfigurations(debugType);
+    }
+
+    getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
+        return this.registry.getSchemaAttributes(debugType);
     }
 
     async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration> {
