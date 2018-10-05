@@ -18,6 +18,7 @@ import { PluginManagerExt, PluginInitData, PluginManager, Plugin, PluginAPI } fr
 import { PluginMetadata } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 
+import { join } from 'path';
 import { dispose } from '../common/disposable-util';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
@@ -88,8 +89,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
         // Create pluginContext object for this plugin.
         const subscriptions: theia.Disposable[] = [];
+        const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
         const pluginContext: theia.PluginContext = {
-            subscriptions: subscriptions
+            extensionPath: plugin.pluginFolder,
+            subscriptions: subscriptions,
+            asAbsolutePath: asAbsolutePath
         };
 
         let stopFn = undefined;
