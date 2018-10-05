@@ -54,7 +54,8 @@ describe('WorkspaceService', () => {
     const toDispose: Disposable[] = [];
     let wsService: WorkspaceService;
     let updateTitleStub: sinon.SinonStub;
-    let reloadWindowStub: sinon.SinonStub;
+    // stub of window.location.reload
+    let windowLocationReloadStub: sinon.SinonStub;
     let onFilesChangedStub: sinon.SinonStub;
 
     let mockFileChangeEmitter: Emitter<FileChangeEvent>;
@@ -97,11 +98,11 @@ describe('WorkspaceService', () => {
 
         // stub the updateTitle() & reloadWindow() function because `document` and `window` are unavailable
         updateTitleStub = sinon.stub(WorkspaceService.prototype, <any>'updateTitle').callsFake(() => { });
-        reloadWindowStub = sinon.stub(WorkspaceService.prototype, <any>'reloadWindow').callsFake(() => { });
+        windowLocationReloadStub = sinon.stub(window.location, 'reload');
         mockFileChangeEmitter = new Emitter();
         onFilesChangedStub = sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
         toDispose.push(mockFileChangeEmitter);
-        toRestore.push(...[updateTitleStub, reloadWindowStub, onFilesChangedStub]);
+        toRestore.push(...[updateTitleStub, windowLocationReloadStub, onFilesChangedStub]);
 
         wsService = testContainer.get<WorkspaceService>(WorkspaceService);
     });
@@ -125,6 +126,7 @@ describe('WorkspaceService', () => {
             expect((await wsService.roots).length).to.eq(0);
             expect(wsService.tryGetRoots().length).to.eq(0);
             expect(updateTitleStub.called).to.be.true;
+            expect(window.location.hash).to.be.empty;
         });
 
         it('should reset the exposed roots and title if server returns an invalid or nonexistent file / folder', async () => {
@@ -142,12 +144,13 @@ describe('WorkspaceService', () => {
             expect((await wsService.roots).length).to.eq(0);
             expect(wsService.tryGetRoots().length).to.eq(0);
             expect(updateTitleStub.called).to.be.true;
+            expect(window.location.hash).to.be.empty;
         });
 
-        ['file:///home/oneFolder', 'file:///home/oneFolder/'].forEach(uriStr => {
+        ['/home/oneFolder', '/home/oneFolder/'].forEach(uriStr => {
             it('should set the exposed roots and workspace to the folder returned by server as the most recently used workspace, and start watching that folder', async () => {
                 const stat = <FileStat>{
-                    uri: uriStr,
+                    uri: 'file://' + uriStr,
                     lastModification: 0,
                     isDirectory: true
                 };
@@ -161,12 +164,14 @@ describe('WorkspaceService', () => {
                 expect(wsService.tryGetRoots().length).to.eq(1);
                 expect(wsService.tryGetRoots()[0]).to.eq(stat);
                 expect((<sinon.SinonStub>mockFileSystemWatcher.watchFileChanges).calledWith(new URI(stat.uri))).to.be.true;
+                expect(window.location.hash).eq('#' + uriStr);
             });
         });
 
         it('should set the exposed roots and workspace to the folders listed in the workspace file returned by the server, ' +
             'and start watching the workspace file and all the folders', async () => {
-                const workspaceFileUri = 'file:///home/workspaceFile';
+                const workspaceFilePath = '/home/workspaceFile';
+                const workspaceFileUri = 'file://' + workspaceFilePath;
                 const workspaceFileStat = <FileStat>{
                     uri: workspaceFileUri,
                     lastModification: 0,
@@ -194,6 +199,7 @@ describe('WorkspaceService', () => {
                 expect(wsService.tryGetRoots().length).to.eq(2);
                 expect(wsService.tryGetRoots()[0].uri).to.eq(rootA);
                 expect(wsService.tryGetRoots()[1].uri).to.eq(rootB);
+                expect(window.location.hash).to.eq('#' + workspaceFilePath);
 
                 expect((<Map<string, Disposable>>wsService['rootWatchers']).size).to.eq(2);
                 expect((<Map<string, Disposable>>wsService['rootWatchers']).has(rootA)).to.be.true;
@@ -221,6 +227,26 @@ describe('WorkspaceService', () => {
             expect((await wsService.roots).length).to.eq(0);
             expect(wsService.tryGetRoots().length).to.eq(0);
             expect((<sinon.SinonStub>mockILogger.error).called).to.be.true;
+        });
+
+        it('should use the workspace path in the URL fragment, if available', async function() {
+            const workspacePath = '/home/somewhere';
+            window.location.hash = '#' + workspacePath;
+            const stat = <FileStat>{
+                uri: 'file://' + workspacePath,
+                lastModification: 0,
+                isDirectory: true
+            };
+            (<sinon.SinonStub>mockFilesystem.getFileStat).resolves(stat);
+            (<sinon.SinonStub>mockFileSystemWatcher.watchFileChanges).resolves(new DisposableCollection());
+
+            await wsService['init']();
+            expect(wsService.workspace).to.eq(stat);
+            expect((await wsService.roots).length).to.eq(1);
+            expect(wsService.tryGetRoots().length).to.eq(1);
+            expect(wsService.tryGetRoots()[0]).to.eq(stat);
+            expect((<sinon.SinonStub>mockFileSystemWatcher.watchFileChanges).calledWith(new URI(stat.uri))).to.be.true;
+            expect(window.location.hash).to.eq('#' + workspacePath);
         });
     });
 
@@ -264,13 +290,15 @@ describe('WorkspaceService', () => {
                 .then(() => {
                     done(new Error('WorkspaceService.doOpen() should throw an error but did not'));
                 }).catch(e => {
+                    expect(window.location.hash).to.be.empty;
                     done();
                 });
         });
 
         it('should reload the current window with new uri if preferences["workspace.preserveWindow"] = true and there is an opened current workspace', async () => {
             mockPreferenceValues['workspace.preserveWindow'] = true;
-            const newUriStr = 'file:///home/newWorkspaceUri';
+            const newPath = '/home/newWorkspaceUri';
+            const newUriStr = 'file://' + newPath;
             const newUri = new URI(newUriStr);
             const stat = <FileStat>{
                 uri: newUriStr,
@@ -282,13 +310,15 @@ describe('WorkspaceService', () => {
             (wsService['_workspace'] as any) = stat;
 
             await wsService['doOpen'](newUri, {});
-            expect(reloadWindowStub.called).to.be.true;
+            expect(windowLocationReloadStub.called).to.be.true;
             expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(newUriStr)).to.be.true;
             expect(wsService.workspace).to.eq(stat);
+            expect(window.location.hash).to.eq('#' + newPath);
         });
 
         it('should keep the old Theia window & open a new window if preferences["workspace.preserveWindow"] = false and there is an opened current workspace', async () => {
             mockPreferenceValues['workspace.preserveWindow'] = false;
+            const oldWorkspacePath = '/home/oldWorkspaceUri';
             const oldWorkspaceUriStr = 'file:///home/oldWorkspaceUri';
             const oldStat = <FileStat>{
                 uri: oldWorkspaceUriStr,
@@ -297,6 +327,7 @@ describe('WorkspaceService', () => {
             };
             toRestore.push(sinon.stub(wsService, 'roots').resolves([oldStat]));
             (wsService['_workspace'] as any) = oldStat;
+            window.location.hash = '#' + oldWorkspacePath;
             const newWorkspaceUriStr = 'file:///home/newWorkspaceUri';
             const uri = new URI(newWorkspaceUriStr);
             const newStat = <FileStat>{
@@ -309,15 +340,17 @@ describe('WorkspaceService', () => {
             toRestore.push(stubOpenNewWindow);
 
             await wsService['doOpen'](uri, {});
-            expect(reloadWindowStub.called).to.be.false;
+            expect(windowLocationReloadStub.called).to.be.false;
             expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(newWorkspaceUriStr)).to.be.true;
             expect(stubOpenNewWindow.called).to.be.true;
             expect(wsService.workspace).to.eq(oldStat);
+            expect(window.location.hash).to.eq('#' + oldWorkspacePath);
         });
 
         it('should reload the current window with new uri if preferences["workspace.preserveWindow"] = false and browser blocks the new window being opened', async () => {
             mockPreferenceValues['workspace.preserveWindow'] = false;
-            const oldWorkspaceUriStr = 'file:///home/oldWorkspaceUri';
+            const oldWorkspacePath = '/home/oldWorkspaceUri';
+            const oldWorkspaceUriStr = 'file://' + oldWorkspacePath;
             const oldStat = <FileStat>{
                 uri: oldWorkspaceUriStr,
                 lastModification: 0,
@@ -325,7 +358,9 @@ describe('WorkspaceService', () => {
             };
             toRestore.push(sinon.stub(wsService, 'roots').resolves([oldStat]));
             (wsService['_workspace'] as any) = oldStat;
-            const newWorkspaceUriStr = 'file:///home/newWorkspaceUri';
+            window.location.hash = '#' + oldWorkspacePath;
+            const newWorkspacePath = '/home/newWorkspaceUri';
+            const newWorkspaceUriStr = 'file://' + newWorkspacePath;
             const uri = new URI(newWorkspaceUriStr);
             const newStat = <FileStat>{
                 uri: newWorkspaceUriStr,
@@ -338,10 +373,11 @@ describe('WorkspaceService', () => {
             toRestore.push(stubOpenNewWindow);
 
             await wsService['doOpen'](uri, {});
-            expect(reloadWindowStub.called).to.be.true;
+            expect(windowLocationReloadStub.called).to.be.true;
             expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(newWorkspaceUriStr)).to.be.true;
             expect(stubOpenNewWindow.called).to.be.true;
             expect(wsService.workspace).to.eq(newStat);
+            expect(window.location.hash).to.eq('#' + newWorkspacePath);
         });
     });
 
@@ -354,11 +390,13 @@ describe('WorkspaceService', () => {
             };
             wsService['_workspace'] = stat;
             wsService['_roots'] = [stat];
+            window.location.hash = '#something';
 
             await wsService.close();
             expect(wsService.workspace).to.be.undefined;
             expect((await wsService.roots).length).to.eq(0);
             expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith('')).to.be.true;
+            expect(window.location.hash).to.be.empty;
         });
     });
 
