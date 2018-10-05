@@ -20,7 +20,7 @@ import * as fuzzy from 'fuzzy';
 import { injectable, inject, postConstruct } from 'inversify';
 import { CommandRegistry, Command, MessageService } from '@theia/core/lib/common';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog } from '@theia/core/lib/browser';
+import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
 import { KeymapsService, KeybindingJson } from './keymaps-service';
 
@@ -57,6 +57,7 @@ export class KeybindingWidget extends ReactWidget {
     protected items: KeybindingItem[];
 
     static readonly ID = 'keybindings.view.widget';
+    static readonly LABEL = 'Keyboard Shortcuts';
 
     protected query: string = '';
 
@@ -70,16 +71,13 @@ export class KeybindingWidget extends ReactWidget {
 
     protected readonly searchKeybindings: () => void = debounce(() => this.doSearchKeybindings(), 50);
 
-    constructor() {
-        super();
-        this.id = KeybindingWidget.ID;
-        this.title.label = 'Keyboard Shortcuts';
-        this.title.closable = true;
-        this.update();
-    }
-
     @postConstruct()
     protected init(): void {
+        this.id = KeybindingWidget.ID;
+        this.title.label = KeybindingWidget.LABEL;
+        this.title.closable = true;
+        this.update();
+
         this.items = this.getItems();
         if (this.keymapsService.onDidChangeKeymaps) {
             this.keymapsService.onDidChangeKeymaps(() => {
@@ -87,6 +85,11 @@ export class KeybindingWidget extends ReactWidget {
                 this.update();
             });
         }
+    }
+
+    protected onActivateRequest(msg: Message) {
+        super.onActivateRequest(msg);
+        this.focusInputField();
     }
 
     protected doSearchKeybindings(): void {
@@ -116,6 +119,14 @@ export class KeybindingWidget extends ReactWidget {
 
     protected findSearchField(): HTMLInputElement | null {
         return document.getElementById('search-kb') as HTMLInputElement;
+    }
+
+    protected focusInputField() {
+        const input = document.getElementById('search-kb');
+        if (input) {
+            (input as HTMLInputElement).focus();
+            (input as HTMLInputElement).select();
+        }
     }
 
     protected render(): React.ReactNode {
