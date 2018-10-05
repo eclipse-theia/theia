@@ -2179,6 +2179,19 @@ declare module '@theia/plugin' {
          * extension is deactivated the disposables will be disposed.
          */
         subscriptions: { dispose(): any }[];
+
+        /**
+        * The absolute file path of the directory containing the extension.
+        */
+        extensionPath: string;
+
+        /**
+         * Get the absolute path of a resource contained in the extension.
+         *
+         * @param relativePath A relative path to a resource contained in the extension.
+         * @return The absolute path of the resource.
+         */
+        asAbsolutePath(relativePath: string): string;
     }
 
     /**
