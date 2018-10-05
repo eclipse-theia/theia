@@ -3794,6 +3794,82 @@ declare module '@theia/plugin' {
     }
 
     /**
+       * A code action represents a change that can be performed in code, e.g. to fix a problem or
+       * to refactor code.
+       *
+       * A CodeAction must set either [`edit`](CodeAction#edit) and/or a [`command`](CodeAction#command). If both are supplied, the `edit` is applied first, then the command is executed.
+       */
+    export class CodeAction {
+
+        /**
+         * A short, human-readable, title for this code action.
+         */
+        title: string;
+
+        /**
+         * [Diagnostics](#Diagnostic) that this code action resolves.
+         */
+        diagnostics?: Diagnostic[];
+
+        /**
+         * A [command](#Command) this code action executes.
+         */
+        command?: Command;
+
+        /**
+         * [Kind](#CodeActionKind) of the code action.
+         *
+         * Used to filter code actions.
+         */
+        kind?: CodeActionKind;
+
+        /**
+         * Creates a new code action.
+         *
+         * A code action must have at least a [title](#CodeAction.title) and [edits](#CodeAction.edit)
+         * and/or a [command](#CodeAction.command).
+         *
+         * @param title The title of the code action.
+         * @param kind The kind of the code action.
+         */
+        constructor(title: string, kind?: CodeActionKind);
+    }
+
+    /**
+     * The code action interface defines the contract between extensions and
+     * the [light bulb](https://code.visualstudio.com/docs/editor/editingevolved#_code-action) feature.
+     *
+     * A code action can be any command that is [known](#commands.getCommands) to the system.
+     */
+    export interface CodeActionProvider {
+        /**
+         * Provide commands for the given document and range.
+         *
+         * @param document The document in which the command was invoked.
+         * @param range The selector or range for which the command was invoked. This will always be a selection if
+         * there is a currently active editor.
+         * @param context Context carrying additional information.
+         * @param token A cancellation token.
+         * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | CodeAction)[]>;
+    }
+
+    /**
+     * Metadata about the type of code actions that a [CodeActionProvider](#CodeActionProvider) providers
+     */
+    export interface CodeActionProviderMetadata {
+        /**
+         * [CodeActionKinds](#CodeActionKind) that this provider may return.
+         *
+         * The list of kinds may be generic, such as `CodeActionKind.Refactor`, or the provider
+         * may list our every specific kind they provide, such as `CodeActionKind.Refactor.Extract.append('function`)`
+         */
+        readonly providedCodeActionKinds?: ReadonlyArray<CodeActionKind>;
+    }
+
+    /**
      * A code lens represents a [command](#Command) that should be shown along with
      * source text, like the number of references, a way to run tests, etc.
      *
@@ -4276,6 +4352,20 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerDocumentRangeFormattingEditProvider(selector: DocumentSelector, provider: DocumentRangeFormattingEditProvider): Disposable;
+
+        /**
+        * Register a code action provider.
+        *
+        * Multiple providers can be registered for a language. In that case providers are asked in
+        * parallel and the results are merged. A failing provider (rejected promise or exception) will
+        * not cause a failure of the whole operation.
+        *
+        * @param selector A selector that defines the documents this provider is applicable to.
+        * @param provider A code action provider.
+        * @param metadata Metadata about the kind of code actions the provider providers.
+        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+        */
+        export function registerCodeActionsProvider(selector: DocumentSelector, provider: CodeActionProvider, metadata?: CodeActionProviderMetadata): Disposable;
 
         /**
          * Register a formatting provider that works on type. The provider is active when the user enables the setting `editor.formatOnType`.
