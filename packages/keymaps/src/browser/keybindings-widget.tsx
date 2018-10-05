@@ -82,10 +82,10 @@ export class KeybindingWidget extends ReactWidget {
     protected init(): void {
         this.items = this.getItems();
         if (this.keymapsService.onDidChangeKeymaps) {
-            this.keymapsService.onDidChangeKeymaps(() => {
+            this.toDispose.push(this.keymapsService.onDidChangeKeymaps(() => {
                 this.doSearchKeybindings();
                 this.update();
-            });
+            }));
         }
     }
 
