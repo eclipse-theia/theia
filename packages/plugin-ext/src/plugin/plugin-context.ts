@@ -270,6 +270,12 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
                         const data = documents.getDocumentData(uri);
                         return data && data.document;
                     }));
+            },
+            createFileSystemWatcher(globPattern: theia.GlobPattern,
+                ignoreCreateEvents?: boolean,
+                ignoreChangeEvents?: boolean,
+                ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
+                return workspaceExt.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
             }
         };
 
