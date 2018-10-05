@@ -79,20 +79,6 @@ export function fromRange(range: theia.Range | undefined): Range | undefined {
     }
     const { start, end } = range;
     return {
-        startLineNumber: start.line,
-        startColumn: start.character + 1,
-        endLineNumber: end.line,
-        endColumn: end.character + 1
-    };
-}
-
-// TODO make this primary converter, see https://github.com/theia-ide/theia/issues/2910
-export function fromRange_(range: theia.Range | undefined): Range | undefined {
-    if (!range) {
-        return undefined;
-    }
-    const { start, end } = range;
-    return {
         startLineNumber: start.line + 1,
         startColumn: start.character + 1,
         endLineNumber: end.line + 1,
@@ -287,7 +273,7 @@ export function toCompletionItemKind(type?: CompletionType): types.CompletionIte
 export function fromTextEdit(edit: theia.TextEdit): SingleEditOperation {
     return <SingleEditOperation>{
         text: edit.newText,
-        range: fromRange_(edit.range)
+        range: fromRange(edit.range)
     };
 }
 
@@ -382,22 +368,22 @@ export function fromHover(hover: theia.Hover): Hover {
 export function fromLocation(location: theia.Location): Location {
     return <Location>{
         uri: location.uri,
-        range: fromRange_(location.range)
+        range: fromRange(location.range)
     };
 }
 
 export function fromDefinitionLink(definitionLink: theia.DefinitionLink): DefinitionLink {
     return <DefinitionLink>{
         uri: definitionLink.targetUri,
-        range: fromRange_(definitionLink.targetRange),
-        origin: definitionLink.originSelectionRange ? fromRange_(definitionLink.originSelectionRange) : undefined,
-        selectionRange: definitionLink.targetSelectionRange ? fromRange_(definitionLink.targetSelectionRange) : undefined
+        range: fromRange(definitionLink.targetRange),
+        origin: definitionLink.originSelectionRange ? fromRange(definitionLink.originSelectionRange) : undefined,
+        selectionRange: definitionLink.targetSelectionRange ? fromRange(definitionLink.targetSelectionRange) : undefined
     };
 }
 
 export function fromDocumentLink(definitionLink: theia.DocumentLink): DocumentLink {
     return <DocumentLink>{
-        range: fromRange_(definitionLink.range),
+        range: fromRange(definitionLink.range),
         url: definitionLink.target && definitionLink.target.toString()
     };
 }
