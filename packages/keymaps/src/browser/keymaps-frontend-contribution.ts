@@ -43,7 +43,7 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
     constructor() {
         super({
             widgetId: KeybindingWidget.ID,
-            widgetName: 'Keyboard Shortcuts',
+            widgetName: KeybindingWidget.LABEL,
             defaultWidgetOptions: {
                 area: 'main'
             },
