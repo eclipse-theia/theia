@@ -23,6 +23,7 @@ import {
     PreferenceSchema,
     PreferenceChangeEvent
 } from '@theia/core/lib/browser/preferences';
+import { JsonSchemaConfiguration } from '@theia/core/lib/browser/json-schema-store';
 
 export const jsonPreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -74,11 +75,6 @@ export const jsonPreferenceSchema: PreferenceSchema = {
         }
     }
 };
-
-export interface JsonSchemaConfiguration {
-    url: string
-    fileMatch: string[]
-}
 
 export interface JsonConfiguration {
     'json.schemas': JsonSchemaConfiguration[]

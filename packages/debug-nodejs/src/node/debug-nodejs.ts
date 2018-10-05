@@ -16,11 +16,13 @@
 
 const path = require('path');
 const packageJson = require('../../package.json');
-const debugAdapterDir = packageJson['debugAdapter']['dir'];
+const debugAdapterDir = packageJson['debugAdapter']['dir'] + '/extension';
 
 import { injectable } from 'inversify';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugAdapterContribution, DebugAdapterExecutable } from '@theia/debug/lib/node/debug-model';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { getSchemaAttributes } from './package-json-parser';
 
 @injectable()
 export class NodeJsDebugAdapterContribution implements DebugAdapterContribution {
@@ -32,6 +34,10 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
         name: 'Attach by PID',
         processId: ''
     }];
+
+    getSchemaAttributes(): Promise<IJSONSchema[]> {
+        return getSchemaAttributes(path.join(__dirname, `../../${debugAdapterDir}`), this.debugType);
+    }
 
     resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration {
         if (!config.request) {

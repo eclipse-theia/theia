@@ -19,7 +19,7 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
-import { DebugService, DebugConfiguration } from '../common/debug-common';
+import { DebugService, DebugConfiguration, LaunchConfig } from '../common/debug-common';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import * as jsoncparser from 'jsonc-parser';
 
@@ -83,10 +83,18 @@ export class DebugConfigurationManager {
     }
 
     async readConfigurations(): Promise<DebugConfiguration[]> {
+        const configFile = await this.internalReadConfig();
+        return configFile.configurations;
+    }
+
+    protected async internalReadConfig(): Promise<LaunchConfig> {
         const configFile = await this.resolveConfigurationFile();
         const { content } = await this.fileSystem.resolveContent(configFile.uri);
         if (content.length === 0) {
-            return [];
+            return {
+                version: '0.2.0',
+                configurations: []
+            };
         }
         try {
             return jsoncparser.parse(content);
@@ -96,9 +104,11 @@ export class DebugConfigurationManager {
     }
 
     async writeConfigurations(configurations: DebugConfiguration[]): Promise<void> {
-        const configFile = await this.resolveConfigurationFile();
+        const config = await this.internalReadConfig();
+        config.configurations = configurations;
         // TODO use jsonc-parser instead
-        const jsonPretty = JSON.stringify(configurations, (key, value) => value, 2);
+        const jsonPretty = JSON.stringify(config, (key, value) => value, 2);
+        const configFile = await this.resolveConfigurationFile();
         await this.fileSystem.setContent(configFile, jsonPretty);
     }
 

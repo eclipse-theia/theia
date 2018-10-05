@@ -18,11 +18,12 @@ import { ContainerModule, interfaces, } from 'inversify';
 import { PreferenceProvider, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
-import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { PreferencesContribution } from './preferences-contribution';
 import { createPreferencesTreeWidget } from './preference-tree-container';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
 import { PreferencesContainer, PreferencesTreeWidget } from './preferences-tree-widget';
+import { PreferencesFrontendApplicationContribution } from './preferences-frontend-application-contribution';
 
 import './monaco-contribution';
 
@@ -46,6 +47,7 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     })).inSingletonScope();
 
     bind(PreferencesMenuFactory).toSelf();
+    bind(FrontendApplicationContribution).to(PreferencesFrontendApplicationContribution).inSingletonScope();
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

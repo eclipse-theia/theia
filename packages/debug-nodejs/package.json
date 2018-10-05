@@ -34,19 +34,21 @@
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "build": "concurrently -n download,build -c red,blue \"node ./scripts/download-vscode-node-debug.js\" \"theiaext build\"",
+    "download": "node ./scripts/download-vscode-node-debug.js",
+    "build": "yarn download && theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.15"
+    "@theia/ext-scripts": "^0.3.15",
+    "unzip-stream": "^0.3.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
   "debugAdapter": {
-    "downloadUrl": "https://github.com/tolusha/node-debug/releases/download/v1.23.5/vscode-node-debug.tar.gz",
+    "downloadUrl": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug2/1.28.3/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage",
     "dir": "lib/adapter"
   }
 }

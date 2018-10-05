@@ -26,6 +26,8 @@ import {
 import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME, JSONC_LANGUAGE_ID } from '../common';
 import { ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
+import { JsonPreferences } from './json-preferences';
+import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 
 @injectable()
 export class JsonClientContribution extends BaseLanguageClientContribution {
@@ -37,9 +39,39 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
+        @inject(JsonPreferences) protected readonly preferences: JsonPreferences,
+        @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore
     ) {
         super(workspace, languages, languageClientFactory);
+        this.initializeJsonSchemaAssociations();
+        preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'json.schemas') {
+                this.updateSchemas();
+            }
+        });
+        jsonSchemaStore.onSchemasChanged(() => {
+            this.updateSchemas();
+        });
+        this.updateSchemas();
+    }
+
+    protected async updateSchemas(): Promise<void> {
+        const allConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
+        const config = this.preferences['json.schemas'];
+        if (config instanceof Array) {
+            allConfigs.push(...config);
+        }
+        const registry: { [pattern: string]: string[] } = {};
+        for (const s of allConfigs) {
+            if (s.fileMatch) {
+                for (const p of s.fileMatch) {
+                    registry[p] = [s.url];
+                }
+            }
+        }
+        const client = await this.languageClient;
+        client.sendNotification('json/schemaAssociations', registry);
     }
 
     protected get globPatterns() {
@@ -70,19 +102,17 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
     }
 
     protected async initializeJsonSchemaAssociations(): Promise<void> {
-        const client = await this.languageClient;
         const url = `${window.location.protocol}//schemastore.azurewebsites.net/api/json/catalog.json`;
         const response = await fetch(url);
         const schemas: SchemaData[] = (await response.json()).schemas!;
-        const registry: { [pattern: string]: string[] } = {};
         for (const s of schemas) {
             if (s.fileMatch) {
-                for (const p of s.fileMatch) {
-                    registry[p] = [s.url];
-                }
+                this.jsonSchemaStore.registerSchema({
+                    fileMatch : s.fileMatch,
+                    url: s.url
+                });
             }
         }
-        client.sendNotification('json/schemaAssociations', registry);
     }
 
 }

@@ -64,6 +64,7 @@ import { BreakpointStorage } from './breakpoint/breakpoint-marker';
 import { SourceOpener } from './debug-utils';
 import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 import { DebugToolBar } from './view/debug-toolbar-widget';
+import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -83,6 +84,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
     bind(DebugResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(DebugResourceResolver);
+    bind(FrontendApplicationContribution).to(DebugFrontendApplicationContribution).inSingletonScope();
 });
 
 function bindDebugWidget(bind: interfaces.Bind): void {

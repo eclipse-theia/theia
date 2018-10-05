@@ -113,3 +113,35 @@ export class DefaultResourceProvider {
     }
 
 }
+
+@injectable()
+export class InMemoryResources implements ResourceResolver {
+
+    private resources = new Map<string, Resource>();
+
+    add(uri: URI, contents: string): Resource {
+        const stringUri = uri.toString();
+        if (this.resources.has(stringUri)) {
+            throw new Error(`Cannot add already existing in-memory resource '${stringUri}'`);
+        }
+        const resource: Resource = {
+            uri,
+            async readContents(): Promise<string> {
+                return contents;
+            },
+            dispose: () => {
+                this.resources.delete(stringUri);
+            }
+        };
+        this.resources.set(stringUri, resource);
+        return resource;
+    }
+
+    resolve(uri: URI): MaybePromise<Resource> {
+        if (!this.resources.has(uri.toString())) {
+            throw new Error('Resource does not exist.');
+        }
+        return this.resources.get(uri.toString())!;
+    }
+
+}
