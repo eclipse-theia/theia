@@ -20,8 +20,7 @@ import {
     ApplicationShell,
     WidgetManager,
     FrontendApplicationContribution,
-    BaseWidget,
-    VirtualWidget
+    BaseWidget
 } from '@theia/core/lib/browser';
 import { DebugSessionManager } from '../debug-session';
 import { DebugSession } from '../debug-model';
@@ -132,10 +131,10 @@ export class DebugPanelHandler implements FrontendApplicationContribution {
 
     private async onDebugSessionDestroyed(debugSession: DebugSession): Promise<void> { }
 
-    private async createOrActiveDebugPanel(debugSession: DebugSession): Promise<void> {
+    async createOrActiveDebugPanel(debugSession: DebugSession): Promise<void> {
         const { sessionId } = debugSession;
         const options: DebugWidgetOptions = { sessionId };
-        const widget = <DebugWidget>await this.widgetManager.getOrCreateWidget(DEBUG_FACTORY_ID, options);
+        const widget = <DebugPanelWidget>await this.widgetManager.getOrCreateWidget(DEBUG_PANEL_FACTORY_ID, options);
 
         const tabBar = this.shell.getTabBarFor(widget);
         if (!tabBar) {
