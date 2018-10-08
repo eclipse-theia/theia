@@ -89,8 +89,26 @@ export class GitRepositoryProvider {
     }
 
     findRepository(uri: URI): Repository | undefined {
-        const reposSorted = this._allRepositories ? this._allRepositories.sort((ra: Repository, rb: Repository) => rb.localUri.length - ra.localUri.length) : [];
+        const reposSorted = this._allRepositories ? this._allRepositories.sort(Repository.sortComparator) : [];
         return reposSorted.find(repo => new URI(repo.localUri).isEqualOrParent(uri));
+    }
+
+    findRepositoryOrSelected(arg: URI | string | { uri?: string | URI } | undefined): Repository | undefined {
+        let uri: URI | string | undefined;
+        if (arg) {
+            if (arg instanceof URI || typeof arg === 'string') {
+                uri = arg;
+            } else if (typeof arg === 'object' && 'uri' in arg && arg.uri) {
+                uri = arg.uri;
+            }
+            if (uri) {
+                if (typeof uri === 'string') {
+                    uri = new URI(uri);
+                }
+                return this.findRepository(uri);
+            }
+        }
+        return this.selectedRepository;
     }
 
     async refresh(options?: GitRefreshOptions): Promise<void> {

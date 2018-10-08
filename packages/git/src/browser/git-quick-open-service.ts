@@ -200,8 +200,7 @@ export class GitQuickOpenService {
         }
     }
 
-    async chooseTagsAndBranches(execFunc: (branchName: string, currentBranchName: string) => void, repo?: Repository): Promise<void> {
-        const repository = repo || this.getRepository();
+    async chooseTagsAndBranches(execFunc: (branchName: string, currentBranchName: string) => void, repository: Repository | undefined = this.getRepository()): Promise<void> {
         if (repository) {
             const [branches, tags, currentBranch] = await Promise.all([this.getBranches(repository), this.getTags(repository), this.getCurrentBranch(repository)]);
             const execute = async (item: GitQuickOpenItem<Branch | Tag>) => {
@@ -283,17 +282,15 @@ export class GitQuickOpenService {
         }
     }
 
-    private async getTags(repo?: Repository): Promise<Tag[]> {
-        const repository = repo || this.getRepository();
+    private async getTags(repository: Repository | undefined = this.getRepository()): Promise<Tag[]> {
         if (repository) {
             const result = await this.git.exec(repository, ['tag', '--sort=-creatordate']);
-            return result.stdout.trim().split('\n').map(tag => ({ name: tag }));
+            return result.stdout !== '' ? result.stdout.trim().split('\n').map(tag => ({ name: tag })) : [];
         }
         return [];
     }
 
-    private async getBranches(repo?: Repository): Promise<Branch[]> {
-        const repository = repo || this.getRepository();
+    private async getBranches(repository: Repository | undefined = this.getRepository()): Promise<Branch[]> {
         if (!repository) {
             return [];
         }
@@ -309,8 +306,7 @@ export class GitQuickOpenService {
         }
     }
 
-    private async getCurrentBranch(repo?: Repository): Promise<Branch | undefined> {
-        const repository = repo || this.getRepository();
+    private async getCurrentBranch(repository: Repository | undefined = this.getRepository()): Promise<Branch | undefined> {
         if (!repository) {
             return undefined;
         }

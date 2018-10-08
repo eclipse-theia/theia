@@ -72,7 +72,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     async setContent(options: Git.Options.Diff) {
         this.options = options;
-        const repository = this.repositoryProvider.selectedRepository;
+        const repository = this.repositoryProvider.findRepositoryOrSelected(options);
         if (repository) {
             const fileChanges: GitFileChange[] = await this.git.diff(repository, {
                 range: options.range,
@@ -128,6 +128,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     protected renderDiffListHeader(): React.ReactNode {
         return this.doRenderDiffListHeader(
+            this.renderRepositoryHeader(),
             this.renderPathHeader(),
             this.renderRevisionHeader(),
             this.renderToolbar()
@@ -138,15 +139,11 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         return <div className='diff-header'>{...children}</div>;
     }
 
-    protected renderHeaderRow({ name, value, classNames }: { name: string, value: React.ReactNode, classNames?: string[] }): React.ReactNode {
-        if (value === null) {
-            return null;
+    protected renderRepositoryHeader(): React.ReactNode {
+        if (this.options && this.options.uri) {
+            return this.renderHeaderRow({ name: 'repository', value: this.getRepositoryLabel(this.options.uri) });
         }
-        const className = ['header-row', ...(classNames || [])].join(' ');
-        return <div key={name} className={className}>
-            <div className='theia-header'>{name}</div>
-            <div className='header-value'>{value}</div>
-        </div>;
+        return undefined;
     }
 
     protected renderPathHeader(): React.ReactNode {
@@ -160,6 +157,8 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
             const path = this.relativePath(this.options.uri);
             if (path.length > 0) {
                 return '/' + path;
+            } else {
+                return this.labelProvider.getLongName(new URI(this.options.uri));
             }
         }
         return null;
