@@ -188,6 +188,7 @@ export namespace Repository {
         const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : repository);
         return new Path(uri.toString().substr(repositoryUri.toString().length + 1));
     }
+    export const sortComparator = (ra: Repository, rb: Repository) => rb.localUri.length - ra.localUri.length;
 }
 
 /**
