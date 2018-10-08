@@ -15,9 +15,10 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { AbstractDefaultCallHierarchyService, CallHierarchyContext } from '@theia/callhierarchy/lib/browser/callhierarchy-service-impl';
+import { AbstractDefaultCallHierarchyService, ExtendedDocumentSymbol } from '@theia/callhierarchy/lib/browser/callhierarchy-service-impl';
+import { CallHierarchyContext } from '@theia/callhierarchy/lib/browser/callhierarchy-context';
 import { TYPESCRIPT_LANGUAGE_ID } from '../common';
-import { SymbolInformation, Range, Location } from 'vscode-languageserver-types';
+import { SymbolInformation, Range, Location, DocumentSymbol } from 'vscode-languageserver-types';
 import * as utils from '@theia/callhierarchy/lib/browser/utils';
 
 @injectable()
@@ -32,8 +33,15 @@ export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchy
      * are returned as a reference as well. As these are not calls they have to be filtered.
      * We also just want ot see the top-most caller symbol.
      */
-    async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<SymbolInformation | undefined> {
-        const symbols = (await context.getAllSymbols(reference.uri)).filter(s => this.isCallable(s));
+    async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | SymbolInformation | undefined> {
+        const allSymbols = await context.getAllSymbols(reference.uri);
+        if (allSymbols.length === 0) {
+            return undefined;
+        }
+        if (DocumentSymbol.is(allSymbols[0])) {
+            return this.getEnclosingRootSymbol(reference, context);
+        }
+        const symbols = (allSymbols as SymbolInformation[]).filter(s => this.isCallable(s));
         let bestMatch: SymbolInformation | undefined = undefined;
         let bestRange: Range | undefined = undefined;
         for (const candidate of symbols) {
