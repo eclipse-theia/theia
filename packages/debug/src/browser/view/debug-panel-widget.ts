@@ -25,29 +25,29 @@ import {
 import { DebugSessionManager } from '../debug-session';
 import { DebugSession } from '../debug-model';
 import { inject, injectable, postConstruct } from 'inversify';
-import { DebugThreadsWidget } from './debug-threads-widget';
-import { DebugStackFramesWidget } from './debug-stack-frames-widget';
-import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
-import { DebugVariablesWidget } from './debug-variables-widget';
+import { DebugThreadsWidget } from '../view/debug-threads-widget';
+import { DebugStackFramesWidget } from '../view/debug-stack-frames-widget';
+import { DebugBreakpointsWidget } from '../view/debug-breakpoints-widget';
+import { DebugVariablesWidget } from '../view/debug-variables-widget';
 import { ExtDebugProtocol } from '../../common/debug-common';
 import { Disposable } from '@theia/core';
-import { DebugStyles } from './base/debug-styles';
-import { DebugToolBar } from './debug-toolbar-widget';
+import { DebugStyles } from '../view/base/debug-styles';
+import { DebugToolBar } from '../view/debug-toolbar-widget';
 
-export const DEBUG_FACTORY_ID = 'debug';
+export const DEBUG_PANEL_FACTORY_ID = 'debug';
 
 /**
  * The debug target widget. It is used as a container
  * for the rest of widgets for the specific debug target.
  */
 @injectable()
-export class DebugWidget extends BaseWidget {
+export class DebugPanelWidget extends BaseWidget {
     private readonly HORIZONTALS_IDS = ['theia-bottom-content-panel', 'theia-main-content-panel'];
     private readonly widgets: Widget[];
 
     constructor(
+        @inject(DebugSession) readonly debugSession: DebugSession,
         @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
-        @inject(DebugSession) protected readonly debugSession: DebugSession,
         @inject(DebugThreadsWidget) protected readonly threads: DebugThreadsWidget,
         @inject(DebugStackFramesWidget) protected readonly frames: DebugStackFramesWidget,
         @inject(DebugBreakpointsWidget) protected readonly breakpoints: DebugBreakpointsWidget,
@@ -110,7 +110,7 @@ export class DebugWidget extends BaseWidget {
 }
 
 @injectable()
-export class DebugFrontendContribution implements FrontendApplicationContribution {
+export class DebugPanelHandler implements FrontendApplicationContribution {
 
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
@@ -120,21 +120,21 @@ export class DebugFrontendContribution implements FrontendApplicationContributio
     protected init() {
         this.debugSessionManager.onDidCreateDebugSession(debugSession => this.onDebugSessionCreated(debugSession));
         this.debugSessionManager.onDidDestroyDebugSession(debugSession => this.onDebugSessionDestroyed(debugSession));
-        this.debugSessionManager.findAll().forEach(debugSession => this.createDebugWidget(debugSession));
+        this.debugSessionManager.findAll().forEach(debugSession => this.createOrActiveDebugPanel(debugSession));
     }
 
     initialize(): void { }
 
     private async onDebugSessionCreated(debugSession: DebugSession): Promise<void> {
-        this.createDebugWidget(debugSession);
+        this.createOrActiveDebugPanel(debugSession);
     }
 
     private async onDebugSessionDestroyed(debugSession: DebugSession): Promise<void> { }
 
-    private async createDebugWidget(debugSession: DebugSession): Promise<void> {
+    async createOrActiveDebugPanel(debugSession: DebugSession): Promise<void> {
         const { sessionId } = debugSession;
         const options: DebugWidgetOptions = { sessionId };
-        const widget = <DebugWidget>await this.widgetManager.getOrCreateWidget(DEBUG_FACTORY_ID, options);
+        const widget = <DebugPanelWidget>await this.widgetManager.getOrCreateWidget(DEBUG_PANEL_FACTORY_ID, options);
 
         const tabBar = this.shell.getTabBarFor(widget);
         if (!tabBar) {

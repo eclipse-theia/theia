@@ -17,12 +17,6 @@
 import { ContainerModule, interfaces, Container } from 'inversify';
 import { DebugCommandHandlers, DEBUG_VARIABLE_CONTEXT_MENU } from './debug-command';
 import { DebugConfigurationManager } from './debug-configuration';
-import {
-    DEBUG_FACTORY_ID,
-    DebugWidget,
-    DebugFrontendContribution,
-    DebugWidgetOptions,
-} from './view/debug-frontend-contribution';
 import { DebugPath, DebugService } from '../common/debug-common';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 import { CommandContribution } from '@theia/core/lib/common/command';
@@ -37,7 +31,8 @@ import {
     defaultTreeProps,
     TreeModelImpl,
     TreeModel,
-    FrontendApplicationContribution
+    FrontendApplicationContribution,
+    bindViewContribution
 } from '@theia/core/lib/browser';
 import {
     DebugSession,
@@ -50,7 +45,9 @@ import {
     DebugResourceResolver
 } from './debug-session';
 import {
-    DebugVariablesWidget, DebugVariableModel, DebugVariablesTree,
+    DebugVariablesWidget,
+    DebugVariableModel,
+    DebugVariablesTree,
 } from './view/debug-variables-widget';
 import '../../src/browser/style/index.css';
 import { DebugThreadsWidget } from './view/debug-threads-widget';
@@ -66,6 +63,14 @@ import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 import { DebugToolBar } from './view/debug-toolbar-widget';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
+import { DebugExplorerViewContribution, DEBUG_EXPLORER_WIDGET_FACTORY_ID } from './explorer/debug-explorer-view-contribution';
+import { DebugExplorerWidget } from './explorer/debug-explorer-widget';
+import {
+    DebugPanelHandler,
+    DebugPanelWidget,
+    DebugWidgetOptions,
+    DEBUG_PANEL_FACTORY_ID
+} from './view/debug-panel-widget';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -76,7 +81,8 @@ export const DEBUG_VARIABLES_PROPS = <TreeProps>{
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindDebugSessionManager(bind);
     bindBreakpointsManager(bind);
-    bindDebugWidget(bind);
+    bindDebugPanel(bind);
+    bindDebugExplorer(bind);
     DebugConsoleContribution.bindContribution(bind);
 
     bind(MenuContribution).to(DebugCommandHandlers);
@@ -89,19 +95,30 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(FrontendApplicationContribution).to(DebugFrontendApplicationContribution).inSingletonScope();
 });
 
-function bindDebugWidget(bind: interfaces.Bind): void {
-    bind(DebugWidget).toSelf();
+function bindDebugPanel(bind: interfaces.Bind): void {
+    bind(DebugPanelWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
-        id: DEBUG_FACTORY_ID,
+        id: DEBUG_PANEL_FACTORY_ID,
         createWidget: (options: DebugWidgetOptions) => {
             const container = createDebugTargetContainer(context, options.sessionId);
-            return container.get<DebugWidget>(DebugWidget);
+            return container.get<DebugPanelWidget>(DebugPanelWidget);
         }
     })).inSingletonScope();
 
-    bind(DebugFrontendContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(DebugFrontendContribution));
+    bind(DebugPanelHandler).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(DebugPanelHandler));
     bind(DebugSelectionService).toSelf().inSingletonScope();
+}
+
+function bindDebugExplorer(bind: interfaces.Bind) {
+    bindViewContribution(bind, DebugExplorerViewContribution);
+    bind(FrontendApplicationContribution).toService(DebugExplorerViewContribution);
+
+    bind(DebugExplorerWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: DEBUG_EXPLORER_WIDGET_FACTORY_ID,
+        createWidget: () => context.container.get<DebugExplorerWidget>(DebugExplorerWidget)
+    })).inSingletonScope();
 }
 
 function bindBreakpointsManager(bind: interfaces.Bind): void {
