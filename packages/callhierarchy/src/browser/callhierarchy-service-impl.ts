@@ -15,98 +15,18 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { ILanguageClient } from '@theia/languages/lib/browser';
 import { LanguageClientProvider } from '@theia/languages/lib/browser/language-client-provider';
 import {
-    ReferencesRequest, DocumentSymbolRequest, DefinitionRequest, TextDocumentPositionParams,
-    TextDocumentIdentifier, SymbolInformation, Location, Position, Range, SymbolKind
+    SymbolInformation, Location, Position, Range, SymbolKind, DocumentSymbol
 } from 'monaco-languageclient/lib/services';
 import * as utils from './utils';
 import { Definition, Caller } from './callhierarchy';
 import { CallHierarchyService } from './callhierarchy-service';
-import { ILogger, Disposable } from '@theia/core';
+import { ILogger } from '@theia/core';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import URI from '@theia/core/lib/common/uri';
+import { CallHierarchyContext } from './callhierarchy-context';
 
-export class CallHierarchyContext {
-
-    readonly symbolCache = new Map<string, SymbolInformation[]>();
-    readonly disposables: Disposable[] = [];
-
-    constructor(readonly languageClient: ILanguageClient,
-        readonly textModelService: MonacoTextModelService,
-        readonly logger: ILogger) { }
-
-    async getAllSymbols(uri: string): Promise<SymbolInformation[]> {
-        const cachedSymbols = this.symbolCache.get(uri);
-        if (cachedSymbols) {
-            return cachedSymbols;
-        }
-        const result = await this.languageClient.sendRequest(DocumentSymbolRequest.type, {
-            textDocument: TextDocumentIdentifier.create(uri)
-        });
-        const symbols = (result || []) as SymbolInformation[];
-        this.symbolCache.set(uri, symbols);
-        return symbols;
-    }
-
-    async getEditorModelReference(uri: string) {
-        const model = await this.textModelService.createModelReference(new URI(uri));
-        this.disposables.push(model);
-        return model;
-    }
-
-    async getDefinitionLocation(location: Location): Promise<Location | undefined> {
-        const uri = location.uri;
-        const { line, character } = location.range.start;
-
-        // Definition can be null
-        // tslint:disable-next-line:no-null-keyword
-        let locations: Location | Location[] | null = null;
-        try {
-            locations = await this.languageClient.sendRequest(DefinitionRequest.type, <TextDocumentPositionParams>{
-                position: Position.create(line, character),
-                textDocument: { uri }
-            });
-        } catch (error) {
-            this.logger.error(`Error from definitions request: ${uri}#${line}/${character}`, error);
-        }
-        if (!locations) {
-            return undefined;
-        }
-        return Array.isArray(locations) ? locations[0] : locations;
-    }
-
-    async getCallerReferences(definition: Location): Promise<Location[]> {
-        try {
-            const references = await this.languageClient.sendRequest(ReferencesRequest.type, {
-                context: {
-                    includeDeclaration: false // TODO find out, why definitions are still contained
-                },
-                position: {
-                    line: definition.range.start.line,
-                    character: definition.range.start.character
-                },
-                textDocument: {
-                    uri: definition.uri
-                }
-            });
-            const uniqueReferences = utils.filterUnique(references);
-            const filteredReferences = utils.filterSame(uniqueReferences, definition);
-            return filteredReferences;
-        } catch (error) {
-            this.logger.error('Error from references request', error);
-            return [];
-        }
-    }
-
-    dispose() {
-        this.disposables.forEach(element => {
-            element.dispose();
-        });
-        this.symbolCache.clear();
-    }
-}
+export type ExtendedDocumentSymbol = DocumentSymbol & Location & { containerName: string };
 
 @injectable()
 export abstract class AbstractDefaultCallHierarchyService implements CallHierarchyService {
@@ -174,7 +94,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
      */
     protected async createCallers(callerReferences: Location[], context: CallHierarchyContext): Promise<Caller[]> {
         const result: Caller[] = [];
-        const caller2references = new Map<SymbolInformation, Location[]>();
+        const caller2references = new Map<ExtendedDocumentSymbol | SymbolInformation, Location[]>();
         for (const reference of callerReferences) {
             const callerSymbol = await this.getEnclosingCallerSymbol(reference, context);
             if (callerSymbol) {
@@ -203,7 +123,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
         return <Caller>{ callerDefinition, references };
     }
 
-    protected async toDefinition(symbol: SymbolInformation, context: CallHierarchyContext): Promise<Definition | undefined> {
+    protected async toDefinition(symbol: ExtendedDocumentSymbol | SymbolInformation, context: CallHierarchyContext): Promise<Definition | undefined> {
         const location = await this.getSymbolNameLocation(symbol, context);
         if (!location) {
             return undefined;
@@ -217,7 +137,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
     /**
      * Override this to configure the callables of your language.
      */
-    protected isCallable(symbol: SymbolInformation): boolean {
+    protected isCallable(symbol: DocumentSymbol | SymbolInformation): boolean {
         switch (symbol.kind) {
             case SymbolKind.Constant:
             case SymbolKind.Constructor:
@@ -239,41 +159,70 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
      * As we only check regions that contain the definition, that is the one with the
      * latest start position.
      */
-    protected async getEnclosingRootSymbol(definition: Location, context: CallHierarchyContext): Promise<SymbolInformation | undefined> {
-        const symbols = (await context.getAllSymbols(definition.uri)).filter(s => this.isCallable(s));
-        let bestMatch: SymbolInformation | undefined = undefined;
-        let bestRange: Range | undefined = undefined;
-        for (const candidate of symbols) {
-            const candidateRange = candidate.location.range;
-            if (utils.containsRange(candidateRange, definition.range)) {
-                if (!bestMatch || utils.startsAfter(candidateRange, bestRange!)) {
-                    bestMatch = candidate;
-                    bestRange = candidateRange;
+    protected async getEnclosingRootSymbol(definition: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | SymbolInformation | undefined> {
+        const allSymbols = await context.getAllSymbols(definition.uri);
+        if (allSymbols.length === 0) {
+            return undefined;
+        }
+        if (DocumentSymbol.is(allSymbols[0])) {
+            const symbols = (allSymbols as DocumentSymbol[]);
+            const containsDefinition = (symbol: DocumentSymbol) => utils.containsRange(symbol.range, definition.range);
+            for (const symbol of symbols) {
+                let containerName = definition.uri.split('/').pop();
+                let candidate = containsDefinition(symbol) ? symbol : undefined;
+                outer: while (candidate) {
+                    const children = candidate.children || [];
+                    for (const child of children) {
+                        if (containsDefinition(child)) {
+                            containerName = candidate.name;
+                            candidate = child;
+                            continue outer;
+                        }
+                    }
+                    break;
+                }
+                if (candidate) {
+                    return <ExtendedDocumentSymbol>{ uri: definition.uri, containerName, ...candidate };
                 }
             }
+            return undefined;
+        } else {
+            const symbols = (allSymbols as SymbolInformation[]).filter(s => this.isCallable(s));
+            let bestMatch: SymbolInformation | undefined = undefined;
+            let bestRange: Range | undefined = undefined;
+            for (const candidate of symbols) {
+                const candidateRange = candidate.location.range;
+                if (utils.containsRange(candidateRange, definition.range)) {
+                    if (!bestMatch || utils.startsAfter(candidateRange, bestRange!)) {
+                        bestMatch = candidate;
+                        bestRange = candidateRange;
+                    }
+                }
+            }
+            return bestMatch;
         }
-        return bestMatch;
     }
 
     /**
      * Finds the symbol that encloses the reference range of a caller
      */
-    protected async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<SymbolInformation | undefined> {
+    protected async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | SymbolInformation | undefined> {
         return this.getEnclosingRootSymbol(reference, context);
     }
 
     /**
      * Finds the location of its name within a symbol's location.
      */
-    protected async getSymbolNameLocation(symbol: SymbolInformation, context: CallHierarchyContext): Promise<Location | undefined> {
-        const model = await context.getEditorModelReference(symbol.location.uri);
+    protected async getSymbolNameLocation(symbol: ExtendedDocumentSymbol | SymbolInformation, context: CallHierarchyContext): Promise<Location | undefined> {
+        const symbolLocation: Location = DocumentSymbol.is(symbol) ? symbol : symbol.location;
+        const model = await context.getEditorModelReference(symbolLocation.uri);
         let position = new monaco.Position(
-            symbol.location.range.start.line + 1,
-            symbol.location.range.start.character + 1
+            symbolLocation.range.start.line + 1,
+            symbolLocation.range.start.character + 1
         );
         const endPosition = new monaco.Position(
-            symbol.location.range.end.line + 1,
-            symbol.location.range.end.character + 1
+            symbolLocation.range.end.line + 1,
+            symbolLocation.range.end.character + 1
         );
         do {
             const word = model.object.textEditorModel.getWordAtPosition(position);
@@ -281,7 +230,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
                 const range = Range.create(
                     Position.create(position.lineNumber - 1, position.column - 1),
                     Position.create(position.lineNumber - 1, position.column - 1 + symbol.name.length));
-                return Location.create(symbol.location.uri, range);
+                return Location.create(symbolLocation.uri, range);
             }
             const delta = (word) ? word.word.length + 1 : 1;
             position = model.object.textEditorModel.modifyPosition(position, delta);
