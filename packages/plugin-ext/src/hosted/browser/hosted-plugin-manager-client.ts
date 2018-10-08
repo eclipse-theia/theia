@@ -23,6 +23,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { OpenFileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
 import { HostedPluginServer } from '../../common/plugin-protocol';
+import { DebugService, DebugConfiguration } from '@theia/debug/lib/common/debug-common';
+import { DebugConfiguration as HostedDebugConfig } from '../../common';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session';
+import { HostedPluginPreferences } from './hosted-plugin-preferences';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -32,6 +36,12 @@ export namespace HostedPluginCommands {
         id: 'hosted-plugin:start',
         label: 'Hosted Plugin: Start Instance'
     };
+
+    export const DEBUG: Command = {
+        id: 'hosted-plugin:debug',
+        label: 'Hosted Plugin: Debug Instance'
+    };
+
     export const STOP: Command = {
         id: 'hosted-plugin:stop',
         label: 'Hosted Plugin: Stop Instance'
@@ -75,6 +85,8 @@ export class HostedPluginManagerClient {
     // URL to the running plugin instance
     protected pluginInstanceURL: string | undefined;
 
+    protected isDebug = false;
+
     protected readonly stateChanged = new Emitter<HostedInstanceData>();
 
     get onStateChanged(): Event<HostedInstanceData> {
@@ -95,6 +107,12 @@ export class HostedPluginManagerClient {
     protected readonly fileSystem: FileSystem;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+    @inject(DebugService)
+    protected readonly debugService: DebugService;
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+    @inject(HostedPluginPreferences)
+    protected readonly hostedPluginPreferences: HostedPluginPreferences;
 
     @postConstruct()
     protected async init() {
@@ -113,7 +131,7 @@ export class HostedPluginManagerClient {
         return undefined;
     }
 
-    async start(): Promise<void> {
+    async start(debugConfig?: HostedDebugConfig): Promise<void> {
         if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
             this.messageService.warn('Hosted instance is already running.');
             return;
@@ -131,7 +149,11 @@ export class HostedPluginManagerClient {
             this.stateChanged.fire({ state: HostedInstanceState.STARTING, pluginLocation: this.pluginLocation });
             this.messageService.info('Starting hosted instance server ...');
 
-            this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation.toString());
+            if (debugConfig) {
+                this.pluginInstanceURL = await this.hostedPluginServer.runDebugHostedPluginInstance(this.pluginLocation.toString(), debugConfig);
+            } else {
+                this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation.toString());
+            }
             await this.openPluginWindow();
 
             this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
@@ -140,6 +162,19 @@ export class HostedPluginManagerClient {
             this.messageService.error('Failed to run hosted plugin instance: ' + this.getErrorMessage(error));
             this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation });
         }
+    }
+
+    async debug(): Promise<void> {
+        this.isDebug = true;
+
+        await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
+        const configuration = {
+            type: 'node',
+            request: 'attach',
+            name: 'Hosted Plugin'
+        } as DebugConfiguration;
+        const session = await this.debugService.create(configuration);
+        await this.debugSessionManager.create(session, configuration);
     }
 
     async stop(checkRunning: boolean = true): Promise<void> {

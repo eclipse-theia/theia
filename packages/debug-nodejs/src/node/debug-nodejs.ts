@@ -44,10 +44,6 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
             throw new Error('Debug request type is not provided.');
         }
 
-        switch (config.request) {
-            case 'attach': this.validateAttachConfig(config);
-        }
-
         return config;
     }
 
@@ -57,11 +53,5 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
             program,
             runtime: 'node'
         };
-    }
-
-    private validateAttachConfig(config: DebugConfiguration) {
-        if (!config.processId) {
-            throw new Error('PID is not provided.');
-        }
     }
 }
