@@ -36,6 +36,8 @@ export class HostedPluginSupport {
     @inject(HostedPluginProcess)
     protected readonly hostedPluginProcess: HostedPluginProcess;
 
+    private isPluginProcessRunning = false;
+
     /**
      * Optional runners to delegate some work
      */
@@ -51,11 +53,13 @@ export class HostedPluginSupport {
     }
 
     setClient(client: HostedPluginClient): void {
+        this.client = client;
         this.hostedPluginProcess.setClient(client);
         this.pluginRunners.forEach(runner => runner.setClient(client));
     }
 
     clientClosed(): void {
+        this.isPluginProcessRunning = false;
         this.terminatePluginServer();
     }
 
@@ -84,7 +88,10 @@ export class HostedPluginSupport {
     }
 
     public runPluginServer(): void {
-        this.hostedPluginProcess.runPluginServer();
+        if (!this.isPluginProcessRunning) {
+            this.hostedPluginProcess.runPluginServer();
+            this.isPluginProcessRunning = true;
+        }
     }
 
     public sendLog(logPart: LogPart): void {
