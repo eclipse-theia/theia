@@ -550,7 +550,8 @@ export class DugiteGit implements Git {
         const args = ['diff', '--name-status', '-C', '-M', '-z'];
         args.push(this.mapRange((options || {}).range));
         if (options && options.uri) {
-            args.push(...['--', Path.relative(this.getFsPath(repository), this.getFsPath(options.uri))]);
+            const relativePath = Path.relative(this.getFsPath(repository), this.getFsPath(options.uri));
+            args.push(...['--', relativePath !== '' ? relativePath : '.']);
         }
         const result = await this.exec(repository, args);
         return this.nameStatusParser.parse(repository.localUri, result.stdout.trim());

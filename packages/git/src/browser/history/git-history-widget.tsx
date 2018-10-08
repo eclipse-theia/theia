@@ -169,8 +169,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 } else if (options && options.uri && repository) {
                     const pathIsUnderVersionControl = await this.git.lsFiles(repository, options.uri, { errorUnmatch: true });
                     if (!pathIsUnderVersionControl) {
-                        const relPath = this.relativePath(options.uri);
-                        this.errorMessage = <React.Fragment><i>/{decodeURIComponent(relPath)}</i> is not under version control.</React.Fragment>;
+                        this.errorMessage = <React.Fragment>It is not under version control.</React.Fragment>;
                     }
                 }
                 resolver();
@@ -252,7 +251,9 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             reason = this.errorMessage;
             if (this.options.uri) {
                 const relPath = this.relativePath(this.options.uri);
-                path = <React.Fragment> for <i>/{decodeURIComponent(relPath)}</i></React.Fragment>;
+                const repo = this.repositoryProvider.findRepository(new URI(this.options.uri));
+                const repoName = repo ? ` in ${new URI(repo.localUri).displayName}` : '';
+                path = <React.Fragment> for <i>/{decodeURIComponent(relPath)}</i>{repoName}</React.Fragment>;
             }
             content = <div className='message-container'>
                 <div className='no-history-message'>
@@ -275,16 +276,10 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             const path = this.relativePath(this.options.uri);
             return <div className='diff-header'>
                 {
-                    path.length > 0 ?
-                        <div className='header-row'>
-                            <div className='theia-header'>
-                                path:
-                                </div>
-                            <div className='header-value'>
-                                {'/' + path}
-                            </div>
-                        </div>
-                        : ''
+                    this.renderHeaderRow({ name: 'repository', value: this.getRepositoryLabel(this.options.uri) })
+                }
+                {
+                    this.renderHeaderRow({ name: 'path', value: path })
                 }
                 <div className='theia-header'>
                     Commits
