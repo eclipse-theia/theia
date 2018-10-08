@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry } from '../../common/plugin-protocol';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry, DebugConfiguration } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { HostedPluginSupport } from './hosted-plugin';
@@ -116,6 +116,10 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     runHostedPluginInstance(uri: string): Promise<string> {
         return this.uriToStrPromise(this.hostedInstanceManager.run(new URI(uri)));
+    }
+
+    runDebugHostedPluginInstance(uri: string, debugConfig: DebugConfiguration): Promise<string> {
+        return this.uriToStrPromise(this.hostedInstanceManager.debug(new URI(uri), debugConfig));
     }
 
     terminateHostedPluginInstance(): Promise<void> {

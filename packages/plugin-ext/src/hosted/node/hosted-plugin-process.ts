@@ -63,28 +63,31 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     public terminatePluginServer(): void {
-        const emitter = new Emitter();
         if (this.childProcess === undefined) {
             return;
         }
+        // tslint:disable-next-line:no-shadowed-variable
+        const cp = this.childProcess;
+        this.childProcess = undefined;
 
-        this.childProcess.on('message', message => {
+        const emitter = new Emitter();
+        cp.on('message', message => {
             emitter.fire(JSON.parse(message));
         });
         const rpc = new RPCProtocolImpl({
             onMessage: emitter.event,
             send: (m: {}) => {
-                if (this.childProcess!.send) {
-                    this.childProcess!.send(JSON.stringify(m));
+                if (cp.send) {
+                    cp.send(JSON.stringify(m));
                 }
             }
         });
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
         hostedPluginManager.$stopPlugin('').then(() => {
             emitter.dispose();
-            this.childProcess!.kill();
+            cp.kill();
         });
-        this.childProcess = undefined;
+
     }
 
     public runPluginServer(): void {

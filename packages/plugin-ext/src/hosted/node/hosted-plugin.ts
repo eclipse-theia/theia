@@ -61,6 +61,7 @@ export class HostedPluginSupport {
     clientClosed(): void {
         this.isPluginProcessRunning = false;
         this.terminatePluginServer();
+        this.isPluginProcessRunning = false;
     }
 
     runPlugin(plugin: PluginModel): void {

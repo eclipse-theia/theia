@@ -24,12 +24,19 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
             type: 'boolean',
             description: 'Run watcher on plugin under development',
             default: true
+        },
+        'hosted-plugin.debugMode': {
+            type: 'string',
+            description: 'Using inspect or inspect-brk for Node.js debug',
+            default: 'inspect',
+            enum: ['inspect', 'inspect-brk']
         }
     }
 };
 
 export interface HostedPluginConfiguration {
     'hosted-plugin.watchMode': boolean;
+    'hosted-plugin.debugMode': string;
 }
 
 export const HostedPluginPreferences = Symbol('HostedPluginPreferences');

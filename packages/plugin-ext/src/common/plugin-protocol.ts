@@ -65,13 +65,13 @@ export interface PluginPackageViewContainer {
 }
 
 export interface PluginPackageView {
-	id: string;
-	name: string;
+    id: string;
+    name: string;
 }
 
 export interface PluginPackageMenu {
-	command: string;
-	group?: string;
+    command: string;
+    group?: string;
 }
 
 export interface PluginPackageGrammarsContribution {
@@ -372,16 +372,16 @@ export interface ViewContainer {
  * View contribution
  */
 export interface View {
-	id: string;
-	name: string;
+    id: string;
+    name: string;
 }
 
 /**
  * Menu contribution
  */
 export interface Menu {
-	command: string;
-	group?: string;
+    command: string;
+    group?: string;
 }
 
 /**
@@ -437,6 +437,11 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
+export interface DebugConfiguration {
+    port?: number;
+    debugMode?: string;
+}
+
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
     postMessage(message: string): Promise<void>;
@@ -458,6 +463,7 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
     isPluginValid(uri: string): Promise<boolean>;
     runHostedPluginInstance(uri: string): Promise<string>;
+    runDebugHostedPluginInstance(uri: string, debugConfig: DebugConfiguration): Promise<string>;
     terminateHostedPluginInstance(): Promise<void>;
     isHostedPluginInstanceRunning(): Promise<boolean>;
     getHostedPluginInstanceURI(): Promise<string>;

@@ -4,7 +4,8 @@
   "description": "Theia - NodeJS Debug Extension",
   "dependencies": {
     "@theia/debug": "^0.3.15",
-    "vscode-debugprotocol": "^1.26.0"
+    "vscode-debugprotocol": "^1.26.0",
+    "unzip-stream": "^0.3.0"
   },
   "publishConfig": {
     "access": "public"
@@ -27,7 +28,7 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
-    "lib",
+    "lib/node",
     "src",
     "scripts"
   ],
@@ -35,14 +36,14 @@
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
     "download": "node ./scripts/download-vscode-node-debug.js",
-    "build": "yarn download && theiaext build",
+    "build": "yarn postinstall && theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "docs": "theiaext docs"
+    "docs": "theiaext docs",
+    "postinstall": "node ./scripts/download-vscode-node-debug.js"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.15",
-    "unzip-stream": "^0.3.0"
+    "@theia/ext-scripts": "^0.3.15"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
