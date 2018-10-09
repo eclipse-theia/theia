@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Position, Range } from 'vscode-languageserver-types';
+import { Position, Range, Location } from 'vscode-languageserver-types';
 import * as lsp from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable } from '@theia/core/lib/common';
@@ -22,7 +22,7 @@ import { Saveable } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
 
 export {
-    Position, Range
+    Position, Range, Location
 };
 
 export const TextEditorProvider = Symbol('TextEditorProvider');

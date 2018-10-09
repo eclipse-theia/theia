@@ -94,6 +94,9 @@
       "@theia/callhierarchy/lib/*": [
         "packages/callhierarchy/src/*"
       ],
+      "@theia/typehierarchy/lib/*": [
+        "packages/typehierarchy/src/*"
+      ],
       "@theia/variable-resolver/lib/*": [
         "packages/variable-resolver/src/*"
       ],
