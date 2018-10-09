@@ -26,6 +26,7 @@ cache:
   - packages/extension-manager/node_modules
   - packages/file-search/node_modules
   - packages/filesystem/node_modules
+  - packages/getting-started/node_modules
   - packages/git/node_modules
   - packages/java/node_modules
   - packages/json/node_modules
