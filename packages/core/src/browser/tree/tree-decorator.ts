@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Tree } from './tree';
+import { Tree, TreeNode } from './tree';
 import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
 
 /**
@@ -498,6 +498,29 @@ export namespace TreeDecoration {
          * Compares the decoration data based on the priority. Lowest priorities come first.
          */
         export const comparePriority = (left: Data, right: Data): number => (left.priority || 0) - (right.priority || 0);
+
+    }
+
+    /**
+     * Tree node that can be decorated explicitly, without the tree decorators.
+     */
+    export interface DecoratedTreeNode extends TreeNode {
+
+        /**
+         * The additional tree decoration data attached to the tree node itself.
+         */
+        readonly decorationData: Data;
+
+    }
+
+    export namespace DecoratedTreeNode {
+
+        /**
+         * Type-guard for decorated tree nodes.
+         */
+        export function is(node: TreeNode | undefined): node is DecoratedTreeNode {
+            return !!node && 'decorationData' in node;
+        }
 
     }
 

@@ -49,6 +49,7 @@
     "@theia/terminal": "^0.4.0",
     "@theia/textmate-grammars": "^0.4.0",
     "@theia/tslint": "^0.4.0",
+    "@theia/typehierarchy": "^0.4.0",
     "@theia/typescript": "^0.4.0",
     "@theia/userstorage": "^0.4.0",
     "@theia/variable-resolver": "^0.4.0",

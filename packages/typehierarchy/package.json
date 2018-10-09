@@ -1,0 +1,50 @@
+{
+  "name": "@theia/typehierarchy",
+  "version": "0.4.0",
+  "description": "Theia - Type Hierarchy Extension",
+  "dependencies": {
+    "@theia/core": "^0.4.0",
+    "@theia/editor": "^0.4.0",
+    "@theia/languages": "^0.4.0",
+    "@types/uuid": "^3.4.3",
+    "uuid": "^3.2.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/typehierarchy-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.4.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
