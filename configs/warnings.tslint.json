@@ -2,7 +2,10 @@
   "rules": {
     "await-promise": {
       "severity": "warning",
-      "options": true
+      "options": [
+        true,
+        "Thenable"
+      ]
     },
     "no-any": {
       "severity": "warning",
