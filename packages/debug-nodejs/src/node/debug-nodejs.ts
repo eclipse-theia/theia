@@ -15,15 +15,15 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
+import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { DebugAdapterContribution, DebugAdapterExecutable } from '@theia/debug/lib/node/debug-model';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { getSchemaAttributes } from './package-json-parser';
 
-const path = require('path');
+const path = require('path'); // FIXME use import
 const packageJson = require('../../package.json');
 const debugAdapterDir = packageJson['debugAdapter']['dir'] + '/extension';
-const psList = require('ps-list');
+const psList = require('ps-list'); // FIXME use import, provide proper d.ts file instead of any
 const DEBUG_PORT_PATTERN = /--(inspect|debug)-port=(\d+)/;
 const DEFAULT_PROTOCOL = 'inspector';
 const DEFAULT_INSPECTOR_PORT = 9229;

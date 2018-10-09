@@ -143,6 +143,10 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.model.getLineContent(lineNumber);
     }
 
+    getLineMaxColumn(lineNumber: number): number {
+        return this.model.getLineMaxColumn(lineNumber);
+    }
+
     get readOnly(): boolean {
         return this.resource.saveContents === undefined;
     }

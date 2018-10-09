@@ -31,6 +31,7 @@
 	position: absolute;
     content: '\276f';
 	line-height: 18px;
+    color: var(--theia-ui-font-color1);
 }
 
 .theia-console-error {

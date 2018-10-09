@@ -25,8 +25,10 @@
 import { Disposable } from '@theia/core';
 import * as stream from 'stream';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
-import { DebugConfiguration, DebugSessionState } from '../common/debug-common';
+import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+
+// FXIME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
 /**
  * DebugAdapterSession symbol for DI.
@@ -38,8 +40,6 @@ export const DebugAdapterSession = Symbol('DebugAdapterSession');
  */
 export interface DebugAdapterSession {
     id: string;
-    state: DebugSessionState;
-
     start(channel: WebSocketChannel): Promise<void>
     stop(): Promise<void>
 }
@@ -73,6 +73,8 @@ export interface DebugAdapterExecutable {
  * no obligation as of how to launch/initialize local or remote debug adapter
  * process/server, it can be done separately and it is not required that this interface covers the
  * procedure, however it is also not disallowed.
+ *
+ * TODO: the better name is DebugStreamConnection + handling on error and close
  */
 export interface CommunicationProvider extends Disposable {
     output: stream.Readable;

@@ -82,7 +82,7 @@ export class BrowserMainMenuFactory {
         commands.addCommand(command.id, {
             execute: () => this.commandRegistry.executeCommand(command.id),
             label: menu.label,
-            icon: command.iconClass,
+            icon: menu.icon,
             isEnabled: () => this.commandRegistry.isEnabled(command.id),
             isVisible: () => this.commandRegistry.isVisible(command.id),
             isToggled: () => this.commandRegistry.isToggled(command.id)

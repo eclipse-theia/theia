@@ -14,192 +14,96 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {
-    VirtualWidget,
-    SELECTED_CLASS,
-} from '@theia/core/lib/browser';
-import { DebugSession } from '../debug-model';
-import { h } from '@phosphor/virtualdom';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { injectable, inject } from 'inversify';
-import { DebugSelection } from './debug-selection-service';
-import { SourceOpener, DebugUtils } from '../debug-utils';
-import { Disposable } from '@theia/core';
-import { DebugStyles, DebugWidget, DebugContext } from './debug-view-common';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
+import { MenuPath } from '@theia/core';
+import { TreeNode, NodeProps, SelectableTreeNode } from '@theia/core/lib/browser';
+import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
+import { DebugStackFramesSource, LoadMoreStackFrames } from './debug-stack-frames-source';
+import { DebugStackFrame } from '../model/debug-stack-frame';
+import { DebugViewModel } from './debug-view-model';
 
-/**
- * Is it used to display call stack.
- */
 @injectable()
-export class DebugStackFramesWidget extends VirtualWidget implements DebugWidget {
-    private _debugContext: DebugContext | undefined;
-    private _frames: DebugProtocol.StackFrame[] = [];
+export class DebugStackFramesWidget extends SourceTreeWidget {
 
-    private readonly sessionDisposableEntries = new DisposableCollection();
-
-    constructor(@inject(SourceOpener) protected readonly sourceOpener: SourceOpener) {
-        super();
-
-        this.id = this.createId();
-        this.addClass('theia-debug-entry');
-        this.node.setAttribute('tabIndex', '0');
+    static CONTEXT_MENU: MenuPath = ['debug-frames-context-menu'];
+    static createContainer(parent: interfaces.Container): Container {
+        const child = SourceTreeWidget.createContainer(parent, {
+            contextMenuPath: DebugStackFramesWidget.CONTEXT_MENU,
+            virtualized: false,
+            scrollIfActive: true
+        });
+        child.bind(DebugStackFramesSource).toSelf();
+        child.unbind(SourceTreeWidget);
+        child.bind(DebugStackFramesWidget).toSelf();
+        return child;
+    }
+    static createWidget(parent: interfaces.Container): DebugStackFramesWidget {
+        return DebugStackFramesWidget.createContainer(parent).get(DebugStackFramesWidget);
     }
 
-    dispose(): void {
-        this.sessionDisposableEntries.dispose();
-        super.dispose();
+    @inject(DebugStackFramesSource)
+    protected readonly frames: DebugStackFramesSource;
+
+    @inject(DebugViewModel)
+    protected readonly viewModel: DebugViewModel;
+
+    @postConstruct()
+    protected init(): void {
+        super.init();
+        this.id = 'debug:frames:' + this.viewModel.id;
+        this.title.label = 'Call Stack';
+        this.toDispose.push(this.frames);
+        this.source = this.frames;
+
+        this.toDispose.push(this.viewModel.onDidChange(() => this.updateWidgetSelection()));
+        this.toDispose.push(this.model.onNodeRefreshed(() => this.updateWidgetSelection()));
+        this.toDispose.push(this.model.onSelectionChanged(() => this.updateModelSelection()));
     }
 
-    get debugContext(): DebugContext | undefined {
-        return this._debugContext;
-    }
-
-    set debugContext(debugContext: DebugContext | undefined) {
-        this.sessionDisposableEntries.dispose();
-        this._debugContext = debugContext;
-        this.id = this.createId();
-
-        if (debugContext) {
-            this.sessionDisposableEntries.push(this.debugSelection!.onDidSelectThread(thread => this.onThreadSelected(thread)));
-
-            const stoppedEventListener = (event: DebugProtocol.StoppedEvent) => this.onStoppedEvent(event);
-            const continuedEventListener = (event: DebugProtocol.ContinuedEvent) => this.onContinuedEvent(event);
-            const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
-
-            this.debugSession!.on('stopped', stoppedEventListener);
-            this.debugSession!.on('continued', continuedEventListener);
-            this.debugSession!.on('terminated', terminatedEventListener);
-
-            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('stopped', stoppedEventListener)));
-            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('continued', continuedEventListener)));
-            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('terminated', terminatedEventListener)));
-        }
-    }
-
-    get frames(): DebugProtocol.StackFrame[] {
-        return this._frames;
-    }
-
-    set frames(frames: DebugProtocol.StackFrame[]) {
-        this._frames = frames;
-        this.update();
-    }
-
-    protected render(): h.Child {
-        const header = h.div({ className: 'theia-debug-header' }, 'Call stack');
-        const items: h.Child = [];
-
-        const selectedFrame = this.debugSelection && this.debugSelection.frame;
-        for (const frame of this._frames) {
-            const className = DebugStyles.DEBUG_ITEM + (DebugUtils.isEqual(selectedFrame, frame) ? ` ${SELECTED_CLASS}` : '');
-            const id = this.createId(frame);
-
-            const item =
-                h.div({
-                    id, className,
-                    onclick: () => {
-                        this.selectFrame(frame);
-                        this.sourceOpener.open(frame);
-                    }
-                }, this.toDisplayName(frame));
-
-            items.push(item);
-        }
-
-        return [header, h.div({ className: Styles.FRAMES }, items)];
-    }
-
-    protected onThreadSelected(thread: DebugProtocol.Thread | undefined) {
-        this.updateFrames(thread ? thread.id : undefined);
-    }
-
-    protected selectFrame(newFrame: DebugProtocol.StackFrame | undefined) {
-        if (!this.debugSelection) {
+    protected updatingSelection = false;
+    protected async updateWidgetSelection(): Promise<void> {
+        if (this.updatingSelection) {
             return;
         }
-
-        const currentFrame = this.debugSelection.frame;
-
-        if (DebugUtils.isEqual(currentFrame, newFrame)) {
-            return;
-        }
-
-        if (currentFrame) {
-            const element = document.getElementById(this.createId(currentFrame));
-            if (element) {
-                element.className = DebugStyles.DEBUG_ITEM;
-            }
-        }
-
-        if (newFrame) {
-            const element = document.getElementById(this.createId(newFrame));
-            if (element) {
-                element.className = `${DebugStyles.DEBUG_ITEM} ${SELECTED_CLASS}`;
-            }
-        }
-
-        this.debugSelection.frame = newFrame;
-    }
-
-    private toDisplayName(frame: DebugProtocol.StackFrame): string {
-        return frame.name;
-    }
-
-    private createId(frame?: DebugProtocol.StackFrame): string {
-        return 'debug-stack-frames'
-            + (this.debugSession ? `-${this.debugSession.sessionId}` : '')
-            + (frame ? `-${frame.id}` : '');
-    }
-
-    protected onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
-        this.frames = [];
-    }
-
-    private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
-        const currentThread = this.debugSelection && this.debugSelection.thread;
-        if (currentThread) {
-            if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsContinued) {
-                this.selectFrame(undefined);
-                this.frames = [];
-            }
-        }
-    }
-
-    private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
-        const currentThread = this.debugSelection && this.debugSelection.thread;
-        if (currentThread) {
-            if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsStopped) {
-                this.updateFrames(currentThread.id);
-            }
-        }
-    }
-
-    private updateFrames(threadId: number | undefined) {
-        this.selectFrame(undefined);
-        this.frames = [];
-
-        if (threadId && this.debugSession) {
-            const args: DebugProtocol.StackTraceArguments = { threadId };
-            this.debugSession.stacks(args).then(response => {
-                const thread = this.debugSelection && this.debugSelection.thread;
-                if (DebugUtils.isEqual(thread, threadId)) { // still the same thread remains selected
-                    this.selectFrame(response.body.stackFrames[0]);
-                    this.frames = response.body.stackFrames;
+        this.updatingSelection = true;
+        try {
+            const { currentFrame } = this.viewModel;
+            if (currentFrame) {
+                const node = this.model.getNode(currentFrame.id);
+                if (SelectableTreeNode.is(node)) {
+                    this.model.selectNode(node);
                 }
-            });
+            }
+        } finally {
+            this.updatingSelection = false;
+        }
+    }
+    protected async updateModelSelection(): Promise<void> {
+        if (this.updatingSelection) {
+            return;
+        }
+        this.updatingSelection = true;
+        try {
+            const node = this.model.selectedNodes[0];
+            if (TreeElementNode.is(node)) {
+                if (node.element instanceof DebugStackFrame) {
+                    node.element.thread.currentFrame = node.element;
+                }
+            }
+        } finally {
+            this.updatingSelection = false;
         }
     }
 
-    private get debugSession(): DebugSession | undefined {
-        return this._debugContext && this._debugContext.debugSession;
+    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        if (TreeElementNode.is(node) && node.element instanceof LoadMoreStackFrames) {
+            node.element.open();
+        }
+        super.handleClickEvent(node, event);
     }
 
-    private get debugSelection(): DebugSelection | undefined {
-        return this._debugContext && this._debugContext.debugSelection;
+    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
+        return undefined;
     }
-}
 
-namespace Styles {
-    export const FRAMES = 'theia-debug-frames';
 }

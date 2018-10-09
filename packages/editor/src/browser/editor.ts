@@ -30,6 +30,7 @@ export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
 
 export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposable {
     getLineContent(lineNumber: number): string;
+    getLineMaxColumn(lineNumber: number): number;
 }
 
 export interface TextDocumentContentChangeDelta extends lsp.TextDocumentContentChangeEvent {

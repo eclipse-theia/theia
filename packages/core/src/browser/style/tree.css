@@ -50,6 +50,15 @@
     width: calc(100% - var(--theia-scrollbar-rail-width));
 }
 
+.theia-ExpansionToggle {
+    padding-right: var(--theia-ui-padding);
+    min-width: 8px;
+}
+
+.theia-ExpansionToggle:hover {
+    cursor: pointer;
+}
+
 .theia-ExpansionToggle.theia-mod-collapsed::before {
     font-family: FontAwesome;
     font-size: calc(var(--theia-content-font-size) * 0.8);
@@ -62,11 +71,12 @@
     content: "\f0d7";
 }
 
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
     background: var(--theia-accent-color3);
 }
 
-.theia-Tree .ReactVirtualized__List .theia-TreeNode.theia-mod-selected {
+.theia-Tree .theia-TreeNode.theia-mod-selected {
     background: var(--theia-accent-color4);
 }
 
@@ -90,4 +100,14 @@
 .theia-TreeNodeSegment mark {
     background-color: var(--theia-word-highlight-match-color1);
     color: var(--theia-ui-font-color1);
+}
+
+.theia-tree-source-node-placeholder {
+    text-align: center;
+    font-style: italic;
+    opacity: 0.4;
+}
+
+.theia-tree-element-node {
+    width: 100%
 }

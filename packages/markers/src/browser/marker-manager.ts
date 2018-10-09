@@ -175,11 +175,20 @@ export abstract class MarkerManager<D extends object> {
         return result;
     }
 
-    getUris(): Iterable<string> {
+    getUris(): IterableIterator<string> {
         return this.uri2MarkerCollection.keys();
     }
 
-    cleanAllMarkers(uri: URI): void {
+    cleanAllMarkers(uri?: URI): void {
+        if (uri) {
+            this.doCleanAllMarkers(uri);
+        } else {
+            for (const uriString of this.getUris()) {
+                this.doCleanAllMarkers(new URI(uriString));
+            }
+        }
+    }
+    protected doCleanAllMarkers(uri: URI): void {
         const uriString = uri.toString();
         const collection = this.uri2MarkerCollection.get(uriString);
         if (collection !== undefined) {

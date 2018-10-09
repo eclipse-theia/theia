@@ -14,18 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { ElementExt } from '@phosphor/domutils';
+import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
+import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';
-import { ConsoleSession } from './console-session';
-import { DisposableCollection } from '@theia/core/lib/common';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { ProtocolToMonacoConverter, MonacoToProtocolConverter } from 'monaco-languageclient/lib';
-import { ElementExt } from '@phosphor/domutils';
-import { ConsoleContentWidget } from './content/console-content-widget';
-import { ConsoleSessionNode } from './content/console-content-tree';
 import { ConsoleHistory } from './console-history';
+import { ConsoleContentWidget } from './console-content-widget';
+import { ConsoleSession } from './console-session';
 
 export const ConsoleOptions = Symbol('ConsoleWidgetOptions');
 export interface ConsoleOptions {
@@ -49,6 +48,14 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         content: 'theia-console-content',
         input: 'theia-console-input',
     };
+
+    static createContainer(parent: interfaces.Container, options: ConsoleOptions): Container {
+        const child = ConsoleContentWidget.createContainer(parent);
+        child.bind(ConsoleHistory).toSelf();
+        child.bind(ConsoleOptions).toConstantValue(options);
+        child.bind(ConsoleWidget).toSelf();
+        return child;
+    }
 
     @inject(ConsoleOptions)
     protected readonly options: ConsoleOptions;
@@ -116,17 +123,12 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected _session: ConsoleSession | undefined;
-    protected readonly toDisposeOnSession = new DisposableCollection();
     set session(session: ConsoleSession | undefined) {
         if (this._session === session) {
             return;
         }
         this._session = session;
-        this.content.model.root = ConsoleSessionNode.to(session);
-        if (this._session) {
-            this.toDisposeOnSession.push(this._session.onDidChange(() => this.content.model.refresh()));
-            this.toDispose.push(this.toDisposeOnSession);
-        }
+        this.content.source = session;
     }
     get session(): ConsoleSession | undefined {
         return this._session;
@@ -190,7 +192,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     protected revealLastOutput(): void {
         const { root } = this.content.model;
-        if (ConsoleSessionNode.is(root)) {
+        if (TreeSourceNode.is(root)) {
             this.content.model.selectNode(root.children[root.children.length - 1]);
         }
     }

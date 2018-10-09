@@ -16,7 +16,6 @@
 
 import { interfaces, injectable } from 'inversify';
 import { AbstractViewContribution, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
-import { ConsoleContainer } from '@theia/console/lib/browser/console-container';
 import { ConsoleWidget, ConsoleOptions } from '@theia/console/lib/browser/console-widget';
 import { DebugConsoleSession } from './debug-console-session';
 
@@ -51,7 +50,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     };
 
     static create(parent: interfaces.Container): ConsoleWidget {
-        const child = ConsoleContainer.create(parent, DebugConsoleContribution.options);
+        const child = ConsoleWidget.createContainer(parent, DebugConsoleContribution.options);
         const widget = child.get(ConsoleWidget);
         widget.session = child.get(DebugConsoleSession);
         return widget;
