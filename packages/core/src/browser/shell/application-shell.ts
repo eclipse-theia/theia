@@ -23,7 +23,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial } from '../../common';
+import { RecursivePartial, MaybePromise } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
@@ -763,16 +763,14 @@ export class ApplicationShell extends Widget {
     /**
      * Track the given widget so it is considered in the `current` and `active` state of the shell.
      */
-    protected track(widget: Widget): void {
+    protected async track(widget: Widget): Promise<void> {
         this.tracker.add(widget);
         Saveable.apply(widget);
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
-            widget.getTrackableWidgets().then(widgetsToTrack => {
-                for (const toTrack of widgetsToTrack) {
-                    this.tracker.add(toTrack);
-                    Saveable.apply(toTrack);
-                }
-            });
+            for (const toTrack of await widget.getTrackableWidgets()) {
+                this.tracker.add(toTrack);
+                Saveable.apply(toTrack);
+            }
         }
     }
 
@@ -1283,7 +1281,7 @@ export namespace ApplicationShell {
      * The _side areas_ are those shell areas that can be collapsed and expanded,
      * i.e. `left`, `right`, and `bottom`.
      */
-    export function isSideArea(area?: Area): area is 'left' | 'right' | 'bottom' {
+    export function isSideArea(area?: string): area is 'left' | 'right' | 'bottom' {
         return area === 'left' || area === 'right' || area === 'bottom';
     }
 
@@ -1359,7 +1357,7 @@ export namespace ApplicationShell {
      * Exposes widgets which activation state should be tracked by shell.
      */
     export interface TrackableWidgetProvider {
-        getTrackableWidgets(): Promise<Widget[]>
+        getTrackableWidgets(): MaybePromise<Widget[]>
     }
 
     export namespace TrackableWidgetProvider {

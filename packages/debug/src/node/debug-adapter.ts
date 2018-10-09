@@ -22,13 +22,8 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
 import * as net from 'net';
-import { injectable, inject, named } from 'inversify';
-import { ILogger, DisposableCollection, Disposable } from '@theia/core';
-import {
-    DebugSessionState,
-    DebugSessionStateAccumulator,
-    ExtDebugProtocol
-} from '../common/debug-common';
+import { injectable, inject } from 'inversify';
+import { DisposableCollection } from '@theia/core';
 import {
     RawProcessFactory,
     ProcessManager,
@@ -42,7 +37,6 @@ import {
     DebugAdapterFactory
 } from './debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { EventEmitter } from 'events';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 
 /**
@@ -58,7 +52,7 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
         const process = this.spawnProcess(executable);
-
+        // FIXME: propagate onError + onExit
         return {
             input: process.input,
             output: process.output,
@@ -80,6 +74,7 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 
     connect(debugServerPort: number): CommunicationProvider {
         const socket = net.createConnection(debugServerPort);
+        // FIXME: propagate socket.on('error', ...) + socket.on('close', ...)
         return {
             input: socket,
             output: socket,
@@ -91,31 +86,22 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 /**
  * [DebugAdapterSession](#DebugAdapterSession) implementation.
  */
-export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapterSession {
-    readonly state: DebugSessionState;
+export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     private static TWO_CRLF = '\r\n\r\n';
 
     private readonly toDispose = new DisposableCollection();
-    private pendingRequests = new Map<number, DebugProtocol.Request>();
     private channel: WebSocketChannel | undefined;
     private contentLength: number;
     private buffer: Buffer;
 
     constructor(
         readonly id: string,
-        protected readonly communicationProvider: CommunicationProvider,
-        protected readonly logger: ILogger
+        protected readonly communicationProvider: CommunicationProvider
     ) {
-        super();
-
         this.contentLength = -1;
         this.buffer = new Buffer(0);
-        this.state = new DebugSessionStateAccumulator(this);
         this.toDispose.push(this.communicationProvider);
-        this.toDispose.push(Disposable.create(() => this.pendingRequests.clear()));
-        // Node.js process crashes if there is no listeners for error event
-        this.on('error', console.error);
     }
 
     async start(channel: WebSocketChannel): Promise<void> {
@@ -123,23 +109,25 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
             throw new Error('The session has already been started, id: ' + this.id);
         }
         this.channel = channel;
+        this.channel.onMessage((message: string) => this.write(message));
         this.channel.onClose(() => this.channel = undefined);
 
         this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
-        this.communicationProvider.output.on('close', () => this.onDebugAdapterClosed());
-        this.communicationProvider.output.on('error', (error: Error) => this.onDebugAdapterError(error));
-        this.communicationProvider.input.on('error', (error: Error) => this.onDebugAdapterError(error));
-
-        this.channel.onMessage((data: string) => this.proceedRequest(data));
+        this.communicationProvider.output.on('close', () => this.fireExited());
+        this.communicationProvider.output.on('error', error => this.onDebugAdapterError(error));
+        this.communicationProvider.input.on('error', error => this.onDebugAdapterError(error));
     }
 
-    protected onDebugAdapterClosed(): void {
-        const event: DebugProtocol.Event = {
+    protected fireExited(): void {
+        const event: DebugProtocol.ExitedEvent = {
             type: 'event',
-            event: 'terminated',
-            seq: -1
+            event: 'exited',
+            seq: -1,
+            body: {
+                exitCode: 1 // FIXME pass a proper exit code
+            }
         };
-        this.proceedEvent(JSON.stringify(event), event);
+        this.send(JSON.stringify(event));
     }
 
     protected onDebugAdapterError(error: Error): void {
@@ -149,7 +137,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
             seq: -1,
             body: error
         };
-        this.proceedEvent(JSON.stringify(event), event);
+        this.send(JSON.stringify(event));
     }
 
     protected handleData(data: Buffer): void {
@@ -158,19 +146,12 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         while (true) {
             if (this.contentLength >= 0) {
                 if (this.buffer.length >= this.contentLength) {
-                    const rawData = this.buffer.toString('utf8', 0, this.contentLength);
+                    const message = this.buffer.toString('utf8', 0, this.contentLength);
                     this.buffer = this.buffer.slice(this.contentLength);
                     this.contentLength = -1;
 
-                    if (rawData.length > 0) {
-                        const message = JSON.parse(rawData) as DebugProtocol.ProtocolMessage;
-                        if (message.type === 'event') {
-                            this.proceedEvent(rawData, message as DebugProtocol.Event);
-                        } else if (message.type === 'response') {
-                            this.proceedResponse(rawData, message as DebugProtocol.Response);
-                        } else if (this.channel) {
-                            this.channel.send(rawData);
-                        }
+                    if (message.length > 0) {
+                        this.send(message);
                     }
                     continue;	// there may be more complete messages to process
                 }
@@ -193,125 +174,18 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
         }
     }
 
-    protected proceedEvent(rawData: string, event: DebugProtocol.Event): void {
-        this.logger.debug(log => log(`DAP event:\n${JSON.stringify(event, undefined, 2)}`));
-
-        this.emit(event.event, event);
+    protected send(message: string): void {
         if (this.channel) {
-            this.channel.send(rawData);
+            this.channel.send(message);
         }
     }
 
-    protected proceedResponse(rawData: string, response: DebugProtocol.Response): void {
-        this.logger.debug(log => log(`DAP Response:\n${JSON.stringify(response, undefined, 2)}`));
-
-        const request = this.pendingRequests.get(response.request_seq);
-
-        this.pendingRequests.delete(response.request_seq);
-        if (this.channel) {
-            this.channel.send(rawData);
-        }
-
-        if (response.success) {
-            switch (response.command) {
-                case 'attach':
-                case 'launch': {
-                    const event: ExtDebugProtocol.ConnectedEvent = {
-                        type: 'event',
-                        seq: -1,
-                        event: 'connected'
-                    };
-                    this.proceedEvent(JSON.stringify(event), event);
-                    break;
-                }
-
-                case 'configurationDone': {
-                    const event: ExtDebugProtocol.ConfigurationDoneEvent = {
-                        type: 'event',
-                        seq: -1,
-                        event: 'configurationDone'
-                    };
-                    this.proceedEvent(JSON.stringify(event), event);
-                    break;
-                }
-
-                case 'setVariable': {
-                    const setVariableRequest = request as DebugProtocol.SetVariableRequest;
-                    const event: ExtDebugProtocol.VariableUpdatedEvent = {
-                        type: 'event',
-                        seq: -1,
-                        event: 'variableUpdated',
-                        body: {
-                            ...response.body,
-                            name: setVariableRequest.arguments.name,
-                            parentVariablesReference: setVariableRequest.arguments.variablesReference,
-                        }
-                    };
-                    this.proceedEvent(JSON.stringify(event), event);
-                    break;
-                }
-
-                case 'continue': {
-                    const continueRequest = request as DebugProtocol.ContinueRequest;
-                    const continueResponse = response as DebugProtocol.ContinueResponse;
-                    const event: DebugProtocol.ContinuedEvent = {
-                        type: 'event',
-                        seq: -1,
-                        event: 'continued',
-                        body: {
-                            threadId: continueRequest.arguments.threadId,
-                            allThreadsContinued: continueResponse.body && continueResponse.body.allThreadsContinued
-                        }
-                    };
-                    this.proceedEvent(JSON.stringify(event), event);
-                    break;
-                }
-
-                case 'loadedSources': {
-                    const loadedSourcesResponse = response as DebugProtocol.LoadedSourcesResponse;
-
-                    for (const source of loadedSourcesResponse.body.sources) {
-                        const event: DebugProtocol.LoadedSourceEvent = {
-                            type: 'event',
-                            seq: -1,
-                            event: 'loadedSource',
-                            body: {
-                                source,
-                                reason: 'new'
-                            }
-                        };
-                        this.proceedEvent(JSON.stringify(event), event);
-                    }
-                    break;
-                }
-
-                case 'initialized': {
-                    const initializeResponse = response as DebugProtocol.InitializeResponse;
-                    const event: DebugProtocol.CapabilitiesEvent = {
-                        type: 'event',
-                        seq: -1,
-                        event: 'capabilities',
-                        body: {
-                            capabilities: initializeResponse.body || {}
-                        }
-                    };
-                    this.proceedEvent(JSON.stringify(event), event);
-                    break;
-                }
-            }
-        }
-    }
-
-    protected proceedRequest(data: string): void {
-        const request = JSON.parse(data) as DebugProtocol.Request;
-        this.logger.debug(log => log(`DAP Request:\n${JSON.stringify(request, undefined, 2)}`));
-
-        this.pendingRequests.set(request.seq, request);
-        this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(data, 'utf8')}\r\n\r\n${data}`, 'utf8');
+    protected write(message: string): void {
+        this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(message, 'utf8')}\r\n\r\n${message}`, 'utf8');
     }
 
     async stop(): Promise<void> {
-        await this.toDispose.dispose();
+        this.toDispose.dispose();
     }
 }
 
@@ -321,13 +195,10 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 @injectable()
 export class DebugAdapterSessionFactoryImpl implements DebugAdapterSessionFactory {
 
-    @inject(ILogger) @named('debug') protected readonly logger: ILogger;
-
     get(sessionId: string, communicationProvider: CommunicationProvider): DebugAdapterSession {
         return new DebugAdapterSessionImpl(
             sessionId,
-            communicationProvider,
-            this.logger
+            communicationProvider
         );
     }
 }

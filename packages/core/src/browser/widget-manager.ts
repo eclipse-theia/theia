@@ -99,16 +99,17 @@ export class WidgetManager {
     /**
      * return the widget for the given description
      */
-    getWidget<T extends Widget>(factoryId: string, options?: any): Promise<T | undefined> {
+    async getWidget<T extends Widget>(factoryId: string, options?: any): Promise<T | undefined> {
         const key = this.toKey({ factoryId, options });
-        return this.doGetWidget<T>(key);
+        const pendingWidget = this.doGetWidget<T>(key);
+        const widget = pendingWidget && await pendingWidget;
+        return widget;
     }
 
-    protected async doGetWidget<T extends Widget>(key: string): Promise<T | undefined> {
-        const existingWidgetPromise = this.widgetPromises.get(key) || this.pendingWidgetPromises.get(key);
-        if (existingWidgetPromise) {
-            const existingWidget = await existingWidgetPromise;
-            return existingWidget as T;
+    protected doGetWidget<T extends Widget>(key: string): MaybePromise<T> | undefined {
+        const pendingWidget = this.widgetPromises.get(key) || this.pendingWidgetPromises.get(key);
+        if (pendingWidget) {
+            return pendingWidget as MaybePromise<T>;
         }
         return undefined;
     }
@@ -118,7 +119,7 @@ export class WidgetManager {
      */
     async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
         const key = this.toKey({ factoryId, options });
-        const existingWidget = await this.doGetWidget<T>(key);
+        const existingWidget = this.doGetWidget<T>(key);
         if (existingWidget) {
             return existingWidget;
         }

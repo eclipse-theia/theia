@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ApplicationShell, Navigatable } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 
@@ -27,6 +27,20 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly workspaceService: WorkspaceService;
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+
+    protected currentWidget: NavigatableWidget | undefined;
+
+    @postConstruct()
+    protected init(): void {
+        this.updateCurrentWidget();
+        this.shell.currentChanged.connect(() => this.updateCurrentWidget());
+    }
+    protected updateCurrentWidget(): void {
+        const { currentWidget } = this.shell;
+        if (NavigatableWidget.is(currentWidget)) {
+            this.currentWidget = currentWidget;
+        }
+    }
 
     registerVariables(variables: VariableRegistry): void {
         variables.registerVariable({
@@ -113,8 +127,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
     }
 
     protected getResourceUri(): URI | undefined {
-        const widget = this.shell.currentWidget;
-        return Navigatable.is(widget) ? widget.getResourceUri() : undefined;
+        return this.currentWidget && this.currentWidget.getResourceUri();
     }
 
     protected getWorkspaceRelativePath(uri: URI): string | undefined {

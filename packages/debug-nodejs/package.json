@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/debug": "^0.3.15",
     "ps-list": "5.0.1",
-    "vscode-debugprotocol": "^1.26.0",
+    "vscode-debugprotocol": "^1.32.0",
     "unzip-stream": "^0.3.0"
   },
   "publishConfig": {

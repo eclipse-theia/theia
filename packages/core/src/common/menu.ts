@@ -235,7 +235,11 @@ export class ActionMenuNode implements MenuNode {
     }
 
     get icon(): string | undefined {
-        return this.action.icon;
+        if (this.action.icon) {
+            return this.action.icon;
+        }
+        const command = this.commands.getCommand(this.action.commandId);
+        return command && command.iconClass;
     }
 
     get sortString() {

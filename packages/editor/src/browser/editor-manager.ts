@@ -108,7 +108,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions): void {
         if (input && input.selection) {
             const editor = widget.editor;
-            const selection = this.getSelection(input.selection);
+            const selection = this.getSelection(widget, input.selection);
             if (Position.is(selection)) {
                 editor.cursor = selection;
                 editor.revealPosition(selection);
@@ -120,17 +120,22 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         }
     }
 
-    protected getSelection(selection: RecursivePartial<Range>): Range | Position | undefined {
+    protected getSelection(widget: EditorWidget, selection: RecursivePartial<Range>): Range | Position | undefined {
         const { start, end } = selection;
-        if (start && start.line !== undefined && start.line >= 0 &&
-            start.character !== undefined && start.character >= 0) {
-            if (end && end.line !== undefined && end.line >= 0 &&
-                end.character !== undefined && end.character >= 0) {
-                return selection as Range;
-            }
-            return start as Position;
+        const line = start && start.line !== undefined && start.line >= 0 ? start.line : undefined;
+        if (line === undefined) {
+            return undefined;
         }
-        return undefined;
+        const character = start && start.character !== undefined && start.character >= 0 ? start.character : widget.editor.document.getLineMaxColumn(line);
+        const endLine = end && end.line !== undefined && end.line >= 0 ? end.line : undefined;
+        if (endLine === undefined) {
+            return { line, character };
+        }
+        const endCharacter = end && end.character !== undefined && end.character >= 0 ? end.character : widget.editor.document.getLineMaxColumn(endLine);
+        return {
+            start: { line, character },
+            end: { line: endLine, character: endCharacter }
+        };
     }
 
 }
