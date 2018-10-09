@@ -221,7 +221,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      */
     protected forceUpdate({ resize }: TreeWidget.ForceUpdateOptions = { resize: true }): void {
         if (this.view && this.view.list) {
-            if (resize) {
+            if (resize && this.isVisible) {
                 this.view.cache.clearAll();
                 this.view.list.recomputeRowHeights();
             } else {
@@ -245,6 +245,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }
             }
         }
+        this.forceUpdate();
     }
 
     protected onUpdateRequest(msg: Message): void {
