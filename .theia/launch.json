@@ -19,7 +19,8 @@
       },
       "sourceMaps": true,
       "smartStep": true,
-      "outputCapture": "std"
+      "outputCapture": "std",
+      "internalConsoleOptions": "openOnSessionStart"
     }
   ]
 }

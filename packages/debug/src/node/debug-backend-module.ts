@@ -20,11 +20,11 @@ import {
     DebugServiceImpl,
     DebugAdapterSessionManager,
     DebugAdapterContributionRegistry
-} from './debug-service';
+} from './debug-service-impl';
 import {
     DebugPath,
     DebugService
-} from '../common/debug-common';
+} from '../common/debug-service';
 import {
     LaunchBasedDebugAdapterFactory,
     DebugAdapterSessionFactoryImpl

@@ -14,57 +14,28 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ReactNode } from 'react';
-import { Event } from '@theia/core/lib/common/event';
+import { injectable } from 'inversify';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
+import { TreeSource, TreeElement, CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
 
-export interface ConsoleItem {
+export interface ConsoleItem extends TreeElement {
     readonly severity?: MessageType
-    readonly empty: boolean
-    render(): ReactNode
 }
 export namespace ConsoleItem {
     export const errorClassName = 'theia-console-error';
     export const warningClassName = 'theia-console-warning';
     export const infoClassName = 'theia-console-info';
     export const logClassName = 'theia-console-log';
-    export function toClassName(item: ConsoleItem): string | undefined {
-        if (item.severity === MessageType.Error) {
-            return errorClassName;
-        }
-        if (item.severity === MessageType.Warning) {
-            return warningClassName;
-        }
-        if (item.severity === MessageType.Info) {
-            return infoClassName;
-        }
-        if (item.severity === MessageType.Log) {
-            return logClassName;
-        }
-        return undefined;
-    }
 }
 
-export interface CompositeConsoleItem extends ConsoleItem {
-    readonly hasChildren: boolean;
-    resolve(): MaybePromise<ConsoleItem[]>;
-}
-export namespace CompositeConsoleItem {
-    // tslint:disable:no-any
-    export function is(item: CompositeConsoleItem | any): item is CompositeConsoleItem {
-        return !!item && 'resolve' in item;
-    }
-    export function hasChildren(item: CompositeConsoleItem | any): item is CompositeConsoleItem {
-        return is(item) && item.hasChildren;
-    }
+export interface CompositeConsoleItem extends ConsoleItem, CompositeTreeElement {
+    getElements(): MaybePromise<IterableIterator<ConsoleItem>>
 }
 
-export interface ConsoleSession {
-    readonly id: string
-    readonly name: string
-    readonly items: ConsoleItem[]
-    readonly onDidChange: Event<void>
-    execute(value: string): MaybePromise<void>
-    clear(): MaybePromise<void>
+@injectable()
+export abstract class ConsoleSession extends TreeSource {
+    abstract getElements(): MaybePromise<IterableIterator<ConsoleItem>>;
+    abstract execute(value: string): MaybePromise<void>;
+    abstract clear(): MaybePromise<void>;
 }

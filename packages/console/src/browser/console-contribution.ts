@@ -20,7 +20,7 @@ import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegi
 import { ConsoleManager } from './console-manager';
 import { ConsoleKeybindingContexts } from './console-keybinding-contexts';
 import { ConsoleWidget } from './console-widget';
-import { CONSOLE_CONTEXT_MENU } from './content/console-content-container';
+import { ConsoleContentWidget } from './console-content-widget';
 
 export namespace ConsoleCommands {
     export const SELECT_ALL: Command = {
@@ -44,8 +44,8 @@ export namespace ConsoleCommands {
 }
 
 export namespace ConsoleContextMenu {
-    export const CLIPBOARD = [...CONSOLE_CONTEXT_MENU, '1_clipboard'];
-    export const CLEAR = [...CONSOLE_CONTEXT_MENU, '2_clear'];
+    export const CLIPBOARD = [...ConsoleContentWidget.CONTEXT_MENU, '1_clipboard'];
+    export const CLEAR = [...ConsoleContentWidget.CONTEXT_MENU, '2_clear'];
 }
 
 @injectable()

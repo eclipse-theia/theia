@@ -20,7 +20,7 @@ import { Disposable, MenuPath } from '../../common';
 import { Key, KeyCode, KeyModifier } from '../keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
-import { SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget } from '../widgets';
+import { EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget } from '../widgets';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
@@ -34,6 +34,7 @@ import { List, ListRowRenderer, ScrollParams, CellMeasurer, CellMeasurerCache } 
 import { TopDownTreeIterator } from './tree-iterator';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
+import { ElementExt } from '@phosphor/domutils';
 
 const debounce = require('lodash.debounce');
 
@@ -48,7 +49,6 @@ export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
-export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 
 export const TreeProps = Symbol('TreeProps');
 export interface TreeProps {
@@ -73,6 +73,16 @@ export interface TreeProps {
      * 'true' if the tree widget support searching. Otherwise, `false`. Defaults to `false`.
      */
     readonly search?: boolean
+
+    /**
+     * 'true' if the tree widget should be virtualized searching. Otherwise, `false`. Defaults to `true`.
+     */
+    readonly virtualized?: boolean
+
+    /**
+     * 'true' if the selected node should be auto scrolled only if the widget is active. Otherwise, `false`. Defaults to `false`.
+     */
+    readonly scrollIfActive?: boolean
 }
 
 export interface NodeProps {
@@ -277,11 +287,16 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected view: TreeWidget.View | undefined;
     protected renderTree(model: TreeModel): React.ReactNode {
         if (model.root) {
+            const rows = Array.from(this.rows.values());
+            if (this.props.virtualized === false) {
+                this.onRender.push(Disposable.create(() => this.scrollToSelected()));
+                return rows.map(row => <div key={row.index}>{this.renderNodeRow(row)}</div>);
+            }
             return <TreeWidget.View
                 ref={view => this.view = (view || undefined)}
                 width={this.node.offsetWidth}
                 height={this.node.offsetHeight}
-                rows={Array.from(this.rows.values())}
+                rows={rows}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
                 handleScroll={this.handleScroll}
@@ -289,6 +304,22 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
+    }
+
+    scrollArea: Element = this.node;
+    protected scrollToSelected(): void {
+        if (this.props.scrollIfActive === true && !this.node.contains(document.activeElement)) {
+            return;
+        }
+        const focus = this.node.getElementsByClassName(FOCUS_CLASS)[0];
+        if (focus) {
+            ElementExt.scrollIntoViewIfNeeded(this.scrollArea, focus);
+        } else {
+            const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
+            if (selected) {
+                ElementExt.scrollIntoViewIfNeeded(this.scrollArea, selected);
+            }
+        }
     }
 
     protected readonly handleScroll = (info: ScrollParams) => {
@@ -328,13 +359,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return <div
             data-node-id={node.id}
             className={className}
-            style={
-                {
-                    paddingLeft: '4px',
-                    paddingRight: '6px',
-                    minWidth: '8px'
-                }
-            }
+            style={{ paddingLeft: '4px' }}
             onClick={this.toggle}>
         </div>;
     }

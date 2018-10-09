@@ -23,9 +23,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { OpenFileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
 import { HostedPluginServer } from '../../common/plugin-protocol';
-import { DebugService, DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugConfiguration as HostedDebugConfig } from '../../common';
-import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
 
 /**
@@ -107,8 +106,6 @@ export class HostedPluginManagerClient {
     protected readonly fileSystem: FileSystem;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-    @inject(DebugService)
-    protected readonly debugService: DebugService;
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
     @inject(HostedPluginPreferences)
@@ -168,14 +165,12 @@ export class HostedPluginManagerClient {
         this.isDebug = true;
 
         await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
-        const configuration = {
+        await this.debugSessionManager.start({
             type: 'node',
             request: 'attach',
             timeout: 30000,
             name: 'Hosted Plugin'
-        } as DebugConfiguration;
-        const session = await this.debugService.create(configuration);
-        await this.debugSessionManager.create(session, configuration);
+        });
     }
 
     async stop(checkRunning: boolean = true): Promise<void> {

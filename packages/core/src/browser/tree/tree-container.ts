@@ -28,7 +28,7 @@ import { FuzzySearch } from './fuzzy-search';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { SearchBoxDebounce } from './search-box-debounce';
 
-export function createTreeContainer(parent: interfaces.Container): Container {
+export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
     const child = new Container({ defaultScope: 'Singleton' });
     child.parent = parent;
 
@@ -47,7 +47,10 @@ export function createTreeContainer(parent: interfaces.Container): Container {
     child.bind(TreeModel).toDynamicValue(ctx => ctx.container.get(TreeModelImpl));
 
     child.bind(TreeWidget).toSelf();
-    child.bind(TreeProps).toConstantValue(defaultTreeProps);
+    child.bind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        ...props
+    });
 
     child.bind(TreeSearch).toSelf().inSingletonScope();
     child.bind(FuzzySearch).toSelf().inSingletonScope();

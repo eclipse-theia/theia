@@ -33,8 +33,8 @@ export class AnsiConsoleItem implements ConsoleItem {
         });
     }
 
-    get empty(): boolean {
-        return !this.htmlContent;
+    get visible(): boolean {
+        return !!this.htmlContent;
     }
 
     render(): React.ReactNode {
