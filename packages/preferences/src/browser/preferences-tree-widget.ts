@@ -380,7 +380,7 @@ export class PreferencesTreeWidget extends TreeWidget {
             expanded: true,
         };
         const nodes: { [id: string]: PreferenceProperty }[] = [];
-        for (const group of this.preferencesGroupNames) {
+        for (const group of this.preferencesGroupNames.sort((a, b) => a.localeCompare(b))) {
             const propertyNodes: SelectableTreeNode[] = [];
             const properties: string[] = [];
             for (const property in this.properties) {
@@ -397,6 +397,7 @@ export class PreferencesTreeWidget extends TreeWidget {
                 expanded: false,
                 selected: false
             };
+            properties.sort((a, b) => a.localeCompare(b));
             properties.forEach(property => {
                 const node: SelectableTreeNode = {
                     id: property,
