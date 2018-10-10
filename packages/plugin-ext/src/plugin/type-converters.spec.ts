@@ -19,6 +19,7 @@ import * as Converter from './type-converters';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import * as model from '../api/model';
+import { MarkdownString, isMarkdownString } from './markdown-string';
 
 describe('Type converters:', () => {
 
@@ -57,10 +58,10 @@ describe('Type converters:', () => {
 
             it('should recognize markdown string', () => {
                 // given
-                const markdownString = new types.MarkdownString('**test**');
+                const markdownString = new MarkdownString('**test**');
 
                 // when
-                const result = Converter.isMarkdownString(markdownString);
+                const result = isMarkdownString(markdownString);
 
                 // then
                 assert.deepEqual(result !== false, true);
@@ -71,7 +72,7 @@ describe('Type converters:', () => {
                 const markdownObject = { value: '*test*' };
 
                 // when
-                const result = Converter.isMarkdownString(markdownObject);
+                const result = isMarkdownString(markdownObject);
 
                 // then
                 assert.deepEqual(result !== false, true);
@@ -82,7 +83,7 @@ describe('Type converters:', () => {
                 const markdownObject = { field1: 5, value: '*test*', field2: 'test' };
 
                 // when
-                const result = Converter.isMarkdownString(markdownObject);
+                const result = isMarkdownString(markdownObject);
 
                 // then
                 assert.deepEqual(result !== false, true);
@@ -93,7 +94,7 @@ describe('Type converters:', () => {
                 const nonMarkdownObject = { field1: 5, field2: 'test' };
 
                 // when
-                const result = Converter.isMarkdownString(nonMarkdownObject);
+                const result = isMarkdownString(nonMarkdownObject);
 
                 // then
                 assert.deepEqual(result === false, true);
@@ -104,7 +105,7 @@ describe('Type converters:', () => {
                 const nonMarkdownObject = { isTrusted: true, field1: 5, field2: 'test' };
 
                 // when
-                const result = Converter.isMarkdownString(nonMarkdownObject);
+                const result = isMarkdownString(nonMarkdownObject);
 
                 // then
                 assert.deepEqual(result === false, true);
@@ -113,7 +114,7 @@ describe('Type converters:', () => {
 
         describe('converter: ', () => {
             const aStringWithMarkdown: string = '**test**';
-            const pluginMarkdown: theia.MarkdownString = new types.MarkdownString(aStringWithMarkdown);
+            const pluginMarkdown: theia.MarkdownString = new MarkdownString(aStringWithMarkdown);
             const aLanguage = 'typescript';
             const aValue = 'const x=5;';
             const codeblock = { language: aLanguage, value: aValue };

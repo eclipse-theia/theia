@@ -30,6 +30,7 @@ import {
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
+import { isMarkdownString } from './markdown-string';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -146,17 +147,6 @@ function isCodeblock(thing: any): thing is Codeblock {
     return thing && typeof thing === 'object'
         && typeof (<Codeblock>thing).language === 'string'
         && typeof (<Codeblock>thing).value === 'string';
-}
-
-// tslint:disable-next-line:no-any
-export function isMarkdownString(thing: any): thing is MarkdownString {
-    if (thing instanceof types.MarkdownString) {
-        return true;
-    } else if (thing && typeof thing === 'object') {
-        return typeof (<MarkdownString>thing).value === 'string'
-            && (typeof (<MarkdownString>thing).isTrusted === 'boolean' || (<MarkdownString>thing).isTrusted === void 0);
-    }
-    return false;
 }
 
 export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): MarkdownString {

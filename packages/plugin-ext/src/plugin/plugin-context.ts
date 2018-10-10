@@ -36,7 +36,6 @@ import {
     TextEditorSelectionChangeKind,
     EndOfLine,
     SnippetString,
-    MarkdownString,
     ThemeColor,
     TextEditorRevealType,
     TextEditorLineNumbersStyle,
@@ -77,6 +76,7 @@ import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
+import { MarkdownString } from './markdown-string';
 
 export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager): PluginAPIFactory {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
