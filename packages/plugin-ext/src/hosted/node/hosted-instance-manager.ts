@@ -18,6 +18,8 @@ import { inject, injectable, named } from 'inversify';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as net from 'net';
+import * as request from 'request';
+
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { LogType } from './../../common/types';
@@ -134,6 +136,8 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             await this.runHostedPluginTheiaInstance(command, processOptions));
         this.pluginUri = pluginUri;
 
+        await this.checkInstanceUriReady();
+
         return this.instanceUri;
     }
 
@@ -161,6 +165,58 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             return this.pluginUri;
         }
         throw new Error('Hosted plugin instance is not running.');
+    }
+
+    /**
+     * Checks that the `instanceUri` is responding before exiting method
+     */
+    public async checkInstanceUriReady(): Promise<void> {
+        return new Promise<void>((resolve, reject) => this.pingLoop(60, resolve, reject));
+    }
+
+    /**
+     * Start a loop to ping, if ping is OK return immediately, else start a new ping after 1second. We iterate for the given amount of loops provided in remainingCount
+     * @param remainingCount the number of occurence to check
+     * @param resolve resolvefunction if ok
+     * @param reject reject function if error
+     */
+    private async pingLoop(remainingCount: number,
+        resolve: (value?: void | PromiseLike<void> | undefined | Error) => void,
+        reject: (value?: void | PromiseLike<void> | undefined | Error) => void): Promise<void> {
+        const isOK = await this.ping();
+        if (isOK) {
+            resolve();
+        } else {
+            if (remainingCount > 0) {
+                setTimeout(() => this.pingLoop(--remainingCount, resolve, reject), 1000);
+            } else {
+                reject(new Error('Unable to ping the remote server'));
+            }
+        }
+    }
+
+    /**
+     * Ping the plugin URI (checking status of the head)
+     */
+    private async ping(): Promise<boolean> {
+        // disable redirect to grab the release
+        const options = {
+            followRedirect: false
+        };
+
+        return new Promise<boolean>((resolve, reject) => {
+            const url = this.instanceUri.toString();
+            request.head(url, options).on('response', res => {
+                // Wait that the status is OK
+                if (res.statusCode === 200) {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            }).on('error', error => {
+                resolve(false);
+            });
+        });
     }
 
     isPluginValid(uri: URI): boolean {
