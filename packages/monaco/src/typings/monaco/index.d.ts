@@ -325,6 +325,7 @@ declare module monaco.keybindings {
 declare module monaco.services {
 
     export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
+        constructor(themeService: IStandaloneThemeService);
         abstract getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
         abstract openCodeEditor(input: monaco.editor.IResourceInput, source?: monaco.editor.ICodeEditor,
             sideBySide?: boolean): monaco.Promise<monaco.editor.CommonCodeEditor | undefined>;
