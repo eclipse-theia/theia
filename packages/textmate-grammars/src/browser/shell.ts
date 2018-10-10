@@ -21,7 +21,7 @@ import { injectable } from 'inversify';
 export class ShellContribution implements LanguageGrammarDefinitionContribution {
 
     readonly id = 'shell';
-    readonly scopeName = 'source.sh';
+    readonly scopeName = 'source.shell';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
