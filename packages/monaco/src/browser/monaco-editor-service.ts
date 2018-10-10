@@ -42,6 +42,10 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
     @inject(EditorManager)
     protected readonly editors: EditorManager;
 
+    constructor() {
+        super(monaco.services.StaticServices.standaloneThemeService.get());
+    }
+
     getActiveCodeEditor(): ICodeEditor | undefined {
         const editor = MonacoEditor.getActive(this.editors);
         return editor && editor.getControl();
