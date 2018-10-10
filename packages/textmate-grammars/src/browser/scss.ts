@@ -18,17 +18,16 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 import { injectable } from 'inversify';
 
 @injectable()
-export class LessContribution implements LanguageGrammarDefinitionContribution {
+export class ScssContribution implements LanguageGrammarDefinitionContribution {
 
-    readonly id = 'less';
-    readonly scopeName = 'source.css.less';
+    readonly id = 'scss';
+    readonly scopeName = 'source.css.scss';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: ['.less'],
-            aliases: ['Less', 'less'],
-            mimetypes: ['text/x-less', 'text/less'],
+            extensions: ['.scss'],
+            aliases: ['Scss', 'scss']
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             wordPattern: /(#?-?\d*\.\d\w*%?)|([@#!.:]?[\w-?]+%?)|[@#!.]/g,
@@ -63,7 +62,7 @@ export class LessContribution implements LanguageGrammarDefinitionContribution {
             }
         });
 
-        const grammar = require('../../data/less.tmLanguage.json');
+        const grammar = require('../../data/scss.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
                 return {
