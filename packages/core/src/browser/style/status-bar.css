@@ -50,7 +50,7 @@
 }
 
 #theia-statusBar .area .element.hasCommand:hover {
-    background-color: var(--theia-accent-color2);
+    background-color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
 }
 
