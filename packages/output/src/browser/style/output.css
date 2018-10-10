@@ -16,13 +16,14 @@
 
 #outputView {
 	font-size: var(--theia-ui-font-size1);
-    padding: 6px;
     color: var(--theia-ui-font-color1);
 }
 
 #outputView #outputContents {
     overflow: auto;
     height: inherit;
+    padding: 6px;
+    box-sizing: border-box;
 }
 
 #outputView #outputChannelList {
@@ -44,6 +45,7 @@
     background-repeat: no-repeat;
     padding-left: 3px;
     padding-right: 15px;
+    margin: 6px;
 }
 
 .output-tab-icon::before {
