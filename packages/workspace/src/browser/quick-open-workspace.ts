@@ -64,7 +64,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
                     }
                     const current = this.workspaceService.workspace;
                     const uriToOpen = new URI(workspace);
-                    if (current && current.uri !== workspace) {
+                    if ((current && current.uri !== workspace) || !current) {
                         this.workspaceService.open(uriToOpen);
                     }
                     return true;
