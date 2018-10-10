@@ -40,6 +40,7 @@ import { SwiftContribution } from './swift';
 import { VbContribution } from './vb';
 import { HtmlContribution } from './html';
 import { LessContribution } from './less';
+import { ScssContribution } from './scss';
 import { MarkdownContribution } from './markdown';
 import { ShellContribution } from './shell';
 import { TclContribution } from './tcl';
@@ -123,6 +124,9 @@ export default new ContainerModule(bind => {
 
     bind(LessContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(LessContribution);
+
+    bind(ScssContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(ScssContribution);
 
     bind(MarkdownContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(MarkdownContribution);
