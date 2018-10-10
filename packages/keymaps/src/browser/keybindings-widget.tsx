@@ -373,6 +373,6 @@ export class KeybindingWidget extends ReactWidget {
         return property.replace(new RegExp(this.regexp), '$1');
     }
 
-    protected openKeybindings = () => this.keymapsService.open();
+    protected openKeybindings = () => this.keymapsService.open(this);
 
 }
