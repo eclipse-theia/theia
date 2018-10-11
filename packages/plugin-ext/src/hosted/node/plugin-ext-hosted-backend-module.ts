@@ -39,7 +39,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 
     bind(HostedPluginProcess).toSelf().inSingletonScope();
 
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(HostedPluginReader)).inSingletonScope();
+    bind(BackendApplicationContribution).toService(HostedPluginReader);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<HostedPluginClient>(hostedServicePath, client => {

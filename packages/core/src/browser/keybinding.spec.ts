@@ -58,7 +58,7 @@ before(async () => {
 
         bind(TestContribution).toSelf().inSingletonScope();
         [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
-            bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(TestContribution)).inSingletonScope()
+            bind(serviceIdentifier).toService(TestContribution)
         );
 
         bind(KeybindingContext).toConstantValue({
@@ -69,8 +69,8 @@ before(async () => {
         });
 
         bind(StatusBarImpl).toSelf().inSingletonScope();
-        bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
-        bind(CommandService).toDynamicValue(context => context.container.get(CommandRegistry));
+        bind(StatusBar).toService(StatusBarImpl);
+        bind(CommandService).toService(CommandRegistry);
         bind(LabelParser).toSelf().inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     });

@@ -52,7 +52,7 @@ export default new ContainerModule(bind => {
     ).inSingletonScope();
 
     bind(FileResourceResolver).toSelf().inSingletonScope();
-    bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
+    bind(ResourceResolver).toService(FileResourceResolver);
 
     bind(FrontendApplicationContribution).to(FileSystemFrontendContribution).inSingletonScope();
 });

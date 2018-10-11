@@ -22,7 +22,7 @@ import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser
 
 export default new ContainerModule(bind => {
     bind(PythonClientContribution).toSelf().inSingletonScope();
-    bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(PythonClientContribution));
+    bind(LanguageClientContribution).toService(PythonClientContribution);
 
     bind(LanguageGrammarDefinitionContribution).to(PythonGrammarContribution).inSingletonScope();
 });

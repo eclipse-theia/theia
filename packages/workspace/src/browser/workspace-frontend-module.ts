@@ -46,7 +46,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(IWorkspaceService).toService(WorkspaceService);
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceService));
+    bind(FrontendApplicationContribution).toService(WorkspaceService);
     bind(WorkspaceServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<WorkspaceServer>(workspacePath);
@@ -54,9 +54,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, KeybindingContribution, MenuContribution]) {
-        bind(identifier).toDynamicValue(ctx =>
-            ctx.container.get(WorkspaceFrontendContribution)
-        ).inSingletonScope();
+        bind(identifier).toService(WorkspaceFrontendContribution);
     }
 
     bind(OpenFileDialogFactory).toFactory(ctx =>

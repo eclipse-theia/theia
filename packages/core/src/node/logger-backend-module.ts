@@ -30,7 +30,7 @@ export function bindLogger(bind: interfaces.Bind): void {
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
     bind(LogLevelCliContribution).toSelf().inSingletonScope();
-    bind(CliContribution).toDynamicValue(ctx => ctx.container.get(LogLevelCliContribution));
+    bind(CliContribution).toService(LogLevelCliContribution);
     bind(LoggerFactory).toFactory(ctx =>
         (name: string) => {
             const child = new Container({ defaultScope: 'Singleton' });

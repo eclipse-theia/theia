@@ -27,7 +27,7 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
 
     child.unbind(FileTreeModel);
     child.bind(FileDialogModel).toSelf();
-    child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(FileDialogModel));
+    child.rebind(TreeModel).toService(FileDialogModel);
 
     child.unbind(FileTreeWidget);
     child.bind(FileDialogWidget).toSelf();

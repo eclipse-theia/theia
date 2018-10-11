@@ -34,6 +34,6 @@ export default new ContainerModule(bind => {
     bind(MergeConflictsFrontendContribution).toSelf().inSingletonScope();
     bind(MergeConflictsProvider).toSelf().inSingletonScope();
     [CommandContribution, FrontendApplicationContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(c => c.container.get(MergeConflictsFrontendContribution)).inSingletonScope()
+        bind(serviceIdentifier).toService(MergeConflictsFrontendContribution)
     );
 });

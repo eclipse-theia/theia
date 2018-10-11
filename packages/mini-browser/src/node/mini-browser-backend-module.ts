@@ -24,7 +24,7 @@ import { MiniBrowserEndpoint, MiniBrowserEndpointHandler, HtmlHandler, ImageHand
 export default new ContainerModule(bind => {
     bind(MiniBrowserEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(MiniBrowserEndpoint);
-    bind(MiniBrowserService).toDynamicValue(context => context.container.get(MiniBrowserEndpoint));
+    bind(MiniBrowserService).toService(MiniBrowserEndpoint);
     bind(ConnectionHandler).toDynamicValue(context => new JsonRpcConnectionHandler(MiniBrowserServicePath, () => context.container.get(MiniBrowserService))).inSingletonScope();
     bindContributionProvider(bind, MiniBrowserEndpointHandler);
     bind(MiniBrowserEndpointHandler).to(HtmlHandler).inSingletonScope();

@@ -25,7 +25,7 @@ import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
     bind(ProcessManager).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ProcessManager)).inSingletonScope();
+    bind(BackendApplicationContribution).toService(ProcessManager);
     bind(ILogger).toDynamicValue(ctx => {
         const parentLogger = ctx.container.get<ILogger>(ILogger);
         return parentLogger.child('process');

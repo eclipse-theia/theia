@@ -32,11 +32,11 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(PluginApiContribution)).inSingletonScope();
+    bind(BackendApplicationContribution).toService(PluginApiContribution);
 
     bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();
     bind(PluginDeployerContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(PluginDeployerContribution)).inSingletonScope();
+    bind(BackendApplicationContribution).toService(PluginDeployerContribution);
 
     bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerResolver).to(GithubPluginDeployerResolver).inSingletonScope();
