@@ -24,6 +24,7 @@ import { GitHistoryWidget } from './git-history-widget';
 import { Git } from '../../common';
 import { GitRepositoryTracker } from '../git-repository-tracker';
 import { GitRepositoryProvider } from '../git-repository-provider';
+import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
 
 export namespace GitHistoryCommands {
     export const OPEN_FILE_HISTORY: Command = {
@@ -84,7 +85,9 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '5_history'], {
             commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id
         });
-
+        menus.registerMenuAction(EDITOR_CONTEXT_MENU_GIT, {
+            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id
+        });
         super.registerMenus(menus);
     }
 
