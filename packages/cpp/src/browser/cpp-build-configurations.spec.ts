@@ -20,7 +20,7 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { MockStorageService } from '@theia/core/lib/browser/test/mock-storage-service';
 import sinon = require('sinon');
-import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
+import { CppBuildConfigurationManager, CppBuildConfiguration, CppBuildConfigurationManagerImpl } from './cpp-build-configurations';
 import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { bindCppPreferences } from './cpp-preferences';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
@@ -30,7 +30,7 @@ let container: Container;
 
 beforeEach(function() {
     const m = new ContainerModule(bind => {
-        bind(CppBuildConfigurationManager).toSelf().inSingletonScope();
+        bind(CppBuildConfigurationManager).to(CppBuildConfigurationManagerImpl).inSingletonScope();
         bind(StorageService).to(MockStorageService).inSingletonScope();
         bind(FileSystem).to(FileSystemNode).inSingletonScope();
         bindCppPreferences(bind);

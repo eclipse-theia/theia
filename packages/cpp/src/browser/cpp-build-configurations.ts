@@ -32,12 +32,38 @@ class SavedActiveBuildConfiguration {
     configName?: string;
 }
 
+export const CppBuildConfigurationManager = Symbol('CppBuildConfigurationManager');
+export interface CppBuildConfigurationManager {
+    /** Get the list of defined build configurations.  */
+    getConfigs(): CppBuildConfiguration[];
+
+    /** Get the list of valid defined build configurations.  */
+    getValidConfigs(): CppBuildConfiguration[];
+
+    /** Get the active build configuration.  */
+    getActiveConfig(): CppBuildConfiguration | undefined;
+
+    /** Change the active build configuration.  */
+    setActiveConfig(config: CppBuildConfiguration | undefined): void;
+
+    /** Event emitted when the active build configuration changes.  */
+    onActiveConfigChange: Event<CppBuildConfiguration | undefined>;
+
+    /**
+     * Promise resolved when the list of build configurations has been read
+     * once, and the active configuration has been set, if relevant.
+     */
+    ready: Promise<void>;
+}
+
+export const CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY = 'cpp.buildConfigurations';
+
 /**
  * Entry point to get the list of build configurations and get/set the active
  * build configuration.
  */
 @injectable()
-export class CppBuildConfigurationManager {
+export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationManager {
 
     @inject(CppPreferences)
     protected readonly cppPreferences: CppPreferences;
@@ -55,12 +81,7 @@ export class CppBuildConfigurationManager {
     protected readonly activeConfigChangeEmitter = new Emitter<CppBuildConfiguration | undefined>();
 
     readonly ACTIVE_BUILD_CONFIGURATION_STORAGE_KEY = 'cpp.active-build-configuration';
-    readonly BUILD_CONFIGURATIONS_PREFERENCE_KEY = 'cpp.buildConfigurations';
 
-    /**
-     * Promise resolved when the list of build configurations has been read
-     * once, and the active configuration has been set, if relevant.
-     */
     public ready: Promise<void>;
 
     @postConstruct()
@@ -98,29 +119,24 @@ export class CppBuildConfigurationManager {
             });
     }
 
-    /** Get the active build configuration.  */
     getActiveConfig(): CppBuildConfiguration | undefined {
         return this.activeConfig;
     }
 
-    /** Change the active build configuration.  */
     setActiveConfig(config: CppBuildConfiguration | undefined) {
         this.activeConfig = config;
         this.saveActiveConfiguration(config);
         this.activeConfigChangeEmitter.fire(config);
     }
 
-    /** Event emitted when the active build configuration changes.  */
     get onActiveConfigChange(): Event<CppBuildConfiguration | undefined> {
         return this.activeConfigChangeEmitter.event;
     }
 
-    /** Get the list of defined build configurations.  */
     getConfigs(): CppBuildConfiguration[] {
-        return this.cppPreferences[this.BUILD_CONFIGURATIONS_PREFERENCE_KEY] || [];
+        return this.cppPreferences[CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY] || [];
     }
 
-    /** Get the list of valid defined build configurations.  */
     getValidConfigs(): CppBuildConfiguration[] {
         return Array.from(this.getConfigs())
             .filter(a => a.name !== '' && a.directory !== '')
