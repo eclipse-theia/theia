@@ -81,9 +81,7 @@ before(async () => {
     });
     testContainer.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
-    testContainer.bind(PreferenceService).toDynamicValue(ctx =>
-        ctx.container.get(PreferenceServiceImpl)
-    ).inSingletonScope();
+    testContainer.bind(PreferenceService).toService(PreferenceServiceImpl);
 
     testContainer.bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);

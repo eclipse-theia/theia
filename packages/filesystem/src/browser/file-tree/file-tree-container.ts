@@ -25,11 +25,11 @@ export function createFileTreeContainer(parent: interfaces.Container): Container
 
     child.unbind(TreeImpl);
     child.bind(FileTree).toSelf();
-    child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(FileTree));
+    child.rebind(Tree).toService(FileTree);
 
     child.unbind(TreeModelImpl);
     child.bind(FileTreeModel).toSelf();
-    child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(FileTreeModel));
+    child.rebind(TreeModel).toService(FileTreeModel);
 
     child.unbind(TreeWidget);
     child.bind(FileTreeWidget).toSelf();

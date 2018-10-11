@@ -71,7 +71,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
 
 export function bindRepositoryWatcher(bind: interfaces.Bind): void {
     bind(DugiteGitWatcherServer).toSelf();
-    bind(GitWatcherServer).toDynamicValue(context => context.container.get(DugiteGitWatcherServer));
+    bind(GitWatcherServer).toService(DugiteGitWatcherServer);
 }
 
 export default new ContainerModule(bind => {

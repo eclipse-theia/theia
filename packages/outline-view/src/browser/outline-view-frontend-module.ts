@@ -35,7 +35,7 @@ export default new ContainerModule(bind => {
     );
 
     bind(OutlineViewService).toSelf().inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(context => context.container.get(OutlineViewService));
+    bind(WidgetFactory).toService(OutlineViewService);
 
     bindViewContribution(bind, OutlineViewContribution);
     bind(FrontendApplicationContribution).toService(OutlineViewContribution);

@@ -31,7 +31,7 @@ decorate(injectable(), ApplicationPackage);
 export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMasterProcessFactory): void {
     bind(RemoteMasterProcessFactory).toConstantValue(masterFactory);
     bind(ServerProcess).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ServerProcess)).inSingletonScope();
+    bind(BackendApplicationContribution).toService(ServerProcess);
 }
 
 export const backendApplicationModule = new ContainerModule(bind => {

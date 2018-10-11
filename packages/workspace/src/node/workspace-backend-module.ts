@@ -22,11 +22,9 @@ import { CliContribution } from '@theia/core/lib/node/cli';
 
 export default new ContainerModule(bind => {
     bind(WorkspaceCliContribution).toSelf().inSingletonScope();
-    bind(CliContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceCliContribution));
+    bind(CliContribution).toService(WorkspaceCliContribution);
     bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
-    bind(WorkspaceServer).toDynamicValue(ctx =>
-        ctx.container.get(DefaultWorkspaceServer)
-    ).inSingletonScope();
+    bind(WorkspaceServer).toService(DefaultWorkspaceServer);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(workspacePath, () =>

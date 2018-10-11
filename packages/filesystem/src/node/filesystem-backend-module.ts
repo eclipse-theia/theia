@@ -25,7 +25,7 @@ import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watc
 
 export function bindFileSystem(bind: interfaces.Bind): void {
     bind(FileSystemNode).toSelf().inSingletonScope();
-    bind(FileSystem).toDynamicValue(ctx => ctx.container.get(FileSystemNode)).inSingletonScope();
+    bind(FileSystem).toService(FileSystemNode);
 }
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
@@ -39,9 +39,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
         });
     } else {
         bind(FileSystemWatcherServerClient).toSelf();
-        bind(FileSystemWatcherServer).toDynamicValue(ctx =>
-            ctx.container.get(FileSystemWatcherServerClient)
-        );
+        bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
     }
 }
 

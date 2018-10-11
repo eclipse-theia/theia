@@ -33,18 +33,18 @@ export function createTreeContainer(parent: interfaces.Container, props?: Partia
     child.parent = parent;
 
     child.bind(TreeImpl).toSelf();
-    child.bind(Tree).toDynamicValue(ctx => ctx.container.get(TreeImpl));
+    child.bind(Tree).toService(TreeImpl);
 
     child.bind(TreeSelectionServiceImpl).toSelf();
-    child.bind(TreeSelectionService).toDynamicValue(ctx => ctx.container.get(TreeSelectionServiceImpl));
+    child.bind(TreeSelectionService).toService(TreeSelectionServiceImpl);
 
     child.bind(TreeExpansionServiceImpl).toSelf();
-    child.bind(TreeExpansionService).toDynamicValue(ctx => ctx.container.get(TreeExpansionServiceImpl));
+    child.bind(TreeExpansionService).toService(TreeExpansionServiceImpl);
 
     child.bind(TreeNavigationService).toSelf();
 
     child.bind(TreeModelImpl).toSelf();
-    child.bind(TreeModel).toDynamicValue(ctx => ctx.container.get(TreeModelImpl));
+    child.bind(TreeModel).toService(TreeModelImpl);
 
     child.bind(TreeWidget).toSelf();
     child.bind(TreeProps).toConstantValue({

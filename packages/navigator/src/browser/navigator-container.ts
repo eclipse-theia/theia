@@ -36,11 +36,11 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
 
     child.unbind(FileTree);
     child.bind(FileNavigatorTree).toSelf();
-    child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(FileNavigatorTree));
+    child.rebind(Tree).toService(FileNavigatorTree);
 
     child.unbind(FileTreeModel);
     child.bind(FileNavigatorModel).toSelf();
-    child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(FileNavigatorModel));
+    child.rebind(TreeModel).toService(FileNavigatorModel);
 
     child.unbind(FileTreeWidget);
     child.bind(FileNavigatorWidget).toSelf();
@@ -48,7 +48,7 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
     child.rebind(TreeProps).toConstantValue(FILE_NAVIGATOR_PROPS);
 
     child.bind(NavigatorDecoratorService).toSelf().inSingletonScope();
-    child.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(NavigatorDecoratorService)).inSingletonScope();
+    child.rebind(TreeDecoratorService).toService(NavigatorDecoratorService);
     bindContributionProvider(child, NavigatorTreeDecorator);
 
     return child;
