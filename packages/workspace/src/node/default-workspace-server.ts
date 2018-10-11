@@ -26,7 +26,6 @@ import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MessageService, ILogger } from '@theia/core';
 import { WorkspaceServer } from '../common';
-import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -124,11 +123,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     }
 
     private workspaceStillExist(wspath: string): boolean {
-        const uri = new URI(wspath);
-        if (fs.pathExistsSync(uri.path.toString())) {
-            return true;
-        }
-        return false;
+        return fs.pathExistsSync(FileUri.fsPath(wspath));
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
