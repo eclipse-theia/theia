@@ -31,7 +31,7 @@ export function createPreferencesTreeWidget(parent: interfaces.Container): Prefe
 
     child.bind(PreferencesTreeWidget).toSelf();
     child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: true });
-    child.rebind(TreeWidget).toDynamicValue(ctx => ctx.container.get(PreferencesTreeWidget));
+    child.rebind(TreeWidget).toService(PreferencesTreeWidget);
 
     bindPreferencesDecorator(child);
 
@@ -41,5 +41,5 @@ export function createPreferencesTreeWidget(parent: interfaces.Container): Prefe
 function bindPreferencesDecorator(parent: interfaces.Container): void {
     parent.bind(PreferencesDecorator).toSelf().inSingletonScope();
     parent.bind(PreferencesDecoratorService).toSelf().inSingletonScope();
-    parent.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(PreferencesDecoratorService)).inSingletonScope();
+    parent.rebind(TreeDecoratorService).toService(PreferencesDecoratorService);
 }

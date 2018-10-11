@@ -44,8 +44,8 @@ export default new ContainerModule(bind => {
     }));
 
     bind(ExtensionWidgetFactory).toSelf().inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(ExtensionWidgetFactory)).inSingletonScope();
+    bind(WidgetFactory).toService(ExtensionWidgetFactory);
 
     bind(ExtensionOpenHandler).toSelf().inSingletonScope();
-    bind(OpenHandler).toDynamicValue(ctx => ctx.container.get(ExtensionOpenHandler)).inSingletonScope();
+    bind(OpenHandler).toService(ExtensionOpenHandler);
 });

@@ -20,7 +20,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler, MessageClient, Dispatching
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(DispatchingMessageClient).toSelf().inSingletonScope();
-    rebind(MessageClient).toDynamicValue(ctx => ctx.container.get(DispatchingMessageClient)).inSingletonScope();
+    rebind(MessageClient).toService(DispatchingMessageClient);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<MessageClient>(messageServicePath, client => {
             const dispatching = ctx.container.get<DispatchingMessageClient>(DispatchingMessageClient);

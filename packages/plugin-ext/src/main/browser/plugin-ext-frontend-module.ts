@@ -58,7 +58,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
 
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
+    bind(CommandContribution).toService(PluginApiFrontendContribution);
 
     bind(TextEditorService).to(TextEditorServiceImpl).inSingletonScope();
     bind(EditorModelService).to(EditorModelServiceImpl).inSingletonScope();

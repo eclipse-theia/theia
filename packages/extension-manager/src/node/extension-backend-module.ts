@@ -31,7 +31,7 @@ export function bindNodeExtensionServer(bind: interfaces.Bind, args?: Applicatio
         bind(ApplicationProjectOptions).toConstantValue(args);
     } else {
         bind(ApplicationProjectCliContribution).toSelf().inSingletonScope();
-        bind(CliContribution).toDynamicValue(ctx => ctx.container.get(ApplicationProjectCliContribution)).inSingletonScope();
+        bind(CliContribution).toService(ApplicationProjectCliContribution);
         bind(NpmClientOptions).toDynamicValue(ctx =>
             ctx.container.get(ApplicationProjectCliContribution).args
         ).inSingletonScope();
@@ -44,9 +44,7 @@ export function bindNodeExtensionServer(bind: interfaces.Bind, args?: Applicatio
 
     bind(ExtensionKeywords).toConstantValue([extensionKeyword]);
     bind(NodeExtensionServer).toSelf().inSingletonScope();
-    bind(ExtensionServer).toDynamicValue(ctx =>
-        ctx.container.get(NodeExtensionServer)
-    ).inSingletonScope();
+    bind(ExtensionServer).toService(NodeExtensionServer);
 }
 
 export default new ContainerModule(bind => {

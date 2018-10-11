@@ -42,6 +42,6 @@ export default new ContainerModule(bind => {
     }
 
     bind(LanguageClientProviderImpl).toSelf().inSingletonScope();
-    bind(LanguageClientProvider).toDynamicValue(ctx => ctx.container.get(LanguageClientProviderImpl)).inSingletonScope();
+    bind(LanguageClientProvider).toService(LanguageClientProviderImpl);
 
 });

@@ -35,14 +35,14 @@ export function createProblemTreeContainer(parent: interfaces.Container): Contai
 
     child.unbind(TreeImpl);
     child.bind(ProblemTree).toSelf();
-    child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(ProblemTree));
+    child.rebind(Tree).toService(ProblemTree);
 
     child.unbind(TreeWidget);
     child.bind(ProblemWidget).toSelf();
 
     child.unbind(TreeModelImpl);
     child.bind(ProblemTreeModel).toSelf();
-    child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(ProblemTreeModel));
+    child.rebind(TreeModel).toService(ProblemTreeModel);
 
     child.rebind(TreeProps).toConstantValue(PROBLEM_TREE_PROPS);
     child.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);

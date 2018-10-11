@@ -46,7 +46,7 @@ export function bindGitHistoryModule(bind: interfaces.Bind) {
     }));
 
     bind(GitCommitDetailOpenHandler).toSelf();
-    bind(OpenHandler).toDynamicValue(ctx => ctx.container.get(GitCommitDetailOpenHandler));
+    bind(OpenHandler).toService(GitCommitDetailOpenHandler);
 
     bindViewContribution(bind, GitHistoryContribution);
 

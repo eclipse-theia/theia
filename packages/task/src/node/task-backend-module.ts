@@ -29,7 +29,7 @@ import { TaskClient, TaskServer, taskPath } from '../common/task-protocol';
 export default new ContainerModule(bind => {
 
     bind(TaskManager).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(TaskManager)).inSingletonScope();
+    bind(BackendApplicationContribution).toService(TaskManager);
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {

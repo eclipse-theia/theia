@@ -31,6 +31,6 @@ export default new ContainerModule(bind => {
 
     bind(ElectronMenuContribution).toSelf().inSingletonScope();
     for (const serviceIdentifier of [FrontendApplicationContribution, KeybindingContribution, CommandContribution, MenuContribution]) {
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(ElectronMenuContribution)).inSingletonScope();
+        bind(serviceIdentifier).toService(ElectronMenuContribution);
     }
 });

@@ -106,14 +106,14 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
-    bind(OpenerService).toDynamicValue(context => context.container.get(DefaultOpenerService));
+    bind(OpenerService).toService(DefaultOpenerService);
     bind(HttpOpenHandler).toSelf().inSingletonScope();
-    bind(OpenHandler).toDynamicValue(ctx => ctx.container.get(HttpOpenHandler)).inSingletonScope();
+    bind(OpenHandler).toService(HttpOpenHandler);
 
     bindContributionProvider(bind, WidgetFactory);
     bind(WidgetManager).toSelf().inSingletonScope();
     bind(ShellLayoutRestorer).toSelf().inSingletonScope();
-    bind(CommandContribution).toDynamicValue(ctx => ctx.container.get(ShellLayoutRestorer));
+    bind(CommandContribution).toService(ShellLayoutRestorer);
 
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context =>
@@ -125,7 +125,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope();
-    bind(CommandService).toDynamicValue(context => context.container.get(CommandRegistry));
+    bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
     bind(QuickOpenContribution).to(CommandQuickOpenContribution);
 
@@ -141,7 +141,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(CommonFrontendContribution)).inSingletonScope()
+        bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
 
     bind(QuickOpenService).toSelf().inSingletonScope();
@@ -149,7 +149,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope()
+        bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
     );
 
     bind(PrefixQuickOpenService).toSelf().inSingletonScope();
@@ -165,7 +165,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(StorageService).toService(LocalStorageService);
 
     bind(StatusBarImpl).toSelf().inSingletonScope();
-    bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
+    bind(StatusBar).toService(StatusBarImpl);
     bind(LabelParser).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, LabelProviderContribution);
@@ -193,10 +193,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         };
     });
     bind(FrontendConnectionStatusService).toSelf().inSingletonScope();
-    bind(ConnectionStatusService).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();
+    bind(ConnectionStatusService).toService(FrontendConnectionStatusService);
+    bind(FrontendApplicationContribution).toService(FrontendConnectionStatusService);
     bind(ApplicationConnectionStatusContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ApplicationConnectionStatusContribution)).inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ApplicationConnectionStatusContribution);
 
     bind(ApplicationServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);

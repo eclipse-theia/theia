@@ -81,7 +81,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     );
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(MonacoOutlineContribution));
+    bind(FrontendApplicationContribution).toService(MonacoOutlineContribution);
 
     bind(MonacoStatusBarContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoStatusBarContribution);
@@ -93,9 +93,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(StrictEditorTextFocusContext).to(MonacoStrictEditorTextFocusContext).inSingletonScope();
 
     bind(MonacoQuickOpenService).toSelf().inSingletonScope();
-    rebind(QuickOpenService).toDynamicValue(ctx =>
-        ctx.container.get(MonacoQuickOpenService)
-    ).inSingletonScope();
+    rebind(QuickOpenService).toService(MonacoQuickOpenService);
 
     MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);
 
