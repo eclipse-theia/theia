@@ -29,6 +29,10 @@ export const GIT_WIDGET_FACTORY_ID = 'git';
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
 export namespace GIT_COMMANDS {
+    export const CLONE = {
+        id: 'git.clone',
+        label: 'Git: Clone...'
+    };
     export const FETCH = {
         id: 'git.fetch',
         label: 'Git: Fetch...'
@@ -248,6 +252,17 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
             execute: () => this.syncService.publish(),
             isEnabled: () => this.syncService.canPublish(),
             isVisible: () => this.syncService.canPublish()
+        });
+        registry.registerCommand(GIT_COMMANDS.CLONE, {
+            execute: (args: any[]) => {
+                let url: string | undefined = undefined;
+                let folder: string | undefined = undefined;
+                let branch: string | undefined = undefined;
+                if (args) {
+                    [url, folder, branch] = args;
+                }
+                return this.quickOpenService.clone(url, folder, branch);
+            }
         });
     }
 
