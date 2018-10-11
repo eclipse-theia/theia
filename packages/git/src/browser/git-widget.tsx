@@ -394,6 +394,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 id={this.scrollContainer}
                 repository={repository}
                 openChange={this.handleOpenChange}
+                openFile={this.openFile}
                 selectChange={this.selectChange}
                 discard={this.discard}
                 unstage={this.unstage}
@@ -414,6 +415,11 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                     : ''
             }
         </div>;
+    }
+
+    protected readonly openFile = (uri: URI) => this.doOpenFile(uri);
+    protected doOpenFile(uri: URI) {
+        this.editorManager.open(uri, { mode: 'reveal' });
     }
 
     protected readonly handleListFocus = (e: React.FocusEvent) => this.doHandleListFocus(e);
@@ -673,6 +679,7 @@ export namespace GitItem {
         unstage: (repository: Repository, change: GitFileChange) => void
         stage: (repository: Repository, change: GitFileChange) => void
         discard: (repository: Repository, change: GitFileChange) => void
+        openFile: (uri: URI) => void
     }
 }
 
@@ -681,6 +688,7 @@ export class GitItem extends React.Component<GitItem.Props> {
     protected readonly openChange = () => this.props.openChange(this.props.change, { mode: 'reveal' });
     protected readonly selectChange = () => this.props.selectChange(this.props.change);
     protected readonly doGitAction = (action: 'stage' | 'unstage' | 'discard') => this.props[action](this.props.repository, this.props.change);
+    protected readonly doOpenFile = () => this.props.openFile(new URI(this.props.change.uri));
 
     render() {
         const { change } = this.props;
@@ -702,6 +710,9 @@ export class GitItem extends React.Component<GitItem.Props> {
 
     protected renderGitItemButtons(): React.ReactNode {
         return <div className='buttons'>
+            <a className='toolbar-button' title='Open File' onClick={() => this.doOpenFile()}>
+                <i className='open-file' />
+            </a>
             {
                 this.props.change.staged ?
                     <a className='toolbar-button' title='Unstage Changes' onClick={() => this.doGitAction('unstage')}>
@@ -729,6 +740,7 @@ export namespace GitChangesListContainer {
         unstage: (repository: Repository, change: GitFileChange) => void
         stage: (repository: Repository, change: GitFileChange) => void
         discard: (repository: Repository, change: GitFileChange) => void
+        openFile: (uri: URI) => void
         mergeChanges: GitFileChangeNode[]
         stagedChanges: GitFileChangeNode[]
         unstagedChanges: GitFileChangeNode[]
@@ -781,6 +793,7 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
             stage={this.props.stage}
             unstage={this.props.unstage}
             selectChange={this.props.selectChange}
+            openFile={this.props.openFile}
         />;
     }
 

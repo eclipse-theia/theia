@@ -180,6 +180,7 @@ is not optimized for dense, information rich UIs.
   --theia-icon-clear: url(../icons/clear-search-results.svg);
   --theia-icon-replace: url(../icons/replace.svg);
   --theia-icon-replace-all: url(../icons/replace-all.svg);
+  --theia-icon-open-file: url(../icons/open-file-bright.svg);
 
   /* Scrollbars */
   --theia-scrollbar-width: 6px;

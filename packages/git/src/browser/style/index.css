@@ -129,6 +129,12 @@
     background: var(--theia-content-font-color3);
 }
 
+#theia-gitContainer .buttons .toolbar-button .open-file {
+    height: 16px;
+    width: 12px;
+    background: var(--theia-icon-open-file) no-repeat center center;
+}
+
 #theia-gitContainer .gitItem .itemButtonsContainer .buttons {
     display: none;
     margin: 0 3px;
