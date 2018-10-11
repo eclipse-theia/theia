@@ -171,6 +171,7 @@ export class HostedPluginManagerClient {
         const configuration = {
             type: 'node',
             request: 'attach',
+            timeout: 30000,
             name: 'Hosted Plugin'
         } as DebugConfiguration;
         const session = await this.debugService.create(configuration);
