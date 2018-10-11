@@ -337,6 +337,17 @@ export class HostedPluginController implements FrontendApplicationContribution {
             type: 'command',
             command: HostedPluginCommands.START.id
         });
+
+        commands.addCommand(HostedPluginCommands.DEBUG.id, {
+            label: 'Debug Instance',
+            icon: 'fa fa-bug',
+            execute: () => setTimeout(() => this.hostedPluginManagerClient.debug(), 100)
+        });
+
+        menu.addItem({
+            type: 'command',
+            command: HostedPluginCommands.DEBUG.id
+        });
     }
 
 }
