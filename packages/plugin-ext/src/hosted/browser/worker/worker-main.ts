@@ -21,6 +21,8 @@ import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../api/plugin-api';
 import { createAPIFactory } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';
+import { EnvExtImpl } from '../../../plugin/env';
+import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -42,6 +44,8 @@ addEventListener('message', (message: any) => {
 function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
     ctx.importScripts('/context/' + contextPath);
 }
+const envExt = new EnvExtImpl(rpc);
+const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
     // tslint:disable-next-line:no-any
@@ -97,9 +101,9 @@ const pluginManager = new PluginManagerExtImpl({
 
         return [result, foreign];
     }
-});
+}, envExt, preferenceRegistryExt);
 
-const apiFactory = createAPIFactory(rpc, pluginManager);
+const apiFactory = createAPIFactory(rpc, pluginManager, envExt, preferenceRegistryExt);
 let defaultApi: typeof theia;
 
 const handler = {
@@ -121,6 +125,7 @@ const handler = {
 ctx['theia'] = new Proxy(Object.create(null), handler);
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
+rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
 
 function isElectron() {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {

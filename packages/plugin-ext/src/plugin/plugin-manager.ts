@@ -21,6 +21,8 @@ import * as theia from '@theia/plugin';
 import { join } from 'path';
 import { dispose } from '../common/disposable-util';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { EnvExtImpl } from './env';
+import { PreferenceRegistryExtImpl } from './preference-registry';
 
 export interface PluginHost {
 
@@ -47,7 +49,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     private activatedPlugins = new Map<string, ActivatedPlugin>();
     private pluginActivationPromises = new Map<string, Deferred<void>>();
 
-    constructor(private readonly host: PluginHost) {
+    constructor(private readonly host: PluginHost,
+        private readonly envExt: EnvExtImpl,
+        private readonly preferencesManager: PreferenceRegistryExtImpl) {
     }
 
     $stopPlugin(contextPath: string): PromiseLike<void> {
@@ -66,6 +70,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     $init(pluginInit: PluginInitData): PromiseLike<void> {
+        // init query parameters
+        this.envExt.setQueryParameters(pluginInit.env.queryParams);
+
+        this.preferencesManager.init(pluginInit.preferences);
+
         const [plugins, foreignPlugins] = this.host.init(pluginInit.plugins);
         // add foreign plugins
         for (const plugin of foreignPlugins) {

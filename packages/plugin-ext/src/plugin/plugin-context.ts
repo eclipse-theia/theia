@@ -78,7 +78,12 @@ import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { MarkdownString } from './markdown-string';
 
-export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager): PluginAPIFactory {
+export function createAPIFactory(
+    rpc: RPCProtocol,
+    pluginManager: PluginManager,
+    envExt: EnvExtImpl,
+    preferenceRegistryExt: PreferenceRegistryExtImpl): PluginAPIFactory {
+
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
@@ -90,8 +95,6 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
     const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
-    const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
-    const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
 
