@@ -107,6 +107,9 @@ export class ProblemWidget extends TreeWidget {
                     {'[' + problemMarker.owner + ']'}
                 </div>
                 <div className='message'>{problemMarker.data.message}
+                    {
+                        (problemMarker.data.code) ? <span className='code'>{'[' + problemMarker.data.code + ']'}</span> : ''
+                    }
                     <span className='position'>
                         {'(' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ')'}
                     </span>
@@ -136,7 +139,7 @@ export class ProblemWidget extends TreeWidget {
 
 }
 
-export class ProblemMarkerRemoveButton extends React.Component<{model: ProblemTreeModel, node: TreeNode}> {
+export class ProblemMarkerRemoveButton extends React.Component<{ model: ProblemTreeModel, node: TreeNode }> {
 
     render(): React.ReactNode {
         return <span className='remove-node' onClick={this.remove}></span>;
