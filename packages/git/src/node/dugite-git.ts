@@ -319,9 +319,9 @@ export class DugiteGit implements Git {
     }
 
     async clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository> {
-        const { localUri } = options;
+        const { localUri, branch } = options;
         const exec = await this.execProvider.exec();
-        await clone(remoteUrl, this.getFsPath(localUri), {}, { exec });
+        await clone(remoteUrl, this.getFsPath(localUri), { branch }, { exec });
         return { localUri };
     }
 

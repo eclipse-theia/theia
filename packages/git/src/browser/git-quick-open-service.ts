@@ -21,7 +21,9 @@ import { Git, Repository, Branch, BranchType, Tag } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitErrorHandler } from './git-error-handler';
 
 /**
@@ -38,8 +40,65 @@ export class GitQuickOpenService {
         @inject(Git) protected readonly git: Git,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
-        @inject(MessageService) protected readonly messageService: MessageService
+        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) { }
+
+    async clone(url?: string, folder?: string, branch?: string): Promise<string | undefined> {
+        if (!folder) {
+            const roots = await this.workspaceService.roots;
+            folder = roots[0].uri;
+        }
+
+        if (url) {
+            const repo = await this.git.clone(
+                url,
+                {
+                    localUri: await this.buildDefaultProjectPath(folder, url),
+                    branch: branch
+                });
+            return repo.localUri;
+        }
+
+        const gitCloneLocalTargetFolder = folder;
+        const gitQuickOpenService = this;
+        const cloneRepoModel: QuickOpenModel = {
+            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                const dynamicItems: QuickOpenItem[] = [];
+                const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
+                if (lookFor === undefined || lookFor.length === 0) {
+                    dynamicItems.push(new SingleStringInputOpenItem(`Please provide a Git repository location. ${suffix}`, () => { }, () => false));
+                } else {
+                    dynamicItems.push(new SingleStringInputOpenItem(
+                        `Clone the Git repository: ${lookFor}. ${suffix}`,
+                        async () => {
+                            try {
+                                await gitQuickOpenService.git.clone(lookFor, { localUri: await gitQuickOpenService.buildDefaultProjectPath(gitCloneLocalTargetFolder, lookFor) });
+                            } catch (error) {
+                                gitQuickOpenService.gitErrorHandler.handleError(error);
+                            }
+                        }
+                    ));
+                }
+                acceptor(dynamicItems);
+            }
+        };
+        this.quickOpenService.open(cloneRepoModel, this.getOptions('Git repository location:', false));
+    }
+
+    private async buildDefaultProjectPath(folderPath: string, gitURI: string): Promise<string> {
+        if (!(await this.fileSystem.exists(folderPath))) {
+            // user specifies its own project path, doesn't want us to guess it
+            return folderPath;
+        }
+        const uriSplitted = gitURI.split('/');
+        let projectPath = folderPath + '/' + (uriSplitted.pop() || uriSplitted.pop());
+        if (projectPath.endsWith('.git')) {
+            projectPath = projectPath.substring(0, projectPath.length - '.git'.length);
+        }
+        return projectPath;
+    }
 
     async fetch(): Promise<void> {
         const repository = this.getRepository();
@@ -156,22 +215,22 @@ export class GitQuickOpenService {
             };
             const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, switchBranch, toLabel, toDescription));
             const createBranchItem = (item: QuickOpenItem) => {
-                const __this = this;
+                const gitQuickOpenService = this;
                 const createBranchModel: QuickOpenModel = {
                     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                         const dynamicItems: QuickOpenItem[] = [];
                         const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
                         if (lookFor === undefined || lookFor.length === 0) {
-                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provide a branch name. ${suffix}`, () => { }, () => false));
+                            dynamicItems.push(new SingleStringInputOpenItem(`Please provide a branch name. ${suffix}`, () => { }, () => false));
                         } else {
-                            dynamicItems.push(new CreateNewBranchOpenItem(
+                            dynamicItems.push(new SingleStringInputOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
                                 async () => {
                                     try {
-                                        await __this.git.branch(repository, { toCreate: lookFor });
-                                        await __this.git.checkout(repository, { branch: lookFor });
+                                        await gitQuickOpenService.git.branch(repository, { toCreate: lookFor });
+                                        await gitQuickOpenService.git.checkout(repository, { branch: lookFor });
                                     } catch (error) {
-                                        __this.gitErrorHandler.handleError(error);
+                                        gitQuickOpenService.gitErrorHandler.handleError(error);
                                     }
                                 }
                             ));
@@ -181,7 +240,8 @@ export class GitQuickOpenService {
                 };
                 this.quickOpenService.open(createBranchModel, this.getOptions('The name of the branch:', false));
             };
-            items.unshift(new CreateNewBranchOpenItem('Create new branch...', createBranchItem, (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
+
+            items.unshift(new SingleStringInputOpenItem('Create new branch...', createBranchItem, (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
             this.open(items, 'Select a ref to checkout or create a new local branch:');
         }
     }
@@ -352,10 +412,7 @@ class GitQuickOpenItem<T> extends QuickOpenItem {
 
 }
 
-/**
- * Placeholder item for creating a new local branch.
- */
-class CreateNewBranchOpenItem extends QuickOpenItem {
+class SingleStringInputOpenItem extends QuickOpenItem {
 
     constructor(
         private readonly label: string,
