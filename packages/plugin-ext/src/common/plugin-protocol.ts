@@ -18,6 +18,7 @@ import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plugin-api';
+import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -51,6 +52,7 @@ export interface PluginPackage {
  * This interface describes a package.json contribution section object.
  */
 export interface PluginPackageContribution {
+    configuration: PreferenceSchema;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
@@ -293,6 +295,7 @@ export interface PluginModel {
  * This interface describes some static plugin contributions.
  */
 export interface PluginContribution {
+    configuration?: PreferenceSchema;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
     viewsContainers?: { [location: string]: ViewContainer[] };

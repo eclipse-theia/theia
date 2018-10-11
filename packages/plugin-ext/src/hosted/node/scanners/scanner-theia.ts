@@ -90,6 +90,11 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         const contributions: PluginContribution = {};
+        if (rawPlugin.contributes!.configuration) {
+            const config = this.readConfiguration(rawPlugin.contributes.configuration!, rawPlugin.packagePath);
+            contributions.configuration = config;
+        }
+
         if (rawPlugin.contributes!.languages) {
             const languages = this.readLanguages(rawPlugin.contributes.languages!, rawPlugin.packagePath);
             contributions.languages = languages;
@@ -136,6 +141,14 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         return contributions;
+    }
+
+    private readConfiguration(rawConfiguration: any, pluginPath: string): any {
+        return {
+            type: rawConfiguration.type,
+            title: rawConfiguration.title,
+            properties: rawConfiguration.properties
+        };
     }
 
     private readViewsContainers(rawViewsContainers: PluginPackageViewContainer[], pluginPath: string): ViewContainer[] {
