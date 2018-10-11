@@ -36,6 +36,7 @@ interface ConfigurationInspect<T> {
     workspaceFolderValue?: T;
 }
 
+// tslint:disable-next-line:no-any
 function lookUp(tree: any, key: string): any {
     if (!key) {
         return;
@@ -51,6 +52,7 @@ function lookUp(tree: any, key: string): any {
 
 export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     private proxy: PreferenceRegistryMain;
+    // tslint:disable-next-line:no-any
     private _preferences: any;
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
@@ -60,8 +62,14 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void {
+    // tslint:disable-next-line:no-any
+    init(data: { [key: string]: any }): void {
         this._preferences = this.parse(data);
+    }
+
+    // tslint:disable-next-line:no-any
+    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void {
+        this.init(data);
         this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
     }
 

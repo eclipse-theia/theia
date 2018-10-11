@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { RPCProtocol } from '../api/rpc-protocol';
-import { EnvMain, EnvExt, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
+import { EnvMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
 import { QueryParameters } from '../common/env';
 
-export class EnvExtImpl implements EnvExt {
+export class EnvExtImpl {
     private proxy: EnvMain;
     private queryParameters: QueryParameters;
 
@@ -43,7 +43,7 @@ export class EnvExtImpl implements EnvExt {
         return this.queryParameters;
     }
 
-    $setQueryParameters(queryParams: QueryParameters): void {
+    setQueryParameters(queryParams: QueryParameters): void {
         this.queryParameters = queryParams;
     }
 }

@@ -23,6 +23,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger } from '@theia/core';
 import { PreferenceServiceImpl } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
+import { getQueryParameters } from '../../main/browser/env-main';
 
 @injectable()
 export class HostedPluginSupport {
@@ -69,7 +70,7 @@ export class HostedPluginSupport {
             if (frontend) {
                 const worker = new PluginWorker();
                 const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                hostedExtManager.$init({ plugins: pluginsMetadata });
+                hostedExtManager.$init({ plugins: pluginsMetadata, preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
                 setUpPluginApi(worker.rpc, container);
             }
 
@@ -78,7 +79,7 @@ export class HostedPluginSupport {
                 pluginsMetadata.forEach(pluginMetadata => {
                     const rpc = this.createServerRpc(pluginMetadata);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                    hostedExtManager.$init({ plugins: [pluginMetadata] });
+                    hostedExtManager.$init({ plugins: [pluginMetadata], preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
                     setUpPluginApi(rpc, container);
                 });
             }

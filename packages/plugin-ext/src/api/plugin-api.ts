@@ -42,6 +42,8 @@ import {
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
+    preferences: { [key: string]: any };
+    env: EnvInit;
 }
 
 export interface Plugin {
@@ -50,6 +52,10 @@ export interface Plugin {
     model: PluginModel;
     rawModel: PluginPackage;
     lifecycle: PluginLifecycle;
+}
+
+export interface EnvInit {
+    queryParams: QueryParameters;
 }
 
 export interface PluginAPI {
@@ -572,10 +578,6 @@ export interface EnvMain {
     $getEnvVariable(envVarName: string): Promise<string | undefined>;
 }
 
-export interface EnvExt {
-    $setQueryParameters(queryParams: QueryParameters): void;
-}
-
 export interface PreferenceRegistryMain {
     $updateConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
@@ -703,7 +705,6 @@ export const MAIN_RPC_CONTEXT = {
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
-    ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
     PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),

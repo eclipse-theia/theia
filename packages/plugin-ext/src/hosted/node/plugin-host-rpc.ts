@@ -18,6 +18,8 @@ import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../api/plugin-api';
 import { PluginMetadata } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
+import { EnvExtImpl } from '../../plugin/env';
+import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 
 /**
  * Handle the RPC calls.
@@ -32,9 +34,12 @@ export class PluginHostRPC {
     }
 
     initialize() {
-        this.pluginManager = this.createPluginManager();
+        const envExt = new EnvExtImpl(this.rpc);
+        const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
-        PluginHostRPC.apiFactory = createAPIFactory(this.rpc, this.pluginManager);
+        this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
+        PluginHostRPC.apiFactory = createAPIFactory(this.rpc, this.pluginManager, envExt, preferenceRegistryExt);
     }
 
     // tslint:disable-next-line:no-any
@@ -48,7 +53,7 @@ export class PluginHostRPC {
         }
     }
 
-    createPluginManager(): PluginManagerExtImpl {
+    createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl): PluginManagerExtImpl {
         const pluginManager = new PluginManagerExtImpl({
             loadPlugin(plugin: Plugin): void {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
@@ -96,7 +101,7 @@ export class PluginHostRPC {
                 }
                 return [result, foreign];
             }
-        });
+        }, envExt, preferencesManager);
         return pluginManager;
     }
 }
