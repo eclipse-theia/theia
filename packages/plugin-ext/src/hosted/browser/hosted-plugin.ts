@@ -69,8 +69,8 @@ export class HostedPluginSupport {
             if (frontend) {
                 const worker = new PluginWorker();
                 const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                hostedExtManager.$init({ plugins: pluginsMetadata });
                 setUpPluginApi(worker.rpc, container);
+                hostedExtManager.$init({ plugins: pluginsMetadata });
             }
 
             if (backend) {
@@ -78,8 +78,8 @@ export class HostedPluginSupport {
                 pluginsMetadata.forEach(pluginMetadata => {
                     const rpc = this.createServerRpc(pluginMetadata);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                    hostedExtManager.$init({ plugins: [pluginMetadata] });
                     setUpPluginApi(rpc, container);
+                    hostedExtManager.$init({ plugins: [pluginMetadata] });
                 });
             }
         });
