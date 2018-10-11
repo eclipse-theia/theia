@@ -132,7 +132,7 @@ export interface DebugAdapterContribution {
      * @param config The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration;
+    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
 
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)
@@ -141,5 +141,5 @@ export interface DebugAdapterContribution {
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
-    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable;
+    provideDebugAdapterExecutable(config: DebugConfiguration): Promise<DebugAdapterExecutable>;
 }
