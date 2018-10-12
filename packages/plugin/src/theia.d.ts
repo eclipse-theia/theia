@@ -1438,12 +1438,12 @@ declare module '@theia/plugin' {
     }
 
     /**
-      * An event that is fired when a [document](#TextDocument) will be saved.
-      *
-      * To make modifications to the document before it is being saved, call the
-      * [`waitUntil`](#TextDocumentWillSaveEvent.waitUntil)-function with a thenable
-      * that resolves to an array of [text edits](#TextEdit).
-      */
+     * An event that is fired when a [document](#TextDocument) will be saved.
+     *
+     * To make modifications to the document before it is being saved, call the
+     * [`waitUntil`](#TextDocumentWillSaveEvent.waitUntil)-function with a thenable
+     * that resolves to an array of [text edits](#TextEdit).
+     */
     export interface TextDocumentWillSaveEvent {
 
         /**
@@ -2272,8 +2272,8 @@ declare module '@theia/plugin' {
         subscriptions: { dispose(): any }[];
 
         /**
-        * The absolute file path of the directory containing the extension.
-        */
+         * The absolute file path of the directory containing the extension.
+         */
         extensionPath: string;
 
         /**
@@ -2346,7 +2346,11 @@ declare module '@theia/plugin' {
         /**
          * Shows a selection list with multiple selection allowed.
          */
-        export function showQuickPick(items: string[] | PromiseLike<string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<string[] | undefined>;
+        export function showQuickPick(
+            items: string[] | PromiseLike<string[]>,
+            options: QuickPickOptions & { canPickMany: true },
+            token?: CancellationToken
+        ): PromiseLike<string[] | undefined>;
 
         /**
          * Shows a selection list.
@@ -2359,7 +2363,10 @@ declare module '@theia/plugin' {
         /**
          * Shows a selection list with multiple selection allowed.
          */
-        export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
+        export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>,
+            options: QuickPickOptions & { canPickMany: true },
+            token?: CancellationToken
+        ): PromiseLike<T[] | undefined>;
 
         /**
          * Shows a selection list of [workspace folders](#workspace.workspaceFolders) to pick from.
@@ -3344,7 +3351,12 @@ declare module '@theia/plugin' {
          * @param ignoreDeleteEvents Ignore when files have been deleted.
          * @return A new file system watcher instance.
          */
-        export function createFileSystemWatcher(globPattern: GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher;
+        export function createFileSystemWatcher(
+            globPattern: GlobPattern,
+            ignoreCreateEvents?: boolean,
+            ignoreChangeEvents?: boolean,
+            ignoreDeleteEvents?: boolean
+        ): FileSystemWatcher;
 
         /**
          * Find files across all [workspace folders](#workspace.workspaceFolders) in the workspace.
@@ -4214,7 +4226,11 @@ declare module '@theia/plugin' {
          * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
          * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken | undefined, context: CompletionContext): ProviderResult<CompletionItem[] | CompletionList>;
+        provideCompletionItems(document: TextDocument,
+            position: Position,
+            token: CancellationToken | undefined,
+            context: CompletionContext
+        ): ProviderResult<CompletionItem[] | CompletionList>;
 
         /**
          * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
@@ -4469,11 +4485,12 @@ declare module '@theia/plugin' {
     }
 
     /**
-       * A code action represents a change that can be performed in code, e.g. to fix a problem or
-       * to refactor code.
-       *
-       * A CodeAction must set either [`edit`](CodeAction#edit) and/or a [`command`](CodeAction#command). If both are supplied, the `edit` is applied first, then the command is executed.
-       */
+     * A code action represents a change that can be performed in code, e.g. to fix a problem or
+     * to refactor code.
+     *
+     * A CodeAction must set either [`edit`](CodeAction#edit) and/or a [`command`](CodeAction#command).
+     * If both are supplied, the `edit` is applied first, then the command is executed.
+     */
     export class CodeAction {
 
         /**
@@ -4485,6 +4502,11 @@ declare module '@theia/plugin' {
          * [Diagnostics](#Diagnostic) that this code action resolves.
          */
         diagnostics?: Diagnostic[];
+
+        /**
+         * A [workspace edit](#WorkspaceEdit) this code action performs.
+         */
+        edit?: WorkspaceEdit;
 
         /**
          * A [command](#Command) this code action executes.
@@ -4528,7 +4550,12 @@ declare module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | CodeAction)[]>;
+        provideCodeActions(
+            document: TextDocument,
+            range: Range | Selection,
+            context: CodeActionContext,
+            token: CancellationToken | undefined
+        ): ProviderResult<(Command | CodeAction)[]>;
     }
 
     /**
@@ -4734,6 +4761,103 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A workspace edit is a collection of textual and files changes for
+     * multiple resources and documents.
+     *
+     * Use the [applyEdit](#workspace.applyEdit)-function to apply a workspace edit.
+     */
+    export class WorkspaceEdit {
+
+        /**
+         * The number of affected resources of textual or resource changes.
+         */
+        readonly size: number;
+
+        /**
+         * Replace the given range with given text for the given resource.
+         *
+         * @param uri A resource identifier.
+         * @param range A range.
+         * @param newText A string.
+         */
+        replace(uri: Uri, range: Range, newText: string): void;
+
+        /**
+         * Insert the given text at the given position.
+         *
+         * @param uri A resource identifier.
+         * @param position A position.
+         * @param newText A string.
+         */
+        insert(uri: Uri, position: Position, newText: string): void;
+
+        /**
+         * Delete the text at the given range.
+         *
+         * @param uri A resource identifier.
+         * @param range A range.
+         */
+        delete(uri: Uri, range: Range): void;
+
+        /**
+         * Check if a text edit for a resource exists.
+         *
+         * @param uri A resource identifier.
+         * @return `true` if the given resource will be touched by this edit.
+         */
+        has(uri: Uri): boolean;
+
+        /**
+         * Set (and replace) text edits for a resource.
+         *
+         * @param uri A resource identifier.
+         * @param edits An array of text edits.
+         */
+        set(uri: Uri, edits: TextEdit[]): void;
+
+        /**
+         * Get the text edits for a resource.
+         *
+         * @param uri A resource identifier.
+         * @return An array of text edits.
+         */
+        get(uri: Uri): TextEdit[];
+
+        /**
+         * Create a regular file.
+         *
+         * @param uri Uri of the new file..
+         * @param options Defines if an existing file should be overwritten or be
+         * ignored. When overwrite and ignoreIfExists are both set overwrite wins.
+         */
+        createFile(uri: Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void;
+
+        /**
+         * Delete a file or folder.
+         *
+         * @param uri The uri of the file that is to be deleted.
+         */
+        deleteFile(uri: Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }): void;
+
+        /**
+         * Rename a file or folder.
+         *
+         * @param oldUri The existing file.
+         * @param newUri The new location.
+         * @param options Defines if existing files should be overwritten or be
+         * ignored. When overwrite and ignoreIfExists are both set overwrite wins.
+         */
+        renameFile(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void;
+
+        /**
+         * Get all text edits grouped by resource.
+         *
+         * @return A shallow copy of `[Uri, TextEdit[]]`-tuples.
+         */
+        entries(): [Uri, TextEdit[]][];
+    }
+
+    /**
      * The document formatting provider interface defines the contract between extensions and
      * the formatting-feature.
      */
@@ -4805,9 +4929,9 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * The document formatting provider interface defines the contract between extensions and
-    * the formatting-feature.
-    */
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
     export interface OnTypeFormattingEditProvider {
 
         /**
@@ -5060,17 +5184,17 @@ declare module '@theia/plugin' {
         export function registerDocumentRangeFormattingEditProvider(selector: DocumentSelector, provider: DocumentRangeFormattingEditProvider): Disposable;
 
         /**
-        * Register a code action provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are asked in
-        * parallel and the results are merged. A failing provider (rejected promise or exception) will
-        * not cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A code action provider.
-        * @param metadata Metadata about the kind of code actions the provider providers.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a code action provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A code action provider.
+         * @param metadata Metadata about the kind of code actions the provider providers.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerCodeActionsProvider(selector: DocumentSelector, provider: CodeActionProvider, metadata?: CodeActionProviderMetadata): Disposable;
 
         /**
@@ -5107,16 +5231,16 @@ declare module '@theia/plugin' {
         ): Disposable;
 
         /**
-        * Register a document link provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are asked in
-        * parallel and the results are merged. A failing provider (rejected promise or exception) will
-        * not cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A document link provider.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a document link provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A document link provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerDocumentLinkProvider(selector: DocumentSelector, provider: DocumentLinkProvider): Disposable;
 
         /**

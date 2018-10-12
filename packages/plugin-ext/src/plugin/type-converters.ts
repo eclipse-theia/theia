@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorPosition, Selection, Position, DecorationOptions } from '../api/plugin-api';
+import { EditorPosition, Selection, Position, DecorationOptions, WorkspaceEditDto, ResourceTextEditDto, ResourceFileEditDto } from '../api/plugin-api';
 import {
     Range,
     Hover,
@@ -25,7 +25,8 @@ import {
     RelatedInformation,
     Location,
     DefinitionLink,
-    DocumentLink
+    DocumentLink,
+    Command
 } from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
@@ -376,4 +377,31 @@ export function fromDocumentLink(definitionLink: theia.DocumentLink): DocumentLi
         range: fromRange(definitionLink.range),
         url: definitionLink.target && definitionLink.target.toString()
     };
+}
+
+export function toInternalCommand(command: theia.Command): Command {
+    return {
+        id: command.id,
+        title: command.label || '',
+        tooltip: command.tooltip,
+        arguments: command.arguments
+    };
+}
+
+export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): WorkspaceEditDto {
+    const result: WorkspaceEditDto = {
+        edits: []
+    };
+    for (const entry of (value as types.WorkspaceEdit)._allEntries()) {
+        const [uri, uriOrEdits] = entry;
+        if (Array.isArray(uriOrEdits)) {
+            // text edits
+            const doc = documents ? documents.getDocument(uri.toString()) : undefined;
+            result.edits.push(<ResourceTextEditDto>{ resource: uri, modelVersionId: doc && doc.version, edits: uriOrEdits.map(fromTextEdit) });
+        } else {
+            // resource edits
+            result.edits.push(<ResourceFileEditDto>{ oldUri: uri, newUri: uriOrEdits, options: entry[2] });
+        }
+    }
+    return result;
 }

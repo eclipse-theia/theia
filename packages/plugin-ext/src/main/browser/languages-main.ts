@@ -295,6 +295,29 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
     }
 
+    $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const quickFixProvider = this.createQuickFixProvider(handle, languageSelector, codeActionKinds);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerCodeActionProvider(language, quickFixProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createQuickFixProvider(handle: number, selector: LanguageSelector | undefined, providedCodeActionKinds?: string[]): monaco.languages.CodeActionProvider {
+        return {
+            provideCodeActions: (model, rangeOrSelection, monacoContext) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, monacoContext);
+            }
+        };
+    }
+
     protected matchModel(selector: LanguageSelector | undefined, model: MonacoModelIdentifier): boolean {
         if (Array.isArray(selector)) {
             return selector.some(filter => this.matchModel(filter, model));
