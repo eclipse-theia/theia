@@ -47,7 +47,7 @@ body {
   z-index: 50000;
   background: var(--theia-layout-color0);
   background-image: var(--theia-preloader);
-  background-size: 60px 60px;
+  background-size: 200px 200px;
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center;

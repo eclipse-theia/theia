@@ -81,22 +81,22 @@
 .theia-mini-browser-previous::before {
     content: "\f053";
 }
-  
+
 .theia-mini-browser-next::before {
     content: "\f054";
 }
-  
+
 .theia-mini-browser-refresh::before {
     content: "\f021";
 }
-  
+
 .theia-mini-browser-open::before {
     content: "\f08e";
 }
 
 .theia-mini-browser-content-area {
     position: relative;
-    display: flex; 
+    display: flex;
     height: 100%;
     width: 100%;
     flex-direction: column;
@@ -106,7 +106,7 @@
 
 .theia-mini-browser-pdf-container {
     width: 100%;
-    height: 100%;   
+    height: 100%;
 }
 
 .theia-mini-browser-load-indicator {
@@ -117,7 +117,7 @@
     left: 0;
     z-index: 10;
     background: var(--theia-layout-color3);
-    background-image: var(--theia-preloader);
+    background-image: var(--theia-spinner);
     background-size: 60px 60px;
     background-repeat: no-repeat;
     background-position: center;
