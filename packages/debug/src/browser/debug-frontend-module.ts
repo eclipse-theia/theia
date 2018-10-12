@@ -19,10 +19,9 @@ import { DebugCommandHandlers, DEBUG_VARIABLE_CONTEXT_MENU } from './debug-comma
 import { DebugConfigurationManager } from './debug-configuration';
 import {
     DEBUG_FACTORY_ID,
-    DebugWidget,
-    DebugFrontendContribution,
-    DebugWidgetOptions,
-} from './view/debug-frontend-contribution';
+    DebugPanelWidget,
+    DebugPanelHandler,
+} from './view/debug-panel-widget';
 import { DebugPath, DebugService } from '../common/debug-common';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 import { CommandContribution } from '@theia/core/lib/common/command';
@@ -40,7 +39,6 @@ import {
     FrontendApplicationContribution
 } from '@theia/core/lib/browser';
 import {
-    DebugSession,
     DebugSessionContribution,
     DebugSessionFactory
 } from './debug-model';
@@ -50,13 +48,15 @@ import {
     DebugResourceResolver
 } from './debug-session';
 import {
-    DebugVariablesWidget, DebugVariableModel, DebugVariablesTree,
+    DebugVariablesWidget,
+    DebugVariableModel,
+    DebugVariablesTree,
 } from './view/debug-variables-widget';
 import '../../src/browser/style/index.css';
 import { DebugThreadsWidget } from './view/debug-threads-widget';
 import { DebugStackFramesWidget } from './view/debug-stack-frames-widget';
 import { DebugBreakpointsWidget, BreakpointsDialog } from './view/debug-breakpoints-widget';
-import { DebugSelectionService, DebugSelection } from './view/debug-selection-service';
+import { DebugSelectionService } from './view/debug-selection-service';
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
 import { ActiveLineDecorator, BreakpointDecorator } from './breakpoint/breakpoint-decorators';
 import { BreakpointsManager } from './breakpoint/breakpoint-manager';
@@ -66,6 +66,7 @@ import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 import { DebugToolBar } from './view/debug-toolbar-widget';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
+import { DebugWidgetOptions } from './view/debug-view-common';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -76,7 +77,7 @@ export const DEBUG_VARIABLES_PROPS = <TreeProps>{
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindDebugSessionManager(bind);
     bindBreakpointsManager(bind);
-    bindDebugWidget(bind);
+    bindDebugPanel(bind);
     DebugConsoleContribution.bindContribution(bind);
 
     bind(MenuContribution).to(DebugCommandHandlers);
@@ -89,18 +90,18 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(FrontendApplicationContribution).to(DebugFrontendApplicationContribution).inSingletonScope();
 });
 
-function bindDebugWidget(bind: interfaces.Bind): void {
-    bind(DebugWidget).toSelf();
+function bindDebugPanel(bind: interfaces.Bind): void {
+    bind(DebugPanelWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: DEBUG_FACTORY_ID,
         createWidget: (options: DebugWidgetOptions) => {
-            const container = createDebugTargetContainer(context, options.sessionId);
-            return container.get<DebugWidget>(DebugWidget);
+            const container = createDebugTargetContainer(context, options);
+            return container.get<DebugPanelWidget>(DebugPanelWidget);
         }
     })).inSingletonScope();
 
-    bind(DebugFrontendContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(DebugFrontendContribution));
+    bind(DebugPanelHandler).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(DebugPanelHandler));
     bind(DebugSelectionService).toSelf().inSingletonScope();
 }
 
@@ -121,17 +122,11 @@ function bindDebugSessionManager(bind: interfaces.Bind): void {
     bind(DebugSessionManager).toSelf().inSingletonScope();
 }
 
-function createDebugTargetContainer(context: interfaces.Context, sessionId: string): Container {
-    const session = context.container.get(DebugSessionManager).find(sessionId);
-    if (!session) {
-        throw new Error(`Debug session '${sessionId}' does not exist`);
-    }
+function createDebugTargetContainer(context: interfaces.Context, options: DebugWidgetOptions): Container {
     const child = createTreeContainer(context.container);
 
-    const selection = context.container.get(DebugSelectionService).get(session.sessionId);
+    child.bind(DebugWidgetOptions).toConstantValue(options);
 
-    child.bind(DebugSession).toConstantValue(session);
-    child.bind(DebugSelection).toConstantValue(selection);
     child.bind(DebugThreadsWidget).toSelf();
     child.bind(DebugToolBar).toSelf();
     child.bind(DebugStackFramesWidget).toSelf();

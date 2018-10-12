@@ -132,6 +132,11 @@ export interface DebugSessionState {
     isConnected: boolean;
 
     /**
+     * Indicates if debug session is terminated.
+     */
+    isTerminated: boolean;
+
+    /**
      * Indicates if all threads are continued.
      */
     allThreadsContinued: boolean | undefined;
@@ -239,6 +244,7 @@ export namespace ExtDebugProtocol {
  */
 export class DebugSessionStateAccumulator implements DebugSessionState {
     isConnected: boolean;
+    isTerminated: boolean;
     allThreadsContinued: boolean | undefined;
     allThreadsStopped: boolean | undefined;
     stoppedThreadIds = new Set<number>();
@@ -268,7 +274,7 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
     }
 
     private onTerminated(event: DebugProtocol.TerminatedEvent): void {
-        this.isConnected = false;
+        this.isTerminated = true;
     }
 
     private onContinued(event: DebugProtocol.ContinuedEvent): void {

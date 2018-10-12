@@ -24,15 +24,19 @@ import { DEBUG_COMMANDS } from '../debug-command';
 import { BaseWidget } from '@theia/core/lib/browser/widgets';
 import { Disposable } from '@theia/core';
 import { DebugSessionManager } from '../debug-session';
+import { DebugContext, DebugWidget } from './debug-view-common';
+import { DisposableCollection } from '@theia/core';
 
 /**
  * Debug toolbar.
  */
-export class DebugToolBar extends BaseWidget {
+export class DebugToolBar extends BaseWidget implements DebugWidget {
+    private _debugContext: DebugContext | undefined;
     protected toolbarContainer: HTMLElement;
 
+    private readonly sessionDisposableEntries = new DisposableCollection();
+
     constructor(
-        @inject(DebugSession) protected readonly debugSession: DebugSession,
         @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry) {
         super();
@@ -45,17 +49,35 @@ export class DebugToolBar extends BaseWidget {
     protected init() {
         this.toolbarContainer = document.createElement('div');
         this.node.appendChild(this.toolbarContainer);
+    }
 
-        const eventListener = () => this.update();
+    dispose(): void {
+        this.sessionDisposableEntries.dispose();
+        super.dispose();
+    }
 
-        this.debugSession.on('*', eventListener);
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('*', eventListener)));
+    get debugContext(): DebugContext | undefined {
+        return this._debugContext;
+    }
 
-        this.toDispose.push(this.debugSessionManager.onDidDestroyDebugSession((debugSession: DebugSession) => this.onDebugSessionDestroyed(debugSession)));
+    set debugContext(debugContext: DebugContext | undefined) {
+        this.sessionDisposableEntries.dispose();
+        this._debugContext = debugContext;
+        this.id = this.createId();
+
+        if (debugContext) {
+            const eventListener = () => this.update();
+            this.debugSession!.on('*', eventListener);
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('*', eventListener)));
+
+            this.sessionDisposableEntries.push(this.debugSessionManager.onDidDestroyDebugSession((debugSession: DebugSession) => this.onDebugSessionDestroyed(debugSession)));
+        }
+
+        this.update();
     }
 
     protected onDebugSessionDestroyed(debugSession: DebugSession) {
-        if (debugSession.sessionId === this.debugSession.sessionId) {
+        if (this.debugSession && debugSession.sessionId === this.debugSession.sessionId) {
             this.update();
         }
     }
@@ -88,6 +110,11 @@ export class DebugToolBar extends BaseWidget {
     }
 
     private createId(): string {
-        return `debug-toolbar-${this.debugSession.sessionId}`;
+        return 'debug-toolbar'
+            + (this.debugSession ? `-${this.debugSession.sessionId}` : '');
+    }
+
+    private get debugSession(): DebugSession | undefined {
+        return this._debugContext && this._debugContext.debugSession;
     }
 }

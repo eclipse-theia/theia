@@ -18,24 +18,24 @@ import { VirtualWidget, SELECTED_CLASS, ContextMenuRenderer } from '@theia/core/
 import { DebugSession } from '../debug-model';
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { DEBUG_SESSION_THREAD_CONTEXT_MENU } from '../debug-command';
 import { DebugSelection } from './debug-selection-service';
 import { DebugUtils } from '../debug-utils';
-import { Disposable } from '@theia/core';
-import { DebugStyles } from './base/debug-styles';
+import { Disposable, DisposableCollection } from '@theia/core';
+import { DebugStyles, DebugWidget, DebugContext } from './debug-view-common';
 
 /**
  * Is it used to display list of threads.
  */
 @injectable()
-export class DebugThreadsWidget extends VirtualWidget {
+export class DebugThreadsWidget extends VirtualWidget implements DebugWidget {
+    private _debugContext: DebugContext | undefined;
     private _threads: DebugProtocol.Thread[] = [];
 
-    constructor(
-        @inject(DebugSession) protected readonly debugSession: DebugSession,
-        @inject(DebugSelection) protected readonly debugSelection: DebugSelection,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
+    private readonly sessionDisposableEntries = new DisposableCollection();
+
+    constructor(@inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
         super();
 
         this.id = this.createId();
@@ -43,25 +43,39 @@ export class DebugThreadsWidget extends VirtualWidget {
         this.node.setAttribute('tabIndex', '0');
     }
 
-    @postConstruct()
-    protected init() {
-        const threadEventListener = (event: DebugProtocol.ThreadEvent) => this.onThreadEvent(event);
-        const connectedEventListener = () => this.updateThreads();
-        const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
-        const stoppedEventListener = (event: DebugProtocol.StoppedEvent) => this.onStoppedEvent(event);
+    dispose(): void {
+        this.sessionDisposableEntries.dispose();
+        super.dispose();
+    }
 
-        this.debugSession.on('thread', threadEventListener);
-        this.debugSession.on('configurationDone', connectedEventListener);
-        this.debugSession.on('terminated', terminatedEventListener);
-        this.debugSession.on('stopped', stoppedEventListener);
+    get debugContext(): DebugContext | undefined {
+        return this._debugContext;
+    }
 
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('thread', threadEventListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('configurationDone', connectedEventListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('stopped', stoppedEventListener)));
+    set debugContext(debugContext: DebugContext | undefined) {
+        this.sessionDisposableEntries.dispose();
+        this._debugContext = debugContext;
+        this.id = this.createId();
 
-        if (this.debugSession.state.isConnected) {
-            this.updateThreads();
+        if (debugContext) {
+            const threadEventListener = (event: DebugProtocol.ThreadEvent) => this.onThreadEvent(event);
+            const connectedEventListener = () => this.updateThreads();
+            const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+            const stoppedEventListener = (event: DebugProtocol.StoppedEvent) => this.onStoppedEvent(event);
+
+            this.debugSession!.on('thread', threadEventListener);
+            this.debugSession!.on('configurationDone', connectedEventListener);
+            this.debugSession!.on('terminated', terminatedEventListener);
+            this.debugSession!.on('stopped', stoppedEventListener);
+
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('thread', threadEventListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('configurationDone', connectedEventListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('terminated', terminatedEventListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('stopped', stoppedEventListener)));
+
+            if (this.debugSession!.state.isConnected) {
+                this.updateThreads();
+            }
         }
     }
 
@@ -78,8 +92,9 @@ export class DebugThreadsWidget extends VirtualWidget {
         const header = h.div({ className: 'theia-debug-header' }, 'Threads');
         const items: h.Child = [];
 
+        const selectedThread = this.debugSelection && this.debugSelection.thread;
         for (const thread of this.threads) {
-            const className = DebugStyles.DEBUG_ITEM + (DebugUtils.isEqual(this.debugSelection.thread, thread) ? ` ${SELECTED_CLASS}` : '');
+            const className = DebugStyles.DEBUG_ITEM + (DebugUtils.isEqual(selectedThread, thread) ? ` ${SELECTED_CLASS}` : '');
             const id = this.createId(thread);
 
             const item =
@@ -100,6 +115,10 @@ export class DebugThreadsWidget extends VirtualWidget {
     }
 
     protected selectThread(newThread: DebugProtocol.Thread | undefined) {
+        if (!this.debugSelection) {
+            return;
+        }
+
         const currentThread = this.debugSelection.thread;
 
         if (DebugUtils.isEqual(currentThread, newThread)) {
@@ -124,7 +143,9 @@ export class DebugThreadsWidget extends VirtualWidget {
     }
 
     private createId(thread?: DebugProtocol.Thread): string {
-        return `debug-threads-${this.debugSession.sessionId}` + (thread ? `-${thread.id}` : '');
+        return 'debug-threads'
+            + (this.debugSession ? `-${this.debugSession.sessionId}` : '')
+            + (thread ? `-${thread.id}` : '');
     }
 
     protected onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
@@ -140,17 +161,27 @@ export class DebugThreadsWidget extends VirtualWidget {
     }
 
     private updateThreads(): void {
-        const currentThread = this.debugSelection.thread;
+        const currentThread = this.debugSelection && this.debugSelection.thread;
 
         this.threads = [];
         this.selectThread(undefined);
 
-        this.debugSession.threads().then(response => {
-            this.threads = response.body.threads;
+        if (this.debugSession) {
+            this.debugSession.threads().then(response => {
+                this.threads = response.body.threads;
 
-            const currentThreadExists = this.threads.some(thread => DebugUtils.isEqual(thread, currentThread));
-            this.selectThread(currentThreadExists ? currentThread : this.threads[0]);
-        });
+                const currentThreadExists = this.threads.some(thread => DebugUtils.isEqual(thread, currentThread));
+                this.selectThread(currentThreadExists ? currentThread : this.threads[0]);
+            });
+        }
+    }
+
+    private get debugSession(): DebugSession | undefined {
+        return this._debugContext && this._debugContext.debugSession;
+    }
+
+    private get debugSelection(): DebugSelection | undefined {
+        return this._debugContext && this._debugContext.debugSelection;
     }
 }
 

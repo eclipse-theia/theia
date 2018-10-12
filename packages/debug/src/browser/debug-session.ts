@@ -298,6 +298,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         const state: DebugSessionState = {
             isConnected: false,
+            isTerminated: false,
             sources: new Map<string, DebugProtocol.Source>(),
             stoppedThreadIds: new Set<number>(),
             allThreadsContinued: false,
@@ -376,7 +377,7 @@ export class DebugSessionManager {
     private async attach(session: DebugSession, initializeArgs: DebugProtocol.InitializeRequestArguments): Promise<void> {
         await session.initialize(initializeArgs);
 
-        const attachArgs: DebugProtocol.AttachRequestArguments = Object.assign(session.configuration, { __restart: false });
+        const attachArgs: DebugProtocol.AttachRequestArguments = { __restart: false };
         try {
             await session.attach(attachArgs);
         } catch (cause) {
@@ -388,7 +389,7 @@ export class DebugSessionManager {
     private async launch(session: DebugSession, initializeArgs: DebugProtocol.InitializeRequestArguments): Promise<void> {
         await session.initialize(initializeArgs);
 
-        const launchArgs: DebugProtocol.LaunchRequestArguments = Object.assign(session.configuration, { __restart: false, noDebug: false });
+        const launchArgs: DebugProtocol.LaunchRequestArguments = { __restart: false, noDebug: false };
         try {
             await session.launch(launchArgs);
         } catch (cause) {
