@@ -21,7 +21,7 @@ import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from '@theia/core/lib/b
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope, PreferenceService } from '@theia/preferences/lib/browser';
-import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
+import { CppBuildConfigurationManager, CppBuildConfiguration, CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY } from './cpp-build-configurations';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CommonCommands } from '@theia/core/lib/browser';
 
@@ -130,7 +130,7 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         const configs = this.cppBuildConfigurations.getConfigs();
         const newConfigs = configs.slice(0);
         newConfigs.push({ name: '', directory: '' });
-        await this.preferenceService.set(this.cppBuildConfigurations.BUILD_CONFIGURATIONS_PREFERENCE_KEY, newConfigs, PreferenceScope.Workspace);
+        await this.preferenceService.set(CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY, newConfigs, PreferenceScope.Workspace);
     }
 
 }
