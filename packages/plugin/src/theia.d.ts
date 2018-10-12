@@ -2379,6 +2379,232 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Content settings for a webview.
+     */
+    export interface WebviewOptions {
+        /**
+         * Controls whether scripts are enabled in the webview content or not.
+         *
+         * Defaults to false (scripts-disabled).
+         */
+        readonly enableScripts?: boolean;
+
+        /**
+         * Controls whether command uris are enabled in webview content or not.
+         *
+         * Defaults to false.
+         */
+        readonly enableCommandUris?: boolean;
+
+        /**
+         * Root paths from which the webview can load local (filesystem) resources using the `theia-resource:` scheme.
+         *
+         * Default to the root folders of the current workspace plus the extension's install directory.
+         *
+         * Pass in an empty array to disallow access to any local resources.
+         */
+        readonly localResourceRoots?: ReadonlyArray<Uri>;
+    }
+
+    /**
+     * A webview displays html content, like an iframe.
+     */
+    export interface Webview {
+        /**
+         * Content settings for the webview.
+         */
+        options: WebviewOptions;
+
+        /**
+         * Contents of the webview.
+         *
+         * Should be a complete html document.
+         */
+        html: string;
+
+        /**
+         * Fired when the webview content posts a message.
+         */
+        readonly onDidReceiveMessage: Event<any>;
+
+        /**
+         * Post a message to the webview content.
+         *
+         * Messages are only delivered if the webview is visible.
+         *
+         * @param message Body of the message.
+         */
+        postMessage(message: any): PromiseLike<boolean>;
+    }
+
+    /**
+     * Content settings for a webview panel.
+     */
+    export interface WebviewPanelOptions {
+        /**
+         * Controls if the find widget is enabled in the panel.
+         *
+         * Defaults to false.
+         */
+        readonly enableFindWidget?: boolean;
+
+        /**
+         * Controls if the webview panel's content (iframe) is kept around even when the panel
+         * is no longer visible.
+         *
+         * Normally the webview panel's html context is created when the panel becomes visible
+         * and destroyed when it is is hidden. Extensions that have complex state
+         * or UI can set the `retainContextWhenHidden` to make Theia keep the webview
+         * context around, even when the webview moves to a background tab. When a webview using
+         * `retainContextWhenHidden` becomes hidden, its scripts and other dynamic content are suspended.
+         * When the panel becomes visible again, the context is automatically restored
+         * in the exact same state it was in originally. You cannot send messages to a
+         * hidden webview, even with `retainContextWhenHidden` enabled.
+         *
+         * `retainContextWhenHidden` has a high memory overhead and should only be used if
+         * your panel's context cannot be quickly saved and restored.
+         */
+        readonly retainContextWhenHidden?: boolean;
+    }
+
+    /**
+     * A panel that contains a webview.
+     */
+    interface WebviewPanel {
+        /**
+         * Identifies the type of the webview panel, such as `'markdown.preview'`.
+         */
+        readonly viewType: string;
+
+        /**
+         * Title of the panel shown in UI.
+         */
+        title: string;
+
+        /**
+         * Icon for the panel shown in UI.
+         */
+        iconPath?: Uri | { light: Uri; dark: Uri };
+
+        /**
+         * Webview belonging to the panel.
+         */
+        readonly webview: Webview;
+
+        /**
+         * Content settings for the webview panel.
+         */
+        readonly options: WebviewPanelOptions;
+
+        /**
+         * Editor position of the panel. This property is only set if the webview is in
+         * one of the editor view columns.
+         */
+        readonly viewColumn?: ViewColumn;
+
+        /**
+         * Whether the panel is active (focused by the user).
+         */
+        readonly active: boolean;
+
+        /**
+         * Whether the panel is visible.
+         */
+        readonly visible: boolean;
+
+        /**
+         * Fired when the panel's view state changes.
+         */
+        readonly onDidChangeViewState: Event<WebviewPanelOnDidChangeViewStateEvent>;
+
+        /**
+         * Fired when the panel is disposed.
+         *
+         * This may be because the user closed the panel or because `.dispose()` was
+         * called on it.
+         *
+         * Trying to use the panel after it has been disposed throws an exception.
+         */
+        readonly onDidDispose: Event<void>;
+
+        /**
+         * Show the webview panel in a given column.
+         *
+         * A webview panel may only show in a single column at a time. If it is already showing, this
+         * method moves it to a new column.
+         *
+         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         * @param preserveFocus When `true`, the webview will not take focus.
+         */
+        reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
+
+        /**
+         * Dispose of the webview panel.
+         *
+         * This closes the panel if it showing and disposes of the resources owned by the webview.
+         * Webview panels are also disposed when the user closes the webview panel. Both cases
+         * fire the `onDispose` event.
+         */
+        dispose(): void;
+    }
+
+    /**
+     * Event fired when a webview panel's view state changes.
+     */
+    export interface WebviewPanelOnDidChangeViewStateEvent {
+        /**
+         * Webview panel whose view state changed.
+         */
+        readonly webviewPanel: WebviewPanel;
+    }
+
+    /**
+     * Restore webview panels that have been persisted when vscode shuts down.
+     *
+     * There are two types of webview persistence:
+     *
+     * - Persistence within a session.
+     * - Persistence across sessions (across restarts of Theia).
+     *
+     * A `WebviewPanelSerializer` is only required for the second case: persisting a webview across sessions.
+     *
+     * Persistence within a session allows a webview to save its state when it becomes hidden
+     * and restore its content from this state when it becomes visible again. It is powered entirely
+     * by the webview content itself. To save off a persisted state, call `acquireVsCodeApi().setState()` with
+     * any json serializable object. To restore the state again, call `getState()`
+     *
+     * ```js
+     * // Within the webview
+     * const vscode = acquireVsCodeApi();
+     *
+     * // Get existing state
+     * const oldState = vscode.getState() || { value: 0 };
+     *
+     * // Update state
+     * setState({ value: oldState.value + 1 })
+     * ```
+     *
+     * A `WebviewPanelSerializer` extends this persistence across restarts of Theia. When the editor is shutdown,
+     * Theia will save off the state from `setState` of all webviews that have a serializer. When the
+     * webview first becomes visible after the restart, this state is passed to `deserializeWebviewPanel`.
+     * The extension can then restore the old `WebviewPanel` from this state.
+     */
+    interface WebviewPanelSerializer {
+        /**
+         * Restore a webview panel from its seriailzed `state`.
+         *
+         * Called when a serialized webview first becomes visible.
+         *
+         * @param webviewPanel Webview panel to restore. The serializer should take ownership of this panel. The
+         * serializer must restore the webview's `.html` and hook up all webview events.
+         * @param state Persisted state from the webview content.
+         *
+         * @return PromiseLike indicating that the webview has been fully restored.
+         */
+        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: any): PromiseLike<void>;
+    }
+
+    /**
      * Common namespace for dealing with window and editor, showing messages and user input.
      */
     export namespace window {
@@ -2648,6 +2874,31 @@ declare module '@theia/plugin' {
          * @returns A promise that resolves to the selected resource or `undefined`.
          */
         export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
+
+        /**
+         * Create and show a new webview panel.
+         *
+         * @param viewType Identifies the type of the webview panel.
+         * @param title Title of the panel.
+         * @param showOptions Where to show the webview in the editor. If preserveFocus is set, the new webview will not take focus.
+         * @param options Settings for the new panel.
+         *
+         * @return New webview panel.
+         */
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | { viewColumn: ViewColumn, preserveFocus?: boolean }, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
+
+        /**
+         * Registers a webview panel serializer.
+         *
+         * Plugins that support reviving should have an `"onWebviewPanel:viewType"` activation event and
+         * make sure that [registerWebviewPanelSerializer](#registerWebviewPanelSerializer) is called during activation.
+         *
+         * Only a single serializer may be registered at a time for a given `viewType`.
+         *
+         * @param viewType Type of the webview panel that can be serialized.
+         * @param serializer Webview serializer.
+         */
+        export function registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
 
         /**
          * Represents the current window's state.

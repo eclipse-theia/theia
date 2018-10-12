@@ -26,5 +26,13 @@ export class PluginApiContribution implements BackendApplicationContribution {
             const filePath: string = req.params.path;
             res.sendFile(pluginPath + filePath);
         });
+
+        app.get('/webview/:path(*)', (req, res) => {
+            let filePath: string = req.params.path;
+            if (filePath.charAt(0) !== '/') {
+                filePath = '/' + filePath;
+            }
+            res.sendFile(filePath);
+        });
     }
 }
