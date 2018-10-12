@@ -69,6 +69,7 @@ import {
     TreeItemCollapsibleState,
     SymbolKind,
     DocumentSymbol,
+    WorkspaceEdit,
     SymbolInformation,
     FileType,
     FileChangeType
@@ -369,7 +370,7 @@ export function createAPIFactory(
                 return languagesExt.registerLinkProvider(selector, provider);
             },
             registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
-                return languagesExt.registerCodeActionsProvider(selector, provider, metadata);
+                return languagesExt.registerCodeActionsProvider(selector, provider, plugin.model, metadata);
             },
             registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
                 return languagesExt.registerCodeLensProvider(selector, provider);
@@ -401,7 +402,7 @@ export function createAPIFactory(
             onDidChangeActiveDebugSession(listener, thisArg?, disposables?) {
                 // FIXME: to implement
                 return new Disposable(() => { });
-			},
+            },
             onDidTerminateDebugSession(listener, thisArg?, disposables?) {
                 // FIXME: to implement
                 return new Disposable(() => { });
@@ -469,6 +470,7 @@ export function createAPIFactory(
             TreeItemCollapsibleState,
             SymbolKind,
             DocumentSymbol,
+            WorkspaceEdit,
             SymbolInformation,
             FileType,
             FileChangeType
