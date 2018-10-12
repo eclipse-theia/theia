@@ -30,6 +30,7 @@ export interface NotificationProperties {
     text: string;
     actions?: NotificationAction[];
     timeout: number | undefined;
+    timeoutFn?: () => void;
 }
 
 export interface Notification {
@@ -71,6 +72,9 @@ export class Notifications {
         text.innerText = properties.text;
         const close = () => {
             element.remove();
+            if (properties.timeoutFn) {
+                properties.timeoutFn();
+            }
         };
         const handler = <Notification>{ element, properties };
         const buttons = element.appendChild(document.createElement('div'));

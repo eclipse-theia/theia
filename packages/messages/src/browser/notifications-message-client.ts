@@ -44,7 +44,7 @@ export class NotificationsMessageClient extends MessageClient {
             this.showToast(message, a => {
                 this.visibleMessages.delete(key);
                 resolve(a);
-            });
+            }, () => this.visibleMessages.delete(key));
         });
     }
 
@@ -52,7 +52,7 @@ export class NotificationsMessageClient extends MessageClient {
         return `${m.type}-${m.text}-${m.actions ? m.actions.join('|') : '|'}`;
     }
 
-    protected showToast(message: Message, onCloseFn: (action: string | undefined) => void): void {
+    protected showToast(message: Message, onCloseFn: (action: string | undefined) => void, timeoutFn?: () => void): void {
         const icon = this.iconFor(message.type);
         const text = message.text;
         const actions = (message.actions || []).map(action => <NotificationAction>{
@@ -73,7 +73,8 @@ export class NotificationsMessageClient extends MessageClient {
             icon,
             text,
             actions,
-            timeout
+            timeout,
+            timeoutFn
         });
     }
 
