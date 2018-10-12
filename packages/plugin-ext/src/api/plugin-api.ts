@@ -820,6 +820,48 @@ export interface LanguagesMain {
     $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
+export interface WebviewPanelViewState {
+    readonly active: boolean;
+    readonly visible: boolean;
+    readonly position: number;
+}
+
+export interface WebviewPanelShowOptions {
+    readonly viewColumn?: number;
+    readonly preserveFocus?: boolean;
+}
+
+export interface WebviewsExt {
+    $onMessage(handle: string, message: any): void;
+    $onDidChangeWebviewPanelViewState(handle: string, newState: WebviewPanelViewState): void;
+    $onDidDisposeWebviewPanel(handle: string): PromiseLike<void>;
+    $deserializeWebviewPanel(newWebviewHandle: string,
+        viewType: string,
+        title: string,
+        state: any,
+        position: number,
+        options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void>;
+}
+
+export interface WebviewsMain {
+    $createWebviewPanel(handle: string,
+        viewType: string,
+        title: string,
+        showOptions: WebviewPanelShowOptions,
+        options: theia.WebviewPanelOptions & theia.WebviewOptions | undefined,
+        pluginLocation: UriComponents): void;
+    $disposeWebview(handle: string): void;
+    $reveal(handle: string, showOptions: WebviewPanelShowOptions): void;
+    $setTitle(handle: string, value: string): void;
+    $setIconPath(handle: string, value: { light: string, dark: string } | string | undefined): void;
+    $setHtml(handle: string, value: string): void;
+    $setOptions(handle: string, options: theia.WebviewOptions): void;
+    $postMessage(handle: string, value: any): Thenable<boolean>;
+
+    $registerSerializer(viewType: string): void;
+    $unregisterSerializer(viewType: string): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -837,6 +879,7 @@ export const PLUGIN_RPC_CONTEXT = {
     OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain'),
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
+    WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -854,4 +897,5 @@ export const MAIN_RPC_CONTEXT = {
     PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
+    WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
 };
