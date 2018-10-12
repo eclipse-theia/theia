@@ -80,18 +80,24 @@ export class PluginDeployerImpl implements PluginDeployer, PluginServer {
         // init resolvers
         await this.initResolvers();
 
-        // check THEIA_PLUGINS env var
-        if (!process.env.THEIA_PLUGINS || process.env.THEIA_PLUGINS === '') {
-            return Promise.resolve();
-        }
-        const pluginsValue = process.env.THEIA_PLUGINS;
+        // check THEIA_DEFAULT_PLUGINS or THEIA_PLUGINS env var
+        const defaultPluginsValue = process.env.THEIA_DEFAULT_PLUGINS || undefined;
+        const pluginsValue = process.env.THEIA_PLUGINS || undefined;
 
+        this.logger.debug('Found the list of default plugins ID on env:', defaultPluginsValue);
         this.logger.debug('Found the list of plugins ID on env:', pluginsValue);
 
-        // transform it to an array
-        const pluginIdList = pluginsValue.split(',');
+        // transform it to array
+        const defaultPluginIdList = defaultPluginsValue ? defaultPluginsValue.split(',') : [];
+        const pluginIdList = pluginsValue ? pluginsValue.split(',') : [];
+        const pluginsList = defaultPluginIdList.concat(pluginIdList);
 
-        await this.deployMultipleEntries(pluginIdList);
+        // skip if no plug-ins
+        if (pluginsList.length === 0) {
+            return Promise.resolve();
+        }
+
+        await this.deployMultipleEntries(pluginsList);
 
     }
 
