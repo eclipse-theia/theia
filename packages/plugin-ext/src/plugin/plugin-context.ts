@@ -77,6 +77,7 @@ import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { MarkdownString } from './markdown-string';
+import { WebviewsExtImpl } from './webviews';
 
 export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager): PluginAPIFactory {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -94,6 +95,7 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
     const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
+    const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
 
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
@@ -196,7 +198,15 @@ export function createAPIFactory(rpc: RPCProtocol, pluginManager: PluginManager)
             createOutputChannel(name: string): theia.OutputChannel {
                 return outputChannelRegistryExt.createOutputChannel(name);
             },
-
+            createWebviewPanel(viewType: string,
+                title: string,
+                showOptions: theia.ViewColumn | { viewColumn: theia.ViewColumn, preserveFocus?: boolean },
+                options: theia.WebviewPanelOptions & theia.WebviewOptions): theia.WebviewPanel {
+                return webviewExt.createWebview(viewType, title, showOptions, options, Uri.file(plugin.pluginPath));
+            },
+            registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
+                return webviewExt.registerWebviewPanelSerializer(viewType, serializer);
+            },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();
             },

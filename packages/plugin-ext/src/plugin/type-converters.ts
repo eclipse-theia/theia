@@ -32,6 +32,9 @@ import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
 import { isMarkdownString } from './markdown-string';
 
+const SIDE_GROUP = -2;
+const ACTIVE_GROUP = -1;
+
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
         return undefined;
@@ -46,6 +49,18 @@ export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined 
     }
 
     return undefined;
+}
+
+export function fromViewColumn(column?: theia.ViewColumn): number {
+    if (typeof column === 'number' && column >= types.ViewColumn.One) {
+        return column - 1;
+    }
+
+    if (column! === <number>types.ViewColumn.Beside) {
+        return SIDE_GROUP;
+    }
+
+    return ACTIVE_GROUP;
 }
 
 export function toSelection(selection: Selection): types.Selection {

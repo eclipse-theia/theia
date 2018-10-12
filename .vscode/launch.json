@@ -61,7 +61,9 @@
                 "--no-app-auto-install"
             ],
             "env": {
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                // "THEIA_PLUGINS": "local-dir:///Users/yevhen/work/demo/plugins"
+                "HOSTED_PLUGIN": "/Users/yevhen/work/demo/theia-use-plugin-plugin"
             },
             "sourceMaps": true,
             "outFiles": [

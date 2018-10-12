@@ -29,6 +29,7 @@ import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { TerminalServiceMainImpl } from './terminal-main';
 import { LanguagesMainImpl } from './languages-main';
 import { DialogsMainImpl } from './dialogs-main';
+import { WebviewsMainImpl } from './webviews-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -68,4 +69,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const languagesMain = new LanguagesMainImpl(rpc);
     rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, languagesMain);
+
+    const webviewsMain = new WebviewsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN, webviewsMain);
 }
