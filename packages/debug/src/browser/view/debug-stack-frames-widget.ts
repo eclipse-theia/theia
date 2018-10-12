@@ -21,23 +21,24 @@ import {
 import { DebugSession } from '../debug-model';
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { DebugSelection } from './debug-selection-service';
 import { SourceOpener, DebugUtils } from '../debug-utils';
 import { Disposable } from '@theia/core';
-import { DebugStyles } from './base/debug-styles';
+import { DebugStyles, DebugWidget, DebugContext } from './debug-view-common';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 /**
  * Is it used to display call stack.
  */
 @injectable()
-export class DebugStackFramesWidget extends VirtualWidget {
+export class DebugStackFramesWidget extends VirtualWidget implements DebugWidget {
+    private _debugContext: DebugContext | undefined;
     private _frames: DebugProtocol.StackFrame[] = [];
 
-    constructor(
-        @inject(DebugSession) protected readonly debugSession: DebugSession,
-        @inject(DebugSelection) protected readonly debugSelection: DebugSelection,
-        @inject(SourceOpener) protected readonly sourceOpener: SourceOpener) {
+    private readonly sessionDisposableEntries = new DisposableCollection();
+
+    constructor(@inject(SourceOpener) protected readonly sourceOpener: SourceOpener) {
         super();
 
         this.id = this.createId();
@@ -45,21 +46,35 @@ export class DebugStackFramesWidget extends VirtualWidget {
         this.node.setAttribute('tabIndex', '0');
     }
 
-    @postConstruct()
-    protected init() {
-        this.toDispose.push(this.debugSelection.onDidSelectThread(thread => this.onThreadSelected(thread)));
+    dispose(): void {
+        this.sessionDisposableEntries.dispose();
+        super.dispose();
+    }
 
-        const stoppedEventListener = (event: DebugProtocol.StoppedEvent) => this.onStoppedEvent(event);
-        const continuedEventListener = (event: DebugProtocol.ContinuedEvent) => this.onContinuedEvent(event);
-        const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+    get debugContext(): DebugContext | undefined {
+        return this._debugContext;
+    }
 
-        this.debugSession.on('stopped', stoppedEventListener);
-        this.debugSession.on('continued', continuedEventListener);
-        this.debugSession.on('terminated', terminatedEventListener);
+    set debugContext(debugContext: DebugContext | undefined) {
+        this.sessionDisposableEntries.dispose();
+        this._debugContext = debugContext;
+        this.id = this.createId();
 
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('stopped', stoppedEventListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('continued', continuedEventListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
+        if (debugContext) {
+            this.sessionDisposableEntries.push(this.debugSelection!.onDidSelectThread(thread => this.onThreadSelected(thread)));
+
+            const stoppedEventListener = (event: DebugProtocol.StoppedEvent) => this.onStoppedEvent(event);
+            const continuedEventListener = (event: DebugProtocol.ContinuedEvent) => this.onContinuedEvent(event);
+            const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+
+            this.debugSession!.on('stopped', stoppedEventListener);
+            this.debugSession!.on('continued', continuedEventListener);
+            this.debugSession!.on('terminated', terminatedEventListener);
+
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('stopped', stoppedEventListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('continued', continuedEventListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('terminated', terminatedEventListener)));
+        }
     }
 
     get frames(): DebugProtocol.StackFrame[] {
@@ -75,7 +90,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
         const header = h.div({ className: 'theia-debug-header' }, 'Call stack');
         const items: h.Child = [];
 
-        const selectedFrame = this.debugSelection.frame;
+        const selectedFrame = this.debugSelection && this.debugSelection.frame;
         for (const frame of this._frames) {
             const className = DebugStyles.DEBUG_ITEM + (DebugUtils.isEqual(selectedFrame, frame) ? ` ${SELECTED_CLASS}` : '');
             const id = this.createId(frame);
@@ -100,6 +115,10 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     protected selectFrame(newFrame: DebugProtocol.StackFrame | undefined) {
+        if (!this.debugSelection) {
+            return;
+        }
+
         const currentFrame = this.debugSelection.frame;
 
         if (DebugUtils.isEqual(currentFrame, newFrame)) {
@@ -128,7 +147,9 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     private createId(frame?: DebugProtocol.StackFrame): string {
-        return `debug-stack-frames-${this.debugSession.sessionId}` + (frame ? `-${frame.id}` : '');
+        return 'debug-stack-frames'
+            + (this.debugSession ? `-${this.debugSession.sessionId}` : '')
+            + (frame ? `-${frame.id}` : '');
     }
 
     protected onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
@@ -136,7 +157,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
-        const currentThread = this.debugSelection.thread;
+        const currentThread = this.debugSelection && this.debugSelection.thread;
         if (currentThread) {
             if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsContinued) {
                 this.selectFrame(undefined);
@@ -146,7 +167,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
-        const currentThread = this.debugSelection.thread;
+        const currentThread = this.debugSelection && this.debugSelection.thread;
         if (currentThread) {
             if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsStopped) {
                 this.updateFrames(currentThread.id);
@@ -158,15 +179,24 @@ export class DebugStackFramesWidget extends VirtualWidget {
         this.selectFrame(undefined);
         this.frames = [];
 
-        if (threadId) {
+        if (threadId && this.debugSession) {
             const args: DebugProtocol.StackTraceArguments = { threadId };
             this.debugSession.stacks(args).then(response => {
-                if (DebugUtils.isEqual(this.debugSelection.thread, threadId)) { // still the same thread remains selected
+                const thread = this.debugSelection && this.debugSelection.thread;
+                if (DebugUtils.isEqual(thread, threadId)) { // still the same thread remains selected
                     this.selectFrame(response.body.stackFrames[0]);
                     this.frames = response.body.stackFrames;
                 }
             });
         }
+    }
+
+    private get debugSession(): DebugSession | undefined {
+        return this._debugContext && this._debugContext.debugSession;
+    }
+
+    private get debugSelection(): DebugSelection | undefined {
+        return this._debugContext && this._debugContext.debugSelection;
     }
 }
 

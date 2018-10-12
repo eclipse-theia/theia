@@ -20,36 +20,52 @@ import {
 import { DebugSession } from '../debug-model';
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, Event, DisposableCollection } from '@theia/core';
 import { injectable, inject, postConstruct } from 'inversify';
 import { BreakpointsManager } from '../breakpoint/breakpoint-manager';
 import { ExtDebugProtocol } from '../../common/debug-common';
 import { DebugUtils } from '../debug-utils';
 import { Disposable } from '@theia/core';
-import { DebugStyles } from './base/debug-styles';
+import { DebugStyles, DebugWidget, DebugContext } from './debug-view-common';
 
 /**
  * Is it used to display breakpoints.
  */
 @injectable()
-export class DebugBreakpointsWidget extends VirtualWidget {
+export class DebugBreakpointsWidget extends VirtualWidget implements DebugWidget {
+    private _debugContext: DebugContext | undefined;
     private readonly onDidClickBreakpointEmitter = new Emitter<ExtDebugProtocol.AggregatedBreakpoint>();
     private readonly onDidDblClickBreakpointEmitter = new Emitter<ExtDebugProtocol.AggregatedBreakpoint>();
+    private readonly sessionDisposableEntries = new DisposableCollection();
     private breakpoints: ExtDebugProtocol.AggregatedBreakpoint[] = [];
 
-    constructor(
-        @inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager,
-        @inject(DebugSession) protected readonly debugSession: DebugSession | undefined) {
+    constructor(@inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager) {
         super();
 
-        this.id = 'debug-breakpoints' + (debugSession ? `-${debugSession.sessionId}` : '');
         this.addClass('theia-debug-entry');
         this.node.setAttribute('tabIndex', '0');
+        this.id = this.createId();
     }
 
     @postConstruct()
     protected init() {
         this.toDispose.push(this.breakpointManager.onDidChangeBreakpoints(() => this.refreshBreakpoints()));
+    }
+
+    dispose(): void {
+        this.sessionDisposableEntries.dispose();
+        super.dispose();
+    }
+
+    get debugContext(): DebugContext | undefined {
+        return this._debugContext;
+    }
+
+    set debugContext(debugContext: DebugContext | undefined) {
+        this.sessionDisposableEntries.dispose();
+        this._debugContext = debugContext;
+        this.id = this.createId();
+
         if (this.debugSession) {
             const configurationDoneListener = () => this.refreshBreakpoints();
             const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
@@ -57,9 +73,11 @@ export class DebugBreakpointsWidget extends VirtualWidget {
             this.debugSession.on('configurationDone', configurationDoneListener);
             this.debugSession.on('terminated', terminatedEventListener);
 
-            this.toDispose.push(Disposable.create(() => this.debugSession!.removeListener('configurationDone', configurationDoneListener)));
-            this.toDispose.push(Disposable.create(() => this.debugSession!.removeListener('terminated', terminatedEventListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('configurationDone', configurationDoneListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('terminated', terminatedEventListener)));
         }
+
+        this.refreshBreakpoints();
     }
 
     get onDidClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
@@ -128,6 +146,14 @@ export class DebugBreakpointsWidget extends VirtualWidget {
     private toDisplayNameSourceBrk(source: DebugProtocol.Source, breakpoint: DebugProtocol.SourceBreakpoint): string {
         return source.name! + `:${breakpoint.line}` + (breakpoint.column ? `:${breakpoint.column}` : '');
     }
+
+    private get debugSession(): DebugSession | undefined {
+        return this._debugContext && this._debugContext.debugSession;
+    }
+
+    private createId() {
+        return 'debug-breakpoints' + (this.debugSession ? `-${this.debugSession.sessionId}` : '');
+    }
 }
 
 @injectable()
@@ -139,7 +165,7 @@ export class BreakpointsDialog extends AbstractDialog<void> {
             title: 'Breakpoints'
         });
 
-        this.breakpointsWidget = new DebugBreakpointsWidget(breakpointManager, undefined);
+        this.breakpointsWidget = new DebugBreakpointsWidget(breakpointManager);
         this.breakpointsWidget.addClass(Styles.BREAKPOINT_DIALOG);
         this.toDispose.push(this.breakpointsWidget);
     }

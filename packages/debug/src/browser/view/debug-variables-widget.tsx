@@ -27,7 +27,7 @@ import {
     TreeModelImpl,
     TreeImpl,
 } from '@theia/core/lib/browser';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core';
@@ -36,47 +36,69 @@ import { DebugSelection } from '../view/debug-selection-service';
 import { ExtDebugProtocol } from '../../common/debug-common';
 import * as React from 'react';
 import { Disposable } from '@theia/core';
+import { DebugWidget, DebugContext } from './debug-view-common';
+import { DisposableCollection } from '@theia/core';
 
 /**
  * Is it used to display variables.
  */
 @injectable()
-export class DebugVariablesWidget extends TreeWidget {
+export class DebugVariablesWidget extends TreeWidget implements DebugWidget {
+    private _debugContext: DebugContext | undefined;
+    private readonly sessionDisposableEntries = new DisposableCollection();
+
     constructor(
-        @inject(DebugSession) protected readonly debugSession: DebugSession,
-        @inject(DebugSelection) protected readonly debugSelection: DebugSelection,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry) {
-        super(treeProps, model, contextMenuRenderer);
 
-        this.id = `debug-variables-${debugSession.sessionId}`;
+        super(treeProps, model, contextMenuRenderer);
+        this.id = this.createId();
         this.title.label = 'Variables';
         this.addClass('theia-debug-entry');
     }
 
-    @postConstruct()
-    protected init() {
-        super.init();
+    dispose(): void {
+        this.sessionDisposableEntries.dispose();
+        super.dispose();
+    }
 
-        const variableUpdateListener = (event: ExtDebugProtocol.VariableUpdatedEvent) => this.onVariableUpdated(event);
-        const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+    get debugContext(): DebugContext | undefined {
+        return this._debugContext;
+    }
 
-        this.debugSession.on('variableUpdated', variableUpdateListener);
-        this.debugSession.on('terminated', terminatedEventListener);
+    set debugContext(debugContext: DebugContext | undefined) {
+        this.sessionDisposableEntries.dispose();
+        this._debugContext = debugContext;
+        this.id = this.createId();
 
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('variableUpdated', variableUpdateListener)));
-        this.toDispose.push(Disposable.create(() => this.debugSession.removeListener('terminated', terminatedEventListener)));
+        (this.model as DebugVariableModel).debugSelection = this.debugContext && this.debugContext.debugSelection;
+        (this.model as DebugVariableModel).debugSession = this.debugContext && this.debugContext.debugSession;
 
-        this.toDispose.push(this.debugSelection.onDidSelectFrame(frame => this.onFrameSelected(frame)));
+        if (debugContext) {
+            const variableUpdateListener = (event: ExtDebugProtocol.VariableUpdatedEvent) => this.onVariableUpdated(event);
+            const terminatedEventListener = (event: DebugProtocol.TerminatedEvent) => this.onTerminatedEvent(event);
+
+            this.debugSession!.on('variableUpdated', variableUpdateListener);
+            this.debugSession!.on('terminated', terminatedEventListener);
+
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('variableUpdated', variableUpdateListener)));
+            this.sessionDisposableEntries.push(Disposable.create(() => this.debugSession!.removeListener('terminated', terminatedEventListener)));
+            this.sessionDisposableEntries.push(this.debugSelection!.onDidSelectFrame(frame => this.onFrameSelected(frame)));
+        }
     }
 
     protected onFrameSelected(frame: DebugProtocol.StackFrame | undefined) {
         if (frame) {
-            this.debugSelection.variable = undefined;
-            this.model.root = FrameNode.create(this.debugSession.sessionId, frame.id);
+            if (this.debugSelection) {
+                this.debugSelection.variable = undefined;
+            }
+
+            this.model.root = this.debugSession
+                ? FrameNode.create(this.debugSession.sessionId, frame.id)
+                : undefined;
         }
     }
 
@@ -84,6 +106,10 @@ export class DebugVariablesWidget extends TreeWidget {
         this.model.root = undefined;
     }
     protected onVariableUpdated(event: ExtDebugProtocol.VariableUpdatedEvent) {
+        if (!this.debugSession) {
+            return;
+        }
+
         const id = VariableNode.getId(this.debugSession.sessionId, event.body.name, event.body.parentVariablesReference);
         const variableNode = this.model.getNode(id) as VariableNode;
         Object.assign(variableNode.extVariable, event.body);
@@ -110,42 +136,86 @@ export class DebugVariablesWidget extends TreeWidget {
     protected decorateScopeCaption(node: ScopeNode): React.ReactNode {
         return <div>{node.scope.name}</div>;
     }
+
+    private createId(): string {
+        return 'debug-variables'
+            + (this.debugSession ? `-${this.debugSession.sessionId}` : '');
+    }
+
+    private get debugSession(): DebugSession | undefined {
+        return this._debugContext && this._debugContext.debugSession;
+    }
+
+    private get debugSelection(): DebugSelection | undefined {
+        return this._debugContext && this._debugContext.debugSelection;
+    }
 }
 
 @injectable()
 export class DebugVariableModel extends TreeModelImpl {
-    constructor(@inject(DebugSelection) protected readonly debugSelection: DebugSelection) {
-        super();
+    private _debugSelection: DebugSelection | undefined;
+    private _debugSession: DebugSession | undefined;
+    private readonly sessionDisposableEntries = new DisposableCollection();
+
+    dispose(): void {
+        this.sessionDisposableEntries.dispose();
+        super.dispose();
     }
 
-    @postConstruct()
-    protected init() {
-        super.init();
+    get debugSelection(): DebugSelection | undefined {
+        return this._debugSelection;
+    }
 
-        this.selectionService.onSelectionChanged((nodes: SelectableTreeNode[]) => {
-            const node = nodes[0];
-            if (VariableNode.is(node)) {
-                this.debugSelection.variable = node.extVariable;
-            } else {
-                this.debugSelection.variable = undefined;
-            }
-        });
+    set debugSelection(debugSelection: DebugSelection | undefined) {
+        this.sessionDisposableEntries.dispose();
+        this._debugSelection = debugSelection;
+
+        if (debugSelection) {
+            this.sessionDisposableEntries.push(
+                this.selectionService.onSelectionChanged((nodes: SelectableTreeNode[]) => {
+                    const node = nodes[0];
+                    if (VariableNode.is(node)) {
+                        this.debugSelection!.variable = node.extVariable;
+                    } else {
+                        this.debugSelection!.variable = undefined;
+                    }
+                }));
+        }
+    }
+
+    get debugSession(): DebugSession | undefined {
+        return this._debugSession;
+    }
+
+    set debugSession(debugSession: DebugSession | undefined) {
+        this._debugSession = debugSession;
+        (this.tree as DebugVariablesTree).debugSession = debugSession;
     }
 }
 
 @injectable()
 export class DebugVariablesTree extends TreeImpl {
-    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
-        super();
+    private _debugSession: DebugSession | undefined;
+
+    get debugSession(): DebugSession | undefined {
+        return this._debugSession;
+    }
+
+    set debugSession(debugSession: DebugSession | undefined) {
+        this._debugSession = debugSession;
     }
 
     protected resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+        if (!this.debugSession) {
+            return Promise.resolve([]);
+        }
+
         if (FrameNode.is(parent)) {
             const frameId = parent.frameId;
             if (frameId) {
                 return this.debugSession.scopes({ frameId }).then(response => {
                     const scopes = response.body.scopes;
-                    return scopes.map(scope => ScopeNode.create(this.debugSession.sessionId, scope, parent));
+                    return scopes.map(scope => ScopeNode.create(this.debugSession!.sessionId, scope, parent));
                 });
             } else {
                 return Promise.resolve([]);
@@ -159,7 +229,7 @@ export class DebugVariablesTree extends TreeImpl {
                 const variables = response.body.variables;
                 return variables.map(variable => {
                     const extVariable = { ...variable, parentVariablesReference };
-                    return VariableNode.create(this.debugSession.sessionId, extVariable, parent);
+                    return VariableNode.create(this.debugSession!.sessionId, extVariable, parent);
                 });
             });
         }
@@ -172,7 +242,7 @@ export class DebugVariablesTree extends TreeImpl {
                     const variables = response.body.variables;
                     return variables.map(variable => {
                         const extVariable = { ...variable, parentVariablesReference };
-                        return VariableNode.create(this.debugSession.sessionId, extVariable, parent);
+                        return VariableNode.create(this.debugSession!.sessionId, extVariable, parent);
                     });
                 });
             } else {
@@ -181,7 +251,6 @@ export class DebugVariablesTree extends TreeImpl {
         }
 
         return super.resolveChildren(parent);
-
     }
 }
 
