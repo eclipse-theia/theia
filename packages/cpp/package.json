@@ -10,6 +10,7 @@
     "@theia/monaco": "^0.3.15",
     "@theia/preferences": "^0.3.15",
     "@theia/process": "^0.3.15",
+    "@theia/task": "^0.3.15",
     "string-argv": "^0.1.1"
   },
   "publishConfig": {
