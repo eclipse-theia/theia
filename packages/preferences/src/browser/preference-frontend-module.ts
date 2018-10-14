@@ -22,7 +22,7 @@ import { bindViewContribution, WidgetFactory, FrontendApplicationContribution } 
 import { PreferencesContribution } from './preferences-contribution';
 import { createPreferencesTreeWidget } from './preference-tree-container';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
-import { PreferencesContainer, PreferencesTreeWidget } from './preferences-tree-widget';
+import { PreferencesContainer, PreferencesEditorsContainer, PreferencesTreeWidget } from './preferences-tree-widget';
 import { PreferencesFrontendApplicationContribution } from './preferences-frontend-application-contribution';
 
 import './monaco-contribution';
@@ -45,6 +45,12 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
         id: PreferencesTreeWidget.ID,
         createWidget: () => createPreferencesTreeWidget(container)
     })).inSingletonScope();
+
+    bind(PreferencesEditorsContainer).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: PreferencesEditorsContainer.ID,
+        createWidget: () => container.get(PreferencesEditorsContainer)
+    }));
 
     bind(PreferencesMenuFactory).toSelf();
     bind(FrontendApplicationContribution).to(PreferencesFrontendApplicationContribution).inSingletonScope();
