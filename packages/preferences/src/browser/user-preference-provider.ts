@@ -17,8 +17,9 @@
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import { UserStorageUri } from '@theia/userstorage/lib/browser';
 
-export const USER_PREFERENCE_URI = new URI().withScheme('user_storage').withPath('settings.json');
+export const USER_PREFERENCE_URI = new URI().withScheme(UserStorageUri.SCHEME).withPath('settings.json');
 @injectable()
 export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
 
