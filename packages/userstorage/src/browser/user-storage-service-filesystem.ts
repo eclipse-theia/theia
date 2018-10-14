@@ -22,7 +22,7 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from './user-storage-uri';
 
-const THEIA_USER_STORAGE_FOLDER = '.theia';
+export const THEIA_USER_STORAGE_FOLDER = '.theia';
 
 @injectable()
 export class UserStorageServiceFilesystemImpl implements UserStorageService {

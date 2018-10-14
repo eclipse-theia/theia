@@ -39,9 +39,12 @@ import {
 } from '@theia/core/lib/browser';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
-import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
 import { DisposableCollection, Emitter, Event, MessageService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
+import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import { UserStorageUri, THEIA_USER_STORAGE_FOLDER } from '@theia/userstorage/lib/browser';
+import URI from '@theia/core/lib/common/uri';
 
 export interface PreferencesEditorWidget extends EditorWidget {
     scope?: PreferenceScope;
@@ -66,9 +69,6 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
-
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
@@ -78,18 +78,13 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(PreferenceProvider) @named(PreferenceScope.User)
-    protected readonly userPreferenceProvider: UserPreferenceProvider;
-
-    @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
-    protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
-
     protected _preferenceScope: PreferenceScope = PreferenceScope.User;
 
     @postConstruct()
     protected init(): void {
         this.id = PreferencesContainer.ID;
         this.title.label = 'Preferences';
+        this.title.caption = this.title.label;
         this.title.closable = true;
         this.title.iconClass = 'fa fa-sliders';
 
@@ -148,8 +143,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
         });
 
-        this.editorsContainer = new PreferencesEditorsContainer(this.editorManager, this.userPreferenceProvider, this.workspacePreferenceProvider, this.preferenceScope);
+        this.editorsContainer = this.editorsContainer = await this.widgetManager.getOrCreateWidget<PreferencesEditorsContainer>(PreferencesEditorsContainer.ID);
         this.toDispose.push(this.editorsContainer);
+        this.editorsContainer.activatePreferenceEditor(this.preferenceScope);
         this.editorsContainer.onInit(() => {
             toArray(this.editorsContainer.widgets()).forEach(editor => {
                 const editorWidget = editor as EditorWidget;
@@ -199,7 +195,24 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     }
 }
 
+@injectable()
 export class PreferencesEditorsContainer extends DockPanel {
+
+    static ID = 'preferences_editors_container';
+
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(PreferenceProvider) @named(PreferenceScope.User)
+    protected readonly userPreferenceProvider: UserPreferenceProvider;
+
+    @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
+    protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
+
+    private preferenceScope: PreferenceScope;
 
     private readonly onInitEmitter = new Emitter<void>();
     readonly onInit: Event<void> = this.onInitEmitter.event;
@@ -211,15 +224,6 @@ export class PreferencesEditorsContainer extends DockPanel {
         this.onEditorChangedEmitter,
         this.onInitEmitter
     );
-
-    constructor(
-        protected readonly editorManager: EditorManager,
-        protected readonly userPreferenceProvider: UserPreferenceProvider,
-        protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider,
-        protected preferenceScope: PreferenceScope,
-    ) {
-        super();
-    }
 
     dispose(): void {
         this.toDispose.dispose();
@@ -238,8 +242,10 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
-        const userPreferences = await this.editorManager.getOrCreateByUri(this.userPreferenceProvider.getUri()) as PreferencesEditorWidget;
+        const userPreferenceUri = this.userPreferenceProvider.getUri();
+        const userPreferences = await this.editorManager.getOrCreateByUri(userPreferenceUri) as PreferencesEditorWidget;
         userPreferences.title.label = 'User Preferences';
+        userPreferences.title.caption = await this.getPreferenceEditorCaption(userPreferenceUri);
         userPreferences.scope = PreferenceScope.User;
         this.addWidget(userPreferences);
 
@@ -248,6 +254,7 @@ export class PreferencesEditorsContainer extends DockPanel {
 
         if (workspacePreferences) {
             workspacePreferences.title.label = 'Workspace Preferences';
+            workspacePreferences.title.caption = await this.getPreferenceEditorCaption(workspacePreferenceUri!);
             workspacePreferences.scope = PreferenceScope.Workspace;
             this.addWidget(workspacePreferences);
         }
@@ -268,6 +275,18 @@ export class PreferencesEditorsContainer extends DockPanel {
         }
     }
 
+    private async getPreferenceEditorCaption(preferenceUri: URI): Promise<string> {
+        const homeStat = await this.fileSystem.getCurrentUserHome();
+        const homeUri = homeStat ? new URI(homeStat.uri) : undefined;
+
+        let uri = preferenceUri;
+        if (preferenceUri.scheme === UserStorageUri.SCHEME && homeUri) {
+            uri = homeUri.resolve(THEIA_USER_STORAGE_FOLDER).resolve(preferenceUri.withoutScheme().path);
+        }
+        return homeUri
+            ? FileSystemUtils.tildifyPath(uri.path.toString(), homeUri.withoutScheme().toString())
+            : uri.path.toString();
+    }
 }
 
 @injectable()
