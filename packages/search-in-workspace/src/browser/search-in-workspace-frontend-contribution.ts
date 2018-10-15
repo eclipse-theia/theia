@@ -28,12 +28,12 @@ export namespace SearchInWorkspaceCommands {
     };
     export const OPEN_SIW_WIDGET = {
         id: 'search-in-workspace.open',
-        label: 'Search In Workspace'
+        label: 'Search in Workspace'
 
     };
     export const FIND_IN_FOLDER = {
         id: 'search-in-workspace.in-folder',
-        label: 'Find In Folder...'
+        label: 'Find in Folder...'
     };
 }
 
