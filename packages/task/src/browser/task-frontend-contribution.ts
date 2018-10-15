@@ -21,6 +21,7 @@ import { MAIN_MENU_BAR, CommandContribution, Command, CommandRegistry, MenuContr
 import { FrontendApplication, FrontendApplicationContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
+import { TaskService } from './task-service';
 
 export namespace TaskCommands {
     // Task menu
@@ -67,6 +68,9 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
 
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib => {
             if (contrib.registerResolvers) {
@@ -83,7 +87,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN,
             {
                 isEnabled: () => true,
-                execute: () => this.quickOpenTask.open()
+                execute: (args: any[]) => {
+                    if (args) {
+                        const [type, label] = args;
+                        return this.taskService.run(type, label);
+                    }
+                    return this.quickOpenTask.open();
+                }
             }
         );
         registry.registerCommand(
