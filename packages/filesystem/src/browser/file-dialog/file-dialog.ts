@@ -42,6 +42,7 @@ export const SAVE_DIALOG_CLASS = 'theia-SaveFileDialog';
 export const NAVIGATION_PANEL_CLASS = 'theia-NavigationPanel';
 export const NAVIGATION_BACK_CLASS = 'theia-NavigationBack';
 export const NAVIGATION_FORWARD_CLASS = 'theia-NavigationForward';
+export const NAVIGATION_HOME_CLASS = 'theia-NavigationHome';
 export const NAVIGATION_LOCATION_LIST_PANEL_CLASS = 'theia-LocationListPanel';
 
 export const FILTERS_PANEL_CLASS = 'theia-FiltersPanel';
@@ -109,6 +110,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
     protected readonly back: HTMLSpanElement;
     protected readonly forward: HTMLSpanElement;
+    protected readonly home: HTMLSpanElement;
     protected readonly locationListRenderer: LocationListRenderer;
     protected readonly treeFiltersRenderer: FileDialogTreeFiltersRenderer | undefined;
     protected readonly treePanel: Panel;
@@ -131,8 +133,13 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
         navigationPanel.appendChild(this.back = createIconButton('fa', 'fa-chevron-left'));
         this.back.classList.add(NAVIGATION_BACK_CLASS);
+        this.back.title = 'Navigate Back';
         navigationPanel.appendChild(this.forward = createIconButton('fa', 'fa-chevron-right'));
         this.forward.classList.add(NAVIGATION_FORWARD_CLASS);
+        this.forward.title = 'Navigate Forward';
+        navigationPanel.appendChild(this.home = createIconButton('fa', 'fa-home'));
+        this.home.classList.add(NAVIGATION_HOME_CLASS);
+        this.home.title = 'Go To Initial Location';
 
         this.locationListRenderer = this.createLocationListRenderer();
         this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
@@ -161,6 +168,9 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         super.onUpdateRequest(msg);
         setEnabled(this.back, this.model.canNavigateBackward());
         setEnabled(this.forward, this.model.canNavigateForward());
+        setEnabled(this.home, !!this.model.initialLocation
+            && !!this.model.location
+            && this.model.initialLocation.toString() !== this.model.location.toString());
         this.locationListRenderer.render();
 
         if (this.treeFiltersRenderer) {
@@ -203,6 +213,11 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
         this.addKeyListener(this.back, Key.ENTER, () => this.model.navigateBackward(), 'click');
         this.addKeyListener(this.forward, Key.ENTER, () => this.model.navigateForward(), 'click');
+        this.addKeyListener(this.home, Key.ENTER, () => {
+            if (this.model.initialLocation) {
+                this.model.location = this.model.initialLocation;
+            }
+        }, 'click');
         super.onAfterAttach(msg);
     }
 
