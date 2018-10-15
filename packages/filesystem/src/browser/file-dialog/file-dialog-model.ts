@@ -15,9 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { TreeNode } from '@theia/core/lib/browser';
-import { DirNode, FileNode, FileTreeModel } from '../file-tree';
+import { DirNode, FileNode, FileTreeModel, FileStatNode } from '../file-tree';
 import { FileDialogTree } from './file-dialog-tree';
 
 @injectable()
@@ -25,11 +26,28 @@ export class FileDialogModel extends FileTreeModel {
 
     @inject(FileDialogTree) readonly tree: FileDialogTree;
     protected readonly onDidOpenFileEmitter = new Emitter<void>();
+    protected _initialLocation: URI | undefined;
 
     @postConstruct()
     protected init(): void {
         super.init();
         this.toDispose.push(this.onDidOpenFileEmitter);
+    }
+
+    /**
+     * Returns the first valid location that was set by calling the `navigateTo` method. Once the initial location has a defined value, it will not change.
+     * Can be `undefined`.
+     */
+    get initialLocation(): URI | undefined {
+        return this._initialLocation;
+    }
+
+    async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
+        const result = await super.navigateTo(nodeOrId);
+        if (!this._initialLocation && FileStatNode.is(result)) {
+            this._initialLocation = result.uri;
+        }
+        return result;
     }
 
     get onDidOpenFile(): Event<void> {

@@ -311,7 +311,7 @@ export class FileSystemNode implements FileSystem {
             throw FileSystemError.FileNotFound(uri);
         }
         if (stat.isDirectory) {
-            throw FileSystemError.FileIsDirectory(uri, '`Cannot get the encoding.');
+            throw FileSystemError.FileIsDirectory(uri, 'Cannot get the encoding.');
         }
         return this.options.encoding;
     }

@@ -54,7 +54,8 @@
  */
 
 .dialogContent .theia-NavigationBack,
-.dialogContent .theia-NavigationForward {
+.dialogContent .theia-NavigationForward,
+.dialogContent .theia-NavigationHome {
     position: absolute;
     top: 0px;
     line-height: 23px;
@@ -63,17 +64,22 @@
 }
 
 .dialogContent .theia-NavigationBack:focus,
-.dialogContent .theia-NavigationForward:focus {
+.dialogContent .theia-NavigationForward:focus,
+.dialogContent .theia-NavigationHome:focus {
     outline: none;
     border: none;
     box-shadow: none;
 }
 
 .dialogContent .theia-NavigationBack {
-    left: 21px;
+    left: auto;
 }
 
 .dialogContent .theia-NavigationForward {
+    left: 21px;
+}
+
+.dialogContent .theia-NavigationHome {
     left: 41px;
 }
 
