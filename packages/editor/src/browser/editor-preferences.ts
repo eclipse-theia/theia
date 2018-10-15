@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -32,20 +32,22 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'type': 'number',
             'minimum': 1,
             'default': 4,
-            'description': 'Configure the tab size in the editor'
+            'description': 'Configure the tab size in the editor.'
         },
         'editor.fontSize': {
             'type': 'number',
             'default': (isOSX) ? 12 : 14,
-            'description': 'Configure the editor font size'
+            'description': 'Configure the editor font size.'
         },
         'editor.lineNumbers': {
             'enum': [
                 'on',
-                'off'
+                'off',
+                'relative',
+                'interval'
             ],
             'default': 'on',
-            'description': 'Control the rendering of line numbers'
+            'description': 'Control the rendering of line numbers.'
         },
         'editor.renderWhitespace': {
             'enum': [
@@ -54,7 +56,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'all'
             ],
             'default': 'none',
-            'description': 'Control the rendering of whitespaces in the editor'
+            'description': 'Control the rendering of whitespaces in the editor.'
         },
         'editor.autoSave': {
             'enum': [
@@ -62,12 +64,12 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'off'
             ],
             'default': 'on',
-            'description': 'Configure whether the editor should be auto saved'
+            'description': 'Configure whether the editor should be auto saved.'
         },
         'editor.autoSaveDelay': {
             'type': 'number',
             'default': 500,
-            'description': 'Configure the auto save delay in milliseconds'
+            'description': 'Configure the auto save delay in milliseconds.'
         },
         'editor.rulers': {
             'type': 'array',
@@ -92,22 +94,33 @@ export const editorPreferenceSchema: PreferenceSchema = {
         'editor.minimap.enabled': {
             'type': 'boolean',
             'default': false,
-            'description': 'Enable or disable the minimap'
+            'description': 'Enable or disable the minimap.'
         },
         'editor.minimap.showSlider': {
-            'type': 'string',
+            'enum': [
+                'mouseover',
+                'always'
+            ],
             'default': 'mouseover',
-            'description': "Controls whether the minimap slider is automatically hidden. Possible values are 'always' and 'mouseover'"
+            'description': 'Controls whether the minimap slider is automatically hidden.'
         },
         'editor.minimap.renderCharacters': {
             'type': 'boolean',
             'default': true,
-            'description': 'Render the actual characters on a line (as opposed to color blocks)'
+            'description': 'Render the actual characters on a line (as opposed to color blocks).'
         },
         'editor.minimap.maxColumn': {
             'type': 'number',
             'default': 120,
-            'description': 'Limit the width of the minimap to render at most a certain number of columns'
+            'description': 'Limit the width of the minimap to render at most a certain number of columns.'
+        },
+        'editor.minimap.side': {
+            'enum': [
+                'right',
+                'left'
+            ],
+            'default': 'right',
+            'description': 'Control the side of the minimap in editor.'
         },
         'editor.overviewRulerLanes': {
             'type': 'number',
@@ -120,7 +133,13 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Controls if a border should be drawn around the overview ruler.'
         },
         'editor.cursorBlinking': {
-            'type': 'string',
+            'enum': [
+                'blink',
+                'smooth',
+                'phase',
+                'expand',
+                'solid'
+            ],
             'default': 'blink',
             'description': "Control the cursor animation style, possible values are 'blink', 'smooth', 'phase', 'expand' and 'solid'."
         },
@@ -130,7 +149,10 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Zoom the font in the editor when using the mouse wheel in combination with holding Ctrl.'
         },
         'editor.cursorStyle': {
-            'type': 'string',
+            'enum': [
+                'line',
+                'block'
+            ],
             'default': 'line',
             'description': "Control the cursor style, either 'block' or 'line'."
         },
@@ -150,7 +172,12 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Enable that scrolling can go one screen size after the last line.'
         },
         'editor.wordWrap': {
-            'enum': ['off', 'on', 'wordWrapColumn', 'bounded'],
+            'enum': [
+                'off',
+                'on',
+                'wordWrapColumn',
+                'bounded'
+            ],
             'default': 'off',
             'description': 'Control the wrapping of the editor.'
         },
@@ -160,9 +187,14 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Control the wrapping of the editor.'
         },
         'editor.wrappingIndent': {
-            'enum': ['none', 'same', 'indent'],
+            'enum': [
+                'same',
+                'indent',
+                'deepIndent',
+                'none'
+            ],
             'default': 'same',
-            'description': "Control indentation of wrapped lines. Can be: 'none', 'same' or 'indent'."
+            'description': 'Control indentation of wrapped lines.'
         },
         'editor.links': {
             'type': 'boolean',
@@ -175,29 +207,36 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'A multiplier to be used on the `deltaX` and `deltaY` of mouse wheel scroll events.'
         },
         'editor.multiCursorModifier': {
-            'enum': ['ctrlCmd', 'alt'],
+            'enum': [
+                'alt',
+                'ctrlCmd'
+            ],
             'default': 'alt',
             'description': 'The modifier to be used to add multiple cursors with the mouse.'
         },
         'editor.accessibilitySupport': {
-            'enum': ['auto', 'off', 'on'],
+            'enum': [
+                'auto',
+                'on',
+                'off'
+            ],
             'default': 'auto',
             'description': "Configure the editor's accessibility support."
         },
         'editor.quickSuggestions': {
             'type': 'boolean',
             'default': true,
-            'description': 'Enable quick suggestions (shadow suggestions)'
+            'description': 'Enable quick suggestions (shadow suggestions).'
         },
         'editor.quickSuggestionsDelay': {
             'type': 'number',
             'default': 500,
-            'description': 'Quick suggestions show delay (in ms)'
+            'description': 'Quick suggestions show delay (in ms).'
         },
         'editor.parameterHints': {
             'type': 'boolean',
             'default': true,
-            'description': 'Enables parameter hints'
+            'description': 'Enables parameter hints.'
         },
         'editor.autoClosingBrackets': {
             'type': 'boolean',
@@ -230,7 +269,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Enable the suggestion box to pop-up on trigger characters.'
         },
         'editor.acceptSuggestionOnEnter': {
-            'enum': ['on', 'smart', 'off'],
+            'enum': [
+                'on',
+                'smart',
+                'off'
+            ],
             'default': 'on',
             'description': 'Accept suggestions on ENTER.'
         },
@@ -240,7 +283,12 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Accept suggestions on provider defined characters.'
         },
         'editor.snippetSuggestions': {
-            'enum': ['top', 'bottom', 'inline', 'none'],
+            'enum': [
+                'inline',
+                'top',
+                'bottom',
+                'none'
+            ],
             'default': 'inline',
             'description': 'Enable snippet suggestions.'
         },
@@ -252,7 +300,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         'editor.wordBasedSuggestions': {
             'type': 'boolean',
             'default': true,
-            'description': "Enable word based suggestions. Defaults to 'true'"
+            'description': "Enable word based suggestions. Defaults to 'true'."
         },
         'editor.selectionHighlight': {
             'type': 'boolean',
@@ -267,15 +315,27 @@ export const editorPreferenceSchema: PreferenceSchema = {
         'editor.codeLens': {
             'type': 'boolean',
             'default': true,
-            'description': 'Show code lens'
+            'description': 'Show code lens.'
         },
         'editor.folding': {
             'type': 'boolean',
             'default': true,
-            'description': 'Enable code folding'
+            'description': 'Enable code folding.'
+        },
+        'editor.foldingStrategy': {
+            'enum': [
+                'auto',
+                'indentation'
+            ],
+            'default': 'auto',
+            'description': 'Selects the folding strategy.'
+                + '\'auto\' uses the strategies contributed for the current document, \'indentation\' uses the indentation based folding strategy. '
         },
         'editor.showFoldingControls': {
-            'enum': ['always', 'mouseover'],
+            'enum': [
+                'mouseover',
+                'always'
+            ],
             'default': 'mouseover',
             'description': 'Controls whether the fold actions in the gutter stay always visible or hide unless the mouse is over the gutter.'
         },
@@ -295,7 +355,12 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': 'Enable rendering of indent guides.'
         },
         'editor.renderLineHighlight': {
-            'enum': ['none', 'gutter', 'line', 'all'],
+            'enum': [
+                'all',
+                'gutter',
+                'line',
+                'none'
+            ],
             'default': 'all',
             'description': 'Enable rendering of current line highlight.'
         },
@@ -308,6 +373,61 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'type': 'boolean',
             'default': true,
             'description': 'Using whitespaces to replace tabs when tabbing.'
+        },
+        'editor.colorDecorators': {
+            'type': 'boolean',
+            'default': true,
+            'description': 'Enable inline color decorators and color picker rendering.'
+        },
+        'editor.highlightActiveIndentGuide': {
+            'type': 'boolean',
+            'default': true,
+            'description': 'Enable highlighting of the active indent guide.'
+        },
+        'editor.iconsInSuggestions': {
+            'type': 'boolean',
+            'default': true,
+            'description': 'Render icons in suggestions box.'
+        },
+        'editor.showUnused': {
+            'type': 'boolean',
+            'default': true,
+            'description': 'Controls fading out of unused variables.',
+        },
+        'editor.scrollBeyondLastColumn': {
+            'type': 'number',
+            'default': 5,
+            'description': 'Enable that scrolling can go beyond the last column by a number of columns.'
+        },
+        'editor.suggestSelection': {
+            'enum': [
+                'first',
+                'recentlyUsed',
+                'recentlyUsedByPrefix'
+            ],
+            'default': 'first',
+            'description': 'The history mode for suggestions'
+        },
+        'editor.fontWeight': {
+            'enum': [
+                'normal',
+                'bold',
+                'bolder',
+                'lighter',
+                'initial',
+                'inherit',
+                '100',
+                '200',
+                '300',
+                '400',
+                '500',
+                '600',
+                '700',
+                '800',
+                '900'
+            ],
+            'default': 'normal',
+            'description': 'Controls the editor\'s font weight.'
         },
         'diffEditor.renderSideBySide': {
             'type': 'boolean',
@@ -345,6 +465,8 @@ export const editorPreferenceSchema: PreferenceSchema = {
 export interface EditorConfiguration {
     'editor.tabSize': number
     'editor.fontSize': number
+    'editor.fontWeight'?: 'normal' | 'bold' | 'bolder' | 'lighter' | 'initial'
+    | 'inherit' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'
     'editor.autoSave': 'on' | 'off'
     'editor.autoSaveDelay': number
     'editor.lineNumbers'?: 'on' | 'off'
@@ -353,27 +475,31 @@ export interface EditorConfiguration {
     'editor.wordSeparators'?: string
     'editor.glyphMargin'?: boolean
     'editor.roundedSelection'?: boolean
-    'editor.minimap.enabled'?: boolean,
-    'editor.minimap.showSlider'?: string,
-    'editor.minimap.renderCharacters'?: boolean,
-    'editor.minimap.maxColumn'?: number,
+    'editor.minimap.enabled'?: boolean
+    'editor.minimap.showSlider'?: 'always' | 'mouseover'
+    'editor.minimap.renderCharacters'?: boolean
+    'editor.minimap.maxColumn'?: number
+    'editor.minimap.side'?: 'right' | 'left'
     'editor.overviewRulerLanes'?: number
     'editor.overviewRulerBorder'?: boolean
-    'editor.cursorBlinking'?: string
+    'editor.cursorBlinking'?: 'blink' | 'smooth' | 'phase' | 'expand' | 'solid'
     'editor.mouseWheelZoom'?: boolean
-    'editor.cursorStyle'?: string
+    'editor.cursorStyle'?: 'line' | 'block'
     'editor.fontLigatures'?: boolean
     'editor.hideCursorInOverviewRuler'?: boolean
     'editor.scrollBeyondLastLine'?: boolean
+    'editor.scrollBeyondLastColumn'?: number
     'editor.wordWrap'?: 'off' | 'on' | 'wordWrapColumn' | 'bounded'
     'editor.wordWrapColumn'?: number
-    'editor.wrappingIndent'?: string
+    'editor.wrappingIndent'?: 'none' | 'same' | 'indent' | 'deepIndent'
     'editor.links'?: boolean
     'editor.mouseWheelScrollSensitivity'?: number
     'editor.multiCursorModifier'?: 'ctrlCmd' | 'alt'
     'editor.accessibilitySupport'?: 'auto' | 'off' | 'on'
     'editor.quickSuggestions'?: boolean
     'editor.quickSuggestionsDelay'?: number
+    'editor.suggestSelection'?: 'first' | 'recentlyUsed' | 'recentlyUsedByPrefix'
+    'editor.iconsInSuggestions'?: boolean
     'editor.parameterHints'?: boolean
     'editor.autoClosingBrackets'?: boolean
     'editor.autoIndent'?: boolean
@@ -390,13 +516,17 @@ export interface EditorConfiguration {
     'editor.occurrencesHighlight'?: boolean
     'editor.codeLens'?: boolean
     'editor.folding'?: boolean
+    'editor.foldingStrategy'?: 'auto' | 'indentation'
     'editor.showFoldingControls'?: 'always' | 'mouseover'
     'editor.matchBrackets'?: boolean
     'editor.renderControlCharacters'?: boolean
     'editor.renderIndentGuides'?: boolean
+    'editor.highlightActiveIndentGuide'?: boolean
     'editor.renderLineHighlight'?: 'none' | 'gutter' | 'line' | 'all'
-    'editor.useTabStops'?: boolean,
-    'editor.insertSpaces': boolean,
+    'editor.useTabStops'?: boolean
+    'editor.insertSpaces': boolean
+    'editor.colorDecorators'?: boolean
+    'editor.showUnused'?: boolean
     'diffEditor.renderSideBySide'?: boolean
     'diffEditor.ignoreTrimWhitespace'?: boolean
     'diffEditor.renderIndicators'?: boolean
@@ -404,6 +534,7 @@ export interface EditorConfiguration {
     'diffEditor.ignoreCharChanges'?: boolean
     'diffEditor.alwaysRevealFirst'?: boolean
 }
+
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
 export const EditorPreferences = Symbol('EditorPreferences');
