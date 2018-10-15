@@ -70,10 +70,11 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
     selectParent(): void;
 
     /**
-     * Navigates to the given node if it is defined.
-     * Navigation sets a node as a root node and expand it.
+     * Navigates to the given node if it is defined. This method accepts both the tree node and its ID as an argument.
+     * Navigation sets a node as a root node and expand it. Resolves to the node if the navigation was successful. Otherwise,
+     * resolves to `undefined`.
      */
-    navigateTo(node: Readonly<TreeNode> | undefined): Promise<void>;
+    navigateTo(nodeOrId: Readonly<TreeNode> | string | undefined): Promise<TreeNode | undefined>;
     /**
      * Tests whether it is possible to navigate forward.
      */
@@ -345,11 +346,16 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
-    async navigateTo(node: TreeNode | undefined): Promise<void> {
-        if (node) {
-            this.navigationService.push(node);
-            await this.doNavigate(node);
+    async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
+        if (nodeOrId) {
+            const node = typeof nodeOrId === 'string' ? this.getNode(nodeOrId) : nodeOrId;
+            if (node) {
+                this.navigationService.push(node);
+                await this.doNavigate(node);
+                return node;
+            }
         }
+        return undefined;
     }
 
     canNavigateForward(): boolean {

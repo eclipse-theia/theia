@@ -36,8 +36,8 @@ export class FileDialogService {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const dialog = this.openFileDialogFactory(Object.assign(props, { title }));
-            dialog.model.navigateTo(rootNode);
-            return await dialog.open();
+            await dialog.model.navigateTo(rootNode);
+            return dialog.open();
         }
         return undefined;
     }
@@ -47,8 +47,8 @@ export class FileDialogService {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const dialog = this.saveFileDialogFactory(Object.assign(props, { title }));
-            dialog.model.navigateTo(rootNode);
-            return await dialog.open();
+            await dialog.model.navigateTo(rootNode);
+            return dialog.open();
         }
         return undefined;
     }
