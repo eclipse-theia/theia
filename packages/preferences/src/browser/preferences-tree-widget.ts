@@ -143,7 +143,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
         });
 
-        this.editorsContainer = this.editorsContainer = await this.widgetManager.getOrCreateWidget<PreferencesEditorsContainer>(PreferencesEditorsContainer.ID);
+        this.editorsContainer = await this.widgetManager.getOrCreateWidget<PreferencesEditorsContainer>(PreferencesEditorsContainer.ID);
         this.toDispose.push(this.editorsContainer);
         this.editorsContainer.activatePreferenceEditor(this.preferenceScope);
         this.editorsContainer.onInit(() => {
