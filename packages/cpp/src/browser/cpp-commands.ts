@@ -32,7 +32,7 @@ import { CppPreferences } from './cpp-preferences';
  */
 export const SWITCH_SOURCE_HEADER: Command = {
     id: 'switch_source_header',
-    label: 'C/C++: Switch between source/header file',
+    label: 'C/C++: Switch Between Source/Header File',
 };
 
 /**
@@ -44,17 +44,17 @@ export const SHOW_CLANGD_REFERENCES: Command = {
 
 export const DUMP_INCLUSIONS: Command = {
     id: 'clangd.dumpinclusions',
-    label: 'C/C++: Dump file inclusions (Debug)'
+    label: 'C/C++: Dump File Inclusions (Debug)'
 };
 
 export const DUMP_INCLUDED_BY: Command = {
     id: 'clangd.dumpincludedby',
-    label: 'C/C++: Dump files including this file (Debug)'
+    label: 'C/C++: Dump Files Including this File (Debug)'
 };
 
 export const REINDEX: Command = {
     id: 'clangd.reindex',
-    label: 'C/C++: Reindex workspace (Debug)'
+    label: 'C/C++: Reindex Workspace (Debug)'
 };
 
 export const PRINT_STATS: Command = {
