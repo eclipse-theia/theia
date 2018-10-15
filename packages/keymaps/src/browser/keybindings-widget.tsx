@@ -75,6 +75,8 @@ export class KeybindingWidget extends ReactWidget {
     protected init(): void {
         this.id = KeybindingWidget.ID;
         this.title.label = KeybindingWidget.LABEL;
+        this.title.caption = KeybindingWidget.LABEL;
+        this.title.iconClass = 'fa fa-bars';
         this.title.closable = true;
         this.update();
 
