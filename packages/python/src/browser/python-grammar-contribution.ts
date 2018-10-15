@@ -23,8 +23,7 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
 
     readonly config: monaco.languages.LanguageConfiguration = {
         comments: {
-            lineComment: '//',
-            blockComment: ['/*', '*/'],
+            lineComment: '#'
         },
         brackets: [
             ['{', '}'],
