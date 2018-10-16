@@ -116,12 +116,17 @@ export class ElectronMainMenuFactory {
         return items;
     }
 
-    /* Return a user visble representation of a keybinding.  */
+    /**
+     * Return a user visible representation of a keybinding.
+     */
     protected acceleratorFor(keybinding: Keybinding) {
         const keyCodesString = keybinding.keybinding.split(' ');
         let result = '';
-        /* FIXME see https://github.com/electron/electron/issues/11740
-           Key Sequences can't be represented properly in the electron menu. */
+        // FIXME see https://github.com/electron/electron/issues/11740
+        // Key Sequences can't be represented properly in the electron menu.
+        //
+        // We can do what VS Code does, and append the chords as a suffix to the menu label.
+        // https://github.com/theia-ide/theia/issues/1199#issuecomment-430909480
         if (keyCodesString.length > 1) {
             return result;
         }
@@ -173,11 +178,20 @@ export class ElectronMainMenuFactory {
         return result;
     }
 
-    protected execute(command: string): void {
-        this.commandRegistry.executeCommand(command).catch(() => { /* no-op */ });
-        if (this.commandRegistry.isVisible(command)) {
-            this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command);
-            electron.remote.getCurrentWindow().setMenu(this._menu);
+    protected async execute(command: string): Promise<void> {
+        try {
+            // This is workaround for https://github.com/theia-ide/theia/issues/446.
+            // Electron menus do not update based on the `isEnabled`, `isVisible` property of the command.
+            // We need to check if we can execute it.
+            if (this.commandRegistry.isEnabled(command)) {
+                await this.commandRegistry.executeCommand(command);
+                if (this.commandRegistry.isVisible(command)) {
+                    this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command);
+                    electron.remote.getCurrentWindow().setMenu(this._menu);
+                }
+            }
+        } catch {
+            // no-op
         }
     }
 

@@ -22,7 +22,7 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
-import { FileStatNode, FileDialogService } from '@theia/filesystem/lib/browser';
+import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -34,13 +34,28 @@ import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
-    export const OPEN: Command = {
+    // On Linux and Windows, both files and folders cannot be opened at the same time in electron.
+    // `OPEN_FILE` and `OPEN_FOLDER` must be available only on Linux and Windows in electron.
+    // `OPEN` must *not* be available on Windows and Linux in electron.
+    // VS Code does the same. See: https://github.com/theia-ide/theia/pull/3202#issuecomment-430585357
+    export const OPEN: Command & { dialogLabel: string } = {
         id: 'workspace:open',
-        label: 'Open...'
+        label: 'Open...',
+        dialogLabel: 'Open'
     };
-    export const OPEN_WORKSPACE: Command = {
+    // No `label`. Otherwise, it shows up in the `Command Palette`.
+    export const OPEN_FILE: Command & { dialogLabel: string } = {
+        id: 'workspace:openFile',
+        dialogLabel: 'Open File'
+    };
+    export const OPEN_FOLDER: Command & { dialogLabel: string } = {
+        id: 'workspace:openFolder',
+        dialogLabel: 'Open Folder' // No `label`. Otherwise, it shows up in the `Command Palette`.
+    };
+    export const OPEN_WORKSPACE: Command & { dialogLabel: string } = {
         id: 'workspace:openWorkspace',
-        label: 'Open Workspace...'
+        label: 'Open Workspace...',
+        dialogLabel: 'Open Workspace'
     };
     export const OPEN_RECENT_WORKSPACE: Command = {
         id: 'workspace:openRecent',
@@ -257,16 +272,16 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
                 isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
                 execute: async uris => {
-                    const node = await this.fileDialogService.showOpenDialog({
+                    const uri = await this.fileDialogService.showOpenDialog({
                         title: WorkspaceCommands.ADD_FOLDER.label!,
                         canSelectFiles: false,
                         canSelectFolders: true
                     });
-                    if (!node) {
+                    if (!uri) {
                         return;
                     }
                     const workspaceSavedBeforeAdding = this.workspaceService.saved;
-                    await this.addFolderToWorkspace(node);
+                    await this.addFolderToWorkspace(uri);
                     if (!workspaceSavedBeforeAdding) {
                         const saveCommand = registry.getCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id);
                         if (saveCommand && await new ConfirmDialog({
@@ -344,9 +359,12 @@ export class WorkspaceCommandContribution implements CommandContribution {
         return parentUri.resolve(base);
     }
 
-    protected async addFolderToWorkspace(node: Readonly<FileStatNode> | undefined): Promise<void> {
-        if (node && node.fileStat.isDirectory) {
-            await this.workspaceService.addRoot(node.uri);
+    protected async addFolderToWorkspace(uri: URI | undefined): Promise<void> {
+        if (uri) {
+            const stat = await this.fileSystem.getFileStat(uri.toString());
+            if (stat && stat.isDirectory) {
+                await this.workspaceService.addRoot(uri);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export namespace BackendProcess {
-    /* Running in electron or a childProcess.fork of electron */
-    export const electron = !!process.versions.electron || process.env.ELECTRON_RUN_AS_NODE;
-}
+import { ContainerModule } from 'inversify';
+import { FileDialogService } from '../../browser/file-dialog/file-dialog-service';
+import { ElectronFileDialogService } from './electron-file-dialog-service';
+
+export default new ContainerModule(bind => {
+    bind(ElectronFileDialogService).toSelf().inSingletonScope();
+    bind(FileDialogService).toService(ElectronFileDialogService);
+});

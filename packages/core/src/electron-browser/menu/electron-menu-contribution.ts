@@ -141,7 +141,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerKeybindings(
             {
                 command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-                keybinding: 'ctrlcmd+shift+i'
+                keybinding: 'ctrlcmd+alt+i'
             },
             {
                 command: ElectronCommands.RELOAD.id,
