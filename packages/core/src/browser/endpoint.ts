@@ -80,7 +80,11 @@ export class Endpoint {
         return this.httpScheme === Endpoint.PROTO_HTTPS ? Endpoint.PROTO_WSS : Endpoint.PROTO_WS;
     }
 
-    protected get httpScheme() {
+    /**
+     * The HTTP/HTTPS scheme of the endpoint, or the user defined one.
+     * See: `Endpoint.Options.httpScheme`.
+     */
+    get httpScheme() {
         if (this.options.httpScheme) {
             return this.options.httpScheme;
         }

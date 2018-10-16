@@ -94,7 +94,45 @@ describe('Endpoint', () => {
                     protocol: 'https:'
                 }, 'https://example.org/');
         });
+
+        it("should return with the 'options.httpScheme' if defined", () => {
+            expect(new Endpoint({ httpScheme: 'foo:' }, {
+                host: 'example.org',
+                pathname: '/',
+                search: '',
+                protocol: 'https:'
+            }).httpScheme).to.be.equal('foo:');
+        });
+
+        it('should return with the HTTP if the protocol is HTTP.', () => {
+            expect(new Endpoint({}, {
+                host: 'example.org',
+                pathname: '/',
+                search: '',
+                protocol: 'http:'
+            }).httpScheme).to.be.equal('http:');
+        });
+
+        it('should return with the HTTPS if the protocol is HTTPS.', () => {
+            expect(new Endpoint({}, {
+                host: 'example.org',
+                pathname: '/',
+                search: '',
+                protocol: 'https:'
+            }).httpScheme).to.be.equal('https:');
+        });
+
+        it('should return with the HTTP if the protocol is *not* HTTP or HTTPS.', () => {
+            expect(new Endpoint({}, {
+                host: 'example.org',
+                pathname: '/',
+                search: '',
+                protocol: 'file:'
+            }).httpScheme).to.be.equal('http:');
+        });
+
     });
+
 });
 
 function expectWsUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {

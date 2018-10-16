@@ -26,6 +26,10 @@
     margin-top: 5px;
 }
 
+.theia-navigator-container .center {
+    text-align: center;
+}
+
 .p-Widget .open-workspace-button {
     border: 1px solid var(--theia-border-color1);
     color: var(--theia-ui-font-color1);
