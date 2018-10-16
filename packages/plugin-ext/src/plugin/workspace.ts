@@ -16,10 +16,11 @@
 
 import { WorkspaceFolder, WorkspaceFoldersChangeEvent, WorkspaceFolderPickOptions, GlobPattern, FileSystemWatcher } from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { WorkspaceExt, WorkspaceFolderPickOptionsMain } from '../api/plugin-api';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { WorkspaceExt, WorkspaceFolderPickOptionsMain, WorkspaceMain, PLUGIN_RPC_CONTEXT as Ext } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { WorkspaceMain, PLUGIN_RPC_CONTEXT as Ext } from '../api/plugin-api';
+import URI from 'vscode-uri';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
@@ -62,6 +63,40 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 resolve(value);
             });
         });
+    }
+
+    findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number,
+              token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
+        let includePattern: string;
+        if (include) {
+            if (typeof include === 'string') {
+                includePattern = include;
+            } else {
+                includePattern = include.pattern;
+            }
+        } else {
+            includePattern = '';
+        }
+
+        let excludePatternOrDisregardExcludes: string | false;
+        if (exclude === undefined) {
+            excludePatternOrDisregardExcludes = false;
+        } else if (exclude) {
+            if (typeof exclude === 'string') {
+                excludePatternOrDisregardExcludes = exclude;
+            } else {
+                excludePatternOrDisregardExcludes = exclude.pattern;
+            }
+        } else {
+            excludePatternOrDisregardExcludes = false;
+        }
+
+        if (token && token.isCancellationRequested) {
+            return Promise.resolve([]);
+        }
+
+        return this.proxy.$startFileSearch(includePattern, excludePatternOrDisregardExcludes, maxResults, token)
+            .then(data => Array.isArray(data) ? data.map(URI.revive) : []);
     }
 
     createFileSystemWatcher(globPattern: GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher {
