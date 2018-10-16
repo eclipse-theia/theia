@@ -72,6 +72,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         @inject(DialogProps) protected readonly props: DialogProps
     ) {
         super();
+        this.id = 'theia-dialog-shell';
         this.addClass('dialogOverlay');
         this.toDispose.push(Disposable.create(() => {
             if (this.reject) {
