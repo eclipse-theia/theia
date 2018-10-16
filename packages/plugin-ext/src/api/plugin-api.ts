@@ -312,6 +312,9 @@ export interface QuickOpenMain {
 
 export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
+    $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes: string | false,
+                     maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
+
 }
 
 export interface WorkspaceExt {

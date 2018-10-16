@@ -76,6 +76,7 @@ import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 
 export function createAPIFactory(
@@ -280,6 +281,9 @@ export function createAPIFactory(
                 ignoreChangeEvents?: boolean,
                 ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
                 return workspaceExt.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
+            },
+            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
+                return workspaceExt.findFiles(include, undefined, maxResults, token);
             }
         };
 
