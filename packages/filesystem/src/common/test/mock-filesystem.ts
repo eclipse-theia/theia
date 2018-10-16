@@ -85,6 +85,10 @@ export class MockFilesystem implements FileSystem {
         return Promise.resolve(mockFileStat);
     }
 
+    async access(uri: string, mode?: number): Promise<boolean> {
+        return true;
+    }
+
     setClient(client: FileSystemClient) {
 
     }

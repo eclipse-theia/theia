@@ -25,7 +25,7 @@ import { injectable, inject, optional } from 'inversify';
 import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions } from '../common/filesystem';
+import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions, FileAccess } from '../common/filesystem';
 
 @injectable()
 export class FileSystemNodeOptions {
@@ -368,6 +368,15 @@ export class FileSystemNode implements FileSystem {
 
     dispose(): void {
         // NOOP
+    }
+
+    async access(uri: string, mode: number = FileAccess.Constants.F_OK): Promise<boolean> {
+        try {
+            await fs.access(FileUri.fsPath(uri), mode);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     protected async doGetStat(uri: URI, depth: number): Promise<FileStat | undefined> {

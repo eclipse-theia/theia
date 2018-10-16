@@ -36,3 +36,30 @@ export function cmd(command: string, ...args: string[]): CMD {
         isWindows ? ['/c', command, ...args] : args
     ];
 }
+
+export namespace OS {
+
+    /**
+     * Enumeration of the supported operating systems.
+     */
+    export enum Type {
+        Windows = 'Windows',
+        Linux = 'Linux',
+        OSX = 'OSX'
+    }
+
+    /**
+     * Returns with the type of the operating system. If it is neither [Windows](isWindows) nor [OS X](isOSX), then
+     * it always return with the `Linux` OS type.
+     */
+    export function type(): OS.Type {
+        if (isWindows) {
+            return Type.Windows;
+        }
+        if (isOSX) {
+            return Type.OSX;
+        }
+        return Type.Linux;
+    }
+
+}

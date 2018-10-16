@@ -28,6 +28,7 @@ import { ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { JsonPreferences } from './json-preferences';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
+import { Endpoint } from '@theia/core/lib/browser';
 
 @injectable()
 export class JsonClientContribution extends BaseLanguageClientContribution {
@@ -102,13 +103,13 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
     }
 
     protected async initializeJsonSchemaAssociations(): Promise<void> {
-        const url = `${window.location.protocol}//schemastore.azurewebsites.net/api/json/catalog.json`;
+        const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
         const response = await fetch(url);
         const schemas: SchemaData[] = (await response.json()).schemas!;
         for (const s of schemas) {
             if (s.fileMatch) {
                 this.jsonSchemaStore.registerSchema({
-                    fileMatch : s.fileMatch,
+                    fileMatch: s.fileMatch,
                     url: s.url
                 });
             }

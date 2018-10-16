@@ -393,12 +393,6 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
             execute: () => this.shell.saveAll()
         });
-
-        commandRegistry.registerCommand(CommonCommands.QUIT, {
-            execute: () => {
-                /* FIXME implement QUIT of innermost command.  */
-            }
-        });
         commandRegistry.registerCommand(CommonCommands.ABOUT_COMMAND, {
             execute: () => this.openAbout()
         });
@@ -479,10 +473,6 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             {
                 command: CommonCommands.SAVE_ALL.id,
                 keybinding: 'ctrlcmd+alt+s'
-            },
-            {
-                command: CommonCommands.QUIT.id,
-                keybinding: 'ctrlcmd+q'
             }
         );
     }

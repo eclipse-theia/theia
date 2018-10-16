@@ -20,4 +20,3 @@ export * from './file-dialog';
 export * from './filesystem-preferences';
 export * from './filesystem-watcher';
 export * from './file-resource';
-export * from './file-dialog-service';

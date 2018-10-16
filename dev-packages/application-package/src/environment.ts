@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './file-dialog';
-export * from './file-dialog-container';
-export * from './file-dialog-tree-filters-renderer';
-export * from './file-dialog-service';
+const isElectronLib: () => boolean = require('is-electron');
+
+/**
+ * `true` if running in Electron. Otherwise, `false`. Can be called from both the `main` and the render process.
+ */
+export function isElectron(): boolean {
+    return isElectronLib();
+}
+
+/**
+ * `true` if running in Electron in development mode. Otherwise, `false`. Cannot be used from the browser.
+ */
+export function isElectronDevMode(): boolean {
+    return isElectron()
+        && typeof process !== 'undefined'
+        // `defaultApp` does not exist on the Node.js API, but on electron (`electron.d.ts`).
+        && ((process as any).defaultApp || /node_modules[/]electron[/]/.test(process.execPath)); // tslint:disable-line:no-any
+}

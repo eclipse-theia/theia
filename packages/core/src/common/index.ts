@@ -34,3 +34,6 @@ export * from './message-service-protocol';
 export * from './selection';
 export * from './strings';
 export * from './application-error';
+
+import { isElectron, isElectronDevMode } from '@theia/application-package/lib/environment';
+export { isElectron, isElectronDevMode };

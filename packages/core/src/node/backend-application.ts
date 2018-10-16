@@ -24,7 +24,7 @@ import { inject, named, injectable } from 'inversify';
 import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
-import { BackendProcess } from './backend-process';
+import { isElectron, isElectronDevMode } from '../common/index';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 export interface BackendApplicationContribution {
@@ -39,7 +39,7 @@ export interface BackendApplicationContribution {
     onStop?(app?: express.Application): void;
 }
 
-const defaultPort = BackendProcess.electron ? 0 : 3000;
+const defaultPort = isElectron() ? 0 : 3000;
 const defaultHost = 'localhost';
 const defaultSSL = false;
 
@@ -75,13 +75,10 @@ export class BackendApplicationCliContribution implements CliContribution {
 
     protected appProjectPath(): string {
         const cwd = process.cwd();
-        if (BackendProcess.electron) {
-            // Check whether we are in bundled application or development mode.
-            const devMode = process.defaultApp || /node_modules[/]electron[/]/.test(process.execPath);
-            if (!devMode) {
-                // In a bundled electron application, the `package.json` is in `resources/app` by default.
-                return path.join(cwd, 'resources', 'app');
-            }
+        // Check whether we are in bundled application or development mode.
+        // In a bundled electron application, the `package.json` is in `resources/app` by default.
+        if (isElectron() && !isElectronDevMode()) {
+            return path.join(cwd, 'resources', 'app');
         }
         return cwd;
     }
