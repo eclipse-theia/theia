@@ -275,6 +275,22 @@ declare module monaco.keybindings {
     export interface IKeybindingItem {
         keybinding: Keybinding;
         command: string;
+        when?: ContextKeyExpr;
+    }
+
+    export interface ContextKeyExpr {
+        getType(): ContextKeyExprType;
+        keys(): string[];
+        serialize(): string;
+    }
+
+    export enum ContextKeyExprType {
+        Defined = 1,
+        Not = 2,
+        Equals = 3,
+        NotEquals = 4,
+        And = 5,
+        Regex = 6
     }
 
     export interface IKeybindingsRegistry {

@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { KeybindingContext } from '@theia/core/lib/browser/keybinding';
 import { EditorManager } from './editor-manager';
 import { EditorWidget } from './editor-widget';
+import { DiffUris } from '@theia/core/lib/browser';
 
 export namespace EditorKeybindingContexts {
 
@@ -25,6 +26,11 @@ export namespace EditorKeybindingContexts {
      * ID of a keybinding context that is enabled when the active text editor has the focus.
      */
     export const editorTextFocus = 'editorTextFocus';
+
+    /**
+     * ID of a keybinding context that is enabled when the active diff editor has the focus.
+     */
+    export const diffEditorTextFocus = 'diffEditorTextFocus';
 
     /**
      * Unique identifier of a keybinding context that is enabled if the active editor has the focus but it does not have any overlaying widgets, such as the content assist widget.
@@ -54,6 +60,17 @@ export class EditorTextFocusContext implements KeybindingContext {
 
     protected canHandle(widget: EditorWidget): boolean {
         return widget.editor.isFocused();
+    }
+
+}
+
+@injectable()
+export class DiffEditorTextFocusContext extends EditorTextFocusContext {
+
+    readonly id: string = EditorKeybindingContexts.diffEditorTextFocus;
+
+    protected canHandle(widget: EditorWidget): boolean {
+        return super.canHandle(widget) && DiffUris.isDiffUri(widget.editor.uri);
     }
 
 }
