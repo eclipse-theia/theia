@@ -21,7 +21,6 @@
 .dialogContent .theia-FileDialog,
 .dialogContent .theia-SaveFileDialog {
     width: 500px;
-    border: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
 .dialogContent .theia-FileDialog {
