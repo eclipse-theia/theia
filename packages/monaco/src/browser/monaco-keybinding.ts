@@ -50,10 +50,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                             keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
                         }
                     }
+                    const isInDiffEditor = item.when && /(?<!\!\s*)isInDiffEditor/gm.test(item.when.serialize());
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
-                        context: EditorKeybindingContexts.editorTextFocus
+                        context: isInDiffEditor ? EditorKeybindingContexts.diffEditorTextFocus : EditorKeybindingContexts.editorTextFocus
                     });
                 } else {
                     // FIXME support chord keybindings properly, KeyCode does not allow it right now
