@@ -112,6 +112,10 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                 }));
             }
         }, options);
+
+        this.registerRestartCommand();
+        toDeactivate.push(Disposable.create(() => this.unregisterRestartCommand()));
+
         return toDeactivate;
     }
 
@@ -228,4 +232,34 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         });
     }
 
+    /**
+     * Return the id of the "restart" command for this language client.
+     */
+    private restartCommandId(): string {
+        return `languages.${this.id}.restart`;
+    }
+
+    /**
+     * Register a command that lets the user restart the language server this
+     * client is connected to.
+     */
+    protected registerRestartCommand(): void {
+        this.registry.registerCommand(
+            {
+                id: this.restartCommandId(),
+                label: `${this.name}: Restart Language Server`,
+            },
+            {
+                execute: () => this.restart(),
+                isEnabled: () => this.running,
+                isVisible: () => this.running,
+            });
+    }
+
+    /**
+     * Unregister the command registered by `registerRestartCommand`.
+     */
+    protected unregisterRestartCommand(): void {
+        this.registry.unregisterCommand(this.restartCommandId());
+    }
 }
