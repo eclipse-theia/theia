@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces, Container } from 'inversify';
 
 export const ContributionProvider = Symbol('ContributionProvider');
 
@@ -59,7 +59,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
 export type Bindable = interfaces.Bind | interfaces.Container;
 export namespace Bindable {
     export function isContainer(arg: Bindable): arg is interfaces.Container {
-        return 'guid' in arg;
+        return arg instanceof Container || 'bind' in arg;
     }
 }
 
