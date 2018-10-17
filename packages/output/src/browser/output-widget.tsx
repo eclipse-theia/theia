@@ -60,7 +60,7 @@ export class OutputWidget extends ReactWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        const channelSelector = document.getElementById('outputChannelList');
+        const channelSelector = document.getElementById(OutputWidget.IDs.CHANNEL_LIST);
         if (channelSelector) {
             channelSelector.focus();
         } else {
@@ -88,13 +88,29 @@ export class OutputWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
-        return <React.Fragment>{this.renderChannelSelector()}{this.renderChannelContents()}</React.Fragment>;
+        return <React.Fragment>
+            <div id={OutputWidget.IDs.OVERLAY}>
+                {this.renderChannelSelector()}
+                {this.renderClearButton()}
+            </div>
+            {this.renderChannelContents()}
+        </React.Fragment>;
     }
 
-    private readonly OUTPUT_CONTENTS_ID = 'outputContents';
+    protected renderClearButton(): React.ReactNode {
+        return <span title='Clear'
+            className={this.selectedChannel ? 'enabled' : ''}
+            id={OutputWidget.IDs.CLEAR_BUTTON} onClick={() => this.clear()} />;
+    }
+
+    protected clear(): void {
+        if (this.selectedChannel) {
+            this.selectedChannel.clear();
+        }
+    }
 
     protected renderChannelContents(): React.ReactNode {
-        return <div id={this.OUTPUT_CONTENTS_ID}>{this.renderLines()}</div>;
+        return <div id={OutputWidget.IDs.CONTENTS}>{this.renderLines()}</div>;
     }
 
     protected renderLines(): React.ReactNode[] {
@@ -131,7 +147,7 @@ export class OutputWidget extends ReactWidget {
             channelOptionElements.push(<option key={this.NONE} value={this.NONE}>{this.NONE}</option>);
         }
         return <select
-            id='outputChannelList'
+            id={OutputWidget.IDs.CHANNEL_LIST}
             value={this.selectedChannel ? this.selectedChannel.name : this.NONE}
             onChange={
                 async event => {
@@ -149,7 +165,7 @@ export class OutputWidget extends ReactWidget {
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         setTimeout(() => {
-            const div = document.getElementById(this.OUTPUT_CONTENTS_ID) as HTMLDivElement;
+            const div = document.getElementById(OutputWidget.IDs.CONTENTS) as HTMLDivElement;
             if (div && div.children.length > 0) {
                 div.children[div.children.length - 1].scrollIntoView(false);
             }
@@ -158,5 +174,14 @@ export class OutputWidget extends ReactWidget {
 
     protected getVisibleChannels(): OutputChannel[] {
         return this.outputChannelManager.getChannels().filter(channel => channel.isVisible);
+    }
+}
+
+export namespace OutputWidget {
+    export namespace IDs {
+        export const CLEAR_BUTTON = 'outputClear';
+        export const CONTENTS = 'outputContents';
+        export const OVERLAY = 'outputOverlay';
+        export const CHANNEL_LIST = 'outputChannelList';
     }
 }
