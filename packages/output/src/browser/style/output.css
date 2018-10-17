@@ -26,15 +26,29 @@
     box-sizing: border-box;
 }
 
-#outputView #outputChannelList {
+#outputView #outputOverlay {
     position: absolute;
     right: 24px;
-    line-height: var(--theia-content-line-height);
-    font-size: var(--theia-ui-font-size1);
+    margin: 6px;
+    display: flex;
+}
+
+#outputView #outputOverlay > * {
+    /* Separation between elements.  */
+    margin-left: 6px;
+
+    height: 21px;
     border-width: 1px;
     border-style: solid;
     border-color: var(--theia-border-color1);
+    box-sizing: border-box;
+
     background: var(--theia-layout-color2);
+}
+
+#outputView #outputChannelList {
+    line-height: var(--theia-content-line-height);
+    font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color1);
 
     -webkit-appearance: none;
@@ -45,7 +59,24 @@
     background-repeat: no-repeat;
     padding-left: 3px;
     padding-right: 15px;
-    margin: 6px;
+}
+
+#outputView #outputClear {
+    background-image: var(--theia-icon-clear);
+    background-position: center;
+    background-repeat: no-repeat;
+    display: inline-block;
+    width: 21px;
+    opacity: 0.25;
+}
+
+#outputView #outputClear.enabled {
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+#outputView #outputClear.enabled:hover {
+    opacity: 1;
 }
 
 .output-tab-icon::before {
