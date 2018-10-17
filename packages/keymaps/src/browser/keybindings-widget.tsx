@@ -189,12 +189,12 @@ export class KeybindingWidget extends ReactWidget {
                                 <i className='fa fa-undo kb-edit'></i>
                             </a>
                         </td>
-                        <td>{this.renderMatchedData(item.command)}</td>
-                        <td className='monaco-keybinding'>
+                        <td title={this.getRawValue(item.command)}>{this.renderMatchedData(item.command)}</td>
+                        <td title={(item.keybinding) ? this.getRawValue(item.keybinding) : ''} className='monaco-keybinding'>
                             {item.keybinding ? this.renderKeybinding(item.keybinding) : ''}
                         </td>
-                        <td><code>{this.renderMatchedData(item.id)}</code></td>
-                        <td><code>{(item.context) ? this.renderMatchedData(item.context) : ''}</code></td>
+                        <td title={this.getRawValue(item.id)}><code>{this.renderMatchedData(item.id)}</code></td>
+                        <td title={(item.context) ? this.getRawValue(item.context) : ''}><code>{(item.context) ? this.renderMatchedData(item.context) : ''}</code></td>
                     </tr>
                 )
             }
@@ -261,10 +261,9 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected editKeybinding(item: KeybindingItem): void {
-        const regexp = new RegExp(this.regexp);
-        const rawCommand = item.command.replace(regexp, '$1');
-        const rawId = item.id.replace(regexp, '$1');
-        const rawKeybinding = (item.keybinding) ? item.keybinding.replace(regexp, '$1') : '';
+        const rawCommand = this.getRawValue(item.command);
+        const rawId = this.getRawValue(item.id);
+        const rawKeybinding = (item.keybinding) ? this.getRawValue(item.keybinding) : '';
         const dialog = new SingleTextInputDialog({
             title: `Edit Keybinding For ${rawCommand}`,
             initialValue: rawKeybinding,
@@ -292,9 +291,8 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected async removeKeybinding(item: KeybindingItem): Promise<void> {
-        const regexp = new RegExp(this.regexp);
-        const rawCommandId = item.id.replace(regexp, '$1');
-        const rawCommand = item.command.replace(regexp, '$1');
+        const rawCommandId = this.getRawValue(item.id);
+        const rawCommand = this.getRawValue(item.command);
         const confirmed = await this.confirmRemoveKeybinding(rawCommand, rawCommandId);
         if (confirmed) {
             this.keymapsService.removeKeybinding(rawCommandId);
@@ -361,6 +359,10 @@ export class KeybindingWidget extends ReactWidget {
         } else {
             return item;
         }
+    }
+
+    protected getRawValue(property: string): string {
+        return property.replace(new RegExp(this.regexp), '$1');
     }
 
     protected openKeybindings = () => this.keymapsService.open();
