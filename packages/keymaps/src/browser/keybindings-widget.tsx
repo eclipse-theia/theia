@@ -267,7 +267,7 @@ export class KeybindingWidget extends ReactWidget {
         const dialog = new SingleTextInputDialog({
             title: `Edit Keybinding For ${rawCommand}`,
             initialValue: rawKeybinding,
-            validate: keybinding => this.validateKeybinding(rawCommand, keybinding),
+            validate: keybinding => this.validateKeybinding(rawCommand, rawKeybinding, keybinding),
         });
         dialog.open().then(async keybinding => {
             if (keybinding) {
@@ -299,13 +299,16 @@ export class KeybindingWidget extends ReactWidget {
         }
     }
 
-    protected validateKeybinding(command: string, keybinding: string): string {
+    protected validateKeybinding(command: string, oldKeybinding: string, keybinding: string): string {
         if (!keybinding) {
             return 'keybinding value is required';
         }
         try {
             const binding = { 'command': command, 'keybinding': keybinding };
             KeySequence.parse(keybinding);
+            if (oldKeybinding === keybinding) {
+                return ' '; // if old and new keybindings match, quietly reject update
+            }
             if (this.keybindingRegistry.containsKeybindingInScope(binding)) {
                 return 'keybinding currently collides';
             }
