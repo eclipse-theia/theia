@@ -40,10 +40,6 @@ export namespace TypeScriptCommands {
         label: 'TypeScript: Open Server Log',
         id: 'typescript.server.openLog'
     };
-    export const restartServer: Command = {
-        label: 'TypeScript: Restart Server',
-        id: 'typescript.server.restart'
-    };
 }
 
 @injectable()
@@ -82,11 +78,6 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
             execute: () => this.openServerLog(),
             isEnabled: () => !!this.clientContribution.logFileUri,
             isVisible: () => !!this.clientContribution.logFileUri
-        });
-        commands.registerCommand(TypeScriptCommands.restartServer, {
-            execute: () => this.clientContribution.restart(),
-            isEnabled: () => this.clientContribution.running,
-            isVisible: () => this.clientContribution.running
         });
     }
 
