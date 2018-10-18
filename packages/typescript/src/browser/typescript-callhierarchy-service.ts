@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { AbstractDefaultCallHierarchyService, ExtendedDocumentSymbol } from '@theia/callhierarchy/lib/browser/callhierarchy-service-impl';
+import { AbstractDefaultCallHierarchyService } from '@theia/callhierarchy/lib/browser/default-callhierarchy-service';
 import { CallHierarchyContext } from '@theia/callhierarchy/lib/browser/callhierarchy-context';
 import { TYPESCRIPT_LANGUAGE_ID } from '../common';
 import { SymbolInformation, Range, Location, DocumentSymbol } from 'vscode-languageserver-types';
 import * as utils from '@theia/callhierarchy/lib/browser/utils';
+import { DefinitionSymbol } from '@theia/languages/lib/browser/calls/calls-protocol.proposed';
 
 @injectable()
 export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchyService {
@@ -33,7 +34,7 @@ export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchy
      * are returned as a reference as well. As these are not calls they have to be filtered.
      * We also just want ot see the top-most caller symbol.
      */
-    async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | SymbolInformation | undefined> {
+    async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<DefinitionSymbol | undefined> {
         const allSymbols = await context.getAllSymbols(reference.uri);
         if (allSymbols.length === 0) {
             return undefined;
@@ -61,6 +62,17 @@ export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchy
                 return undefined;
             }
         }
-        return bestMatch;
+        if (!bestMatch) {
+            return undefined;
+        }
+        const { name, kind, location } = bestMatch;
+        const uri = reference.uri;
+        const selectionRange = reference.range;
+        return {
+            name,
+            kind,
+            location: { uri, range: location.range },
+            selectionRange
+        };
     }
 }

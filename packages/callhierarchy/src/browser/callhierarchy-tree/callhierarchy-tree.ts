@@ -17,10 +17,10 @@
 import { injectable } from 'inversify';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 
-import { Definition, Caller } from '../callhierarchy';
 import { CallHierarchyService } from '../callhierarchy-service';
 
 import { Md5 } from 'ts-md5/dist/md5';
+import { DefinitionSymbol, Call, CallDirection } from '@theia/languages/lib/browser/calls/calls-protocol.proposed';
 
 @injectable()
 export class CallHierarchyTree extends TreeImpl {
@@ -36,84 +36,113 @@ export class CallHierarchyTree extends TreeImpl {
     }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+        if (!CallHierarchyTree.Node.is(parent)) {
+            return [];
+        }
+        if (parent.resolved) {
+            return parent.children.slice();
+        }
         if (!this.callHierarchyService) {
-            return Promise.resolve([]);
+            return [];
         }
-        if (parent.children.length > 0) {
-            return Promise.resolve([...parent.children]);
-        }
-        let definition: Definition | undefined;
-        if (DefinitionNode.is(parent)) {
+        let definition: DefinitionSymbol | undefined;
+        if (CallHierarchyTree.RootCallNode.is(parent)) {
             definition = parent.definition;
-        } else if (CallerNode.is(parent)) {
-            definition = parent.caller.callerDefinition;
+        } else if (CallHierarchyTree.CallNode.is(parent)) {
+            definition = parent.call.symbol;
         }
         if (definition) {
-            const callers = await this.callHierarchyService.getCallers(definition);
-            if (!callers) {
-                return Promise.resolve([]);
+            const direction = CallHierarchyTree.getDirection(parent);
+            const result = await this.callHierarchyService.getCalls({
+                position: definition.location.range.start,
+                textDocument: { uri: definition.location.uri },
+                direction
+            });
+            const { symbol, calls } = result;
+            if (!symbol) {
+                return [];
             }
-            return this.toNodes(callers, parent);
+            parent.resolved = true;
+            if (calls.length === 0) {
+                delete parent.expanded;
+            }
+            return this.toNodes(calls, parent);
         }
-        return Promise.resolve([]);
+        return [];
     }
 
-    protected toNodes(callers: Caller[], parent: CompositeTreeNode): TreeNode[] {
-        return callers.map(caller => this.toNode(caller, parent));
+    protected toNodes(calls: Call[], parent: CompositeTreeNode): TreeNode[] {
+        return calls.map(call => this.toNode(call, parent));
     }
 
-    protected toNode(caller: Caller, parent: CompositeTreeNode | undefined): TreeNode {
-        return CallerNode.create(caller, parent as TreeNode);
-    }
-}
-
-export interface DefinitionNode extends SelectableTreeNode, ExpandableTreeNode {
-    definition: Definition;
-}
-
-export namespace DefinitionNode {
-    export function is(node: TreeNode | undefined): node is DefinitionNode {
-        return !!node && 'definition' in node;
-    }
-
-    export function create(definition: Definition, parent: TreeNode | undefined): DefinitionNode {
-        const name = definition.symbolName;
-        const id = createId(definition, parent);
-        return <DefinitionNode>{
-            id, definition, name, parent,
-            visible: true,
-            children: [],
-            expanded: false,
-            selected: false,
-        };
+    protected toNode(caller: Call, parent: CompositeTreeNode | undefined): TreeNode {
+        return CallHierarchyTree.CallNode.create(caller, parent as TreeNode);
     }
 }
 
-export interface CallerNode extends SelectableTreeNode, ExpandableTreeNode {
-    caller: Caller;
-}
-
-export namespace CallerNode {
-    export function is(node: TreeNode | undefined): node is CallerNode {
-        return !!node && 'caller' in node;
+export namespace CallHierarchyTree {
+    export function getDirection(node?: TreeNode): CallDirection {
+        return RootCallNode.is(node) || CallNode.is(node) ? node.direction : CallDirection.Incoming;
+    }
+    export interface Node extends SelectableTreeNode, ExpandableTreeNode {
+        resolved: boolean;
+        direction: CallDirection;
+    }
+    export namespace Node {
+        export function is(node: TreeNode | undefined): node is Node {
+            // tslint:disable-next-line:no-any
+            return !!node && 'direction' in node && typeof (node as any).resolved === 'boolean';
+        }
+        export function create(definition: DefinitionSymbol, direction: CallDirection, idObject: object, parent: TreeNode | undefined): Node {
+            const name = definition.name;
+            const id = createId(idObject, parent);
+            return <Node>{
+                id, direction, name, parent,
+                visible: true,
+                children: [],
+                expanded: false,
+                selected: false,
+                resolved: false
+            };
+        }
+    }
+    export interface RootCallNode extends Node {
+        definition: DefinitionSymbol;
     }
 
-    export function create(caller: Caller, parent: TreeNode | undefined): CallerNode {
-        const callerDefinition = caller.callerDefinition;
-        const name = callerDefinition.symbolName;
-        const id = createId(callerDefinition, parent);
-        return <CallerNode>{
-            id, caller, name, parent,
-            visible: true,
-            children: [],
-            expanded: false,
-            selected: false,
-        };
+    export namespace RootCallNode {
+        export function is(node: TreeNode | undefined): node is RootCallNode {
+            return Node.is(node) && 'definition' in node;
+        }
+        export function create(definition: DefinitionSymbol, direction: CallDirection, parent: TreeNode | undefined): RootCallNode {
+            return <RootCallNode>{
+                ...Node.create(definition, direction, { definition }, parent),
+                definition
+            };
+        }
     }
-}
 
-function createId(definition: Definition, parent: TreeNode | undefined): string {
-    const idPrefix = (parent) ? parent.id + '/' : '';
-    const id = idPrefix + Md5.hashStr(JSON.stringify(definition));
-    return id;
+    export interface CallNode extends Node {
+        call: Call;
+        direction: CallDirection;
+    }
+
+    export namespace CallNode {
+        export function is(node: TreeNode | undefined): node is CallNode {
+            return Node.is(node) && 'call' in node;
+        }
+        export function create(call: Call, parent: TreeNode | undefined): CallNode {
+            const direction = getDirection(parent);
+            return <CallNode>{
+                ...Node.create(call.symbol, direction, { call }, parent),
+                call
+            };
+        }
+    }
+
+    function createId(o: object, parent: TreeNode | undefined): string {
+        const idPrefix = (parent) ? parent.id + '/' : '';
+        const id = idPrefix + Md5.hashStr(JSON.stringify(o));
+        return id;
+    }
 }

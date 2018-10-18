@@ -15,16 +15,16 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { Location } from 'vscode-languageserver-types';
-import { Definition, Caller } from './callhierarchy';
 import { ContributionProvider } from '@theia/core/lib/common';
+import { LanguageClientProvider } from '@theia/languages/lib/browser/language-client-provider';
+import { CallsParams, CallsResult, CallsServerCapabilities } from '@theia/languages/lib/browser/calls/calls-protocol.proposed';
+import { LspCallHierarchyService } from './lsp-callhierarchy-service';
 
 export const CallHierarchyService = Symbol('CallHierarchyService');
 
 export interface CallHierarchyService {
-    readonly languageId: string
-    getRootDefinition(location: Location): Promise<Definition | undefined>
-    getCallers(definition: Definition): Promise<Caller[] | undefined>
+    readonly languageId: string;
+    getCalls(params: CallsParams): Promise<CallsResult>;
 }
 
 @injectable()
@@ -33,7 +33,18 @@ export class CallHierarchyServiceProvider {
     @inject(ContributionProvider) @named(CallHierarchyService)
     protected readonly contributions: ContributionProvider<CallHierarchyService>;
 
-    get(languageId: string): CallHierarchyService | undefined {
+    @inject(LanguageClientProvider)
+    protected readonly languageClientProvider: LanguageClientProvider;
+
+    async get(languageId: string): Promise<CallHierarchyService | undefined> {
+        const languageClient = await this.languageClientProvider.getLanguageClient(languageId);
+        if (languageClient && languageClient.initializeResult) {
+            const capabilities = languageClient.initializeResult.capabilities;
+            const callsProvider = (capabilities as CallsServerCapabilities).callsProvider;
+            if (callsProvider) {
+                return new LspCallHierarchyService(languageId, languageClient);
+            }
+        }
         return this.contributions.getContributions().find(service => languageId === service.languageId);
     }
 }

@@ -14,4 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export const CALLHIERARCHY_ID = 'callhierarchy';
+import { ILanguageClient } from '@theia/languages/lib/browser';
+import { CallsParams, CallsResult, CallsRequest } from '@theia/languages/lib/browser/calls/calls-protocol.proposed';
+import { CallHierarchyService } from './callhierarchy-service';
+
+export class LspCallHierarchyService implements CallHierarchyService {
+
+    constructor(public readonly languageId: string, protected readonly client: ILanguageClient) {}
+
+    async getCalls(params: CallsParams): Promise<CallsResult> {
+        const result = await this.client.sendRequest(CallsRequest.type, params);
+        return result;
+    }
+
+}

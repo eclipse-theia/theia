@@ -14,4 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export const CALLHIERARCHY_ID = 'callhierarchy';
+import { injectable } from 'inversify';
+import { AbstractDefaultCallHierarchyService } from '@theia/callhierarchy/lib/browser/default-callhierarchy-service';
+import { PYTHON_LANGUAGE_ID } from '../common';
+
+@injectable()
+export class PythonCallHierarchyService extends AbstractDefaultCallHierarchyService {
+
+    readonly languageId: string = PYTHON_LANGUAGE_ID;
+
+}

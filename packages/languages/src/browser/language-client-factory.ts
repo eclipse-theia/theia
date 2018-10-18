@@ -23,6 +23,7 @@ import {
     ILanguageClient, LanguageClientOptions, MonacoLanguageClient,
     createConnection, LanguageContribution
 } from './language-client-services';
+import { CallsFeature } from './calls/calls-feature.proposed';
 
 @injectable()
 export class LanguageClientFactory {
@@ -64,7 +65,7 @@ export class LanguageClientFactory {
         let initializationFailedHandler = clientOptions.initializationFailedHandler;
         clientOptions.initializationFailedHandler = e => !!initializationFailedHandler && initializationFailedHandler(e);
         connection.onDispose(() => initializationFailedHandler = () => false);
-        return new MonacoLanguageClient({
+        const languageclient = new MonacoLanguageClient({
             id: contribution.id,
             name: contribution.name,
             clientOptions,
@@ -72,6 +73,8 @@ export class LanguageClientFactory {
                 get: async (errorHandler, closeHandler) => createConnection(connection, errorHandler, closeHandler)
             }
         });
+        languageclient.registerFeature(new CallsFeature(languageclient));
+        return languageclient;
     }
 
 }

@@ -46,6 +46,7 @@
 .theia-CallHierarchyTree .definitionNode .symbol {
     white-space: nowrap;
     overflow: hidden;
+    margin-left: 0px;
 }
 
 .theia-CallHierarchyTree .definitionNode .referenceCount {
@@ -63,4 +64,22 @@
 
 .call-hierarchy-tab-icon::before {
     content: "\f0ab"
+}
+
+.theia-CallHierarchyTree .definitionNode .rotation-incoming {
+    -webkit-transform: rotate(135deg);
+    -moz-transform: rotate(135deg);
+    -ms-transform: rotate(135deg);
+    -o-transform: rotate(135deg);
+    transform: rotate(135deg);
+    margin-left: 5px;
+}
+
+.theia-CallHierarchyTree .definitionNode .rotation-outgoing {
+    -webkit-transform: rotate(315deg);
+    -moz-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
+    transform: rotate(315deg);
+    margin-left: 5px;
 }

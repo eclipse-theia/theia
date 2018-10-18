@@ -52,9 +52,8 @@ export class CallHierarchyContext implements Disposable {
         return model;
     }
 
-    async getDefinitionLocation(location: Location): Promise<Location | undefined> {
-        const uri = location.uri;
-        const { line, character } = location.range.start;
+    async getDefinitionLocation(uri: string, position: Position): Promise<Location | undefined> {
+        const { line, character } = position;
 
         // Definition can be null
         // tslint:disable-next-line:no-null-keyword

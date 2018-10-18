@@ -20,13 +20,13 @@ import {
     SymbolInformation, Location, Position, Range, SymbolKind, DocumentSymbol
 } from 'monaco-languageclient/lib/services';
 import * as utils from './utils';
-import { Definition, Caller } from './callhierarchy';
 import { CallHierarchyService } from './callhierarchy-service';
 import { ILogger } from '@theia/core';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { CallHierarchyContext } from './callhierarchy-context';
+import { CallsResult, CallsParams, CallDirection, Call, DefinitionSymbol } from '@theia/languages/lib/browser/calls/calls-protocol.proposed';
 
-export type ExtendedDocumentSymbol = DocumentSymbol & Location & { containerName: string };
+type ExtendedDocumentSymbol = DocumentSymbol & Location & { containerName: string };
 
 @injectable()
 export abstract class AbstractDefaultCallHierarchyService implements CallHierarchyService {
@@ -37,12 +37,15 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
 
     abstract get languageId(): string;
 
-    /**
-     * Returns root definition of caller hierarchy.
-     */
-    public async getRootDefinition(location: Location): Promise<Definition | undefined> {
-        return this.withContext(async services => {
-            const definitionLocation = await services.getDefinitionLocation(location);
+    async getCalls(params: CallsParams): Promise<CallsResult> {
+        const nullResult: CallsResult = { calls: [] };
+        // Callees are unsupported
+        if (params.direction === CallDirection.Outgoing) {
+            return nullResult;
+        }
+        // Callers
+        return await this.withContext(async services => {
+            const definitionLocation = await services.getDefinitionLocation(params.textDocument.uri, params.position);
             if (!definitionLocation) {
                 return undefined;
             }
@@ -50,19 +53,11 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
             if (!definitionSymbol) {
                 return undefined;
             }
-            return this.toDefinition(definitionSymbol, services);
-        });
-    }
+            const callerReferences = await services.getCallerReferences(definitionLocation);
+            const calls = await this.createCallers(callerReferences, services);
 
-    /**
-     * Returns next level of caller definitions.
-     */
-    public async getCallers(definition: Definition): Promise<Caller[] | undefined> {
-        return this.withContext(async services => {
-            const callerReferences = await services.getCallerReferences(definition.location);
-            const callers = this.createCallers(callerReferences, services);
-            return callers;
-        });
+            return { symbol: definitionSymbol, calls };
+        }) || nullResult;
     }
 
     protected async withContext<T>(lambda: (context: CallHierarchyContext) => Promise<T>): Promise<T | undefined> {
@@ -92,8 +87,8 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
     /**
      * Creates callers for given references and method symbols.
      */
-    protected async createCallers(callerReferences: Location[], context: CallHierarchyContext): Promise<Caller[]> {
-        const result: Caller[] = [];
+    protected async createCallers(callerReferences: Location[], context: CallHierarchyContext): Promise<Call[]> {
+        const result: Call[] = [];
         const caller2references = new Map<ExtendedDocumentSymbol | SymbolInformation, Location[]>();
         for (const reference of callerReferences) {
             const callerSymbol = await this.getEnclosingCallerSymbol(reference, context);
@@ -111,27 +106,28 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
             if (locations) {
                 const definition = await this.toDefinition(callerSymbol, context);
                 if (definition) {
-                    const caller = this.toCaller(definition, locations);
-                    result.push(caller);
+                    for (const location of locations) {
+                        result.push(<Call>{
+                            location,
+                            symbol: definition
+                        });
+                    }
                 }
             }
         }
         return result;
     }
 
-    protected toCaller(callerDefinition: Definition, references: Location[]): Caller {
-        return <Caller>{ callerDefinition, references };
-    }
-
-    protected async toDefinition(symbol: ExtendedDocumentSymbol | SymbolInformation, context: CallHierarchyContext): Promise<Definition | undefined> {
+    protected async toDefinition(symbol: ExtendedDocumentSymbol | SymbolInformation, context: CallHierarchyContext): Promise<DefinitionSymbol | undefined> {
         const location = await this.getSymbolNameLocation(symbol, context);
         if (!location) {
             return undefined;
         }
-        const symbolName = symbol.name;
-        const symbolKind = symbol.kind;
-        const containerName = symbol.containerName;
-        return <Definition>{ location, symbolName, symbolKind, containerName };
+        const name = symbol.name;
+        const kind = symbol.kind;
+        const uri = location.uri;
+        const selectionRange = DocumentSymbol.is(symbol) ? symbol.selectionRange : symbol.location.range;
+        return <DefinitionSymbol>{ location, name, kind, uri, selectionRange };
     }
 
     /**
@@ -159,7 +155,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
      * As we only check regions that contain the definition, that is the one with the
      * latest start position.
      */
-    protected async getEnclosingRootSymbol(definition: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | SymbolInformation | undefined> {
+    protected async getEnclosingRootSymbol(definition: Location, context: CallHierarchyContext): Promise<DefinitionSymbol | undefined> {
         const allSymbols = await context.getAllSymbols(definition.uri);
         if (allSymbols.length === 0) {
             return undefined;
@@ -168,13 +164,13 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
             const symbols = (allSymbols as DocumentSymbol[]);
             const containsDefinition = (symbol: DocumentSymbol) => utils.containsRange(symbol.range, definition.range);
             for (const symbol of symbols) {
-                let containerName = definition.uri.split('/').pop();
+                // let containerName = definition.uri.split('/').pop();
                 let candidate = containsDefinition(symbol) ? symbol : undefined;
                 outer: while (candidate) {
                     const children = candidate.children || [];
                     for (const child of children) {
                         if (containsDefinition(child)) {
-                            containerName = candidate.name;
+                            // containerName = candidate.name;
                             candidate = child;
                             continue outer;
                         }
@@ -182,7 +178,14 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
                     break;
                 }
                 if (candidate) {
-                    return <ExtendedDocumentSymbol>{ uri: definition.uri, containerName, ...candidate };
+                    const { name, kind, range, selectionRange} = candidate;
+                    const uri = definition.uri;
+                    return {
+                        name,
+                        kind,
+                        location: { uri, range },
+                        selectionRange
+                    };
                 }
             }
             return undefined;
@@ -199,7 +202,18 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
                     }
                 }
             }
-            return bestMatch;
+            if (!bestMatch) {
+                return undefined;
+            }
+            const { name, kind, location } = bestMatch;
+            const uri = definition.uri;
+            const selectionRange = definition.range;
+            return {
+                name,
+                kind,
+                location: { uri, range: location.range },
+                selectionRange
+            };
         }
     }
 

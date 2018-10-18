@@ -19,10 +19,14 @@ import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { PythonClientContribution } from './python-client-contribution';
 import { PythonGrammarContribution } from './python-grammar-contribution';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
+import { CallHierarchyService } from '@theia/callhierarchy/lib/browser';
+import { PythonCallHierarchyService } from './python-callhierarchy-service';
 
 export default new ContainerModule(bind => {
     bind(PythonClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(PythonClientContribution));
 
     bind(LanguageGrammarDefinitionContribution).to(PythonGrammarContribution).inSingletonScope();
+    bind(PythonCallHierarchyService).toSelf().inSingletonScope();
+    bind(CallHierarchyService).toService(PythonCallHierarchyService);
 });
