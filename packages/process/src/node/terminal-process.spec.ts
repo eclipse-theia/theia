@@ -43,13 +43,22 @@ describe('TerminalProcess', function () {
             return expect(() => terminalProcessFactory({ command: '/non-existent' })).to.throw();
         } else {
             const terminalProcess = terminalProcessFactory({ command: '/non-existant' });
-            const p = new Promise(resolve => {
+            const p = new Promise<number>((resolve, reject) => {
+                terminalProcess.onError(error => {
+                    reject();
+                });
+
                 terminalProcess.onExit(event => {
-                    if (event.code > 0) { resolve(); }
+                    if (event.code === undefined) {
+                        reject();
+                    }
+
+                    resolve(event.code);
                 });
             });
 
-            await p;
+            const exitCode = await p;
+            expect(exitCode).equal(1);
         }
     });
 

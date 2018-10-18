@@ -90,21 +90,22 @@ describe('RawProcess', function () {
     it('test exit', async function () {
         const args = ['--version'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
-        const p = new Promise((resolve, reject) => {
+        const p = new Promise<number>((resolve, reject) => {
             rawProcess.onError(error => {
                 reject();
             });
 
             rawProcess.onExit(event => {
-                if (event.code > 0) {
+                if (event.code === undefined) {
                     reject();
-                } else {
-                    resolve();
                 }
+
+                resolve(event.code);
             });
         });
 
-        await p;
+        const exitCode = await p;
+        expect(exitCode).equal(0);
     });
 
     it('test pipe stdout stream', async function () {
