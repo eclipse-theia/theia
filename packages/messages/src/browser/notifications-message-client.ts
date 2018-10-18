@@ -73,7 +73,8 @@ export class NotificationsMessageClient extends MessageClient {
             icon,
             text,
             actions,
-            timeout
+            timeout,
+            onTimeout: () => onCloseFn(undefined)
         });
     }
 
