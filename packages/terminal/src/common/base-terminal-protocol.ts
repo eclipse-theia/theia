@@ -33,7 +33,9 @@ export namespace IBaseTerminalServer {
 
 export interface IBaseTerminalExitEvent {
     terminalId: number;
-    code: number;
+
+    // Exactly one of code and signal will be set.
+    code?: number;
     signal?: string;
 }
 

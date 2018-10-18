@@ -103,7 +103,14 @@ export class RawProcess extends Process {
             }
 
             this.process.on('error', this.emitOnError.bind(this));
-            this.process.on('exit', this.emitOnExit.bind(this));
+            this.process.on('exit', (exitCode: number, signal: string) => {
+                // node's child_process exit sets the unused parameter to null,
+                // but we want it to be undefined instead.
+                this.emitOnExit(
+                    exitCode !== null ? exitCode : undefined,
+                    signal !== null ? signal : undefined,
+                );
+            });
 
             this.output = this.process.stdout;
             this.input = this.process.stdin;
