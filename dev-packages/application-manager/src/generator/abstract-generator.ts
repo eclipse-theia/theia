@@ -27,6 +27,9 @@ const argv = yargs.option('mode', {
     description: 'Split frontend modules into separate chunks. By default enabled in the dev mode and disabled in the prod mode.',
     type: 'boolean',
     default: undefined
+}).option('app-target', {
+    description: 'The target application type. Overrides ["theia.target"] in the application\'s package.json.',
+    choices: ['browser', 'electron'],
 }).argv;
 const mode: 'development' | 'production' = argv.mode;
 const splitFrontend: boolean = argv['split-frontend'] === undefined ? mode === 'development' : argv['split-frontend'];
