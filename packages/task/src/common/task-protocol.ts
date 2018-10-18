@@ -65,7 +65,9 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
 export interface TaskExitedEvent {
     readonly taskId: number;
     readonly ctx?: string;
-    readonly code: number;
+
+    // Exactly one of code and signal will be set.
+    readonly code?: number;
     readonly signal?: string;
 }
 

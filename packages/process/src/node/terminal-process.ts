@@ -20,6 +20,7 @@ import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
 import { IPty, spawn } from 'node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
+import { signame } from './utils';
 
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
 export interface TerminalProcessOptions extends ProcessOptions {
@@ -51,7 +52,19 @@ export class TerminalProcess extends Process {
             options.options || {});
 
         this.terminal.on('exit', (code: number, signal?: number) => {
-            this.emitOnExit(code, signal ? signal.toString() : undefined);
+            // Make sure to only pass either code or signal as !undefined, not
+            // both.
+            //
+            // node-pty quirk: On Linux/macOS, if the process exited through the
+            // exit syscall (with an exit code), signal will be 0 (an invalid
+            // signal value).  If it was terminated because of a signal, the
+            // signal parameter will hold the signal number and code should
+            // be ignored.
+            if (signal === undefined || signal === 0) {
+                this.emitOnExit(code, undefined);
+            } else {
+                this.emitOnExit(undefined, signame(signal));
+            }
         });
 
         this.terminal.on('data', (data: string) => {

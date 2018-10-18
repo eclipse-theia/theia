@@ -2,7 +2,8 @@
   "extends": "../../configs/base.tsconfig",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib"
+    "outDir": "lib",
+    "strictFunctionTypes": true
   },
   "include": [
     "src"
