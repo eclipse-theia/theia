@@ -30,6 +30,7 @@ export interface NotificationProperties {
     text: string;
     actions?: NotificationAction[];
     timeout: number | undefined;
+    onTimeout: () => void;
 }
 
 export interface Notification {
@@ -78,6 +79,7 @@ export class Notifications {
 
         const closeTimer = (!!properties.timeout && properties.timeout > 0) ?
             window.setTimeout(() => {
+                properties.onTimeout();
                 close();
             }, properties.timeout) : undefined;
 
