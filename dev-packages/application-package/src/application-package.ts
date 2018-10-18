@@ -30,12 +30,12 @@ export class ApplicationPackageOptions {
     readonly log?: ApplicationLog;
     readonly error?: ApplicationLog;
     readonly registry?: NpmRegistry;
+    readonly appTarget?: ApplicationProps.Target;
 }
 
 export type ApplicationModuleResolver = (modulePath: string) => string;
 
 export class ApplicationPackage {
-
     readonly projectPath: string;
     readonly log: ApplicationLog;
     readonly error: ApplicationLog;
@@ -68,6 +68,11 @@ export class ApplicationPackage {
             return this._props;
         }
         const theia = this.pck.theia || {};
+
+        if (this.options.appTarget) {
+            theia.target = this.options.appTarget;
+        }
+
         return this._props = { ...ApplicationProps.DEFAULT, ...theia };
     }
 
