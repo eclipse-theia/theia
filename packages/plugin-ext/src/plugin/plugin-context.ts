@@ -93,7 +93,7 @@ export function createAPIFactory(
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
-    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc));
+    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc, editorsAndDocuments));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
@@ -284,6 +284,9 @@ export function createAPIFactory(
             },
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, undefined, maxResults, token);
+            },
+            registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
+                return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             }
         };
 

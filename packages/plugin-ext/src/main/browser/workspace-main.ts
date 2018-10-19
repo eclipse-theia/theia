@@ -26,6 +26,9 @@ import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/br
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { editor } from '@typefox/monaco-editor-core';
+import ITextModel = editor.ITextModel;
 
 export class WorkspaceMainImpl implements WorkspaceMain {
 
@@ -33,15 +36,20 @@ export class WorkspaceMainImpl implements WorkspaceMain {
 
     private quickOpenService: MonacoQuickOpenService;
 
+    private textModelService: MonacoTextModelService;
+
     private fileSearchService: FileSearchService;
+
+    private resourceContentProvider: { [handle: number]: theia.Disposable } = {};
 
     private roots: FileStat[];
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
         this.quickOpenService = container.get(MonacoQuickOpenService);
-        const workspaceService = container.get(WorkspaceService);
+        this.textModelService = container.get(MonacoTextModelService);
         this.fileSearchService = container.get(FileSearchService);
+        const workspaceService = container.get(WorkspaceService);
 
         workspaceService.roots.then(roots => {
             this.roots = roots;
@@ -139,7 +147,7 @@ export class WorkspaceMainImpl implements WorkspaceMain {
             promises[j++] = this.fileSearchService.find(includePattern, {rootUri: root.uri}).then(value => {
                 const paths: string[] = new Array();
                 let i = 0;
-                value.forEach( item => {
+                value.forEach(item => {
                     let path: string;
                     path = root.uri.endsWith('/') ? root.uri + item : root.uri + '/' + item;
                     paths[i++] = path;
@@ -153,6 +161,42 @@ export class WorkspaceMainImpl implements WorkspaceMain {
                 uris[i++] = Uri.parse(path);
             });
             return Promise.resolve(uris);
-            });
+        });
+    }
+
+    $registerTextDocumentContentProvider(handle: number, scheme: string): void {
+        this.resourceContentProvider[handle] = this.textModelService.registerTextModelContentProvider(scheme, {
+                provideTextContent: (uri: monaco.Uri): monaco.Promise<ITextModel> =>
+                    monaco.Promise.wrap(this.proxy.$provideTextDocumentContent(handle, uri).then(value => {
+                            if (typeof value === 'string') {
+                                const firstLineText = value.substr(0, 1 + value.search(/\r?\n/));
+                                return this.getModel(value, uri, firstLineText);
+                            } else {
+                                return undefined!;
+                            }
+                        }
+                        )
+                    )
+            }
+        );
+    }
+
+    getModel(value: string, uri: Uri, firstLineText: string): monaco.Promise<ITextModel> {
+        const modeService = monaco.services.StaticServices.modeService.get();
+        return modeService.getOrCreateModeByFilenameOrFirstLine(uri.fsPath, firstLineText).then((mode: any) =>
+                monaco.Promise.as(monaco.editor.createModel(value, mode.getLanguageIdentifier().language, uri))
+        );
+    }
+
+    $unregisterTextContentProvider(handle: number): void {
+        const registration = this.resourceContentProvider[handle];
+        if (registration) {
+            registration.dispose();
+            delete this.resourceContentProvider[handle];
+        }
+    }
+
+    $onVirtualDocumentChange(uri: UriComponents, value: string): void {
+       // not implemented yet
     }
 }

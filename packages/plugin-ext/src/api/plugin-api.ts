@@ -312,6 +312,9 @@ export interface QuickOpenMain {
 
 export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
+    $registerTextDocumentContentProvider(handle: number, scheme: string): void;
+    $unregisterTextContentProvider(handle: number): void;
+    $onVirtualDocumentChange(uri: UriComponents, value: string): void;
     $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes: string | false,
                      maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
 
@@ -319,6 +322,7 @@ export interface WorkspaceMain {
 
 export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: theia.WorkspaceFoldersChangeEvent): void;
+    $provideTextDocumentContent(handle: number, uri: UriComponents): Promise<string | undefined>;
 }
 
 export interface DialogsMain {

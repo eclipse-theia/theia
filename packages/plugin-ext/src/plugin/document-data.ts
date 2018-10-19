@@ -257,6 +257,19 @@ export class DocumentDataExt {
         return new Position(line, character);
     }
 
+    equalLines(lines: string[]): boolean {
+        const len = lines.length;
+        if (len !== this.lines.length) {
+            return false;
+        }
+        for (let i = 0; i < len; i++) {
+            if (lines[i] !== this.lines[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private lineAt(lineOrPosition: number | theia.Position): theia.TextLine {
 
         let line: number = -1;

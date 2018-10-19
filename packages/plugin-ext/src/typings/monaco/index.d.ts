@@ -231,6 +231,7 @@ declare module monaco.services {
 
     export module StaticServices {
         export const codeEditorService: LazyStaticService<ICodeEditorService>;
+        export const modeService: LazyStaticService<IModeService>;
     }
 
 }
