@@ -21,6 +21,9 @@
 
 // copied from https://github.com/Microsoft/vscode/blob/d4edb9abcc261846cabee6702715fe2914ae42cb/src/vs/base/common/jsonSchema.ts
 
+// Keep tab indent for easier comparison with the original file.
+/* tslint:disable:indent */
+
 /**
  * extended JSON schema
  */
