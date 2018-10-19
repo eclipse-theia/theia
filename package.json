@@ -68,5 +68,8 @@
     "dev-packages/*",
     "packages/*",
     "examples/*"
-  ]
+  ],
+  "resolutions": {
+    "**/inversify": "4.13.0"
+  }
 }
