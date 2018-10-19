@@ -173,8 +173,8 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     }
 
     protected onActivateRequest(msg: Message): void {
-        if (this.treeWidget) {
-            this.treeWidget.activate();
+        if (this.currentEditor) {
+            this.currentEditor.activate();
         }
         super.onActivateRequest(msg);
     }
