@@ -75,6 +75,11 @@ export interface Keybinding {
     context?: string;
 }
 
+export interface ScopedKeybinding extends Keybinding {
+    /** Current keybinding scope */
+    scope?: KeybindingScope;
+}
+
 export const KeybindingContribution = Symbol('KeybindingContribution');
 export interface KeybindingContribution {
     registerKeybindings(keybindings: KeybindingRegistry): void;
@@ -341,15 +346,15 @@ export class KeybindingRegistry {
      *
      * @param commandId The ID of the command for which we are looking for keybindings.
      */
-    getKeybindingsForCommand(commandId: string): Keybinding[] {
-        const result: Keybinding[] = [];
+    getKeybindingsForCommand(commandId: string): ScopedKeybinding[] {
+        const result: ScopedKeybinding[] = [];
 
         for (let scope = KeybindingScope.END - 1; scope >= KeybindingScope.DEFAULT; scope--) {
             this.keymaps[scope].forEach(binding => {
                 const command = this.commandRegistry.getCommand(binding.command);
                 if (command) {
                     if (command.id === commandId) {
-                        result.push(binding);
+                        result.push({ ...binding, scope });
                     }
                 }
             });
