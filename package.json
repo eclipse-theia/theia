@@ -7,7 +7,8 @@
     "node": ">=7.9.0"
   },
   "resolution": {
-    "**/@types/node": "8.10.20"
+    "**/@types/node": "8.10.20",
+    "**/inversify": "4.13.0"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
@@ -68,8 +69,5 @@
     "dev-packages/*",
     "packages/*",
     "examples/*"
-  ],
-  "resolutions": {
-    "**/inversify": "4.13.0"
-  }
+  ]
 }
