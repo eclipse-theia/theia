@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional, multiInject } from 'inversify';
 import * as express from 'express';
 import * as fs from 'fs';
 import { resolve } from 'path';
 import { MetadataScanner } from './metadata-scanner';
-import { PluginMetadata, PluginPackage, getPluginId } from '../../common/plugin-protocol';
+import { PluginMetadata, PluginPackage, getPluginId, MetadataProcessor } from '../../common/plugin-protocol';
 import { ILogger } from '@theia/core';
 
 @injectable()
@@ -30,6 +30,9 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
     @inject(MetadataScanner) private readonly scanner: MetadataScanner;
     private plugin: PluginMetadata | undefined;
+
+    @optional()
+    @multiInject(MetadataProcessor) private readonly metadataProcessors: MetadataProcessor[];
 
     /**
      * Map between a plugin's id and the local storage
@@ -80,6 +83,12 @@ export class HostedPluginReader implements BackendApplicationContribution {
         }
 
         if (pluginMetadata) {
+            // Add post processor
+            if (this.metadataProcessors) {
+                this.metadataProcessors.forEach(metadataProcessor => {
+                    metadataProcessor.process(pluginMetadata);
+                });
+            }
             this.pluginsIdsFiles.set(getPluginId(pluginMetadata.model), path);
         }
 

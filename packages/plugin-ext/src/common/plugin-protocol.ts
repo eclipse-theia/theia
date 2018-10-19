@@ -427,9 +427,15 @@ export interface ExtensionContext {
 }
 
 export interface PluginMetadata {
+    host: string;
     source: PluginPackage;
     model: PluginModel;
     lifecycle: PluginLifecycle;
+}
+
+export const MetadataProcessor = Symbol('MetadataProcessor');
+export interface MetadataProcessor {
+    process(pluginMetadata: PluginMetadata): void;
 }
 
 export function getPluginId(plugin: PluginPackage | PluginModel): string {
