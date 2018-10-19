@@ -40,24 +40,6 @@
     text-decoration: underline;
 }
 
-
-.kb table th:nth-child(1) {
-    text-align: center;
-    width: 30px;
-}
-
-.kb table th:nth-child(3) {
-    width: 200px;
-}
-
-.kb table th:nth-child(5) {
-    width: 100px;
-}
-
-.kb table th:nth-child(6) {
-    width: 150px;
-}
-
 .kb table {
     border-spacing: 0;
     border-collapse: separate;
@@ -92,6 +74,10 @@
     font-size: calc(var(--theia-ui-font-size1) * 0.8);
 }
 
+.td-scope {
+    text-transform: lowercase;
+}
+
 .kb table tr:nth-child(odd) {
     background-color: rgba(130, 130, 130, 0.04);
 }
@@ -113,6 +99,30 @@
     padding-top: 5px;
     text-align: left;
     vertical-align: middle;
+}
+
+.kb table .th-action {
+    width: 30px;
+}
+
+.kb table .th-command {
+    width: 200px;
+}
+
+.kb table .th-context {
+    width: 70px;
+}
+
+.kb table .th-label {
+    width: 150px;
+}
+
+.kb table .th-keybinding {
+    width: 70px;
+}
+
+.kb table .th-scope {
+    width: 30px;
 }
 
 .message-container {

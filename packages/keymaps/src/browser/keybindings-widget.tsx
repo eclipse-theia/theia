@@ -20,7 +20,7 @@ import * as fuzzy from 'fuzzy';
 import { injectable, inject, postConstruct } from 'inversify';
 import { CommandRegistry, Command, MessageService } from '@theia/core/lib/common';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message } from '@theia/core/lib/browser';
+import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
 import { KeymapsService, KeybindingJson } from './keymaps-service';
 
@@ -29,6 +29,7 @@ export interface KeybindingItem {
     command: string,
     keybinding?: string,
     context?: string,
+    scope?: string,
 }
 
 export interface CellData {
@@ -100,7 +101,7 @@ export class KeybindingWidget extends ReactWidget {
         this.query = searchField ? searchField.value.trim().toLocaleLowerCase() : '';
         const items = this.getItems();
         items.forEach(item => {
-            const keys: (keyof KeybindingItem)[] = ['id', 'command', 'keybinding', 'context'];
+            const keys: (keyof KeybindingItem)[] = ['id', 'command', 'keybinding', 'context', 'scope'];
             let matched = false;
             for (const key of keys) {
                 const string = item[key];
@@ -161,11 +162,12 @@ export class KeybindingWidget extends ReactWidget {
                 <table>
                     <thead>
                         <tr>
-                            <th></th>
-                            <th>Label</th>
-                            <th>Keybinding</th>
-                            <th>Command</th>
-                            <th>Context</th>
+                            <th className='th-action'></th>
+                            <th className='th-label'>Label</th>
+                            <th className='th-keybinding'>Keybinding</th>
+                            <th className='th-scope'>Scope</th>
+                            <th className='th-context'>Context</th>
+                            <th className='th-command'>Command</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -181,24 +183,31 @@ export class KeybindingWidget extends ReactWidget {
             {
                 this.items.map((item, index) =>
                     <tr className='kb-item-row' key={index} onDoubleClick={a => this.editKeybinding(item)}>
-                        <td>
-                            <a href='#' onClick={a => this.editKeybinding(item)}>
-                                <i className='fa fa-pencil kb-edit'></i>
-                            </a>
-                            <a href='#' onClick={a => this.removeKeybinding(item)}>
-                                <i className='fa fa-undo kb-edit'></i>
-                            </a>
-                        </td>
+                        <td>{this.renderActions(item)}</td>
                         <td title={this.getRawValue(item.command)}>{this.renderMatchedData(item.command)}</td>
                         <td title={(item.keybinding) ? this.getRawValue(item.keybinding) : ''} className='monaco-keybinding'>
                             {item.keybinding ? this.renderKeybinding(item.keybinding) : ''}
                         </td>
-                        <td title={this.getRawValue(item.id)}><code>{this.renderMatchedData(item.id)}</code></td>
+                        <td title={(item.scope) ? this.getRawValue(item.scope) : ''}>
+                            <code className='td-scope'>{item.scope ? this.renderMatchedData(item.scope) : ''}</code>
+                        </td>
                         <td title={(item.context) ? this.getRawValue(item.context) : ''}><code>{(item.context) ? this.renderMatchedData(item.context) : ''}</code></td>
+                        <td title={this.getRawValue(item.id)}><code>{this.renderMatchedData(item.id)}</code></td>
                     </tr>
                 )
             }
         </React.Fragment>;
+    }
+
+    protected renderActions(item: KeybindingItem): React.ReactNode {
+        return <span>
+            <a href='#' onClick={a => this.editKeybinding(item)}>
+                <i className='fa fa-pencil kb-edit'></i>
+            </a>
+            <a href='#' onClick={a => this.removeKeybinding(item)}>
+                <i className='fa fa-undo kb-edit'></i>
+            </a>
+        </span>;
     }
 
     protected renderKeybinding(keybinding: string): React.ReactNode {
@@ -236,7 +245,9 @@ export class KeybindingWidget extends ReactWidget {
                 id: commands[i].id,
                 command: commands[i].label || '',
                 keybinding: (keybindings && keybindings[0]) ? keybindings[0].keybinding : '',
-                context: (keybindings && keybindings[0]) ? keybindings[0].context : ''
+                context: (keybindings && keybindings[0]) ? keybindings[0].context : '',
+                scope: (keybindings && keybindings[0] && typeof keybindings[0].scope !== 'undefined')
+                    ? KeybindingScope[keybindings[0].scope!].toLocaleLowerCase() : '',
             };
             items.push(item);
         }
