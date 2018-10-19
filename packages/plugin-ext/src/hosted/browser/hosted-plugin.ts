@@ -75,11 +75,27 @@ export class HostedPluginSupport {
             }
 
             if (backend) {
-                // create one RPC per plugin to be able so remote plug-ins can be in different context
-                pluginsMetadata.forEach(pluginMetadata => {
-                    const rpc = this.createServerRpc(pluginMetadata);
+                // sort plugins per host
+                const pluginsPerHost = pluginsMetadata.reduce((map: any, pluginMetadata) => {
+                    const host = pluginMetadata.host;
+                    if (!map[host]) {
+                        map[host] = [pluginMetadata];
+                    } else {
+                        map[host].push(pluginMetadata);
+                    }
+                    return map;
+                }, {});
+
+                // create one RPC per host and init.
+                Object.keys(pluginsPerHost).forEach(hostKey => {
+                    const plugins: PluginMetadata[] = pluginsPerHost[hostKey];
+                    let pluginID = hostKey;
+                    if (plugins.length === 1) {
+                        pluginID = getPluginId(plugins[0].model);
+                    }
+                    const rpc = this.createServerRpc(pluginID);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                    hostedExtManager.$init({ plugins: [pluginMetadata], preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
+                    hostedExtManager.$init({ plugins: plugins, preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
                     setUpPluginApi(rpc, container);
                 });
             }
@@ -105,11 +121,10 @@ export class HostedPluginSupport {
         return result;
     }
 
-    private createServerRpc(pluginMetadata: PluginMetadata): RPCProtocol {
+    private createServerRpc(pluginID: string): RPCProtocol {
         return new RPCProtocolImpl({
             onMessage: this.watcher.onPostMessageEvent,
             send: message => {
-                const pluginID = getPluginId(pluginMetadata.model);
                 const wrappedMessage: any = {};
                 wrappedMessage['pluginID'] = pluginID;
                 wrappedMessage['content'] = message;
