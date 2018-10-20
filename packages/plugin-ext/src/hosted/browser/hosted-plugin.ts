@@ -93,7 +93,7 @@ export class HostedPluginSupport {
                     if (plugins.length === 1) {
                         pluginID = getPluginId(plugins[0].model);
                     }
-                    const rpc = this.createServerRpc(pluginID);
+                    const rpc = this.createServerRpc(pluginID, hostKey);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                     hostedExtManager.$init({ plugins: plugins, preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
                     setUpPluginApi(rpc, container);
@@ -121,7 +121,7 @@ export class HostedPluginSupport {
         return result;
     }
 
-    private createServerRpc(pluginID: string): RPCProtocol {
+    private createServerRpc(pluginID: string, hostID: string): RPCProtocol {
         return new RPCProtocolImpl({
             onMessage: this.watcher.onPostMessageEvent,
             send: message => {
@@ -130,6 +130,6 @@ export class HostedPluginSupport {
                 wrappedMessage['content'] = message;
                 this.server.onMessage(JSON.stringify(wrappedMessage));
             }
-        });
+        }, hostID);
     }
 }
