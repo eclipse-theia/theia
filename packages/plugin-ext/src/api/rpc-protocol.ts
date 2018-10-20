@@ -61,8 +61,9 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly invokedHandlers: { [req: string]: Promise<any>; };
     private readonly pendingRPCReplies: { [msgId: string]: Deferred<any>; };
     private readonly multiplexor: RPCMultiplexer;
+    private messageToSendHostId: string | undefined;
 
-    constructor(connection: MessageConnection) {
+    constructor(connection: MessageConnection, readonly remoteHostID?: string) {
         this.isDisposed = false;
         // tslint:disable-next-line:no-null-keyword
         this.locals = Object.create(null);
@@ -72,7 +73,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         // tslint:disable-next-line:no-null-keyword
         this.invokedHandlers = Object.create(null);
         this.pendingRPCReplies = {};
-        this.multiplexor = new RPCMultiplexer(connection, msg => this.receiveOneMessage(msg));
+        this.multiplexor = new RPCMultiplexer(connection, msg => this.receiveOneMessage(msg), remoteHostID);
     }
     getProxy<T>(proxyId: ProxyIdentifier<T>): T {
         if (!this.proxies[proxyId.id]) {
@@ -109,7 +110,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         const result = new Deferred();
 
         this.pendingRPCReplies[callId] = result;
-        this.multiplexor.send(MessageFactory.request(callId, proxyId, methodName, args));
+        this.multiplexor.send(MessageFactory.request(callId, proxyId, methodName, args, this.messageToSendHostId));
         return result.promise;
     }
 
@@ -119,6 +120,17 @@ export class RPCProtocolImpl implements RPCProtocol {
         }
 
         const msg = <RPCMessage>JSON.parse(rawmsg);
+
+        // handle message that sets the Host ID
+        if ((<any>msg).setHostID) {
+            this.messageToSendHostId = (<any>msg).setHostID;
+            return;
+        }
+
+        // skip message if not matching host
+        if (this.remoteHostID && (<any>msg).hostID && this.remoteHostID !== (<any>msg).hostID) {
+            return;
+        }
 
         switch (msg.type) {
             case MessageType.Request:
@@ -141,10 +153,10 @@ export class RPCProtocolImpl implements RPCProtocol {
 
         this.invokedHandlers[callId].then(r => {
             delete this.invokedHandlers[callId];
-            this.multiplexor.send(MessageFactory.replyOK(callId, r));
+            this.multiplexor.send(MessageFactory.replyOK(callId, r, this.messageToSendHostId));
         }, err => {
             delete this.invokedHandlers[callId];
-            this.multiplexor.send(MessageFactory.replyErr(callId, err));
+            this.multiplexor.send(MessageFactory.replyErr(callId, err, this.messageToSendHostId));
         });
     }
 
@@ -218,11 +230,14 @@ class RPCMultiplexer {
 
     private messagesToSend: string[];
 
-    constructor(connection: MessageConnection, onMessage: (msg: string) => void) {
+    constructor(connection: MessageConnection, onMessage: (msg: string) => void, remoteHostId?: string) {
         this.connection = connection;
         this.sendAccumulatedBound = this.sendAccumulated.bind(this);
 
         this.messagesToSend = [];
+        if (remoteHostId) {
+            this.send(`{"setHostID":"${remoteHostId}"}`);
+        }
 
         this.connection.onMessage((data: string[]) => {
             const len = data.length;
@@ -252,22 +267,34 @@ class RPCMultiplexer {
 
 class MessageFactory {
 
-    public static request(req: string, rpcId: string, method: string, args: any[]): string {
-        return `{"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args)}}`;
+    public static request(req: string, rpcId: string, method: string, args: any[], messageToSendHostId?: string): string {
+        let prefix = '';
+        if (messageToSendHostId) {
+            prefix = `"hostID":"${messageToSendHostId}",`;
+        }
+        return `{${prefix}"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args)}}`;
     }
 
-    public static replyOK(req: string, res: any): string {
+    public static replyOK(req: string, res: any, messageToSendHostId?: string): string {
+        let prefix = '';
+        if (messageToSendHostId) {
+            prefix = `"hostID":"${messageToSendHostId}",`;
+        }
         if (typeof res === 'undefined') {
-            return `{"type":${MessageType.Reply},"id":"${req}"}`;
+            return `{${prefix}"type":${MessageType.Reply},"id":"${req}"}`;
         }
-        return `{"type":${MessageType.Reply},"id":"${req}","res":${JSON.stringify(res)}}`;
+        return `{${prefix}"type":${MessageType.Reply},"id":"${req}","res":${JSON.stringify(res)}}`;
     }
 
-    public static replyErr(req: string, err: any): string {
-        if (err instanceof Error) {
-            return `{"type":${MessageType.ReplyErr},"id":"${req}","err":${JSON.stringify(transformErrorForSerialization(err))}}`;
+    public static replyErr(req: string, err: any, messageToSendHostId?: string): string {
+        let prefix = '';
+        if (messageToSendHostId) {
+            prefix = `"hostID":"${messageToSendHostId}",`;
         }
-        return `{"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
+        if (err instanceof Error) {
+            return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":${JSON.stringify(transformErrorForSerialization(err))}}`;
+        }
+        return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
     }
 }
 
