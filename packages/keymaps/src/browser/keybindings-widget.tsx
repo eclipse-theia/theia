@@ -272,17 +272,18 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected editKeybinding(item: KeybindingItem): void {
-        const rawCommand = this.getRawValue(item.command);
-        const rawId = this.getRawValue(item.id);
-        const rawKeybinding = (item.keybinding) ? this.getRawValue(item.keybinding) : '';
+        const command = this.getRawValue(item.command);
+        const id = this.getRawValue(item.id);
+        const keybinding = (item.keybinding) ? this.getRawValue(item.keybinding) : '';
+        const context = (item.context) ? this.getRawValue(item.context) : '';
         const dialog = new SingleTextInputDialog({
-            title: `Edit Keybinding For ${rawCommand}`,
-            initialValue: rawKeybinding,
-            validate: keybinding => this.validateKeybinding(rawCommand, rawKeybinding, keybinding),
+            title: `Edit Keybinding For ${command}`,
+            initialValue: keybinding,
+            validate: newKeybinding => this.validateKeybinding(command, keybinding, newKeybinding),
         });
-        dialog.open().then(async keybinding => {
-            if (keybinding) {
-                await this.keymapsService.setKeybinding(rawId, keybinding);
+        dialog.open().then(async newKeybinding => {
+            if (newKeybinding) {
+                await this.keymapsService.setKeybinding({ 'command': id, 'keybinding': newKeybinding, 'context': context });
             }
         });
     }
