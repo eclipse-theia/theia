@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
@@ -27,7 +28,13 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {
-            execute: () => this.quickFileOpenService.open(),
+            execute: (args: any[]) => {
+                if (args) {
+                    const [fileURI] = args;
+                    return this.quickFileOpenService.openFile(new URI(fileURI));
+                }
+                return this.quickFileOpenService.open();
+            },
             isEnabled: () => this.quickFileOpenService.isEnabled()
         });
     }
