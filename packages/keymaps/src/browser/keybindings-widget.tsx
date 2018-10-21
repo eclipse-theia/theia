@@ -18,7 +18,7 @@ import React = require('react');
 import debounce = require('lodash.debounce');
 import * as fuzzy from 'fuzzy';
 import { injectable, inject, postConstruct } from 'inversify';
-import { CommandRegistry, Command, MessageService } from '@theia/core/lib/common';
+import { CommandRegistry, Command } from '@theia/core/lib/common';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
@@ -51,9 +51,6 @@ export class KeybindingWidget extends ReactWidget {
 
     @inject(KeymapsService)
     protected readonly keymapsService: KeymapsService;
-
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
 
     protected items: KeybindingItem[];
 
@@ -183,7 +180,7 @@ export class KeybindingWidget extends ReactWidget {
             {
                 this.items.map((item, index) =>
                     <tr className='kb-item-row' key={index} onDoubleClick={a => this.editKeybinding(item)}>
-                        <td>{this.renderActions(item)}</td>
+                        <td className='kb-actions'>{this.renderActions(item)}</td>
                         <td title={this.getRawValue(item.command)}>{this.renderMatchedData(item.command)}</td>
                         <td title={(item.keybinding) ? this.getRawValue(item.keybinding) : ''} className='monaco-keybinding'>
                             {item.keybinding ? this.renderKeybinding(item.keybinding) : ''}
@@ -200,14 +197,16 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected renderActions(item: KeybindingItem): React.ReactNode {
-        return <span>
-            <a href='#' onClick={a => this.editKeybinding(item)}>
-                <i className='fa fa-pencil kb-edit'></i>
-            </a>
-            <a href='#' onClick={a => this.removeKeybinding(item)}>
-                <i className='fa fa-undo kb-edit'></i>
-            </a>
-        </span>;
+        return <span>{this.renderEdit(item)}{this.renderRemove(item)}</span>;
+    }
+
+    protected renderEdit(item: KeybindingItem): React.ReactNode {
+        return <a title='Edit' href='#' onClick={a => this.editKeybinding(item)}><i className='fa fa-pencil kb-edit'></i></a>;
+    }
+
+    protected renderRemove(item: KeybindingItem): React.ReactNode {
+        return (item.scope && item.scope === KeybindingScope[1].toLocaleLowerCase())
+            ? <a title='Remove' href='#' onClick={a => this.removeKeybinding(item)}><i className='fa fa-undo kb-edit'></i></a> : '';
     }
 
     protected renderKeybinding(keybinding: string): React.ReactNode {
@@ -289,12 +288,6 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected async confirmRemoveKeybinding(command: string, commandId: string): Promise<boolean> {
-        const keybindings = await this.keymapsService.getKeybindings();
-        const exists = this.keybindingExistsInJson(keybindings, commandId);
-        if (!exists) {
-            this.messageService.warn(`No custom keybinding found for '${command}'`);
-            return false;
-        }
         const dialog = new ConfirmDialog({
             title: `Revert keybinding for '${command}'`,
             msg: 'Do you really want to revert this keybinding?'
