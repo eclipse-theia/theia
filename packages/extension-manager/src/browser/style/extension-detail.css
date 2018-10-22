@@ -43,8 +43,6 @@
     margin-top: 0px;
 }
 
-.theia-extension-detail .extensionVersion {}
-
 .theia-extension-detail .extensionAuthor {
     border-right: var(--theia-ui-font-color1) 1px solid;
     padding-right: 10px;
