@@ -41,6 +41,7 @@ import * as path from 'path';
 import { isObject } from 'util';
 import { GrammarsReader } from './grammars-reader';
 import { CharacterPair } from '../../../api/plugin-api';
+import * as jsoncparser from 'jsonc-parser';
 
 @injectable()
 export class TheiaPluginScanner implements PluginScanner {
@@ -208,7 +209,8 @@ export class TheiaPluginScanner implements PluginScanner {
         if (rawLang.configuration) {
             const conf = fs.readFileSync(path.resolve(pluginPath, rawLang.configuration), 'utf8');
             if (conf) {
-                const rawConfiguration: PluginPackageLanguageContributionConfiguration = JSON.parse(conf);
+                const strippedContent = jsoncparser.stripComments(conf);
+                const rawConfiguration: PluginPackageLanguageContributionConfiguration = jsoncparser.parse(strippedContent);
 
                 const configuration: LanguageConfiguration = {
                     brackets: rawConfiguration.brackets,
