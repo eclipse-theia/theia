@@ -64,6 +64,9 @@ import {
     CodeActionTrigger,
     TextDocumentSaveReason,
     CodeAction,
+    SymbolKind,
+    DocumentSymbol,
+    SymbolInformation,
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -350,6 +353,12 @@ export function createAPIFactory(
             },
             registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
                 return languagesExt.registerCodeActionsProvider(selector, provider, metadata);
+            },
+            registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
+                return languagesExt.registerReferenceProvider(selector, provider);
+            },
+            registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
+                return languagesExt.registerDocumentSymbolProvider(selector, provider);
             }
 
         };
@@ -418,6 +427,9 @@ export function createAPIFactory(
             CodeActionTrigger,
             TextDocumentSaveReason,
             CodeAction,
+            SymbolKind,
+            DocumentSymbol,
+            SymbolInformation,
         };
     };
 }

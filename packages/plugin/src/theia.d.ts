@@ -3295,6 +3295,187 @@ declare module '@theia/plugin' {
      */
     export type ProviderResult<T> = T | undefined | PromiseLike<T | undefined>;
 
+
+    /**
+     * A symbol kind.
+     */
+    export enum SymbolKind {
+        File = 0,
+        Module = 1,
+        Namespace = 2,
+        Package = 3,
+        Class = 4,
+        Method = 5,
+        Property = 6,
+        Field = 7,
+        Constructor = 8,
+        Enum = 9,
+        Interface = 10,
+        Function = 11,
+        Variable = 12,
+        Constant = 13,
+        String = 14,
+        Number = 15,
+        Boolean = 16,
+        Array = 17,
+        Object = 18,
+        Key = 19,
+        Null = 20,
+        EnumMember = 21,
+        Struct = 22,
+        Event = 23,
+        Operator = 24,
+        TypeParameter = 25
+    }
+
+    /**
+     * Represents information about programming constructs like variables, classes,
+     * interfaces etc.
+     */
+    export class SymbolInformation {
+
+        /**
+         * The name of this symbol.
+         */
+        name: string;
+
+        /**
+         * The name of the symbol containing this symbol.
+         */
+        containerName: string;
+
+        /**
+         * The kind of this symbol.
+         */
+        kind: SymbolKind;
+
+        /**
+         * The location of this symbol.
+         */
+        location: Location;
+
+        /**
+         * Creates a new symbol information object.
+         *
+         * @param name The name of the symbol.
+         * @param kind The kind of the symbol.
+         * @param containerName The name of the symbol containing the symbol.
+         * @param location The location of the symbol.
+         */
+        constructor(name: string, kind: SymbolKind, containerName: string, location: Location);
+
+        /**
+         * ~~Creates a new symbol information object.~~
+         *
+         * @deprecated Please use the constructor taking a [location](#Location) object.
+         *
+         * @param name The name of the symbol.
+         * @param kind The kind of the symbol.
+         * @param range The range of the location of the symbol.
+         * @param uri The resource of the location of symbol, defaults to the current document.
+         * @param containerName The name of the symbol containing the symbol.
+         */
+        constructor(name: string, kind: SymbolKind, range: Range, uri?: Uri, containerName?: string);
+    }
+
+    /**
+    * Represents programming constructs like variables, classes, interfaces etc. that appear in a document. Document
+    * symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to
+    * its most interesting range, e.g. the range of an identifier.
+    */
+    export class DocumentSymbol {
+
+        /**
+         * The name of this symbol.
+         */
+        name: string;
+
+        /**
+         * More detail for this symbol, e.g the signature of a function.
+         */
+        detail: string;
+
+        /**
+         * The kind of this symbol.
+         */
+        kind: SymbolKind;
+
+        /**
+         * The range enclosing this symbol not including leading/trailing whitespace but everything else, e.g comments and code.
+         */
+        range: Range;
+
+        /**
+         * The range that should be selected and reveal when this symbol is being picked, e.g the name of a function.
+         * Must be contained by the [`range`](#DocumentSymbol.range).
+         */
+        selectionRange: Range;
+
+        /**
+         * Children of this symbol, e.g. properties of a class.
+         */
+        children: DocumentSymbol[];
+
+        /**
+         * Creates a new document symbol.
+         *
+         * @param name The name of the symbol.
+         * @param detail Details for the symbol.
+         * @param kind The kind of the symbol.
+         * @param range The full range of the symbol.
+         * @param selectionRange The range that should be reveal.
+         */
+        constructor(name: string, detail: string, kind: SymbolKind, range: Range, selectionRange: Range);
+    }
+
+    /**
+     * The document symbol provider interface defines the contract between extensions and
+     * the [go to symbol](https://code.visualstudio.com/docs/editor/editingevolved#_go-to-symbol)-feature.
+     */
+    export interface DocumentSymbolProvider {
+
+        /**
+         * Provide symbol information for the given document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param token A cancellation token.
+         * @return An array of document highlights or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideDocumentSymbols(document: TextDocument, token: CancellationToken): ProviderResult<SymbolInformation[] | DocumentSymbol[]>;
+    }
+
+    /**
+     * Value-object that contains additional information when
+     * requesting references.
+     */
+    export interface ReferenceContext {
+
+        /**
+         * Include the declaration of the current symbol.
+         */
+        includeDeclaration: boolean;
+    }
+
+    /**
+     * The reference provider interface defines the contract between extensions and
+     * the [find references](https://code.visualstudio.com/docs/editor/editingevolved#_peek)-feature.
+     */
+    export interface ReferenceProvider {
+
+        /**
+         * Provide a set of project-wide references for the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param context
+         * @param token A cancellation token.
+         * @return An array of locations or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideReferences(document: TextDocument, position: Position, context: ReferenceContext, token: CancellationToken): ProviderResult<Location[]>;
+    }
+
     /**
      * A text edit represents edits that should be applied
      * to a document.
@@ -4417,6 +4598,32 @@ declare module '@theia/plugin' {
         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
         */
         export function registerDocumentLinkProvider(selector: DocumentSelector, provider: DocumentLinkProvider): Disposable;
+
+        /**
+         * Register a reference provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A reference provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Disposable;
+
+        /**
+         * Register a document symbol provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A document symbol provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider): Disposable;
     }
 
     /**

@@ -291,6 +291,21 @@ export class LanguagesExtImpl implements LanguagesExt {
         return new Disposable(() => { });
     }
     // ### Code Actions Provider end
+
+    // ### Code Reference Provider begin
+    registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
+        // FIXME: to implement
+        return new Disposable(() => { });
+    }
+    // ### Code Reference Provider end
+
+    // ### Document Symbol Provider begin
+    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
+        // FIXME: to implement
+        return new Disposable(() => { });
+    }
+    // ### Document Symbol Provider end
+
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {
