@@ -197,16 +197,16 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected renderActions(item: KeybindingItem): React.ReactNode {
-        return <span>{this.renderEdit(item)}{this.renderRemove(item)}</span>;
+        return <span>{this.renderEdit(item)}{this.renderReset(item)}</span>;
     }
 
     protected renderEdit(item: KeybindingItem): React.ReactNode {
-        return <a title='Edit' href='#' onClick={a => this.editKeybinding(item)}><i className='fa fa-pencil kb-edit'></i></a>;
+        return <a title='Edit Keybinding' href='#' onClick={a => this.editKeybinding(item)}><i className='fa fa-pencil kb-action-item'></i></a>;
     }
 
-    protected renderRemove(item: KeybindingItem): React.ReactNode {
+    protected renderReset(item: KeybindingItem): React.ReactNode {
         return (item.scope && item.scope === KeybindingScope[1].toLocaleLowerCase())
-            ? <a title='Remove' href='#' onClick={a => this.removeKeybinding(item)}><i className='fa fa-undo kb-edit'></i></a> : '';
+            ? <a title='Reset Keybinding' href='#' onClick={a => this.resetKeybinding(item)}><i className='fa fa-undo kb-action-item'></i></a> : '';
     }
 
     protected renderKeybinding(keybinding: string): React.ReactNode {
@@ -287,18 +287,18 @@ export class KeybindingWidget extends ReactWidget {
         });
     }
 
-    protected async confirmRemoveKeybinding(command: string, commandId: string): Promise<boolean> {
+    protected async confirmResetKeybinding(command: string, commandId: string): Promise<boolean> {
         const dialog = new ConfirmDialog({
-            title: `Revert keybinding for '${command}'`,
-            msg: 'Do you really want to revert this keybinding?'
+            title: `Reset keybinding for '${command}'`,
+            msg: 'Do you really want to reset this keybinding to its default value?'
         });
         return !!await dialog.open();
     }
 
-    protected async removeKeybinding(item: KeybindingItem): Promise<void> {
+    protected async resetKeybinding(item: KeybindingItem): Promise<void> {
         const rawCommandId = this.getRawValue(item.id);
         const rawCommand = this.getRawValue(item.command);
-        const confirmed = await this.confirmRemoveKeybinding(rawCommand, rawCommandId);
+        const confirmed = await this.confirmResetKeybinding(rawCommand, rawCommandId);
         if (confirmed) {
             this.keymapsService.removeKeybinding(rawCommandId);
         }
