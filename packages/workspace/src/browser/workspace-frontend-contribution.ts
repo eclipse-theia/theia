@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { isOSX, isElectron, OS } from '@theia/core';
+import { isOSX, environment, OS } from '@theia/core';
 import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -41,8 +41,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     registerCommands(commands: CommandRegistry): void {
         // Not visible/enabled on Windows/Linux in electron.
         commands.registerCommand(WorkspaceCommands.OPEN, {
-            isEnabled: () => isOSX || !isElectron(),
-            isVisible: () => isOSX || !isElectron(),
+            isEnabled: () => isOSX || !this.isElectron(),
+            isVisible: () => isOSX || !this.isElectron(),
             // tslint:disable-next-line:no-any
             execute: (args: any[]) => {
                 if (args) {
@@ -81,13 +81,13 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        if (isOSX || !isElectron()) {
+        if (isOSX || !this.isElectron()) {
             menus.registerMenuAction(CommonMenus.FILE_OPEN, {
                 commandId: WorkspaceCommands.OPEN.id,
                 order: 'a00'
             });
         }
-        if (!isOSX && isElectron()) {
+        if (!isOSX && this.isElectron()) {
             menus.registerMenuAction(CommonMenus.FILE_OPEN, {
                 commandId: WorkspaceCommands.OPEN_FILE.id,
                 label: `${WorkspaceCommands.OPEN_FILE.dialogLabel}...`,
@@ -119,10 +119,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
-            command: isOSX || !isElectron() ? WorkspaceCommands.OPEN.id : WorkspaceCommands.OPEN_FILE.id,
+            command: isOSX || !this.isElectron() ? WorkspaceCommands.OPEN.id : WorkspaceCommands.OPEN_FILE.id,
             keybinding: 'ctrlcmd+alt+o',
         });
-        if (!isOSX && isElectron()) {
+        if (!isOSX && this.isElectron()) {
             keybindings.registerKeybinding({
                 command: WorkspaceCommands.OPEN_FOLDER.id,
                 keybinding: 'ctrl+k ctrl+o',
@@ -143,7 +143,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      * Except when you are on either Windows or Linux `AND` running in electron. If so, it opens a file.
      */
     protected async doOpen(): Promise<URI | undefined> {
-        if (!isOSX && isElectron()) {
+        if (!isOSX && this.isElectron()) {
             return this.doOpenFile();
         }
         const [rootStat] = await this.workspaceService.roots;
@@ -261,7 +261,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         await this.preferences.ready;
         const supportMultiRootWorkspace = this.preferences['workspace.supportMultiRootWorkspace'];
         const type = OS.type();
-        const electron = isElectron();
+        const electron = this.isElectron();
         return WorkspaceFrontendContribution.createOpenWorkspaceOpenFileDialogProps({
             type,
             electron,
@@ -312,6 +312,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         }).open();
         return !!confirmed;
     }
+
+    private isElectron(): boolean {
+        return environment.electron.is();
+    }
+
 }
 
 export namespace WorkspaceFrontendContribution {

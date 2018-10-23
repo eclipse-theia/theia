@@ -14,21 +14,43 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-const isElectronLib: () => boolean = require('is-electron');
+const isElectron: () => boolean = require('is-electron');
 
 /**
- * `true` if running in Electron. Otherwise, `false`. Can be called from both the `main` and the render process.
+ * The electron specific environment.
  */
-export function isElectron(): boolean {
-    return isElectronLib();
+class ElectronEnv {
+
+    /**
+     * Environment variable that can be accessed on the `process` to check if running in electron or not.
+     */
+    readonly THEIA_ELECTRON_VERSION = 'THEIA_ELECTRON_VERSION';
+
+    /**
+     * `true` if running in electron. Otherwise, `false`.
+     *
+     * Can be called from both the `main` and the render process. Also works for forked cluster workers.
+     */
+    is(): boolean {
+        // When forking a new process from the cluster, we can rely neither on `process.versions` nor `process.argv`.
+        // Se we look into the `process.env` as well. `is-electron` does not do it for us.
+        return isElectron() || typeof process !== 'undefined' && typeof process.env === 'object' && !!process.env.THEIA_ELECTRON_VERSION;
+    }
+
+    /**
+     * `true` if running in Electron in development mode. Otherwise, `false`.
+     *
+     * Cannot be used from the browser. From the browser, it is always `false`.
+     */
+    isDevMode(): boolean {
+        return this.is()
+            && typeof process !== 'undefined'
+            // `defaultApp` does not exist on the Node.js API, but on electron (`electron.d.ts`).
+            && ((process as any).defaultApp || /node_modules[/]electron[/]/.test(process.execPath)); // tslint:disable-line:no-any
+    }
+
 }
 
-/**
- * `true` if running in Electron in development mode. Otherwise, `false`. Cannot be used from the browser.
- */
-export function isElectronDevMode(): boolean {
-    return isElectron()
-        && typeof process !== 'undefined'
-        // `defaultApp` does not exist on the Node.js API, but on electron (`electron.d.ts`).
-        && ((process as any).defaultApp || /node_modules[/]electron[/]/.test(process.execPath)); // tslint:disable-line:no-any
-}
+const electron = new ElectronEnv();
+const environment: Readonly<{ electron: ElectronEnv }> = { electron };
+export { environment };
