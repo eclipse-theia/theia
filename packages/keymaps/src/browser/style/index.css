@@ -24,7 +24,7 @@
     vertical-align: middle;
 }
 
-.kb-edit {
+.kb-action-item {
     visibility: hidden;
     padding-right: 5px;
 }
@@ -91,7 +91,7 @@
     background-color: var(--theia-accent-color4);
 }
 
-.kb table tbody tr:hover .kb-edit{
+.kb table tbody tr:hover .kb-action-item{
     visibility: visible;
     color: var(--theia-ui-font-color1);
     text-decoration: none;
