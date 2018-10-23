@@ -16,7 +16,8 @@
     "decompress": "^4.2.0",
     "lodash.clonedeep": "^4.5.0",
     "ps-tree": "1.1.0",
-    "vscode-uri": "^1.0.1"
+    "vscode-uri": "^1.0.1",
+    "jsonc-parser": "^2.0.2"
   },
   "publishConfig": {
     "access": "public"
