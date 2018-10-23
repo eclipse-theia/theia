@@ -21,7 +21,7 @@ import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
-import { isElectron, isElectronDevMode } from './environment';
+import { environment } from './environment';
 
 // tslint:disable-next-line:no-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
@@ -253,7 +253,7 @@ export class ApplicationPackage {
         if (!this._moduleResolver) {
             // If running a bundled electron application, we cannot create a file for the module on the fly.
             // https://github.com/theia-ide/theia/issues/2992
-            if (isElectron() && !isElectronDevMode()) {
+            if (environment.electron.is() && !environment.electron.isDevMode()) {
                 this._moduleResolver = modulePath => require.resolve(modulePath);
             } else {
                 const loaderPath = this.path('.application-module-loader.js');

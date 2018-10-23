@@ -35,5 +35,5 @@ export * from './selection';
 export * from './strings';
 export * from './application-error';
 
-import { isElectron, isElectronDevMode } from '@theia/application-package/lib/environment';
-export { isElectron, isElectronDevMode };
+import { environment } from '@theia/application-package/lib/environment';
+export { environment };
