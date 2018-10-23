@@ -121,9 +121,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     protected async addCommits(options?: Git.Options.Log): Promise<void> {
         let repository: Repository | undefined;
-        if (options && options.uri) {
-            repository = this.repositoryProvider.findRepository(new URI(options.uri));
-        }
+        repository = this.repositoryProvider.findRepositoryOrSelected(options);
         let resolver: () => void;
         this.errorMessage = undefined;
         this.cancelIndicator.cancel();
@@ -177,6 +175,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         } else {
             setTimeout(() => {
                 this.commits = [];
+                this.errorMessage = <React.Fragment>There is no repository selected in this workspace.</React.Fragment>;
                 resolver();
             });
         }
