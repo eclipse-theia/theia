@@ -16,13 +16,13 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { FileAccess, FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, ILogger, MessageService } from '@theia/core/lib/common';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from 'ajv';
@@ -65,6 +65,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -110,25 +113,32 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (this._workspace) {
             this.toDisposeOnWorkspace.push(await this.watcher.watchFileChanges(new URI(this._workspace.uri)));
         }
-        this.updateTitle();
         await this.updateWorkspace();
+        this.updateTitle();
     }
 
     protected async updateWorkspace(): Promise<void> {
-        await this.updateRoots();
+        const computedRoots = await this.updateRoots();
         this.watchRoots();
+        if (!computedRoots) {
+            this._workspace = undefined;
+        }
     }
 
-    protected async updateRoots(): Promise<void> {
-        this._roots = await this.computeRoots();
+    protected async updateRoots(): Promise<FileStat[] | undefined> {
+        const computedRoots = await this.computeRoots();
+        this._roots = computedRoots || [];
         this.deferredRoots.resolve(this._roots); // in order to resolve first
         this.deferredRoots = new Deferred<FileStat[]>();
         this.deferredRoots.resolve(this._roots);
         this.onWorkspaceChangeEmitter.fire(this._roots);
+        return computedRoots;
     }
 
-    protected async computeRoots(): Promise<FileStat[]> {
-        const roots: FileStat[] = [];
+    /**
+     * Returns an array of roots, or `undefined` if unable to read data from the workspace file.
+     */
+    protected async computeRoots(): Promise<FileStat[] | undefined> {
         if (this._workspace) {
             if (this._workspace.isDirectory) {
                 return [this._workspace];
@@ -136,6 +146,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
             const workspaceData = await this.getWorkspaceDataFromFile();
             if (workspaceData) {
+                const roots: FileStat[] = [];
                 for (const { path } of workspaceData.folders) {
                     const valid = await this.toValidRoot(path);
                     if (valid) {
@@ -148,9 +159,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
                         });
                     }
                 }
+                return roots;
             }
         }
-        return roots;
     }
 
     protected async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
@@ -160,13 +171,17 @@ export class WorkspaceService implements FrontendApplicationContribution {
                     folders: [{ path: this._workspace.uri }]
                 };
             }
-            const { stat, content } = await this.fileSystem.resolveContent(this._workspace.uri);
-            const strippedContent = jsoncparser.stripComments(content);
-            const data = jsoncparser.parse(strippedContent);
-            if (data && WorkspaceData.is(data)) {
-                return WorkspaceData.transformToAbsolute(data, stat);
+            try {
+                const { stat, content } = await this.fileSystem.resolveContent(this._workspace.uri);
+                const strippedContent = jsoncparser.stripComments(content);
+                const data = jsoncparser.parse(strippedContent);
+                if (data && WorkspaceData.is(data)) {
+                    return WorkspaceData.transformToAbsolute(data, stat);
+                }
+                this.messageService.error(`Unable to retrieve workspace data from the file: '${this._workspace.uri}'. Please check if the file is corrupted.`, { timeout: 0 });
+            } catch (ex) {
+                this.messageService.error(`Failed to read data from ${this._workspace.uri}.`, { timeout: 0 });
             }
-            this.logger.error(`Unable to retrieve workspace data from the file: '${this._workspace.uri}'. Please check if the file is corrupted.`);
         }
     }
 
@@ -228,7 +243,27 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Opens directory, or recreates a workspace from the file that `uri` points to.
      */
     open(uri: URI, options?: WorkspaceInput): void {
-        this.doOpen(uri, options);
+        this.checkReadAccess(uri.toString()).then(canRead => {
+            if (canRead) {
+                this.doOpen(uri, options);
+            }
+        });
+    }
+
+    private async checkReadAccess(uriStr: string): Promise<boolean> {
+        const canRead = await this.fileSystem.access(uriStr, FileAccess.Constants.R_OK);
+        if (!canRead) {
+            this.messageService.error(`Access denied: Failed to read data from ${uriStr}.`, { timeout: 0 });
+        }
+        return canRead;
+    }
+
+    private async checkWriteAccess(uriStr: string): Promise<boolean> {
+        const canWrite = await this.fileSystem.access(uriStr, FileAccess.Constants.W_OK);
+        if (!canWrite) {
+            this.messageService.error(`Access denied: Failed to write data to ${uriStr}.`, { timeout: 0 });
+        }
+        return canWrite;
     }
 
     protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<void> {
@@ -262,6 +297,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!this.opened) {
             throw new Error('Folder cannot be added as there is no active workspace or opened folder.');
         }
+        if (!await this.checkReadAccess(uri.toString())) {
+            return;
+        }
         const valid = await this.toValidRoot(uri);
         if (!valid) {
             throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${uri.toString()}.`);
@@ -274,7 +312,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
                     await this.save(tempFile);
                 }
             }
-            this._workspace = await this.writeWorkspaceFile(this._workspace, [...this._roots, valid]);
+            const updatedWorkspace = await this.writeWorkspaceFile(this._workspace, [...this._roots, valid]);
+            if (updatedWorkspace) {
+                this._workspace = updatedWorkspace;
+            }
         }
     }
 
@@ -286,9 +327,12 @@ export class WorkspaceService implements FrontendApplicationContribution {
             throw new Error('Folder cannot be removed as there is no active folder in the current workspace.');
         }
         if (this._workspace) {
-            this._workspace = await this.writeWorkspaceFile(
+            const updatedWorkspace = await this.writeWorkspaceFile(
                 this._workspace, this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0)
             );
+            if (updatedWorkspace) {
+                this._workspace = updatedWorkspace;
+            }
         }
     }
 
@@ -297,9 +341,13 @@ export class WorkspaceService implements FrontendApplicationContribution {
             const workspaceData = WorkspaceData.transformToRelative(
                 WorkspaceData.buildWorkspaceData(rootFolders.map(f => f.uri)), workspaceFile
             );
-            if (workspaceData) {
-                const stat = await this.fileSystem.setContent(workspaceFile, JSON.stringify(workspaceData));
-                return stat;
+            if (workspaceData && await this.checkWriteAccess(workspaceFile.uri)) {
+                try {
+                    const stat = await this.fileSystem.setContent(workspaceFile, JSON.stringify(workspaceData));
+                    return stat;
+                } catch (ex) {
+                    this.messageService.error(`Failed to write data into ${workspaceFile.uri}.`, { timeout: 0 });
+                }
             }
         }
     }
@@ -417,12 +465,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
     async save(uri: URI | FileStat): Promise<void> {
         const uriStr = uri instanceof URI ? uri.toString() : uri.uri;
         if (!await this.fileSystem.exists(uriStr)) {
-            await this.fileSystem.createFile(uriStr);
+            const parent = uri instanceof URI ? uri.parent : new URI(uri.uri).parent;
+            if (!await this.checkWriteAccess(parent.toString())) {
+                return;
+            }
+            try {
+                await this.fileSystem.createFile(uriStr);
+            } catch (ex) {
+                this.messageService.error(`Failed to create file ${uriStr}.`, { timeout: 0 });
+            }
         }
         let stat = await this.toFileStat(uriStr);
-        stat = await this.writeWorkspaceFile(stat, await this.roots);
-        await this.server.setMostRecentlyUsedWorkspace(uriStr);
-        await this.setWorkspace(stat);
+        const updatedStat = await this.writeWorkspaceFile(stat, await this.roots);
+        if (updatedStat) {
+            stat = updatedStat;
+            await this.server.setMostRecentlyUsedWorkspace(uriStr);
+            await this.setWorkspace(stat);
+        }
     }
 
     protected readonly rootWatchers = new Map<string, Disposable>();
@@ -488,7 +547,8 @@ namespace WorkspaceData {
                     required: ['path']
                 }
             }
-        }
+        },
+        required: ['folders']
     });
 
     // tslint:disable-next-line:no-any

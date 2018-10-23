@@ -21,7 +21,7 @@ import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { FileAccess, FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
@@ -361,6 +361,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
     protected async addFolderToWorkspace(uri: URI | undefined): Promise<void> {
         if (uri) {
+            const uriStr = uri.toString();
+            const canRead = await this.fileSystem.access(uriStr, FileAccess.Constants.R_OK);
+            if (!canRead) {
+                this.messageService.error(`Access denied: Failed to read data from ${uriStr}.`, { timeout: 0 });
+            }
             const stat = await this.fileSystem.getFileStat(uri.toString());
             if (stat && stat.isDirectory) {
                 await this.workspaceService.addRoot(uri);

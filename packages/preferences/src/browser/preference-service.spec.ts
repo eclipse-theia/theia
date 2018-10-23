@@ -46,6 +46,7 @@ import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-works
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspacePreferences, createWorkspacePreferences } from '@theia/workspace/lib/browser/workspace-preferences';
+import { MessageService, MessageClient } from '@theia/core/lib/common';
 import * as sinon from 'sinon';
 import URI from '@theia/core/lib/common/uri';
 
@@ -132,6 +133,9 @@ before(async () => {
 
     /* Logger mock */
     testContainer.bind(ILogger).to(MockLogger);
+
+    testContainer.bind(MessageClient).toSelf().inSingletonScope();
+    testContainer.bind(MessageService).toSelf().inSingletonScope();
 });
 
 describe('Preference Service', function () {
