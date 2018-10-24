@@ -2170,7 +2170,7 @@ declare module '@theia/plugin' {
         /**
          * Send text to the terminal.
          * @param text - text content.
-         * @param addNewLine - in case true - apply new line after the text, otherwise don't apply new line.
+         * @param addNewLine - in case true - apply new line after the text, otherwise don't apply new line. This defaults to `true`.
          */
         sendText(text: string, addNewLine?: boolean): void;
 
