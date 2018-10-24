@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { GitHistoryContribution, GIT_HISTORY } from './git-history-contribution';
+import { GitHistoryContribution, GIT_HISTORY_ID } from './git-history-contribution';
 import { interfaces, Container } from 'inversify';
 import { WidgetFactory, OpenHandler, bindViewContribution } from '@theia/core/lib/browser';
 import { GitHistoryWidget } from './git-history-widget';
@@ -30,7 +30,7 @@ export function bindGitHistoryModule(bind: interfaces.Bind) {
     bind(GitAvatarService).toSelf().inSingletonScope();
     bind(GitHistoryWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: GIT_HISTORY,
+        id: GIT_HISTORY_ID,
         createWidget: () => ctx.container.get<GitHistoryWidget>(GitHistoryWidget)
     }));
 
