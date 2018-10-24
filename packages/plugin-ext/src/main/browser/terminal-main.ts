@@ -34,7 +34,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
     private terminalNumber = 0;
     private readonly TERM_ID_PREFIX = 'plugin-terminal-';
 
-    constructor(container: interfaces.Container, rpc: RPCProtocol) {
+    constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminalService = container.get(TerminalService);
         this.shell = container.get(ApplicationShell);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);

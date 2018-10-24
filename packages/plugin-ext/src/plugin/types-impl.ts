@@ -516,6 +516,17 @@ export class ThemeColor {
     }
 }
 
+export class ThemeIcon {
+
+    static readonly File: ThemeIcon;
+
+    static readonly Folder: ThemeIcon;
+
+    private constructor(public id: string) {
+    }
+
+}
+
 export enum TextEditorRevealType {
     Default = 0,
     InCenter = 1,
@@ -926,6 +937,32 @@ export class CodeAction {
         this.title = title;
         this.kind = kind;
     }
+}
+
+export class TreeItem {
+
+    label?: string;
+
+    id?: string;
+
+    iconPath?: string | URI | { light: string | URI; dark: string | URI } | ThemeIcon;
+
+    resourceUri?: URI;
+
+    tooltip?: string | undefined;
+
+    command?: theia.Command;
+
+    collapsibleState?: TreeItemCollapsibleState;
+
+    contextValue?: string;
+
+}
+
+export enum TreeItemCollapsibleState {
+    None = 0,
+    Collapsed = 1,
+    Expanded = 2
 }
 
 export enum SymbolKind {

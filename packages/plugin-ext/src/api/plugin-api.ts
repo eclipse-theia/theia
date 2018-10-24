@@ -313,7 +313,7 @@ export interface QuickOpenMain {
 export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
     $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes: string | false,
-                     maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
+        maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
 
 }
 
@@ -324,6 +324,50 @@ export interface WorkspaceExt {
 export interface DialogsMain {
     $showOpenDialog(options: OpenDialogOptionsMain): Promise<string[] | undefined>;
     $showSaveDialog(options: SaveDialogOptionsMain): Promise<string | undefined>;
+}
+
+export interface TreeViewsMain {
+    $registerTreeDataProvider(treeViewId: string): void;
+    $refresh(treeViewId: string): void;
+    $reveal(treeViewId: string): void;
+}
+
+export interface TreeViewsExt {
+    $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
+    $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
+    $setSelection(treeViewId: string, treeItemId: string): Promise<any>;
+}
+
+export class TreeViewItem {
+
+    id: string;
+
+    label: string;
+
+    icon?: string;
+
+    tooltip?: string;
+
+    collapsibleState?: TreeViewItemCollapsibleState;
+
+}
+
+/**
+ * Collapsible state of the tree item
+ */
+export enum TreeViewItemCollapsibleState {
+    /**
+     * Determines an item can be neither collapsed nor expanded. Implies it has no children.
+     */
+    None = 0,
+    /**
+     * Determines an item is collapsed
+     */
+    Collapsed = 1,
+    /**
+     * Determines an item is expanded
+     */
+    Expanded = 2
 }
 
 export interface WindowStateExt {
@@ -694,6 +738,7 @@ export const PLUGIN_RPC_CONTEXT = {
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
+    TREE_VIEWS_MAIN: createProxyIdentifier<TreeViewsMain>('TreeViewsMain'),
     PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
     OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain'),
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
@@ -709,6 +754,7 @@ export const MAIN_RPC_CONTEXT = {
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
+    TREE_VIEWS_EXT: createProxyIdentifier<TreeViewsExt>('TreeViewsExt'),
     PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
 };
