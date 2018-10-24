@@ -186,11 +186,18 @@ export class WorkspaceCommandContribution implements CommandContribution {
             })
         }));
         registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newUriAwareCommandHandler({
-            execute: uri => this.getParent(uri).then(parent => {
+            isVisible: uri => !this.isWorkspaceRoot(uri),
+            execute: uri => this.getParent(uri).then(async parent => {
                 if (parent) {
                     const initialValue = uri.path.base;
+                    const stat = await this.fileSystem.getFileStat(uri.toString());
+                    if (stat === undefined) {
+                        throw new Error(`Unexpected error occurred when renaming. File does not exist. URI: ${uri.toString(true)}.`);
+                    }
+                    const fileType = stat.isDirectory ? 'Directory' : 'File';
+                    const titleStr = `Rename ${fileType}`;
                     const dialog = new SingleTextInputDialog({
-                        title: 'Rename File',
+                        title: titleStr,
                         initialValue,
                         initialSelectionRange: {
                             start: 0,
@@ -374,6 +381,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         const rootUris = new Set(this.workspaceService.tryGetRoots().map(root => root.uri));
         return uris.every(uri => rootUris.has(uri.toString()));
+    }
+
+    protected isWorkspaceRoot(uri: URI): boolean {
+        const rootUris = new Set(this.workspaceService.tryGetRoots().map(root => root.uri));
+        return rootUris.has(uri.toString());
     }
 
     protected async removeFolderFromWorkspace(uris: URI[]): Promise<void> {
