@@ -79,7 +79,7 @@ export class TerminalExtImpl implements Terminal {
         this.termProcessId = this.proxy.$createTerminal(nameOrOptions);
     }
 
-    sendText(text: string, addNewLine?: boolean): void {
+    sendText(text: string, addNewLine: boolean = true): void {
         this.termProcessId.then(id => this.proxy.$sendText(id, text, addNewLine));
     }
 
