@@ -2004,6 +2004,24 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A reference to a named icon. Currently only [File](#ThemeIcon.File) and [Folder](#ThemeIcon.Folder) are supported.
+     * Using a theme icon is preferred over a custom icon as it gives theme authors the possibility to change the icons.
+     */
+    export class ThemeIcon {
+        /**
+         * Reference to a icon representing a file. The icon is taken from the current file icon theme or a placeholder icon.
+         */
+        static readonly File: ThemeIcon;
+
+        /**
+         * Reference to a icon representing a folder. The icon is taken from the current file icon theme or a placeholder icon.
+         */
+        static readonly Folder: ThemeIcon;
+
+        private constructor(id: string);
+    }
+
+    /**
      * Represents the state of a window.
      */
     export interface WindowState {
@@ -2548,6 +2566,201 @@ declare module '@theia/plugin' {
          * @param - terminal options.
          */
         export function createTerminal(options: TerminalOptions): Terminal;
+
+        /**
+         * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.
+         * This will allow you to contribute data to the [TreeView](#TreeView) and update if the data changes.
+         *
+         * **Note:** To get access to the [TreeView](#TreeView) and perform operations on it, use [createTreeView](#window.createTreeView).
+         *
+         * @param viewId Id of the view contributed using the extension point `views`.
+         * @param treeDataProvider A [TreeDataProvider](#TreeDataProvider) that provides tree data for the view
+         */
+        export function registerTreeDataProvider<T>(viewId: string, treeDataProvider: TreeDataProvider<T>): Disposable;
+
+        /**
+         * Create a [TreeView](#TreeView) for the view contributed using the extension point `views`.
+         * @param viewId Id of the view contributed using the extension point `views`.
+         * @param options Options object to provide [TreeDataProvider](#TreeDataProvider) for the view.
+         * @returns a [TreeView](#TreeView).
+         */
+        export function createTreeView<T>(viewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T>;
+
+    }
+
+    /**
+     * The event that is fired when an element in the [TreeView](#TreeView) is expanded or collapsed
+     */
+    export interface TreeViewExpansionEvent<T> {
+
+        /**
+         * Element that is expanded or collapsed.
+         */
+        element: T;
+
+    }
+
+    /**
+     * Represents a Tree view
+     */
+    export interface TreeView<T> extends Disposable {
+
+        /**
+         * Event that is fired when an element is expanded
+         */
+        readonly onDidExpandElement: Event<TreeViewExpansionEvent<T>>;
+
+        /**
+         * Event that is fired when an element is collapsed
+         */
+        readonly onDidCollapseElement: Event<TreeViewExpansionEvent<T>>;
+
+        /**
+         * Currently selected elements.
+         */
+        readonly selection: ReadonlyArray<T>;
+
+        /**
+         * Reveal an element. By default revealed element is selected.
+         *
+         * In order to not to select, set the option `select` to `false`.
+         *
+         * **NOTE:** [TreeDataProvider](#TreeDataProvider) is required to implement [getParent](#TreeDataProvider.getParent) method to access this API.
+         */
+        reveal(element: T, options?: { select?: boolean }): PromiseLike<void>;
+    }
+
+    /**
+     * A data provider that provides tree data
+     */
+    export interface TreeDataProvider<T> {
+        /**
+         * An optional event to signal that an element or root has changed.
+         * This will trigger the view to update the changed element/root and its children recursively (if shown).
+         * To signal that root has changed, do not pass any argument or pass `undefined` or `null`.
+         */
+        onDidChangeTreeData?: Event<T | undefined | null>;
+
+        /**
+         * Get [TreeItem](#TreeItem) representation of the `element`
+         *
+         * @param element The element for which [TreeItem](#TreeItem) representation is asked for.
+         * @return [TreeItem](#TreeItem) representation of the element
+         */
+        getTreeItem(element: T): TreeItem | PromiseLike<TreeItem>;
+
+        /**
+         * Get the children of `element` or root if no element is passed.
+         *
+         * @param element The element from which the provider gets children. Can be `undefined`.
+         * @return Children of `element` or root if no element is passed.
+         */
+        getChildren(element?: T): ProviderResult<T[]>;
+
+        /**
+         * Optional method to return the parent of `element`.
+         * Return `null` or `undefined` if `element` is a child of root.
+         *
+         * **NOTE:** This method should be implemented in order to access [reveal](#TreeView.reveal) API.
+         *
+         * @param element The element for which the parent has to be returned.
+         * @return Parent of `element`.
+         */
+        getParent?(element: T): ProviderResult<T>;
+    }
+
+    export class TreeItem {
+        /**
+         * A human-readable string describing this item. When `falsy`, it is derived from [resourceUri](#TreeItem.resourceUri).
+         */
+        label?: string;
+
+        /**
+         * Optional id for the tree item that has to be unique across tree. The id is used to preserve the selection and expansion state of the tree item.
+         *
+         * If not provided, an id is generated using the tree item's label. **Note** that when labels change, ids will change and that selection and expansion state cannot be kept stable anymore.
+         */
+        id?: string;
+
+        /**
+         * The icon path or [ThemeIcon](#ThemeIcon) for the tree item.
+         * When `falsy`, [Folder Theme Icon](#ThemeIcon.Folder) is assigned, if item is collapsible otherwise [File Theme Icon](#ThemeIcon.File).
+         * When a [ThemeIcon](#ThemeIcon) is specified, icon is derived from the current file icon theme for the specified theme icon using [resourceUri](#TreeItem.resourceUri) (if provided).
+         */
+        iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
+
+        /**
+         * The [uri](#Uri) of the resource representing this item.
+         *
+         * Will be used to derive the [label](#TreeItem.label), when it is not provided.
+         * Will be used to derive the icon from current icon theme, when [iconPath](#TreeItem.iconPath) has [ThemeIcon](#ThemeIcon) value.
+         */
+        resourceUri?: Uri;
+
+        /**
+         * The tooltip text when you hover over this item.
+         */
+        tooltip?: string | undefined;
+
+        /**
+         * The [command](#Command) which should be run when the tree item is selected.
+         */
+        command?: Command;
+
+        /**
+         * [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item.
+         */
+        collapsibleState?: TreeItemCollapsibleState;
+
+        /**
+         * Context value of the tree item. This can be used to contribute item specific actions in the tree.
+         * For example, a tree item is given a context value as `folder`. When contributing actions to `view/item/context`
+         * using `menus` extension point, you can specify context value for key `viewItem` in `when` expression like `viewItem == folder`.
+         * ```
+         *	"contributes": {
+         *		"menus": {
+         *			"view/item/context": [
+         *				{
+         *					"command": "extension.deleteFolder",
+            *					"when": "viewItem == folder"
+            *				}
+            *			]
+            *		}
+            *	}
+            * ```
+            * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
+            */
+        contextValue?: string;
+
+		/**
+		 * @param label A human-readable string describing this item
+		 * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+		 */
+        // constructor(label: string, collapsibleState?: TreeItemCollapsibleState);
+
+		/**
+		 * @param resourceUri The [uri](#Uri) of the resource representing this item.
+		 * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+		 */
+        // constructor(resourceUri: Uri, collapsibleState?: TreeItemCollapsibleState);
+    }
+
+    /**
+     * Collapsible state of the tree item
+     */
+    export enum TreeItemCollapsibleState {
+        /**
+         * Determines an item can be neither collapsed nor expanded. Implies it has no children.
+         */
+        None = 0,
+        /**
+         * Determines an item is collapsed
+         */
+        Collapsed = 1,
+        /**
+         * Determines an item is expanded
+         */
+        Expanded = 2
     }
 
     /**

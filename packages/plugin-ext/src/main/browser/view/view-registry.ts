@@ -20,6 +20,7 @@ import { ApplicationShell } from '@theia/core/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { ViewsContainerWidget } from './views-container-widget';
+import { TreeViewWidget } from './tree-views-main';
 
 export interface ViewContainerRegistry {
     container: ViewContainer;
@@ -36,18 +37,23 @@ export class ViewRegistry {
     @inject(FrontendApplicationStateService)
     protected applicationStateService: FrontendApplicationStateService;
 
-    containers: ViewContainerRegistry[] = new Array();
+    private containers: ViewContainerRegistry[] = new Array();
+
+    private containersWidgets: Map<string, ViewsContainerWidget> = new Map<string, ViewsContainerWidget>();
+
+    private treeViewWidgets: Map<string, TreeViewWidget> = new Map<string, TreeViewWidget>();
 
     @postConstruct()
     init() {
         this.applicationStateService.reachedState('ready').then(() => {
             this.showContainers();
+            this.showTreeViewWidgets();
         });
     }
 
     getArea(location: string): ApplicationShell.Area {
         switch (location) {
-            case 'right': return'right';
+            case 'right': return 'right';
             case 'bottom': return 'bottom';
             case 'top': return 'top';
         }
@@ -79,9 +85,9 @@ export class ViewRegistry {
         // Show views containers
         this.containers.forEach(registry => {
             const widget = new ViewsContainerWidget(registry.container, registry.views);
-            const tabBar = this.applicationShell.getTabBarFor(widget);
-            // const area = this.applicationShell.getAreaFor(widget);
+            this.containersWidgets.set(registry.container.id, widget);
 
+            const tabBar = this.applicationShell.getTabBarFor(widget);
             if (!tabBar) {
                 const widgetArgs: ApplicationShell.WidgetOptions = {
                     area: registry.area
@@ -95,6 +101,21 @@ export class ViewRegistry {
         if (activeWidget) {
             this.applicationShell.activateWidget(activeWidget.id);
         }
+    }
+
+    onRegisterTreeView(treeViewid: string, treeViewWidget: TreeViewWidget) {
+        this.treeViewWidgets.set(treeViewid, treeViewWidget);
+    }
+
+    showTreeViewWidgets(): void {
+        this.treeViewWidgets.forEach((treeViewWidget, treeViewId) => {
+            this.containersWidgets.forEach((viewsContainerWidget, viewsContainerId) => {
+                if (viewsContainerWidget.hasView(treeViewId)) {
+                    viewsContainerWidget.addWidget(treeViewId, treeViewWidget);
+                    this.applicationShell.activateWidget(viewsContainerWidget.id);
+                }
+            });
+        });
     }
 
 }
