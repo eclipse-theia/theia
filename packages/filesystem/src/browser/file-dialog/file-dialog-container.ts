@@ -54,6 +54,11 @@ export function createOpenFileDialogContainer(parent: interfaces.Container, prop
 
 export function createSaveFileDialogContainer(parent: interfaces.Container, props: SaveFileDialogProps): Container {
     const container = createFileDialogContainer(parent);
+    container.rebind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        multiSelect: false,
+        search: true
+    });
 
     container.bind(SaveFileDialogProps).toConstantValue(props);
     container.bind(SaveFileDialog).toSelf();
