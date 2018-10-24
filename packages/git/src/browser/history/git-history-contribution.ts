@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
-import { AbstractViewContribution } from '@theia/core/lib/browser';
+import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser';
 import { injectable, inject, postConstruct } from 'inversify';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -26,18 +26,25 @@ import { GitRepositoryTracker } from '../git-repository-tracker';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
 
+export const GIT_HISTORY_ID = 'git-history';
+export const GIT_HISTORY_LABEL = 'Git History';
+export const GIT_HISTORY_TOGGLE_KEYBINDING = 'alt+h';
+export const GIT_HISTORY_MAX_COUNT = 100;
+
 export namespace GitHistoryCommands {
     export const OPEN_FILE_HISTORY: Command = {
         id: 'git-history:open-file-history',
-        label: 'Git History'
     };
     export const OPEN_BRANCH_HISTORY: Command = {
-        id: 'git-history:open-branch-history'
+        id: 'git-history:open-branch-history',
+        label: GIT_HISTORY_LABEL
     };
 }
 
-export const GIT_HISTORY = 'git-history';
-export const GIT_HISTORY_MAX_COUNT = 100;
+export interface GitHistoryOpenViewArguments extends OpenViewArguments {
+    uri: string | undefined;
+}
+
 @injectable()
 export class GitHistoryContribution extends AbstractViewContribution<GitHistoryWidget> {
 
@@ -50,14 +57,14 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
 
     constructor() {
         super({
-            widgetId: GIT_HISTORY,
-            widgetName: 'Git History',
+            widgetId: GIT_HISTORY_ID,
+            widgetName: GIT_HISTORY_LABEL,
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 400
             },
             toggleCommandId: GitHistoryCommands.OPEN_BRANCH_HISTORY.id,
-            toggleKeybinding: 'alt+h'
+            toggleKeybinding: GIT_HISTORY_TOGGLE_KEYBINDING
         });
     }
 
@@ -81,31 +88,32 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         });
     }
 
+    async openView(args?: Partial<GitHistoryOpenViewArguments>): Promise<GitHistoryWidget> {
+        const widget = await super.openView(args);
+        this.refreshWidget(args!.uri);
+        return widget;
+    }
+
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '5_history'], {
-            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id
+            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id,
+            label: GIT_HISTORY_LABEL
         });
         menus.registerMenuAction(EDITOR_CONTEXT_MENU_GIT, {
-            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id
+            commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id,
+            label: GIT_HISTORY_LABEL
         });
         super.registerMenus(menus);
     }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
-            execute: async uri => this.showWidget(uri.toString()),
+            execute: async uri => this.openView({ activate: true, uri: uri.toString() }),
             isEnabled: (uri: URI) => !!this.repositoryProvider.findRepository(uri)
         }));
         commands.registerCommand(GitHistoryCommands.OPEN_BRANCH_HISTORY, {
-            execute: () => this.showWidget(undefined)
+            execute: () => this.openView({ activate: true, uri: undefined })
         });
-    }
-
-    async showWidget(uri: string | undefined) {
-        await this.openView({
-            activate: true
-        });
-        this.refreshWidget(uri);
     }
 
     protected async refreshWidget(uri: string | undefined) {
