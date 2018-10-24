@@ -100,7 +100,6 @@ export class ElectronMainMenuFactory {
                 items.push({
                     id: menu.id,
                     label: menu.label,
-                    icon: menu.icon,
                     type: this.commandRegistry.getToggledHandler(commandId) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId),
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
