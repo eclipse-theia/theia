@@ -23,13 +23,14 @@
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
+const os = require('os');
 
 const directories = ['node_modules'];
 
 const workspaces = JSON.parse(JSON.parse(child_process.execSync('yarn workspaces info --json').toString()).data);
 for (const name in workspaces) {
     const workspace = workspaces[name];
-    const nodeModulesPath = path.join(workspace.location, 'node_modules');
+    const nodeModulesPath = [workspace.location, 'node_modules'].join('/');
     if (fs.existsSync(path.join(process.cwd(), nodeModulesPath))) {
         directories.push(nodeModulesPath);
     }
@@ -39,7 +40,7 @@ const travisPath = path.resolve(__dirname, '../.travis.yml');
 const content = fs.readFileSync(travisPath).toString();
 const startIndex = content.indexOf('# start_cache_directories') + '# start_cache_directories'.length;
 const endIndex = content.indexOf('# end_cache_directories');
-const result = content.substr(0, startIndex) +
-    directories.sort((d, d2) => d.localeCompare(d2)).map(d => `\n  - ${d}`).join('') +
-    '\n' + content.substr(endIndex);
+const result = content.substr(0, startIndex) + os.EOL +
+    directories.sort((d, d2) => d.localeCompare(d2)).map(d => `  - ${d}${os.EOL}`).join('') +
+    content.substr(endIndex);
 fs.writeFileSync(travisPath, result);
