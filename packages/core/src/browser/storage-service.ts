@@ -84,15 +84,18 @@ export class LocalStorageService implements StorageService {
         return `theia:${pathname}:${key}`;
     }
 
-    private showDiskQuotaExceededMessage() {
+    private async showDiskQuotaExceededMessage(): Promise<void> {
         const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
+        const CLEAR_STORAGE_ACTION = 'Clear Local Storage';
         const ERROR_MESSAGE = `Your preferred browser's local storage is almost full.
         To be able to save your current workspace layout or data, you may need to free up some space.
         You can refer to Theia's documentation page for instructions on how to manually clean
-        your browser's local storage.`;
-        this.messageService.warn(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION).then(selected => {
+        your browser's local storage or choose to clear all.`;
+        this.messageService.warn(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION, CLEAR_STORAGE_ACTION).then(async selected => {
             if (READ_INSTRUCTIONS_ACTION === selected) {
                 window.open('https://github.com/theia-ide/theia/wiki/Cleaning-Local-Storage');
+            } else if (CLEAR_STORAGE_ACTION === selected) {
+                this.clearStorage();
             }
         });
     }
@@ -102,16 +105,18 @@ export class LocalStorageService implements StorageService {
      * If we are close to the limit, use a dialog to notify the user.
      */
     private testLocalStorage(): void {
-        const array = new Array(60000); // size: <array size> * 5 =  ~ 300K
         const keyTest = this.prefix('Test');
-
         try {
-            this.storage[keyTest] = JSON.stringify(array);
+            this.storage[keyTest] = JSON.stringify(new Array(60000));
         } catch (error) {
             this.showDiskQuotaExceededMessage();
         } finally {
             this.storage.removeItem(keyTest);
         }
+    }
+
+    private clearStorage(): void {
+        this.storage.clear();
     }
 
 }
