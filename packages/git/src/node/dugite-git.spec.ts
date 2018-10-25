@@ -763,7 +763,9 @@ describe('git', async function () {
 
 });
 
-describe('log', () => {
+describe('log', function () {
+
+    this.timeout(10000);
 
     async function testLogFromRepoRoot(testLocalGit: string) {
         const savedValue = process.env.USE_LOCAL_GIT;
