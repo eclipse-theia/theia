@@ -34,6 +34,7 @@ export interface StorageService {
      */
     getData<T>(key: string, defaultValue: T): Promise<T>;
     getData<T>(key: string): Promise<T | undefined>;
+
 }
 
 interface LocalStorage {
@@ -115,7 +116,7 @@ export class LocalStorageService implements StorageService {
         }
     }
 
-    private clearStorage(): void {
+    clearStorage(): void {
         this.storage.clear();
     }
 

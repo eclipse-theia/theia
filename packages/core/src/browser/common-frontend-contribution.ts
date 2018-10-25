@@ -27,6 +27,8 @@ import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
+import { LocalStorageService } from './storage-service';
+import { ConfirmDialog } from './dialogs';
 
 export namespace CommonMenus {
 
@@ -158,6 +160,11 @@ export namespace CommonCommands {
         label: 'Open Preferences'
     };
 
+    export const CLEAR_STORAGE: Command = {
+        id: 'clear.localStorage',
+        label: 'Clear Local Storage'
+    };
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');
@@ -175,7 +182,8 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
+        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
+        @inject(LocalStorageService) protected readonly localStorageService: LocalStorageService
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
@@ -396,6 +404,18 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.ABOUT_COMMAND, {
             execute: () => this.openAbout()
         });
+        commandRegistry.registerCommand(CommonCommands.CLEAR_STORAGE, {
+            execute: async () => {
+                const confirmed = await this.confirmClearStorage();
+                if (confirmed) {
+                    try {
+                        this.localStorageService.clearStorage();
+                    } catch (error) {
+                        this.messageService.warn('The browser\'s local storage could not be cleared.');
+                    }
+                }
+            }
+        });
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
@@ -479,5 +499,13 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
 
     protected async openAbout() {
         this.aboutDialog.open();
+    }
+
+    protected async confirmClearStorage(): Promise<boolean> {
+        const dialog = new ConfirmDialog({
+            title: 'Clear Local Storage',
+            msg: 'Do you really want to clear your local storage?'
+        });
+        return !!await dialog.open();
     }
 }
