@@ -1,12 +1,12 @@
 {
   "name": "@theia/typescript",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "description": "Theia - Typescript Extension",
   "dependencies": {
-    "@theia/callhierarchy": "^0.3.15",
-    "@theia/core": "^0.3.15",
-    "@theia/languages": "^0.3.15",
-    "@theia/monaco": "^0.3.15",
+    "@theia/callhierarchy": "^0.3.16",
+    "@theia/core": "^0.3.16",
+    "@theia/languages": "^0.3.16",
+    "@theia/monaco": "^0.3.16",
     "typescript-language-server": "^0.3.5"
   },
   "publishConfig": {
@@ -44,7 +44,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.15"
+    "@theia/ext-scripts": "^0.3.16"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
