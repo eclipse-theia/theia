@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/ext-scripts",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "description": "NPM scripts for Theia packages.",
   "files": [
     "theiaext"

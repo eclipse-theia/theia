@@ -3,6 +3,14 @@
 ## v0.3.16
 - [plug-in] added `DocumentLinkProvider` Plug-in API
 - [plug-in] Terminal.sendText API adds a new line to the text being sent to the terminal if `addNewLine` parameter wasn't specified
+- Reverted [cpp] Add debugging for C/C++ programs. This feature will come back in its own cpp-specific repo 
+- [core] Add methods to unregister menus, commands and keybindings
+- [terminal] Add 'open in terminal' to navigator
+- [markers] Added ability to remove markers
+- [windows] Implemented drives selector for the file dialog
+- [callhierarchy][typescript] adapt to hierarchical document symbols
+- [output] Add button to clear output view
+- [debug] decouple debug model from UI + clean up
 
 
 ## v0.3.15
