@@ -57,6 +57,7 @@ export namespace Keybinding {
     }
 
     /* Determine whether object is a KeyBinding */
+    // tslint:disable-next-line:no-any
     export function is(arg: Keybinding | any): arg is Keybinding {
         return !!arg && arg === Object(arg) && 'command' in arg && 'keybinding' in arg;
     }

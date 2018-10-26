@@ -18,6 +18,7 @@ export function deepFreeze<T>(obj: T): T {
     if (!obj || typeof obj !== 'object') {
         return obj;
     }
+    // tslint:disable-next-line:no-any
     const stack: any[] = [obj];
     while (stack.length > 0) {
         const objectToFreeze = stack.shift();

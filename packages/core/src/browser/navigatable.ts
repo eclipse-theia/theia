@@ -72,6 +72,7 @@ export interface NavigatableWidgetOptions {
 }
 export namespace NavigatableWidgetOptions {
     export function is(arg: Object | undefined): arg is NavigatableWidgetOptions {
+        // tslint:disable-next-line:no-any
         return !!arg && 'kind' in arg && (arg as any).kind === 'navigatable';
     }
 }
