@@ -61,14 +61,14 @@ export class TreeViewsExtImpl implements TreeViewsExt {
                 return treeView.selectedElements;
             },
 
-            reveal: (element: T, _options: { select?: boolean }): Thenable<void> => treeView.reveal(element, _options),
+            reveal: (element: T, selectionOptions: { select?: boolean }): Thenable<void> =>
+                treeView.reveal(element, selectionOptions),
 
             dispose: () => {
                 this.treeViews.delete(treeViewId);
                 treeView.dispose();
             }
         };
-
     }
 
     async $getChildren(treeViewId: string, treeItemId: string): Promise<TreeViewItem[] | undefined> {
@@ -117,9 +117,12 @@ class TreeViewExtImpl<T> extends Disposable {
 
     private cache: Map<string, T> = new Map<string, T>();
 
-    constructor(treeViewId: string,
+    private idCounter: number = 0;
+
+    constructor(
+        private treeViewId: string,
         private treeDataProvider: TreeDataProvider<T>,
-        proxy: TreeViewsMain,
+        private proxy: TreeViewsMain,
         private commandRegistry: CommandRegistryImpl) {
 
         super(() => {
@@ -138,20 +141,19 @@ class TreeViewExtImpl<T> extends Disposable {
     dispose() {
     }
 
-    async reveal(element: T, options?: { select?: boolean }): Promise<void> {
-        // temporary reply with OK
-        await this.delay(1000);
-    }
-
-    async delay(miliseconds: number): Promise<any> {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve();
-            }, miliseconds);
+    async reveal(element: T, selectionOptions?: { select?: boolean }): Promise<void> {
+        // find element id in a cache
+        let elementId;
+        this.cache.forEach((el, id) => {
+            if (Object.is(el, element)) {
+                elementId = id;
+            }
         });
-    }
 
-    idCounter: number = 0;
+        if (elementId) {
+            return this.proxy.$reveal(this.treeViewId, elementId);
+        }
+    }
 
     generateId(): string {
         this.idCounter++;
