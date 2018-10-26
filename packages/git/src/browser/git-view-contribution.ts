@@ -254,6 +254,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
             isVisible: () => this.syncService.canPublish()
         });
         registry.registerCommand(GIT_COMMANDS.CLONE, {
+            // tslint:disable-next-line:no-any
             execute: (args: any[]) => {
                 let url: string | undefined = undefined;
                 let folder: string | undefined = undefined;

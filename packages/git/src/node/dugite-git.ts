@@ -172,7 +172,7 @@ export class GitBlameParser {
             return undefined;
         }
         const parsedEntries = this.parseEntries(gitBlameOutput);
-        return await this.createFileBlame(fileUri, parsedEntries, commitBody);
+        return this.createFileBlame(fileUri, parsedEntries, commitBody);
     }
 
     protected parseEntries(rawOutput: string): GitBlameParser.Entry[] {
@@ -542,7 +542,7 @@ export class DugiteGit implements Git {
                 ...opts,
                 exec
             };
-            return (await git(args, repositoryPath, name, opts));
+            return git(args, repositoryPath, name, opts);
         });
     }
 
