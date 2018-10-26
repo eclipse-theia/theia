@@ -32,12 +32,15 @@ export interface SaveableSource {
 }
 
 export namespace Saveable {
+    // tslint:disable-next-line:no-any
     export function isSource(arg: any): arg is SaveableSource {
         return !!arg && ('saveable' in arg);
     }
+    // tslint:disable-next-line:no-any
     export function is(arg: any): arg is Saveable {
         return !!arg && ('dirty' in arg) && ('onDirtyChanged' in arg);
     }
+    // tslint:disable-next-line:no-any
     export function get(arg: any): Saveable | undefined {
         if (is(arg)) {
             return arg;
@@ -47,6 +50,7 @@ export namespace Saveable {
         }
         return undefined;
     }
+    // tslint:disable-next-line:no-any
     export function getDirty(arg: any): Saveable | undefined {
         const saveable = get(arg);
         if (saveable && saveable.dirty) {
@@ -54,9 +58,11 @@ export namespace Saveable {
         }
         return undefined;
     }
+    // tslint:disable-next-line:no-any
     export function isDirty(arg: any): boolean {
         return !!getDirty(arg);
     }
+    // tslint:disable-next-line:no-any
     export async function save(arg: any): Promise<void> {
         const saveable = getDirty(arg);
         if (saveable) {
