@@ -65,6 +65,7 @@ export interface DebugAdapterExecutable {
      * the parameters contain a command and arguments. For instance:
      * {'program' : 'COMMAND_TO_LAUNCH_DEBUG_ADAPTER', args : [ { 'arg1', 'arg2' } ] }
      */
+    // tslint:disable-next-line:no-any
     [key: string]: any;
 }
 
