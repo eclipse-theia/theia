@@ -32,6 +32,7 @@ import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugViewOptions } from './view/debug-view-model';
 import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-session-widget';
 import { InDebugModeContext } from './debug-keybinding-contexts';
+import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugSessionContribution);
@@ -39,6 +40,9 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugSessionManager).toSelf().inSingletonScope();
 
     bind(BreakpointManager).toSelf().inSingletonScope();
+    bind(DebugEditorModelFactory).toDynamicValue(({ container }) => <DebugEditorModelFactory>(editor =>
+        DebugEditorModel.createModel(container, editor)
+    )).inSingletonScope();
     bind(DebugEditorService).toSelf().inSingletonScope();
 
     bind(DebugSessionWidgetFactory).toDynamicValue(({ container }) =>

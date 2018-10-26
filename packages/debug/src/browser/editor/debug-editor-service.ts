@@ -20,7 +20,7 @@ import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugSessionManager } from '../debug-session-manager';
-import { DebugEditorModel } from './debug-editor-model';
+import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugBreakpoint } from '../model/debug-breakpoint';
 
@@ -38,6 +38,9 @@ export class DebugEditorService {
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenu: ContextMenuRenderer;
+
+    @inject(DebugEditorModelFactory)
+    protected readonly factory: DebugEditorModelFactory;
 
     protected readonly models = new Map<string, DebugEditorModel>();
 
@@ -58,7 +61,7 @@ export class DebugEditorService {
             return;
         }
         const uri = editor.getControl().getModel().uri.toString();
-        const debugModel = new DebugEditorModel(editor.getControl(), this.breakpoints, this.sessionManager, this.contextMenu);
+        const debugModel = this.factory(editor.getControl());
         this.models.set(uri, debugModel);
         editor.getControl().onDidDispose(() => {
             debugModel.dispose();
@@ -97,6 +100,22 @@ export class DebugEditorService {
         if (breakpoint) {
             breakpoint.setEnabled(enabled);
         }
+    }
+
+    showHover(): void {
+        const { model } = this;
+        if (model) {
+            const selection = model.editor.getSelection();
+            model.hover.show({ selection, focus: true });
+        }
+    }
+    canShowHover(): boolean {
+        const { model } = this;
+        if (model) {
+            const selection = model.editor.getSelection();
+            return !!model.editor.getModel().getWordAtPosition(selection.getStartPosition());
+        }
+        return false;
     }
 
 }
