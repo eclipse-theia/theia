@@ -40,6 +40,7 @@ export interface GitCommitNode extends GitCommitDetails {
 }
 
 export namespace GitCommitNode {
+    // tslint:disable-next-line:no-any
     export function is(node: any): node is GitCommitNode {
         return !!node && 'commitSha' in node && 'commitMessage' in node && 'fileChangeNodes' in node;
     }
@@ -82,6 +83,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addGitListNavigationKeyListeners(this.node);
+        // tslint:disable-next-line:no-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.listView && this.listView.list && this.listView.list.Grid) {
                 const { scrollTop } = e.target;
@@ -310,6 +312,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
+    // tslint:disable-next-line:no-any
     protected doLoadMoreRows(params: IndexRange): Promise<any> {
         let resolver: () => void;
         const promise = new Promise(resolve => resolver = resolve);
@@ -493,6 +496,7 @@ export namespace GitHistoryList {
         readonly indexOfSelected: number
         readonly hasMoreRows: boolean
         readonly handleScroll: (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void
+        // tslint:disable-next-line:no-any
         readonly loadMoreRows: (params: IndexRange) => Promise<any>
         readonly renderCommit: (commit: GitCommitNode) => React.ReactNode
         readonly renderFileChangeList: (fileChange: GitFileChangeNode) => React.ReactNode
