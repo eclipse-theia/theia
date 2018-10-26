@@ -71,14 +71,14 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
         config.protocol = DEFAULT_PROTOCOL;
         config.port = DEFAULT_INSPECTOR_PORT;
 
-        const pidToDebug = Number.parseInt(config.processId);
+        const pidToDebug = Number.parseInt(config.processId, 10);
 
         const tasks: [{ pid: number, cmd: string }] = await psList();
         const taskToDebug = tasks.find(task => task.pid === pidToDebug);
         if (taskToDebug) {
             const matches = DEBUG_PORT_PATTERN.exec(taskToDebug.cmd);
             if (matches && matches.length === 3) {
-                config.port = parseInt(matches[2]);
+                config.port = parseInt(matches[2], 10);
                 config.protocol = matches[1] === 'debug' ? 'legacy' : 'inspector';
             }
         }

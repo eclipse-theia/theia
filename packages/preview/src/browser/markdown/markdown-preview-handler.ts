@@ -135,7 +135,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
         let matchedElement: HTMLElement | undefined;
         for (let i = 0; i < markedElements.length; i++) {
             const element = markedElements[i];
-            const line = Number.parseInt(element.getAttribute('data-line') || '0');
+            const line = Number.parseInt(element.getAttribute('data-line') || '0', 10);
             if (line > sourceLine) {
                 break;
             }
@@ -201,7 +201,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
 
     protected getLineNumberFromAttribute(element: HTMLElement): number | undefined {
         const attribute = element.getAttribute('data-line');
-        return attribute ? Number.parseInt(attribute) : undefined;
+        return attribute ? Number.parseInt(attribute, 10) : undefined;
     }
 
     protected engine: markdownit.MarkdownIt | undefined;

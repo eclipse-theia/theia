@@ -198,7 +198,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             throw new Error(`Unexpected format for --theia-code-font-size (${fontSizeStr})`);
         }
 
-        const fontSize = Number.parseInt(fontSizeMatch[1]);
+        const fontSize = Number.parseInt(fontSizeMatch[1], 10);
 
         /* xterm.js expects #XXX of #XXXXXX for colors.  */
         const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;

@@ -92,7 +92,7 @@ export namespace ContentLines {
                         };
                 }
                 // tslint:disable-next-line:no-any
-                const index = Number.parseInt(p as any);
+                const index = Number.parseInt(p as any, 10);
                 if (Number.isInteger(index)) {
                     if (index >= 0 && index < target.length) {
                         const value = target.getLineContent(index);
