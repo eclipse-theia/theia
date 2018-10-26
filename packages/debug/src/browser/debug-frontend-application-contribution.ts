@@ -137,6 +137,10 @@ export namespace DebugCommands {
         id: 'debug.breakpoint.removeAll',
         label: 'Debug: Remove All Breakpoints'
     };
+    export const SHOW_HOVER = {
+        id: 'debug.editor.showHover',
+        label: 'Debug: Show Hover'
+    };
 
     export const RESTART_FRAME = {
         id: 'debug.frame.restart',
@@ -592,6 +596,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registry.registerCommand(DebugCommands.REMOVE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.cleanAllMarkers(),
             isEnabled: () => !!this.breakpointManager.getUris().next().value
+        });
+        registry.registerCommand(DebugCommands.SHOW_HOVER, {
+            execute: () => this.editors.showHover(),
+            isEnabled: () => this.editors.canShowHover()
         });
 
         registry.registerCommand(DebugCommands.RESTART_FRAME, {

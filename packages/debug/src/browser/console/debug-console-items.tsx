@@ -47,8 +47,8 @@ export class ExpressionContainer implements CompositeConsoleItem {
         return !!this.variablesReference;
     }
 
-    protected elements: Promise<ConsoleItem[]> | undefined;
-    async getElements(): Promise<IterableIterator<ConsoleItem>> {
+    protected elements: Promise<ExpressionContainer[]> | undefined;
+    async getElements(): Promise<IterableIterator<ExpressionContainer>> {
         if (!this.hasElements || !this.session) {
             return [].values();
         }
@@ -57,8 +57,8 @@ export class ExpressionContainer implements CompositeConsoleItem {
         }
         return (await this.elements).values();
     }
-    protected async doResolve(): Promise<ConsoleItem[]> {
-        const result: ConsoleItem[] = [];
+    protected async doResolve(): Promise<ExpressionContainer[]> {
+        const result: ExpressionContainer[] = [];
         if (this.namedVariables) {
             await this.fetch(result, 'named');
         }
@@ -258,8 +258,15 @@ export class ExpressionItem extends ExpressionContainer {
 
     static notAvailable = 'not available';
 
-    protected value = ExpressionItem.notAvailable;
-    protected available = false;
+    protected _value = ExpressionItem.notAvailable;
+    get value(): string {
+        return this._value;
+    }
+
+    protected _available = false;
+    get available(): boolean {
+        return this._available;
+    }
 
     constructor(
         protected readonly expression: string,
@@ -270,36 +277,36 @@ export class ExpressionItem extends ExpressionContainer {
 
     render(): React.ReactNode {
         const valueClassNames: string[] = [];
-        if (!this.available) {
+        if (!this._available) {
             valueClassNames.push(ConsoleItem.errorClassName);
             valueClassNames.push('theia-debug-console-unavailable');
         }
         return <div className={'theia-debug-console-expression'}>
             <div>{this.expression}</div>
-            <div className={valueClassNames.join(' ')}>{this.value}</div>
+            <div className={valueClassNames.join(' ')}>{this._value}</div>
         </div>;
     }
 
-    async evaluate(): Promise<void> {
+    async evaluate(context: string = 'repl'): Promise<void> {
         if (this.session) {
             try {
                 const { expression } = this;
-                const body = await this.session.evaluate(expression, 'repl');
+                const body = await this.session.evaluate(expression, context);
                 if (body) {
-                    this.value = body.result;
-                    this.available = true;
+                    this._value = body.result;
+                    this._available = true;
                     this.variablesReference = body.variablesReference;
                     this.namedVariables = body.namedVariables;
                     this.indexedVariables = body.indexedVariables;
                     this.elements = undefined;
                 }
             } catch (err) {
-                this.value = err.message;
-                this.available = false;
+                this._value = err.message;
+                this._available = false;
             }
         } else {
-            this.value = 'Please start a debug session to evaluate';
-            this.available = false;
+            this._value = 'Please start a debug session to evaluate';
+            this._available = false;
         }
     }
 
