@@ -14,22 +14,38 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('p-debounce');
+import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable, DisposableCollection, MenuPath } from '@theia/core';
+import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugBreakpoint } from '../model/debug-breakpoint';
 import { DebugSessionManager } from '../debug-session-manager';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
-import debounce = require('p-debounce');
+import { DebugEditor } from './debug-editor';
+import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover-widget';
 
+export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
+export type DebugEditorModelFactory = (editor: monaco.editor.IStandaloneCodeEditor) => DebugEditorModel;
+
+@injectable()
 export class DebugEditorModel implements Disposable {
+
+    static createContainer(parent: interfaces.Container, editor: monaco.editor.IStandaloneCodeEditor): Container {
+        const child = createDebugHoverWidgetContainer(parent, editor);
+        child.bind(DebugEditorModel).toSelf();
+        return child;
+    }
+    static createModel(parent: interfaces.Container, editor: monaco.editor.IStandaloneCodeEditor): DebugEditorModel {
+        return DebugEditorModel.createContainer(parent, editor).get(DebugEditorModel);
+    }
 
     static CONTEXT_MENU: MenuPath = ['debug-editor-context-menu'];
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected readonly uri: URI;
+    protected uri: URI;
 
     protected breakpointDecorations: string[] = [];
     protected breakpointRanges = new Map<string, monaco.Range>();
@@ -41,19 +57,32 @@ export class DebugEditorModel implements Disposable {
 
     protected updatingDecorations = false;
 
-    constructor(
-        readonly editor: monaco.editor.IStandaloneCodeEditor,
-        readonly breakpoints: BreakpointManager,
-        readonly sessions: DebugSessionManager,
-        readonly contextMenu: ContextMenuRenderer
-    ) {
-        this.uri = new URI(editor.getModel().uri.toString());
+    @inject(DebugHoverWidget)
+    readonly hover: DebugHoverWidget;
+
+    @inject(DebugEditor)
+    readonly editor: monaco.editor.IStandaloneCodeEditor;
+
+    @inject(BreakpointManager)
+    readonly breakpoints: BreakpointManager;
+
+    @inject(DebugSessionManager)
+    readonly sessions: DebugSessionManager;
+
+    @inject(ContextMenuRenderer)
+    readonly contextMenu: ContextMenuRenderer;
+
+    @postConstruct()
+    protected init(): void {
+        this.uri = new URI(this.editor.getModel().uri.toString());
         this.toDispose.pushAll([
-            editor.onMouseDown(event => this.handleMouseDown(event)),
-            editor.onMouseMove(event => this.handleMouseMove(event)),
-            editor.onMouseLeave(event => this.handleMouseLeave(event)),
-            editor.getModel().onDidChangeDecorations(() => this.updateBreakpoints()),
-            sessions.onDidChange(() => this.renderFrames())
+            this.hover,
+            this.editor.onMouseDown(event => this.handleMouseDown(event)),
+            this.editor.onMouseMove(event => this.handleMouseMove(event)),
+            this.editor.onMouseLeave(event => this.handleMouseLeave(event)),
+            this.editor.onKeyDown(() => this.hover.hide({ immediate: false })),
+            this.editor.getModel().onDidChangeDecorations(() => this.updateBreakpoints()),
+            this.sessions.onDidChange(() => this.renderFrames())
         ]);
         this.renderFrames();
         this.render();
@@ -257,9 +286,11 @@ export class DebugEditorModel implements Disposable {
         this.hintBreakpoint(event);
     }
     protected handleMouseMove(event: monaco.editor.IEditorMouseEvent): void {
+        this.showHover(event);
         this.hintBreakpoint(event);
     }
     protected handleMouseLeave(event: monaco.editor.IEditorMouseEvent): void {
+        this.hideHover(event);
         this.deltaHintDecorations([]);
     }
 
@@ -283,6 +314,31 @@ export class DebugEditorModel implements Disposable {
             }];
         }
         return [];
+    }
+
+    protected showHover(mouseEvent: monaco.editor.IEditorMouseEvent): void {
+        const targetType = mouseEvent.target.type;
+        const stopKey = isOSX ? 'metaKey' : 'ctrlKey';
+
+        // tslint:disable-next-line:no-any
+        if (targetType === monaco.editor.MouseTargetType.CONTENT_WIDGET && mouseEvent.target.detail === this.hover.getId() && !(<any>mouseEvent.event)[stopKey]) {
+            // mouse moved on top of debug hover widget
+            return;
+        }
+        if (targetType === monaco.editor.MouseTargetType.CONTENT_TEXT) {
+            this.hover.show({
+                selection: mouseEvent.target.range,
+                immediate: false
+            });
+        } else {
+            this.hover.hide({ immediate: false });
+        }
+    }
+    protected hideHover({ event }: monaco.editor.IEditorMouseEvent): void {
+        const rect = this.hover.getDomNode().getBoundingClientRect();
+        if (event.posx < rect.left || event.posx > rect.right || event.posy < rect.top || event.posy > rect.bottom) {
+            this.hover.hide({ immediate: false });
+        }
     }
 
     protected deltaDecorations(oldDecorations: string[], newDecorations: monaco.editor.IModelDeltaDecoration[]): string[] {
