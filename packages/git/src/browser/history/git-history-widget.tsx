@@ -306,7 +306,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     protected readonly handleScroll = (info: ScrollParams) => this.doHandleScroll(info);
     protected doHandleScroll(info: ScrollParams) {
-        this.node.scrollTo({ top: info.scrollTop });
+        this.node.scrollTop = info.scrollTop;
     }
 
     protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
