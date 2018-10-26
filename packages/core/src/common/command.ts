@@ -44,6 +44,7 @@ export interface Command {
 
 export namespace Command {
     /* Determine whether object is a Command */
+    // tslint:disable-next-line:no-any
     export function is(arg: Command | any): arg is Command {
         return !!arg && arg === Object(arg) && 'id' in arg;
     }
@@ -71,18 +72,22 @@ export interface CommandHandler {
     /**
      * Execute this handler.
      */
+    // tslint:disable-next-line:no-any
     execute(...args: any[]): any;
     /**
      * Test whether this handler is enabled (active).
      */
+    // tslint:disable-next-line:no-any
     isEnabled?(...args: any[]): boolean;
     /**
      * Test whether menu items for this handler should be visible.
      */
+    // tslint:disable-next-line:no-any
     isVisible?(...args: any[]): boolean;
     /**
      * Test whether menu items for this handler should be toggled.
      */
+    // tslint:disable-next-line:no-any
     isToggled?(...args: any[]): boolean;
 }
 
@@ -107,6 +112,7 @@ export interface CommandService {
      *
      * Reject if a command cannot be executed.
      */
+    // tslint:disable-next-line:no-any
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
 }
 
@@ -201,6 +207,7 @@ export class CommandRegistry implements CommandService {
     /**
      * Test whether there is an active handler for the given command.
      */
+    // tslint:disable-next-line:no-any
     isEnabled(command: string, ...args: any[]): boolean {
         return this.getActiveHandler(command, ...args) !== undefined;
     }
@@ -208,6 +215,7 @@ export class CommandRegistry implements CommandService {
     /**
      * Test whether there is a visible handler for the given command.
      */
+    // tslint:disable-next-line:no-any
     isVisible(command: string, ...args: any[]): boolean {
         return this.getVisibleHandler(command, ...args) !== undefined;
     }
@@ -225,6 +233,7 @@ export class CommandRegistry implements CommandService {
      *
      * Reject if a command cannot be executed.
      */
+    // tslint:disable-next-line:no-any
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(command, ...args);
         if (handler) {
@@ -237,6 +246,7 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a visible handler for the given command or `undefined`.
      */
+    // tslint:disable-next-line:no-any
     getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
         if (handlers) {
@@ -252,6 +262,7 @@ export class CommandRegistry implements CommandService {
     /**
      * Get an active handler for the given command or `undefined`.
      */
+    // tslint:disable-next-line:no-any
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
         if (handlers) {

@@ -33,6 +33,7 @@ export interface IJSONSchema {
 	$schema?: string;
 	type?: string | string[];
 	title?: string;
+	// tslint:disable-next-line:no-any
 	default?: any;
 	definitions?: IJSONSchemaMap;
 	description?: string;
@@ -61,10 +62,12 @@ export interface IJSONSchema {
 	allOf?: IJSONSchema[];
 	oneOf?: IJSONSchema[];
 	not?: IJSONSchema;
+	// tslint:disable-next-line:no-any
 	enum?: any[];
 	format?: string;
 
 	// schema draft 06
+	// tslint:disable-next-line:no-any
 	const?: any;
 	contains?: IJSONSchema;
 	propertyNames?: IJSONSchema;
@@ -94,6 +97,7 @@ export interface IJSONSchemaMap {
 export interface IJSONSchemaSnippet {
 	label?: string;
 	description?: string;
+	// tslint:disable-next-line:no-any
 	body?: any; // a object that will be JSON stringified
 	bodyText?: string; // an already stringified JSON object that can contain new lines (\n) and tabs (\t)
 }
