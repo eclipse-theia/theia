@@ -214,7 +214,7 @@ export class DebugServiceImpl implements DebugService, MessagingService.Contribu
     }
 
     async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]> {
-        return await this.registry.provideDebugConfigurations(debugType);
+        return this.registry.provideDebugConfigurations(debugType);
     }
 
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
@@ -222,7 +222,7 @@ export class DebugServiceImpl implements DebugService, MessagingService.Contribu
     }
 
     async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration> {
-        return await this.registry.resolveDebugConfiguration(config);
+        return this.registry.resolveDebugConfiguration(config);
     }
 
     async create(config: DebugConfiguration): Promise<string> {
