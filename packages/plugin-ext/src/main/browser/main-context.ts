@@ -30,6 +30,8 @@ import { TerminalServiceMainImpl } from './terminal-main';
 import { LanguagesMainImpl } from './languages-main';
 import { DialogsMainImpl } from './dialogs-main';
 import { TreeViewsMainImpl } from './view/tree-views-main';
+import { NotificationMainImpl } from './notification-main';
+import { StatusBarMainImpl } from './status-bar-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -60,6 +62,12 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const envMain = new EnvMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.ENV_MAIN, envMain);
+
+    const notificationMain = new NotificationMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
+
+    const statusBarMain = new StatusBarMainImpl(container);
+    rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MAIN, statusBarMain);
 
     const terminalMain = new TerminalServiceMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);

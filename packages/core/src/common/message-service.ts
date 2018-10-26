@@ -15,7 +15,14 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { MessageClient, MessageType, MessageOptions } from './message-service-protocol';
+import {
+    MessageClient,
+    MessageType,
+    MessageOptions,
+    ProgressToken,
+    ProgressUpdate,
+    ProgressMessageArguments
+} from './message-service-protocol';
 
 @injectable()
 export class MessageService {
@@ -65,4 +72,15 @@ export class MessageService {
         return this.client.showMessage({ type, text });
     }
 
+    newProgress(message: ProgressMessageArguments): Promise<ProgressToken | undefined> {
+        return this.client.newProgress(message);
+    }
+
+    stopProgress(progress: ProgressToken): Promise<void> {
+        return this.client.stopProgress(progress);
+    }
+
+    reportProgress(progress: ProgressToken, update: ProgressUpdate): Promise<void> {
+        return this.client.reportProgress(progress, update);
+    }
 }

@@ -2586,6 +2586,77 @@ declare module '@theia/plugin' {
          */
         export function createTreeView<T>(viewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T>;
 
+        /**
+         * Show progress in the editor. Progress is shown while running the given callback
+         * and while the promise it returned isn't resolved nor rejected. The location at which
+         * progress should show (and other details) is defined via the passed [`ProgressOptions`](#ProgressOptions).
+         *
+         * @param task A callback returning a promise. Progress state can be reported with
+         * the provided [progress](#Progress)-object.
+         *
+         * To report discrete progress, use `increment` to indicate how much work has been completed. Each call with
+         * a `increment` value will be summed up and reflected as overall progress until 100% is reached (a value of
+         * e.g. `10` accounts for `10%` of work done).
+         * Note that currently only `ProgressLocation.Notification` is capable of showing discrete progress.
+         *
+         * To monitor if the operation has been cancelled by the user, use the provided [`CancellationToken`](#CancellationToken).
+         * Note that currently only `ProgressLocation.Notification` is supporting to show a cancel button to cancel the
+         * long running operation.
+         *
+         * @return The thenable the task-callback returned.
+         */
+        export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => Thenable<R>): Thenable<R>;
+    }
+    /**
+     * Value-object describing where and how progress should show.
+     */
+    export interface ProgressOptions {
+        /**
+         * The location at which progress should show.
+         */
+        location: ProgressLocation;
+        /**
+         * A human-readable string which will be used to describe the
+         * operation.
+         */
+        title?: string;
+        /**
+         * Controls if a cancel button should show to allow the user to
+         * cancel the long running operation.  Note that currently only
+         * `ProgressLocation.Notification` is supporting to show a cancel
+         * button.
+         */
+        cancellable?: boolean;
+    }
+    /**
+     * A location in the editor at which progress information can be shown. It depends on the
+     * location how progress is visually represented.
+     */
+    export enum ProgressLocation {
+        /**
+         * Show progress for the source control viewlet, as overlay for the icon and as progress bar
+         * inside the viewlet (when visible). Neither supports cancellation nor discrete progress.
+         */
+        SourceControl = 1,
+        /**
+         * Show progress in the status bar of the editor. Neither supports cancellation nor discrete progress.
+         */
+        Window = 10,
+        /**
+         * Show progress as notification with an optional cancel button. Supports to show infinite and discrete progress.
+         */
+        Notification = 15
+    }
+    /**
+     * Defines a generalized way of reporting progress updates.
+     */
+    export interface Progress<T> {
+        /**
+         * Report a progress update.
+         * @param value A progress item, like a message and/or an
+         * report on how much work finished
+         */
+        report(value: T): void;
     }
 
     /**

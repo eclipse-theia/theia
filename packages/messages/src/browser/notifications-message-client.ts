@@ -18,9 +18,12 @@ import { injectable, inject } from 'inversify';
 import {
     MessageClient,
     MessageType,
-    Message
+    Message,
+    ProgressMessageArguments,
+    ProgressToken,
+    ProgressUpdate
 } from '@theia/core/lib/common';
-import { Notifications, NotificationAction } from './notifications';
+import { Notifications, NotificationAction, NotificationProperties, ProgressNotification} from './notifications';
 import { NotificationPreferences } from './notification-preferences';
 
 @injectable()
@@ -33,7 +36,45 @@ export class NotificationsMessageClient extends MessageClient {
         return this.show(message);
     }
 
+    newProgress(message: ProgressMessageArguments): Promise<ProgressToken | undefined> {
+        const messageArguments = { type: MessageType.Progress, text: message.text, options: { timeout: 0 }, actions: message.actions };
+        const key = this.getKey(messageArguments);
+        if (this.visibleProgressNotifications.has(key)) {
+            return Promise.resolve({ id: key });
+        }
+        const progressNotification = this.notifications.create(this.getNotificationProperties(
+            key,
+            messageArguments,
+            () => {
+                const onCancel = message.onCancel;
+                if (onCancel) {
+                    onCancel(key);
+                }
+                this.visibleProgressNotifications.delete(key);
+            }));
+        this.visibleProgressNotifications.set(key, progressNotification);
+        progressNotification.show();
+        return Promise.resolve({ id: key });
+    }
+
+    stopProgress(progress: ProgressToken): Promise<void> {
+        const progressMessage = this.visibleProgressNotifications.get(progress.id);
+        if (progressMessage) {
+            progressMessage.close();
+        }
+        return Promise.resolve(undefined);
+    }
+
+    reportProgress(progress: ProgressToken, update: ProgressUpdate): Promise<void> {
+        const notification = this.visibleProgressNotifications.get(progress.id);
+        if (notification) {
+            notification.update({ message: update.value, increment: update.increment });
+        }
+        return Promise.resolve(undefined);
+    }
+
     protected visibleMessages = new Set<string>();
+    protected visibleProgressNotifications = new Map<string, ProgressNotification>();
     protected show(message: Message): Promise<string | undefined> {
         const key = this.getKey(message);
         if (this.visibleMessages.has(key)) {
@@ -41,10 +82,10 @@ export class NotificationsMessageClient extends MessageClient {
         }
         this.visibleMessages.add(key);
         return new Promise(resolve => {
-            this.showToast(message, a => {
+            this.notifications.show(this.getNotificationProperties(key, message, a => {
                 this.visibleMessages.delete(key);
                 resolve(a);
-            });
+            }));
         });
     }
 
@@ -52,7 +93,7 @@ export class NotificationsMessageClient extends MessageClient {
         return `${m.type}-${m.text}-${m.actions ? m.actions.join('|') : '|'}`;
     }
 
-    protected showToast(message: Message, onCloseFn: (action: string | undefined) => void): void {
+    protected getNotificationProperties(id: string, message: Message, onCloseFn: (action: string | undefined) => void): NotificationProperties {
         const icon = this.iconFor(message.type);
         const text = message.text;
         const actions = (message.actions || []).map(action => <NotificationAction>{
@@ -69,22 +110,22 @@ export class NotificationsMessageClient extends MessageClient {
             label: 'Close',
             fn: element => onCloseFn(undefined)
         });
-        this.notifications.show({
+        return {
+            id,
             icon,
             text,
             actions,
             timeout,
             onTimeout: () => onCloseFn(undefined)
-        });
+        };
     }
 
     protected iconFor(type: MessageType): string {
-        if (type === MessageType.Error) {
-            return 'error';
+        switch (type) {
+            case MessageType.Error: return 'error';
+            case MessageType.Warning: return 'warning';
+            case MessageType.Progress: return 'progress';
+            default: return 'info';
         }
-        if (type === MessageType.Warning) {
-            return 'warning';
-        }
-        return 'info';
     }
 }
