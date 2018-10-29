@@ -91,6 +91,7 @@
 .theia-TreeNodeSegment {
     flex-grow: 0;
     user-select: none;
+    white-space: nowrap;
 }
 
 .theia-TreeNodeSegmentGrow {

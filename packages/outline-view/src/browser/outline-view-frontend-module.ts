@@ -24,10 +24,13 @@ import {
     TreeWidget,
     bindViewContribution,
     TreeProps,
-    defaultTreeProps
+    defaultTreeProps,
+    TreeDecoratorService
 } from '@theia/core/lib/browser';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
 import '../../src/browser/styles/index.css';
+import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
@@ -48,6 +51,10 @@ function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidge
 
     child.unbind(TreeWidget);
     child.bind(OutlineViewWidget).toSelf();
+
+    child.bind(OutlineDecoratorService).toSelf().inSingletonScope();
+    child.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(OutlineDecoratorService)).inSingletonScope();
+    bindContributionProvider(child, OutlineTreeDecorator);
 
     return child.get(OutlineViewWidget);
 }
