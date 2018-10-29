@@ -36,12 +36,27 @@ export interface Command {
      * An icon class of this command.
      */
     iconClass?: string;
+    /**
+     * A category of this command.
+     */
+    category?: string;
 }
 
 export namespace Command {
     /* Determine whether object is a Command */
     export function is(arg: Command | any): arg is Command {
         return !!arg && arg === Object(arg) && 'id' in arg;
+    }
+
+    /** Comparator function for when sorting commands */
+    export function compareCommands(a: Command, b: Command): number {
+        if (a.label && b.label) {
+            const aCommand = (a.category) ? a.category + a.label : a.label;
+            const bCommand = (b.category) ? b.category + b.label : b.label;
+            return (aCommand).localeCompare(bCommand);
+        } else {
+            return 0;
+        }
     }
 }
 

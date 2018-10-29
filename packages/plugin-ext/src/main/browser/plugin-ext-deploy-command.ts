@@ -28,7 +28,9 @@ export class PluginExtDeployCommandService implements QuickOpenModel {
 
     public static COMMAND: Command = {
         id: 'plugin-ext:deploy-plugin-id',
-        label: 'Plugin: Deploy Plugin by Id'
+        category: 'Plugin',
+        label: 'Deploy Plugin by Id',
+
     };
 
     @inject(QuickOpenService)

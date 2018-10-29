@@ -31,6 +31,7 @@ import * as fuzzy from 'fuzzy';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
+    category: 'File',
     label: 'Open File...'
 };
 
