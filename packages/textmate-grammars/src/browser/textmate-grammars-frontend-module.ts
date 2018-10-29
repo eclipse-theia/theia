@@ -46,7 +46,6 @@ import { ShellContribution } from './shell';
 import { TclContribution } from './tcl';
 import { XmlContribution } from './xml';
 import { XslContribution } from './xsl';
-import { YamlContribution } from './yaml';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
 
 export default new ContainerModule(bind => {
@@ -142,7 +141,4 @@ export default new ContainerModule(bind => {
 
     bind(XslContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(XslContribution);
-
-    bind(YamlContribution).toSelf().inSingletonScope();
-    bind(LanguageGrammarDefinitionContribution).toService(YamlContribution);
 });
