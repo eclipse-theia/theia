@@ -53,115 +53,140 @@ export namespace DebugMenus {
 }
 
 export namespace DebugCommands {
-    export const START = {
+
+    const DEBUG_CATEGORY = 'Debug';
+
+    export const START: Command = {
         id: 'debug.start',
-        label: 'Debug: Start Debugging',
+        category: DEBUG_CATEGORY,
+        label: 'Start Debugging',
         iconClass: 'fa fa-play'
     };
-    export const START_NO_DEBUG = {
+    export const START_NO_DEBUG: Command = {
         id: 'debug.start.noDebug',
         label: 'Debug: Start Without Debugging'
     };
-    export const STOP = {
+    export const STOP: Command = {
         id: 'debug.stop',
-        label: 'Debug: Stop Debugging',
+        category: DEBUG_CATEGORY,
+        label: 'Stop Debugging',
         iconClass: 'fa fa-stop'
     };
-    export const RESTART = {
+    export const RESTART: Command = {
         id: 'debug.restart',
-        label: 'Debug: Restart Debugging'
+        category: DEBUG_CATEGORY,
+        label: 'Restart Debugging',
     };
 
-    export const OPEN_CONFIGURATION = {
+    export const OPEN_CONFIGURATION: Command = {
         id: 'debug.configuration.open',
-        label: 'Debug: Open Configuration'
+        category: DEBUG_CATEGORY,
+        label: 'Open Configuration',
     };
-    export const ADD_CONFIGURATION = {
+    export const ADD_CONFIGURATION: Command = {
         id: 'debug.configuration.add',
-        label: 'Debug: Add Configuration...'
+        category: DEBUG_CATEGORY,
+        label: 'Add Configuration...',
     };
 
-    export const STEP_OVER = {
+    export const STEP_OVER: Command = {
         id: 'debug.thread.next',
-        label: 'Debug: Step Over',
+        category: DEBUG_CATEGORY,
+        label: 'Step Over',
         iconClass: 'fa fa-arrow-right'
     };
-    export const STEP_INTO = {
+    export const STEP_INTO: Command = {
         id: 'debug.thread.stepin',
-        label: 'Debug: Step Into',
+        category: DEBUG_CATEGORY,
+        label: 'Step Into',
         iconClass: 'fa fa-arrow-down'
     };
-    export const STEP_OUT = {
+    export const STEP_OUT: Command = {
         id: 'debug.thread.stepout',
-        label: 'Debug: Step Out',
+        category: DEBUG_CATEGORY,
+        label: 'Step Out',
         iconClass: 'fa fa-arrow-up'
     };
-    export const CONTINUE = {
+    export const CONTINUE: Command = {
         id: 'debug.thread.continue',
-        label: 'Debug: Continue',
+        category: DEBUG_CATEGORY,
+        label: 'Continue',
         iconClass: 'fa fa-play-circle'
     };
-    export const PAUSE = {
+    export const PAUSE: Command = {
         id: 'debug.thread.pause',
-        label: 'Debug: Pause',
+        category: DEBUG_CATEGORY,
+        label: 'Pause',
         iconClass: 'fa fa-pause'
     };
-    export const CONTINUE_ALL = {
+    export const CONTINUE_ALL: Command = {
         id: 'debug.thread.continue.all',
-        label: 'Debug: Continue All',
+        category: DEBUG_CATEGORY,
+        label: 'Continue All',
         iconClass: 'fa fa-play-circle'
     };
-    export const PAUSE_ALL = {
+    export const PAUSE_ALL: Command = {
         id: 'debug.thread.pause.all',
-        label: 'Debug: Pause All',
+        category: DEBUG_CATEGORY,
+        label: 'Pause All',
         iconClass: 'fa fa-pause'
     };
 
-    export const TOGGLE_BREAKPOINT = {
+    export const TOGGLE_BREAKPOINT: Command = {
         id: 'debug.breakpoint.toggle',
-        label: 'Debug: Toggle Breakpoint'
+        category: DEBUG_CATEGORY,
+        label: 'Toggle Breakpoint',
     };
-    export const ENABLE_ALL_BREAKPOINTS = {
+    export const ENABLE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.enableAll',
-        label: 'Debug: Enable All Breakpoints'
+        category: DEBUG_CATEGORY,
+        label: 'Enable All Breakpoints',
     };
-    export const DISABLE_ALL_BREAKPOINTS = {
+    export const DISABLE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.disableAll',
-        label: 'Debug: Disable All Breakpoints'
+        category: DEBUG_CATEGORY,
+        label: 'Disable All Breakpoints',
     };
-    export const REMOVE_BREAKPOINT = {
+    export const REMOVE_BREAKPOINT: Command = {
         id: 'debug.breakpoint.remove',
-        label: 'Debug: Remove Breakpoint'
+        category: DEBUG_CATEGORY,
+        label: 'Remove Breakpoint',
     };
-    export const REMOVE_ALL_BREAKPOINTS = {
+    export const REMOVE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.removeAll',
-        label: 'Debug: Remove All Breakpoints'
+        category: DEBUG_CATEGORY,
+        label: 'Remove All Breakpoints',
     };
     export const SHOW_HOVER = {
         id: 'debug.editor.showHover',
         label: 'Debug: Show Hover'
     };
 
-    export const RESTART_FRAME = {
+    export const RESTART_FRAME: Command = {
         id: 'debug.frame.restart',
-        label: 'Debug: Restart Frame'
+        category: DEBUG_CATEGORY,
+        label: 'Restart Frame',
     };
-    export const COPY_CALL_STACK = {
+    export const COPY_CALL_STACK: Command = {
         id: 'debug.callStack.copy',
-        label: 'Debug: Copy Call Stack'
+        category: DEBUG_CATEGORY,
+        label: 'Copy Call Stack',
     };
 
-    export const SET_VARIABLE_VALUE = {
+    export const SET_VARIABLE_VALUE: Command = {
         id: 'debug.variable.setValue',
-        label: 'Debug: Set Value'
+        category: DEBUG_CATEGORY,
+        label: 'Set Value',
     };
-    export const COPY_VAIRABLE_VALUE = {
+    export const COPY_VAIRABLE_VALUE: Command = {
         id: 'debug.variable.copyValue',
-        label: 'Debug: Copy Value'
+        category: DEBUG_CATEGORY,
+        label: 'Copy Value',
     };
-    export const COPY_VAIRABLE_AS_EXPRESSION = {
+    export const COPY_VAIRABLE_AS_EXPRESSION: Command = {
         id: 'debug.variable.copyAsExpression',
-        label: 'Debug: Copy As Expression'
+        category: DEBUG_CATEGORY,
+        label: 'Copy As Expression',
     };
 }
 export namespace DebugThreadContextCommands {

@@ -65,6 +65,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({
             id: 'reset.layout',
+            category: 'View',
             label: 'Reset Workbench Layout'
         }, {
                 execute: async () => {

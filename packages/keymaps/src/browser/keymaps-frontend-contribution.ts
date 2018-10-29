@@ -30,7 +30,8 @@ import { KeybindingWidget } from './keybindings-widget';
 export namespace KeymapsCommands {
     export const OPEN_KEYMAPS: Command = {
         id: 'keymaps:open',
-        label: 'Open Keyboard Shortcuts'
+        category: 'Settings',
+        label: 'Open Keyboard Shortcuts',
     };
 }
 
