@@ -237,11 +237,11 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
 
     protected uploadFile(base: URI, file: File): void {
         const reader = new FileReader();
-        reader.onload = () => this.uploadFileContent(base.resolve(file.name), reader.result);
+        reader.onload = () => this.uploadFileContent(base.resolve(file.name), reader.result as ArrayBuffer);
         reader.readAsArrayBuffer(file);
     }
 
-    protected async uploadFileContent(base: URI, fileContent: Iterable<number>): Promise<void> {
+    protected async uploadFileContent(base: URI, fileContent: ArrayBuffer): Promise<void> {
         const uri = base.toString();
         const encoding = 'base64';
         const content = base64.fromByteArray(new Uint8Array(fileContent));

@@ -201,8 +201,9 @@ export class DebugVariable extends ExpressionContainer {
         return !!this.valueRef && document.queryCommandSupported('copy');
     }
     copyValue(): void {
-        if (this.valueRef) {
-            document.getSelection().selectAllChildren(this.valueRef);
+        const selection = document.getSelection();
+        if (this.valueRef && selection) {
+            selection.selectAllChildren(this.valueRef);
             document.execCommand('copy');
         }
     }
@@ -213,8 +214,9 @@ export class DebugVariable extends ExpressionContainer {
         return !!this.nameRef && document.queryCommandSupported('copy');
     }
     copyAsExpression(): void {
-        if (this.nameRef) {
-            document.getSelection().selectAllChildren(this.nameRef);
+        const selection = document.getSelection();
+        if (this.nameRef && selection) {
+            selection.selectAllChildren(this.nameRef);
             document.execCommand('copy');
         }
     }

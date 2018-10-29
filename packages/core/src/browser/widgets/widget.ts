@@ -112,7 +112,7 @@ export class BaseWidget extends Widget {
     }
 
     protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean): void {
-        this.toDisposeOnDetach.push(addEventListener(element, type, listener));
+        this.toDisposeOnDetach.push(addEventListener(element, type, listener, useCapture));
     }
 
     protected addKeyListener<K extends keyof HTMLElementEventMap>(

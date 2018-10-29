@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-debounce';
-import { BaseWidget } from '../widgets/widget';
+import { BaseWidget, Message } from '../widgets/widget';
 import { Emitter, Event } from '../../common/event';
 import { KeyCode, Key } from '../keys';
 
@@ -172,7 +172,6 @@ export class SearchBox extends BaseWidget {
 
         const input = document.createElement('input');
         input.readOnly = true;
-        input.onselectstart = () => false;
         input.type = 'text';
         input.classList.add(
             SearchBox.Styles.SEARCH_INPUT,
@@ -221,6 +220,12 @@ export class SearchBox extends BaseWidget {
             close
         };
 
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        // tslint:disable-next-line:no-any
+        this.addEventListener(this.input, 'selectstart' as any, () => false);
     }
 
 }
