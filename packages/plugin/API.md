@@ -5,7 +5,7 @@
 ### Plugin API
 
 Namespace for dealing with installed plug-ins. Plug-ins are represented
-by an Plugin-interface which enables reflection on them.
+by a Plugin-interface which enables reflection on them.
 Plug-in writers can provide APIs to other plug-ins by returning their API public
 surface from the `start`-call.
 

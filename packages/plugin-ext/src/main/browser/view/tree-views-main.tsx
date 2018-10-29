@@ -80,7 +80,14 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         }
     }
 
-    $reveal(treeViewId: string): void {
+    async $reveal(treeViewId: string, treeItemId: string): Promise<any> {
+        const treeViewWidget = this.treeViewWidgets.get(treeViewId);
+        if (treeViewWidget) {
+            const treeNode = treeViewWidget.model.getNode(treeItemId);
+            if (treeNode && SelectableTreeNode.is(treeNode)) {
+                treeViewWidget.model.selectNode(treeNode);
+            }
+        }
     }
 
     createTreeViewContainer(dataProvider: TreeViewDataProviderMain): Container {

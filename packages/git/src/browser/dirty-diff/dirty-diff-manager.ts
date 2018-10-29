@@ -155,13 +155,13 @@ export class DirtyDiffModel implements Disposable {
             this.enabled = enabled;
             this.update();
         }
-        if (preferenceName === 'git.editor.dirtydiff.linesLimit') {
+        if (preferenceName === 'git.editor.dirtyDiff.linesLimit') {
             this.update();
         }
     }
 
     protected get linesLimit(): number {
-        const limit = this.preferences['git.editor.dirtydiff.linesLimit'];
+        const limit = this.preferences['git.editor.dirtyDiff.linesLimit'];
         return limit > 0 ? limit : Number.MAX_SAFE_INTEGER;
     }
 

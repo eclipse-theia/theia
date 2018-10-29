@@ -22,7 +22,7 @@ import { Message } from '@phosphor/messaging';
 import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams } from 'react-virtualized';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from '@theia/core/lib/common/uri';
-import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
+import { GIT_HISTORY_ID, GIT_HISTORY_MAX_COUNT, GIT_HISTORY_LABEL } from './git-history-contribution';
 import { GitFileStatus, Git, GitFileChange, Repository } from '../../common';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitDiffContribution } from '../diff/git-diff-contribution';
@@ -69,10 +69,10 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(GitDiffContribution) protected readonly diffContribution: GitDiffContribution) {
         super();
-        this.id = GIT_HISTORY;
+        this.id = GIT_HISTORY_ID;
         this.scrollContainer = 'git-history-list-container';
-        this.title.label = 'Git History';
-        this.title.caption = 'Git History';
+        this.title.label = GIT_HISTORY_LABEL;
+        this.title.caption = GIT_HISTORY_LABEL;
         this.title.iconClass = 'fa git-history-tab-icon';
         this.addClass('theia-git');
         this.resetState();
@@ -306,7 +306,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     protected readonly handleScroll = (info: ScrollParams) => this.doHandleScroll(info);
     protected doHandleScroll(info: ScrollParams) {
-        this.node.scrollTo({ top: info.scrollTop });
+        this.node.scrollTop = info.scrollTop;
     }
 
     protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
