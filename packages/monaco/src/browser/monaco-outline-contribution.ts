@@ -280,6 +280,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             id,
             iconClass: SymbolKind[symbol.kind].toString().toLowerCase(),
             name: this.getName(symbol),
+            detail: this.getDetail(symbol),
             parent,
             uri,
             range: this.getNameRange(symbol),
@@ -296,7 +297,11 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected getName(symbol: DocumentSymbol): string {
-        return symbol.name + (symbol.detail || '');
+        return symbol.name;
+    }
+
+    protected getDetail(symbol: DocumentSymbol): string {
+        return symbol.detail;
     }
 
     protected createId(name: string, ids: Map<string, number>): string {
@@ -342,6 +347,7 @@ export interface MonacoOutlineSymbolInformationNode extends OutlineSymbolInforma
     uri: URI;
     range: Range;
     fullRange: Range;
+    detail?: string;
     parent: MonacoOutlineSymbolInformationNode | undefined;
     children: MonacoOutlineSymbolInformationNode[];
 }
