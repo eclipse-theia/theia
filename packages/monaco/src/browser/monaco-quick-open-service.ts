@@ -57,7 +57,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
         this.opts = opts;
-        this.previousActiveElement = window.document.activeElement;
+        this.previousActiveElement = window.document.activeElement || undefined;
         this.widget.show(this.opts.prefix || '');
         this.setPlaceHolder(opts.inputAriaLabel);
         this.setPassword(opts.password ? true : false);

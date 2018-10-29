@@ -259,7 +259,9 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 const elements = body.getElementsByTagName(tag);
                 for (let i = 0; i < elements.length; i++) {
                     const element = elements.item(i);
-                    procedure(element);
+                    if (element) {
+                        procedure(element);
+                    }
                 }
             };
 

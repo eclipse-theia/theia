@@ -601,8 +601,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registry.registerCommand(DebugCommands.COPY_CALL_STACK, {
             execute: () => {
                 const { frames } = this;
-                if (frames) {
-                    document.getSelection().selectAllChildren(frames.node);
+                const selection = document.getSelection();
+                if (frames && selection) {
+                    selection.selectAllChildren(frames.node);
                     document.execCommand('copy');
                 }
             },
