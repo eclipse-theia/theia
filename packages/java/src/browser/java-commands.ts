@@ -42,8 +42,9 @@ export const APPLY_WORKSPACE_EDIT: Command = {
  * Organize Imports
  */
 export const JAVA_ORGANIZE_IMPORTS: Command = {
-    label: 'Java: Organize Imports',
-    id: 'java.edit.organizeImports'
+    id: 'java.edit.organizeImports',
+    category: 'Java',
+    label: 'Organize Imports',
 };
 
 @injectable()

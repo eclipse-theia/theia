@@ -132,6 +132,7 @@ export class ThemeService {
 export class ThemingCommandContribution implements CommandContribution, MenuContribution, CommandHandler, Command, QuickOpenModel {
 
     id = 'change_theme';
+    category = 'Settings';
     label = 'Change Color Theme';
     private resetTo: string | undefined;
 

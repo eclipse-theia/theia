@@ -40,16 +40,20 @@ import URI from '@theia/core/lib/common/uri';
 const NAVIGATOR_CONTEXT_MENU_NEW = ['navigator-context-menu', '4_new'];
 
 export namespace TerminalCommands {
+    const TERMINAL_CATEGORY = 'Terminal';
     export const NEW: Command = {
         id: 'terminal:new',
+        category: TERMINAL_CATEGORY,
         label: 'Open New Terminal'
     };
     export const TERMINAL_CLEAR: Command = {
         id: 'terminal:clear',
-        label: 'Terminal: Clear'
+        category: TERMINAL_CATEGORY,
+        label: 'Clear Terminal'
     };
     export const TERMINAL_CONTEXT: Command = {
         id: 'terminal:context',
+        category: TERMINAL_CATEGORY,
         label: 'Open in Terminal'
     };
 }
