@@ -455,7 +455,7 @@ export class MiniBrowser extends BaseWidget {
         }
         try {
             const { contentDocument } = this.frame;
-            if (contentDocument) {
+            if (contentDocument && contentDocument.location) {
                 location = contentDocument.location.href;
             }
         } catch {

@@ -139,7 +139,10 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     selectAll(): void {
-        document.getSelection().selectAllChildren(this.content.node);
+        const selection = document.getSelection();
+        if (selection) {
+            selection.selectAllChildren(this.content.node);
+        }
     }
 
     collapseAll(): void {
