@@ -62,7 +62,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this._languageClient ? Promise.resolve(this._languageClient) : this.ready;
     }
 
+    // tslint:disable-next-line:no-any
     waitForActivation(app: FrontendApplication): Promise<any> {
+        // tslint:disable-next-line:no-any
         const activationPromises: Promise<any>[] = [];
         const workspaceContains = this.workspaceContains;
         if (workspaceContains.length !== 0) {
@@ -206,6 +208,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     /**
      * Check to see if one of the paths is in the current workspace.
      */
+    // tslint:disable-next-line:no-any
     protected async waitForItemInWorkspace(): Promise<any> {
         const doesContain = await this.workspaceService.containsSome(this.workspaceContains);
         if (!doesContain) {
