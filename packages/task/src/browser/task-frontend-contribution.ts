@@ -87,6 +87,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN,
             {
                 isEnabled: () => true,
+                // tslint:disable-next-line:no-any
                 execute: (args: any[]) => {
                     if (args) {
                         const [type, label] = args;
