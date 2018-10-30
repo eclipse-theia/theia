@@ -26,6 +26,7 @@ export namespace ObjectIdentifier {
         return <T & ObjectIdentifier>obj;
     }
 
+    // tslint:disable-next-line:no-any
     export function of(obj: any): number {
         return obj[name];
     }

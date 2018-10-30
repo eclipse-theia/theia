@@ -143,6 +143,7 @@ interface Codeblock {
     value: string;
 }
 
+// tslint:disable-next-line:no-any
 function isCodeblock(thing: any): thing is Codeblock {
     return thing && typeof thing === 'object'
         && typeof (<Codeblock>thing).language === 'string'

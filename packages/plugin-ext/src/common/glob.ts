@@ -25,6 +25,7 @@ import * as paths from './paths';
 import { CharCode } from './char-code';
 /* tslint:disable:no-null-keyword no-shadowed-variable one-variable-per-declaration */
 export interface IExpression {
+    // tslint:disable-next-line:no-any
     [pattern: string]: boolean | SiblingClause | any;
 }
 
@@ -460,6 +461,7 @@ function toRegExp(pattern: string): ParsedStringPattern {
  */
 export function match(pattern: string | IRelativePattern, path: string): boolean;
 export function match(expression: IExpression, path: string, hasSibling?: (name: string) => boolean): string /* the matching pattern */;
+// tslint:disable-next-line:no-any
 export function match(arg1: string | IExpression | IRelativePattern, path: string, hasSibling?: (name: string) => boolean): any {
     if (!arg1 || !path) {
         return false;
@@ -478,6 +480,7 @@ export function match(arg1: string | IExpression | IRelativePattern, path: strin
  */
 export function parse(pattern: string | IRelativePattern, options?: IGlobOptions): ParsedPattern;
 export function parse(expression: IExpression, options?: IGlobOptions): ParsedExpression;
+// tslint:disable-next-line:no-any
 export function parse(arg1: string | IExpression | IRelativePattern, options: IGlobOptions = {}): any {
     if (!arg1) {
         return FALSE;
@@ -493,9 +496,11 @@ export function parse(arg1: string | IExpression | IRelativePattern, options: IG
             return !!parsedPattern(path, basename);
         };
         if (parsedPattern.allBasenames) {
+            // tslint:disable-next-line:no-any
             (<ParsedStringPattern><any>resultPattern).allBasenames = parsedPattern.allBasenames;
         }
         if (parsedPattern.allPaths) {
+            // tslint:disable-next-line:no-any
             (<ParsedStringPattern><any>resultPattern).allPaths = parsedPattern.allPaths;
         }
         return resultPattern;
@@ -543,6 +548,7 @@ function listToMap(list: string[]) {
     return map;
 }
 
+// tslint:disable-next-line:no-any
 export function isRelativePattern(obj: any): obj is IRelativePattern {
     const rp = obj as IRelativePattern;
 
@@ -651,6 +657,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
     return resultExpression;
 }
 
+// tslint:disable-next-line:no-any
 function parseExpressionPattern(pattern: string, value: any, options: IGlobOptions): (ParsedStringPattern | ParsedExpressionPattern) {
     if (value === false) {
         return NULL; // pattern is disabled
