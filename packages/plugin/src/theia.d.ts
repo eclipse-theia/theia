@@ -47,6 +47,7 @@ declare module '@theia/plugin' {
          * @return Returns a new disposable which, upon dispose, will
          * dispose all provided disposables.
          */
+        // tslint:disable-next-line:no-any
         static from(...disposableLikes: { dispose: () => any }[]): Disposable;
     }
 
@@ -77,6 +78,7 @@ declare module '@theia/plugin' {
         /**
          * The parsed contents of the plug-in's package.json.
          */
+        // tslint:disable-next-line:no-any
         readonly packageJSON: any;
 
         /**
@@ -133,6 +135,7 @@ declare module '@theia/plugin' {
          * @param pluginId An plug-in identifier.
          * @return An plug-in or `undefined`.
          */
+        // tslint:disable-next-line:no-any
         export function getPlugin(pluginId: string): Plugin<any> | undefined;
 
         /**
@@ -146,6 +149,7 @@ declare module '@theia/plugin' {
         /**
          * All plug-ins currently known to the system.
          */
+        // tslint:disable-next-line:no-any
         export let all: Plugin<any>[];
     }
 
@@ -175,6 +179,7 @@ declare module '@theia/plugin' {
          * Arguments that the command handler should be
          * invoked with.
          */
+        // tslint:disable-next-line:no-any
         arguments?: any[];
     }
 
@@ -454,6 +459,7 @@ declare module '@theia/plugin' {
          * value starting at 1.
          * @return This snippet string.
          */
+        // tslint:disable-next-line:no-any
         appendPlaceholder(value: string | ((snippet: SnippetString) => any), number?: number): SnippetString;
 
         /**
@@ -465,6 +471,7 @@ declare module '@theia/plugin' {
          * be resolved - either a string or a function with which a nested snippet can be created.
          * @return This snippet string.
          */
+        // tslint:disable-next-line:no-any
         appendVariable(name: string, defaultValue: string | ((snippet: SnippetString) => any)): SnippetString;
     }
 
@@ -1254,6 +1261,7 @@ declare module '@theia/plugin' {
          *
          * @return An object.
          */
+        // tslint:disable-next-line:no-any
         toJSON(): any;
     }
 
@@ -1438,12 +1446,12 @@ declare module '@theia/plugin' {
     }
 
     /**
-      * An event that is fired when a [document](#TextDocument) will be saved.
-      *
-      * To make modifications to the document before it is being saved, call the
-      * [`waitUntil`](#TextDocumentWillSaveEvent.waitUntil)-function with a thenable
-      * that resolves to an array of [text edits](#TextEdit).
-      */
+     * An event that is fired when a [document](#TextDocument) will be saved.
+     *
+     * To make modifications to the document before it is being saved, call the
+     * [`waitUntil`](#TextDocumentWillSaveEvent.waitUntil)-function with a thenable
+     * that resolves to an array of [text edits](#TextEdit).
+     */
     export interface TextDocumentWillSaveEvent {
 
         /**
@@ -1485,6 +1493,7 @@ declare module '@theia/plugin' {
          *
          * @param thenable A thenable that delays saving.
          */
+        // tslint:disable-next-line:no-any
         waitUntil(thenable: PromiseLike<any>): void;
     }
 
@@ -1617,6 +1626,7 @@ declare module '@theia/plugin' {
          * @param disposables An array to which a {{IDisposable}} will be added.
          * @return a disposable to remove the listener again.
          */
+        // tslint:disable-next-line:no-any
         (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable;
     }
 
@@ -1694,6 +1704,7 @@ declare module '@theia/plugin' {
          * An event emitted when cancellation is requested
          * @event
          */
+        // tslint:disable-next-line:no-any
         readonly onCancellationRequested: Event<any>;
 
     }
@@ -1767,6 +1778,7 @@ declare module '@theia/plugin' {
         /**
          * Function that is invoked when item selected
          */
+        // tslint:disable-next-line:no-any
         onDidSelectItem?(item: QuickPickItem | string): any;
     }
 
@@ -1866,6 +1878,7 @@ declare module '@theia/plugin' {
          *
          * Throw if a command is already registered for the given command identifier.
          */
+        // tslint:disable-next-line:no-any
         export function registerCommand(command: Command, handler?: (...args: any[]) => any): Disposable;
 
         /**
@@ -1874,6 +1887,7 @@ declare module '@theia/plugin' {
          * @param commandId a given command id
          * @param handler a command handler
          */
+        // tslint:disable-next-line:no-any
         export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable;
 
         /**
@@ -1882,6 +1896,7 @@ declare module '@theia/plugin' {
          * @param command a command description
          * @param handler a command handler with access to text editor
          */
+        // tslint:disable-next-line:no-any
         export function registerTextEditorCommand(command: Command, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void): Disposable;
 
         /**
@@ -1889,6 +1904,7 @@ declare module '@theia/plugin' {
          *
          * Reject if a command cannot be executed.
          */
+        // tslint:disable-next-line:no-any
         export function executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined>;
     }
 
@@ -2239,11 +2255,12 @@ declare module '@theia/plugin' {
          * An array to which disposables can be added. When this
          * extension is deactivated the disposables will be disposed.
          */
+        // tslint:disable-next-line:no-any
         subscriptions: { dispose(): any }[];
 
         /**
-        * The absolute file path of the directory containing the extension.
-        */
+         * The absolute file path of the directory containing the extension.
+         */
         extensionPath: string;
 
         /**
@@ -2316,7 +2333,10 @@ declare module '@theia/plugin' {
         /**
          * Shows a selection list with multiple selection allowed.
          */
-        export function showQuickPick(items: string[] | PromiseLike<string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<string[] | undefined>;
+        export function showQuickPick(items: string[] | PromiseLike<string[]>,
+            options: QuickPickOptions & { canPickMany: true },
+            token?: CancellationToken): PromiseLike<string[]
+            | undefined>;
 
         /**
          * Shows a selection list.
@@ -2329,7 +2349,9 @@ declare module '@theia/plugin' {
         /**
          * Shows a selection list with multiple selection allowed.
          */
-        export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
+        export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>,
+            options: QuickPickOptions & { canPickMany: true },
+            token?: CancellationToken): PromiseLike<T[] | undefined>;
 
         /**
          * Shows a selection list of [workspace folders](#workspace.workspaceFolders) to pick from.
@@ -2530,6 +2552,7 @@ declare module '@theia/plugin' {
          * @param hideWhenDone PromiseLike on which completion (resolve or reject) the message will be disposed.
          * @return A disposable which hides the status bar message.
          */
+        // tslint:disable-next-line:no-any
         export function setStatusBarMessage(text: string, hideWhenDone: PromiseLike<any>): Disposable;
 
         /**
@@ -2676,16 +2699,20 @@ declare module '@theia/plugin' {
         label?: string;
 
         /**
-         * Optional id for the tree item that has to be unique across tree. The id is used to preserve the selection and expansion state of the tree item.
+         * Optional id for the tree item that has to be unique across tree.
+         * The id is used to preserve the selection and expansion state of the tree item.
          *
-         * If not provided, an id is generated using the tree item's label. **Note** that when labels change, ids will change and that selection and expansion state cannot be kept stable anymore.
+         * If not provided, an id is generated using the tree item's label.
+         * **Note** that when labels change, ids will change and that selection and expansion state cannot be kept stable anymore.
          */
         id?: string;
 
         /**
          * The icon path or [ThemeIcon](#ThemeIcon) for the tree item.
-         * When `falsy`, [Folder Theme Icon](#ThemeIcon.Folder) is assigned, if item is collapsible otherwise [File Theme Icon](#ThemeIcon.File).
-         * When a [ThemeIcon](#ThemeIcon) is specified, icon is derived from the current file icon theme for the specified theme icon using [resourceUri](#TreeItem.resourceUri) (if provided).
+         * When `falsy`, [Folder Theme Icon](#ThemeIcon.Folder) is assigned, if item is
+         * collapsible otherwise [File Theme Icon](#ThemeIcon.File).
+         * When a [ThemeIcon](#ThemeIcon) is specified, icon is derived from the current
+         * file icon theme for the specified theme icon using [resourceUri](#TreeItem.resourceUri) (if provided).
          */
         iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
@@ -2717,19 +2744,19 @@ declare module '@theia/plugin' {
          * For example, a tree item is given a context value as `folder`. When contributing actions to `view/item/context`
          * using `menus` extension point, you can specify context value for key `viewItem` in `when` expression like `viewItem == folder`.
          * ```
-         *	"contributes": {
-         *		"menus": {
-         *			"view/item/context": [
-         *				{
-         *					"command": "extension.deleteFolder",
-            *					"when": "viewItem == folder"
-            *				}
-            *			]
-            *		}
-            *	}
-            * ```
-            * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
-            */
+         * "contributes": {
+         *    menus": {
+         *        "view/item/context": [
+         *            {
+         *                "command": "extension.deleteFolder",
+         *                "when": "viewItem == folder"
+         *            }
+         *        ]
+         *    }
+         * }
+         * ```
+         * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
+         */
         contextValue?: string;
 
 		/**
@@ -2871,11 +2898,13 @@ declare module '@theia/plugin' {
          * `ConfigurationTarget.WorkspaceFolder` when configuration is resource specific
          * `ConfigurationTarget.Workspace` otherwise.
          */
+        // tslint:disable-next-line:no-any
         update(section: string, value: any, configurationTarget?: ConfigurationTarget | boolean): PromiseLike<void>;
 
         /**
          * Readable dictionary that backs this configuration.
          */
+        // tslint:disable-next-line:no-any
         readonly [key: string]: any;
     }
 
@@ -3093,7 +3122,10 @@ declare module '@theia/plugin' {
          * @param ignoreDeleteEvents Ignore when files have been deleted.
          * @return A new file system watcher instance.
          */
-        export function createFileSystemWatcher(globPattern: GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher;
+        export function createFileSystemWatcher(globPattern: GlobPattern,
+            ignoreCreateEvents?: boolean,
+            ignoreChangeEvents?: boolean,
+            ignoreDeleteEvents?: boolean): FileSystemWatcher;
 
         /**
          * Find files across all [workspace folders](#workspace.workspaceFolders) in the workspace.
@@ -3508,7 +3540,6 @@ declare module '@theia/plugin' {
      */
     export type ProviderResult<T> = T | undefined | PromiseLike<T | undefined>;
 
-
     /**
      * A symbol kind.
      */
@@ -3592,10 +3623,10 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * Represents programming constructs like variables, classes, interfaces etc. that appear in a document. Document
-    * symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to
-    * its most interesting range, e.g. the range of an identifier.
-    */
+     * Represents programming constructs like variables, classes, interfaces etc. that appear in a document. Document
+     * symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to
+     * its most interesting range, e.g. the range of an identifier.
+     */
     export class DocumentSymbol {
 
         /**
@@ -3951,7 +3982,10 @@ declare module '@theia/plugin' {
          * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
          * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken | undefined, context: CompletionContext): ProviderResult<CompletionItem[] | CompletionList>;
+        provideCompletionItems(document: TextDocument,
+            position: Position,
+            token: CancellationToken | undefined,
+            context: CompletionContext): ProviderResult<CompletionItem[] | CompletionList>;
 
         /**
          * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
@@ -4178,6 +4212,7 @@ declare module '@theia/plugin' {
          * @param callback Function to execute for each entry.
          * @param thisArg The `this` context used when invoking the handler function.
          */
+        // tslint:disable-next-line:no-any
         forEach(callback: (uri: Uri, diagnostics: Diagnostic[], collection: DiagnosticCollection) => any, thisArg?: any): void;
 
         /**
@@ -4206,11 +4241,12 @@ declare module '@theia/plugin' {
     }
 
     /**
-       * A code action represents a change that can be performed in code, e.g. to fix a problem or
-       * to refactor code.
-       *
-       * A CodeAction must set either [`edit`](CodeAction#edit) and/or a [`command`](CodeAction#command). If both are supplied, the `edit` is applied first, then the command is executed.
-       */
+     * A code action represents a change that can be performed in code, e.g. to fix a problem or
+     * to refactor code.
+     *
+     * A CodeAction must set either [`edit`](CodeAction#edit) and/or a [`command`](CodeAction#command).
+     * If both are supplied, the `edit` is applied first, then the command is executed.
+     */
     export class CodeAction {
 
         /**
@@ -4511,9 +4547,9 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * The document formatting provider interface defines the contract between extensions and
-    * the formatting-feature.
-    */
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
     export interface OnTypeFormattingEditProvider {
 
         /**
@@ -4766,17 +4802,17 @@ declare module '@theia/plugin' {
         export function registerDocumentRangeFormattingEditProvider(selector: DocumentSelector, provider: DocumentRangeFormattingEditProvider): Disposable;
 
         /**
-        * Register a code action provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are asked in
-        * parallel and the results are merged. A failing provider (rejected promise or exception) will
-        * not cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A code action provider.
-        * @param metadata Metadata about the kind of code actions the provider providers.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a code action provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A code action provider.
+         * @param metadata Metadata about the kind of code actions the provider providers.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerCodeActionsProvider(selector: DocumentSelector, provider: CodeActionProvider, metadata?: CodeActionProviderMetadata): Disposable;
 
         /**
@@ -4800,16 +4836,16 @@ declare module '@theia/plugin' {
         ): Disposable;
 
         /**
-        * Register a document link provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are asked in
-        * parallel and the results are merged. A failing provider (rejected promise or exception) will
-        * not cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A document link provider.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a document link provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A document link provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerDocumentLinkProvider(selector: DocumentSelector, provider: DocumentLinkProvider): Disposable;
 
         /**
