@@ -140,6 +140,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     }
 
     /* Log a message to a logger.  */
+    // tslint:disable-next-line:no-any
     log(name: string, logLevel: number, message: any, params: any[]): Promise<void> {
         const logger = this.loggers.get(name);
         if (logger === undefined) {
