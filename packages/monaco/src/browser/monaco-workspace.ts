@@ -221,6 +221,7 @@ export class MonacoWorkspace implements lang.Workspace {
                     continue;
                 }
                 const uri = change.uri.toString();
+                // tslint:disable-next-line:no-any
                 const { codeUri } = (change.uri as any);
                 if (testGlob(globPattern, uri)) {
                     if (fileChangeType === FileChangeType.ADDED) {

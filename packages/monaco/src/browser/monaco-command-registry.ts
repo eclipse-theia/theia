@@ -20,7 +20,9 @@ import { EditorManager, TextEditorSelection } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 
 export interface MonacoEditorCommandHandler {
+    // tslint:disable-next-line:no-any
     execute(editor: MonacoEditor, ...args: any[]): any;
+    // tslint:disable-next-line:no-any
     isEnabled?(editor: MonacoEditor, ...args: any[]): boolean;
 }
 @injectable()
@@ -62,6 +64,7 @@ export class MonacoCommandRegistry {
         };
     }
 
+    // tslint:disable-next-line:no-any
     protected execute(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): any {
         const editor = MonacoEditor.getCurrent(this.editorManager);
         if (editor) {
@@ -71,11 +74,13 @@ export class MonacoCommandRegistry {
         return Promise.resolve();
     }
 
+    // tslint:disable-next-line:no-any
     protected isEnabled(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
         const editor = MonacoEditor.getCurrent(this.editorManager);
         return !!editor && (!monacoHandler.isEnabled || monacoHandler.isEnabled(editor, ...args));
     }
 
+    // tslint:disable-next-line:no-any
     protected isVisible(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
         return TextEditorSelection.is(this.selectionService.selection);
     }
