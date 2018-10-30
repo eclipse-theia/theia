@@ -775,6 +775,7 @@ describe('NodeFileSystem', function () {
 
 });
 
+// tslint:disable-next-line:no-any
 process.on('unhandledRejection', (reason: any) => {
     console.error('Unhandled promise rejection: ' + reason);
 });
