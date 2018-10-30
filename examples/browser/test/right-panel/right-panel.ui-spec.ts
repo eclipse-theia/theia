@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 /* tslint:disable:no-unused-expression*/
-import { expect } from "chai";
-import { RightPanel } from "./right-panel";
+import { expect } from 'chai';
+import { RightPanel } from './right-panel';
 import { MainPage } from '../main-page/main-page';
 let rightPanel: RightPanel;
 let mainPage: MainPage;
@@ -33,12 +33,12 @@ before(() => {
 });
 
 describe('theia right panel', () => {
-    it(`should show 'Outline'`, () => {
+    it("should show 'Outline'", () => {
         expect(rightPanel.doesTabExist('Outline')).to.be.true;
     });
 
     describe('outline tab', () => {
-        it(`should open/close the outline tab`, () => {
+        it('should open/close the outline tab', () => {
             rightPanel.openCloseTab('Outline');
             expect(rightPanel.isOutlineViewVisible()).to.be.true;
             expect(rightPanel.isTabActive('Outline')).to.be.true;

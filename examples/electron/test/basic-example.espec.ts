@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as chai from "chai";
+import * as chai from 'chai';
 import * as path from 'path';
 import * as electron from 'electron';
 
@@ -28,7 +28,7 @@ describe('basic-example-spec', () => {
     describe('01 #start example app', () => {
         it('should start the electron example app', (done) => {
             if (app.isReady()) {
-                require("../src-gen/backend/main"); // start the express server
+                require('../src-gen/backend/main'); // start the express server
 
                 mainWindow.webContents.openDevTools();
                 mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
