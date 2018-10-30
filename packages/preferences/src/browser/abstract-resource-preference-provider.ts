@@ -23,6 +23,7 @@ import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
 
+    // tslint:disable-next-line:no-any
     protected preferences: { [key: string]: any } = {};
 
     @inject(ILogger) protected readonly logger: ILogger;
@@ -59,10 +60,12 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     abstract getUri(): MaybePromise<URI | undefined>;
 
+    // tslint:disable-next-line:no-any
     getPreferences(): { [key: string]: any } {
         return this.preferences;
     }
 
+    // tslint:disable-next-line:no-any
     async setPreference(key: string, value: any): Promise<void> {
         const resource = await this.resource;
         if (resource.saveContents) {
