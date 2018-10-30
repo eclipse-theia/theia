@@ -82,7 +82,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                     ]
                 });
                 if (WorkspaceEdit.is(result) && this.workspace.applyEdit) {
-                    return await this.workspace.applyEdit(result);
+                    return this.workspace.applyEdit(result);
                 } else {
                     return false;
                 }
