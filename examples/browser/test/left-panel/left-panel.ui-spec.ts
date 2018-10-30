@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 /* tslint:disable:no-unused-expression*/
-import { expect } from "chai";
-import { LeftPanel } from "./left-panel";
+import { expect } from 'chai';
+import { LeftPanel } from './left-panel';
 import { MainPage } from '../main-page/main-page';
 let leftPanel: LeftPanel;
 let mainPage: MainPage;
@@ -33,13 +33,13 @@ before(() => {
 });
 
 describe('theia left panel', () => {
-    it(`should show 'Files' and 'Git'`, () => {
+    it("should show 'Files' and 'Git'", () => {
         expect(leftPanel.doesTabExist('Files')).to.be.true;
         expect(leftPanel.doesTabExist('Git')).to.be.true;
     });
 
     describe('files tab', () => {
-        it(`should open/close the files tab`, () => {
+        it('should open/close the files tab', () => {
             leftPanel.openCloseTab('Files');
             expect(leftPanel.isFileTreeVisible()).to.be.true;
             expect(leftPanel.isTabActive('Files')).to.be.true;
@@ -51,7 +51,7 @@ describe('theia left panel', () => {
     });
 
     describe('git tab', () => {
-        it(`should open/close the git tab`, () => {
+        it('should open/close the git tab', () => {
             leftPanel.openCloseTab('Git');
             expect(leftPanel.isGitContainerVisible()).to.be.true;
             expect(leftPanel.isTabActive('Git')).to.be.true;

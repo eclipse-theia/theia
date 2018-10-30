@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 /* tslint:disable:no-unused-expression*/
-import { expect } from "chai";
-import { TopPanel } from "./top-panel";
-import { BottomPanel } from "../bottom-panel/bottom-panel";
-import { RightPanel } from "../right-panel/right-panel";
-import { LeftPanel } from "../left-panel/left-panel";
+import { expect } from 'chai';
+import { TopPanel } from './top-panel';
+import { BottomPanel } from '../bottom-panel/bottom-panel';
+import { RightPanel } from '../right-panel/right-panel';
+import { LeftPanel } from '../left-panel/left-panel';
 import { MainPage } from '../main-page/main-page';
 let topPanel: TopPanel;
 let bottomPanel: BottomPanel;
@@ -179,7 +179,7 @@ describe('theia top panel (menubar)', () => {
     });
 
     describe('outline view UI', () => {
-        const tabName = "Outline";
+        const tabName = 'Outline';
         it('should start with outline view tab already created', () => {
             expect(rightPanel.doesTabExist(tabName)).to.be.true;
         });

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import "webdriverio";
+import 'webdriverio';
 import { TopPanel } from '../top-panel/top-panel';
 import { LeftPanel } from '../left-panel/left-panel';
 
@@ -58,9 +58,9 @@ export class MainPage {
 
     closeAll() {
         /* Make sure that all the "docked" layouts are closed */
-        while (this.driver.isExisting(`.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable`)) {
-            this.driver.rightClick(`.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable`);
-            this.driver.element(`.p-Widget.p-Menu .p-Menu-content`).click(`div=Close All`);
+        while (this.driver.isExisting('.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable')) {
+            this.driver.rightClick('.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable');
+            this.driver.element('.p-Widget.p-Menu .p-Menu-content').click('div=Close All');
         }
     }
 }
