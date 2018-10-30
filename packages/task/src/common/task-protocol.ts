@@ -26,6 +26,7 @@ export interface TaskConfiguration {
     /** A label that uniquely identifies a task configuration */
     readonly label: string;
     /** Additional task type specific properties. */
+    // tslint:disable-next-line:no-any
     readonly [key: string]: any;
 }
 
@@ -40,6 +41,7 @@ export interface TaskInfo {
     /** task config used for launching a task */
     readonly config: TaskConfiguration,
     /** Additional properties specific for a particular Task Runner. */
+    // tslint:disable-next-line:no-any
     readonly [key: string]: any;
 }
 
