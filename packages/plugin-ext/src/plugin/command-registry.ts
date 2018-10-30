@@ -18,6 +18,7 @@ import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } fr
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from './types-impl';
 
+// tslint:disable-next-line:no-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
 
 export class CommandRegistryImpl implements CommandRegistryExt {
@@ -57,6 +58,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         throw new Error('Method not implemented.');
     }
 
+    // tslint:disable-next-line:no-any
     $executeCommand<T>(id: string, args: any[]): PromiseLike<T> {
         if (this.commands.has(id)) {
             return this.executeLocalCommand(id, args);
@@ -65,6 +67,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
+    // tslint:disable-next-line:no-any
     executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.commands.has(id)) {
             return this.executeLocalCommand(id, args);
@@ -73,6 +76,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
+    // tslint:disable-next-line:no-any
     private executeLocalCommand<T>(id: string, args: any[]): PromiseLike<T> {
         const handler = this.commands.get(id);
         if (handler) {

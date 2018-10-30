@@ -18,6 +18,7 @@ import { Event } from 'vscode-jsonrpc';
 /**
  * Provides a token (for now it's a NONE)
  */
+// tslint:disable-next-line:no-any
 export function createToken(): any {
     return Object.freeze({
         isCancellationRequested: false,
