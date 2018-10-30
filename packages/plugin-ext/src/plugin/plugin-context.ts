@@ -379,9 +379,11 @@ export function createAPIFactory(
         };
 
         const plugins: typeof theia.plugins = {
+            // tslint:disable-next-line:no-any
             get all(): theia.Plugin<any>[] {
                 return pluginManager.getAllPlugins().map(plg => new Plugin(pluginManager, plg));
             },
+            // tslint:disable-next-line:no-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
                 const plg = pluginManager.getPluginById(pluginId);
                 if (plg) {
@@ -466,6 +468,7 @@ class Plugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
     isActive: boolean;
+    // tslint:disable-next-line:no-any
     packageJSON: any;
     pluginType: theia.PluginType;
     constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {

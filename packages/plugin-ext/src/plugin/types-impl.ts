@@ -24,6 +24,7 @@ import { MarkdownString, isMarkdownString } from './markdown-string';
 export class Disposable {
     private disposable: undefined | (() => void);
 
+    // tslint:disable-next-line:no-any
     static from(...disposables: { dispose(): any }[]): Disposable {
         return new Disposable(() => {
             if (disposables) {
@@ -1026,6 +1027,7 @@ export class SymbolInformation {
         SymbolInformation.validate(this);
     }
 
+    // tslint:disable-next-line:no-any
     toJSON(): any {
         return {
             name: this.name,
