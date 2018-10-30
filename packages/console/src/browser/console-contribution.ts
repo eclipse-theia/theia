@@ -132,6 +132,7 @@ export class ConsoleCommandHandler implements CommandHandler {
         return !!this.manager.currentConsole;
     }
 
+    // tslint:disable-next-line:no-any
     execute(...args: any[]): any {
         const { currentConsole } = this.manager;
         if (currentConsole) {

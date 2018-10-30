@@ -21,6 +21,7 @@ export async function getSchemaAttributes(pathToVsCodeExtension: string, debugTy
     const taskSchema = {}; // TODO
     const packageJsonPath = `${pathToVsCodeExtension}/package.json`;
     const packageNlsJsonPath = `${pathToVsCodeExtension}/package.nls.json`;
+    // tslint:disable-next-line:no-any
     const nlsMap: any = await new Promise((resolve, reject) => fs.readFile(packageNlsJsonPath, (err, data) => {
         if (err) {
             console.error(err);
@@ -29,6 +30,7 @@ export async function getSchemaAttributes(pathToVsCodeExtension: string, debugTy
             resolve(JSON.parse(data.toString()));
         }
     }));
+    // tslint:disable-next-line:no-any
     const fullPackageJson: any = await new Promise((resolve, reject) => fs.readFile(packageJsonPath, (err, data) => {
         if (err) {
             console.error(err);
