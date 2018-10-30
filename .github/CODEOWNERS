@@ -1,0 +1,4 @@
+# plugin
+packages/plugin/** @evidolob @benoitf
+packages/plugin-ext/** @evidolob @benoitf
+packages/plugin-ext-vscode/** @evidolob @benoitf
