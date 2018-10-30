@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable, inject } from 'inversify';
 import { MessageService, CommandRegistry } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
@@ -23,15 +25,19 @@ import {
     DocumentSelector, TextDocument, FileSystemWatcher,
     Workspace, Languages, State
 } from './language-client-services';
-import { MessageConnection } from 'vscode-jsonrpc';
+import { MessageConnection, ResponseError } from 'vscode-jsonrpc';
 import { LanguageClientFactory } from './language-client-factory';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { InitializeParams } from 'monaco-languageclient';
 
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution extends LanguageContribution {
+    readonly running: boolean;
     readonly languageClient: Promise<ILanguageClient>;
     waitForActivation(app: FrontendApplication): Promise<void>;
     activate(app: FrontendApplication): Disposable;
+    deactivate(): void;
+    restart(): void;
 }
 
 @injectable()
@@ -90,12 +96,19 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this.workspace.ready;
     }
 
+    protected readonly toDeactivate = new DisposableCollection();
     activate(): Disposable {
+        if (this.toDeactivate.disposed) {
+            this.doActivate(this.toDeactivate);
+        }
+        return this.toDeactivate;
+    }
+    deactivate(): void {
+        this.toDeactivate.dispose();
+    }
+    protected doActivate(toDeactivate: DisposableCollection): void {
         const options: WebSocketOptions = {};
-        const toDeactivate = new DisposableCollection();
-        toDeactivate.push(Disposable.create(() => {
-            options.reconnecting = false;
-        }));
+        toDeactivate.push(Disposable.create(() => options.reconnecting = false));
         this.connectionProvider.listen({
             path: LanguageContribution.getPath(this),
             onConnection: messageConnection => {
@@ -103,27 +116,23 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                     messageConnection.dispose();
                     return;
                 }
-                toDeactivate.push(messageConnection);
-
                 const languageClient = this.createLanguageClient(messageConnection);
                 this.onWillStart(languageClient);
-                languageClient.start();
-                this.toRestart.push(Disposable.create(async () => {
-                    await languageClient.onReady();
-                    languageClient.stop();
-                }));
+                toDeactivate.pushAll([
+                    messageConnection,
+                    this.toRestart.push(Disposable.create(async () => {
+                        await languageClient.onReady();
+                        languageClient.stop();
+                    })),
+                    languageClient.start()
+                ]);
             }
         }, options);
-
-        this.registerRestartCommand();
-        toDeactivate.push(Disposable.create(() => this.unregisterRestartCommand()));
-
-        return toDeactivate;
     }
 
     protected state: State | undefined;
     get running(): boolean {
-        return this.state === State.Running;
+        return !this.toDeactivate.disposed && this.state === State.Running;
     }
 
     protected readonly toRestart = new DisposableCollection();
@@ -160,14 +169,20 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return {
             documentSelector,
             synchronize: { fileEvents, configurationSection },
-            initializationFailedHandler: err => {
-                const detail = err instanceof Error ? `: ${err.message}` : '.';
-                this.messageService.error(`Failed to start ${this.name} language server${detail}`);
-                return false;
-            },
+            initializationFailedHandler: err => this.handleInitializationFailed(err),
             diagnosticCollectionName: id,
             initializationOptions
         };
+    }
+    protected handleInitializationFailed(err: ResponseError<InitializeParams> | Error | any): boolean {
+        this.deactivate();
+        const detail = err instanceof Error ? `: ${err.message}` : '.';
+        this.messageService.error(`Failed to start ${this.name} language server${detail}`, 'Retry').then(result => {
+            if (result) {
+                this.activate();
+            }
+        });
+        return false;
     }
 
     // tslint:disable-next-line:no-any
@@ -235,34 +250,4 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         });
     }
 
-    /**
-     * Return the id of the "restart" command for this language client.
-     */
-    private restartCommandId(): string {
-        return `languages.${this.id}.restart`;
-    }
-
-    /**
-     * Register a command that lets the user restart the language server this
-     * client is connected to.
-     */
-    protected registerRestartCommand(): void {
-        this.registry.registerCommand(
-            {
-                id: this.restartCommandId(),
-                label: `${this.name}: Restart Language Server`,
-            },
-            {
-                execute: () => this.restart(),
-                isEnabled: () => this.running,
-                isVisible: () => this.running,
-            });
-    }
-
-    /**
-     * Unregister the command registered by `registerRestartCommand`.
-     */
-    protected unregisterRestartCommand(): void {
-        this.registry.unregisterCommand(this.restartCommandId());
-    }
 }

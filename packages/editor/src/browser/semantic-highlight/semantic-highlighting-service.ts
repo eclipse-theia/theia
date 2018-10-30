@@ -46,9 +46,7 @@ export class SemanticHighlightingService implements Disposable {
         if (scopes && scopes.length > 0) {
             this.logger.info(`Registering scopes for language: ${languageId}.`);
             if (this.scopes.has(languageId)) {
-                const error = new Error(`The scopes are already registered for language: ${languageId}.`);
-                this.logger.error(error.message);
-                throw error;
+                this.logger.warn(`The scopes are already registered for language: ${languageId}.`);
             }
             this.scopes.set(languageId, scopes.map(scope => scope.slice(0)));
             this.logger.info(`The scopes have been successfully registered for ${languageId}.`);
@@ -61,9 +59,7 @@ export class SemanticHighlightingService implements Disposable {
     protected unregister(languageId: string): void {
         this.logger.info(`Unregistering scopes for language: ${languageId}.`);
         if (!this.scopes.has(languageId)) {
-            const error = new Error(`No scopes were registered for language: ${languageId}.`);
-            this.logger.error(error.message);
-            throw error;
+            this.logger.warn(`No scopes were registered for language: ${languageId}.`);
         }
         this.scopes.delete(languageId);
         this.logger.info(`The scopes have been successfully unregistered for ${languageId}.`);

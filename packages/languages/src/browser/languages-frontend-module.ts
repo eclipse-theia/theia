@@ -32,7 +32,9 @@ export default new ContainerModule(bind => {
     bind(LanguageClientFactory).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, LanguageClientContribution);
-    bind(FrontendApplicationContribution).to(LanguagesFrontendContribution);
+    bind(LanguagesFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(LanguagesFrontendContribution);
+    bind(CommandContribution).toService(LanguagesFrontendContribution);
 
     bind(WorkspaceSymbolCommand).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, KeybindingContribution, QuickOpenContribution]) {
