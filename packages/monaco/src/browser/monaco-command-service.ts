@@ -50,6 +50,7 @@ export class MonacoCommandService implements ICommandService {
         }
     }
 
+    // tslint:disable-next-line:no-any
     executeCommand(commandId: any, ...args: any[]): monaco.Promise<any> {
         const handler = this.commandRegistry.getActiveHandler(commandId, ...args);
         if (handler) {
