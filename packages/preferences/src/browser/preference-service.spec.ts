@@ -307,6 +307,7 @@ describe('Preference Service', function () {
          * A slow provider that becomes ready after 1 second.
          */
         class SlowProvider extends PreferenceProvider {
+            // tslint:disable-next-line:no-any
             readonly prefs: { [p: string]: any } = {};
 
             constructor() {

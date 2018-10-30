@@ -309,7 +309,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (home) {
             const tempWorkspaceUri = getTemporaryWorkspaceFileUri(new URI(home.uri));
             if (!await this.fileSystem.exists(tempWorkspaceUri.toString())) {
-                return await this.fileSystem.createFile(tempWorkspaceUri.toString());
+                return this.fileSystem.createFile(tempWorkspaceUri.toString());
             }
             return this.toFileStat(tempWorkspaceUri);
         }
@@ -368,7 +368,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
                 this._workspace = uri;
-                this.logger.error(error.toString()).then(async () => await this.reloadWindow());
+                this.logger.error(error.toString()).then(() => this.reloadWindow());
             }
         }
     }

@@ -31,6 +31,7 @@ export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, co
     path: string,
     identifier: interfaces.ServiceIdentifier<IBaseTerminalServer>,
     constructor: {
+        // tslint:disable-next-line:no-any
         new(...args: any[]): IBaseTerminalServer;
     }
 }): void {
