@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2017-2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,13 +15,7 @@
  ********************************************************************************/
 
 import { RequestType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
-export interface ActionableMessage {
-    severity: MessageType;
-    message: string;
-    data?: any;
-    commands?: Command[];
-}
+import { TextDocumentIdentifier } from '@theia/languages/lib/browser';
 
 export namespace SwitchSourceHeaderRequest {
     export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>('textDocument/switchSourceHeader');
