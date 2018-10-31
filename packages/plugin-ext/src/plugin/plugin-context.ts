@@ -382,6 +382,13 @@ export function createAPIFactory(
             }
         };
 
+        const debug: typeof theia.debug = {
+            registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): theia.Disposable {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             commands,
@@ -390,6 +397,7 @@ export function createAPIFactory(
             env,
             languages,
             plugins,
+            debug,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
