@@ -20,10 +20,10 @@ import * as temp from 'temp';
 import * as fs from 'fs';
 import { RipgrepSearchInWorkspaceServer } from './ripgrep-search-in-workspace-server';
 import { SearchInWorkspaceClient, SearchInWorkspaceResult } from '../common/search-in-workspace-interface';
-import { Container, ContainerModule } from 'inversify';
+import { Container } from 'inversify';
 import { ILogger, isWindows } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
+import { RawProcessFactory, ProcessManager, RawProcessFactoryImpl } from '@theia/process/lib/node';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
@@ -116,24 +116,10 @@ If one uses \`salut";\' echo foo && echo bar; "\` as a search term it should not
 beforeEach(() => {
     const container = new Container();
 
-    const module = new ContainerModule(bind => {
-        bind(ILogger).to(MockLogger);
-        bind(RipgrepSearchInWorkspaceServer).toSelf();
-        bind(ProcessManager).toSelf().inSingletonScope();
-        bind(RawProcess).toSelf().inTransientScope();
-        bind(RawProcessFactory).toFactory(ctx =>
-            (options: RawProcessOptions) => {
-                const child = new Container({ defaultScope: 'Singleton' });
-                child.parent = ctx.container;
-
-                child.bind(RawProcessOptions).toConstantValue(options);
-                return child.get(RawProcess);
-            }
-        );
-    });
-
-    container.load(module);
-
+    container.bind(ILogger).to(MockLogger);
+    container.bind(RipgrepSearchInWorkspaceServer).toSelf();
+    container.bind(ProcessManager).toSelf().inSingletonScope();
+    container.bind(RawProcessFactory).to(RawProcessFactoryImpl);
     ripgrepServer = container.get(RipgrepSearchInWorkspaceServer);
 });
 
@@ -180,11 +166,11 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
     }
 }
 
-describe('ripgrep-search-in-workspace-server', function () {
+describe('ripgrep-search-in-workspace-server', function() {
     this.timeout(10000);
 
     // Try some simple patterns with different case.
-    it('returns 7 results when searching for "carrot"', function (done) {
+    it('returns 7 results when searching for "carrot"', function(done) {
         const pattern = 'carrot';
 
         const client = new ResultAccumulator(() => {
@@ -205,7 +191,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         ripgrepServer.search(pattern, rootDir);
     });
 
-    it('returns 5 results when searching for "carrot" case sensitive', function (done) {
+    it('returns 5 results when searching for "carrot" case sensitive', function(done) {
         const pattern = 'carrot';
 
         const client = new ResultAccumulator(() => {
@@ -226,7 +212,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
     });
 
-    it('returns 4 results when searching for "carrot" matching whole words, case insensitive', function (done) {
+    it('returns 4 results when searching for "carrot" matching whole words, case insensitive', function(done) {
         const pattern = 'carrot';
 
         const client = new ResultAccumulator(() => {
@@ -246,7 +232,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
     });
 
-    it('returns 4 results when searching for "carrot" matching whole words, case sensitive', function (done) {
+    it('returns 4 results when searching for "carrot" matching whole words, case sensitive', function(done) {
         const pattern = 'carrot';
 
         const client = new ResultAccumulator(() => {
@@ -265,7 +251,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
     });
 
-    it('returns 1 result when searching for "Carrot"', function (done) {
+    it('returns 1 result when searching for "Carrot"', function(done) {
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
                 { file: 'carrots', line: 4, character: 1, length: 6, lineText: '' },
@@ -278,7 +264,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         ripgrepServer.search('Carrot', rootDir, { matchCase: true });
     });
 
-    it('returns 0 result when searching for "CarroT"', function (done) {
+    it('returns 0 result when searching for "CarroT"', function(done) {
         const pattern = 'CarroT';
 
         const client = new ResultAccumulator(() => {
@@ -290,7 +276,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try something that we know isn't there.
-    it('finds 0 result when searching for "PINEAPPLE"', function (done) {
+    it('finds 0 result when searching for "PINEAPPLE"', function(done) {
         const pattern = 'PINEAPPLE';
 
         const client = new ResultAccumulator(() => {
@@ -302,7 +288,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try a pattern with a space.
-    it('finds 1 result when searching for "carrots are orange"', function (done) {
+    it('finds 1 result when searching for "carrots are orange"', function(done) {
         const pattern = 'carrots are orange';
 
         const client = new ResultAccumulator(() => {
@@ -319,7 +305,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
     // Try with an output size that exceeds the default node buffer size
     // (200 * 1024) when spawning a new process.
-    it('works with a lot of results', function (done) {
+    it('works with a lot of results', function(done) {
         // This can take a bit of time.
         this.timeout(150000);
         const pattern = 'lots-of-matches';
@@ -346,7 +332,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try limiting the number of returned results.
-    it('limits the number of returned results', function (done) {
+    it('limits the number of returned results', function(done) {
         const pattern = 'lots-of-matches';
 
         const client = new ResultAccumulator(() => {
@@ -373,7 +359,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try with regexes.
-    it('searches for regexes', function (done) {
+    it('searches for regexes', function(done) {
         const pattern = 'h[e3]l+[o0]';
 
         const client = new ResultAccumulator(() => {
@@ -395,7 +381,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try without regex
-    it('searches for fixed string', function (done) {
+    it('searches for fixed string', function(done) {
         const pattern = 'hello.';
 
         const client = new ResultAccumulator(() => {
@@ -413,7 +399,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try with a pattern starting with -, and in filenames containing colons and spaces.
-    it('searches a pattern starting with -', function (done) {
+    it('searches a pattern starting with -', function(done) {
         const pattern = '-fo+bar';
 
         const client = new ResultAccumulator(() => {
@@ -435,7 +421,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try with a pattern starting with --, and in filenames containing colons and spaces.
-    it('searches a pattern starting with --', function (done) {
+    it('searches a pattern starting with --', function(done) {
         const pattern = '--fo+bar';
 
         const client = new ResultAccumulator(() => {
@@ -457,7 +443,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try searching in an UTF-8 file.
-    it('searches in a UTF-8 file', function (done) {
+    it('searches in a UTF-8 file', function(done) {
         const pattern = ' jag';
 
         const client = new ResultAccumulator(() => {
@@ -474,7 +460,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     });
 
     // Try searching a pattern that contains unicode characters.
-    it('searches a UTF-8 pattern', function (done) {
+    it('searches a UTF-8 pattern', function(done) {
         const pattern = ' h?är';
 
         const client = new ResultAccumulator(() => {
@@ -494,7 +480,7 @@ describe('ripgrep-search-in-workspace-server', function () {
     // A regex that may match an empty string should not return zero-length
     // results.  Run the test in a directory without big files, because it
     // makes rg print all searched lines, which can take a lot of time.
-    it('doesn\'t return zero-length matches', function (done) {
+    it('doesn\'t return zero-length matches', function(done) {
         const pattern = '(hello)?';
 
         const client = new ResultAccumulator(() => {
@@ -508,7 +494,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         ripgrepServer.search(pattern, rootDir + '/small');
     });
 
-    it('searches a pattern with special characters ', function (done) {
+    it('searches a pattern with special characters ', function(done) {
         const pattern = 'salut";\' echo foo && echo bar; "';
 
         const client = new ResultAccumulator(() => {

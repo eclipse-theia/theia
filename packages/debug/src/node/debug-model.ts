@@ -90,7 +90,7 @@ export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
  * Factory to start debug adapter.
  */
 export interface DebugAdapterFactory {
-    start(executable: DebugAdapterExecutable): CommunicationProvider;
+    start(executable: DebugAdapterExecutable): Promise<CommunicationProvider>;
     connect(debugServerPort: number): CommunicationProvider;
 }
 

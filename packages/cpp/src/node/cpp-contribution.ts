@@ -37,7 +37,8 @@ export class CppContribution extends BaseLanguageServerContribution {
             args = parseArgs(envArgs);
         }
 
-        const serverConnection = this.createProcessStreamConnection(command, args);
-        this.forward(clientConnection, serverConnection);
+        this.createProcessStreamConnection(command, args).then(serverConnection => {
+            this.forward(clientConnection, serverConnection);
+        });
     }
 }

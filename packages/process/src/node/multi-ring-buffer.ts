@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import * as stream from 'stream';
-import { inject, injectable } from 'inversify';
 import { Disposable } from '@theia/core/lib/common';
 
 /**
@@ -73,7 +72,6 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
     }
 }
 
-export const MultiRingBufferOptions = Symbol('MultiRingBufferOptions');
 export interface MultiRingBufferOptions {
     readonly size: number,
     readonly encoding?: string,
@@ -81,7 +79,6 @@ export interface MultiRingBufferOptions {
 
 export interface WrappedPosition { newPos: number, wrap: boolean }
 
-@injectable()
 export class MultiRingBuffer {
 
     protected readonly buffer: Buffer;
@@ -97,7 +94,7 @@ export class MultiRingBuffer {
     protected readerId = 0;
 
     constructor(
-        @inject(MultiRingBufferOptions) protected readonly options: MultiRingBufferOptions
+        protected readonly options: MultiRingBufferOptions
     ) {
         this.maxSize = options.size;
         if (options.encoding !== undefined) {

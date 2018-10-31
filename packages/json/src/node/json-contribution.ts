@@ -31,16 +31,13 @@ export class JsonContribution extends BaseLanguageServerContribution {
             path.resolve(__dirname, './json-starter'),
             '--stdio'
         ];
-        try {
-            const serverConnection = this.createProcessStreamConnection(command, args);
+
+        this.createProcessStreamConnection(command, args).then(serverConnection => {
             serverConnection.reader.onError(err => {
                 console.log(err);
             });
             this.forward(clientConnection, serverConnection);
-        } catch (e) {
-            console.log(e);
-            throw e;
-        }
+        }).catch(e => console.log(e));
     }
 
     protected onDidFailSpawnProcess(error: Error): void {

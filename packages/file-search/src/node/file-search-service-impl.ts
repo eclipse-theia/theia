@@ -48,7 +48,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         if (!options.useGitIgnore) {
             args.push('-uu');
         }
-        const process = this.rawProcessFactory({
+        const process = await this.rawProcessFactory.create({
             command: rgPath,
             args,
             options: {
@@ -71,8 +71,8 @@ export class FileSearchServiceImpl implements FileSearchService {
             }
         }
         const lineReader = readline.createInterface({
-            input: process.output,
-            output: process.input
+            input: process.stdout,
+            output: process.stdin,
         });
         lineReader.on('line', line => {
             if (result.length >= opts.limit) {
@@ -84,9 +84,6 @@ export class FileSearchServiceImpl implements FileSearchService {
                     fuzzyMatches.push(line);
                 }
             }
-        });
-        process.onError(e => {
-            resultDeferred.reject(e);
         });
         process.onExit(e => {
             const left = opts.limit - result.length;

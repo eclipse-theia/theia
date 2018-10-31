@@ -32,8 +32,8 @@ export class SearchInWorkspaceClientImpl implements SearchInWorkspaceClient {
     onResult(searchId: number, result: SearchInWorkspaceResult): void {
         this.service.onResult(searchId, result);
     }
-    onDone(searchId: number, error?: string): void {
-        this.service.onDone(searchId, error);
+    onDone(searchId: number): void {
+        this.service.onDone(searchId);
     }
 
     setService(service: SearchInWorkspaceClient) {
@@ -60,7 +60,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
     // events until we get the search id and return it to the caller.
     // Otherwise the caller would discard the event because it doesn't know
     // the search id yet.
-    private pendingOnDones: Map<number, string | undefined> = new Map();
+    private pendingOnDones: Set<number> = new Set();
 
     private lastKnownSearchId: number = -1;
 
@@ -86,19 +86,19 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         }
     }
 
-    onDone(searchId: number, error?: string): void {
+    onDone(searchId: number, ): void {
         const callbacks = this.pendingSearches.get(searchId);
 
         if (callbacks) {
             this.pendingSearches.delete(searchId);
-            callbacks.onDone(searchId, error);
+            callbacks.onDone(searchId);
         } else {
             if (searchId > this.lastKnownSearchId) {
-                this.logger.debug(`Got an onDone for a searchId we don't know about (${searchId}), stashing it for later with error = `, error);
-                this.pendingOnDones.set(searchId, error);
+                this.logger.debug(`Got an onDone for a searchId we don't know about (${searchId}), stashing it for later.`);
+                this.pendingOnDones.add(searchId);
             } else {
                 // It's possible to receive an onDone for a search we have cancelled.  Just ignore it.
-                this.logger.debug(`Got an onDone for a searchId we don't know about (${searchId}), but it's probably an old one, error = `, error);
+                this.logger.debug(`Got an onDone for a searchId we don't know about (${searchId}), but it's probably an old one.`);
             }
         }
     }
@@ -120,13 +120,12 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         // Check if we received an onDone before search() returned.
         if (this.pendingOnDones.has(searchId)) {
             this.logger.debug('Ohh, we have a stashed onDone for that searchId');
-            const error = this.pendingOnDones.get(searchId);
             this.pendingOnDones.delete(searchId);
 
             // Call the client's searchId, but first give it a
             // chance to record the returned searchId.
             setTimeout(() => {
-                this.onDone(searchId, error);
+                this.onDone(searchId);
             }, 0);
         }
 

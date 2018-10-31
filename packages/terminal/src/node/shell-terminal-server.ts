@@ -31,11 +31,11 @@ export class ShellTerminalServer extends BaseTerminalServer {
         super(processManager, logger);
     }
 
-    create(options: IShellTerminalServerOptions): Promise<number> {
+    async create(options: IShellTerminalServerOptions): Promise<number> {
         try {
-            const term = this.shellFactory(options);
-            this.postCreate(term);
-            return Promise.resolve(term.id);
+            const process = await this.shellFactory.create(options);
+            this.postCreate(process);
+            return Promise.resolve(process.id);
         } catch (error) {
             this.logger.error('Error while creating terminal', error);
             return Promise.resolve(-1);

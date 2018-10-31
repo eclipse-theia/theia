@@ -78,18 +78,6 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     protected postCreate(term: TerminalProcess): void {
         const toDispose = new DisposableCollection();
-
-        toDispose.push(term.onError(error => {
-            this.logger.error(`Terminal pid: ${term.pid} error: ${error}, closing it.`);
-
-            if (this.client !== undefined) {
-                this.client.onTerminalError({
-                    'terminalId': term.id,
-                    'error': error
-                });
-            }
-        }));
-
         toDispose.push(term.onExit(event => {
             if (this.client !== undefined) {
                 this.client.onTerminalExitChanged({

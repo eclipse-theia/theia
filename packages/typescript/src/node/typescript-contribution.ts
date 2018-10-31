@@ -54,8 +54,9 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
             __dirname + '/startserver.js',
             '--stdio'
         ];
-        const serverConnection = this.createProcessStreamConnection(command, args);
-        this.forward(clientConnection, serverConnection);
+        this.createProcessStreamConnection(command, args).then(serverConnection => {
+            this.forward(clientConnection, serverConnection);
+        });
     }
 
     protected map(message: Message): Message {

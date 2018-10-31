@@ -50,19 +50,19 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     @inject(ProcessManager)
     protected readonly processManager: ProcessManager;
 
-    start(executable: DebugAdapterExecutable): CommunicationProvider {
-        const process = this.spawnProcess(executable);
+    async start(executable: DebugAdapterExecutable): Promise<CommunicationProvider> {
+        const process = await this.spawnProcess(executable);
         // FIXME: propagate onError + onExit
         return {
-            input: process.input,
-            output: process.output,
+            input: process.stdin,
+            output: process.stdout,
             dispose: () => process.kill()
         };
     }
 
-    private spawnProcess(executable: DebugAdapterExecutable): RawProcess {
+    private spawnProcess(executable: DebugAdapterExecutable): Promise<RawProcess> {
         const { command, args } = executable;
-        return this.processFactory({ command, args, options: { stdio: ['pipe', 'pipe', 2] } });
+        return this.processFactory.create({ command, args, options: { stdio: ['pipe', 'pipe', 2] } });
     }
 
     connect(debugServerPort: number): CommunicationProvider {

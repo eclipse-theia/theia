@@ -102,7 +102,7 @@ export class ProcessTaskRunner implements TaskRunner {
             const processType = taskConfig.type === 'process' ? 'process' : 'shell';
             if (processType === 'process') {
                 this.logger.debug('Task: creating underlying raw process');
-                proc = this.rawProcessFactory(<RawProcessOptions>{
+                proc = await this.rawProcessFactory.create(<RawProcessOptions>{
                     command: command,
                     args: args,
                     options: options
@@ -110,7 +110,7 @@ export class ProcessTaskRunner implements TaskRunner {
             } else {
                 // all Task types without specific TaskRunner will be run as a shell process e.g.: npm, gulp, etc.
                 this.logger.debug('Task: creating underlying terminal process');
-                proc = this.terminalProcessFactory(<TerminalProcessOptions>{
+                proc = await this.terminalProcessFactory.create(<TerminalProcessOptions>{
                     command: command,
                     args: args,
                     options: options

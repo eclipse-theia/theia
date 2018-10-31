@@ -109,7 +109,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
             const address = server.address();
             env.CLIENT_HOST = address.address;
             env.CLIENT_PORT = address.port;
-            this.createProcessSocketConnection(socket, socket, command, args, { env })
+            return this.createProcessSocketConnection(socket, socket, command, args, { env })
                 .then(serverConnection => this.forward(clientConnection, serverConnection));
         });
     }

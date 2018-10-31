@@ -36,9 +36,9 @@ export class TerminalServer extends BaseTerminalServer implements ITerminalServe
 
     async create(options: ITerminalServerOptions): Promise<number> {
         try {
-            const term = this.terminalFactory(options);
-            this.postCreate(term);
-            return term.id;
+            const process = await this.terminalFactory.create(options);
+            this.postCreate(process);
+            return process.id;
         } catch (error) {
             this.logger.error('Error while creating terminal', error);
             return -1;

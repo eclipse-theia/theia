@@ -40,9 +40,16 @@ describe('TerminalProcess', function () {
         /* Strangely, Linux returns exited with code 1 when using a non existing path but Windows throws an error.
         This would need to be investigated more.  */
         if (isWindows) {
-            return expect(() => terminalProcessFactory({ command: '/non-existent' })).to.throw();
+            let error: Error | undefined = undefined;
+            try {
+                await terminalProcessFactory.create({ command: '/non-existent' });
+            } catch (err) {
+                error = err;
+            }
+
+            expect(error).not.eq(undefined);
         } else {
-            const terminalProcess = terminalProcessFactory({ command: '/non-existant' });
+            const terminalProcess = await terminalProcessFactory.create({ command: '/non-existant' });
             const p = new Promise(resolve => {
                 terminalProcess.onExit(event => {
                     if (event.code > 0) { resolve(); }
@@ -55,11 +62,8 @@ describe('TerminalProcess', function () {
 
     it('test exit', async function () {
         const args = ['--version'];
-        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
+        const terminalProcess = await terminalProcessFactory.create({ command: process.execPath, 'args': args });
         const p = new Promise((resolve, reject) => {
-            terminalProcess.onError(error => {
-                reject();
-            });
             terminalProcess.onExit(event => {
                 if (event.code === 0) {
                     resolve();
@@ -74,7 +78,7 @@ describe('TerminalProcess', function () {
 
     it('test pipe stream', async function () {
         const args = ['--version'];
-        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
+        const terminalProcess = await terminalProcessFactory.create({ command: process.execPath, 'args': args });
 
         const outStream = new stream.PassThrough();
 

@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, Container, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import { TerminalBackendContribution } from './terminal-backend-contribution';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
-import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
+import { ShellProcessFactory, ShellProcessFactoryImpl } from './shell-process';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { IBaseTerminalClient, DispatchingBaseTerminalClient, IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalServer } from './terminal-server';
@@ -56,16 +56,7 @@ export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, co
 export default new ContainerModule(bind => {
     bind(MessagingService.Contribution).to(TerminalBackendContribution).inSingletonScope();
 
-    bind(ShellProcess).toSelf().inTransientScope();
-    bind(ShellProcessFactory).toFactory(ctx =>
-        (options: ShellProcessOptions) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-            child.bind(ShellProcessOptions).toConstantValue(options);
-            return child.get(ShellProcess);
-        }
-    );
-
+    bind(ShellProcessFactory).to(ShellProcessFactoryImpl).inSingletonScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
     bindTerminalServer(bind, {
         path: terminalPath,

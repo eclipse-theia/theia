@@ -14,8 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, unmanaged } from 'inversify';
-import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
 
 export interface IProcessExitEvent {
@@ -34,24 +32,23 @@ export interface ProcessOptions {
     options?: object
 }
 
-@injectable()
 export abstract class Process {
-
-    readonly id: number;
-    readonly exitEmitter: Emitter<IProcessExitEvent>;
-    readonly errorEmitter: Emitter<Error>;
+    protected _id: number = -1;
+    readonly exitEmitter: Emitter<IProcessExitEvent> = new Emitter<IProcessExitEvent>();
     abstract readonly pid: number;
     protected _killed = false;
 
     constructor(
-        protected readonly processManager: ProcessManager,
         protected readonly logger: ILogger,
-        @unmanaged() protected readonly type: ProcessType,
-        protected readonly options: ProcessOptions
-    ) {
-        this.exitEmitter = new Emitter<IProcessExitEvent>();
-        this.errorEmitter = new Emitter<Error>();
-        this.id = this.processManager.register(this);
+        protected readonly type: ProcessType) {
+    }
+
+    setId(id: number): void {
+        this._id = id;
+    }
+
+    get id(): number {
+        return this._id;
     }
 
     abstract kill(signal?: string): void;
@@ -64,10 +61,6 @@ export abstract class Process {
         return this.exitEmitter.event;
     }
 
-    get onError(): Event<Error> {
-        return this.errorEmitter.event;
-    }
-
     protected emitOnExit(code: number, signal?: string) {
         const exitEvent = { code, signal };
         this.handleOnExit(exitEvent);
@@ -78,18 +71,6 @@ export abstract class Process {
         this._killed = true;
         const signalSuffix = event.signal ? `, signal: ${event.signal}` : '';
 
-        this.logger.debug(`Process ${this.pid} has exited with code ${event.code}${signalSuffix}.`,
-            this.options.command, this.options.args);
+        this.logger.debug(`Process ${this.pid} has exited with code ${event.code}${signalSuffix}.`);
     }
-
-    protected emitOnError(err: Error) {
-        this.handleOnError(err);
-        this.errorEmitter.fire(err);
-    }
-
-    protected handleOnError(error: Error) {
-        this._killed = true;
-        this.logger.error(error);
-    }
-
 }

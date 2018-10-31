@@ -108,7 +108,7 @@ export interface SearchInWorkspaceClient {
     /**
      * Called when no more search matches will come.
      */
-    onDone(searchId: number, error?: string): void;
+    onDone(searchId: number): void;
 }
 
 export const SearchInWorkspaceServer = Symbol('SearchInWorkspaceServer');

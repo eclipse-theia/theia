@@ -18,6 +18,7 @@ import { Process } from './process';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import * as assert from 'assert';
 
 @injectable()
 export class ProcessManager implements BackendApplicationContribution {
@@ -39,13 +40,14 @@ export class ProcessManager implements BackendApplicationContribution {
      *
      * @param process the process to register.
      */
-    register(process: Process): number {
+    register(process: Process): void {
+        assert(process.pid > 0);
         const id = this.id;
+        this.id++;
+
+        process.setId(id);
         this.processes.set(id, process);
         process.onExit(() => this.unregister(process));
-        process.onError(() => this.unregister(process));
-        this.id++;
-        return id;
     }
 
     /**

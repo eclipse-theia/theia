@@ -27,34 +27,46 @@ export interface TerminalProcessOptions extends ProcessOptions {
 
 export const TerminalProcessFactory = Symbol('TerminalProcessFactory');
 export interface TerminalProcessFactory {
-    (options: TerminalProcessOptions): TerminalProcess;
+    create(options: TerminalProcessOptions): Promise<TerminalProcess>;
 }
 
 @injectable()
-export class TerminalProcess extends Process {
+export class TerminalProcessFactoryImpl implements TerminalProcessFactory {
 
-    protected readonly terminal: IPty;
+    @inject(ProcessManager)
+    processManager: ProcessManager;
 
-    constructor(
-        @inject(TerminalProcessOptions) options: TerminalProcessOptions,
-        @inject(ProcessManager) processManager: ProcessManager,
-        @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named('process') logger: ILogger
-    ) {
-        super(processManager, logger, ProcessType.Terminal, options);
+    @inject(ILogger) @named('process')
+    logger: ILogger;
+
+    async create(options: TerminalProcessOptions): Promise<TerminalProcess> {
+        const process = spawn(options.command, options.args || [], options.options || {});
 
         this.logger.debug('Starting terminal process', JSON.stringify(options, undefined, 2));
 
-        this.terminal = spawn(
-            options.command,
-            options.args || [],
-            options.options || {});
+        const buffer = new MultiRingBuffer({ size: 1048576 });
+        const terminalProcess = new TerminalProcess(process, buffer, this.logger);
 
-        this.terminal.on('exit', (code: number, signal?: number) => {
+        this.processManager.register(terminalProcess);
+
+        return terminalProcess;
+    }
+}
+
+export class TerminalProcess extends Process {
+
+    constructor(
+        protected readonly process: IPty,
+        protected readonly ringBuffer: MultiRingBuffer,
+        logger: ILogger
+    ) {
+        super(logger, ProcessType.Terminal);
+
+        this.process.on('exit', (code: number, signal?: number) => {
             this.emitOnExit(code, signal ? signal.toString() : undefined);
         });
 
-        this.terminal.on('data', (data: string) => {
+        this.process.on('data', (data: string) => {
             ringBuffer.enq(data);
         });
     }
@@ -64,21 +76,21 @@ export class TerminalProcess extends Process {
     }
 
     get pid() {
-        return this.terminal.pid;
+        return this.process.pid;
     }
 
     kill(signal?: string) {
         if (this.killed === false) {
-            this.terminal.kill(signal);
+            this.process.kill(signal);
         }
     }
 
     resize(cols: number, rows: number): void {
-        this.terminal.resize(cols, rows);
+        this.process.resize(cols, rows);
     }
 
     write(data: string): void {
-        this.terminal.write(data);
+        this.process.write(data);
     }
 
 }

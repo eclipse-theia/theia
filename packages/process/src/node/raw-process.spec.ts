@@ -31,7 +31,7 @@ const track = temp.track();
 
 const expect = chai.expect;
 
-describe('RawProcess', function () {
+describe('RawProcess', function() {
 
     this.timeout(5000);
     let rawProcessFactory: RawProcessFactory;
@@ -40,25 +40,26 @@ describe('RawProcess', function () {
         rawProcessFactory = createProcessTestContainer().get<RawProcessFactory>(RawProcessFactory);
     });
 
-    it('test error on non-existent path', async function () {
-        const p = new Promise((resolve, reject) => {
-            const rawProcess = rawProcessFactory({ command: '/non-existent' });
-            rawProcess.onError(error => {
-                // tslint:disable-next-line:no-any
-                const code = (error as any).code;
-                resolve(code);
-            });
-        });
+    it('test error on non-existent path', async function() {
+        let error: NodeJS.ErrnoException | undefined = undefined;
+        try {
+            await rawProcessFactory.create({ command: '/non-existent' });
+        } catch (err) {
+            error = err;
+        }
 
-        expect(await p).to.be.equal('ENOENT');
+        expect(error).instanceof(Error);
+        expect(error!.code).eq('ENOENT');
+        expect(error!.errno).eq('ENOENT');
+        expect(error!.path).eq('/non-existent');
     });
 
-    it('test error on non-executable path', async function () {
-        /* Create a non-executable file.  */
+    it('test error on non-executable path', async function() {
+        // Create a non-executable file.
         const f = track.openSync('non-executable');
         fs.writeSync(f.fd, 'echo bob');
 
-        /* Make really sure it's non-executable.  */
+        // Make really sure it's non-executable.
         let mode = fs.fstatSync(f.fd).mode;
         mode &= ~fs.constants.S_IXUSR;
         mode &= ~fs.constants.S_IXGRP;
@@ -67,83 +68,70 @@ describe('RawProcess', function () {
 
         fs.closeSync(f.fd);
 
-        const p = new Promise((resolve, reject) => {
-            const rawProcess = rawProcessFactory({ command: f.path });
-            rawProcess.onError(error => {
-                // tslint:disable-next-line:no-any
-                const code = (error as any).code;
-                resolve(code);
-            });
-        });
-
-        /* On Windows, we get 'UNKNOWN'.  */
-        let expectedCode = 'EACCES';
-        if (isWindows) {
-            expectedCode = 'UNKNOWN';
+        let error: NodeJS.ErrnoException | undefined = undefined;
+        try {
+            await rawProcessFactory.create({ command: f.path });
+        } catch (err) {
+            error = err;
         }
 
-        expect(await p).to.equal(expectedCode);
+        // On Windows, we get 'UNKNOWN'.
+        const expectedCode = isWindows ? 'UNKNOWN' : 'EACCES';
+
+        expect(error).instanceof(Error);
+        expect(error!.code).eq(expectedCode);
+        expect(error!.errno).eq(expectedCode);
     });
 
-    it('test exit', async function () {
-        const args = ['--version'];
-        const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
-        const p = new Promise((resolve, reject) => {
-            rawProcess.onError(error => {
-                reject();
-            });
-
+    it('test exit', async function() {
+        const exitCode = await new Promise<number>(async (resolve, reject) => {
+            const args = ['-e', 'process.exit(3)'];
+            const rawProcess = await rawProcessFactory.create({ command: process.execPath, 'args': args });
             rawProcess.onExit(event => {
-                if (event.code > 0) {
-                    reject();
-                } else {
-                    resolve();
-                }
+                resolve(event.code);
             });
         });
 
-        await p;
+        expect(exitCode).eq(3);
     });
 
-    it('test pipe stdout stream', async function () {
-        const args = ['--version'];
-        const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
+    it('test pipe stdout stream', async function() {
+        const output = await new Promise<string>(async (resolve, reject) => {
+            const args = ['-e', 'console.log("text to stdout")'];
+            const outStream = new stream.PassThrough();
+            const rawProcess = await rawProcessFactory.create({ command: process.execPath, 'args': args });
 
-        const outStream = new stream.PassThrough();
+            rawProcess.stdout.pipe(outStream);
 
-        const p = new Promise<string>((resolve, reject) => {
-            let version = '';
+            let buf = '';
             outStream.on('data', data => {
-                version += data.toString();
+                buf += data.toString();
             });
             outStream.on('end', () => {
-                resolve(version.trim());
+                resolve(buf.trim());
             });
         });
 
-        rawProcess.output.pipe(outStream);
-
-        expect(await p).to.be.equal(process.version);
+        expect(output).to.be.equal('text to stdout');
     });
 
-    it('test pipe stderr stream', async function () {
-        const args = ['invalidarg'];
-        const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
+    it('test pipe stderr stream', async function() {
+        const output = await new Promise<string>(async (resolve, reject) => {
+            const args = ['-e', 'console.error("text to stderr")'];
+            const outStream = new stream.PassThrough();
+            const rawProcess = await rawProcessFactory.create({ command: process.execPath, 'args': args });
 
-        const outStream = new stream.PassThrough();
+            rawProcess.stderr.pipe(outStream);
 
-        const p = new Promise<string>((resolve, reject) => {
-            let version = '';
+            let buf = '';
             outStream.on('data', data => {
-                version += data.toString();
+                buf += data.toString();
             });
             outStream.on('end', () => {
-                resolve(version.trim());
+                resolve(buf.trim());
             });
         });
 
-        rawProcess.errorOutput.pipe(outStream);
-
-        expect(await p).to.have.string('Error');
+        expect(output).to.be.equal('text to stderr');
     });
 });
