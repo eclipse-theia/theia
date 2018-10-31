@@ -30,12 +30,12 @@ html, body {
 
 .gs-action-container {
     line-height: 20px;
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-ui-font-color0);
 }
 
 .gs-action-details {
     padding-left: 5px;
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-ui-font-color1);
 }
 
 .gs-container {
@@ -43,17 +43,21 @@ html, body {
 }
 
 .gs-header h1 {
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-ui-font-color0);
     flex: 1;
     font-weight: 600;
     text-transform: uppercase;
 }
 
 .gs-hr {
-    background-color: var(--theia-border-color1); 
-    height: 1px; 
+    background-color: var(--theia-border-color1);
+    height: 1px;
     border: 0;
     margin: 0px;
+}
+
+.gs-no-recent {
+    color: var(--theia-ui-font-color1);
 }
 
 .gs-section a {
@@ -69,7 +73,7 @@ html, body {
 }
 
 .gs-section-header {
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-ui-font-color0);
     font-size: var(--theia-ui-font-size2);
     font-weight: 600;
     margin-bottom: 5px;
@@ -80,7 +84,7 @@ html, body {
 }
 
 .gs-sub-header {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-ui-font-color1);
     text-transform: capitalize;
-    font-weight: 200;
+    font-weight: 400;
 }
