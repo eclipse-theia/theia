@@ -25,8 +25,8 @@ export class TopPanel {
     }
 
     openNewTerminal() {
-        this.clickMenuTab('File');
-        this.clickSubMenu('Open New Terminal');
+        this.clickMenuTab('Terminal');
+        this.clickSubMenu('New Terminal');
     }
 
     toggleCallHierarchyView() {

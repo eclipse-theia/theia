@@ -46,11 +46,12 @@ export namespace CommonMenus {
     export const EDIT_CLIPBOARD = [...EDIT, '2_clipboard'];
     export const EDIT_FIND = [...EDIT, '3_find'];
 
-    export const VIEW = [...MAIN_MENU_BAR, '3_view'];
+    export const VIEW = [...MAIN_MENU_BAR, '4_view'];
     export const VIEW_VIEWS = [...VIEW, '1_views'];
     export const VIEW_LAYOUT = [...VIEW, '2_layout'];
 
-    export const HELP = [...MAIN_MENU_BAR, '4_help'];
+    // last menu item
+    export const HELP = [...MAIN_MENU_BAR, '9_help'];
 
 }
 
