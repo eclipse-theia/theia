@@ -44,7 +44,7 @@ import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
 
 export namespace DebugMenus {
-    export const DEBUG = [...MAIN_MENU_BAR, '4_debug'];
+    export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
     export const DEBUG_CONTROLS = [...DEBUG, 'a_controls'];
     export const DEBUG_CONFIGURATION = [...DEBUG, 'b_configuration'];
     export const DEBUG_THREADS = [...DEBUG, 'c_threads'];
