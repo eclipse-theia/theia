@@ -42,7 +42,7 @@ const NAVIGATOR_CONTEXT_MENU_NEW = ['navigator-context-menu', '4_new'];
 export namespace TerminalCommands {
     export const NEW: Command = {
         id: 'terminal:new',
-        label: 'Open New Terminal'
+        label: 'New Terminal'
     };
     export const TERMINAL_CLEAR: Command = {
         id: 'terminal:clear',
