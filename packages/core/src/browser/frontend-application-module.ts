@@ -61,6 +61,8 @@ import { AboutDialog, AboutDialogProps } from './about-dialog';
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore } from './json-schema-store';
+import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
+import { WidgetTracker } from './widgets';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -74,11 +76,28 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ApplicationShellOptions).toConstantValue({});
     bind(ApplicationShell).toSelf().inSingletonScope();
+    bind(WidgetTracker).toService(ApplicationShell);
     bind(SidePanelHandlerFactory).toAutoFactory(SidePanelHandler);
     bind(SidePanelHandler).toSelf();
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
-    bind(DockPanelRendererFactory).toAutoFactory(DockPanelRenderer);
+    bindContributionProvider(bind, TabBarToolbarContribution);
+    bind(TabBarToolbarRegistry).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(TabBarToolbarRegistry);
+    bind(TabBarToolbarFactory).toFactory(context => () => {
+        const { container } = context;
+        const commandRegistry = container.get(CommandRegistry);
+        const labelParser = container.get(LabelParser);
+        return new TabBarToolbar(commandRegistry, labelParser);
+    });
+
+    bind(DockPanelRendererFactory).toFactory(context => (widgetTracker: WidgetTracker) => {
+        const { container } = context;
+        const tabBarToolbarRegistry = container.get(TabBarToolbarRegistry);
+        const tabBarRendererFactory: () => TabBarRenderer = container.get(TabBarRendererFactory);
+        const tabBarToolbarFactory: () => TabBarToolbar = container.get(TabBarToolbarFactory);
+        return new DockPanelRenderer(tabBarRendererFactory, tabBarToolbarRegistry, widgetTracker, tabBarToolbarFactory);
+    });
     bind(DockPanelRenderer).toSelf();
     bind(TabBarRendererFactory).toFactory(context => () => {
         const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);

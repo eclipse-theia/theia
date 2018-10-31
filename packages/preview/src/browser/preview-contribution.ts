@@ -19,6 +19,7 @@ import { Widget } from '@phosphor/widgets';
 import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from '@theia/core/lib/common';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
@@ -29,9 +30,12 @@ import { PreviewPreferences } from './preview-preferences';
 import debounce = require('lodash.debounce');
 
 export namespace PreviewCommands {
+    /**
+     * No `label`. Otherwise, it would show up in the `Command Palette` and we already have the `Preview` open handler.
+     * See in (`WorkspaceCommandContribution`)[https://bit.ly/2DncrSD].
+     */
     export const OPEN: Command = {
-        id: 'preview:open',
-        label: 'Open Preview'
+        id: 'preview:open'
     };
 }
 
@@ -40,7 +44,8 @@ export interface PreviewOpenerOptions extends WidgetOpenerOptions {
 }
 
 @injectable()
-export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution {
+// tslint:disable-next-line:max-line-length
+export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
     readonly id = PreviewUri.id;
     readonly label = 'Preview';
@@ -213,7 +218,17 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: PreviewCommands.OPEN.id,
-            label: PreviewCommands.OPEN.label,
+            label: 'Open Preview',
+        });
+    }
+
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        registry.registerItem({
+            id: PreviewCommands.OPEN.id,
+            command: PreviewCommands.OPEN,
+            isVisible: (widget: Widget) => widget instanceof EditorWidget && this.canHandleEditorUri(),
+            text: '$(columns)',
+            tooltip: 'Open Preview to the Side'
         });
     }
 

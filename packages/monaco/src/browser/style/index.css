@@ -28,6 +28,7 @@
  */
 .p-TabBar.theia-app-centers {
     z-index: 0;
+    display: flex;
 }
 
 /*
