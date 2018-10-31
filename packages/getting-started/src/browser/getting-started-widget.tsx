@@ -134,14 +134,14 @@ export class GettingStartedWidget extends ReactWidget {
                 </span>
             </div>
         );
-        const more = (paths.length > this.recentLimit) ? <div className='gs-action-contaienr'>
+        const more = (paths.length > this.recentLimit) ? <div className='gs-action-container'>
             <a href='#' onClick={this.doOpenRecentWorkspace}>More...</a>
         </div> : <div />;
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className='fa fa-clock-o'></i>Recent Workspaces
-                    </h3>
-            {content}
+            </h3>
+            {(items.length > 0) ? content : <p className='gs-no-recent'>No Recent Workspaces</p>}
             {more}
         </div>;
     }
@@ -182,7 +182,9 @@ export class GettingStartedWidget extends ReactWidget {
     protected renderVersion(): React.ReactNode {
         return <div className='gs-section'>
             <div className='gs-action-container'>
-                <p className='gs-sub-header gs-version' > {this.applicationInfo ? 'Version ' + this.applicationInfo.version : ''}</p>
+                <p className='gs-sub-header gs-version' >
+                    {this.applicationInfo ? 'Version ' + this.applicationInfo.version : ''}
+                </p>
             </div>
         </div>;
     }
