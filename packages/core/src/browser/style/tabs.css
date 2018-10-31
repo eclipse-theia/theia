@@ -102,23 +102,23 @@
 | Perfect scrollbar
 |----------------------------------------------------------------------------*/
 
-.p-TabBar[data-orientation='horizontal'] > .ps__rail-x {
+.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x {
   height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
   z-index: 1000;
 }
 
-.p-TabBar[data-orientation='horizontal'] > .ps__rail-x  >.ps__thumb-x {
+.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x  > .ps__thumb-x {
   height: var(--theia-private-horizontal-tab-scrollbar-height);
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
 
-.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:hover,
-.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:focus {
+.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:hover,
+.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:focus {
   height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
 }
 
-.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:hover > .ps__thumb-x,
-.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:focus > .ps__thumb-x {
+.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:hover > .ps__thumb-x,
+.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:focus > .ps__thumb-x {
   height: var(--theia-private-horizontal-tab-scrollbar-height);
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
@@ -152,4 +152,36 @@
 .p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon {
   width: 15px;
   line-height: 1.7;
+}
+
+/*-----------------------------------------------------------------------------
+| Tab-bar toolbar
+|----------------------------------------------------------------------------*/
+
+.p-TabBar-toolbar {
+  z-index: 1001; /* Due to the scrollbar (`z-index: 1000;`) it has a greater `z-index`. */
+  display: flex;
+  flex-direction: row-reverse;
+  flex-grow: 1;
+  padding: 4px;
+  margin-right: 4px;
+}
+
+.p-TabBar-toolbar.hidden {
+  display: none !important;
+}
+
+.p-TabBar-content-container {
+  display: flex;
+  background: var(--theia-layout-color0);
+}
+
+.p-TabBar-toolbar .item {
+  display: flex;
+  align-items: center;
+  margin-left: 8px; /* `padding` + `margin-right` from the container toolbar */
+}
+
+.p-TabBar-toolbar .item:hover {
+  cursor: pointer;
 }

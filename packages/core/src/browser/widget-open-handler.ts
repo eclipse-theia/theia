@@ -14,8 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
-
 import { inject, postConstruct, injectable } from 'inversify';
 import { Widget, FocusTracker } from '@phosphor/widgets';
 import URI from '../common/uri';
