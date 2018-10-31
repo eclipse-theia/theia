@@ -1068,3 +1068,16 @@ export class DocumentSymbol {
         DocumentSymbol.validate(this);
     }
 }
+
+export enum FileChangeType {
+	Changed = 1,
+	Created = 2,
+	Deleted = 3,
+}
+
+export enum FileType {
+	Unknown = 0,
+	File = 1,
+	Directory = 2,
+	SymbolicLink = 64
+}
