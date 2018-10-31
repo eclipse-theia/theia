@@ -69,7 +69,9 @@ import {
     TreeItemCollapsibleState,
     SymbolKind,
     DocumentSymbol,
-    SymbolInformation
+    SymbolInformation,
+    FileType,
+    FileChangeType
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -294,6 +296,10 @@ export function createAPIFactory(
             },
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, undefined, maxResults, token);
+            },
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
+                // FIXME: to implement
+                return new Disposable(() => { });
             }
         };
 
@@ -449,7 +455,9 @@ export function createAPIFactory(
             TreeItemCollapsibleState,
             SymbolKind,
             DocumentSymbol,
-            SymbolInformation
+            SymbolInformation,
+            FileType,
+            FileChangeType
         };
     };
 }
