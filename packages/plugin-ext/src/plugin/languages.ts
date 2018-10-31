@@ -292,6 +292,13 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### Code Actions Provider end
 
+    // ### Code Lens Provider begin
+    registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
+        // FIXME: to implement
+        return new Disposable(() => { });
+    }
+    // ### Code Lens Provider end
+
     // ### Code Reference Provider begin
     registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
         // FIXME: to implement

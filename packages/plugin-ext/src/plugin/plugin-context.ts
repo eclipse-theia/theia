@@ -361,6 +361,9 @@ export function createAPIFactory(
             registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
                 return languagesExt.registerCodeActionsProvider(selector, provider, metadata);
             },
+            registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
+                return languagesExt.registerCodeLensProvider(selector, provider);
+            },
             registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
                 return languagesExt.registerReferenceProvider(selector, provider);
             },
