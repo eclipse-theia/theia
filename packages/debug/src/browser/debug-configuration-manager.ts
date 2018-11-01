@@ -18,11 +18,9 @@ import debounce = require('p-debounce');
 import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable, DisposableCollection, Event, Emitter, Reference } from '@theia/core';
+import { Disposable, DisposableCollection, Event, Emitter, ResourceProvider, Resource } from '@theia/core';
 import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { DebugService } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
 
@@ -30,8 +28,8 @@ import { DebugConfiguration } from '../common/debug-configuration';
 export class DebugConfigurationManager {
     private static readonly CONFIG = '.theia/launch.json';
 
-    @inject(MonacoTextModelService)
-    protected readonly modelService: MonacoTextModelService;
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
     @inject(OpenerService)
@@ -50,11 +48,7 @@ export class DebugConfigurationManager {
         this.workspaceService.onWorkspaceChanged(() => this.updateModels());
     }
 
-    protected readonly models = new Map<string, {
-        reference: Reference<MonacoEditorModel>
-        configurations: DebugConfiguration[],
-        toDispose: DisposableCollection
-    }>();
+    protected readonly models = new Map<string, DebugConfigurationManager.Model>();
     protected updateModels = debounce(async () => {
         const roots = await this.workspaceService.roots;
         const toDelete = new Set(this.models.keys());
@@ -65,17 +59,21 @@ export class DebugConfigurationManager {
             toDelete.delete(key);
             if (!this.models.has(key)) {
                 const toDispose = new DisposableCollection();
-                const reference = await this.modelService.createModelReference(uri);
-                toDispose.push(reference);
-                const configurations = this.parseConfigurations(reference.object);
-                const value = { reference, configurations, toDispose };
+                const resource = await this.resourceProvider(uri);
+                toDispose.push(resource);
+                const content = await this.readContents(resource);
+                const json = this.parseConfigurations(content);
+                const value = { resource, content, json, toDispose };
                 this.models.set(key, value);
                 toDispose.push(Disposable.create(() => this.models.delete(key)));
-                const reconcileConfigurations = debounce(() => {
-                    value.configurations = this.parseConfigurations(reference.object);
+                const reconcileConfigurations = debounce(async () => {
+                    value.content = await this.readContents(resource);
+                    value.json = this.parseConfigurations(value.content);
                     this.updateCurrentConfiguration();
-                }, 250);
-                toDispose.push(reference.object.onDidChangeContent(reconcileConfigurations));
+                }, 50);
+                if (resource.onDidChangeContents) {
+                    toDispose.push(resource.onDidChangeContents(reconcileConfigurations));
+                }
             }
         }
         for (const uri of toDelete) {
@@ -91,8 +89,8 @@ export class DebugConfigurationManager {
         return this.getConfigurations();
     }
     protected *getConfigurations(): IterableIterator<DebugConfiguration> {
-        for (const uri of this.models.keys()) {
-            for (const configuration of this.models.get(uri)!.configurations) {
+        for (const model of this.models.values()) {
+            for (const configuration of model.json.configurations) {
                 yield configuration;
             }
         }
@@ -111,7 +109,7 @@ export class DebugConfigurationManager {
     }
     findConfiguration(name: string): DebugConfiguration | undefined {
         for (const model of this.models.values()) {
-            for (const configuration of model.configurations) {
+            for (const configuration of model.json.configurations) {
                 if (configuration.name === name) {
                     return configuration;
                 }
@@ -120,44 +118,62 @@ export class DebugConfigurationManager {
         return undefined;
     }
 
-    protected parseConfigurations(model: MonacoEditorModel): DebugConfiguration[] {
-        const result = [];
-        const content = model.getText();
-        const jsonContent: Partial<{
+    protected async readContents(resource: Resource): Promise<string | undefined> {
+        try {
+            return await resource.readContents();
+        } catch (e) {
+            return undefined;
+        }
+    }
+    protected parseConfigurations(content: string | undefined): DebugConfigurationManager.JsonContent {
+        const configurations: DebugConfiguration[] = [];
+        if (!content) {
+            return {
+                version: '0.2.0',
+                configurations
+            };
+        }
+        const json: Partial<{
             configurations: Partial<DebugConfiguration>[]
-        }> | undefined = jsoncparser.parse(jsoncparser.stripComments(content));
-        if (jsonContent && 'configurations' in jsonContent) {
-            const { configurations } = jsonContent;
-            if (Array.isArray(configurations)) {
-                configurations.filter(DebugConfiguration.is);
-                for (const configuration of configurations) {
+        }> | undefined = jsoncparser.parse(content, undefined, { disallowComments: false });
+        if (json && 'configurations' in json) {
+            if (Array.isArray(json.configurations)) {
+                json.configurations.filter(DebugConfiguration.is);
+                for (const configuration of json.configurations) {
                     if (DebugConfiguration.is(configuration)) {
-                        result.push(configuration);
+                        configurations.push(configuration);
                     }
                 }
             }
         }
-        return result;
+        return {
+            ...json,
+            configurations
+        };
     }
 
     /**
      * Opens configuration file in the editor.
      */
     async openConfiguration(): Promise<void> {
-        const uri = this.models.keys().next().value;
-        if (uri) {
-            await open(this.openerService, new URI(uri), {
-                mode: 'activate'
-            });
+        const model = this.models.values().next().value;
+        if (!model) {
+            return;
         }
+        if (model.content === undefined) {
+            await this.save(model);
+        }
+        await open(this.openerService, model.resource.uri, {
+            mode: 'activate'
+        });
     }
 
     /**
      * Adds a new configuration to the configuration file.
      */
     async addConfiguration(): Promise<void> {
-        const uri = this.models.keys().next().value;
-        if (!uri) {
+        const model = this.models.values().next().value;
+        if (!model) {
             return;
         }
         const debugType = await this.selectDebugType();
@@ -168,26 +184,17 @@ export class DebugConfigurationManager {
         if (!newDebugConfiguration) {
             return;
         }
-        const configurations = this.models.get(uri)!.configurations;
-        configurations.push(newDebugConfiguration);
-        await Promise.all([
-            this.writeConfigurations(uri, configurations),
-            this.openConfiguration()]
-        );
+        model.json.configurations.unshift(newDebugConfiguration);
+        this.currentConfiguration = newDebugConfiguration;
+        await this.save(model);
+        await this.openConfiguration();
     }
-    protected async writeConfigurations(uri: string, configurations: DebugConfiguration[]): Promise<void> {
-        if (!this.models.has(uri)) {
-            return;
-        }
-        const { reference } = this.models.get(uri)!;
-        const model = reference.object['model'];
-        const content = model.getValue();
-        const jsonContent = jsoncparser.parse(jsoncparser.stripComments(content)) || { version: '0.2.0' };
-        jsonContent.configurations = configurations;
-
-        // TODO use jsonc-parser instead
-        model.setValue(JSON.stringify(jsonContent, undefined, 2));
-        await reference.object.save();
+    protected async save(model: DebugConfigurationManager.Model): Promise<void> {
+        const oldContent = model.content || '';
+        const edits = jsoncparser.modify(oldContent, [], model.json, { formattingOptions: {} });
+        const content = jsoncparser.applyEdits(oldContent, edits);
+        model.content = content;
+        await Resource.save(model.resource, { content });
     }
 
     async selectConfiguration(): Promise<DebugConfiguration | undefined> {
@@ -211,4 +218,17 @@ export class DebugConfigurationManager {
         }), { placeholder: 'Select Debug Configuration' }));
     }
 
+}
+export namespace DebugConfigurationManager {
+    export interface JsonContent {
+        configurations: DebugConfiguration[]
+        // tslint:disable-next-line:no-any
+        [property: string]: any
+    }
+    export interface Model {
+        resource: Resource
+        content: string | undefined
+        json: JsonContent
+        toDispose: DisposableCollection
+    }
 }
