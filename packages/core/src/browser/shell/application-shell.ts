@@ -23,7 +23,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, MaybePromise } from '../../common';
+import { RecursivePartial, MaybePromise, Event as CommonEvent } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel } from './theia-dock-panel';
@@ -807,6 +807,9 @@ export class ApplicationShell extends Widget {
                 this.tracker.add(toTrack);
                 Saveable.apply(toTrack);
             }
+            if (widget.onDidChangeTrackableWidgets) {
+                widget.onDidChangeTrackableWidgets(widgets => widgets.forEach(w => this.track(w)));
+            }
         }
     }
 
@@ -1435,6 +1438,7 @@ export namespace ApplicationShell {
      */
     export interface TrackableWidgetProvider {
         getTrackableWidgets(): MaybePromise<Widget[]>
+        readonly onDidChangeTrackableWidgets?: CommonEvent<Widget[]>
     }
 
     export namespace TrackableWidgetProvider {

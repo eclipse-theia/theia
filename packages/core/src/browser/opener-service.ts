@@ -78,7 +78,7 @@ export interface OpenerService {
 }
 
 export async function open(openerService: OpenerService, uri: URI, options?: OpenerOptions): Promise<object | undefined> {
-    const opener = await openerService.getOpener(uri);
+    const opener = await openerService.getOpener(uri, options);
     return opener.open(uri, options);
 }
 

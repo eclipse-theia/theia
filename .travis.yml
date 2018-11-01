@@ -21,6 +21,7 @@ cache:
   - packages/cpp/node_modules
   - packages/debug-nodejs/node_modules
   - packages/debug/node_modules
+  - packages/editor-preview/node_modules
   - packages/editor/node_modules
   - packages/editorconfig/node_modules
   - packages/extension-manager/node_modules

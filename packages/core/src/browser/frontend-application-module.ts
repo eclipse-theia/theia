@@ -62,6 +62,8 @@ import { EnvVariablesServer, envVariablesPath } from './../common/env-variables'
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
+import { WidgetTracker } from './widgets';
+import { bindCorePreferences } from './core-preferences';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -215,4 +217,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(ThemingCommandContribution),
     );
+
+    bindCorePreferences(bind);
 });
