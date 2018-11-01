@@ -288,6 +288,10 @@ export function createAPIFactory(
                         return data && data.document;
                     }));
             },
+            registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
             createFileSystemWatcher(globPattern: theia.GlobPattern,
                 ignoreCreateEvents?: boolean,
                 ignoreChangeEvents?: boolean,
