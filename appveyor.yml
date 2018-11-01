@@ -2,7 +2,7 @@ shallow_clone: true
 
 environment:
   matrix:
-    - nodejs_version: "10"
+    - nodejs_version: "Current"
 
 platform:
   - x64
