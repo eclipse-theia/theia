@@ -17,6 +17,7 @@
     "@theia/debug": "^0.3.16",
     "@theia/debug-nodejs": "^0.3.16",
     "@theia/editor": "^0.3.16",
+    "@theia/editor-preview": "^0.3.16",
     "@theia/editorconfig": "^0.3.16",
     "@theia/extension-manager": "^0.3.16",
     "@theia/file-search": "^0.3.16",
