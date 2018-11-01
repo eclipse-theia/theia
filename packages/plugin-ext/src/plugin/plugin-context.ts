@@ -392,6 +392,14 @@ export function createAPIFactory(
         };
 
         const debug: typeof theia.debug = {
+            onDidChangeActiveDebugSession(listener, thisArg?, disposables?) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+			},
+            onDidTerminateDebugSession(listener, thisArg?, disposables?) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): theia.Disposable {
                 // FIXME: to implement
                 return new Disposable(() => { });

@@ -5172,7 +5172,34 @@ declare module '@theia/plugin' {
 		 * Additional debug type specific properties.
 		 */
 		[key: string]: any;
+    }
+
+	/**
+	 * A debug session.
+	 */
+	export interface DebugSession {
+
+		/**
+		 * The unique ID of this debug session.
+		 */
+		readonly id: string;
+
+		/**
+		 * The debug session's type from the [debug configuration](#DebugConfiguration).
+		 */
+		readonly type: string;
+
+		/**
+		 * The debug session's name from the [debug configuration](#DebugConfiguration).
+		 */
+		readonly name: string;
+
+		/**
+		 * Send a custom request to the debug adapter.
+		 */
+		customRequest(command: string, args?: any): PromiseLike<any>;
 	}
+
  	/**
 	 * A debug configuration provider allows to add the initial debug configurations to a newly created launch.json
 	 * and to resolve a launch configuration before it is used to start a new debug session.
@@ -5207,6 +5234,19 @@ declare module '@theia/plugin' {
 	 * Namespace for debug functionality.
 	 */
 	export namespace debug {
+
+		/**
+		 * An [event](#Event) which fires when the [active debug session](#debug.activeDebugSession)
+		 * has changed. *Note* that the event also fires when the active debug session changes
+		 * to `undefined`.
+		 */
+		export const onDidChangeActiveDebugSession: Event<DebugSession | undefined>;
+
+		/**
+		 * An [event](#Event) which fires when a [debug session](#DebugSession) has terminated.
+		 */
+        export const onDidTerminateDebugSession: Event<DebugSession>;
+        
  		/**
 		 * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
 		 * More than one provider can be registered for the same type.
