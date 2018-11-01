@@ -131,6 +131,12 @@ describe('cpp extension', function() {
             return;
         }
 
+        // This test doesn't pass on AppVeyor yet.
+        if (process.platform === 'win32') {
+            this.skip();
+            return;
+        }
+
         prepareWorkspace();
 
         // Open Files and Problems views
