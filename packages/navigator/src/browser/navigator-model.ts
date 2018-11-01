@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
-import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
+import { OpenerService, open, TreeNode, ExpandableTreeNode, SelectableTreeNode, CorePreferences } from '@theia/core/lib/browser';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
@@ -27,6 +27,7 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -130,6 +131,13 @@ export class FileNavigatorModel extends FileTreeModel {
             return node;
         }
         return undefined;
+    }
+
+    selectNode(node: SelectableTreeNode): void {
+        if (FileNode.is(node) && this.corePreferences['list.openMode'] === 'singleClick') {
+            open(this.openerService, node.uri, {mode: 'reveal', preview: true});
+        }
+        super.selectNode(node);
     }
 
     protected getNodeClosestToRootByUri(uri: URI): TreeNode | undefined {
