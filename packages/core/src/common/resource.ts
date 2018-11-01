@@ -34,23 +34,23 @@ export interface Resource extends Disposable {
 export namespace Resource {
     export interface SaveContext {
         content: string
-        changes: TextDocumentContentChangeEvent[]
+        changes?: TextDocumentContentChangeEvent[]
         options?: { encoding?: string }
     }
-    export async function save(resource: Resource, context: SaveContext, token: CancellationToken): Promise<void> {
-        if (context.changes.length === 0 || !resource.saveContents) {
+    export async function save(resource: Resource, context: SaveContext, token?: CancellationToken): Promise<void> {
+        if (!resource.saveContents) {
             return;
         }
         if (await trySaveContentChanges(resource, context)) {
             return;
         }
-        if (token.isCancellationRequested) {
+        if (token && token.isCancellationRequested) {
             return;
         }
         await resource.saveContents(context.content, context.options);
     }
     export async function trySaveContentChanges(resource: Resource, context: SaveContext): Promise<boolean> {
-        if (!resource.saveContentChanges || shouldSaveContent(context)) {
+        if (!context.changes || !resource.saveContentChanges || shouldSaveContent(context)) {
             return false;
         }
         try {
@@ -62,6 +62,9 @@ export namespace Resource {
         return true;
     }
     export function shouldSaveContent({ content, changes }: SaveContext): boolean {
+        if (!changes) {
+            return true;
+        }
         let contentChangesLength = 0;
         const contentLength = content.length;
         for (const change of changes) {

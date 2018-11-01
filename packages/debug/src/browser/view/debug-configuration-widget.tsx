@@ -64,12 +64,16 @@ export class DebugConfigurationWidget extends ReactWidget {
 
     render(): React.ReactNode {
         const { configurations, currentConfiguration } = this.manager;
+        const options = Array.from(configurations).map((configuration, index) =>
+            <option key={index} value={configuration.name}>{configuration.name}</option>
+        );
+        const currentOption = currentConfiguration && currentConfiguration.name || '__NO_CONF__';
         return <React.Fragment>
             <DebugAction run={this.start} label='Start Debugging' iconClass='start' ref={this.setStepRef} />
-            <select className='debug-configuration' value={currentConfiguration && currentConfiguration.name} onChange={this.setCurrentConfiguration}>
-                {Array.from(configurations).map((configuration, index) =>
-                    <option key={index} value={configuration.name}>{configuration.name}</option>
-                )}
+            <select className='debug-configuration' value={currentOption} onChange={this.setCurrentConfiguration}>
+                {options.length ? options : <option value='__NO_CONF__'>No Configurations</option>}
+                <option disabled>{'Add Configuration...'.replace(/./g, '-')}</option>
+                <option value='__ADD_CONF__'>Add Configuration...</option>
             </select>
             <DebugAction run={this.openConfiguration} label='Open launch.json' iconClass='configure' />
             <DebugAction run={this.openConsole} label='Debug Console' iconClass='repl' />
@@ -78,13 +82,19 @@ export class DebugConfigurationWidget extends ReactWidget {
 
     protected readonly setCurrentConfiguration = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.currentTarget.value;
-        this.manager.currentConfiguration = this.manager.findConfiguration(value);
+        if (value === '__ADD_CONF__') {
+            this.manager.addConfiguration();
+        } else {
+            this.manager.currentConfiguration = this.manager.findConfiguration(value);
+        }
     }
 
     protected readonly start = () => {
         const configuration = this.manager.currentConfiguration;
         if (configuration) {
             this.sessionManager.start(configuration);
+        } else {
+            this.manager.addConfiguration();
         }
     }
 
