@@ -19,6 +19,8 @@ install:
 
 before_build:
   - node --version && npm --version && yarn --version && python --version
+  - git status
+  - ls -al examples/browser/test/cpp
 
 build_script:
   - yarn

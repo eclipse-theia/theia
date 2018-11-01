@@ -80,6 +80,8 @@ before_script:
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.7.0
   - export PATH=$HOME/.yarn/bin:$PATH ;
+  - git status
+  - ls -al examples/browser/test/cpp
 install: yarn && scripts/check_git_status.sh
 script: travis_retry yarn test ;
 notifications:
