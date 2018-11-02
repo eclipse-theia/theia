@@ -318,11 +318,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     /**
      * Clears current workspace root.
      */
-    close(): void {
+    async close(): Promise<void> {
         this._workspace = undefined;
         this._roots.length = 0;
 
-        this.server.setMostRecentlyUsedWorkspace('');
+        await this.server.setMostRecentlyUsedWorkspace('');
         this.reloadWindow();
     }
 
