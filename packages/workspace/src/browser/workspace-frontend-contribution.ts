@@ -275,7 +275,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             msg: 'Do you really want to close the workspace?'
         });
         if (await dialog.open()) {
-            this.workspaceService.close();
+            await this.workspaceService.close();
         }
     }
 
