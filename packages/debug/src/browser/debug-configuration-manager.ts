@@ -15,18 +15,17 @@
  ********************************************************************************/
 
 import debounce = require('p-debounce');
-import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable, DisposableCollection, Event, Emitter, ResourceProvider, Resource } from '@theia/core';
+import { Event, Emitter, ResourceProvider } from '@theia/core';
 import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugService } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
+import { DebugConfigurationModel } from './debug-configuration-model';
 
 @injectable()
 export class DebugConfigurationManager {
-    private static readonly CONFIG = '.theia/launch.json';
 
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
@@ -48,38 +47,29 @@ export class DebugConfigurationManager {
         this.workspaceService.onWorkspaceChanged(() => this.updateModels());
     }
 
-    protected readonly models = new Map<string, DebugConfigurationManager.Model>();
+    protected readonly models = new Map<string, DebugConfigurationModel>();
     protected updateModels = debounce(async () => {
         const roots = await this.workspaceService.roots;
         const toDelete = new Set(this.models.keys());
         for (const rootStat of roots) {
             const root = new URI(rootStat.uri);
-            const uri = root.resolve(DebugConfigurationManager.CONFIG);
-            const key = uri.toString();
-            toDelete.delete(key);
-            if (!this.models.has(key)) {
-                const toDispose = new DisposableCollection();
-                const resource = await this.resourceProvider(uri);
-                toDispose.push(resource);
-                const content = await this.readContents(resource);
-                const json = this.parseConfigurations(content);
-                const value = { resource, content, json, toDispose };
-                this.models.set(key, value);
-                toDispose.push(Disposable.create(() => this.models.delete(key)));
-                const reconcileConfigurations = debounce(async () => {
-                    value.content = await this.readContents(resource);
-                    value.json = this.parseConfigurations(value.content);
-                    this.updateCurrentConfiguration();
-                }, 50);
-                if (resource.onDidChangeContents) {
-                    toDispose.push(resource.onDidChangeContents(reconcileConfigurations));
+            for (const [provider, configPath] of [['theia', '.theia/launch.json'], ['vscode', '.vscode/launch.json']]) {
+                const uri = root.resolve(configPath);
+                const key = uri.toString();
+                toDelete.delete(key);
+                if (!this.models.has(key)) {
+                    const resource = await this.resourceProvider(uri);
+                    const model = new DebugConfigurationModel(provider, resource);
+                    model.onDidChange(() => this.updateCurrentConfiguration());
+                    model.onDispose(() => this.models.delete(key));
+                    this.models.set(key, model);
                 }
             }
         }
         for (const uri of toDelete) {
             const model = this.models.get(uri);
             if (model) {
-                model.toDispose.dispose();
+                model.dispose();
             }
         }
         this.updateCurrentConfiguration();
@@ -90,7 +80,7 @@ export class DebugConfigurationManager {
     }
     protected *getConfigurations(): IterableIterator<DebugConfiguration> {
         for (const model of this.models.values()) {
-            for (const configuration of model.json.configurations) {
+            for (const configuration of model.configurations) {
                 yield configuration;
             }
         }
@@ -109,7 +99,7 @@ export class DebugConfigurationManager {
     }
     findConfiguration(name: string): DebugConfiguration | undefined {
         for (const model of this.models.values()) {
-            for (const configuration of model.json.configurations) {
+            for (const configuration of model.configurations) {
                 if (configuration.name === name) {
                     return configuration;
                 }
@@ -118,61 +108,14 @@ export class DebugConfigurationManager {
         return undefined;
     }
 
-    protected async readContents(resource: Resource): Promise<string | undefined> {
-        try {
-            return await resource.readContents();
-        } catch (e) {
-            return undefined;
-        }
-    }
-    protected parseConfigurations(content: string | undefined): DebugConfigurationManager.JsonContent {
-        const configurations: DebugConfiguration[] = [];
-        if (!content) {
-            return {
-                version: '0.2.0',
-                configurations
-            };
-        }
-        const json: Partial<{
-            configurations: Partial<DebugConfiguration>[]
-        }> | undefined = jsoncparser.parse(content, undefined, { disallowComments: false });
-        if (json && 'configurations' in json) {
-            if (Array.isArray(json.configurations)) {
-                json.configurations.filter(DebugConfiguration.is);
-                for (const configuration of json.configurations) {
-                    if (DebugConfiguration.is(configuration)) {
-                        configurations.push(configuration);
-                    }
-                }
-            }
-        }
-        return {
-            ...json,
-            configurations
-        };
-    }
-
-    /**
-     * Opens configuration file in the editor.
-     */
     async openConfiguration(): Promise<void> {
-        const model = this.models.values().next().value;
-        if (!model) {
-            return;
+        const { model } = this;
+        if (model) {
+            await this.doOpen(model);
         }
-        if (model.content === undefined) {
-            await this.save(model);
-        }
-        await open(this.openerService, model.resource.uri, {
-            mode: 'activate'
-        });
     }
-
-    /**
-     * Adds a new configuration to the configuration file.
-     */
     async addConfiguration(): Promise<void> {
-        const model = this.models.values().next().value;
+        const { model } = this;
         if (!model) {
             return;
         }
@@ -184,25 +127,30 @@ export class DebugConfigurationManager {
         if (!newDebugConfiguration) {
             return;
         }
-        model.json.configurations.unshift(newDebugConfiguration);
+        await model.addConfiguration(newDebugConfiguration);
         this.currentConfiguration = newDebugConfiguration;
-        await this.save(model);
-        await this.openConfiguration();
+        await this.doOpen(model);
     }
-    protected async save(model: DebugConfigurationManager.Model): Promise<void> {
-        const oldContent = model.content || '';
-        const edits = jsoncparser.modify(oldContent, [], model.json, { formattingOptions: {} });
-        const content = jsoncparser.applyEdits(oldContent, edits);
-        model.content = content;
-        await Resource.save(model.resource, { content });
+    protected async doOpen(model: DebugConfigurationModel): Promise<void> {
+        if (!model.exists) {
+            await model.save();
+        }
+        await open(this.openerService, model.uri, {
+            mode: 'activate'
+        });
     }
-
-    async selectConfiguration(): Promise<DebugConfiguration | undefined> {
-        const configurations = Array.from(this.configurations);
-        return this.quickPick.show(configurations.map(value => ({
-            label: value.type + ' : ' + value.name,
-            value
-        })), { placeholder: 'Select launch configuration' });
+    protected get model(): DebugConfigurationModel | undefined {
+        for (const model of this.models.values()) {
+            if (model.exists) {
+                return model;
+            }
+        }
+        for (const model of this.models.values()) {
+            if (model.provider === 'theia') {
+                return model;
+            }
+        }
+        return this.models.values().next().value;
     }
 
     protected async selectDebugType(): Promise<string | undefined> {
@@ -218,17 +166,4 @@ export class DebugConfigurationManager {
         }), { placeholder: 'Select Debug Configuration' }));
     }
 
-}
-export namespace DebugConfigurationManager {
-    export interface JsonContent {
-        configurations: DebugConfiguration[]
-        // tslint:disable-next-line:no-any
-        [property: string]: any
-    }
-    export interface Model {
-        resource: Resource
-        content: string | undefined
-        json: JsonContent
-        toDispose: DisposableCollection
-    }
 }
