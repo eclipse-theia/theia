@@ -78,15 +78,13 @@ export namespace DebugCommands {
         label: 'Restart Debugging',
     };
 
-    export const OPEN_CONFIGURATION: Command = {
-        id: 'debug.configuration.open',
-        category: DEBUG_CATEGORY,
-        label: 'Open Configuration',
+    export const OPEN_CONFIGURATIONS = {
+        id: 'debug.configurations.open',
+        label: 'Debug: Open Configurations'
     };
-    export const ADD_CONFIGURATION: Command = {
-        id: 'debug.configuration.add',
-        category: DEBUG_CATEGORY,
-        label: 'Add Configuration...',
+    export const ADD_CONFIGURATION = {
+        id: 'debug.configurations.add',
+        label: 'Debug: Add Configuration...'
     };
 
     export const STEP_OVER: Command = {
@@ -396,7 +394,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.RESTART
         );
         registerMenuActions(DebugMenus.DEBUG_CONFIGURATION,
-            DebugCommands.OPEN_CONFIGURATION,
+            DebugCommands.OPEN_CONFIGURATIONS,
             DebugCommands.ADD_CONFIGURATION
         );
         registerMenuActions(DebugMenus.DEBUG_THREADS,
@@ -483,7 +481,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
 
-        registry.registerCommand(DebugCommands.OPEN_CONFIGURATION, {
+        registry.registerCommand(DebugCommands.OPEN_CONFIGURATIONS, {
             execute: () => this.confiugurations.openConfiguration()
         });
         registry.registerCommand(DebugCommands.ADD_CONFIGURATION, {
