@@ -780,7 +780,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async start(noDebug?: boolean): Promise<void> {
-        const configuration = await this.confiugurations.selectConfiguration();
+        const configuration = this.confiugurations.currentConfiguration;
         if (configuration) {
             configuration.noDebug = noDebug;
             await this.manager.start(configuration);
