@@ -21,7 +21,7 @@ import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { KeymapsParser } from './keymaps-parser';
 
-import './monaco-contribution';
+import './keymaps-monaco-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser';
 import { KeybindingWidget } from './keybindings-widget';
 
