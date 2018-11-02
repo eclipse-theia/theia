@@ -207,9 +207,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 }
                 this.refreshModelChildren();
             }
-        }, searchOptions);
+        }, searchOptions).catch(e => { return; });
         token.onCancellationRequested(() => {
-            this.searchService.cancel(searchId);
+            if (searchId) {
+                this.searchService.cancel(searchId);
+            }
         });
     }
 

@@ -21,6 +21,7 @@ import { CommandRegistry, MenuModelRegistry, SelectionService } from '@theia/cor
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export namespace SearchInWorkspaceCommands {
     export const TOGGLE_SIW_WIDGET = {
@@ -42,6 +43,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor() {
         super({
@@ -55,12 +57,13 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
-        await this.openView({activate: false});
+        await this.openView({ activate: false });
     }
 
     registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
+            isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
             execute: () => this.openView({
                 activate: true
             })
