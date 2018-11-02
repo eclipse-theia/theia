@@ -44,6 +44,14 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
     registerVariables(variables: VariableRegistry): void {
         variables.registerVariable({
+            name: 'workspaceRoot',
+            description: 'The path of the workspace root folder',
+            resolve: () => {
+                const uri = this.getWorkspaceRootUri();
+                return uri && uri.path.toString();
+            }
+        });
+        variables.registerVariable({
             name: 'workspaceFolder',
             description: 'The path of the workspace root folder',
             resolve: () => {
