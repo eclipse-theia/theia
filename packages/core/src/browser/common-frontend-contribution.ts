@@ -436,6 +436,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             });
         }
         registry.registerKeybindings(
+            // Edition
             {
                 command: CommonCommands.UNDO.id,
                 keybinding: 'ctrlcmd+z'
@@ -452,13 +453,22 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 command: CommonCommands.REPLACE.id,
                 keybinding: 'ctrlcmd+alt+f'
             },
+            // Tabs
             {
                 command: CommonCommands.NEXT_TAB.id,
                 keybinding: 'ctrlcmd+tab'
             },
             {
+                command: CommonCommands.NEXT_TAB.id,
+                keybinding: 'ctrlcmd+alt+d'
+            },
+            {
                 command: CommonCommands.PREVIOUS_TAB.id,
                 keybinding: 'ctrlcmd+shift+tab'
+            },
+            {
+                command: CommonCommands.PREVIOUS_TAB.id,
+                keybinding: 'ctrlcmd+alt+a'
             },
             {
                 command: CommonCommands.CLOSE_TAB.id,
@@ -472,6 +482,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 command: CommonCommands.CLOSE_ALL_TABS.id,
                 keybinding: 'alt+shift+w'
             },
+            // Panels
             {
                 command: CommonCommands.COLLAPSE_PANEL.id,
                 keybinding: 'alt+c'
@@ -484,6 +495,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 command: CommonCommands.COLLAPSE_ALL_PANELS.id,
                 keybinding: 'alt+shift+c',
             },
+            // Saving
             {
                 command: CommonCommands.SAVE.id,
                 keybinding: 'ctrlcmd+s'

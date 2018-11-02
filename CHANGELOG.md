@@ -2,12 +2,13 @@
 
 ## v0.3.17
 - [plug-in] added `languages.registerCodeLensProvider` Plug-in API
+- [core] `ctrl+alt+a` and `ctrl+alt+d` to switch tabs left/right
 
 
 ## v0.3.16
 - [plug-in] added `DocumentLinkProvider` Plug-in API
 - [plug-in] Terminal.sendText API adds a new line to the text being sent to the terminal if `addNewLine` parameter wasn't specified
-- Reverted [cpp] Add debugging for C/C++ programs. This feature will come back in its own cpp-specific repo 
+- Reverted [cpp] Add debugging for C/C++ programs. This feature will come back in its own cpp-specific repo
 - [core] Add methods to unregister menus, commands and keybindings
 - [terminal] Add 'open in terminal' to navigator
 - [markers] Added ability to remove markers
@@ -20,7 +21,7 @@
 ## v0.3.15
 - [plug-in] added `menus` contribution point
 - [cpp] Add debugging for C/C++ programs
-- View Keybindings Widget - used to view and search keybindings 
+- View Keybindings Widget - used to view and search keybindings
 - multi-root workspace support, vsCode compatibility
 - Add TCL grammar file
 - [debug] resolve variables in configurations
@@ -30,7 +31,7 @@
 
 ## v0.3.13
 - [cpp] Add a status bar button to select an active cpp build configuration
-- Recently opened workspaces history 
+- Recently opened workspaces history
 - [git/blame] convert to toggle command
 - [cpp] Watch changes to compile_commands.json
 - [ts] one ls for all js related languages
