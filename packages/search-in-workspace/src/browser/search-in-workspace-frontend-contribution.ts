@@ -21,6 +21,7 @@ import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -45,6 +46,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor() {
         super({
@@ -64,6 +66,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
+            isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
             execute: () => this.openView({
                 activate: true
             })

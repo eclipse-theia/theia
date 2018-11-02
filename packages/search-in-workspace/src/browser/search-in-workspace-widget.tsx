@@ -21,6 +21,7 @@ import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interfac
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Disposable } from '@theia/core/lib/common';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export interface SearchFieldState {
     className: string;
@@ -57,6 +58,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected resultContainer: HTMLElement;
 
     @inject(SearchInWorkspaceResultTreeWidget) protected readonly resultTreeWidget: SearchInWorkspaceResultTreeWidget;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
     init() {
@@ -234,7 +236,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderControlButtons(): React.ReactNode {
-        const refreshButton = this.renderControlButton(`refresh${this.hasResults || this.searchTerm !== '' ? ' enabled' : ''}`, 'Refresh', this.refresh);
+        const refreshButton = this.renderControlButton(`refresh${(this.hasResults || this.searchTerm !== '') && this.workspaceService.tryGetRoots().length > 0
+            ? ' enabled' : ''}`, 'Refresh', this.refresh);
         const collapseAllButton = this.renderControlButton(`collapse-all${this.hasResults ? ' enabled' : ''}`, 'Collapse All', this.collapseAll);
         const clearButton = this.renderControlButton(`clear-all${this.hasResults ? ' enabled' : ''}`, 'Clear', this.clear);
         return <div className='controls button-container'>{refreshButton}{collapseAllButton}{clearButton}</div>;
@@ -276,6 +279,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderNotification(): React.ReactNode {
+        if (this.workspaceService.tryGetRoots().length <= 0) {
+            return <div className='search-notification show'>
+                <div>Cannot search without an active workspace present.</div>
+            </div>;
+        }
         return <div
             className={`search-notification ${this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? 'show' : ''}`}>
             <div>
