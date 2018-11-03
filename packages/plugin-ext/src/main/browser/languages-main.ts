@@ -97,6 +97,18 @@ export class LanguagesMainImpl implements LanguagesMain {
         this.disposables.set(handle, disposable);
     }
 
+    $registeReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const referenceProvider = this.createReferenceProvider(handle, languageSelector);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerReferenceProvider(language, referenceProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
     $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const signatureHelpProvider = this.createSignatureHelpProvider(handle, languageSelector, triggerCharacters);
@@ -240,6 +252,31 @@ export class LanguagesMainImpl implements LanguagesMain {
                             range: result.range
                         };
                     }
+                });
+            }
+        };
+    }
+
+    protected createReferenceProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.ReferenceProvider {
+        return {
+            provideReferences: (model, position, context, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideReferences(handle, model.uri, position, context).then(result => {
+                    if (!result) {
+                        return undefined!;
+                    }
+
+                    if (Array.isArray(result)) {
+                        const references: monaco.languages.Location[] = [];
+                        for (const item of result) {
+                            references.push({...item, uri: monaco.Uri.revive(item.uri) });
+                        }
+                        return references;
+                    }
+
+                    return undefined!;
                 });
             }
         };

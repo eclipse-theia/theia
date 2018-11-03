@@ -42,7 +42,9 @@ import {
     DocumentLink,
     CodeLensSymbol,
     Command,
-    TextEdit
+    TextEdit,
+    ReferenceContext,
+    Location
 } from './model';
 
 export interface PluginInitData {
@@ -728,6 +730,7 @@ export interface LanguagesExt {
     $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion>;
     $releaseCompletionItems(handle: number, id: number): void;
     $provideDefinition(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined>;
+    $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext): Promise<Location[] | undefined>;
     $provideSignatureHelp(handle: number, resource: UriComponents, position: Position): Promise<SignatureHelp | undefined>;
     $provideHover(handle: number, resource: UriComponents, position: Position): Promise<Hover | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents, options: FormattingOptions): Promise<ModelSingleEditOperation[] | undefined>;
@@ -757,6 +760,7 @@ export interface LanguagesMain {
     $unregister(handle: number): void;
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
     $registerDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registeReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void;
     $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;

@@ -46,7 +46,9 @@ import {
     Definition,
     DefinitionLink,
     DocumentLink,
-    CodeLensSymbol
+    CodeLensSymbol,
+    ReferenceContext,
+    Location
 } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -60,6 +62,7 @@ import { CodeActionAdapter } from './languages/code-action';
 import { LinkProviderAdapter } from './languages/link-provider';
 import { CodeLensAdapter } from './languages/lens';
 import { CommandRegistryImpl } from './command-registry';
+import { ReferenceAdapter } from './languages/reference';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -71,7 +74,8 @@ type Adapter = CompletionAdapter |
     LinkProviderAdapter |
     CodeLensAdapter |
     CodeActionAdapter |
-    LinkProviderAdapter;
+    LinkProviderAdapter |
+    ReferenceAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -345,9 +349,14 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Code Lens Provider end
 
     // ### Code Reference Provider begin
+    $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext): Promise<Location[] | undefined> {
+        return this.withAdapter(handle, ReferenceAdapter, adapter => adapter.provideReferences(URI.revive(resource), position, context));
+    }
+
     registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
-        // FIXME: to implement
-        return new Disposable(() => { });
+        const callId = this.addNewAdapter(new ReferenceAdapter(provider, this.documents));
+        this.proxy.$registeReferenceProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
     }
     // ### Code Reference Provider end
 
