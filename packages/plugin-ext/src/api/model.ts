@@ -226,6 +226,18 @@ export interface DefinitionProvider {
     provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | DefinitionLink[] | undefined;
 }
 
+/**
+ * Value-object that contains additional information when
+ * requesting references.
+ */
+export interface ReferenceContext {
+
+    /**
+     * Include the declaration of the current symbol.
+     */
+    includeDeclaration: boolean;
+}
+
 export interface DocumentLink {
     range: Range;
     url?: string;
