@@ -28,6 +28,7 @@ import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitQuickOpenService } from './git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { GitPrompt } from '../common/git-prompt';
 
 export const GIT_WIDGET_FACTORY_ID = 'git';
 
@@ -104,6 +105,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
     @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
     @inject(GitSyncService) protected readonly syncService: GitSyncService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(GitPrompt) protected readonly prompt: GitPrompt;
 
     constructor() {
         super({
