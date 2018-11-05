@@ -20,9 +20,9 @@ import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
-import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
+import { DebugSessionOptions } from './debug-session-options';
 
 /**
  * DebugSessionContribution symbol for DI.
@@ -52,7 +52,7 @@ export const DebugSessionFactory = Symbol('DebugSessionFactory');
  * The [debug session](#DebugSession) factory.
  */
 export interface DebugSessionFactory {
-    get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession;
+    get(sessionId: string, options: DebugSessionOptions): DebugSession;
 }
 
 @injectable()
@@ -76,10 +76,10 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     @inject(MessageClient)
     protected readonly messages: MessageClient;
 
-    get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
+    get(sessionId: string, options: DebugSessionOptions): DebugSession {
         return new DebugSession(
             sessionId,
-            debugConfiguration,
+            options,
             this.connectionProvider,
             this.terminalService,
             this.editorManager,

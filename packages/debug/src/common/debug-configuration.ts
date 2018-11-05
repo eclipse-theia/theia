@@ -57,9 +57,6 @@ export interface DebugConfiguration {
 
     /** default: neverOpen */
     internalConsoleOptions?: 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart'
-
-    __resovled?: boolean
-    __configurationId?: number
 }
 export namespace DebugConfiguration {
     export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {

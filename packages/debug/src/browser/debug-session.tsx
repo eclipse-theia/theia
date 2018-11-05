@@ -23,7 +23,6 @@ import { Emitter, Event, DisposableCollection, Disposable, MessageClient, Messag
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
-import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';
 import { DebugThread, StoppedDetails } from './model/debug-thread';
 import { DebugScope } from './console/debug-console-items';
@@ -33,6 +32,8 @@ import { DebugBreakpoint } from './model/debug-breakpoint';
 import debounce = require('p-debounce');
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
+import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugConfiguration } from '../common/debug-common';
 
 export enum DebugState {
     Inactive,
@@ -62,7 +63,7 @@ export class DebugSession implements CompositeTreeElement {
 
     constructor(
         readonly id: string,
-        readonly configuration: DebugConfiguration,
+        readonly options: DebugSessionOptions,
         connectionProvider: WebSocketConnectionProvider,
         protected readonly terminalServer: TerminalService,
         protected readonly editorManager: EditorManager,
@@ -107,6 +108,10 @@ export class DebugSession implements CompositeTreeElement {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    get configuration(): DebugConfiguration {
+        return this.options.configuration;
     }
 
     protected _capabilities: DebugProtocol.Capabilities = {};
@@ -505,8 +510,8 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     get label(): string {
-        if (this.configuration.__configurationId) {
-            return this.configuration.name + ' (' + (this.configuration.__configurationId + 1) + ')';
+        if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
+            return this.configuration.name + ' (' + (this.options.id + 1) + ')';
         }
         return this.configuration.name;
     }
