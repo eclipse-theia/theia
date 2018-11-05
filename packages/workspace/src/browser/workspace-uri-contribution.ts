@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { DefaultUriLabelProviderContribution, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
 import { IWorkspaceService } from './workspace-service';
@@ -62,24 +62,16 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
 
     async getIcon(element: URI | FileStat): Promise<string> {
         if (FileStat.is(element) && element.isDirectory) {
-            return 'fa fa-folder';
+            return FOLDER_ICON;
         }
         const uri = this.getUri(element);
         const icon = super.getFileIcon(uri);
         if (!icon) {
             try {
                 const stat = await this.getStat(element);
-                if (stat) {
-                    if (stat.isDirectory) {
-                        return 'fa fa-folder';
-                    } else {
-                        return 'fa fa-file';
-                    }
-                } else {
-                    return 'fa fa-file';
-                }
+                return stat && stat.isDirectory ? FOLDER_ICON : FILE_ICON;
             } catch (err) {
-                return 'fa fa-file';
+                return FILE_ICON;
             }
         }
         return icon;
