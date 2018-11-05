@@ -23,7 +23,6 @@ export namespace QuickOpenOptions {
     export interface Resolved {
         readonly prefix: string;
         readonly placeholder: string;
-        readonly password: boolean;
         readonly ignoreFocusOut: boolean;
 
         readonly fuzzyMatchLabel: boolean;
@@ -39,14 +38,19 @@ export namespace QuickOpenOptions {
          */
         readonly showItemsWithoutHighlight: boolean;
 
-        selectIndex(lookfor: string): number;
+        /**
+         * `true` if the quick open widget provides a way for the user to securely enter a password.
+         * Otherwise, `false`.
+         */
+        readonly password: boolean;
+
+        selectIndex(lookFor: string): number;
 
         onClose(canceled: boolean): void;
     }
     export const defaultOptions: Resolved = Object.freeze({
         prefix: '',
         placeholder: '',
-        password: false,
         ignoreFocusOut: false,
 
         fuzzyMatchLabel: false,
@@ -57,6 +61,7 @@ export namespace QuickOpenOptions {
         skipPrefix: 0,
 
         showItemsWithoutHighlight: false,
+        password: false,
 
         onClose: () => { /* no-op*/ },
 
@@ -72,7 +77,7 @@ export class QuickOpenService {
     /**
      * It should be implemented by an extension, e.g. by the monaco extension.
      */
-    open(model: QuickOpenModel, options?: QuickOpenOptions): void {}
-    showDecoration(type: MessageType): void {}
-    hideDecoration(): void {}
+    open(model: QuickOpenModel, options?: QuickOpenOptions): void { }
+    showDecoration(type: MessageType): void { }
+    hideDecoration(): void { }
 }

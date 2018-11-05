@@ -168,6 +168,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
 export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControllerOpts {
 
     protected readonly options: QuickOpenOptions.Resolved;
+    readonly password?: boolean;
 
     constructor(
         protected readonly model: QuickOpenModel,
@@ -175,14 +176,11 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
     ) {
         this.model = model;
         this.options = QuickOpenOptions.resolve(options);
+        this.password = this.options.password;
     }
 
     get prefix(): string {
         return this.options.prefix;
-    }
-
-    get password(): boolean {
-        return this.options.password;
     }
 
     get ignoreFocusOut(): boolean {

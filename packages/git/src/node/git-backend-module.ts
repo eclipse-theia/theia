@@ -27,6 +27,8 @@ import { GitLocator } from './git-locator/git-locator-protocol';
 import { GitLocatorClient } from './git-locator/git-locator-client';
 import { GitLocatorImpl } from './git-locator/git-locator-impl';
 import { GitExecProvider } from './git-exec-provider';
+import { GitPromptServer, GitPromptClient, GitPrompt } from '../common/git-prompt';
+import { DugiteGitPromptServer } from './dugite-git-prompt';
 
 export interface GitBindingOptions {
     readonly bindManager: (binding: interfaces.BindingToSyntax<{}>) => interfaces.BindingWhenOnSyntax<{}>;
@@ -74,6 +76,11 @@ export function bindRepositoryWatcher(bind: interfaces.Bind): void {
     bind(GitWatcherServer).toService(DugiteGitWatcherServer);
 }
 
+export function bindPrompt(bind: interfaces.Bind): void {
+    bind(DugiteGitPromptServer).toSelf().inSingletonScope();
+    bind(GitPromptServer).toDynamicValue(context => context.container.get(DugiteGitPromptServer));
+}
+
 export default new ContainerModule(bind => {
     bindGit(bind);
     bind(ConnectionHandler).toDynamicValue(context =>
@@ -88,6 +95,16 @@ export default new ContainerModule(bind => {
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler<GitWatcherClient>(GitWatcherPath, client => {
             const server = context.container.get<GitWatcherServer>(GitWatcherServer);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.dispose());
+            return server;
+        })
+    ).inSingletonScope();
+
+    bindPrompt(bind);
+    bind(ConnectionHandler).toDynamicValue(context =>
+        new JsonRpcConnectionHandler<GitPromptClient>(GitPrompt.WS_PATH, client => {
+            const server = context.container.get<GitPromptServer>(GitPromptServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
