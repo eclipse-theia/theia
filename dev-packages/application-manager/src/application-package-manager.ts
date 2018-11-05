@@ -59,14 +59,9 @@ export class ApplicationPackageManager {
         await this.frontend.generate();
     }
 
-    async copy(): Promise<void> {
-        await fs.ensureDir(this.pck.lib());
-        await fs.copy(this.pck.frontend('index.html'), this.pck.lib('index.html'));
-    }
-
     async build(args: string[] = []): Promise<void> {
         await this.generate();
-        await this.copy();
+        await fs.ensureDir(this.pck.lib());
         return this.__process.run('webpack', args);
     }
 

@@ -32,7 +32,6 @@ export class FrontendGenerator extends AbstractGenerator {
 <html>
 
 <head>${this.compileIndexHead(frontendModules)}
-  <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 
 <body>

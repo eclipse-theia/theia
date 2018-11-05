@@ -37,6 +37,7 @@ const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
@@ -54,7 +55,7 @@ const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
-        filename: 'bundle.js',
+        filename: '[chunkhash].js',
         path: outputPath
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
@@ -135,6 +136,11 @@ module.exports = {
     },
     devtool: 'source-map',
     plugins: [
+        new HtmlWebpackPlugin({
+            filename: 'index.html',
+            template: 'src-gen/frontend/index.html',
+            inject: 'head'
+        }),
         new CopyWebpackPlugin([${this.ifMonaco(() => `
             {
                 from: monacoEditorCorePath,
