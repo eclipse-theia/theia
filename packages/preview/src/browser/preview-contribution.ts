@@ -194,12 +194,9 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         const mainTabBars = this.shell.mainAreaTabBars;
         const defaultTabBar = this.shell.getTabBarFor('main');
         if (mainTabBars.length > 1 && defaultTabBar) {
-            const currentTabArea = this.shell.currentTabArea;
-            const currentTabBar = (currentTabArea === 'main') ? this.shell.currentTabBar || defaultTabBar : defaultTabBar;
-            const currentIndex = mainTabBars.indexOf(currentTabBar);
-            const targetIndex = (mainTabBars.length === currentIndex + 1) ? currentIndex - 1 : currentIndex + 1;
-            const targetTabBar = mainTabBars[targetIndex];
-            const currentTitle = targetTabBar.currentTitle;
+            const currentTabBar = this.shell.currentTabBar || defaultTabBar;
+            const currentIndex = currentTabBar.currentIndex;
+            const currentTitle = currentTabBar.titles[currentIndex];
             if (currentTitle) {
                 return currentTitle.owner;
             }
