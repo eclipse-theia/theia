@@ -20,11 +20,14 @@ import { DugiteGit } from '../dugite-git';
 import { bindGit, GitBindingOptions } from '../git-backend-module';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import { NoSyncRepositoryManager } from '.././test/no-sync-repository-manager';
+import { GitEnvProvider, DefaultGitEnvProvider } from '../env/git-env-provider';
 
 // tslint:disable-next-line:no-any
-export function initializeBindings(): { container: Container, bind: any } {
+export function initializeBindings(): { container: Container, bind: interfaces.Bind } {
     const container = new Container();
     const bind = container.bind.bind(container);
+    bind(DefaultGitEnvProvider).toSelf().inRequestScope();
+    bind(GitEnvProvider).toService(DefaultGitEnvProvider);
     bindLogger(bind);
     return { container, bind };
 }
