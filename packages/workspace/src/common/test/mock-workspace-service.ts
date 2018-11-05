@@ -14,5 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './mock-preference-service';
-export * from './mock-preference-proxy';
+import { injectable } from 'inversify';
+import { IWorkspaceService } from '../../browser/workspace-service';
+import { FileStat } from '@theia/filesystem/lib/common/filesystem';
+
+@injectable()
+export class MockWorkspaceService implements IWorkspaceService {
+    get roots(): Promise<FileStat[]> {
+        const stat: FileStat = {
+            uri: 'file:///workspace',
+            lastModification: 0,
+            isDirectory: true
+        };
+        return Promise.resolve([stat]);
+    }
+}

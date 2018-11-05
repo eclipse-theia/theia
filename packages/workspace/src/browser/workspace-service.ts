@@ -20,7 +20,7 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -185,9 +185,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     /**
      * on unload, we set our workspace root as the last recently used on the backend.
-     * @param app
      */
-    onStop(app: FrontendApplication): void {
+    onStop(): void {
         this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.uri : '');
     }
 
@@ -407,7 +406,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             await this.fileSystem.createFile(uriStr);
         }
         let stat = await this.toFileStat(uriStr);
-        stat = await this.writeWorkspaceFile(stat, await this.roots);
+        stat = await this.writeWorkspaceFile(stat, this._roots);
         await this.server.setMostRecentlyUsedWorkspace(uriStr);
         await this.setWorkspace(stat);
     }
