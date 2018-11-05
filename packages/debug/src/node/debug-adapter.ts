@@ -61,15 +61,8 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     }
 
     private spawnProcess(executable: DebugAdapterExecutable): RawProcess {
-        const command = executable.runtime
-            ? executable.runtime
-            : executable.program;
-
-        const args = executable.runtime
-            ? [executable.program].concat(executable.args ? executable.args : [])
-            : executable.args;
-
-        return this.processFactory({ command: command, args: args, options: { stdio: ['pipe', 'pipe', 2] } });
+        const { command, args } = executable;
+        return this.processFactory({ command, args, options: { stdio: ['pipe', 'pipe', 2] } });
     }
 
     connect(debugServerPort: number): CommunicationProvider {

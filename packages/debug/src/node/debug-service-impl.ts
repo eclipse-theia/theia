@@ -29,23 +29,31 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
  */
 @injectable()
 export class DebugAdapterContributionRegistry {
-    protected readonly contribs = new Map<string, DebugAdapterContribution>();
 
-    constructor(
-        @inject(ContributionProvider) @named(DebugAdapterContribution)
-        protected readonly contributions: ContributionProvider<DebugAdapterContribution>
-    ) {
-        for (const contrib of this.contributions.getContributions()) {
-            this.contribs.set(contrib.debugType, contrib);
-        }
-    }
+    @inject(ContributionProvider) @named(DebugAdapterContribution)
+    protected readonly contributions: ContributionProvider<DebugAdapterContribution>;
 
     /**
      * Finds and returns an array of registered debug types.
      * @returns An array of registered debug types
      */
+    protected _debugTypes: string[] | undefined;
     debugTypes(): string[] {
-        return Array.from(this.contribs.keys());
+        if (!this._debugTypes) {
+            const result = new Set<string>();
+            for (const contribution of this.contributions.getContributions()) {
+                result.add(contribution.debugType);
+            }
+            this._debugTypes = [...result];
+        }
+        return this._debugTypes;
+    }
+    protected *getContributions(debugType: string): IterableIterator<DebugAdapterContribution> {
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.debugType === debugType || contribution.debugType === '*' || debugType === '*') {
+                yield contribution;
+            }
+        }
     }
 
     /**
@@ -53,25 +61,18 @@ export class DebugAdapterContributionRegistry {
      * @param debugType The registered debug type
      * @returns An array of [debug configurations](#DebugConfiguration)
      */
-    async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]> {
-        const contrib = this.contribs.get(debugType);
-        if (contrib) {
-            return contrib.provideDebugConfigurations;
+    async provideDebugConfigurations(debugType: string, workspaceFolderUri?: string): Promise<DebugConfiguration[]> {
+        const configurations: DebugConfiguration[] = [];
+        for (const contribution of this.getContributions(debugType)) {
+            if (contribution.provideDebugConfigurations) {
+                try {
+                    configurations.push(...await contribution.provideDebugConfigurations(workspaceFolderUri));
+                } catch (e) {
+                    console.error(e);
+                }
+            }
         }
-        throw new Error(`Debug adapter '${debugType}' isn't registered.`);
-    }
-
-    /**
-     * Provides schema attributes.
-     * @param debugType The registered debug type
-     * @returns Schema attributes for the given debug type
-     */
-    getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
-        const contrib = this.contribs.get(debugType);
-        if (contrib) {
-            return contrib.getSchemaAttributes();
-        }
-        throw new Error(`Debug adapter '${debugType}' isn't registered.`);
+        return configurations;
     }
 
     /**
@@ -80,12 +81,42 @@ export class DebugAdapterContributionRegistry {
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration> {
-        const contrib = this.contribs.get(config.type);
-        if (contrib) {
-            return contrib.resolveDebugConfiguration(config);
+    async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri?: string): Promise<DebugConfiguration> {
+        let current = config;
+        for (const contribution of this.getContributions(config.type)) {
+            if (contribution.resolveDebugConfiguration) {
+                try {
+                    const next = await contribution.resolveDebugConfiguration(config, workspaceFolderUri);
+                    if (next) {
+                        current = next;
+                    } else {
+                        return current;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
         }
-        throw new Error(`Debug adapter '${config.type}' isn't registered.`);
+        return current;
+    }
+
+    /**
+     * Provides schema attributes.
+     * @param debugType The registered debug type
+     * @returns Schema attributes for the given debug type
+     */
+    async getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
+        const schemas: IJSONSchema[] = [];
+        for (const contribution of this.getContributions(debugType)) {
+            if (contribution.getSchemaAttributes) {
+                try {
+                    schemas.push(...await contribution.getSchemaAttributes());
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+        return schemas;
     }
 
     /**
@@ -95,9 +126,10 @@ export class DebugAdapterContributionRegistry {
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
     async provideDebugAdapterExecutable(config: DebugConfiguration): Promise<DebugAdapterExecutable> {
-        const contrib = this.contribs.get(config.type);
-        if (contrib) {
-            return contrib.provideDebugAdapterExecutable(config);
+        for (const contribution of this.getContributions(config.type)) {
+            if (contribution.provideDebugAdapterExecutable) {
+                return contribution.provideDebugAdapterExecutable(config);
+            }
         }
         throw new Error(`Debug adapter '${config.type}' isn't registered.`);
     }
@@ -108,10 +140,12 @@ export class DebugAdapterContributionRegistry {
      * @returns An [debug adapter session factory](#DebugAdapterSessionFactory)
      */
     debugAdapterSessionFactory(debugType: string): DebugAdapterSessionFactory | undefined {
-        const contrib = this.contribs.get(debugType);
-        if (contrib) {
-            return contrib.debugAdapterSessionFactory;
+        for (const contribution of this.getContributions(debugType)) {
+            if (contribution.debugAdapterSessionFactory) {
+                return contribution.debugAdapterSessionFactory;
+            }
         }
+        return undefined;
     }
 }
 
@@ -212,17 +246,15 @@ export class DebugServiceImpl implements DebugService, MessagingService.Contribu
     async debugTypes(): Promise<string[]> {
         return this.registry.debugTypes();
     }
-
-    async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]> {
-        return this.registry.provideDebugConfigurations(debugType);
-    }
-
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
         return this.registry.getSchemaAttributes(debugType);
     }
 
-    async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration> {
-        return this.registry.resolveDebugConfiguration(config);
+    async provideDebugConfigurations(debugType: string, workspaceFolderUri?: string): Promise<DebugConfiguration[]> {
+        return this.registry.provideDebugConfigurations(debugType, workspaceFolderUri);
+    }
+    async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri?: string): Promise<DebugConfiguration> {
+        return this.registry.resolveDebugConfiguration(config, workspaceFolderUri);
     }
 
     async create(config: DebugConfiguration): Promise<string> {

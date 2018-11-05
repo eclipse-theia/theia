@@ -172,10 +172,12 @@ export class HostedPluginManagerClient {
 
         await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
         await this.debugSessionManager.start({
-            type: 'node',
-            request: 'attach',
-            timeout: 30000,
-            name: 'Hosted Plugin'
+            configuration: {
+                type: 'node',
+                request: 'attach',
+                timeout: 30000,
+                name: 'Hosted Plugin'
+            }
         });
     }
 

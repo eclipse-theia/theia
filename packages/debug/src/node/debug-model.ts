@@ -22,8 +22,8 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
-import { Disposable } from '@theia/core';
 import * as stream from 'stream';
+import { Disposable, MaybePromise } from '@theia/core';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
@@ -58,15 +58,14 @@ export interface DebugAdapterSessionFactory {
 
 /**
  * Debug adapter executable.
+ *
+ * Parameters to instantiate the debug adapter. In case of launching adapter
+ * the parameters contain a command and arguments. For instance:
+ * {'command' : 'COMMAND_TO_LAUNCH_DEBUG_ADAPTER', args : [ { 'arg1', 'arg2' } ] }
  */
 export interface DebugAdapterExecutable {
-    /**
-     * Parameters to instantiate the debug adapter. In case of launching adapter
-     * the parameters contain a command and arguments. For instance:
-     * {'program' : 'COMMAND_TO_LAUNCH_DEBUG_ADAPTER', args : [ { 'arg1', 'arg2' } ] }
-     */
-    // tslint:disable-next-line:no-any
-    [key: string]: any;
+    command: string
+    args?: string[]
 }
 
 /**
@@ -119,23 +118,9 @@ export interface DebugAdapterContribution {
     debugAdapterSessionFactory?: DebugAdapterSessionFactory;
 
     /**
-     * Provides initial [debug configuration](#DebugConfiguration).
-     * @returns An array of [debug configurations](#DebugConfiguration).
-     */
-    provideDebugConfigurations: DebugConfiguration[];
-
-    /**
      * @returns The contributed configuration schema for this debug type.
      */
-    getSchemaAttributes(): Promise<IJSONSchema[]>;
-
-    /**
-     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
-     * or by adding/changing/removing attributes.
-     * @param config The [debug configuration](#DebugConfiguration) to resolve.
-     * @returns The resolved debug configuration.
-     */
-    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
+    getSchemaAttributes?(): MaybePromise<IJSONSchema[]>;
 
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)
@@ -144,5 +129,19 @@ export interface DebugAdapterContribution {
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
-    provideDebugAdapterExecutable(config: DebugConfiguration): Promise<DebugAdapterExecutable>;
+    provideDebugAdapterExecutable?(config: DebugConfiguration): MaybePromise<DebugAdapterExecutable>;
+
+    /**
+     * Provides initial [debug configuration](#DebugConfiguration).
+     * @returns An array of [debug configurations](#DebugConfiguration).
+     */
+    provideDebugConfigurations?(workspaceFolderUri?: string): MaybePromise<DebugConfiguration[]>;
+
+    /**
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes.
+     * @param config The [debug configuration](#DebugConfiguration) to resolve.
+     * @returns The resolved debug configuration.
+     */
+    resolveDebugConfiguration?(config: DebugConfiguration, workspaceFolderUri?: string): MaybePromise<DebugConfiguration | undefined>;
 }

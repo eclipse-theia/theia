@@ -20,7 +20,6 @@ import { injectable, inject, named, postConstruct } from 'inversify';
 import { Emitter, Event, ContributionProvider, DisposableCollection } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugService } from '../common/debug-service';
 import { DebugState, DebugSession } from './debug-session';
 import { DebugSessionContribution, DebugSessionFactory } from './debug-session-contribution';
@@ -30,6 +29,7 @@ import { DebugBreakpoint } from './model/debug-breakpoint';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import URI from '@theia/core/lib/common/uri';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
+import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 
 export interface DidChangeActiveDebugSession {
     previous: DebugSession | undefined
@@ -61,8 +61,8 @@ export class DebugSessionManager {
     protected readonly onDidDestroyDebugSessionEmitter = new Emitter<DebugSession>();
     readonly onDidDestroyDebugSession: Event<DebugSession> = this.onDidDestroyDebugSessionEmitter.event;
 
-    protected readonly onDidChangeBreakpointsEmitter = new Emitter<DidChangeBreakpointsEvent >();
-    readonly onDidChangeBreakpoints: Event<DidChangeBreakpointsEvent > = this.onDidChangeBreakpointsEmitter.event;
+    protected readonly onDidChangeBreakpointsEmitter = new Emitter<DidChangeBreakpointsEvent>();
+    readonly onDidChangeBreakpoints: Event<DidChangeBreakpointsEvent> = this.onDidChangeBreakpointsEmitter.event;
     protected fireDidChangeBreakpoints(event: DidChangeBreakpointsEvent): void {
         this.onDidChangeBreakpointsEmitter.fire(event);
     }
@@ -102,27 +102,32 @@ export class DebugSessionManager {
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
     }
 
-    async start(configuration: DebugConfiguration): Promise<DebugSession> {
-        const resolvedConfiguration = await this.resolveConfiguration(configuration);
-        const sessionId = await this.debugService.create(resolvedConfiguration);
-        return this.doStart(sessionId, resolvedConfiguration);
+    async start(options: DebugSessionOptions): Promise<DebugSession> {
+        const resovled = await this.resolveConfiguration(options);
+        const sessionId = await this.debugService.create(resovled.configuration);
+        return this.doStart(sessionId, resovled);
     }
     protected configurationIds = new Map<string, number>();
-    protected async resolveConfiguration(configuration: DebugConfiguration): Promise<DebugConfiguration> {
-        if (configuration.__resovled) {
-            return configuration;
+    protected async resolveConfiguration(options: Readonly<DebugSessionOptions>): Promise<InternalDebugSessionOptions> {
+        if (InternalDebugSessionOptions.is(options)) {
+            return options;
         }
-        const resolvedConfiguration = await this.debugService.resolveDebugConfiguration(configuration);
-        resolvedConfiguration.__resovled = true;
-        const configurationId = this.configurationIds.has(configuration.name) ? this.configurationIds.get(configuration.name)! + 1 : 0;
-        this.configurationIds.set(configuration.name, configurationId);
-        resolvedConfiguration.__configurationId = configurationId;
-        return this.variableResolver.resolve(resolvedConfiguration);
+        const { workspaceFolderUri } = options;
+        const resolvedConfiguration = await this.debugService.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
+        const configuration = await this.variableResolver.resolve(resolvedConfiguration);
+        const key = configuration.name + workspaceFolderUri;
+        const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
+        this.configurationIds.set(key, id);
+        return {
+            id,
+            configuration,
+            workspaceFolderUri
+        };
     }
-    protected async doStart(sessionId: string, debugConfiguration: DebugConfiguration): Promise<DebugSession> {
-        const contrib = this.contribs.get(debugConfiguration.type);
+    protected async doStart(sessionId: string, options: DebugSessionOptions): Promise<DebugSession> {
+        const contrib = this.contribs.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;
-        const session = sessionFactory.get(sessionId, debugConfiguration);
+        const session = sessionFactory.get(sessionId, options);
         this._sessions.set(sessionId, session);
 
         this.onDidCreateDebugSessionEmitter.fire(session);
@@ -166,9 +171,9 @@ export class DebugSessionManager {
     }
     protected async doRestart(session: DebugSession, restart?: any): Promise<DebugSession> {
         await session.disconnect({ restart: true });
-        const { configuration } = session;
+        const { options, configuration } = session;
         configuration.__restart = restart;
-        return this.start(configuration);
+        return this.start(options);
     }
 
     protected remove(sessionId: string): void {
