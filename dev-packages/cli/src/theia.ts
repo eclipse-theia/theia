@@ -83,17 +83,6 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
             }
         })
         .command({
-            command: 'copy',
-            handler: () => {
-                try {
-                    manager.copy();
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
-            }
-        })
-        .command({
             command: 'generate',
             handler: () => {
                 try {

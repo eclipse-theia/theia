@@ -49,7 +49,6 @@ export async function assertInstallation(expectation: {
             assert.equal(false, fs.existsSync(path.resolve(appProjectPath, 'node_modules', extension)), extension + ' is not uninstalled');
         }
     }
-    assert.equal(true, fs.existsSync(path.resolve(appProjectPath, 'lib', 'bundle.js')), 'the bundle is not generated');
     assert.equal(false, result.failed, 'the installation is failed');
 }
 
