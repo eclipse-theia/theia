@@ -20,6 +20,9 @@ import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
 
+export const FOLDER_ICON = 'fa fa-folder';
+export const FILE_ICON = 'fa fa-file';
+
 export const LabelProviderContribution = Symbol('LabelProviderContribution');
 export interface LabelProviderContribution {
 
@@ -61,9 +64,9 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
         const iconClass = this.getFileIcon(uri);
         if (!iconClass) {
             if (uri.displayName.indexOf('.') === -1) {
-                return 'fa fa-folder';
+                return FOLDER_ICON;
             } else {
-                return 'fa fa-file';
+                return FILE_ICON;
             }
         }
         return iconClass;

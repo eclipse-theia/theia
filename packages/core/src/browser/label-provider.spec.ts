@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
-import { DefaultUriLabelProviderContribution } from './label-provider';
+import { DefaultUriLabelProviderContribution, FOLDER_ICON } from './label-provider';
 import URI from '../common/uri';
 
 describe('DefaultUriLabelProviderContribution', function () {
@@ -45,6 +45,6 @@ describe('DefaultUriLabelProviderContribution', function () {
         const prov = new DefaultUriLabelProviderContribution();
         const icon = prov.getIcon(new URI('file:///tmp/hello'));
 
-        expect(icon).eq('fa fa-folder');
+        expect(icon).eq(FOLDER_ICON);
     });
 });
