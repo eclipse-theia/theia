@@ -33,6 +33,7 @@ export class DebugConfigurationModel implements Disposable {
 
     constructor(
         readonly provider: string,
+        readonly workspaceFolderUri: string | undefined,
         protected readonly resource: Resource
     ) {
         this.toDispose.push(resource);

@@ -47,13 +47,6 @@ export interface DebugService extends Disposable {
     debugTypes(): Promise<string[]>;
 
     /**
-     * Provides initial [debug configuration](#DebugConfiguration).
-     * @param debugType The registered debug type
-     * @returns An array of [debug configurations](#DebugConfiguration)
-     */
-    provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]>;
-
-    /**
      * Provides the schema attributes.
      * @param debugType The registered debug type
      * @returns An JSON Schema describing the configuration attributes for the given debug type
@@ -61,12 +54,19 @@ export interface DebugService extends Disposable {
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]>;
 
     /**
+     * Provides initial [debug configuration](#DebugConfiguration).
+     * @param debugType The registered debug type
+     * @returns An array of [debug configurations](#DebugConfiguration)
+     */
+    provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]>;
+
+    /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
      * or by adding/changing/removing attributes.
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
+    resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration>;
 
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).

@@ -17,12 +17,15 @@
 import * as React from 'react';
 import { injectable, inject, postConstruct } from 'inversify';
 import { Disposable } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
 import { ReactWidget } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugConsoleContribution } from '../console/debug-console-contribution';
 import { DebugConfigurationManager } from '../debug-configuration-manager';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugAction } from './debug-action';
 import { DebugViewModel } from './debug-view-model';
+import { DebugSessionOptions } from '../debug-session-options';
 
 @injectable()
 export class DebugConfigurationWidget extends ReactWidget {
@@ -38,6 +41,9 @@ export class DebugConfigurationWidget extends ReactWidget {
 
     @inject(DebugConsoleContribution)
     protected readonly debugConsole: DebugConsoleContribution;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
     protected init(): void {
@@ -63,14 +69,10 @@ export class DebugConfigurationWidget extends ReactWidget {
     protected setStepRef = (stepRef: DebugAction | null) => this.stepRef = stepRef || undefined;
 
     render(): React.ReactNode {
-        const { configurations, currentConfiguration } = this.manager;
-        const options = Array.from(configurations).map((configuration, index) =>
-            <option key={index} value={configuration.name}>{configuration.name}</option>
-        );
-        const currentOption = currentConfiguration && currentConfiguration.name || '__NO_CONF__';
+        const { options } = this;
         return <React.Fragment>
             <DebugAction run={this.start} label='Start Debugging' iconClass='start' ref={this.setStepRef} />
-            <select className='debug-configuration' value={currentOption} onChange={this.setCurrentConfiguration}>
+            <select className='debug-configuration' value={this.currentValue} onChange={this.setCurrentConfiguration}>
                 {options.length ? options : <option value='__NO_CONF__'>No Configurations</option>}
                 <option disabled>{'Add Configuration...'.replace(/./g, '-')}</option>
                 <option value='__ADD_CONF__'>Add Configuration...</option>
@@ -79,18 +81,40 @@ export class DebugConfigurationWidget extends ReactWidget {
             <DebugAction run={this.openConsole} label='Debug Console' iconClass='repl' />
         </React.Fragment>;
     }
+    protected get currentValue(): string {
+        const { current } = this.manager;
+        return current ? this.toValue(current) : '__NO_CONF__';
+    }
+    protected get options(): React.ReactNode[] {
+        return Array.from(this.manager.all).map((options, index) =>
+            <option key={index} value={this.toValue(options)}>{this.toName(options)}</option>
+        );
+    }
+    protected toValue({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
+        if (!workspaceFolderUri) {
+            return configuration.name;
+        }
+        return configuration.name + '__CONF__' + workspaceFolderUri;
+    }
+    protected toName({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
+        if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceOpened) {
+            return configuration.name;
+        }
+        return configuration.name + ' (' + new URI(workspaceFolderUri).path.base + ')';
+    }
 
     protected readonly setCurrentConfiguration = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.currentTarget.value;
         if (value === '__ADD_CONF__') {
             this.manager.addConfiguration();
         } else {
-            this.manager.currentConfiguration = this.manager.findConfiguration(value);
+            const [name, workspaceFolderUri] = value.split('__CONF__');
+            this.manager.current = this.manager.find(name, workspaceFolderUri);
         }
     }
 
     protected readonly start = () => {
-        const configuration = this.manager.currentConfiguration;
+        const configuration = this.manager.current;
         if (configuration) {
             this.sessionManager.start(configuration);
         } else {
