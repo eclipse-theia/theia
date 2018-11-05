@@ -21,6 +21,7 @@ import { LanguageServerContribution } from '@theia/languages/lib/node';
 import { JavaContribution } from './java-contribution';
 import { JavaCliContribution } from './java-cli-contribution';
 import { JavaExtensionContribution } from './java-extension-model';
+import { JavaExtensionContributionImpl } from './java-extension-contribution';
 
 export default new ContainerModule(bind => {
     bind(LanguageServerContribution).to(JavaContribution).inSingletonScope();
@@ -28,4 +29,5 @@ export default new ContainerModule(bind => {
     bind(CliContribution).toService(JavaCliContribution);
 
     bindContributionProvider(bind, JavaExtensionContribution);
+    bind(JavaExtensionContribution).to(JavaExtensionContributionImpl).inSingletonScope();
 });

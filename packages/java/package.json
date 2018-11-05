@@ -20,7 +20,7 @@
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "postinstall": "node ./scripts/download-jdt-ls.js",
+    "postinstall": "node ./scripts/download-jdt-ls.js && node ./scripts/download-java-dap.js",
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
