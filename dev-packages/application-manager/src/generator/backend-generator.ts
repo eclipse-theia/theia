@@ -56,7 +56,13 @@ function start(port, host, argv) {
     return cliManager.initializeCli(argv).then(function () {
         const application = container.get(BackendApplication);
         application.use(express.static(path.join(__dirname, '../../lib'), {
-            index: 'index.html'
+            index: 'index.html',
+            maxAge: '1d',
+            setHeaders: function(res, path) {
+                if (express.static.mime.lookup(path) === 'text/html') {
+                    res.setHeader('Cache-Control', 'public, max-age=0')
+                }
+            }
         }));
         return application.start(port, host);
     });
