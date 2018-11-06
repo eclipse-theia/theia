@@ -14,11 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+
 import debounce = require('p-debounce');
+import { visit } from 'jsonc-parser';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter, ResourceProvider } from '@theia/core';
-import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { QuickPickService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugService } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
@@ -32,8 +40,8 @@ export class DebugConfigurationManager {
     protected readonly resourceProvider: ResourceProvider;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
     @inject(DebugService)
     protected readonly debug: DebugService;
     @inject(QuickPickService)
@@ -141,30 +149,47 @@ export class DebugConfigurationManager {
         if (!model) {
             return;
         }
-        const debugType = await this.selectDebugType();
-        if (!debugType) {
+        const widget = await this.doOpen(model);
+        if (!(widget.editor instanceof MonacoEditor)) {
             return;
         }
-        const { workspaceFolderUri } = model;
-        const newDebugConfiguration = await this.selectDebugConfiguration(debugType, workspaceFolderUri);
-        if (!newDebugConfiguration) {
-            return;
-        }
-        await model.addConfiguration(newDebugConfiguration);
-        this.current = {
-            configuration: newDebugConfiguration,
-            workspaceFolderUri
-        };
-        await this.doOpen(model);
-    }
-    protected async doOpen(model: DebugConfigurationModel): Promise<void> {
-        if (!model.exists) {
-            await model.save();
-        }
-        await open(this.openerService, model.uri, {
-            mode: 'activate'
+        const editor = widget.editor.getControl();
+        const { commandService } = widget.editor;
+        let position: monaco.Position | undefined;
+        let depthInArray = 0;
+        let lastProperty = '';
+        visit(editor.getValue(), {
+            onObjectProperty: property => {
+                lastProperty = property;
+            },
+            onArrayBegin: offset => {
+                if (lastProperty === 'configurations' && depthInArray === 0) {
+                    position = editor.getModel().getPositionAt(offset + 1);
+                }
+                depthInArray++;
+            },
+            onArrayEnd: () => {
+                depthInArray--;
+            }
         });
+        if (!position) {
+            return;
+        }
+        // Check if there are more characters on a line after a "configurations": [, if yes enter a newline
+        if (editor.getModel().getLineLastNonWhitespaceColumn(position.lineNumber) > position.column) {
+            editor.setPosition(position);
+            editor.trigger('debug', 'lineBreakInsert', undefined);
+        }
+        // Check if there is already an empty line to insert suggest, if yes just place the cursor
+        if (editor.getModel().getLineLastNonWhitespaceColumn(position.lineNumber + 1) === 0) {
+            editor.setPosition({ lineNumber: position.lineNumber + 1, column: 1 << 30 });
+            await commandService.executeCommand('editor.action.deleteLines');
+        }
+        editor.setPosition(position);
+        await commandService.executeCommand('editor.action.insertLineAfter');
+        await commandService.executeCommand('editor.action.triggerSuggest');
     }
+
     protected get model(): DebugConfigurationModel | undefined {
         for (const model of this.models.values()) {
             if (model.exists) {
@@ -179,17 +204,42 @@ export class DebugConfigurationManager {
         return this.models.values().next().value;
     }
 
-    protected async selectDebugType(): Promise<string | undefined> {
-        const debugTypes = await this.debug.debugTypes();
-        return this.quickPick.show(debugTypes, { placeholder: 'Select Debug Type' });
+    protected async doOpen(model: DebugConfigurationModel): Promise<EditorWidget> {
+        if (!model.exists) {
+            await this.doCreate(model);
+        }
+        return this.editorManager.open(model.uri, {
+            mode: 'activate'
+        });
+    }
+    protected async doCreate(model: DebugConfigurationModel): Promise<void> {
+        const debugType = await this.selectDebugType();
+        const configurations = debugType ? await this.debug.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
+        const content = this.getInitialConfigurationContent(configurations);
+        await model.save(content);
     }
 
-    protected async selectDebugConfiguration(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {
-        const configurations = await this.debug.provideDebugConfigurations(debugType, workspaceFolderUri);
-        return this.quickPick.show(configurations.map(value => ({
-            label: value.name,
-            value
-        }), { placeholder: 'Select Debug Configuration' }));
+    protected getInitialConfigurationContent(initialConfigurations: DebugConfiguration[]): string {
+        return `{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  "version": "0.2.0",
+  "configurations": ${JSON.stringify(initialConfigurations, undefined, '  ').split('\n').map(line => '  ' + line).join('\n').trim()}
+}
+`;
+    }
+
+    protected async selectDebugType(): Promise<string | undefined> {
+        const widget = this.editorManager.currentEditor;
+        if (!widget) {
+            return undefined;
+        }
+        const { languageId } = widget.editor.document;
+        const debuggers = await this.debug.getDebuggersForLanguage(languageId);
+        return this.quickPick.show(debuggers.map(
+            ({ label, type }) => ({ label, value: type }),
+            { placeholder: 'Select Environment' })
+        );
     }
 
 }

@@ -101,16 +101,9 @@ export class DebugConfigurationModel implements Disposable {
     get exists(): boolean {
         return this.content !== undefined;
     }
-    async save(): Promise<void> {
-        const oldContent = this.content || '';
-        const edits = jsoncparser.modify(oldContent, [], this.json, { formattingOptions: {} });
-        const content = jsoncparser.applyEdits(oldContent, edits);
-        this.content = content;
+    async save(content: string): Promise<void> {
         await Resource.save(this.resource, { content });
-    }
-    async addConfiguration(configuration: DebugConfiguration): Promise<void> {
-        this.json.configurations.unshift(configuration);
-        await this.save();
+        this.reconcile();
     }
 }
 export namespace DebugConfigurationModel {
