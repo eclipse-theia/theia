@@ -67,7 +67,7 @@ export class GitCommitDetailWidget extends GitDiffWidget {
         const mail = <div className='mail header-value noWrapInfo'>{`<${authorEMail}>`}</div>;
         const authorRow = <div className='header-row noWrapInfo'><div className='theia-header'>author: </div>{author}</div>;
         const mailRow = <div className='header-row noWrapInfo'><div className='theia-header'>e-mail: </div>{mail}</div>;
-        const authorDate = this.commitDetailOptions.authorDate;
+        const authorDate = new Date(this.commitDetailOptions.authorDate);
         const dateStr = authorDate.toLocaleDateString('en', {
             month: 'short',
             day: 'numeric',

@@ -111,7 +111,7 @@ export enum CommitPlaceholders {
     SHORT_HASH = '%h',
     AUTHOR_EMAIL = '%aE',
     AUTHOR_NAME = '%aN',
-    AUTHOR_DATE = '%ad',
+    AUTHOR_DATE = '%aI',
     AUTHOR_RELATIVE_DATE = '%ar',
     SUBJECT = '%s',
     BODY = '%b'
@@ -141,14 +141,11 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
         const chunks = this.split(input, delimiter);
         const changes: CommitWithChanges[] = [];
         for (const chunk of chunks) {
-            const [sha, email, name, timeAsString, authorDateRelative, summary, body, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
-            const timestamp = parseInt(timeAsString, 10);
+            const [sha, email, name, timestamp, authorDateRelative, summary, body, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
             const fileChanges = this.nameStatusParser.parse(repositoryUri, (rawChanges || '').trim());
             changes.push({
                 sha,
-                author: {
-                    timestamp, email, name
-                },
+                author: { timestamp, email, name },
                 authorDateRelative,
                 summary,
                 body,
@@ -203,7 +200,6 @@ export class GitBlameParser {
                         name: entry.author,
                         email: entry.authorMail,
                         timestamp: entry.authorTime,
-                        tzOffset: entry.authorTz,
                     },
                     summary: entry.summary,
                     body: await commitBody(sha)
@@ -234,7 +230,7 @@ export namespace GitBlameParser {
         lineCount?: number,
         author?: string,
         authorMail?: string,
-        authorTime?: number,
+        authorTime?: string,
         /**
          * Timezone offset, e.g. UTC/GMT+2 === 200
          */
@@ -264,7 +260,9 @@ export namespace GitBlameParser {
             const matches = rest.match(/(<(.*)>)/);
             entry.authorMail = matches ? matches[2] : rest;
         } else if (firstPart === 'author-time') {
-            entry.authorTime = parseInt(parts[1], 10) * 1000;
+            const rest = parts.slice(1).join(' ');
+            const matches = rest.match(/(<(.*)>)/);
+            entry.authorTime = matches ? matches[2] : rest;
         } else if (firstPart === 'author-tz') {
             entry.authorTz = parseInt(parts[1], 10);
         } else if (firstPart === 'summary') {
@@ -723,10 +721,9 @@ export class DugiteGit implements Git {
 
     private async mapCommitIdentity(toMap: DugiteCommitIdentity): Promise<CommitIdentity> {
         return {
-            timestamp: toMap.date.getTime(),
+            timestamp: toMap.date.toISOString(),
             email: toMap.email,
             name: toMap.name,
-            tzOffset: toMap.tzOffset
         };
     }
 
