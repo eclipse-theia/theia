@@ -273,9 +273,9 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         if (e instanceof ResponseError) {
             const capturedStack = capturedError.stack || '';
             if (e.data && e.data.kind === 'application') {
-                const { stack, data } = e.data;
+                const { stack, data, message } = e.data;
                 return ApplicationError.fromJson(e.code, {
-                    message: capturedError.message,
+                    message: message || capturedError.message,
                     data,
                     stack: `${capturedStack}\nCaused by: ${stack}`
                 });

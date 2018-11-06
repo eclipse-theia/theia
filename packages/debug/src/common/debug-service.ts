@@ -17,6 +17,7 @@
 // tslint:disable:no-any
 
 import { Disposable } from '@theia/core';
+import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebugConfiguration } from './debug-configuration';
 
@@ -99,3 +100,10 @@ export interface DebugService extends Disposable {
  * The endpoint path to the debug adapter session.
  */
 export const DebugAdapterPath = '/services/debug-adapter';
+
+export namespace DebugError {
+    export const NotFound = ApplicationError.declare(-41000, (type: string) => ({
+        message: `'${type}' debugger type is not supported.`,
+        data: { type }
+    }));
+}

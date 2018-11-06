@@ -17,10 +17,10 @@
 // tslint:disable:no-any
 
 import { injectable, inject, named, postConstruct } from 'inversify';
-import { Emitter, Event, ContributionProvider, DisposableCollection } from '@theia/core';
+import { Emitter, Event, ContributionProvider, DisposableCollection, MessageService } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { DebugService } from '../common/debug-service';
+import { DebugService, DebugError } from '../common/debug-service';
 import { DebugState, DebugSession } from './debug-session';
 import { DebugSessionContribution, DebugSessionFactory } from './debug-session-contribution';
 import { DebugThread } from './model/debug-thread';
@@ -94,6 +94,9 @@ export class DebugSessionManager {
     @inject(VariableResolverService)
     protected readonly variableResolver: VariableResolverService;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     @postConstruct()
     protected init(): void {
         for (const contrib of this.contributions.getContributions()) {
@@ -103,9 +106,16 @@ export class DebugSessionManager {
     }
 
     async start(options: DebugSessionOptions): Promise<DebugSession> {
-        const resovled = await this.resolveConfiguration(options);
-        const sessionId = await this.debugService.create(resovled.configuration);
-        return this.doStart(sessionId, resovled);
+        try {
+            const resolved = await this.resolveConfiguration(options);
+            const sessionId = await this.debugService.create(resolved.configuration);
+            return this.doStart(sessionId, resolved);
+        } catch (e) {
+            if (DebugError.NotFound.is(e)) {
+                this.messageService.error(e.message);
+            }
+            throw e;
+        }
     }
     protected configurationIds = new Map<string, number>();
     protected async resolveConfiguration(options: Readonly<DebugSessionOptions>): Promise<InternalDebugSessionOptions> {
