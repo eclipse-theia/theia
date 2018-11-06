@@ -46,8 +46,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
     private _roots: FileStat[] = [];
     private deferredRoots = new Deferred<FileStat[]>();
 
-    private hasWorkspace: boolean = false;
-
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
@@ -191,17 +189,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
      */
     onStop(app: FrontendApplication): void {
         this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.uri : '');
-    }
-
-    async onStart() {
-        const allWorkspace = await this.recentWorkspaces();
-        if (allWorkspace.length > 0) {
-            this.hasWorkspace = true;
-        }
-    }
-
-    get hasHistory(): boolean {
-        return this.hasWorkspace;
     }
 
     async recentWorkspaces(): Promise<string[]> {
