@@ -18,3 +18,4 @@ examples/*/webpack.config.js
 package-backup.json
 .history
 .Trash-*
+packages/plugin/typedoc

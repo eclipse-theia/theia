@@ -2,5 +2,6 @@
   "ignoreCompilerErrors": true,
   "mode": "file",
   "out": "docs/api",
-  "excludeExternals": true
+  "excludeExternals": true,
+  "includeDeclarations": true
 }
