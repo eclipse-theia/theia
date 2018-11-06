@@ -327,14 +327,9 @@ export interface CommitIdentity {
     readonly email: string;
 
     /**
-     * The date of the commit.
+     * The date of the commit in ISO format.
      */
-    readonly timestamp: number;
-
-    /**
-     * The time-zone offset.
-     */
-    readonly tzOffset?: number;
+    readonly timestamp: string;
 
 }
 

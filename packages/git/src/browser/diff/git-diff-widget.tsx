@@ -32,7 +32,7 @@ export const GIT_DIFF = 'git-diff';
 @injectable()
 export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
 
-    protected fileChangeNodes: GitFileChangeNode[];
+    protected fileChangeNodes: GitFileChangeNode[] = [];
     protected options: Git.Options.Diff;
 
     protected gitStatus?: WorkingDirectoryStatus;
