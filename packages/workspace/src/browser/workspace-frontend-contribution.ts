@@ -63,9 +63,12 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             isEnabled: () => this.workspaceService.opened,
             execute: () => this.closeWorkspace()
         });
-        commands.registerCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE, {
-            isEnabled: () => this.workspaceService.hasHistory,
-            execute: () => this.quickOpenWorkspace.select()
+        this.workspaceService.recentWorkspaces().then(({ length }) => {
+            if (!length) {
+                commands.registerCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE, {
+                    execute: () => this.quickOpenWorkspace.select()
+                });
+            }
         });
         commands.registerCommand(WorkspaceCommands.SAVE_WORKSPACE_AS, {
             isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
