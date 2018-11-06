@@ -26,7 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter, ResourceProvider } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { QuickPickService } from '@theia/core/lib/browser';
+import { QuickPickService, StorageService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugService } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
@@ -50,9 +50,10 @@ export class DebugConfigurationManager {
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
+    protected initialized: Promise<void>;
     @postConstruct()
     protected async init(): Promise<void> {
-        this.updateModels();
+        this.initialized = this.updateModels();
         this.workspaceService.onWorkspaceChanged(() => this.updateModels());
     }
 
@@ -69,6 +70,7 @@ export class DebugConfigurationManager {
                 if (!this.models.has(key)) {
                     const resource = await this.resourceProvider(uri);
                     const model = new DebugConfigurationModel(provider, rootStat.uri, resource);
+                    await model.reconcile();
                     model.onDidChange(() => this.updateCurrent());
                     model.onDispose(() => this.models.delete(key));
                     this.models.set(key, model);
@@ -242,4 +244,35 @@ export class DebugConfigurationManager {
         );
     }
 
+    @inject(StorageService)
+    protected readonly storage: StorageService;
+
+    async load(): Promise<void> {
+        await this.initialized;
+        const data = await this.storage.getData<DebugConfigurationManager.Data>('debug.configurations', {});
+        if (data.current) {
+            this.current = this.find(data.current.name, data.current.workspaceFolderUri);
+        }
+    }
+
+    save(): void {
+        const data: DebugConfigurationManager.Data = {};
+        const { current } = this;
+        if (current) {
+            data.current = {
+                name: current.configuration.name,
+                workspaceFolderUri: current.workspaceFolderUri
+            };
+        }
+        this.storage.setData('debug.configurations', data);
+    }
+
+}
+export namespace DebugConfigurationManager {
+    export interface Data {
+        current?: {
+            name: string
+            workspaceFolderUri?: string
+        }
+    }
 }
