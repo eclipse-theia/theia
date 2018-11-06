@@ -59,7 +59,7 @@ export class DebugConfigurationModel implements Disposable {
         return this.json.configurations;
     }
 
-    protected async reconcile(): Promise<void> {
+    async reconcile(): Promise<void> {
         this.content = await this.readContents();
         this.json = this.parseConfigurations();
         this.onDidChangeEmitter.fire(undefined);
