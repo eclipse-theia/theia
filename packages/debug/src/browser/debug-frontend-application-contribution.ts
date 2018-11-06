@@ -360,6 +360,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     items.oneOf!.push(attribute);
                 }
             }
+            items.defaultSnippets!.push(...await this.debugService.getConfigurationSnippets());
             this.inmemoryResources.add(launchSchemaUrl, JSON.stringify(schema));
             this.jsonSchemaStore.registerSchema({
                 fileMatch: ['launch.json'],

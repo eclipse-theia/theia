@@ -17,9 +17,9 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { injectable, unmanaged } from 'inversify';
-import { DebugAdapterContribution, DebugAdapterExecutable } from '@theia/debug/lib/node/debug-model';
+import { DebugAdapterContribution, DebugAdapterExecutable } from '../debug-model';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 
 namespace nls {
     export function localize(key: string, _default: string) {
@@ -41,7 +41,7 @@ export interface VSCodePlatformSpecificAdapterContribution {
 }
 export interface VSCodeDebuggerContribution extends VSCodePlatformSpecificAdapterContribution {
     type: string
-    configurationSnippets?: {}[]
+    configurationSnippets?: IJSONSchemaSnippet[]
     configurationAttributes?: {
         [request: string]: IJSONSchema
     }
@@ -181,6 +181,11 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
 
             return attributes;
         });
+    }
+
+    async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
+        const debuggerContribution = await this.debuggerContribution;
+        return debuggerContribution.configurationSnippets || [];
     }
 
     async provideDebugAdapterExecutable(): Promise<DebugAdapterExecutable> {
