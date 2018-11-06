@@ -100,6 +100,21 @@ export class DebugConfigurationManager {
         }
     }
 
+    get supported(): Promise<IterableIterator<DebugSessionOptions>> {
+        return this.getSupported();
+    }
+    protected async getSupported(): Promise<IterableIterator<DebugSessionOptions>> {
+        const [, debugTypes] = await Promise.all([await this.initialized, this.debug.debugTypes()]);
+        return this.doGetSupported(new Set(debugTypes));
+    }
+    protected *doGetSupported(debugTypes: Set<string>): IterableIterator<DebugSessionOptions> {
+        for (const options of this.getAll()) {
+            if (debugTypes.has(options.configuration.type)) {
+                yield options;
+            }
+        }
+    }
+
     protected _currentOptions: DebugSessionOptions | undefined;
     get current(): DebugSessionOptions | undefined {
         return this._currentOptions;

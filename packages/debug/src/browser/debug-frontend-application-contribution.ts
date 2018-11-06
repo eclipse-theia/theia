@@ -275,7 +275,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     protected readonly manager: DebugSessionManager;
 
     @inject(DebugConfigurationManager)
-    protected readonly confiugurations: DebugConfigurationManager;
+    protected readonly configurations: DebugConfigurationManager;
 
     @inject(BreakpointManager)
     protected readonly breakpointManager: BreakpointManager;
@@ -297,7 +297,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             widgetId: DebugWidget.ID,
             widgetName: DebugWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'left'
+                area: 'left',
+                rank: 400
             },
             toggleCommandId: 'debug:toggle',
             toggleKeybinding: 'ctrlcmd+shift+d'
@@ -305,7 +306,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async initializeLayout(): Promise<void> {
-        await this.openView();
+        ((async () => {
+            const supported = await this.configurations.supported;
+            if (supported.next().value) {
+                await this.openView();
+            }
+        })());
     }
 
     protected firstSessionStart = true;
@@ -367,14 +373,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 url: launchSchemaUrl.toString()
             });
         });
-        await Promise.all([
-            this.confiugurations.load(),
-            this.breakpointManager.load()
-        ]);
+        this.configurations.load();
+        await this.breakpointManager.load();
     }
 
     onStop(): void {
-        this.confiugurations.save();
+        this.configurations.save();
         this.breakpointManager.save();
     }
 
@@ -487,10 +491,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
 
         registry.registerCommand(DebugCommands.OPEN_CONFIGURATIONS, {
-            execute: () => this.confiugurations.openConfiguration()
+            execute: () => this.configurations.openConfiguration()
         });
         registry.registerCommand(DebugCommands.ADD_CONFIGURATION, {
-            execute: () => this.confiugurations.addConfiguration()
+            execute: () => this.configurations.addConfiguration()
         });
 
         registry.registerCommand(DebugCommands.STEP_OVER, {
@@ -783,7 +787,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async start(noDebug?: boolean): Promise<void> {
-        let { current } = this.confiugurations;
+        let { current } = this.configurations;
         if (current) {
             if (noDebug !== undefined) {
                 current = {
