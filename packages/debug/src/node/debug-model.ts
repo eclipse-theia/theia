@@ -106,7 +106,11 @@ export interface DebugAdapterContribution {
     /**
      * The debug type. Should be a unique value among all debug adapters.
      */
-    readonly debugType: string;
+    readonly type: string;
+
+    readonly label?: MaybePromise<string | undefined>;
+
+    readonly languages?: MaybePromise<string[] | undefined>;
 
     /**
      * The [debug adapter session](#DebugAdapterSession) factory.
@@ -122,7 +126,7 @@ export interface DebugAdapterContribution {
      */
     getSchemaAttributes?(): MaybePromise<IJSONSchema[]>;
 
-    getConfigurationSnippets?(): Promise<IJSONSchemaSnippet[]>;
+    getConfigurationSnippets?(): MaybePromise<IJSONSchemaSnippet[]>;
 
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)

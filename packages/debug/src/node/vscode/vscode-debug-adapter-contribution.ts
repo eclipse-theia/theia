@@ -41,6 +41,8 @@ export interface VSCodePlatformSpecificAdapterContribution {
 }
 export interface VSCodeDebuggerContribution extends VSCodePlatformSpecificAdapterContribution {
     type: string
+    label?: string
+    languages?: string[]
     configurationSnippets?: IJSONSchemaSnippet[]
     configurationAttributes?: {
         [request: string]: IJSONSchema
@@ -72,12 +74,16 @@ export namespace VSCodeDebuggerContribution {
 export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAdapterContribution {
 
     protected readonly debuggerContribution: Promise<VSCodeDebuggerContribution>;
+    readonly label: Promise<string | undefined>;
+    readonly languages: Promise<string[] | undefined>;
 
     constructor(
-        @unmanaged() readonly debugType: string,
+        @unmanaged() readonly type: string,
         @unmanaged() readonly extensionPath: string
     ) {
         this.debuggerContribution = this.parse();
+        this.label = this.debuggerContribution.then(({ label }) => label);
+        this.languages = this.debuggerContribution.then(({ languages }) => languages);
     }
     protected async parse(): Promise<VSCodeDebuggerContribution> {
         const nlsMap = require(path.join(this.extensionPath, 'package.nls.json'));
@@ -92,9 +98,9 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
                 debuggers: VSCodeDebuggerContribution[]
             }
         } = JSON.parse(text);
-        const debuggerContribution = pck.contributes.debuggers.find(d => d.type === this.debugType);
+        const debuggerContribution = pck.contributes.debuggers.find(d => d.type === this.type);
         if (!debuggerContribution) {
-            throw new Error(`Debugger contribution for '${this.debugType}' type is not found in ${pckPath}`);
+            throw new Error(`Debugger contribution for '${this.type}' type is not found in ${pckPath}`);
         }
         return debuggerContribution;
     }
@@ -117,7 +123,7 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
             }
             const properties = attributes.properties;
             properties['type'] = {
-                enum: [this.debugType],
+                enum: [this.type],
                 description: nls.localize('debugType', 'Type of configuration.'),
                 pattern: '^(?!node2)',
                 errorMessage: nls.localize('debugTypeNotRecognised',

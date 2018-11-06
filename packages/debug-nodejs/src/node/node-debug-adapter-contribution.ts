@@ -38,7 +38,7 @@ export class NodeDebugAdapterContribution extends AbstractVSCodeDebugAdapterCont
     // TODO: construct based on package.json of the given workspace
     provideDebugConfigurations(workspaceFolderUri?: string): DebugConfiguration[] {
         return [{
-            type: this.debugType,
+            type: this.type,
             request: 'attach',
             name: 'Debug (Attach)',
             processId: ''

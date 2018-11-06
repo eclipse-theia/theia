@@ -17,7 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '@theia/core';
 import { DebugConfiguration } from '../common/debug-configuration';
-import { DebugService, DebugAdapterPath } from '../common/debug-service';
+import { DebugService, DebugAdapterPath, DebuggerDescription } from '../common/debug-service';
 
 import { UUID } from '@phosphor/coreutils';
 import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
@@ -32,6 +32,13 @@ export class DebugAdapterContributionRegistry {
 
     @inject(ContributionProvider) @named(DebugAdapterContribution)
     protected readonly contributions: ContributionProvider<DebugAdapterContribution>;
+    protected *getContributions(debugType: string): IterableIterator<DebugAdapterContribution> {
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.type === debugType || contribution.type === '*' || debugType === '*') {
+                yield contribution;
+            }
+        }
+    }
 
     /**
      * Finds and returns an array of registered debug types.
@@ -42,18 +49,27 @@ export class DebugAdapterContributionRegistry {
         if (!this._debugTypes) {
             const result = new Set<string>();
             for (const contribution of this.contributions.getContributions()) {
-                result.add(contribution.debugType);
+                result.add(contribution.type);
             }
             this._debugTypes = [...result];
         }
         return this._debugTypes;
     }
-    protected *getContributions(debugType: string): IterableIterator<DebugAdapterContribution> {
+
+    async getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]> {
+        const debuggers: DebuggerDescription[] = [];
         for (const contribution of this.contributions.getContributions()) {
-            if (contribution.debugType === debugType || contribution.debugType === '*' || debugType === '*') {
-                yield contribution;
+            if (contribution.languages && contribution.label) {
+                const label = await contribution.label;
+                if (label && (await contribution.languages || []).indexOf(language) !== -1) {
+                    debuggers.push({
+                        type: contribution.type,
+                        label
+                    });
+                }
             }
         }
+        return debuggers;
     }
 
     /**
@@ -259,6 +275,11 @@ export class DebugServiceImpl implements DebugService, MessagingService.Contribu
     async debugTypes(): Promise<string[]> {
         return this.registry.debugTypes();
     }
+
+    getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]> {
+        return this.registry.getDebuggersForLanguage(language);
+    }
+
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
         return this.registry.getSchemaAttributes(debugType);
     }
