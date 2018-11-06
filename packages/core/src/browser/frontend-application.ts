@@ -215,9 +215,11 @@ export class FrontendApplication {
      * method in order to create an application-specific custom layout.
      */
     protected async createDefaultLayout(): Promise<void> {
-        for (const initializer of this.contributions.getContributions()) {
-            if (initializer.initializeLayout) {
-                await initializer.initializeLayout(this);
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.initializeLayout) {
+                await this.measure(contribution.constructor.name + '.initializeLayout',
+                    () => contribution.initializeLayout!(this)
+                );
             }
         }
     }
@@ -247,7 +249,9 @@ export class FrontendApplication {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStart) {
                 try {
-                    await contribution.onStart(this);
+                    await this.measure(contribution.constructor.name + '.onStart',
+                        () => contribution.onStart!(this)
+                    );
                 } catch (error) {
                     this.logger.error('Could not start contribution', error);
                 }
@@ -268,6 +272,24 @@ export class FrontendApplication {
                 }
             }
         }
+    }
+
+    protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
+        const startMark = name + '-start';
+        const endMark = name + '-end';
+        performance.mark(startMark);
+        const result = await fn();
+        performance.mark(endMark);
+        performance.measure(name, startMark, endMark);
+        for (const item of performance.getEntriesByName(name)) {
+            if (item.duration > 100) {
+                console.warn(item.name + ' is slow, took: ' + item.duration + ' ms');
+            } else {
+                console.debug(item.name + ' took ' + item.duration + ' ms');
+            }
+        }
+        performance.clearMeasures(name);
+        return result;
     }
 
 }
