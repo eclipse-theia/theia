@@ -367,10 +367,14 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 url: launchSchemaUrl.toString()
             });
         });
-        await this.breakpointManager.load();
+        await Promise.all([
+            this.confiugurations.load(),
+            this.breakpointManager.load()
+        ]);
     }
 
     onStop(): void {
+        this.confiugurations.save();
         this.breakpointManager.save();
     }
 
