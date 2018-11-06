@@ -26,7 +26,7 @@ import * as stream from 'stream';
 import { Disposable, MaybePromise } from '@theia/core';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { DebugConfiguration } from '../common/debug-configuration';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 
 // FXIME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
@@ -121,6 +121,8 @@ export interface DebugAdapterContribution {
      * @returns The contributed configuration schema for this debug type.
      */
     getSchemaAttributes?(): MaybePromise<IJSONSchema[]>;
+
+    getConfigurationSnippets?(): Promise<IJSONSchemaSnippet[]>;
 
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)
