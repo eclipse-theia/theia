@@ -42,8 +42,9 @@ export const APPLY_WORKSPACE_EDIT: Command = {
  * Organize Imports
  */
 export const JAVA_ORGANIZE_IMPORTS: Command = {
-    label: 'Java: Organize Imports',
-    id: 'java.edit.organizeImports'
+    id: 'java.edit.organizeImports',
+    category: 'Java',
+    label: 'Organize Imports',
 };
 
 @injectable()
@@ -82,7 +83,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                     ]
                 });
                 if (WorkspaceEdit.is(result) && this.workspace.applyEdit) {
-                    return await this.workspace.applyEdit(result);
+                    return this.workspace.applyEdit(result);
                 } else {
                     return false;
                 }

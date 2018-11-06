@@ -33,7 +33,8 @@ import { GitRepositoryProvider } from '../git-repository-provider';
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
         id: 'git-diff:open-file-diff',
-        label: 'Diff: Compare With...'
+        category: 'Git Diff',
+        label: 'Compare With...'
     };
 }
 

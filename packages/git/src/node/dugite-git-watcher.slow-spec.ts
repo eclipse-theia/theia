@@ -85,7 +85,7 @@ describe('git-watcher-slow', () => {
         watchers.push(await watcher!.watchGitChanges(repository!));
         await sleep(6000);
 
-        watchers.forEach(async watcherId => await watcher!.unwatchGitChanges(watcherId));
+        watchers.forEach(async watcherId => watcher!.unwatchGitChanges(watcherId));
         expect(events.length).to.be.equal(1, JSON.stringify(events));
         expect(events[0].status.changes.length).to.be.equal(1, JSON.stringify(events));
         expect(events[0].status.changes[0].uri.toString().endsWith('A.txt')).to.be.true;

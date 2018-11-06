@@ -31,6 +31,7 @@ import * as fuzzy from 'fuzzy';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
+    category: 'File',
     label: 'Open File...'
 };
 
@@ -187,9 +188,13 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             if (mode !== QuickOpenMode.OPEN) {
                 return false;
             }
-            this.openerService.getOpener(uri).then(opener => opener.open(uri));
+            this.openFile(uri);
             return true;
         };
+    }
+
+    openFile(uri: URI) {
+        this.openerService.getOpener(uri).then(opener => opener.open(uri));
     }
 
     private async toItem(uriOrString: URI | string, group?: string) {

@@ -25,7 +25,7 @@ import {
     SelectionService
 } from '@theia/core/lib/common';
 import {
-    CommonMenus, ApplicationShell, KeybindingContribution, KeyCode, Key,
+    ApplicationShell, KeybindingContribution, KeyCode, Key,
     KeyModifier, KeybindingRegistry
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -36,20 +36,30 @@ import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
+import { MAIN_MENU_BAR } from '@theia/core';
 
-const NAVIGATOR_CONTEXT_MENU_NEW = ['navigator-context-menu', '4_new'];
+export namespace TerminalMenus {
+    export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
+    export const TERMINAL_NEW = [...TERMINAL, '1_terminal'];
+    export const TERMINAL_TASKS = [...TERMINAL, '2_terminal'];
+    export const TERMINAL_NAVIGATOR_CONTEXT_MENU = ['navigator-context-menu', '4_new'];
+}
 
 export namespace TerminalCommands {
+    const TERMINAL_CATEGORY = 'Terminal';
     export const NEW: Command = {
         id: 'terminal:new',
+        category: TERMINAL_CATEGORY,
         label: 'Open New Terminal'
     };
     export const TERMINAL_CLEAR: Command = {
         id: 'terminal:clear',
-        label: 'Terminal: Clear'
+        category: TERMINAL_CATEGORY,
+        label: 'Clear Terminal'
     };
     export const TERMINAL_CONTEXT: Command = {
         id: 'terminal:context',
+        category: TERMINAL_CATEGORY,
         label: 'Open in Terminal'
     };
 }
@@ -101,10 +111,13 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.FILE_NEW, {
-            commandId: TerminalCommands.NEW.id
+        menus.registerSubmenu(TerminalMenus.TERMINAL, 'Terminal');
+        menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
+            commandId: TerminalCommands.NEW.id,
+            label: 'New Terminal',
+            order: '0'
         });
-        menus.registerMenuAction(NAVIGATOR_CONTEXT_MENU_NEW, {
+        menus.registerMenuAction(TerminalMenus.TERMINAL_NAVIGATOR_CONTEXT_MENU, {
             commandId: TerminalCommands.TERMINAL_CONTEXT.id
         });
     }

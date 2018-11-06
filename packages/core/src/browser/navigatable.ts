@@ -20,7 +20,7 @@ import { Widget, BaseWidget } from './widgets';
 import { WidgetOpenHandler, WidgetOpenerOptions } from './widget-open-handler';
 
 /**
- * `Navigatable` provides an access to an URI of an underyling instance of `Resource`.
+ * `Navigatable` provides an access to an URI of an underlying instance of `Resource`.
  */
 export interface Navigatable {
     /**
@@ -72,6 +72,7 @@ export interface NavigatableWidgetOptions {
 }
 export namespace NavigatableWidgetOptions {
     export function is(arg: Object | undefined): arg is NavigatableWidgetOptions {
+        // tslint:disable-next-line:no-any
         return !!arg && 'kind' in arg && (arg as any).kind === 'navigatable';
     }
 }

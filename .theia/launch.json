@@ -20,7 +20,8 @@
       "sourceMaps": true,
       "smartStep": true,
       "outputCapture": "std",
-      "internalConsoleOptions": "openOnSessionStart"
+      "internalConsoleOptions": "openOnSessionStart",
+      "openDebug": "openOnDebugBreak"
     }
   ]
 }

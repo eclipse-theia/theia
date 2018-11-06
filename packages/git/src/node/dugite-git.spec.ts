@@ -394,7 +394,7 @@ describe('git', async function () {
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
 
-            const writeContentLines = async (lines: string[]) => await fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
+            const writeContentLines = async (lines: string[]) => fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
             const addAndCommit = async (message: string) => {
                 await git.exec(repository, ['add', '.']);
                 await git.exec(repository, ['commit', '-m', `${message}`]);
@@ -433,7 +433,7 @@ describe('git', async function () {
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
 
-            const writeContentLines = async (lines: string[]) => await fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
+            const writeContentLines = async (lines: string[]) => fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
             const add = async () => {
                 await git.exec(repository, ['add', '.']);
             };
@@ -464,7 +464,7 @@ describe('git', async function () {
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
 
-            const writeContentLines = async (lines: string[]) => await fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
+            const writeContentLines = async (lines: string[]) => fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
             const addAndCommit = async (message: string) => {
                 await git.exec(repository, ['add', '.']);
                 await git.exec(repository, ['commit', '-m', `${message}`]);
@@ -510,7 +510,7 @@ describe('git', async function () {
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
 
-            const writeContentLines = async (lines: string[]) => await fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
+            const writeContentLines = async (lines: string[]) => fs.writeFile(filePath, lines.join('\n'), { encoding: 'utf8' });
             const addAndCommit = async (message: string) => {
                 await git.exec(repository, ['add', '.']);
                 await git.exec(repository, ['commit', '-m', `${message}`]);
@@ -754,7 +754,7 @@ describe('git', async function () {
             const message = `${expectation ? '' : 'not '}exist`;
             it(`errorUnmatched - ${relativePath} should ${message}`, async () => {
                 const uri = relativePath.startsWith('.') ? relativePath : FileUri.create(path.join(root, relativePath)).toString();
-                const testMe = async () => await git.lsFiles({ localUri }, uri, { errorUnmatch: true });
+                const testMe = async () => git.lsFiles({ localUri }, uri, { errorUnmatch: true });
                 expect(await testMe()).to.be.equal(expectation);
             });
         });

@@ -17,31 +17,25 @@
 import { inject, injectable, named } from 'inversify';
 import { ILogger, ContributionProvider } from '@theia/core/lib/common';
 import { QuickOpenTask } from './quick-open-task';
-import { MAIN_MENU_BAR, CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
+import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { FrontendApplication, FrontendApplicationContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TaskService } from './task-service';
+import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 
 export namespace TaskCommands {
-    // Task menu
-    export const TASK_MENU = [...MAIN_MENU_BAR, '3_task'];
-    export const TASK_MENU_RUN = [...TASK_MENU, '1_run'];
-    export const TASK_MENU_LABEL = 'Task';
-
-    // run task group
-    export const TASK = [...MAIN_MENU_BAR, '3_task'];
-    export const RUN_GROUP = [...TASK, '1_run'];
-
-    // run task command
+    const TASK_CATEGORY = 'Task';
     export const TASK_RUN: Command = {
         id: 'task:run',
-        label: 'Tasks: Run...'
+        category: TASK_CATEGORY,
+        label: 'Run Task...'
     };
 
     export const TASK_ATTACH: Command = {
         id: 'task:attach',
-        label: 'Tasks: Attach...'
+        category: TASK_CATEGORY,
+        label: 'Attach Task...'
     };
 }
 
@@ -87,6 +81,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN,
             {
                 isEnabled: () => true,
+                // tslint:disable-next-line:no-any
                 execute: (args: any[]) => {
                     if (args) {
                         const [type, label] = args;
@@ -106,17 +101,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        // Explicitly register the Task Submenu
-        menus.registerSubmenu(TaskCommands.TASK_MENU, TaskCommands.TASK_MENU_LABEL);
-        menus.registerMenuAction(TaskCommands.RUN_GROUP, {
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
             commandId: TaskCommands.TASK_RUN.id,
-            label: TaskCommands.TASK_RUN.label ? TaskCommands.TASK_RUN.label.slice('Tasks: '.length) : TaskCommands.TASK_RUN.label,
             order: '0'
         });
 
-        menus.registerMenuAction(TaskCommands.RUN_GROUP, {
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
             commandId: TaskCommands.TASK_ATTACH.id,
-            label: TaskCommands.TASK_ATTACH.label ? TaskCommands.TASK_ATTACH.label.slice('Tasks: '.length) : TaskCommands.TASK_ATTACH.label,
             order: '1'
         });
     }

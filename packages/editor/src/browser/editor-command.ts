@@ -23,6 +23,8 @@ import { EditorManager } from './editor-manager';
 
 export namespace EditorCommands {
 
+    const EDITOR_CATEGORY = 'Editor';
+
     /**
      * Show editor references
      */
@@ -37,14 +39,17 @@ export namespace EditorCommands {
     };
     export const INDENT_USING_SPACES: Command = {
         id: 'textEditor.commands.indentUsingSpaces',
+        category: EDITOR_CATEGORY,
         label: 'Indent Using Spaces'
     };
     export const INDENT_USING_TABS: Command = {
         id: 'textEditor.commands.indentUsingTabs',
+        category: EDITOR_CATEGORY,
         label: 'Indent Using Tabs'
     };
     export const CHANGE_LANGUAGE: Command = {
         id: 'textEditor.change.language',
+        category: EDITOR_CATEGORY,
         label: 'Change Language Mode'
     };
 
@@ -53,6 +58,7 @@ export namespace EditorCommands {
      */
     export const GO_BACK: Command = {
         id: 'textEditor.commands.go.back',
+        category: EDITOR_CATEGORY,
         label: 'Go Back'
     };
     /**
@@ -60,6 +66,7 @@ export namespace EditorCommands {
      */
     export const GO_FORWARD: Command = {
         id: 'textEditor.commands.go.forward',
+        category: EDITOR_CATEGORY,
         label: 'Go Forward'
     };
     /**
@@ -67,6 +74,7 @@ export namespace EditorCommands {
      */
     export const GO_LAST_EDIT: Command = {
         id: 'textEditor.commands.go.lastEdit',
+        category: EDITOR_CATEGORY,
         label: 'Go to Last Edit Location'
     };
 }

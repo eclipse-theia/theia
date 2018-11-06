@@ -46,19 +46,24 @@ export namespace CommonMenus {
     export const EDIT_CLIPBOARD = [...EDIT, '2_clipboard'];
     export const EDIT_FIND = [...EDIT, '3_find'];
 
-    export const VIEW = [...MAIN_MENU_BAR, '3_view'];
+    export const VIEW = [...MAIN_MENU_BAR, '4_view'];
     export const VIEW_VIEWS = [...VIEW, '1_views'];
     export const VIEW_LAYOUT = [...VIEW, '2_layout'];
 
-    export const HELP = [...MAIN_MENU_BAR, '4_help'];
+    // last menu item
+    export const HELP = [...MAIN_MENU_BAR, '9_help'];
 
 }
 
 export namespace CommonCommands {
 
+    const FILE_CATEGORY = 'File';
+    const VIEW_CATEGORY = 'View';
+
     export const OPEN: Command = {
         id: 'core.open',
-        label: 'Open'
+        category: FILE_CATEGORY,
+        label: 'Open',
     };
 
     export const CUT: Command = {
@@ -94,53 +99,65 @@ export namespace CommonCommands {
 
     export const NEXT_TAB: Command = {
         id: 'core.nextTab',
+        category: VIEW_CATEGORY,
         label: 'Switch to Next Tab'
     };
     export const PREVIOUS_TAB: Command = {
         id: 'core.previousTab',
+        category: VIEW_CATEGORY,
         label: 'Switch to Previous Tab'
     };
     export const CLOSE_TAB: Command = {
         id: 'core.close.tab',
+        category: VIEW_CATEGORY,
         label: 'Close Tab'
     };
     export const CLOSE_OTHER_TABS: Command = {
         id: 'core.close.other.tabs',
+        category: VIEW_CATEGORY,
         label: 'Close Other Tabs'
     };
     export const CLOSE_RIGHT_TABS: Command = {
         id: 'core.close.right.tabs',
+        category: VIEW_CATEGORY,
         label: 'Close Tabs to the Right'
     };
     export const CLOSE_ALL_TABS: Command = {
         id: 'core.close.all.tabs',
+        category: VIEW_CATEGORY,
         label: 'Close All Tabs'
     };
     export const COLLAPSE_PANEL: Command = {
         id: 'core.collapse.tab',
+        category: VIEW_CATEGORY,
         label: 'Collapse Side Panel'
     };
     export const COLLAPSE_ALL_PANELS: Command = {
         id: 'core.collapse.all.tabs',
+        category: VIEW_CATEGORY,
         label: 'Collapse All Side Panels'
     };
     export const TOGGLE_BOTTOM_PANEL: Command = {
         id: 'core.toggle.bottom.panel',
+        category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     };
 
     export const SAVE: Command = {
         id: 'core.save',
-        label: 'Save'
+        category: FILE_CATEGORY,
+        label: 'Save',
     };
     export const SAVE_ALL: Command = {
         id: 'core.saveAll',
-        label: 'Save All'
+        category: FILE_CATEGORY,
+        label: 'Save All',
     };
 
     export const AUTO_SAVE: Command = {
         id: 'textEditor.commands.autosave',
-        label: 'Auto Save'
+        category: FILE_CATEGORY,
+        label: 'Auto Save',
     };
 
     export const QUIT: Command = {
@@ -155,7 +172,8 @@ export namespace CommonCommands {
 
     export const OPEN_PREFERENCES: Command = {
         id: 'preferences:open',
-        label: 'Open Preferences'
+        category: 'Settings',
+        label: 'Open Preferences',
     };
 
 }

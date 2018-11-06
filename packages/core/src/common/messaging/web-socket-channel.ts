@@ -110,8 +110,17 @@ export class WebSocketChannel implements IWebSocket {
         this.toDispose.push(Disposable.create(() => this.fireError = () => { }));
     }
 
+    protected closing = false;
     protected fireClose(code: number, reason: string): void {
-        this.closeEmitter.fire([code, reason]);
+        if (this.closing) {
+            return;
+        }
+        this.closing = true;
+        try {
+            this.closeEmitter.fire([code, reason]);
+        } finally {
+            this.closing = false;
+        }
         this.dispose();
     }
     onClose(cb: (code: number, reason: string) => void): Disposable {

@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 /* tslint:disable:no-unused-expression*/
-import { MainPage } from "./main-page";
-import { expect } from "chai";
+import { MainPage } from './main-page';
+import { expect } from 'chai';
 
 let mainPage: MainPage;
 let driver: WebdriverIO.Client<void>;

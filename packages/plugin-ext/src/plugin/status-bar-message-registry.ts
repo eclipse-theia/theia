@@ -29,6 +29,7 @@ export class StatusBarMessageRegistryExt {
         this.proxy = rpc.getProxy(Ext.STATUS_BAR_MESSAGE_REGISTRY_MAIN);
     }
 
+    // tslint:disable-next-line:no-any
     setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
         let id: string;
         this.proxy.$setMessage(text, 0, 1, undefined, undefined, undefined).then((messageId: string) => {

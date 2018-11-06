@@ -15,8 +15,9 @@
  ********************************************************************************/
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Widget } from '@phosphor/widgets';
+import { Widget, FocusTracker } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
+import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keys';
 
@@ -81,7 +82,7 @@ export class BaseWidget extends Widget {
                 const container = await this.getScrollContainer();
                 container.style.overflow = 'hidden';
                 this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
-                this.toDispose.push(Disposable.create(async () => {
+                this.toDisposeOnDetach.push(Disposable.create(() => {
                     if (this.scrollBar) {
                         this.scrollBar.destroy();
                         this.scrollBar = undefined;
@@ -112,7 +113,7 @@ export class BaseWidget extends Widget {
     }
 
     protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean): void {
-        this.toDisposeOnDetach.push(addEventListener(element, type, listener));
+        this.toDisposeOnDetach.push(addEventListener(element, type, listener, useCapture));
     }
 
     protected addKeyListener<K extends keyof HTMLElementEventMap>(
@@ -214,4 +215,38 @@ export function addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element
     return Disposable.create(() =>
         document.removeEventListener(type, documentListener)
     );
+}
+
+/**
+ * Tracks the current and active widgets in the application. Also provides access to the currently active and current widgets.
+ */
+export const WidgetTracker = Symbol('WidgetTracker');
+export interface WidgetTracker {
+
+    /**
+     * The current widget in the application shell. The current widget is the last widget that
+     * was active and not yet closed. See the remarks to `activeWidget` on what _active_ means.
+     */
+    currentWidget: Widget | undefined;
+
+    /**
+     * The active widget in the application shell. The active widget is the one that has focus
+     * (either the widget itself or any of its contents).
+     *
+     * _Note:_ Focus is taken by a widget through the `onActivateRequest` method. It is up to the
+     * widget implementation which DOM element will get the focus. The default implementation
+     * does not take any focus; in that case the widget is never returned by this property.
+     */
+    activeWidget: Widget | undefined;
+
+    /**
+     * A signal emitted whenever the `currentWidget` property is changed.
+     */
+    readonly currentChanged: Signal<object, FocusTracker.IChangedArgs<Widget>>;
+
+    /**
+     * A signal emitted whenever the `activeWidget` property is changed.
+     */
+    readonly activeChanged: Signal<object, FocusTracker.IChangedArgs<Widget>>;
+
 }

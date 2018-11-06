@@ -20,6 +20,7 @@ import { loadVsRequire, loadMonaco } from '../browser/monaco-loader';
 
 export { ContainerModule };
 
+// tslint:disable-next-line:no-any
 const s = <any>self;
 
 /**

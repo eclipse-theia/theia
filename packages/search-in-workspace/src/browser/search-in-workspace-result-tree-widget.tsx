@@ -46,6 +46,7 @@ export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, Selecta
     file: string;
 }
 export namespace SearchInWorkspaceResultNode {
+    // tslint:disable-next-line:no-any
     export function is(node: any): node is SearchInWorkspaceResultNode {
         return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node;
     }
@@ -53,6 +54,7 @@ export namespace SearchInWorkspaceResultNode {
 
 export type SearchInWorkspaceResultLineNode = SelectableTreeNode & SearchInWorkspaceResult;
 export namespace SearchInWorkspaceResultLineNode {
+    // tslint:disable-next-line:no-any
     export function is(node: any): node is SearchInWorkspaceResultLineNode {
         return SelectableTreeNode.is(node) && 'line' in node && 'character' in node && 'lineText' in node;
     }
@@ -73,6 +75,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     private cancelIndicator = new CancellationTokenSource();
 
     protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceResultNode>>();
+    // tslint:disable-next-line:no-any
     protected focusInputEmitter = new Emitter<any>();
 
     @inject(SearchInWorkspaceService) protected readonly searchService: SearchInWorkspaceService;
@@ -204,9 +207,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 }
                 this.refreshModelChildren();
             }
-        }, searchOptions);
+        }, searchOptions).catch(e => { return; });
         token.onCancellationRequested(() => {
-            this.searchService.cancel(searchId);
+            if (searchId) {
+                this.searchService.cancel(searchId);
+            }
         });
     }
 

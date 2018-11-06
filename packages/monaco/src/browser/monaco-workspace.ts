@@ -23,7 +23,7 @@ import { DisposableCollection } from '@theia/core/lib/common';
 import { FileSystem, } from '@theia/filesystem/lib/common';
 import { FileChangeType, FileSystemWatcher } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import * as lang from '@theia/languages/lib/browser';
 import { Emitter, TextDocumentWillSaveEvent, TextEdit } from '@theia/languages/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
@@ -221,6 +221,7 @@ export class MonacoWorkspace implements lang.Workspace {
                     continue;
                 }
                 const uri = change.uri.toString();
+                // tslint:disable-next-line:no-any
                 const { codeUri } = (change.uri as any);
                 if (testGlob(globPattern, uri)) {
                     if (fileChangeType === FileChangeType.ADDED) {
@@ -243,18 +244,18 @@ export class MonacoWorkspace implements lang.Workspace {
         };
     }
 
-    async applyEdit(changes: lang.WorkspaceEdit): Promise<boolean> {
+    async applyEdit(changes: lang.WorkspaceEdit, options?: EditorOpenerOptions): Promise<boolean> {
         const workspaceEdit = this.p2m.asWorkspaceEdit(changes);
-        await this.applyBulkEdit(workspaceEdit);
+        await this.applyBulkEdit(workspaceEdit, options);
         return true;
     }
 
-    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit): monaco.Promise<monaco.editor.IBulkEditResult> {
+    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): monaco.Promise<monaco.editor.IBulkEditResult> {
         let totalEdits = 0;
         let totalFiles = 0;
         const uri2Edits = this.groupEdits(workspaceEdit);
         for (const uri of uri2Edits.keys()) {
-            const editorWidget = await this.editorManager.open(new URI(uri));
+            const editorWidget = await this.editorManager.open(new URI(uri), options);
             const editor = MonacoEditor.get(editorWidget);
             if (editor) {
                 const model = editor.document.textEditorModel;
@@ -278,6 +279,7 @@ export class MonacoWorkspace implements lang.Workspace {
         const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
         return { ariaSummary };
     }
+
     protected getAriaSummary(totalEdits: number, totalFiles: number): string {
         if (totalEdits === 0) {
             return 'Made no edits';

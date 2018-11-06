@@ -498,7 +498,9 @@ export interface PluginServer {
 
 export const ServerPluginRunner = Symbol('ServerPluginRunner');
 export interface ServerPluginRunner {
+    // tslint:disable-next-line:no-any
     acceptMessage(jsonMessage: any): boolean;
+    // tslint:disable-next-line:no-any
     onMessage(jsonMessage: any): void;
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;

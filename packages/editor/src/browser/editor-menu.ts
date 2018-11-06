@@ -32,7 +32,7 @@ export namespace EditorMainMenu {
     /**
      * The main `Go` menu item.
      */
-    export const GO = [...MAIN_MENU_BAR, '4_go'];
+    export const GO = [...MAIN_MENU_BAR, '5_go'];
 
     /**
      * Navigation menu group in the `Go` menu.

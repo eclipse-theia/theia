@@ -80,6 +80,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         }
     }
 
+    // tslint:disable-next-line:no-any
     async $reveal(treeViewId: string, treeItemId: string): Promise<any> {
         const treeViewWidget = this.treeViewWidgets.get(treeViewId);
         if (treeViewWidget) {

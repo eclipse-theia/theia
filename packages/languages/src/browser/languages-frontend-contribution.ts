@@ -15,23 +15,53 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { ContributionProvider } from '@theia/core/lib/common';
+import { ContributionProvider, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { LanguageClientContribution } from './language-client-contribution';
 
 @injectable()
-export class LanguagesFrontendContribution implements FrontendApplicationContribution {
+export class LanguagesFrontendContribution implements FrontendApplicationContribution, CommandContribution {
 
-    constructor(
-        @inject(ContributionProvider) @named(LanguageClientContribution)
-        protected readonly contributions: ContributionProvider<LanguageClientContribution>
-    ) { }
+    @inject(FrontendApplication)
+    protected readonly app: FrontendApplication;
+
+    @inject(ContributionProvider) @named(LanguageClientContribution)
+    protected readonly contributions: ContributionProvider<LanguageClientContribution>;
 
     onStart(app: FrontendApplication): void {
         for (const contribution of this.contributions.getContributions()) {
             contribution.waitForActivation(app).then(() =>
                 contribution.activate(app)
             );
+        }
+    }
+
+    registerCommands(commands: CommandRegistry): void {
+        for (const contribution of this.contributions.getContributions()) {
+            commands.registerCommand({
+                id: `${contribution.id}.server.start`,
+                label: `${contribution.name}: Start Language Server`
+            }, {
+                    execute: () => contribution.activate(this.app),
+                    isEnabled: () => !contribution.running,
+                    isVisible: () => !contribution.running,
+                });
+            commands.registerCommand({
+                id: `${contribution.id}.server.stop`,
+                label: `${contribution.name}: Stop Language Server`
+            }, {
+                    execute: () => contribution.deactivate(),
+                    isEnabled: () => contribution.running,
+                    isVisible: () => contribution.running,
+                });
+            commands.registerCommand({
+                id: `${contribution.id}.server.restart`,
+                label: `${contribution.name}: Restart Language Server`
+            }, {
+                    execute: () => contribution.restart(),
+                    isEnabled: () => contribution.running,
+                    isVisible: () => contribution.running,
+                });
         }
     }
 

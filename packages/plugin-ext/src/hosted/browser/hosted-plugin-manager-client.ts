@@ -31,27 +31,33 @@ import { HostedPluginPreferences } from './hosted-plugin-preferences';
  * Commands to control Hosted plugin instances.
  */
 export namespace HostedPluginCommands {
+    const HOSTED_PLUGIN_CATEGORY = 'Hosted Plugin';
     export const START: Command = {
         id: 'hosted-plugin:start',
-        label: 'Hosted Plugin: Start Instance'
+        category: HOSTED_PLUGIN_CATEGORY,
+        label: 'Start Instance'
     };
 
     export const DEBUG: Command = {
         id: 'hosted-plugin:debug',
-        label: 'Hosted Plugin: Debug Instance'
+        category: HOSTED_PLUGIN_CATEGORY,
+        label: 'Debug Instance'
     };
 
     export const STOP: Command = {
         id: 'hosted-plugin:stop',
-        label: 'Hosted Plugin: Stop Instance'
+        category: HOSTED_PLUGIN_CATEGORY,
+        label: 'Stop Instance'
     };
     export const RESTART: Command = {
         id: 'hosted-plugin:restart',
-        label: 'Hosted Plugin: Restart Instance'
+        category: HOSTED_PLUGIN_CATEGORY,
+        label: 'Restart Instance'
     };
     export const SELECT_PATH: Command = {
         id: 'hosted-plugin:select-path',
-        label: 'Hosted Plugin: Select Path'
+        category: HOSTED_PLUGIN_CATEGORY,
+        label: 'Select Path'
     };
 }
 

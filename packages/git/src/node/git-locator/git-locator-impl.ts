@@ -29,12 +29,16 @@ export interface GitLocateContext {
 export class GitLocatorImpl implements GitLocator {
 
     protected readonly options: {
+        // tslint:disable-next-line:no-any
         info: (message: string, ...args: any[]) => void
+        // tslint:disable-next-line:no-any
         error: (message: string, ...args: any[]) => void
     };
 
     constructor(options?: {
+        // tslint:disable-next-line:no-any
         info?: (message: string, ...args: any[]) => void
+        // tslint:disable-next-line:no-any
         error?: (message: string, ...args: any[]) => void
     }) {
         this.options = {
@@ -48,7 +52,7 @@ export class GitLocatorImpl implements GitLocator {
     }
 
     async locate(basePath: string, options: GitLocateOptions): Promise<string[]> {
-        return await this.doLocate(basePath, {
+        return this.doLocate(basePath, {
             maxCount: typeof options.maxCount === 'number' ? options.maxCount : -1,
             visited: new Map<string, boolean>()
         });

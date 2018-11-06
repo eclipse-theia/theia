@@ -17,22 +17,26 @@
 import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject } from 'inversify';
-import { CommandRegistry, MenuModelRegistry, SelectionService } from '@theia/core';
+import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export namespace SearchInWorkspaceCommands {
+    const SEARCH_CATEGORY = 'Search';
     export const TOGGLE_SIW_WIDGET = {
         id: 'search-in-workspace.toggle'
     };
-    export const OPEN_SIW_WIDGET = {
+    export const OPEN_SIW_WIDGET: Command = {
         id: 'search-in-workspace.open',
-        label: 'Search in Workspace'
+        category: SEARCH_CATEGORY,
+        label: 'Find in Files'
 
     };
-    export const FIND_IN_FOLDER = {
+    export const FIND_IN_FOLDER: Command = {
         id: 'search-in-workspace.in-folder',
+        category: SEARCH_CATEGORY,
         label: 'Find in Folder...'
     };
 }
@@ -42,6 +46,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor() {
         super({
@@ -55,12 +60,13 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
-        await this.openView({activate: false});
+        await this.openView({ activate: false });
     }
 
     registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
+            isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
             execute: () => this.openView({
                 activate: true
             })

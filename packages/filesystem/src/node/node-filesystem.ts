@@ -145,7 +145,7 @@ export class FileSystemNode implements FileSystem {
         if (this.checkInSync(file, stat)) {
             return true;
         }
-        return this.client ? await this.client.shouldOverwrite(file, stat) : false;
+        return this.client ? this.client.shouldOverwrite(file, stat) : false;
     }
 
     protected checkInSync(file: FileStat, stat: FileStat): boolean {

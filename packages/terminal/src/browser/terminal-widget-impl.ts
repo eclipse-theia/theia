@@ -183,7 +183,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
 
         /* Get the CSS properties of <html> (aka :root in css).  */
-        const htmlElementProps = getComputedStyle(document.documentElement);
+        const htmlElementProps = getComputedStyle(document.documentElement!);
 
         const fontFamily = lookup(htmlElementProps, '--theia-terminal-font-family');
         const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');

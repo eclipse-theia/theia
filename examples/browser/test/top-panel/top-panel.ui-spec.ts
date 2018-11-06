@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 /* tslint:disable:no-unused-expression*/
-import { expect } from "chai";
-import { TopPanel } from "./top-panel";
-import { BottomPanel } from "../bottom-panel/bottom-panel";
-import { RightPanel } from "../right-panel/right-panel";
-import { LeftPanel } from "../left-panel/left-panel";
+import { expect } from 'chai';
+import { TopPanel } from './top-panel';
+import { BottomPanel } from '../bottom-panel/bottom-panel';
+import { RightPanel } from '../right-panel/right-panel';
+import { LeftPanel } from '../left-panel/left-panel';
 import { MainPage } from '../main-page/main-page';
 let topPanel: TopPanel;
 let bottomPanel: BottomPanel;
@@ -121,7 +121,7 @@ describe('theia top panel (menubar)', () => {
         it('extensions view should toggle-on then toggle-off', () => {
             if (!leftPanel.isExtensionsContainerVisible()) {
                 topPanel.toggleExtensionsView();
-                leftPanel.waitForExtensionsView();
+                leftPanel.waitForExtensionsViewVisible();
             }
             expect(leftPanel.isExtensionsContainerVisible()).to.be.true;
             topPanel.toggleExtensionsView();
@@ -136,7 +136,7 @@ describe('theia top panel (menubar)', () => {
         it('files view should toggle-on then toggle-off', () => {
             if (!leftPanel.isFileTreeVisible()) {
                 topPanel.toggleFilesView();
-                leftPanel.waitForFilesView();
+                leftPanel.waitForFilesViewVisible();
             }
             expect(leftPanel.isFileTreeVisible()).to.be.true;
             topPanel.toggleFilesView();
@@ -152,7 +152,7 @@ describe('theia top panel (menubar)', () => {
         it('git view should toggle-on then toggle-off', () => {
             if (!leftPanel.isGitContainerVisible()) {
                 topPanel.toggleGitView();
-                leftPanel.waitForGitView();
+                leftPanel.waitForGitViewVisible();
             }
             expect(leftPanel.isGitContainerVisible()).to.be.true;
             topPanel.toggleGitView();
@@ -170,7 +170,7 @@ describe('theia top panel (menubar)', () => {
         it.skip('git history view should toggle-on then toggle-off', () => {
             if (!leftPanel.isGitHistoryContainerVisible()) {
                 topPanel.toggleGitHistoryView();
-                leftPanel.waitForGitHistoryView();
+                leftPanel.waitForGitHistoryViewVisible();
             }
             expect(leftPanel.isGitHistoryContainerVisible()).to.be.true;
             topPanel.toggleGitHistoryView();
@@ -179,7 +179,7 @@ describe('theia top panel (menubar)', () => {
     });
 
     describe('outline view UI', () => {
-        const tabName = "Outline";
+        const tabName = 'Outline';
         it('should start with outline view tab already created', () => {
             expect(rightPanel.doesTabExist(tabName)).to.be.true;
         });
@@ -192,7 +192,7 @@ describe('theia top panel (menubar)', () => {
         it('outline view should toggle-on then toggle-off', () => {
             if (!rightPanel.isOutlineViewVisible()) {
                 topPanel.toggleOutlineView();
-                rightPanel.waitForOutlineView();
+                rightPanel.waitForOutlineViewVisible();
             }
             expect(rightPanel.isOutlineViewVisible()).to.be.true;
 
@@ -251,7 +251,7 @@ describe('theia top panel (menubar)', () => {
         it('search view should toggle-on then toggle-off', () => {
             if (!leftPanel.isSearchViewVisible()) {
                 topPanel.toggleSearchView();
-                leftPanel.waitForSearchView();
+                leftPanel.waitForSearchViewVisible();
             }
             expect(leftPanel.isSearchViewVisible()).to.be.true;
             topPanel.toggleSearchView();

@@ -195,6 +195,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         if ((oldState as any).root && (oldState as any).languageId) {
             // tslint:disable-next-line:no-any
             this.model.root = this.inflateFromStorage((oldState as any).root);
+            // tslint:disable-next-line:no-any
             this.model.initializeCallHierarchy((oldState as any).languageId, (this.model.root as DefinitionNode).definition.location);
         }
     }

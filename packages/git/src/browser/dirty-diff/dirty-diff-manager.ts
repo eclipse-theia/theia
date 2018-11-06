@@ -53,8 +53,8 @@ export class DirtyDiffManager {
 
     @postConstruct()
     protected async initialize() {
-        this.editorManager.onCreated(async e => await this.handleEditorCreated(e));
-        this.repositoryTracker.onGitEvent(throttle(async event => await this.handleGitStatusUpdate(event.source, event.status), 500));
+        this.editorManager.onCreated(async e => this.handleEditorCreated(e));
+        this.repositoryTracker.onGitEvent(throttle(async event => this.handleGitStatusUpdate(event.source, event.status), 500));
         const gitStatus = this.repositoryTracker.selectedRepositoryStatus;
         const repository = this.repositoryTracker.selectedRepository;
         if (gitStatus && repository) {
@@ -239,7 +239,7 @@ export class DirtyDiffModel implements Disposable {
     protected async isInGitRepository(repository: Repository): Promise<boolean> {
         const modelUri = this.editor.uri.withoutScheme().toString();
         const repoUri = new URI(repository.localUri).withoutScheme().toString();
-        return modelUri.startsWith(repoUri) && await this.previousRevision.isVersionControlled();
+        return modelUri.startsWith(repoUri) && this.previousRevision.isVersionControlled();
     }
 
     protected async getPreviousRevisionContent(): Promise<ContentLines | undefined> {

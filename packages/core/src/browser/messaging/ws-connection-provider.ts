@@ -47,9 +47,7 @@ export class WebSocketConnectionProvider {
         const socket = this.createWebSocket(url);
         socket.onerror = console.error;
         socket.onclose = ({ code, reason }) => {
-            const channels = [...this.channels.values()];
-            this.channels.clear();
-            for (const channel of channels) {
+            for (const channel of [...this.channels.values()]) {
                 channel.close(code, reason);
             }
         };
@@ -110,10 +108,13 @@ export class WebSocketConnectionProvider {
         const channel = this.createChannel(id);
         this.channels.set(id, channel);
         channel.onClose(() => {
-            this.channels.delete(channel.id);
-            const { reconnecting } = { reconnecting: true, ...options };
-            if (reconnecting) {
-                this.openChannel(path, handler, options);
+            if (this.channels.delete(channel.id)) {
+                const { reconnecting } = { reconnecting: true, ...options };
+                if (reconnecting) {
+                    this.openChannel(path, handler, options);
+                }
+            } else {
+                console.error('The ws channel does not exist', channel.id);
             }
         });
         channel.onOpen(() => handler(channel));

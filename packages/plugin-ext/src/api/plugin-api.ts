@@ -14,12 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* tslint:disable:no-any */
+
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
 import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage } from '../common/plugin-protocol';
 import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
-import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction } from '../plugin/types-impl';
+import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction, FileOperationOptions } from '../plugin/types-impl';
 import { UriComponents } from '../common/uri-components';
 import { PreferenceChange } from '@theia/core/lib/browser';
 import { ConfigurationTarget } from '../plugin/types-impl';
@@ -37,7 +39,9 @@ import {
     SingleEditOperation as ModelSingleEditOperation,
     Definition,
     DefinitionLink,
-    DocumentLink
+    DocumentLink,
+    Command,
+    TextEdit
 } from './model';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 
@@ -717,6 +721,31 @@ export interface SerializedLanguageConfiguration {
     onEnterRules?: SerializedOnEnterRule[];
 }
 
+export interface CodeActionDto {
+    title: string;
+    edit?: WorkspaceEditDto;
+    diagnostics?: MarkerData[];
+    command?: Command;
+    kind?: string;
+}
+
+export interface ResourceFileEditDto {
+    oldUri: UriComponents;
+    newUri: UriComponents;
+    options: FileOperationOptions;
+}
+
+export interface ResourceTextEditDto {
+    resource: UriComponents;
+    modelVersionId?: number;
+    edits: TextEdit[];
+}
+
+export interface WorkspaceEditDto {
+    edits: (ResourceFileEditDto | ResourceTextEditDto)[];
+    rejectReason?: string;
+}
+
 export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined>;
     $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion>;
@@ -735,6 +764,12 @@ export interface LanguagesExt {
     ): Promise<ModelSingleEditOperation[] | undefined>;
     $provideDocumentLinks(handle: number, resource: UriComponents): Promise<DocumentLink[] | undefined>;
     $resolveDocumentLink(handle: number, link: DocumentLink): Promise<DocumentLink | undefined>;
+    $provideCodeActions(
+        handle: number,
+        resource: UriComponents,
+        rangeOrSelection: Range | Selection,
+        context: monaco.languages.CodeActionContext
+    ): Promise<monaco.languages.CodeAction[]>;
 }
 
 export interface LanguagesMain {
@@ -745,7 +780,7 @@ export interface LanguagesMain {
     $registerDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void;
     $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void;
-
+    $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;

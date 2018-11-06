@@ -97,16 +97,18 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected enableDndOnMainPanel(): void {
         const mainPanelNode = this.shell.mainPanel.node;
-        this.addEventListener(mainPanelNode, 'drop', async e => {
-            const treeNode = this.getTreeNodeFromData(e.dataTransfer);
+        this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
+            const treeNode = dataTransfer && this.getTreeNodeFromData(dataTransfer) || undefined;
 
             if (FileNode.is(treeNode)) {
                 this.commandService.executeCommand(CommonCommands.OPEN.id, treeNode.uri);
             }
         });
         const handler = (e: DragEvent) => {
-            e.dataTransfer.dropEffect = 'link';
-            e.preventDefault();
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'link';
+                e.preventDefault();
+            }
         };
         this.addEventListener(mainPanelNode, 'dragover', handler);
         this.addEventListener(mainPanelNode, 'dragenter', handler);

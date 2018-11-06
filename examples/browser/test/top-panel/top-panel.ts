@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import "webdriverio";
+import 'webdriverio';
 
 export class TopPanel {
 
@@ -25,8 +25,8 @@ export class TopPanel {
     }
 
     openNewTerminal() {
-        this.clickMenuTab('File');
-        this.clickSubMenu('Open New Terminal');
+        this.clickMenuTab('Terminal');
+        this.clickSubMenu('New Terminal');
     }
 
     toggleCallHierarchyView() {
@@ -88,15 +88,15 @@ export class TopPanel {
     }
 
     clickMenuTab(tab: number | string) {
-        if (typeof tab === "string") {
-            this.driver.element(`ul.p-MenuBar-content`).click(`div=${tab}`);
+        if (typeof tab === 'string') {
+            this.driver.element('ul.p-MenuBar-content').click(`div=${tab}`);
         } else {
             this.driver.click(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tab})`);
         }
     }
 
     clickSubMenu(subMenuItem: string) {
-        this.driver.element(`div.p-Widget.p-Menu.p-MenuBar-menu .p-Menu-content`).click(`div=${subMenuItem}`);
+        this.driver.element('div.p-Widget.p-Menu.p-MenuBar-menu .p-Menu-content').click(`div=${subMenuItem}`);
     }
 
     hoverMenuTab(tabNumber: number) {
@@ -108,7 +108,7 @@ export class TopPanel {
     }
 
     isMenuActive(): boolean {
-        return this.driver.isExisting(`#theia\\:menubar.p-mod-active`);
+        return this.driver.isExisting('#theia\\:menubar.p-mod-active');
     }
 
     getxBarTabPosition(tabNumber: number) {
@@ -116,6 +116,6 @@ export class TopPanel {
     }
 
     getxSubMenuPosition(): number {
-        return this.driver.getLocation(`div.p-Widget.p-Menu.p-MenuBar-menu`, 'x');
+        return this.driver.getLocation('div.p-Widget.p-Menu.p-MenuBar-menu', 'x');
     }
 }

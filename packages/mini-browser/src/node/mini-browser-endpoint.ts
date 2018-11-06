@@ -90,7 +90,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     protected readonly handlers: Map<string, MiniBrowserEndpointHandler> = new Map();
 
     configure(app: Application): void {
-        app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => await this.response(await this.getUri(request), response));
+        app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => this.response(await this.getUri(request), response));
     }
 
     async onStart(): Promise<void> {
@@ -143,7 +143,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected async readContent(uri: string): Promise<FileStatWithContent> {
-        return await this.fileSystem.resolveContent(uri);
+        return this.fileSystem.resolveContent(uri);
     }
 
     // tslint:disable-next-line:no-any

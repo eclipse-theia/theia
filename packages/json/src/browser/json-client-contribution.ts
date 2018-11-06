@@ -123,5 +123,6 @@ interface SchemaData {
     description: string;
     fileMatch?: string[];
     url: string;
+    // tslint:disable-next-line:no-any
     schema: any;
 }

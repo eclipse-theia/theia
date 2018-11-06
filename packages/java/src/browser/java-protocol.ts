@@ -29,6 +29,7 @@ export namespace StatusNotification {
 export interface ActionableMessage {
     severity: MessageType;
     message: string;
+    // tslint:disable-next-line:no-any
     data?: any;
     commands?: Command[];
 }

@@ -125,7 +125,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
     const argv = yargs.demandCommand(1).argv;
     const command = argv._[0];
     if (!command || commands.indexOf(command) === -1) {
-        console.log("non-existing or no command specified");
+        console.log('non-existing or no command specified');
         yargs.showHelp();
         process.exit(1);
     } else {

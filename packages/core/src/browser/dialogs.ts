@@ -61,6 +61,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected readonly errorMessageNode: HTMLDivElement;
 
     protected resolve: undefined | ((value: T | undefined) => void);
+    // tslint:disable-next-line:no-any
     protected reject: undefined | ((reason: any) => void);
 
     protected closeButton: HTMLButtonElement | undefined;

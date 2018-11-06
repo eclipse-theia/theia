@@ -139,6 +139,7 @@ export interface MouseTarget {
     /**
      * Some extra detail.
      */
+    // tslint:disable-next-line:no-any
     readonly detail: any;
 }
 

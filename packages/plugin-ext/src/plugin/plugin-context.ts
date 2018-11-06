@@ -72,7 +72,10 @@ import {
     TreeItemCollapsibleState,
     SymbolKind,
     DocumentSymbol,
-    SymbolInformation
+    WorkspaceEdit,
+    SymbolInformation,
+    FileType,
+    FileChangeType
 } from './types-impl';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -306,6 +309,10 @@ export function createAPIFactory(
                         return data && data.document;
                     }));
             },
+            registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
             createFileSystemWatcher(globPattern: theia.GlobPattern,
                 ignoreCreateEvents?: boolean,
                 ignoreChangeEvents?: boolean,
@@ -314,6 +321,10 @@ export function createAPIFactory(
             },
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, undefined, maxResults, token);
+            },
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
+                // FIXME: to implement
+                return new Disposable(() => { });
             }
         };
 
@@ -379,7 +390,10 @@ export function createAPIFactory(
                 return languagesExt.registerLinkProvider(selector, provider);
             },
             registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
-                return languagesExt.registerCodeActionsProvider(selector, provider, metadata);
+                return languagesExt.registerCodeActionsProvider(selector, provider, plugin.model, metadata);
+            },
+            registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
+                return languagesExt.registerCodeLensProvider(selector, provider);
             },
             registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
                 return languagesExt.registerReferenceProvider(selector, provider);
@@ -390,15 +404,32 @@ export function createAPIFactory(
         };
 
         const plugins: typeof theia.plugins = {
+            // tslint:disable-next-line:no-any
             get all(): theia.Plugin<any>[] {
                 return pluginManager.getAllPlugins().map(plg => new Plugin(pluginManager, plg));
             },
+            // tslint:disable-next-line:no-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
                 const plg = pluginManager.getPluginById(pluginId);
                 if (plg) {
                     return new Plugin(pluginManager, plg);
                 }
                 return undefined;
+            }
+        };
+
+        const debug: typeof theia.debug = {
+            onDidChangeActiveDebugSession(listener, thisArg?, disposables?) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
+            onDidTerminateDebugSession(listener, thisArg?, disposables?) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
+            registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): theia.Disposable {
+                // FIXME: to implement
+                return new Disposable(() => { });
             }
         };
 
@@ -410,6 +441,7 @@ export function createAPIFactory(
             env,
             languages,
             plugins,
+            debug,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
@@ -461,7 +493,10 @@ export function createAPIFactory(
             TreeItemCollapsibleState,
             SymbolKind,
             DocumentSymbol,
-            SymbolInformation
+            WorkspaceEdit,
+            SymbolInformation,
+            FileType,
+            FileChangeType
         };
     };
 }
@@ -470,6 +505,7 @@ class Plugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
     isActive: boolean;
+    // tslint:disable-next-line:no-any
     packageJSON: any;
     pluginType: theia.PluginType;
     constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {

@@ -261,6 +261,8 @@ export class Diagnostics {
         this.nextId = 0;
     }
 
+    getDiagnostics(resource: theia.Uri): theia.Diagnostic[];
+    getDiagnostics(): [theia.Uri, theia.Diagnostic[]][];
     getDiagnostics(resource?: URI): theia.Diagnostic[] | [URI, theia.Diagnostic[]][] {
         if (resource) {
             return this.getAllDiagnisticsForResource(resource);

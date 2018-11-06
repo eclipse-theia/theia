@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common';
-import { TreeNode } from '@theia/core/lib/browser';
+import { TreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { DirNode, FileNode, FileTreeModel, FileStatNode } from '../file-tree';
 import { FileDialogTree } from './file-dialog-tree';
 
@@ -27,6 +27,7 @@ export class FileDialogModel extends FileTreeModel {
     @inject(FileDialogTree) readonly tree: FileDialogTree;
     protected readonly onDidOpenFileEmitter = new Emitter<void>();
     protected _initialLocation: URI | undefined;
+    private _disableFileSelection: boolean = false;
 
     @postConstruct()
     protected init(): void {
@@ -40,6 +41,10 @@ export class FileDialogModel extends FileTreeModel {
      */
     get initialLocation(): URI | undefined {
         return this._initialLocation;
+    }
+
+    set disableFileSelection(isSelectable: boolean) {
+        this._disableFileSelection = isSelectable;
     }
 
     async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
@@ -64,4 +69,23 @@ export class FileDialogModel extends FileTreeModel {
         }
     }
 
+    getNextSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+        let nextNode: SelectableTreeNode | undefined = node;
+        do {
+            nextNode = super.getNextSelectableNode(nextNode);
+        } while (FileStatNode.is(nextNode) && !this.isFileStatNodeSelectable(nextNode));
+        return nextNode;
+    }
+
+    getPrevSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+        let prevNode: SelectableTreeNode | undefined = node;
+        do {
+            prevNode = super.getPrevSelectableNode(prevNode);
+        } while (FileStatNode.is(prevNode) && !this.isFileStatNodeSelectable(prevNode));
+        return prevNode;
+    }
+
+    private isFileStatNodeSelectable(node: FileStatNode): boolean {
+        return !(!node.fileStat.isDirectory && this._disableFileSelection);
+    }
 }
