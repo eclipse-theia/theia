@@ -17,7 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '@theia/core';
 import { DebugConfiguration } from '../common/debug-configuration';
-import { DebugService, DebugAdapterPath, DebuggerDescription } from '../common/debug-service';
+import { DebugService, DebugAdapterPath, DebuggerDescription, DebugError } from '../common/debug-service';
 
 import { UUID } from '@phosphor/coreutils';
 import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
@@ -160,7 +160,7 @@ export class DebugAdapterContributionRegistry {
                 return contribution.provideDebugAdapterExecutable(config);
             }
         }
-        throw new Error(`Debug adapter '${config.type}' isn't registered.`);
+        throw DebugError.NotFound(config.type);
     }
 
     /**
