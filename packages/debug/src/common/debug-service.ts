@@ -20,6 +20,11 @@ import { Disposable } from '@theia/core';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebugConfiguration } from './debug-configuration';
 
+export interface DebuggerDescription {
+    type: string
+    label: string
+}
+
 /**
  * The WS endpoint path to the Debug service.
  */
@@ -45,6 +50,8 @@ export interface DebugService extends Disposable {
      * @returns An array of registered debug types
      */
     debugTypes(): Promise<string[]>;
+
+    getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]>;
 
     /**
      * Provides the schema attributes.
