@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import { Disposable } from '@theia/core';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebugConfiguration } from './debug-configuration';
 
 /**
@@ -52,6 +52,8 @@ export interface DebugService extends Disposable {
      * @returns An JSON Schema describing the configuration attributes for the given debug type
      */
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]>;
+
+    getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]>;
 
     /**
      * Provides initial [debug configuration](#DebugConfiguration).

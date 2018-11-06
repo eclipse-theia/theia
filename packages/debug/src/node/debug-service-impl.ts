@@ -22,7 +22,7 @@ import { DebugService, DebugAdapterPath } from '../common/debug-service';
 import { UUID } from '@phosphor/coreutils';
 import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
 import { MessagingService } from '@theia/core/lib/node';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 
 /**
  * Contributions registry.
@@ -111,6 +111,19 @@ export class DebugAdapterContributionRegistry {
             if (contribution.getSchemaAttributes) {
                 try {
                     schemas.push(...await contribution.getSchemaAttributes());
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+        return schemas;
+    }
+    async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
+        const schemas: IJSONSchemaSnippet[] = [];
+        for (const contribution of this.getContributions('*')) {
+            if (contribution.getConfigurationSnippets) {
+                try {
+                    schemas.push(...await contribution.getConfigurationSnippets());
                 } catch (e) {
                     console.error(e);
                 }
@@ -248,6 +261,10 @@ export class DebugServiceImpl implements DebugService, MessagingService.Contribu
     }
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
         return this.registry.getSchemaAttributes(debugType);
+    }
+
+    getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
+        return this.registry.getConfigurationSnippets();
     }
 
     async provideDebugConfigurations(debugType: string, workspaceFolderUri?: string): Promise<DebugConfiguration[]> {
