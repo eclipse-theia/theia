@@ -18,6 +18,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as chai from 'chai';
 import { FileUri } from './file-uri';
+import { isWindows } from '../common/os';
 
 const expect = chai.expect;
 
@@ -64,4 +65,12 @@ describe('file-uri', () => {
         expect(uri.toString(true)).to.be.equal('file:///c:/');
     });
 
+    it('from file:///c%3A', function () {
+        if (!isWindows) {
+            this.skip();
+            return;
+        }
+        const fsPath = FileUri.fsPath('file:///c%3A');
+        expect(fsPath).to.be.equal('c:\\');
+    });
 });
