@@ -103,7 +103,7 @@ export function createAPIFactory(
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
-    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc));
+    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc, editorsAndDocuments));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
@@ -269,29 +269,25 @@ export function createAPIFactory(
             onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
                 return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
             },
-            openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }) {
-                let uriPromise: Promise<Uri>;
-
+            async openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }): Promise<theia.TextDocument | undefined> {
                 const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
+
+                let uri: Uri;
                 if (typeof uriOrFileNameOrOptions === 'string') {
-                    uriPromise = Promise.resolve(Uri.file(uriOrFileNameOrOptions));
+                    uri = Uri.file(uriOrFileNameOrOptions);
+
                 } else if (uriOrFileNameOrOptions instanceof Uri) {
-                    uriPromise = Promise.resolve(uriOrFileNameOrOptions);
+                    uri = uriOrFileNameOrOptions;
+
                 } else if (!options || typeof options === 'object') {
-                    uriPromise = documents.createDocumentData(options);
+                    uri = await documents.createDocumentData(options);
+
                 } else {
-                    throw new Error('illegal argument - uriOrFileNameOrOptions');
+                    return Promise.reject('illegal argument - uriOrFileNameOrOptions');
                 }
 
-                return uriPromise.then(uri =>
-                    documents.ensureDocumentData(uri).then(() => {
-                        const data = documents.getDocumentData(uri);
-                        return data && data.document;
-                    }));
-            },
-            registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider) {
-                // FIXME: to implement
-                return new Disposable(() => { });
+                const data = await documents.openDocument(uri);
+                return data && data.document;
             },
             createFileSystemWatcher(globPattern: theia.GlobPattern,
                 ignoreCreateEvents?: boolean,
@@ -301,6 +297,9 @@ export function createAPIFactory(
             },
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, undefined, maxResults, token);
+            },
+            registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
+                return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
             registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
                 // FIXME: to implement
