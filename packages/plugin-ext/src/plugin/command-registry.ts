@@ -29,6 +29,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
     }
+
     registerCommand(command: theia.Command, handler?: Handler): Disposable {
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
@@ -68,7 +69,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     // tslint:disable-next-line:no-any
-    executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
+    executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined> {
         if (this.commands.has(id)) {
             return this.executeLocalCommand(id, args);
         } else {
