@@ -16,8 +16,11 @@
 
 import Uri from 'vscode-uri';
 import URI from '../common/uri';
+import { isWindows } from '../common/os';
 
 export namespace FileUri {
+
+    const windowsDriveRegex = /^([^:/?#]+?):$/;
 
     /**
      * Creates a new file URI from the filesystem path argument.
@@ -36,8 +39,22 @@ export namespace FileUri {
         if (typeof uri === 'string') {
             return fsPath(new URI(uri));
         } else {
+            /*
+             * A uri for the root of a Windows drive, eg file:\\\c%3A, is converted to c:
+             * by the Uri class.  However file:\\\c%3A is unambiguously a uri to the root of
+             * the drive and c: is interpreted as the default directory for the c drive
+             * (by, for example, the readdir function in the fs-extra module).
+             * A backslash must be appended to the drive, eg c:\, to ensure the correct path.
+             */
             // tslint:disable-next-line:no-any
-            return (uri as any).codeUri.fsPath;
+            const fsPathFromVsCodeUri = (uri as any).codeUri.fsPath;
+            if (isWindows) {
+                const isWindowsDriveRoot = windowsDriveRegex.exec(fsPathFromVsCodeUri);
+                if (isWindowsDriveRoot) {
+                    return fsPathFromVsCodeUri + '\\';
+                }
+            }
+            return fsPathFromVsCodeUri;
         }
     }
 
