@@ -21,6 +21,6 @@ const path = require('path');
 const pck = require('../package.json');
 for (const name in pck.adapters) {
     const url = pck.adapters[name];
-    const targetPath = path.join(__dirname, '../lib', name);
+    const targetPath = path.join(__dirname, '../download', name);
     request(url).pipe(unzip.Extract({ path: targetPath }));
 }
