@@ -31,7 +31,7 @@ export class NodeDebugAdapterContribution extends AbstractVSCodeDebugAdapterCont
     constructor() {
         super(
             'node',
-            path.join(__dirname, '../../lib/node-debug/extension')
+            path.join(__dirname, '../../download/node-debug/extension')
         );
     }
 
@@ -98,7 +98,7 @@ export class Node2DebugAdapterContribution extends AbstractVSCodeDebugAdapterCon
     constructor() {
         super(
             'node2',
-            path.join(__dirname, '../../lib/node-debug2/extension')
+            path.join(__dirname, '../../download/node-debug2/extension')
         );
     }
 

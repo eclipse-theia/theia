@@ -30,16 +30,17 @@
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
     "lib",
-    "src"
+    "src",
+    "scripts"
   ],
   "scripts": {
+    "postinstall": "node ./scripts/download-adapters.js",
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "build": "yarn download && theiaext build",
+    "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "docs": "theiaext docs",
-    "download": "node ./scripts/download-adapters.js"
+    "docs": "theiaext docs"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.3.16"
