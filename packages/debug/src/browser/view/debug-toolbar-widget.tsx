@@ -81,7 +81,7 @@ export class DebugToolBar extends ReactWidget {
 
     protected start = () => this.model.start();
     protected restart = () => this.model.restart();
-    protected stop = () => this.model.currentSession && this.model.currentSession.disconnect();
+    protected stop = () => this.model.currentSession && this.model.currentSession.terminate();
     protected continue = () => this.model.currentThread && this.model.currentThread.continue();
     protected pause = () => this.model.currentThread && this.model.currentThread.pause();
     protected stepOver = () => this.model.currentThread && this.model.currentThread.stepOver();
