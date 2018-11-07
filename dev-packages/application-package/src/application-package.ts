@@ -88,6 +88,7 @@ export class ApplicationPackage {
     protected _frontendElectronModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
+    protected _backendElectronMasterModules: Map<string, string> | undefined;
     protected _extensionPackages: ReadonlyArray<ExtensionPackage> | undefined;
 
     /**
@@ -109,7 +110,7 @@ export class ApplicationPackage {
     }
 
     async findExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
-        return this.getExtensionPackage(extension) || await this.resolveExtensionPackage(extension);
+        return this.getExtensionPackage(extension) || this.resolveExtensionPackage(extension);
     }
 
     async resolveExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
@@ -147,6 +148,13 @@ export class ApplicationPackage {
             this._backendElectronModules = this.computeModules('backendElectron', 'backend');
         }
         return this._backendElectronModules;
+    }
+
+    get backendElectronMasterModules(): Map<string, string> {
+        if (!this._backendElectronMasterModules) {
+            this._backendElectronMasterModules = this.computeModules('backendMasterElectron');
+        }
+        return this._backendElectronMasterModules;
     }
 
     protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
@@ -218,6 +226,10 @@ export class ApplicationPackage {
 
     get targetBackendModules(): Map<string, string> {
         return this.ifBrowser(this.backendModules, this.backendElectronModules);
+    }
+
+    get targetElectronMasterModules(): Map<string, string> {
+        return this.ifElectron(this.backendElectronMasterModules, new Map<string, string>());
     }
 
     get targetFrontendModules(): Map<string, string> {
