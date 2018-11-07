@@ -43,6 +43,12 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             tempWorkspaceFile = getTemporaryWorkspaceFileUri(new URI(home));
         }
         await this.preferences.ready;
+        if (!workspaces.length) {
+            this.items.push(new QuickOpenGroupItem({
+                label: 'No Recent Workspaces',
+                run: (mode: QuickOpenMode): boolean => false
+            }));
+        }
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
             const stat = await this.fileSystem.getFileStat(workspace);
