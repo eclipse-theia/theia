@@ -1737,6 +1737,36 @@ declare module '@theia/plugin' {
         dispose(): void;
     }
 
+	/**
+	 * A text document content provider allows to add readonly documents
+	 * to the editor, such as source from a dll or generated html from md.
+	 *
+	 * Content providers are [registered](#workspace.registerTextDocumentContentProvider)
+	 * for a [uri-scheme](#Uri.scheme). When a uri with that scheme is to
+	 * be [loaded](#workspace.openTextDocument) the content provider is
+	 * asked.
+	 */
+    export interface TextDocumentContentProvider {
+
+		/**
+		 * An event to signal a resource has changed.
+		 */
+        onDidChange?: Event<Uri>;
+
+		/**
+		 * Provide textual content for a given uri.
+		 *
+		 * The editor will use the returned string-content to create a readonly
+		 * [document](#TextDocument). Resources allocated should be released when
+		 * the corresponding document has been [closed](#workspace.onDidCloseTextDocument).
+		 *
+		 * @param uri An uri which scheme matches the scheme this provider was [registered](#workspace.registerTextDocumentContentProvider) for.
+		 * @param token A cancellation token.
+		 * @return A string or a thenable that resolves to such.
+		 */
+        provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string>;
+    }
+
     /**
      * Something that can be selected from a list of items.
      */
@@ -3232,6 +3262,17 @@ declare module '@theia/plugin' {
          * @readonly
          */
         export let textDocuments: TextDocument[];
+
+		/**
+		 * Register a text document content provider.
+		 *
+		 * Only one provider can be registered per scheme.
+		 *
+		 * @param scheme The uri-scheme to register for.
+		 * @param provider A content provider.
+		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 */
+        export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
 
         /**
          * An event that is emitted when a [text document](#TextDocument) is opened.

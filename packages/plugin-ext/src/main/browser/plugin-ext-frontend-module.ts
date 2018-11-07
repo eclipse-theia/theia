@@ -42,6 +42,7 @@ import { UntitledResourceResolver } from './editor/untitled-resource';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
+import { TextContentResourceResolver } from './workspace-main';
 
 export default new ContainerModule(bind => {
     bindHostedPluginPreferences(bind);
@@ -94,4 +95,7 @@ export default new ContainerModule(bind => {
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
 
     bind(PluginContributionHandler).toSelf().inSingletonScope();
+
+    bind(TextContentResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(TextContentResourceResolver);
 });

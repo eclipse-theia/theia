@@ -26,6 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Saveable } from '@theia/core/lib/browser';
 
 export class DocumentsMainImpl implements DocumentsMain {
+
     private proxy: DocumentsExt;
     private toDispose = new DisposableCollection();
     private modelToDispose = new Map<string, Disposable>();
@@ -96,26 +97,31 @@ export class DocumentsMainImpl implements DocumentsMain {
         this.modelToDispose.delete(modelUrl);
     }
 
-    $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
-        let language;
-        let content;
-        if (options) {
-            language = options.language;
-            content = options.content;
+    async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
+        const language = options && options.language;
+        const content = options && options.content;
+        return createUntitledResource(content, language);
+    }
+
+    async $tryOpenDocument(uri: UriComponents): Promise<void> {
+        // Removing try-catch block here makes it not possible to handle errors.
+        // Following message is appeared in browser console
+        //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
+        try {
+            await this.editorManger.open(new URI(uri.external!));
+        } catch (err) {
+            throw new Error(err);
         }
-        return Promise.resolve(createUntitledResource(content, language));
     }
 
-    $tryOpenDocument(uri: UriComponents): Promise<void> {
-        return this.editorManger.open(new URI(uri.external!)).then(() => void 0);
+    async $trySaveDocument(uri: UriComponents): Promise<boolean> {
+        const widget = await this.editorManger.getByUri(new URI(uri.external!));
+        if (widget) {
+            await Saveable.save(widget);
+            return true;
+        }
+
+        return false;
     }
 
-    $trySaveDocument(uri: UriComponents): Promise<boolean> {
-        return this.editorManger.getByUri(new URI(uri.external!)).then(e => {
-            if (e) {
-                return Saveable.save(e).then(() => true);
-            }
-            return Promise.resolve(false);
-        });
-    }
 }

@@ -318,11 +318,14 @@ export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
     $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes: string | false,
         maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
-
+    $registerTextDocumentContentProvider(scheme: string): Promise<void>;
+    $unregisterTextDocumentContentProvider(scheme: string): void;
+    $onTextDocumentContentChange(uri: string, content: string): void;
 }
 
 export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: theia.WorkspaceFoldersChangeEvent): void;
+    $provideTextDocumentContent(uri: string): Promise<string | undefined>;
 }
 
 export interface DialogsMain {

@@ -37,7 +37,7 @@ export class DocumentsExtImpl implements DocumentsExt {
     readonly onDidSaveTextDocument: Event<theia.TextDocument> = this._onDidSaveTextDocument.event;
 
     private proxy: DocumentsMain;
-    private documentLoader = new Map<string, Promise<DocumentDataExt | undefined>>();
+    private loadingDocuments = new Map<string, Promise<DocumentDataExt | undefined>>();
 
     constructor(rpc: RPCProtocol, private editorsAndDocuments: EditorsAndDocumentsExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN);
@@ -113,39 +113,49 @@ export class DocumentsExtImpl implements DocumentsExt {
     }
 
     getDocumentData(resource: theia.Uri): DocumentDataExt | undefined {
-        if (!resource) {
-            return undefined;
+        if (resource) {
+            return this.editorsAndDocuments.getDocument(resource.toString());
         }
-        const data = this.editorsAndDocuments.getDocument(resource.toString());
-        if (data) {
-            return data;
-        }
+
         return undefined;
     }
 
-    ensureDocumentData(uri: URI): Promise<DocumentDataExt | undefined> {
-
+    async openDocument(uri: URI): Promise<DocumentDataExt | undefined> {
         const cached = this.editorsAndDocuments.getDocument(uri.toString());
         if (cached) {
-            return Promise.resolve(cached);
+            return cached;
         }
 
-        let promise = this.documentLoader.get(uri.toString());
-        if (!promise) {
-            promise = this.proxy.$tryOpenDocument(uri).then(() => {
-                this.documentLoader.delete(uri.toString());
-                return this.editorsAndDocuments.getDocument(uri.toString());
-            }, err => {
-                this.documentLoader.delete(uri.toString());
-                return Promise.reject(err);
-            });
-            this.documentLoader.set(uri.toString(), promise);
+        // Determine whether the document is already loading
+        const loadingDocument = this.loadingDocuments.get(uri.toString());
+        if (loadingDocument) {
+            // return the promise if document is already loading
+            return loadingDocument;
         }
 
-        return promise;
+        try {
+            // start opening document
+            const document = this.loadDocument(uri);
+            // add loader to the map
+            this.loadingDocuments.set(uri.toString(), document);
+            // wait the document being opened
+            await document;
+            // retun opened document
+            return document;
+        } catch (error) {
+            return Promise.reject(error);
+        } finally {
+            // remove loader from the map
+            this.loadingDocuments.delete(uri.toString());
+        }
     }
 
-    createDocumentData(options?: { language?: string; content?: string }): Promise<URI> {
+    private async loadDocument(uri: URI): Promise<DocumentDataExt | undefined> {
+        await this.proxy.$tryOpenDocument(uri);
+        return this.editorsAndDocuments.getDocument(uri.toString());
+    }
+
+    async createDocumentData(options?: { language?: string; content?: string }): Promise<URI> {
         return this.proxy.$tryCreateDocument(options).then(data => URI.revive(data));
     }
 
