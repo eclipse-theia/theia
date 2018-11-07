@@ -158,7 +158,7 @@ export class DebugSessionManager {
             if (restart) {
                 this.doRestart(session, restart);
             } else {
-                session.disconnect();
+                session.terminate();
             }
         });
         session.on('exited', () => this.destroy(session.id));
@@ -169,18 +169,13 @@ export class DebugSessionManager {
     restart(): Promise<DebugSession | undefined>;
     restart(session: DebugSession): Promise<DebugSession>;
     async restart(session: DebugSession | undefined = this.currentSession): Promise<DebugSession | undefined> {
-        if (!session) {
-            return undefined;
-        }
-        if (session.capabilities.supportsRestartRequest) {
-            await session.sendRequest('restart', {});
-            return session;
-        } else {
-            return this.doRestart(session);
-        }
+        return session && this.doRestart(session);
     }
     protected async doRestart(session: DebugSession, restart?: any): Promise<DebugSession> {
-        await session.disconnect({ restart: true });
+        if (await session.restart()) {
+            return session;
+        }
+        await session.terminate(!!restart);
         const { options, configuration } = session;
         configuration.__restart = restart;
         return this.start(options);

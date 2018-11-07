@@ -101,6 +101,7 @@ export class DebugSession implements CompositeTreeElement {
                     this.clearThread(threadId);
                 }
             }),
+            this.on('terminated', () => this.terminated = true),
             this.on('capabilities', event => this.updateCapabilities(event.body.capabilities)),
             this.breakpoints.onDidChangeMarkers(uri => this.updateBreakpoints({ uri, sourceModified: true }))
         ]);
@@ -272,8 +273,23 @@ export class DebugSession implements CompositeTreeElement {
         await this.updateThreads(undefined);
     }
 
-    async disconnect(args: DebugProtocol.DisconnectArguments = {}): Promise<void> {
-        await this.sendRequest('disconnect', args);
+    protected terminated = false;
+    async terminate(restart?: boolean): Promise<void> {
+        if (!this.terminated && this.capabilities.supportsTerminateRequest && this.configuration.request === 'launch') {
+            this.terminated = true;
+            await this.connection.sendRequest('terminate', { restart });
+        } else {
+            await this.sendRequest('disconnect', { restart });
+        }
+    }
+
+    async restart(): Promise<boolean> {
+        if (this.capabilities.supportsRestartRequest) {
+            this.terminated = false;
+            await this.sendRequest('restart', {});
+            return true;
+        }
+        return false;
     }
 
     async completions(text: string, column: number, line: number): Promise<DebugProtocol.CompletionItem[]> {

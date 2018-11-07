@@ -482,7 +482,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.start(true)
         });
         registry.registerCommand(DebugCommands.STOP, {
-            execute: () => this.manager.currentSession && this.manager.currentSession.disconnect(),
+            execute: () => this.manager.currentSession && this.manager.currentSession.terminate(),
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
         registry.registerCommand(DebugCommands.RESTART, {
@@ -558,7 +558,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
 
         registry.registerCommand(DebugSessionContextCommands.STOP, {
-            execute: () => this.selectedSession && this.selectedSession.disconnect(),
+            execute: () => this.selectedSession && this.selectedSession.terminate(),
             isEnabled: () => !!this.selectedSession && this.selectedSession.state !== DebugState.Inactive,
             isVisible: () => !this.selectedThread
         });
