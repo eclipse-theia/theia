@@ -14,9 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+
 import { Container } from 'inversify';
 import { WorkspaceService } from './workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { FileSystemWatcher, FileChangeEvent, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DefaultWindowService, WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -29,6 +33,8 @@ import * as sinon from 'sinon';
 import * as chai from 'chai';
 import URI from '@theia/core/lib/common/uri';
 const expect = chai.expect;
+
+disableJSDOM();
 
 const folderA = Object.freeze(<FileStat>{
     uri: 'file:///home/folderA',
@@ -60,6 +66,17 @@ describe('WorkspaceService', () => {
     let mockILogger: ILogger;
     let mockPref: WorkspacePreferences;
 
+    before(() => {
+        disableJSDOM = enableJSDOM();
+        FrontendApplicationConfigProvider.set({
+            'applicationName': 'test',
+        });
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
+
     beforeEach(() => {
         mockPreferenceValues = {};
         mockFilesystem = sinon.createStubInstance(FileSystemNode);
@@ -88,6 +105,7 @@ describe('WorkspaceService', () => {
 
         wsService = testContainer.get<WorkspaceService>(WorkspaceService);
     });
+
     afterEach(() => {
         wsService['toDisposeOnWorkspace'].dispose();
         toRestore.forEach(res => {
