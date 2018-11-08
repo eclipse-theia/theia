@@ -40,6 +40,7 @@ import {
     Definition,
     DefinitionLink,
     DocumentLink,
+    CodeLensSymbol,
     Command,
     TextEdit
 } from './model';
@@ -740,6 +741,8 @@ export interface LanguagesExt {
     ): Promise<ModelSingleEditOperation[] | undefined>;
     $provideDocumentLinks(handle: number, resource: UriComponents): Promise<DocumentLink[] | undefined>;
     $resolveDocumentLink(handle: number, link: DocumentLink): Promise<DocumentLink | undefined>;
+    $provideCodeLenses(handle: number, resource: UriComponents): Promise<CodeLensSymbol[] | undefined>;
+    $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol): Promise<CodeLensSymbol | undefined>;
     $provideCodeActions(
         handle: number,
         resource: UriComponents,
@@ -763,6 +766,8 @@ export interface LanguagesMain {
     $registerRangeFormattingProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerCodeLensSupport(handle: number, selector: SerializedDocumentFilter[], eventHandle?: number): void;
+    $emitCodeLensEvent(eventHandle: number, event?: any): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {

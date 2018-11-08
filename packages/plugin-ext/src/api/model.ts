@@ -236,6 +236,12 @@ export interface DocumentLinkProvider {
     resolveLink?: (link: DocumentLink, token: monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
 }
 
+export interface CodeLensSymbol {
+    range: Range;
+    id?: string;
+    command?: Command;
+}
+
 export interface CodeAction {
     title: string;
     command?: Command;

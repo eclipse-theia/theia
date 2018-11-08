@@ -533,7 +533,26 @@ const disposable = theia.languages.registerDocumentLinkProvider(documentsSelecto
 
 ...
 
-function provideLinks(document: theia.TextDocument): theia.ProviderResult<theia.DocumentLink> {
+function provideLinks(document: theia.TextDocument): theia.ProviderResult<theia.DocumentLink[]> {
+    // code here
+}
+```
+
+#### Code Lens Provider
+
+A code lens provider allows to add a custom lens detection logic.
+
+Example of code lens provider registration:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const provider = { provideCodeLenses: provideLenses };
+
+const disposable = theia.languages.registerCodeLensProvider(documentsSelector, provider);
+
+...
+
+function provideLenses(document: theia.TextDocument): theia.ProviderResult<theia.CodeLens[]> {
     // code here
 }
 ```
