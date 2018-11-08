@@ -55,7 +55,7 @@ const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
-        filename: '[chunkhash].js',
+        filename: 'bundle.[contenthash:8].js',
         path: outputPath
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
