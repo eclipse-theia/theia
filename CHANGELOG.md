@@ -3,6 +3,7 @@
 ## v0.3.17
 - [plug-in] added `languages.registerCodeLensProvider` Plug-in API
 - [core] `ctrl+alt+a` and `ctrl+alt+d` to switch tabs left/right
+- [core] added `theia.applicationName` to application `package.json` and improved window title
 
 
 ## v0.3.16

@@ -69,7 +69,9 @@ export namespace ApplicationProps {
             config: {}
         },
         frontend: {
-            config: {}
+            config: {
+                applicationName: 'Theia'
+            }
         }
     };
 
@@ -92,6 +94,11 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
      * The default theme for the application. If not give, defaults to `dark`. If invalid theme is given, also defaults to `dark`.
      */
     readonly defaultTheme?: string;
+
+    /**
+     * The name of the application. `Theia` by default.
+     */
+    readonly applicationName: string;
 
 }
 
