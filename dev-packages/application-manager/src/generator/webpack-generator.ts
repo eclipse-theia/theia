@@ -41,10 +41,14 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
-const { mode }  = yargs.option('mode', {
+const { mode, env: { hashed } } = yargs.option('mode', {
     description: "Mode to use",
     choices: ["development", "production"],
     default: "production"
+}).option('env.hashed', {
+    description: "Append the content hash to the bundle's filename",
+    type: "boolean",
+    default: false
 }).argv;
 const development = mode === 'development';${this.ifMonaco(() => `
 
@@ -55,7 +59,7 @@ const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
-        filename: 'bundle.[contenthash:8].js',
+        filename: hashed ? 'bundle.[contenthash:8].js' : 'bundle.js',
         path: outputPath
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
