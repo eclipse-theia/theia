@@ -45,7 +45,8 @@ import {
     FormattingOptions,
     Definition,
     DefinitionLink,
-    DocumentLink
+    DocumentLink,
+    CodeLensSymbol
 } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -57,6 +58,8 @@ import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
 import { DefinitionAdapter } from './languages/definition';
 import { CodeActionAdapter } from './languages/code-action';
 import { LinkProviderAdapter } from './languages/link-provider';
+import { CodeLensAdapter } from './languages/lens';
+import { CommandRegistryImpl } from './command-registry';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -65,6 +68,8 @@ type Adapter = CompletionAdapter |
     RangeFormattingAdapter |
     OnTypeFormattingAdapter |
     DefinitionAdapter |
+    LinkProviderAdapter |
+    CodeLensAdapter |
     CodeActionAdapter |
     LinkProviderAdapter;
 
@@ -77,7 +82,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
 
-    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl) {
+    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl, private readonly commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
         this.diagnostics = new Diagnostics(rpc);
     }
@@ -317,8 +322,25 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Code Lens Provider begin
     registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
-        // FIXME: to implement
-        return new Disposable(() => { });
+        const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents, this.commands.getConverter()));
+        const eventHandle = typeof provider.onDidChangeCodeLenses === 'function' ? this.nextCallId() : undefined;
+        this.proxy.$registerCodeLensSupport(callId, this.transformDocumentSelector(selector), eventHandle);
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined && provider.onDidChangeCodeLenses) {
+            const subscription = provider.onDidChangeCodeLenses(e => this.proxy.$emitCodeLensEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+
+        return result;
+    }
+
+    $provideCodeLenses(handle: number, resource: UriComponents): Promise<CodeLensSymbol[] | undefined> {
+        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.provideCodeLenses(URI.revive(resource)));
+    }
+
+    $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol): Promise<CodeLensSymbol | undefined> {
+        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.resolveCodeLens(URI.revive(resource), symbol));
     }
     // ### Code Lens Provider end
 
