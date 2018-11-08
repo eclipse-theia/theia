@@ -11,7 +11,6 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
-    "@types/chai-as-promised": "0.0.31",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
     "@types/mocha": "^2.2.41",
