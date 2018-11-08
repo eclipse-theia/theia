@@ -14,14 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Git, Repository } from '../common';
-import { injectable, inject } from 'inversify';
+import { Repository } from '../common';
+import { injectable, inject, multiInject } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { DisposableCollection, Event, Emitter } from '@theia/core';
 import { LocalStorageService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { ScmWidgetFactory } from './index';
 
 import debounce = require('lodash.debounce');
 
@@ -39,7 +40,7 @@ export class GitRepositoryProvider {
     protected readonly allRepoStorageKey = 'theia-git-all-repositories';
 
     constructor(
-        @inject(Git) protected readonly git: Git,
+        @multiInject(ScmWidgetFactory) public readonly scmWidgetFactories: ScmWidgetFactory[],
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -136,6 +137,10 @@ export class GitRepositoryProvider {
     }
 
     async refresh(options?: GitRefreshOptions): Promise<void> {
+        this.scmWidgetFactories.forEach(scm =>
+            console.info(scm.widgetId)
+        );
+
         const roots: FileStat[] = [];
         await this.workspaceService.roots;
         for (const root of this.workspaceService.tryGetRoots()) {
@@ -145,11 +150,17 @@ export class GitRepositoryProvider {
         }
         const repoUris = new Map<string, Repository>();
         const reposOfRoots = await Promise.all(
-            roots.map(r => this.git.repositories(r.uri, { ...options }))
+            this.scmWidgetFactories.map(f =>
+                Promise.all(
+                    roots.map(r => f.repositories(r.uri, { ...options }))
+                )
+            )
         );
-        reposOfRoots.forEach(reposPerRoot => {
-            reposPerRoot.forEach(repoOfOneRoot => {
-                repoUris.set(repoOfOneRoot.localUri, repoOfOneRoot);
+        reposOfRoots.forEach(reposPerScm => {
+            reposPerScm.forEach(reposPerRoot => {
+                reposPerRoot.forEach(repoOfOneRoot => {
+                    repoUris.set(repoOfOneRoot.localUri, repoOfOneRoot);
+                });
             });
         });
         this._allRepositories = Array.from(repoUris.values());

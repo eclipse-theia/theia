@@ -36,6 +36,11 @@
     margin-bottom: 5px;
 }
 
+.theia-git .singletonFill {
+    width: 100%;
+    height: 100%;
+}
+
 .theia-git .noWrapInfo {
     white-space: nowrap;
     overflow: hidden;

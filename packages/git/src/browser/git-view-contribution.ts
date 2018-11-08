@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject } from 'inversify';
+import { injectable, inject, multiInject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry, CommandContribution, MenuContribution, Command } from '@theia/core';
 import {
@@ -23,14 +23,18 @@ import {
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus } from '../common';
+import { ScmWidgetFactory } from './index';
+import { ScmContainerWidget } from './scm-container-widget';
 import { GitWidget } from './git-widget';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitQuickOpenService, GitAction } from './git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { GitPrompt } from '../common/git-prompt';
+import { GIT_WIDGET_FACTORY_ID } from '.';
 
-export const GIT_WIDGET_FACTORY_ID = 'git';
+export const SCM_WIDGET_FACTORY_ID = 'scm';
+export const NO_SCM_WIDGET_FACTORY_ID = 'no-scm';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -107,7 +111,7 @@ export namespace GIT_COMMANDS {
 }
 
 @injectable()
-export class GitViewContribution extends AbstractViewContribution<GitWidget>
+export class GitViewContribution extends AbstractViewContribution<ScmContainerWidget>
     implements FrontendApplicationContribution, CommandContribution, MenuContribution, TabBarToolbarContribution {
 
     static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
@@ -124,10 +128,10 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(GitPrompt) protected readonly prompt: GitPrompt;
 
-    constructor() {
+    constructor(@multiInject(ScmWidgetFactory) scmWidgetFactories: ScmWidgetFactory[]) {
         super({
-            widgetId: GIT_WIDGET_FACTORY_ID,
-            widgetName: 'Git',
+            widgetId: SCM_WIDGET_FACTORY_ID,
+            widgetName: scmWidgetFactories.length === 1 ? scmWidgetFactories[0].label : 'Source Control',
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 200
@@ -139,6 +143,14 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
         await this.openView();
+    }
+
+    get gitWidget(): Promise<GitWidget> {
+        return this.widgetManager.getOrCreateWidget<GitWidget>(GIT_WIDGET_FACTORY_ID);
+    }
+
+    tryGetGitWidget(): GitWidget | undefined {
+        return this.widgetManager.tryGetWidget(GIT_WIDGET_FACTORY_ID);
     }
 
     onStart(): void {
@@ -257,12 +269,12 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_SIGN_OFF, {
-            execute: () => this.tryGetWidget()!.doCommit(this.repositoryTracker.selectedRepository, 'sign-off'),
+            execute: () => this.tryGetGitWidget()!.doCommit(this.repositoryTracker.selectedRepository, 'sign-off'),
             isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
             execute: async () => {
-                const widget = this.tryGetWidget();
+                const widget = this.tryGetGitWidget();
                 const { selectedRepository } = this.repositoryTracker;
                 if (!!widget && !!selectedRepository) {
                     try {
@@ -385,14 +397,14 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
     async openChanges(widget?: Widget): Promise<EditorWidget | undefined> {
         const options = this.getOpenChangesOptions(widget);
         if (options) {
-            const view = await this.widget;
+            const view = await this.gitWidget;
             return view.openChange(options.change, options.options);
         }
         return undefined;
     }
 
     protected getOpenChangesOptions(widget?: Widget): GitOpenChangesOptions | undefined {
-        const view = this.tryGetWidget();
+        const view = this.tryGetGitWidget();
         if (!view) {
             return undefined;
         }

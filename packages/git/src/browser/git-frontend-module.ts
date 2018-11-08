@@ -20,9 +20,12 @@ import { WebSocketConnectionProvider, WidgetFactory, bindViewContribution, Label
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
 import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';
-import { GitViewContribution, GIT_WIDGET_FACTORY_ID } from './git-view-contribution';
+import { GitViewContribution, SCM_WIDGET_FACTORY_ID, NO_SCM_WIDGET_FACTORY_ID } from './git-view-contribution';
 import { bindGitDiffModule } from './diff/git-diff-frontend-module';
 import { bindGitHistoryModule } from './history/git-history-frontend-module';
+import { ScmContainerWidget } from './scm-container-widget';
+import { ScmWidgetFactory, GIT_WIDGET_FACTORY_ID } from '.';
+import { GitWidgetFactory } from './git-widget-factory';
 import { GitWidget } from './git-widget';
 import { GitResourceResolver } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
@@ -36,6 +39,7 @@ import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
+import { NoScmWidget } from './no-scm-widget';
 
 import '../../src/browser/style/index.css';
 
@@ -55,10 +59,26 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(GitViewContribution);
     bind(TabBarToolbarContribution).toService(GitViewContribution);
 
+    bind(ScmContainerWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: SCM_WIDGET_FACTORY_ID,
+        createWidget: () => context.container.get<ScmContainerWidget>(ScmContainerWidget)
+    })).inSingletonScope();
+
+    bind(GitWidgetFactory).toSelf().inSingletonScope();
     bind(GitWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: GIT_WIDGET_FACTORY_ID,
         createWidget: () => context.container.get<GitWidget>(GitWidget)
+    })).inSingletonScope();
+    bind(ScmWidgetFactory).toDynamicValue(
+        context => context.container.get<GitWidgetFactory>(GitWidgetFactory)
+    ).inSingletonScope();
+
+    bind(NoScmWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: NO_SCM_WIDGET_FACTORY_ID,
+        createWidget: () => context.container.get<NoScmWidget>(NoScmWidget)
     })).inSingletonScope();
 
     bind(GitResourceResolver).toSelf().inSingletonScope();

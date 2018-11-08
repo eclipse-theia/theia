@@ -80,6 +80,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         this.title.iconClass = 'fa git-tab-icon';
         this.scrollContainer = GitWidget.Styles.CHANGES_CONTAINER;
         this.addClass('theia-git');
+        this.addClass('singletonFill');
         this.node.tabIndex = 0;
     }
 
