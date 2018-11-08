@@ -207,8 +207,10 @@ is not optimized for dense, information rich UIs.
   --theia-ui-button-color-secondary: var(--theia-secondary-brand-color1);
   --theia-ui-button-color-secondary-hover: var(--theia-secondary-brand-color0);
   --theia-ui-button-font-color-secondary: var(--theia-inverse-ui-font-color0);
-  --theia-ui-button-color-disabled: var(--theia-disabled-color1);
+  --theia-ui-button-color-disabled: var(--theia-accent-color3);
   --theia-ui-button-font-color-disabled: var(--theia-ui-font-color2);
+  --theia-ui-button-color-secondary-disabled: var(--theia-disabled-color1);
+  --theia-ui-button-font-color-secondary-disabled: var(--theia-ui-font-color2);
 
   /* Expand/collapse element */
   --theia-ui-expand-button-color: var(--theia-accent-color4);

@@ -147,6 +147,11 @@ button[disabled], .theia-button[disabled] {
   cursor: default;
 }
 
+button.secondary[disabled], .theia-button.secondary[disabled] {
+    color: var(--theia-ui-button-font-color-secondary-disabled);
+    background-color: var(--theia-ui-button-color-secondary-disabled);
+}
+
 .p-Widget select {
     color: var(--theia-ui-font-color1);
     font-size: var(--theia-ui-font-size1);
