@@ -278,9 +278,27 @@ export class DebugSession implements CompositeTreeElement {
         if (!this.terminated && this.capabilities.supportsTerminateRequest && this.configuration.request === 'launch') {
             this.terminated = true;
             await this.connection.sendRequest('terminate', { restart });
+            if (!await this.exited(1000)) {
+                await this.disconnect(restart);
+            }
         } else {
-            await this.sendRequest('disconnect', { restart });
+            await this.disconnect(restart);
         }
+    }
+    protected exited(timeout: number): Promise<boolean> {
+        return new Promise<boolean>(resolve => {
+            const listener = this.on('exited', () => {
+                listener.dispose();
+                resolve(true);
+            });
+            setTimeout(() => {
+                listener.dispose();
+                resolve(false);
+            }, timeout);
+        });
+    }
+    protected async disconnect(restart?: boolean): Promise<void> {
+        await this.sendRequest('disconnect', { restart });
     }
 
     async restart(): Promise<boolean> {
