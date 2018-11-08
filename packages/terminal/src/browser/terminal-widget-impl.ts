@@ -57,7 +57,7 @@ interface TerminalCSSProperties {
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
-    private readonly onTermDidClose = new Emitter<TerminalWidget>();
+    protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected terminalId: number;
     protected term: Xterm.Terminal;
     protected restored = false;
@@ -123,16 +123,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
-                if (!this.title.label.endsWith('<error>')) {
-                    this.title.label = `${this.title.label} <error>`;
+                    this.dispose();
+                    this.onTermDidClose.fire(this);
+                    this.onTermDidClose.dispose();
+                    this.logger.error(`The terminal process terminated. Cause: ${error}`);
                 }
-            }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
-                if (!this.title.label.endsWith('<terminated>')) {
-                    this.title.label = `${this.title.label} <terminated>`;
-                }
+                this.dispose();
                 this.onTermDidClose.fire(this);
                 this.onTermDidClose.dispose();
             }
