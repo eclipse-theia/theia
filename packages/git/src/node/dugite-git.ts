@@ -199,7 +199,7 @@ export class GitBlameParser {
                     author: {
                         name: entry.author,
                         email: entry.authorMail,
-                        timestamp: entry.authorTime,
+                        timestamp: entry.authorTime ? new Date(entry.authorTime * 1000).toISOString() : '',
                     },
                     summary: entry.summary,
                     body: await commitBody(sha)
@@ -230,11 +230,7 @@ export namespace GitBlameParser {
         lineCount?: number,
         author?: string,
         authorMail?: string,
-        authorTime?: string,
-        /**
-         * Timezone offset, e.g. UTC/GMT+2 === 200
-         */
-        authorTz?: number,
+        authorTime?: number,
         summary?: string,
     }
 
@@ -260,11 +256,7 @@ export namespace GitBlameParser {
             const matches = rest.match(/(<(.*)>)/);
             entry.authorMail = matches ? matches[2] : rest;
         } else if (firstPart === 'author-time') {
-            const rest = parts.slice(1).join(' ');
-            const matches = rest.match(/(<(.*)>)/);
-            entry.authorTime = matches ? matches[2] : rest;
-        } else if (firstPart === 'author-tz') {
-            entry.authorTz = parseInt(parts[1], 10);
+            entry.authorTime = parseInt(parts[1], 10);
         } else if (firstPart === 'summary') {
             let summary = parts.slice(1).join(' ');
             if (summary.startsWith('"') && summary.endsWith('"')) {
