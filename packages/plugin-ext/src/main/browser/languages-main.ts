@@ -28,7 +28,7 @@ import { fromLanguageSelector } from '../../plugin/type-converters';
 import { UriComponents } from '../../common/uri-components';
 import { LanguageSelector } from '../../plugin/languages';
 import { DocumentFilter, MonacoModelIdentifier, testGlob, getLanguages } from 'monaco-languageclient/lib';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, Emitter } from '@theia/core';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
@@ -177,6 +177,42 @@ export class LanguagesMainImpl implements LanguagesMain {
             resolveLink: (link: monaco.languages.ILink, token) =>
                 this.proxy.$resolveDocumentLink(handle, link).then(v => v!)
         };
+    }
+
+    $registerCodeLensSupport(handle: number, selector: SerializedDocumentFilter[], eventHandle: number): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const lensProvider = this.createCodeLensProvider(handle, languageSelector);
+
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<monaco.languages.CodeLensProvider>();
+            this.disposables.set(eventHandle, emitter);
+            lensProvider.onDidChange = emitter.event;
+        }
+
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerCodeLensProvider(language, lensProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createCodeLensProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.CodeLensProvider {
+        return {
+            provideCodeLenses: (model, token) =>
+                this.proxy.$provideCodeLenses(handle, model.uri).then(v => v!)
+            ,
+            resolveCodeLens: (model, codeLens, token) =>
+                this.proxy.$resolveCodeLens(handle, model.uri, codeLens).then(v => v!)
+        };
+    }
+
+    $emitCodeLensEvent(eventHandle: number, event?: any): void {
+        const obj = this.disposables.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
     }
 
     protected createDefinitionProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.DefinitionProvider {
