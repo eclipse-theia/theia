@@ -2,6 +2,13 @@
   "private": true,
   "name": "@theia/example-browser",
   "version": "0.3.16",
+  "theia": {
+    "frontend": {
+      "config": {
+        "applicationName": "Theia Browser Example"
+      }
+    }
+  },
   "dependencies": {
     "@theia/callhierarchy": "^0.3.16",
     "@theia/console": "^0.3.16",

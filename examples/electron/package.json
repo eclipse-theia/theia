@@ -3,7 +3,12 @@
   "name": "@theia/example-electron",
   "version": "0.3.16",
   "theia": {
-    "target": "electron"
+    "target": "electron",
+    "frontend": {
+      "config": {
+        "applicationName": "Theia Electron Example"
+      }
+    }
   },
   "dependencies": {
     "@theia/callhierarchy": "^0.3.16",

@@ -46,6 +46,7 @@ import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-works
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspacePreferences, createWorkspacePreferences } from '@theia/workspace/lib/browser/workspace-preferences';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import * as sinon from 'sinon';
 import URI from '@theia/core/lib/common/uri';
 
@@ -60,7 +61,7 @@ const tempPath = temp.track().openSync().path;
 const mockUserPreferenceEmitter = new Emitter<void>();
 const mockWorkspacePreferenceEmitter = new Emitter<void>();
 
-before(async () => {
+function testContainerSetup() {
     testContainer = new Container();
     bindPreferenceSchemaProvider(testContainer.bind.bind(testContainer));
 
@@ -130,12 +131,16 @@ before(async () => {
 
     /* Logger mock */
     testContainer.bind(ILogger).to(MockLogger);
-});
+}
 
 describe('Preference Service', function () {
 
     before(() => {
         disableJSDOM = enableJSDOM();
+        FrontendApplicationConfigProvider.set({
+            'applicationName': 'test',
+        });
+        testContainerSetup();
     });
 
     after(() => {
