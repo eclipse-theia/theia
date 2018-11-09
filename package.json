@@ -53,7 +53,7 @@
     "build:clean": "run prepare",
     "docs": "run docs \"@theia/!(example-)*\"",
     "test": "yarn test:theia && yarn test:electron && yarn test:browser",
-    "test:theia": "run test \"@theia/!(example-)*\" --stream --concurrency 1",
+    "test:theia": "run test \"@theia/!(example-)*\" --stream --concurrency=1",
     "test:browser": "yarn rebuild:browser && run test \"@theia/example-browser\"",
     "test:electron": "yarn rebuild:electron && run test \"@theia/example-electron\"",
     "rebuild:clean": "rimraf .browser_modules",
