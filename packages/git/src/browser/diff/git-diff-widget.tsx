@@ -337,7 +337,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         }
     }
 
-    protected getUriToOpen(change: GitFileChange): URI {
+    getUriToOpen(change: GitFileChange): URI {
         const uri: URI = new URI(change.uri);
 
         let fromURI = uri;

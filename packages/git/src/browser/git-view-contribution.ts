@@ -15,8 +15,12 @@
  ********************************************************************************/
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { DisposableCollection, CommandRegistry, MenuModelRegistry } from '@theia/core';
-import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
+import { DisposableCollection, CommandRegistry, MenuModelRegistry, CommandContribution, MenuContribution, Command } from '@theia/core';
+import {
+    AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry,
+    FrontendApplicationContribution, FrontendApplication, Widget
+} from '@theia/core/lib/browser';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus } from '../common';
 import { GitWidget } from './git-widget';
@@ -63,13 +67,15 @@ export namespace GIT_COMMANDS {
         id: 'git.change.repository',
         label: 'Git: Change Repository...'
     };
-    export const OPEN_FILE = {
+    export const OPEN_FILE: Command = {
         id: 'git.open.file',
-        label: 'Git: Open File'
+        category: 'Git',
+        label: 'Open File'
     };
-    export const OPEN_CHANGES = {
+    export const OPEN_CHANGES: Command = {
         id: 'git.open.changes',
-        label: 'Git: Open Changes'
+        category: 'Git',
+        label: 'Open Changes'
     };
     export const SYNC = {
         id: 'git.sync',
@@ -82,7 +88,8 @@ export namespace GIT_COMMANDS {
 }
 
 @injectable()
-export class GitViewContribution extends AbstractViewContribution<GitWidget> implements FrontendApplicationContribution {
+export class GitViewContribution extends AbstractViewContribution<GitWidget>
+    implements FrontendApplicationContribution, CommandContribution, MenuContribution, TabBarToolbarContribution {
 
     static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
     static GIT_REPOSITORY_STATUS = 'git-repository-status';
@@ -267,6 +274,23 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
         });
     }
 
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        registry.registerItem({
+            id: GIT_COMMANDS.OPEN_FILE.id,
+            command: GIT_COMMANDS.OPEN_FILE.id,
+            text: '$(file-o)',
+            isVisible: widget => !!this.getOpenFileOptions(widget),
+            tooltip: GIT_COMMANDS.OPEN_FILE.label
+        });
+        registry.registerItem({
+            id: GIT_COMMANDS.OPEN_CHANGES.id,
+            command: GIT_COMMANDS.OPEN_CHANGES.id,
+            text: '$(files-o)',
+            isVisible: widget => !!this.getOpenChangesOptions(widget),
+            tooltip: GIT_COMMANDS.OPEN_CHANGES.label
+        });
+    }
+
     protected hasConflicts(changes: GitFileChange[]): boolean {
         return changes.some(c => c.status === GitFileStatus.Conflicted);
     }
@@ -280,9 +304,11 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
         return options && this.editorManager.open(options.uri, options.options);
     }
 
-    protected get openFileOptions(): { uri: URI, options?: EditorOpenerOptions } | undefined {
-        const widget = this.editorManager.currentEditor;
-        if (widget && DiffUris.isDiffUri(widget.editor.uri)) {
+    protected get openFileOptions(): GitOpenFileOptions | undefined {
+        return this.getOpenFileOptions(this.editorManager.currentEditor);
+    }
+    protected getOpenFileOptions(widget: Widget | undefined): GitOpenFileOptions | undefined {
+        if (widget instanceof EditorWidget && DiffUris.isDiffUri(widget.editor.uri)) {
             const [, right] = DiffUris.decode(widget.editor.uri);
             const uri = right.withScheme('file');
             const selection = widget.editor.selection;
@@ -300,16 +326,18 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
         return undefined;
     }
 
-    protected get openChangesOptions(): { change: GitFileChange, options?: EditorOpenerOptions } | undefined {
+    protected get openChangesOptions(): GitOpenChangesOptions | undefined {
+        return this.getOpenChangesOptions(this.editorManager.currentEditor);
+    }
+    protected getOpenChangesOptions(widget: Widget | undefined): GitOpenChangesOptions | undefined {
         const view = this.tryGetWidget();
         if (!view) {
             return undefined;
         }
-        const widget = this.editorManager.currentEditor;
-        if (widget && !DiffUris.isDiffUri(widget.editor.uri)) {
+        if (widget instanceof EditorWidget && !DiffUris.isDiffUri(widget.editor.uri)) {
             const uri = widget.editor.uri;
             const change = view.findChange(uri);
-            if (change) {
+            if (change && view.getUriToOpen(change).toString() !== uri.toString()) {
                 const selection = widget.editor.selection;
                 return { change, options: { selection } };
             }
@@ -358,4 +386,12 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
             tooltip: 'Publish Changes'
         };
     }
+}
+export interface GitOpenFileOptions {
+    readonly uri: URI
+    readonly options?: EditorOpenerOptions
+}
+export interface GitOpenChangesOptions {
+    readonly change: GitFileChange
+    readonly options?: EditorOpenerOptions
 }
