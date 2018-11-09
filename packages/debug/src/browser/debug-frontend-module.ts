@@ -33,6 +33,7 @@ import { DebugViewOptions } from './view/debug-view-model';
 import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-session-widget';
 import { InDebugModeContext } from './debug-keybinding-contexts';
 import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model';
+import './debug-monaco-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugSessionContribution);

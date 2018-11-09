@@ -14,28 +14,34 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+
 import debounce = require('p-debounce');
-import * as jsoncparser from 'jsonc-parser';
+import { visit } from 'jsonc-parser';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable, DisposableCollection, Event, Emitter, Reference } from '@theia/core';
-import { QuickPickService, OpenerService, open } from '@theia/core/lib/browser';
+import { Event, Emitter, ResourceProvider } from '@theia/core';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { QuickPickService, StorageService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { DebugService } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
+import { DebugConfigurationModel } from './debug-configuration-model';
+import { DebugSessionOptions } from './debug-session-options';
 
 @injectable()
 export class DebugConfigurationManager {
-    private static readonly CONFIG = '.theia/launch.json';
 
-    @inject(MonacoTextModelService)
-    protected readonly modelService: MonacoTextModelService;
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
     @inject(DebugService)
     protected readonly debug: DebugService;
     @inject(QuickPickService)
@@ -44,171 +50,244 @@ export class DebugConfigurationManager {
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
+    protected initialized: Promise<void>;
     @postConstruct()
     protected async init(): Promise<void> {
-        this.updateModels();
+        this.initialized = this.updateModels();
         this.workspaceService.onWorkspaceChanged(() => this.updateModels());
     }
 
-    protected readonly models = new Map<string, {
-        reference: Reference<MonacoEditorModel>
-        configurations: DebugConfiguration[],
-        toDispose: DisposableCollection
-    }>();
+    protected readonly models = new Map<string, DebugConfigurationModel>();
     protected updateModels = debounce(async () => {
         const roots = await this.workspaceService.roots;
         const toDelete = new Set(this.models.keys());
         for (const rootStat of roots) {
             const root = new URI(rootStat.uri);
-            const uri = root.resolve(DebugConfigurationManager.CONFIG);
-            const key = uri.toString();
-            toDelete.delete(key);
-            if (!this.models.has(key)) {
-                const toDispose = new DisposableCollection();
-                const reference = await this.modelService.createModelReference(uri);
-                toDispose.push(reference);
-                const configurations = this.parseConfigurations(reference.object);
-                const value = { reference, configurations, toDispose };
-                this.models.set(key, value);
-                toDispose.push(Disposable.create(() => this.models.delete(key)));
-                const reconcileConfigurations = debounce(() => {
-                    value.configurations = this.parseConfigurations(reference.object);
-                    this.updateCurrentConfiguration();
-                }, 250);
-                toDispose.push(reference.object.onDidChangeContent(reconcileConfigurations));
+            for (const [provider, configPath] of [['theia', '.theia/launch.json'], ['vscode', '.vscode/launch.json']]) {
+                const uri = root.resolve(configPath);
+                const key = uri.toString();
+                toDelete.delete(key);
+                if (!this.models.has(key)) {
+                    const resource = await this.resourceProvider(uri);
+                    const model = new DebugConfigurationModel(provider, rootStat.uri, resource);
+                    await model.reconcile();
+                    model.onDidChange(() => this.updateCurrent());
+                    model.onDispose(() => this.models.delete(key));
+                    this.models.set(key, model);
+                }
             }
         }
         for (const uri of toDelete) {
             const model = this.models.get(uri);
             if (model) {
-                model.toDispose.dispose();
+                model.dispose();
             }
         }
-        this.updateCurrentConfiguration();
+        this.updateCurrent();
     }, 500);
 
-    get configurations(): IterableIterator<DebugConfiguration> {
-        return this.getConfigurations();
+    get all(): IterableIterator<DebugSessionOptions> {
+        return this.getAll();
     }
-    protected *getConfigurations(): IterableIterator<DebugConfiguration> {
-        for (const uri of this.models.keys()) {
-            for (const configuration of this.models.get(uri)!.configurations) {
-                yield configuration;
+    protected *getAll(): IterableIterator<DebugSessionOptions> {
+        for (const model of this.models.values()) {
+            for (const configuration of model.configurations) {
+                yield {
+                    configuration,
+                    workspaceFolderUri: model.workspaceFolderUri
+                };
             }
         }
     }
 
-    protected _currentConfiguration: DebugConfiguration | undefined;
-    get currentConfiguration(): DebugConfiguration | undefined {
-        return this._currentConfiguration;
+    get supported(): Promise<IterableIterator<DebugSessionOptions>> {
+        return this.getSupported();
     }
-    set currentConfiguration(configuration: DebugConfiguration | undefined) {
-        this.updateCurrentConfiguration(configuration);
+    protected async getSupported(): Promise<IterableIterator<DebugSessionOptions>> {
+        const [, debugTypes] = await Promise.all([await this.initialized, this.debug.debugTypes()]);
+        return this.doGetSupported(new Set(debugTypes));
     }
-    protected updateCurrentConfiguration(configuration: DebugConfiguration | undefined = this._currentConfiguration): void {
-        this._currentConfiguration = configuration && this.findConfiguration(configuration.name) || this.configurations.next().value;
+    protected *doGetSupported(debugTypes: Set<string>): IterableIterator<DebugSessionOptions> {
+        for (const options of this.getAll()) {
+            if (debugTypes.has(options.configuration.type)) {
+                yield options;
+            }
+        }
+    }
+
+    protected _currentOptions: DebugSessionOptions | undefined;
+    get current(): DebugSessionOptions | undefined {
+        return this._currentOptions;
+    }
+    set current(option: DebugSessionOptions | undefined) {
+        this.updateCurrent(option);
+    }
+    protected updateCurrent(options: DebugSessionOptions | undefined = this._currentOptions): void {
+        this._currentOptions = options
+            && this.find(options.configuration.name, options.workspaceFolderUri);
+        if (!this._currentOptions) {
+            const { model } = this;
+            if (model) {
+                const configuration = model.configurations[0];
+                if (configuration) {
+                    this._currentOptions = {
+                        configuration,
+                        workspaceFolderUri: model.workspaceFolderUri
+                    };
+                }
+            }
+        }
         this.onDidChangeEmitter.fire(undefined);
     }
-    findConfiguration(name: string): DebugConfiguration | undefined {
+    find(name: string, workspaceFolderUri: string | undefined): DebugSessionOptions | undefined {
         for (const model of this.models.values()) {
-            for (const configuration of model.configurations) {
-                if (configuration.name === name) {
-                    return configuration;
+            if (model.workspaceFolderUri === workspaceFolderUri) {
+                for (const configuration of model.configurations) {
+                    if (configuration.name === name) {
+                        return {
+                            configuration,
+                            workspaceFolderUri
+                        };
+                    }
                 }
             }
         }
         return undefined;
     }
 
-    protected parseConfigurations(model: MonacoEditorModel): DebugConfiguration[] {
-        const result = [];
-        const content = model.getText();
-        const jsonContent: Partial<{
-            configurations: Partial<DebugConfiguration>[]
-        }> | undefined = jsoncparser.parse(jsoncparser.stripComments(content));
-        if (jsonContent && 'configurations' in jsonContent) {
-            const { configurations } = jsonContent;
-            if (Array.isArray(configurations)) {
-                configurations.filter(DebugConfiguration.is);
-                for (const configuration of configurations) {
-                    if (DebugConfiguration.is(configuration)) {
-                        result.push(configuration);
-                    }
+    async openConfiguration(): Promise<void> {
+        const { model } = this;
+        if (model) {
+            await this.doOpen(model);
+        }
+    }
+    async addConfiguration(): Promise<void> {
+        const { model } = this;
+        if (!model) {
+            return;
+        }
+        const widget = await this.doOpen(model);
+        if (!(widget.editor instanceof MonacoEditor)) {
+            return;
+        }
+        const editor = widget.editor.getControl();
+        const { commandService } = widget.editor;
+        let position: monaco.Position | undefined;
+        let depthInArray = 0;
+        let lastProperty = '';
+        visit(editor.getValue(), {
+            onObjectProperty: property => {
+                lastProperty = property;
+            },
+            onArrayBegin: offset => {
+                if (lastProperty === 'configurations' && depthInArray === 0) {
+                    position = editor.getModel().getPositionAt(offset + 1);
                 }
+                depthInArray++;
+            },
+            onArrayEnd: () => {
+                depthInArray--;
+            }
+        });
+        if (!position) {
+            return;
+        }
+        // Check if there are more characters on a line after a "configurations": [, if yes enter a newline
+        if (editor.getModel().getLineLastNonWhitespaceColumn(position.lineNumber) > position.column) {
+            editor.setPosition(position);
+            editor.trigger('debug', 'lineBreakInsert', undefined);
+        }
+        // Check if there is already an empty line to insert suggest, if yes just place the cursor
+        if (editor.getModel().getLineLastNonWhitespaceColumn(position.lineNumber + 1) === 0) {
+            editor.setPosition({ lineNumber: position.lineNumber + 1, column: 1 << 30 });
+            await commandService.executeCommand('editor.action.deleteLines');
+        }
+        editor.setPosition(position);
+        await commandService.executeCommand('editor.action.insertLineAfter');
+        await commandService.executeCommand('editor.action.triggerSuggest');
+    }
+
+    protected get model(): DebugConfigurationModel | undefined {
+        for (const model of this.models.values()) {
+            if (model.exists) {
+                return model;
             }
         }
-        return result;
+        for (const model of this.models.values()) {
+            if (model.provider === 'theia') {
+                return model;
+            }
+        }
+        return this.models.values().next().value;
     }
 
-    /**
-     * Opens configuration file in the editor.
-     */
-    async openConfiguration(): Promise<void> {
-        const uri = this.models.keys().next().value;
-        if (uri) {
-            await open(this.openerService, new URI(uri), {
-                mode: 'activate'
-            });
+    protected async doOpen(model: DebugConfigurationModel): Promise<EditorWidget> {
+        if (!model.exists) {
+            await this.doCreate(model);
         }
+        return this.editorManager.open(model.uri, {
+            mode: 'activate'
+        });
     }
-
-    /**
-     * Adds a new configuration to the configuration file.
-     */
-    async addConfiguration(): Promise<void> {
-        const uri = this.models.keys().next().value;
-        if (!uri) {
-            return;
-        }
+    protected async doCreate(model: DebugConfigurationModel): Promise<void> {
         const debugType = await this.selectDebugType();
-        if (!debugType) {
-            return;
-        }
-        const newDebugConfiguration = await this.selectDebugConfiguration(debugType);
-        if (!newDebugConfiguration) {
-            return;
-        }
-        const configurations = this.models.get(uri)!.configurations;
-        configurations.push(newDebugConfiguration);
-        await Promise.all([
-            this.writeConfigurations(uri, configurations),
-            this.openConfiguration()]
-        );
-    }
-    protected async writeConfigurations(uri: string, configurations: DebugConfiguration[]): Promise<void> {
-        if (!this.models.has(uri)) {
-            return;
-        }
-        const { reference } = this.models.get(uri)!;
-        const model = reference.object['model'];
-        const content = model.getValue();
-        const jsonContent = jsoncparser.parse(jsoncparser.stripComments(content)) || { version: '0.2.0' };
-        jsonContent.configurations = configurations;
-
-        // TODO use jsonc-parser instead
-        model.setValue(JSON.stringify(jsonContent, undefined, 2));
-        await reference.object.save();
+        const configurations = debugType ? await this.debug.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
+        const content = this.getInitialConfigurationContent(configurations);
+        await model.save(content);
     }
 
-    async selectConfiguration(): Promise<DebugConfiguration | undefined> {
-        const configurations = Array.from(this.configurations);
-        return this.quickPick.show(configurations.map(value => ({
-            label: value.type + ' : ' + value.name,
-            value
-        })), { placeholder: 'Select launch configuration' });
+    protected getInitialConfigurationContent(initialConfigurations: DebugConfiguration[]): string {
+        return `{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  "version": "0.2.0",
+  "configurations": ${JSON.stringify(initialConfigurations, undefined, '  ').split('\n').map(line => '  ' + line).join('\n').trim()}
+}
+`;
     }
 
     protected async selectDebugType(): Promise<string | undefined> {
-        const debugTypes = await this.debug.debugTypes();
-        return this.quickPick.show(debugTypes, { placeholder: 'Select Debug Type' });
+        const widget = this.editorManager.currentEditor;
+        if (!widget) {
+            return undefined;
+        }
+        const { languageId } = widget.editor.document;
+        const debuggers = await this.debug.getDebuggersForLanguage(languageId);
+        return this.quickPick.show(debuggers.map(
+            ({ label, type }) => ({ label, value: type }),
+            { placeholder: 'Select Environment' })
+        );
     }
 
-    protected async selectDebugConfiguration(debugType: string): Promise<DebugConfiguration | undefined> {
-        const configurations = await this.debug.provideDebugConfigurations(debugType);
-        return this.quickPick.show(configurations.map(value => ({
-            label: value.name,
-            value
-        }), { placeholder: 'Select Debug Configuration' }));
+    @inject(StorageService)
+    protected readonly storage: StorageService;
+
+    async load(): Promise<void> {
+        await this.initialized;
+        const data = await this.storage.getData<DebugConfigurationManager.Data>('debug.configurations', {});
+        if (data.current) {
+            this.current = this.find(data.current.name, data.current.workspaceFolderUri);
+        }
     }
 
+    save(): void {
+        const data: DebugConfigurationManager.Data = {};
+        const { current } = this;
+        if (current) {
+            data.current = {
+                name: current.configuration.name,
+                workspaceFolderUri: current.workspaceFolderUri
+            };
+        }
+        this.storage.setData('debug.configurations', data);
+    }
+
+}
+export namespace DebugConfigurationManager {
+    export interface Data {
+        current?: {
+            name: string
+            workspaceFolderUri?: string
+        }
+    }
 }

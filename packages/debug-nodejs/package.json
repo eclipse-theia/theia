@@ -29,19 +29,18 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
-    "lib/node",
+    "lib",
     "src",
     "scripts"
   ],
   "scripts": {
+    "postinstall": "node ./scripts/download-adapters.js",
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "download": "node ./scripts/download-vscode-node-debug.js",
-    "build": "yarn postinstall && theiaext build",
+    "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "docs": "theiaext docs",
-    "postinstall": "node ./scripts/download-vscode-node-debug.js"
+    "docs": "theiaext docs"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.3.16"
@@ -49,8 +48,8 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "debugAdapter": {
-    "downloadUrl": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug2/1.28.3/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage",
-    "dir": "lib/adapter"
+  "adapters": {
+    "node-debug": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug/1.29.2/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage",
+    "node-debug2": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug2/1.29.2/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
   }
 }

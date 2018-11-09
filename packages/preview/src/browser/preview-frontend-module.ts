@@ -18,6 +18,7 @@ import { ContainerModule } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CommandContribution, MenuContribution, bindContributionProvider, ResourceProvider } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, NavigatableWidgetOptions } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { PreviewContribution } from './preview-contribution';
 import { PreviewWidget, PreviewWidgetOptions } from './preview-widget';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
@@ -50,7 +51,7 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
 
     bind(PreviewContribution).toSelf().inSingletonScope();
-    [CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
+    [CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution, TabBarToolbarContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(PreviewContribution)
     );
 });

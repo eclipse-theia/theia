@@ -17,7 +17,10 @@ import * as theia from '@theia/plugin';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from './types-impl';
+import { Command } from '../api/model';
+import { ObjectIdentifier } from '../common/object-identifier';
 
+// tslint:disable-next-line:no-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
 
 export class CommandRegistryImpl implements CommandRegistryExt {
@@ -25,9 +28,17 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private proxy: CommandRegistryMain;
     private commands = new Map<string, Handler>();
 
+    private readonly converter: CommandsConverter;
+
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
+        this.converter = new CommandsConverter(this);
     }
+
+    getConverter(): CommandsConverter {
+        return this.converter;
+    }
+
     registerCommand(command: theia.Command, handler?: Handler): Disposable {
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
@@ -57,6 +68,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         throw new Error('Method not implemented.');
     }
 
+    // tslint:disable-next-line:no-any
     $executeCommand<T>(id: string, args: any[]): PromiseLike<T> {
         if (this.commands.has(id)) {
             return this.executeLocalCommand(id, args);
@@ -65,7 +77,8 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
-    executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
+    // tslint:disable-next-line:no-any
+    executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined> {
         if (this.commands.has(id)) {
             return this.executeLocalCommand(id, args);
         } else {
@@ -73,6 +86,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
+    // tslint:disable-next-line:no-any
     private executeLocalCommand<T>(id: string, args: any[]): PromiseLike<T> {
         const handler = this.commands.get(id);
         if (handler) {
@@ -80,5 +94,77 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
         }
+    }
+}
+
+/** Converter between internal and api commands. */
+export class CommandsConverter {
+
+    private readonly delegatingCommandId: string;
+
+    private cacheId = 0;
+    private cache = new Map<number, theia.Command>();
+
+    constructor(private readonly commands: CommandRegistryImpl) {
+        this.delegatingCommandId = `_internal_command_delegation_${Date.now()}`;
+        this.commands.registerHandler(this.delegatingCommandId, this.executeConvertedCommand);
+    }
+
+    toInternal(command: theia.Command | undefined): Command | undefined {
+        if (!command || !command.label) {
+            return undefined;
+        }
+
+        const result: Command = {
+            id: command.id,
+            title: command.label
+        };
+
+        if (command.id && !CommandsConverter.isFalsyOrEmpty(command.arguments)) {
+            const id = this.cacheId++;
+            ObjectIdentifier.mixin(result, id);
+            this.cache.set(id, command);
+
+            result.id = this.delegatingCommandId;
+            result.arguments = [id];
+        }
+
+        if (command.tooltip) {
+            result.tooltip = command.tooltip;
+        }
+
+        return result;
+    }
+
+    fromInternal(command: Command | undefined): theia.Command | undefined {
+        if (!command) {
+            return undefined;
+        }
+
+        const id = ObjectIdentifier.of(command);
+        if (typeof id === 'number') {
+            return this.cache.get(id);
+        } else {
+            return {
+                id: command.id,
+                label: command.title,
+                arguments: command.arguments
+            };
+        }
+    }
+
+    private executeConvertedCommand(...args: any[]): PromiseLike<any> {
+        const actualCmd = this.cache.get(args[0]);
+        if (!actualCmd) {
+            return Promise.resolve(undefined);
+        }
+        return this.commands.executeCommand(actualCmd.id, actualCmd.arguments || []);
+    }
+
+    /**
+     * @returns `false` if the provided object is an array and not empty.
+     */
+    private static isFalsyOrEmpty(obj: any): boolean {
+        return !Array.isArray(obj) || (<Array<any>>obj).length === 0;
     }
 }

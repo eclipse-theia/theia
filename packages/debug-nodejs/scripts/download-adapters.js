@@ -18,9 +18,9 @@ const request = require('request');
 const unzip = require('unzip-stream');
 const path = require('path');
 
-const packageJson = require('../package.json');
-const downloadUrl = packageJson['debugAdapter']['downloadUrl'];
-const targetPath = path.join(__dirname+'/..', packageJson['debugAdapter']['dir']);
-
-request(downloadUrl)
-  .pipe(unzip.Extract({ path: targetPath }));
+const pck = require('../package.json');
+for (const name in pck.adapters) {
+    const url = pck.adapters[name];
+    const targetPath = path.join(__dirname, '../download', name);
+    request(url).pipe(unzip.Extract({ path: targetPath }));
+}

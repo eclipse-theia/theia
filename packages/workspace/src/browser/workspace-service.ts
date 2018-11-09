@@ -46,8 +46,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
     private _roots: FileStat[] = [];
     private deferredRoots = new Deferred<FileStat[]>();
 
-    private hasWorkspace: boolean = false;
-
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
@@ -193,17 +191,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.uri : '');
     }
 
-    async onStart() {
-        const allWorkspace = await this.recentWorkspaces();
-        if (allWorkspace.length > 0) {
-            this.hasWorkspace = true;
-        }
-    }
-
-    get hasHistory(): boolean {
-        return this.hasWorkspace;
-    }
-
     async recentWorkspaces(): Promise<string[]> {
         return this.server.getRecentWorkspaces();
     }
@@ -318,11 +305,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     /**
      * Clears current workspace root.
      */
-    close(): void {
+    async close(): Promise<void> {
         this._workspace = undefined;
         this._roots.length = 0;
 
-        this.server.setMostRecentlyUsedWorkspace('');
+        await this.server.setMostRecentlyUsedWorkspace('');
         this.reloadWindow();
     }
 

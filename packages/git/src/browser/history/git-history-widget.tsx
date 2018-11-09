@@ -40,6 +40,7 @@ export interface GitCommitNode extends GitCommitDetails {
 }
 
 export namespace GitCommitNode {
+    // tslint:disable-next-line:no-any
     export function is(node: any): node is GitCommitNode {
         return !!node && 'commitSha' in node && 'commitMessage' in node && 'fileChangeNodes' in node;
     }
@@ -82,6 +83,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addGitListNavigationKeyListeners(this.node);
+        // tslint:disable-next-line:no-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.listView && this.listView.list && this.listView.list.Grid) {
                 const { scrollTop } = e.target;
@@ -122,18 +124,15 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected async addCommits(options?: Git.Options.Log): Promise<void> {
         let repository: Repository | undefined;
         repository = this.repositoryProvider.findRepositoryOrSelected(options);
-        let resolver: () => void;
+
         this.errorMessage = undefined;
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
+
         if (repository) {
-            const log = this.git.log(repository, options);
-            log.catch((reason: Error) => {
-                this.errorMessage = reason.message;
-                resolver();
-            });
-            log.then(async changes => {
+            try {
+                let changes = await this.git.log(repository, options);
                 if (token.isCancellationRequested || !this.hasMoreCommits) {
                     return;
                 }
@@ -170,16 +169,15 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                         this.errorMessage = <React.Fragment>It is not under version control.</React.Fragment>;
                     }
                 }
-                resolver();
-            });
+
+            } catch (error) {
+                this.errorMessage = error.message;
+            }
+
         } else {
-            setTimeout(() => {
-                this.commits = [];
-                this.errorMessage = <React.Fragment>There is no repository selected in this workspace.</React.Fragment>;
-                resolver();
-            });
+            this.commits = [];
+            this.errorMessage = <React.Fragment>There is no repository selected in this workspace.</React.Fragment>;
         }
-        return new Promise<void>(resolve => resolver = resolve);
     }
 
     protected async addOrRemoveFileChangeNodes(commit: GitCommitNode) {
@@ -310,6 +308,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
+    // tslint:disable-next-line:no-any
     protected doLoadMoreRows(params: IndexRange): Promise<any> {
         let resolver: () => void;
         const promise = new Promise(resolve => resolver = resolve);
@@ -493,6 +492,7 @@ export namespace GitHistoryList {
         readonly indexOfSelected: number
         readonly hasMoreRows: boolean
         readonly handleScroll: (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void
+        // tslint:disable-next-line:no-any
         readonly loadMoreRows: (params: IndexRange) => Promise<any>
         readonly renderCommit: (commit: GitCommitNode) => React.ReactNode
         readonly renderFileChangeList: (fileChange: GitFileChangeNode) => React.ReactNode

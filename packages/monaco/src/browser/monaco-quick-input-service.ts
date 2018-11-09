@@ -73,7 +73,7 @@ export class QuickInputService {
             options,
             {
                 prefix: options.value,
-                placeholder: options.placeHolder,
+                placeholder: options.placeHolder ? options.placeHolder : '',
                 onClose: () => inputItem.resolve(undefined)
             });
         this.quickOpenService.internalOpen(this.opts);

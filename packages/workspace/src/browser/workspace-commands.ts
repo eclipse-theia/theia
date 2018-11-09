@@ -34,18 +34,24 @@ import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
+
+    const WORKSPACE_CATEGORY = 'Workspace';
+    const FILE_CATEGORY = 'File';
+
     // On Linux and Windows, both files and folders cannot be opened at the same time in electron.
     // `OPEN_FILE` and `OPEN_FOLDER` must be available only on Linux and Windows in electron.
     // `OPEN` must *not* be available on Windows and Linux in electron.
     // VS Code does the same. See: https://github.com/theia-ide/theia/pull/3202#issuecomment-430585357
     export const OPEN: Command & { dialogLabel: string } = {
         id: 'workspace:open',
+        category: FILE_CATEGORY,
         label: 'Open...',
         dialogLabel: 'Open'
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
     export const OPEN_FILE: Command & { dialogLabel: string } = {
         id: 'workspace:openFile',
+        category: FILE_CATEGORY,
         dialogLabel: 'Open File'
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string } = {
@@ -54,56 +60,69 @@ export namespace WorkspaceCommands {
     };
     export const OPEN_WORKSPACE: Command & { dialogLabel: string } = {
         id: 'workspace:openWorkspace',
+        category: FILE_CATEGORY,
         label: 'Open Workspace...',
         dialogLabel: 'Open Workspace'
     };
     export const OPEN_RECENT_WORKSPACE: Command = {
         id: 'workspace:openRecent',
+        category: FILE_CATEGORY,
         label: 'Open Recent Workspace...'
     };
     export const CLOSE: Command = {
         id: 'workspace:close',
+        category: WORKSPACE_CATEGORY,
         label: 'Close Workspace'
     };
     export const NEW_FILE: Command = {
         id: 'file.newFile',
+        category: FILE_CATEGORY,
         label: 'New File'
     };
     export const NEW_FOLDER: Command = {
         id: 'file.newFolder',
+        category: FILE_CATEGORY,
         label: 'New Folder'
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`,
+        category: FILE_CATEGORY,
         label: opener.label,
         iconClass: opener.iconClass
     });
     export const FILE_RENAME: Command = {
         id: 'file.rename',
+        category: FILE_CATEGORY,
         label: 'Rename'
     };
     export const FILE_DELETE: Command = {
         id: 'file.delete',
+        category: FILE_CATEGORY,
         label: 'Delete'
     };
     export const FILE_DUPLICATE: Command = {
         id: 'file.duplicate',
+        category: FILE_CATEGORY,
         label: 'Duplicate'
     };
     export const FILE_COMPARE: Command = {
         id: 'file.compare',
+        category: FILE_CATEGORY,
         label: 'Compare with Each Other'
     };
     export const ADD_FOLDER: Command = {
         id: 'workspace:addFolder',
+        category: WORKSPACE_CATEGORY,
         label: 'Add Folder to Workspace...'
     };
     export const REMOVE_FOLDER: Command = {
         id: 'workspace:removeFolder',
+        category: WORKSPACE_CATEGORY,
         label: 'Remove Folder from Workspace'
     };
     export const SAVE_WORKSPACE_AS: Command = {
         id: 'workspace:saveAs',
+        category: WORKSPACE_CATEGORY,
         label: 'Save Workspace As...'
     };
 }

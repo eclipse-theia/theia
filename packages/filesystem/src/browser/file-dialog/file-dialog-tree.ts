@@ -33,14 +33,7 @@ export class FileDialogTree extends FileTree {
      * @param fileExtensions array of extensions
      */
     setFilter(fileExtensions: string[]): void {
-        this.fileExtensions = [];
-
-        if (fileExtensions) {
-            fileExtensions.forEach(e => {
-                this.fileExtensions.push(e);
-            });
-        }
-
+        this.fileExtensions = fileExtensions.slice();
         this.refresh();
     }
 

@@ -44,7 +44,7 @@ import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
 
 export namespace DebugMenus {
-    export const DEBUG = [...MAIN_MENU_BAR, '4_debug'];
+    export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
     export const DEBUG_CONTROLS = [...DEBUG, 'a_controls'];
     export const DEBUG_CONFIGURATION = [...DEBUG, 'b_configuration'];
     export const DEBUG_THREADS = [...DEBUG, 'c_threads'];
@@ -53,115 +53,138 @@ export namespace DebugMenus {
 }
 
 export namespace DebugCommands {
-    export const START = {
+
+    const DEBUG_CATEGORY = 'Debug';
+
+    export const START: Command = {
         id: 'debug.start',
-        label: 'Debug: Start Debugging',
+        category: DEBUG_CATEGORY,
+        label: 'Start Debugging',
         iconClass: 'fa fa-play'
     };
-    export const START_NO_DEBUG = {
+    export const START_NO_DEBUG: Command = {
         id: 'debug.start.noDebug',
         label: 'Debug: Start Without Debugging'
     };
-    export const STOP = {
+    export const STOP: Command = {
         id: 'debug.stop',
-        label: 'Debug: Stop Debugging',
+        category: DEBUG_CATEGORY,
+        label: 'Stop Debugging',
         iconClass: 'fa fa-stop'
     };
-    export const RESTART = {
+    export const RESTART: Command = {
         id: 'debug.restart',
-        label: 'Debug: Restart Debugging'
+        category: DEBUG_CATEGORY,
+        label: 'Restart Debugging',
     };
 
-    export const OPEN_CONFIGURATION = {
-        id: 'debug.configuration.open',
-        label: 'Debug: Open Configuration'
+    export const OPEN_CONFIGURATIONS = {
+        id: 'debug.configurations.open',
+        label: 'Debug: Open Configurations'
     };
     export const ADD_CONFIGURATION = {
-        id: 'debug.configuration.add',
+        id: 'debug.configurations.add',
         label: 'Debug: Add Configuration...'
     };
 
-    export const STEP_OVER = {
+    export const STEP_OVER: Command = {
         id: 'debug.thread.next',
-        label: 'Debug: Step Over',
+        category: DEBUG_CATEGORY,
+        label: 'Step Over',
         iconClass: 'fa fa-arrow-right'
     };
-    export const STEP_INTO = {
+    export const STEP_INTO: Command = {
         id: 'debug.thread.stepin',
-        label: 'Debug: Step Into',
+        category: DEBUG_CATEGORY,
+        label: 'Step Into',
         iconClass: 'fa fa-arrow-down'
     };
-    export const STEP_OUT = {
+    export const STEP_OUT: Command = {
         id: 'debug.thread.stepout',
-        label: 'Debug: Step Out',
+        category: DEBUG_CATEGORY,
+        label: 'Step Out',
         iconClass: 'fa fa-arrow-up'
     };
-    export const CONTINUE = {
+    export const CONTINUE: Command = {
         id: 'debug.thread.continue',
-        label: 'Debug: Continue',
+        category: DEBUG_CATEGORY,
+        label: 'Continue',
         iconClass: 'fa fa-play-circle'
     };
-    export const PAUSE = {
+    export const PAUSE: Command = {
         id: 'debug.thread.pause',
-        label: 'Debug: Pause',
+        category: DEBUG_CATEGORY,
+        label: 'Pause',
         iconClass: 'fa fa-pause'
     };
-    export const CONTINUE_ALL = {
+    export const CONTINUE_ALL: Command = {
         id: 'debug.thread.continue.all',
-        label: 'Debug: Continue All',
+        category: DEBUG_CATEGORY,
+        label: 'Continue All',
         iconClass: 'fa fa-play-circle'
     };
-    export const PAUSE_ALL = {
+    export const PAUSE_ALL: Command = {
         id: 'debug.thread.pause.all',
-        label: 'Debug: Pause All',
+        category: DEBUG_CATEGORY,
+        label: 'Pause All',
         iconClass: 'fa fa-pause'
     };
 
-    export const TOGGLE_BREAKPOINT = {
+    export const TOGGLE_BREAKPOINT: Command = {
         id: 'debug.breakpoint.toggle',
-        label: 'Debug: Toggle Breakpoint'
+        category: DEBUG_CATEGORY,
+        label: 'Toggle Breakpoint',
     };
-    export const ENABLE_ALL_BREAKPOINTS = {
+    export const ENABLE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.enableAll',
-        label: 'Debug: Enable All Breakpoints'
+        category: DEBUG_CATEGORY,
+        label: 'Enable All Breakpoints',
     };
-    export const DISABLE_ALL_BREAKPOINTS = {
+    export const DISABLE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.disableAll',
-        label: 'Debug: Disable All Breakpoints'
+        category: DEBUG_CATEGORY,
+        label: 'Disable All Breakpoints',
     };
-    export const REMOVE_BREAKPOINT = {
+    export const REMOVE_BREAKPOINT: Command = {
         id: 'debug.breakpoint.remove',
-        label: 'Debug: Remove Breakpoint'
+        category: DEBUG_CATEGORY,
+        label: 'Remove Breakpoint',
     };
-    export const REMOVE_ALL_BREAKPOINTS = {
+    export const REMOVE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.removeAll',
-        label: 'Debug: Remove All Breakpoints'
+        category: DEBUG_CATEGORY,
+        label: 'Remove All Breakpoints',
     };
     export const SHOW_HOVER = {
         id: 'debug.editor.showHover',
         label: 'Debug: Show Hover'
     };
 
-    export const RESTART_FRAME = {
+    export const RESTART_FRAME: Command = {
         id: 'debug.frame.restart',
-        label: 'Debug: Restart Frame'
+        category: DEBUG_CATEGORY,
+        label: 'Restart Frame',
     };
-    export const COPY_CALL_STACK = {
+    export const COPY_CALL_STACK: Command = {
         id: 'debug.callStack.copy',
-        label: 'Debug: Copy Call Stack'
+        category: DEBUG_CATEGORY,
+        label: 'Copy Call Stack',
     };
 
-    export const SET_VARIABLE_VALUE = {
+    export const SET_VARIABLE_VALUE: Command = {
         id: 'debug.variable.setValue',
-        label: 'Debug: Set Value'
+        category: DEBUG_CATEGORY,
+        label: 'Set Value',
     };
-    export const COPY_VAIRABLE_VALUE = {
+    export const COPY_VAIRABLE_VALUE: Command = {
         id: 'debug.variable.copyValue',
-        label: 'Debug: Copy Value'
+        category: DEBUG_CATEGORY,
+        label: 'Copy Value',
     };
-    export const COPY_VAIRABLE_AS_EXPRESSION = {
+    export const COPY_VAIRABLE_AS_EXPRESSION: Command = {
         id: 'debug.variable.copyAsExpression',
-        label: 'Debug: Copy As Expression'
+        category: DEBUG_CATEGORY,
+        label: 'Copy As Expression',
     };
 }
 export namespace DebugThreadContextCommands {
@@ -252,7 +275,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     protected readonly manager: DebugSessionManager;
 
     @inject(DebugConfigurationManager)
-    protected readonly confiugurations: DebugConfigurationManager;
+    protected readonly configurations: DebugConfigurationManager;
 
     @inject(BreakpointManager)
     protected readonly breakpointManager: BreakpointManager;
@@ -274,7 +297,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             widgetId: DebugWidget.ID,
             widgetName: DebugWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'left'
+                area: 'left',
+                rank: 400
             },
             toggleCommandId: 'debug:toggle',
             toggleKeybinding: 'ctrlcmd+shift+d'
@@ -282,7 +306,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async initializeLayout(): Promise<void> {
-        await this.openView();
+        ((async () => {
+            const supported = await this.configurations.supported;
+            if (supported.next().value) {
+                await this.openView();
+            }
+        })());
     }
 
     protected firstSessionStart = true;
@@ -337,16 +366,19 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     items.oneOf!.push(attribute);
                 }
             }
+            items.defaultSnippets!.push(...await this.debugService.getConfigurationSnippets());
             this.inmemoryResources.add(launchSchemaUrl, JSON.stringify(schema));
             this.jsonSchemaStore.registerSchema({
                 fileMatch: ['launch.json'],
                 url: launchSchemaUrl.toString()
             });
         });
+        this.configurations.load();
         await this.breakpointManager.load();
     }
 
     onStop(): void {
+        this.configurations.save();
         this.breakpointManager.save();
     }
 
@@ -371,7 +403,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.RESTART
         );
         registerMenuActions(DebugMenus.DEBUG_CONFIGURATION,
-            DebugCommands.OPEN_CONFIGURATION,
+            DebugCommands.OPEN_CONFIGURATIONS,
             DebugCommands.ADD_CONFIGURATION
         );
         registerMenuActions(DebugMenus.DEBUG_THREADS,
@@ -450,7 +482,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.start(true)
         });
         registry.registerCommand(DebugCommands.STOP, {
-            execute: () => this.manager.currentSession && this.manager.currentSession.disconnect(),
+            execute: () => this.manager.currentSession && this.manager.currentSession.terminate(),
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
         registry.registerCommand(DebugCommands.RESTART, {
@@ -458,11 +490,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
 
-        registry.registerCommand(DebugCommands.OPEN_CONFIGURATION, {
-            execute: () => this.confiugurations.openConfiguration()
+        registry.registerCommand(DebugCommands.OPEN_CONFIGURATIONS, {
+            execute: () => this.configurations.openConfiguration()
         });
         registry.registerCommand(DebugCommands.ADD_CONFIGURATION, {
-            execute: () => this.confiugurations.addConfiguration()
+            execute: () => this.configurations.addConfiguration()
         });
 
         registry.registerCommand(DebugCommands.STEP_OVER, {
@@ -526,7 +558,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
 
         registry.registerCommand(DebugSessionContextCommands.STOP, {
-            execute: () => this.selectedSession && this.selectedSession.disconnect(),
+            execute: () => this.selectedSession && this.selectedSession.terminate(),
             isEnabled: () => !!this.selectedSession && this.selectedSession.state !== DebugState.Inactive,
             isVisible: () => !this.selectedThread
         });
@@ -755,10 +787,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async start(noDebug?: boolean): Promise<void> {
-        const configuration = await this.confiugurations.selectConfiguration();
-        if (configuration) {
-            configuration.noDebug = noDebug;
-            await this.manager.start(configuration);
+        let { current } = this.configurations;
+        if (current) {
+            if (noDebug !== undefined) {
+                current = {
+                    ...current,
+                    configuration: {
+                        ...current.configuration,
+                        noDebug
+                    }
+                };
+            }
+            await this.manager.start(current);
         }
     }
 

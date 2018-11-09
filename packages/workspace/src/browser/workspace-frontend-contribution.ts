@@ -43,14 +43,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         commands.registerCommand(WorkspaceCommands.OPEN, {
             isEnabled: () => isOSX || !this.isElectron(),
             isVisible: () => isOSX || !this.isElectron(),
-            // tslint:disable-next-line:no-any
-            execute: (args: any[]) => {
-                if (args) {
-                    const [fileURI] = args;
-                    return this.workspaceService.open(fileURI);
-                }
-                return this.doOpen();
-            }
+            execute: () => this.doOpen()
         });
         // Visible/enabled only on Windows/Linux in electron.
         commands.registerCommand(WorkspaceCommands.OPEN_FILE, {
@@ -71,7 +64,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             execute: () => this.closeWorkspace()
         });
         commands.registerCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE, {
-            isEnabled: () => this.workspaceService.hasHistory,
             execute: () => this.quickOpenWorkspace.select()
         });
         commands.registerCommand(WorkspaceCommands.SAVE_WORKSPACE_AS, {
@@ -275,7 +267,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             msg: 'Do you really want to close the workspace?'
         });
         if (await dialog.open()) {
-            this.workspaceService.close();
+            await this.workspaceService.close();
         }
     }
 

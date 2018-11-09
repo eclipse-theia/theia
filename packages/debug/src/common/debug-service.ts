@@ -17,8 +17,14 @@
 // tslint:disable:no-any
 
 import { Disposable } from '@theia/core';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { ApplicationError } from '@theia/core/lib/common/application-error';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebugConfiguration } from './debug-configuration';
+
+export interface DebuggerDescription {
+    type: string
+    label: string
+}
 
 /**
  * The WS endpoint path to the Debug service.
@@ -46,12 +52,7 @@ export interface DebugService extends Disposable {
      */
     debugTypes(): Promise<string[]>;
 
-    /**
-     * Provides initial [debug configuration](#DebugConfiguration).
-     * @param debugType The registered debug type
-     * @returns An array of [debug configurations](#DebugConfiguration)
-     */
-    provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]>;
+    getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]>;
 
     /**
      * Provides the schema attributes.
@@ -60,13 +61,22 @@ export interface DebugService extends Disposable {
      */
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]>;
 
+    getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]>;
+
+    /**
+     * Provides initial [debug configuration](#DebugConfiguration).
+     * @param debugType The registered debug type
+     * @returns An array of [debug configurations](#DebugConfiguration)
+     */
+    provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]>;
+
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
      * or by adding/changing/removing attributes.
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
+    resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration>;
 
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).
@@ -90,3 +100,10 @@ export interface DebugService extends Disposable {
  * The endpoint path to the debug adapter session.
  */
 export const DebugAdapterPath = '/services/debug-adapter';
+
+export namespace DebugError {
+    export const NotFound = ApplicationError.declare(-41000, (type: string) => ({
+        message: `'${type}' debugger type is not supported.`,
+        data: { type }
+    }));
+}

@@ -36,6 +36,7 @@ export namespace FileUri {
         if (typeof uri === 'string') {
             return fsPath(new URI(uri));
         } else {
+            // tslint:disable-next-line:no-any
             return (uri as any).codeUri.fsPath;
         }
     }

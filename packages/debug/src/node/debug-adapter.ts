@@ -23,7 +23,7 @@
 
 import * as net from 'net';
 import { injectable, inject } from 'inversify';
-import { DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core';
 import {
     RawProcessFactory,
     ProcessManager,
@@ -61,15 +61,8 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     }
 
     private spawnProcess(executable: DebugAdapterExecutable): RawProcess {
-        const command = executable.runtime
-            ? executable.runtime
-            : executable.program;
-
-        const args = executable.runtime
-            ? [executable.program].concat(executable.args ? executable.args : [])
-            : executable.args;
-
-        return this.processFactory({ command: command, args: args, options: { stdio: ['pipe', 'pipe', 2] } });
+        const { command, args } = executable;
+        return this.processFactory({ command, args, options: { stdio: ['pipe', 'pipe', 2] } });
     }
 
     connect(debugServerPort: number): CommunicationProvider {
@@ -101,7 +94,11 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
     ) {
         this.contentLength = -1;
         this.buffer = new Buffer(0);
-        this.toDispose.push(this.communicationProvider);
+        this.toDispose.pushAll([
+            this.communicationProvider,
+            Disposable.create(() => this.write(JSON.stringify({ seq: -1, type: 'request', command: 'disconnect' }))),
+            Disposable.create(() => this.write(JSON.stringify({ seq: -1, type: 'request', command: 'terminate' })))
+        ]);
     }
 
     async start(channel: WebSocketChannel): Promise<void> {

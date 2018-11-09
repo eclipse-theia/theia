@@ -28,7 +28,8 @@ import debounce = require('lodash.debounce');
 export namespace BlameCommands {
     export const TOGGLE_GIT_ANNOTATIONS: Command = {
         id: 'git.editor.toggle.annotations',
-        label: 'Git: Toggle Blame Annotations'
+        category: 'Git',
+        label: 'Toggle Blame Annotations'
     };
     export const CLEAR_GIT_ANNOTATIONS: Command = {
         id: 'git.editor.clear.annotations'
@@ -137,7 +138,6 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EDITOR_CONTEXT_MENU_GIT, {
             commandId: BlameCommands.TOGGLE_GIT_ANNOTATIONS.id,
-            label: BlameCommands.TOGGLE_GIT_ANNOTATIONS.label!.slice('Git: '.length)
         });
     }
 

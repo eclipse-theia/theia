@@ -19,6 +19,9 @@
  *--------------------------------------------------------------------------------------------*/
 // copied from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/services/extensions/node/rpcProtocol.ts
 // with small modifications
+
+/* tslint:disable:no-any */
+
 import { Event } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 

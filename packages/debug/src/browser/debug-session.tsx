@@ -23,7 +23,6 @@ import { Emitter, Event, DisposableCollection, Disposable, MessageClient, Messag
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
-import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';
 import { DebugThread, StoppedDetails } from './model/debug-thread';
 import { DebugScope } from './console/debug-console-items';
@@ -33,6 +32,8 @@ import { DebugBreakpoint } from './model/debug-breakpoint';
 import debounce = require('p-debounce');
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
+import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugConfiguration } from '../common/debug-common';
 
 export enum DebugState {
     Inactive,
@@ -62,7 +63,7 @@ export class DebugSession implements CompositeTreeElement {
 
     constructor(
         readonly id: string,
-        readonly configuration: DebugConfiguration,
+        readonly options: DebugSessionOptions,
         connectionProvider: WebSocketConnectionProvider,
         protected readonly terminalServer: TerminalService,
         protected readonly editorManager: EditorManager,
@@ -100,6 +101,7 @@ export class DebugSession implements CompositeTreeElement {
                     this.clearThread(threadId);
                 }
             }),
+            this.on('terminated', () => this.terminated = true),
             this.on('capabilities', event => this.updateCapabilities(event.body.capabilities)),
             this.breakpoints.onDidChangeMarkers(uri => this.updateBreakpoints({ uri, sourceModified: true }))
         ]);
@@ -107,6 +109,10 @@ export class DebugSession implements CompositeTreeElement {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    get configuration(): DebugConfiguration {
+        return this.options.configuration;
     }
 
     protected _capabilities: DebugProtocol.Capabilities = {};
@@ -267,8 +273,41 @@ export class DebugSession implements CompositeTreeElement {
         await this.updateThreads(undefined);
     }
 
-    async disconnect(args: DebugProtocol.DisconnectArguments = {}): Promise<void> {
-        await this.sendRequest('disconnect', args);
+    protected terminated = false;
+    async terminate(restart?: boolean): Promise<void> {
+        if (!this.terminated && this.capabilities.supportsTerminateRequest && this.configuration.request === 'launch') {
+            this.terminated = true;
+            await this.connection.sendRequest('terminate', { restart });
+            if (!await this.exited(1000)) {
+                await this.disconnect(restart);
+            }
+        } else {
+            await this.disconnect(restart);
+        }
+    }
+    protected exited(timeout: number): Promise<boolean> {
+        return new Promise<boolean>(resolve => {
+            const listener = this.on('exited', () => {
+                listener.dispose();
+                resolve(true);
+            });
+            setTimeout(() => {
+                listener.dispose();
+                resolve(false);
+            }, timeout);
+        });
+    }
+    protected async disconnect(restart?: boolean): Promise<void> {
+        await this.sendRequest('disconnect', { restart });
+    }
+
+    async restart(): Promise<boolean> {
+        if (this.capabilities.supportsRestartRequest) {
+            this.terminated = false;
+            await this.sendRequest('restart', {});
+            return true;
+        }
+        return false;
     }
 
     async completions(text: string, column: number, line: number): Promise<DebugProtocol.CompletionItem[]> {
@@ -505,8 +544,8 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     get label(): string {
-        if (this.configuration.__configurationId) {
-            return this.configuration.name + ' (' + (this.configuration.__configurationId + 1) + ')';
+        if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
+            return this.configuration.name + ' (' + (this.options.id + 1) + ')';
         }
         return this.configuration.name;
     }

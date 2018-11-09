@@ -3,7 +3,7 @@
   "version": "0.3.16",
   "description": "Theia - Metrics Extension",
   "dependencies": {
-    "@theia/application-manager": "^0.3.16",
+    "@theia/application-package": "^0.3.16",
     "@theia/core": "^0.3.16",
     "prom-client": "^10.2.0"
   },

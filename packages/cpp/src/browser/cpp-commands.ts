@@ -27,12 +27,15 @@ import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 import { ExecuteCommandRequest, ExecuteCommandParams } from 'vscode-languageserver-protocol';
 import { CppPreferences } from './cpp-preferences';
 
+const CPP_CATEGORY = 'C/C++';
+
 /**
  * Switch between source/header file
  */
 export const SWITCH_SOURCE_HEADER: Command = {
     id: 'switch_source_header',
-    label: 'C/C++: Switch Between Source/Header File',
+    category: CPP_CATEGORY,
+    label: 'Switch Between Source/Header File',
 };
 
 /**
@@ -44,22 +47,26 @@ export const SHOW_CLANGD_REFERENCES: Command = {
 
 export const DUMP_INCLUSIONS: Command = {
     id: 'clangd.dumpinclusions',
-    label: 'C/C++: Dump File Inclusions (Debug)'
+    category: CPP_CATEGORY,
+    label: 'Dump File Inclusions (Debug)',
 };
 
 export const DUMP_INCLUDED_BY: Command = {
     id: 'clangd.dumpincludedby',
-    label: 'C/C++: Dump Files Including this File (Debug)'
+    category: CPP_CATEGORY,
+    label: 'Dump Files Including this File (Debug)',
 };
 
 export const REINDEX: Command = {
     id: 'clangd.reindex',
-    label: 'C/C++: Reindex Workspace (Debug)'
+    category: CPP_CATEGORY,
+    label: 'Reindex Workspace (Debug)',
 };
 
 export const PRINT_STATS: Command = {
     id: 'clangd.printstats',
-    label: 'C/C++: Print Index Statistics (Debug)'
+    category: CPP_CATEGORY,
+    label: 'Print Index Statistics (Debug)',
 };
 
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{

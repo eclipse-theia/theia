@@ -23,6 +23,8 @@ import { Signal } from '@phosphor/signaling';
 import { Message } from '@phosphor/messaging';
 import { ArrayExt } from '@phosphor/algorithm';
 import { ElementExt } from '@phosphor/domutils';
+import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
+import { WidgetTracker } from '../widgets';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -188,7 +190,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
-        this.scrollBarFactory = () => new PerfectScrollbar(this.node, options);
+        this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -236,7 +238,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             window.requestAnimationFrame(() => {
                 const tab = this.contentNode.children[index] as HTMLElement;
                 if (tab && this.isVisible) {
-                    const parent = this.node;
+                    const parent = this.scrollbarHost;
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
@@ -269,6 +271,157 @@ export class ScrollableTabBar extends TabBar<Widget> {
         });
         this.pendingReveal = result;
         return result;
+    }
+
+    protected get scrollbarHost(): HTMLElement {
+        return this.node;
+    }
+
+}
+
+/**
+ * Specialized scrollable tab-bar which comes with toolbar support.
+ * Instead of the following DOM structure.
+ *
+ * +-------------------------+
+ * |[TAB_0][TAB_1][TAB_2][TAB|
+ * +-------------Scrollable--+
+ *
+ * There is a dedicated HTML element for toolbar which does **not** contained in the scrollable element.
+ *
+ * +-------------------------+-----------------+
+ * |[TAB_0][TAB_1][TAB_2][TAB|         Toolbar |
+ * +-------------Scrollable--+-None-Scrollable-+
+ *
+ */
+export class ToolbarAwareTabBar extends ScrollableTabBar {
+
+    protected contentContainer: HTMLElement | undefined;
+    protected toolbar: TabBarToolbar | undefined;
+
+    constructor(
+        protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
+        protected readonly widgetTracker: WidgetTracker,
+        protected readonly tabBarToolbarFactory: () => TabBarToolbar,
+        protected readonly options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+
+        super(options);
+        this.rewireDOM();
+    }
+
+    /**
+     * Overrides the `contentNode` property getter in PhosphorJS' TabBar.
+     */
+    get contentNode(): HTMLUListElement {
+        return this.tabBarContainer.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
+    }
+
+    /**
+     * Overrides the scrollable host from the parent class.
+     */
+    protected get scrollbarHost(): HTMLElement {
+        return this.tabBarContainer;
+    }
+
+    protected get tabBarContainer(): HTMLElement {
+        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER)[0] as HTMLElement;
+    }
+
+    // -----------------------------------------------------------------------------------------------------+
+    // Overridden to be able to update the toolbar when the tabs come and go. Does not change the behavior. |
+    // -----------------------------------------------------------------------------------------------------+
+
+    addTab(value: Title<Widget> | Title.IOptions<Widget>): Title<Widget> {
+        const result = super.addTab(value);
+        this.updateToolbar();
+        return result;
+    }
+
+    insertTab(index: number, value: Title<Widget> | Title.IOptions<Widget>): Title<Widget> {
+        const result = super.insertTab(index, value);
+        this.updateToolbar();
+        return result;
+    }
+
+    removeTab(title: Title<Widget>): void {
+        super.removeTab(title);
+        this.updateToolbar();
+    }
+
+    removeTabAt(index: number): void {
+        super.removeTabAt(index);
+        this.updateToolbar();
+    }
+
+    // ----------------------+
+    // End of customization. |
+    // ----------------------+
+
+    protected onAfterAttach(msg: Message): void {
+        this.widgetTracker.currentChanged.connect(this.updateToolbar, this);
+        if (this.toolbar) {
+            if (this.toolbar.isAttached) {
+                Widget.detach(this.toolbar);
+            }
+            Widget.attach(this.toolbar, this.node);
+        }
+        super.onAfterAttach(msg);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        if (this.contentContainer) {
+            this.node.removeChild(this.contentContainer);
+        }
+        if (this.toolbar && this.toolbar.isAttached) {
+            Widget.detach(this.toolbar);
+        }
+        this.widgetTracker.currentChanged.disconnect(this.updateToolbar, this);
+        super.onBeforeDetach(msg);
+    }
+
+    protected updateToolbar(): void {
+        const { currentWidget } = this.widgetTracker;
+        if (this.toolbar && currentWidget) {
+            // If the active widget does not belong to the current tab-bar, do nothing.
+            if (this.titles.map(title => title.owner).some(owner => owner === currentWidget)) {
+                const items = this.tabBarToolbarRegistry.visibleItems(currentWidget);
+                this.toolbar.updateItems(...items);
+            } else {
+                // Otherwise, discard the state.
+                this.toolbar.updateItems(...[]);
+            }
+        }
+    }
+
+    /**
+     * Restructures the DOM defined in PhosphorJS.
+     *
+     * By default the tabs (`li`) are contained in the `this.contentNode` (`lu`) which is wrapped in a `div` (`this.node`).
+     * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
+     * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
+     */
+    protected rewireDOM(): void {
+        const contentNode = this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0];
+        if (!contentNode) {
+            throw new Error("'this.node' does not have the content as a direct children with class name 'p-TabBar-content'.");
+        }
+        this.node.removeChild(contentNode);
+        this.contentContainer = document.createElement('div');
+        this.contentContainer.classList.add(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER);
+        this.contentContainer.appendChild(contentNode);
+        this.node.appendChild(this.contentContainer);
+        this.toolbar = this.tabBarToolbarFactory();
+    }
+
+}
+
+export namespace ToolbarAwareTabBar {
+
+    export namespace Styles {
+
+        export const TAB_BAR_CONTENT = 'p-TabBar-content';
+        export const TAB_BAR_CONTENT_CONTAINER = 'p-TabBar-content-container';
+
     }
 
 }

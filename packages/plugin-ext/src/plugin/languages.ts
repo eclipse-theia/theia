@@ -22,11 +22,13 @@ import {
     SerializedRegExp,
     SerializedOnEnterRule,
     SerializedIndentationRule,
-    Position
+    Position,
+    Selection
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
+import { PluginModel } from '../common/plugin-protocol';
 import { Disposable } from './types-impl';
 import URI from 'vscode-uri/lib/umd';
 import { match as matchGlobPattern } from '../common/glob';
@@ -43,7 +45,8 @@ import {
     FormattingOptions,
     Definition,
     DefinitionLink,
-    DocumentLink
+    DocumentLink,
+    CodeLensSymbol
 } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -53,7 +56,10 @@ import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
 import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
 import { DefinitionAdapter } from './languages/definition';
+import { CodeActionAdapter } from './languages/code-action';
 import { LinkProviderAdapter } from './languages/link-provider';
+import { CodeLensAdapter } from './languages/lens';
+import { CommandRegistryImpl } from './command-registry';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -62,6 +68,9 @@ type Adapter = CompletionAdapter |
     RangeFormattingAdapter |
     OnTypeFormattingAdapter |
     DefinitionAdapter |
+    LinkProviderAdapter |
+    CodeLensAdapter |
+    CodeActionAdapter |
     LinkProviderAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
@@ -73,7 +82,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
 
-    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl) {
+    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl, private readonly commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
         this.diagnostics = new Diagnostics(rpc);
     }
@@ -127,6 +136,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         return callId;
     }
 
+    // tslint:disable-next-line:no-any
     private withAdapter<A, R>(handle: number, ctor: { new(...args: any[]): A }, callback: (adapter: A) => Promise<R>): Promise<R> {
         const adapter = this.adaptersMap.get(handle);
         if (!(adapter instanceof ctor)) {
@@ -209,7 +219,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Diagnostics begin
     getDiagnostics(resource?: URI): theia.Diagnostic[] | [URI, theia.Diagnostic[]][] {
-        return this.diagnostics.getDiagnostics(resource);
+        return this.diagnostics.getDiagnostics(resource!);
     }
 
     createDiagnosticCollection(name?: string): theia.DiagnosticCollection {
@@ -286,16 +296,51 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Document Link Provider end
 
     // ### Code Actions Provider begin
-    registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
-        // FIXME: to implement
-        return new Disposable(() => { });
+    registerCodeActionsProvider(
+        selector: theia.DocumentSelector,
+        provider: theia.CodeActionProvider,
+        pluginModel: PluginModel,
+        metadata?: theia.CodeActionProviderMetadata
+    ): theia.Disposable {
+        const callId = this.addNewAdapter(new CodeActionAdapter(provider, this.documents, this.diagnostics, pluginModel ? pluginModel.id : ''));
+        this.proxy.$registerQuickFixProvider(
+            callId,
+            this.transformDocumentSelector(selector),
+            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value!) : undefined
+        );
+        return this.createDisposable(callId);
+    }
+
+    $provideCodeActions(handle: number,
+        resource: UriComponents,
+        rangeOrSelection: Range | Selection,
+        context: monaco.languages.CodeActionContext
+    ): Promise<monaco.languages.CodeAction[]> {
+        return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeAction(URI.revive(resource), rangeOrSelection, context));
     }
     // ### Code Actions Provider end
 
     // ### Code Lens Provider begin
     registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
-        // FIXME: to implement
-        return new Disposable(() => { });
+        const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents, this.commands.getConverter()));
+        const eventHandle = typeof provider.onDidChangeCodeLenses === 'function' ? this.nextCallId() : undefined;
+        this.proxy.$registerCodeLensSupport(callId, this.transformDocumentSelector(selector), eventHandle);
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined && provider.onDidChangeCodeLenses) {
+            const subscription = provider.onDidChangeCodeLenses(e => this.proxy.$emitCodeLensEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+
+        return result;
+    }
+
+    $provideCodeLenses(handle: number, resource: UriComponents): Promise<CodeLensSymbol[] | undefined> {
+        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.provideCodeLenses(URI.revive(resource)));
+    }
+
+    $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol): Promise<CodeLensSymbol | undefined> {
+        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.resolveCodeLens(URI.revive(resource), symbol));
     }
     // ### Code Lens Provider end
 

@@ -35,16 +35,20 @@ export interface MergeConflictCommandArgument {
 }
 
 export namespace MergeConflictsCommands {
+    const MERGE_CONFLIC_PREFIX = 'Merge Conflict';
     export const AcceptCurrent: Command = {
         id: 'merge-conflicts:accept.current',
-        label: 'Merge Conflict: Accept Current Change'
+        category: MERGE_CONFLIC_PREFIX,
+        label: 'Accept Current Change'
     };
     export const AcceptIncoming: Command = {
         id: 'merge-conflicts:accept.incoming',
-        label: 'Merge Conflict: Accept Incoming Change'
+        category: MERGE_CONFLIC_PREFIX,
+        label: 'Accept Incoming Change'
     };
     export const AcceptBoth: Command = {
         id: 'merge-conflicts:accept.both',
-        label: 'Merge Conflict: Accept Both Changes'
+        category: MERGE_CONFLIC_PREFIX,
+        label: 'Accept Both Changes'
     };
 }

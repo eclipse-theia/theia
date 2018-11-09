@@ -24,6 +24,7 @@ import { MarkdownString, isMarkdownString } from './markdown-string';
 export class Disposable {
     private disposable: undefined | (() => void);
 
+    // tslint:disable-next-line:no-any
     static from(...disposables: { dispose(): any }[]): Disposable {
         return new Disposable(() => {
             if (disposables) {
@@ -929,6 +930,8 @@ export class CodeAction {
 
     command?: theia.Command;
 
+    edit?: WorkspaceEdit;
+
     diagnostics?: Diagnostic[];
 
     kind?: CodeActionKind;
@@ -936,6 +939,136 @@ export class CodeAction {
     constructor(title: string, kind?: CodeActionKind) {
         this.title = title;
         this.kind = kind;
+    }
+}
+
+export interface FileOperationOptions {
+    overwrite?: boolean;
+    ignoreIfExists?: boolean;
+    ignoreIfNotExists?: boolean;
+    recursive?: boolean;
+}
+export interface FileOperation {
+    _type: 1;
+    from: URI | undefined;
+    to: URI | undefined;
+    options?: FileOperationOptions;
+}
+
+export interface FileTextEdit {
+    _type: 2;
+    uri: URI;
+    edit: TextEdit;
+}
+
+export class WorkspaceEdit implements theia.WorkspaceEdit {
+
+    private _edits = new Array<FileOperation | FileTextEdit | undefined>();
+
+    renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void {
+        this._edits.push({ _type: 1, from, to, options });
+    }
+
+    createFile(uri: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void {
+        this._edits.push({ _type: 1, from: undefined, to: uri, options });
+    }
+
+    deleteFile(uri: theia.Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }): void {
+        this._edits.push({ _type: 1, from: uri, to: undefined, options });
+    }
+
+    replace(uri: URI, range: Range, newText: string): void {
+        this._edits.push({ _type: 2, uri, edit: new TextEdit(range, newText) });
+    }
+
+    insert(resource: URI, position: Position, newText: string): void {
+        this.replace(resource, new Range(position, position), newText);
+    }
+
+    delete(resource: URI, range: Range): void {
+        this.replace(resource, range, '');
+    }
+
+    has(uri: URI): boolean {
+        for (const edit of this._edits) {
+            if (edit && edit._type === 2 && edit.uri.toString() === uri.toString()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    set(uri: URI, edits: TextEdit[]): void {
+        if (!edits) {
+            // remove all text edits for `uri`
+            for (let i = 0; i < this._edits.length; i++) {
+                const element = this._edits[i];
+                if (element && element._type === 2 && element.uri.toString() === uri.toString()) {
+                    this._edits[i] = undefined;
+                }
+            }
+            this._edits = this._edits.filter(e => !!e);
+        } else {
+            // append edit to the end
+            for (const edit of edits) {
+                if (edit) {
+                    this._edits.push({ _type: 2, uri, edit });
+                }
+            }
+        }
+    }
+
+    get(uri: URI): TextEdit[] {
+        const res: TextEdit[] = [];
+        for (const candidate of this._edits) {
+            if (candidate && candidate._type === 2 && candidate.uri.toString() === uri.toString()) {
+                res.push(candidate.edit);
+            }
+        }
+        if (res.length === 0) {
+            return undefined!;
+        }
+        return res;
+    }
+
+    entries(): [URI, TextEdit[]][] {
+        const textEdits = new Map<string, [URI, TextEdit[]]>();
+        for (const candidate of this._edits) {
+            if (candidate && candidate._type === 2) {
+                let textEdit = textEdits.get(candidate.uri.toString());
+                if (!textEdit) {
+                    textEdit = [candidate.uri, []];
+                    textEdits.set(candidate.uri.toString(), textEdit);
+                }
+                textEdit[1].push(candidate.edit);
+            }
+        }
+        const result: [URI, TextEdit[]][] = [];
+        textEdits.forEach(v => result.push(v));
+        return result;
+    }
+
+    _allEntries(): ([URI, TextEdit[]] | [URI, URI, FileOperationOptions])[] {
+        const res: ([URI, TextEdit[]] | [URI, URI, FileOperationOptions])[] = [];
+        for (const edit of this._edits) {
+            if (!edit) {
+                continue;
+            }
+            if (edit._type === 1) {
+                res.push([edit.from!, edit.to!, edit.options!]);
+            } else {
+                res.push([edit.uri, [edit.edit]]);
+            }
+        }
+        return res;
+    }
+
+    get size(): number {
+        return this.entries().length;
+    }
+
+    toJSON(): any {
+        return this.entries();
     }
 }
 
@@ -1026,6 +1159,7 @@ export class SymbolInformation {
         SymbolInformation.validate(this);
     }
 
+    // tslint:disable-next-line:no-any
     toJSON(): any {
         return {
             name: this.name,

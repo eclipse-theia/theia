@@ -80,6 +80,14 @@
     background: var(--theia-accent-color4);
 }
 
+.theia-TreeNode.theia-mod-not-selectable {
+    color: var(--theia-ui-font-color2);
+}
+.theia-TreeNode.theia-mod-not-selectable:hover {
+    background: none;
+    cursor: default;
+}
+
 .theia-TreeNodeSegment {
     flex-grow: 0;
     user-select: none;

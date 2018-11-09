@@ -63,7 +63,7 @@ describe('CliManager', () => {
     });
 
     it('prints help and exits', async () =>
-        await assertExits(async () => {
+        assertExits(async () => {
             const mnr = new TestCliManager();
             await mnr.initializeCli(['--help']);
         })

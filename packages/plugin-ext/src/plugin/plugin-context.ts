@@ -69,6 +69,7 @@ import {
     TreeItemCollapsibleState,
     SymbolKind,
     DocumentSymbol,
+    WorkspaceEdit,
     SymbolInformation,
     FileType,
     FileChangeType
@@ -102,11 +103,11 @@ export function createAPIFactory(
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
-    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc));
+    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl(rpc, editorsAndDocuments));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
-    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
+    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -268,25 +269,25 @@ export function createAPIFactory(
             onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
                 return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
             },
-            openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }) {
-                let uriPromise: Promise<Uri>;
-
+            async openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }): Promise<theia.TextDocument | undefined> {
                 const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
+
+                let uri: Uri;
                 if (typeof uriOrFileNameOrOptions === 'string') {
-                    uriPromise = Promise.resolve(Uri.file(uriOrFileNameOrOptions));
+                    uri = Uri.file(uriOrFileNameOrOptions);
+
                 } else if (uriOrFileNameOrOptions instanceof Uri) {
-                    uriPromise = Promise.resolve(uriOrFileNameOrOptions);
+                    uri = uriOrFileNameOrOptions;
+
                 } else if (!options || typeof options === 'object') {
-                    uriPromise = documents.createDocumentData(options);
+                    uri = await documents.createDocumentData(options);
+
                 } else {
-                    throw new Error('illegal argument - uriOrFileNameOrOptions');
+                    return Promise.reject('illegal argument - uriOrFileNameOrOptions');
                 }
 
-                return uriPromise.then(uri =>
-                    documents.ensureDocumentData(uri).then(() => {
-                        const data = documents.getDocumentData(uri);
-                        return data && data.document;
-                    }));
+                const data = await documents.openDocument(uri);
+                return data && data.document;
             },
             createFileSystemWatcher(globPattern: theia.GlobPattern,
                 ignoreCreateEvents?: boolean,
@@ -296,6 +297,9 @@ export function createAPIFactory(
             },
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, undefined, maxResults, token);
+            },
+            registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
+                return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
             registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
                 // FIXME: to implement
@@ -365,7 +369,7 @@ export function createAPIFactory(
                 return languagesExt.registerLinkProvider(selector, provider);
             },
             registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
-                return languagesExt.registerCodeActionsProvider(selector, provider, metadata);
+                return languagesExt.registerCodeActionsProvider(selector, provider, plugin.model, metadata);
             },
             registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
                 return languagesExt.registerCodeLensProvider(selector, provider);
@@ -379,9 +383,11 @@ export function createAPIFactory(
         };
 
         const plugins: typeof theia.plugins = {
+            // tslint:disable-next-line:no-any
             get all(): theia.Plugin<any>[] {
                 return pluginManager.getAllPlugins().map(plg => new Plugin(pluginManager, plg));
             },
+            // tslint:disable-next-line:no-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
                 const plg = pluginManager.getPluginById(pluginId);
                 if (plg) {
@@ -392,6 +398,14 @@ export function createAPIFactory(
         };
 
         const debug: typeof theia.debug = {
+            onDidChangeActiveDebugSession(listener, thisArg?, disposables?) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
+            onDidTerminateDebugSession(listener, thisArg?, disposables?) {
+                // FIXME: to implement
+                return new Disposable(() => { });
+            },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): theia.Disposable {
                 // FIXME: to implement
                 return new Disposable(() => { });
@@ -455,6 +469,7 @@ export function createAPIFactory(
             TreeItemCollapsibleState,
             SymbolKind,
             DocumentSymbol,
+            WorkspaceEdit,
             SymbolInformation,
             FileType,
             FileChangeType
@@ -466,6 +481,7 @@ class Plugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
     isActive: boolean;
+    // tslint:disable-next-line:no-any
     packageJSON: any;
     pluginType: theia.PluginType;
     constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {

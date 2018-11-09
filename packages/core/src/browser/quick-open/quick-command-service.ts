@@ -40,7 +40,7 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     init(): void {
         // let's compute the items here to do it in the context of the currently activeElement
         this.items = [];
-        const filteredAndSortedCommands = this.commands.commands.filter(a => a.label).sort((a, b) => a.label!.localeCompare(b.label!));
+        const filteredAndSortedCommands = this.commands.commands.filter(a => a.label).sort((a, b) => Command.compareCommands(a, b));
         for (const command of filteredAndSortedCommands) {
             if (command.label) {
                 this.items.push(new CommandQuickOpenItem(command, this.commands, this.keybindings));
@@ -59,6 +59,7 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     getOptions(): QuickOpenOptions {
         return { fuzzyMatchLabel: true };
     }
+
 }
 
 export class CommandQuickOpenItem extends QuickOpenItem {
@@ -77,7 +78,9 @@ export class CommandQuickOpenItem extends QuickOpenItem {
     }
 
     getLabel(): string {
-        return this.command.label!;
+        return (this.command.category)
+            ? `${this.command.category}: ` + this.command.label!
+            : this.command.label!;
     }
 
     isHidden(): boolean {

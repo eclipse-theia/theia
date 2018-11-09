@@ -235,3 +235,55 @@ export interface DocumentLinkProvider {
     provideLinks(model: monaco.editor.ITextModel, token: monaco.CancellationToken): DocumentLink[] | undefined | PromiseLike<DocumentLink[] | undefined>;
     resolveLink?: (link: DocumentLink, token: monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
 }
+
+export interface CodeLensSymbol {
+    range: Range;
+    id?: string;
+    command?: Command;
+}
+
+export interface CodeAction {
+    title: string;
+    command?: Command;
+    edit?: WorkspaceEdit;
+    diagnostics?: MarkerData[];
+    kind?: string;
+}
+
+export enum CodeActionTrigger {
+    Automatic = 1,
+    Manual = 2,
+}
+
+export interface CodeActionContext {
+    only?: string;
+    trigger: CodeActionTrigger;
+}
+
+export interface CodeActionProvider {
+    provideCodeActions(
+        model: monaco.editor.ITextModel,
+        range: Range | Selection,
+        context: monaco.languages.CodeActionContext,
+        token: monaco.CancellationToken
+    ): CodeAction[] | PromiseLike<CodeAction[]>;
+
+    providedCodeActionKinds?: string[];
+}
+
+export interface ResourceFileEdit {
+    oldUri: UriComponents;
+    newUri: UriComponents;
+    options: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
+}
+
+export interface ResourceTextEdit {
+    resource: UriComponents;
+    modelVersionId?: number;
+    edits: TextEdit[];
+}
+
+export interface WorkspaceEdit {
+    edits: Array<ResourceTextEdit | ResourceFileEdit>;
+    rejectReason?: string;
+}
