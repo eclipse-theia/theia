@@ -225,7 +225,7 @@ Note, that it is possible to have an array of values for single name, because it
 Function to create new terminal with specific arguments:
 
 ```typescript
-const terminal = theia.window.createTerminal("Bash terminal", "/bin/bash", shellArgs: ["-l"]);
+const terminal = theia.window.createTerminal("Bash terminal", "/bin/bash", ["-l"]);
 ```
 
 Where are:
