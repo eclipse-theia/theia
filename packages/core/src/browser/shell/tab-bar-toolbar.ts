@@ -20,7 +20,7 @@ import { LabelParser, LabelIcon } from '../label-parser';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution } from '../frontend-application';
 import { Disposable, DisposableCollection } from '../../common/disposable';
-import { Command, CommandRegistry, CommandService } from '../../common/command';
+import { CommandRegistry, CommandService } from '../../common/command';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -71,7 +71,7 @@ export class TabBarToolbar extends BaseWidget {
             itemContainer.classList.add(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM);
             for (const labelPart of this.labelParser.parse(item.text)) {
                 const child = document.createElement('div');
-                const listener = () => this.commandService.executeCommand(item.command.id);
+                const listener = () => this.commandService.executeCommand(item.command);
                 child.addEventListener('click', listener);
                 this.toDisposeOnUpdate.push(Disposable.create(() => itemContainer.removeEventListener('click', listener)));
                 if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
@@ -148,7 +148,7 @@ export interface TabBarToolbarItem {
     /**
      * The command to execute.
      */
-    readonly command: Command;
+    readonly command: string;
 
     /**
      * Text of the item.
@@ -238,7 +238,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      */
     visibleItems(widget: Widget): TabBarToolbarItem[] {
         return Array.from(this.items.values())
-            .filter(item => this.commandRegistry.isEnabled(item.id))
+            .filter(item => this.commandRegistry.isEnabled(item.command))
             .filter(item => item.isVisible(widget));
     }
 
