@@ -222,7 +222,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
-            command: PreviewCommands.OPEN,
+            command: PreviewCommands.OPEN.id,
             isVisible: (widget: Widget) => widget instanceof EditorWidget && this.canHandleEditorUri(),
             text: '$(columns)',
             tooltip: 'Open Preview to the Side'
