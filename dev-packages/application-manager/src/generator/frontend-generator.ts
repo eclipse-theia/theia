@@ -104,12 +104,14 @@ process.env.LC_NUMERIC = 'C';
 const { join } = require('path');
 const { isMaster } = require('cluster');
 const { fork } = require('child_process');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+
+const props = require('../../package.json').theia || {};
 
 const windows = [];
 
 function createNewWindow(theUrl) {
-    const newWindow = new BrowserWindow({ width: 1024, height: 728, show: !!theUrl });
+    const newWindow = new BrowserWindow({ width: 1024, height: 728, show: !!theUrl, title: props.applicationName || 'Theia' });
     if (windows.length === 0) {
         newWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {
             // If the first electron window isn't visible, then all other new windows will remain invisible.
@@ -147,6 +149,9 @@ if (isMaster) {
         createNewWindow(url);
     });
     app.on('ready', () => {
+        // Remove the default electron menus, waiting for the application to set its own.
+        Menu.setApplicationMenu(null);
+
         // Check whether we are in bundled application or development mode.
         // @ts-ignore
         const devMode = process.defaultApp || /node_modules[\/]electron[\/]/.test(process.execPath);
