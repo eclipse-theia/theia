@@ -17,6 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, WidgetFactory, bindViewContribution, LabelProviderContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
 import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';
 import { GitViewContribution, GIT_WIDGET_FACTORY_ID } from './git-view-contribution';
@@ -52,6 +53,7 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, GitViewContribution);
     bind(FrontendApplicationContribution).toService(GitViewContribution);
+    bind(TabBarToolbarContribution).toService(GitViewContribution);
 
     bind(GitWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({

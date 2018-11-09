@@ -599,7 +599,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     handleOpenChange = async (change: GitFileChange, options?: EditorOpenerOptions) => this.openChange(change, options);
 
-    protected getUriToOpen(change: GitFileChange): URI {
+    getUriToOpen(change: GitFileChange): URI {
         const changeUri: URI = new URI(change.uri);
         if (change.status !== GitFileStatus.New) {
             if (change.staged) {
