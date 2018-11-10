@@ -161,6 +161,10 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
     outline: none;
 }
 
+textarea {
+  font-family: var(--theia-ui-font-family);
+}
+
 /*-----------------------------------------------------------------------------
 | Import children style files
 |----------------------------------------------------------------------------*/
