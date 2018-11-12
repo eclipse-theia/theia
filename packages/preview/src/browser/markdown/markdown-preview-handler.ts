@@ -40,7 +40,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     protected readonly linkNormalizer: PreviewLinkNormalizer;
 
     canHandle(uri: URI): number {
-        return uri.scheme === 'file' && uri.path.ext === '.md' ? 500 : 0;
+        return uri.scheme === 'file' && uri.path.ext.toLowerCase() === '.md' ? 500 : 0;
     }
 
     renderContent(params: RenderContentParams): HTMLElement {
