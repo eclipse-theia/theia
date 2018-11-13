@@ -17,7 +17,7 @@
 .theia-navigator-container {
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color1);
-    margin: 5px;
+    padding: 5px;
     position: relative;
 }
 
