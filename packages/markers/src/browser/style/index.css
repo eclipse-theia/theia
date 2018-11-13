@@ -24,7 +24,7 @@
 }
 
 .theia-marker-container .noMarkers {
-    margin: 5px;
+    padding: 5px;
 }
 
 .theia-marker-container .markerNode,
