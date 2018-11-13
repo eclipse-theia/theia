@@ -21,30 +21,50 @@ import { UriComponents } from '../../common/uri-components';
 import { WebviewOptions, WebviewPanelOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WebviewWidget } from './webview/webview';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeRulesService } from './webview/theme-rules-service';
+import { DisposableCollection } from '@theia/core';
 
 export class WebviewsMainImpl implements WebviewsMain {
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
+    protected readonly toDispose: DisposableCollection;
+    protected readonly themeService = ThemeService.get();
+    protected readonly themeRulesService = ThemeRulesService.get();
 
     private readonly views = new Map<string, WebviewWidget>();
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.shell = container.get(ApplicationShell);
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
+        this.shell = container.get(ApplicationShell);
+        this.toDispose = new DisposableCollection();
     }
 
-    $createWebviewPanel(viewId: string,
+    $createWebviewPanel(
+        viewId: string,
         viewType: string,
         title: string,
         showOptions: WebviewPanelShowOptions,
         options: (WebviewPanelOptions & WebviewOptions) | undefined,
-        extensionLocation: UriComponents): void {
+        extensionLocation: UriComponents
+    ): void {
         const view = new WebviewWidget(title, {
             allowScripts: options ? options.enableScripts : false
         }, {
-                onMessage: m => {
-                    this.proxy.$onMessage(viewId, m);
-                }
-            });
+            onMessage: m => {
+                this.proxy.$onMessage(viewId, m);
+            },
+            onLoad: contentDocument => {
+                const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
+                const styleTag = contentDocument.createElement('style');
+                styleTag.type = 'text/css';
+                parent.appendChild(styleTag);
+                this.themeRulesService.setRules(styleTag, this.themeRulesService.getCurrentThemeRules());
+                this.toDispose.push(this.themeService.onThemeChange(() => {
+                    this.themeRulesService.setRules(styleTag, this.themeRulesService.getCurrentThemeRules());
+                }));
+            }
+        });
         view.disposed.connect(() => {
             this.onCloseView(viewId);
         });
@@ -57,7 +77,6 @@ export class WebviewsMainImpl implements WebviewsMain {
         if (view) {
             view.dispose();
         }
-
     }
     $reveal(handle: string, showOptions: WebviewPanelShowOptions): void {
         throw new Error('Method not implemented.');
@@ -103,5 +122,6 @@ export class WebviewsMainImpl implements WebviewsMain {
             this.views.delete(viewId);
         };
         this.proxy.$onDidDisposeWebviewPanel(viewId).then(cleanUp, cleanUp);
+        this.toDispose.dispose();
     }
 }

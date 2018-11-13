@@ -83,7 +83,16 @@ module.exports = {
             },
             {
                 test: /\\.useable\\.css$/,
-                loader: 'style-loader/useable!css-loader'
+                use: [
+                  {
+                    loader: 'style-loader/useable',
+                    options: {
+                      singleton: true,
+                      attrs: { id: 'theme' },
+                    }
+                  },
+                  { loader: 'css-loader' },
+                ],
             },
             {
                 test: /\\.(ttf|eot|svg)(\\?v=\\d+\\.\\d+\\.\\d+)?$/,

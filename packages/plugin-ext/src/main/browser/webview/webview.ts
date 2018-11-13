@@ -16,7 +16,7 @@
 import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
 import { MiniBrowser } from '@theia/mini-browser/lib/browser/mini-browser';
-import { DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core';
 
 export interface WebviewWidgetOptions {
     readonly allowScripts?: boolean;
@@ -24,6 +24,7 @@ export interface WebviewWidgetOptions {
 
 export interface WebviewEvents {
     onMessage?(message: any): void;
+    onLoad?(contentDocument: Document): void;
 }
 
 export class WebviewWidget extends BaseWidget {
@@ -33,7 +34,7 @@ export class WebviewWidget extends BaseWidget {
     private iframe: HTMLIFrameElement;
     private state: string | undefined = undefined;
     private loadTimeout: number | undefined;
-    // private pendingMessages
+    //    private pendingMessages
     constructor(title: string, private options: WebviewWidgetOptions, private eventDelegate: WebviewEvents) {
         super();
         this.id = WebviewWidget.ID.nextId();
@@ -179,7 +180,6 @@ export class WebviewWidget extends BaseWidget {
             }
         });
 
-        newFrame.contentDocument!.write('<!DOCTYPE html>');
         newFrame.contentDocument!.write(newDocument.documentElement.innerHTML);
         newFrame.contentDocument!.close();
 
