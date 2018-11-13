@@ -106,6 +106,14 @@ Var är jag?  Varför är jag här?
 If one uses \`salut";\' echo foo && echo bar; "\` as a search term it should not be a problem to find here.
 `);
 
+    createTestFile('glob.txt', `\
+test -glob patterns
+`);
+
+    createTestFile('glob', `\
+test --glob patterns
+`);
+
     let lotsOfMatchesText = '';
     for (let i = 0; i < 100000; i++) {
         lotsOfMatchesText += 'lots-of-matches\n';
@@ -454,6 +462,109 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir, { useRegExp: true });
+    });
+
+    it('searches a pattern starting with a dash w/o regex', function (done) {
+        const pattern = '-foobar';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'file with spaces', line: 1, character: 28, length: 7, lineText: '' },
+            ];
+
+            if (!isWindows) {
+                expected.push(
+                    { file: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' }
+                );
+            }
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir);
+    });
+
+    it('searches a pattern starting with two dashes w/o regex', function (done) {
+        const pattern = '--foobar';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'file with spaces', line: 1, character: 27, length: 8, lineText: '' },
+            ];
+
+            if (!isWindows) {
+                expected.push(
+                    { file: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' }
+                );
+            }
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir);
+    });
+
+    it('searches a whole pattern starting with - w/o regex', function (done) {
+        const pattern = '-glob';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'glob', line: 1, character: 7, length: 5, lineText: '' },
+                { file: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, { matchWholeWord: true });
+    });
+
+    it('searches a whole pattern starting with -- w/o regex', function (done) {
+        const pattern = '--glob';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'glob', line: 1, character: 6, length: 6, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, { matchWholeWord: true });
+    });
+
+    it('searches a pattern in .txt file', function (done) {
+        const pattern = '-glob';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, { include: ['*.txt'] });
+    });
+
+    it('searches a whole pattern in .txt file', function (done) {
+        const pattern = '-glob';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, { include: ['*.txt'], matchWholeWord: true });
     });
 
     // Try searching in an UTF-8 file.
