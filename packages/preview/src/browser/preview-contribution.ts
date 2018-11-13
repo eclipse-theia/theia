@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
-import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from '@theia/core/lib/common';
+import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
@@ -194,6 +194,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         const mainTabBars = this.shell.mainAreaTabBars;
         const defaultTabBar = this.shell.getTabBarFor('main');
         if (mainTabBars.length > 1 && defaultTabBar) {
+            // FIXME: what if this.shell.currentTabBar does not belong to mainTabBars?
             const currentTabBar = this.shell.currentTabBar || defaultTabBar;
             const currentIndex = currentTabBar.currentIndex;
             const currentTitle = currentTabBar.titles[currentIndex];
@@ -205,10 +206,10 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(PreviewCommands.OPEN, <CommandHandler>{
-            execute: () => this.openForEditor(),
-            isEnabled: () => this.canHandleEditorUri(),
-            isVisible: () => this.canHandleEditorUri(),
+        registry.registerCommand(PreviewCommands.OPEN, {
+            execute: widget => this.openForEditor(widget),
+            isEnabled: widget => this.canHandleEditorUri(widget),
+            isVisible: widget => this.canHandleEditorUri(widget),
         });
     }
 
@@ -223,32 +224,32 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
             command: PreviewCommands.OPEN.id,
-            isVisible: (widget: Widget) => widget instanceof EditorWidget && this.canHandleEditorUri(),
             text: '$(columns)',
             tooltip: 'Open Preview to the Side'
         });
     }
 
-    protected canHandleEditorUri(): boolean {
-        const uri = this.getCurrentEditorUri();
+    protected canHandleEditorUri(widget?: Widget): boolean {
+        const uri = this.getCurrentEditorUri(widget);
         return !!uri && this.previewHandlerProvider.canHandle(uri);
     }
-    protected getCurrentEditorUri(): URI | undefined {
-        const current = this.editorManager.currentEditor;
+    protected getCurrentEditorUri(widget?: Widget): URI | undefined {
+        const current = this.getCurrentEditor(widget);
         return current && current.editor.uri;
     }
+    protected getCurrentEditor(widget?: Widget): EditorWidget | undefined {
+        const current = widget ? widget : this.editorManager.currentEditor;
+        return current instanceof EditorWidget && current || undefined;
+    }
 
-    protected async openForEditor(): Promise<void> {
-        const uri = this.getCurrentEditorUri();
-        if (!uri) {
+    protected async openForEditor(widget?: Widget): Promise<void> {
+        const ref = this.getCurrentEditor(widget);
+        if (!ref) {
             return;
         }
-        const ref = this.findWidgetInMainAreaToAddAfter();
-        await this.open(uri, {
-            ... this.defaultOpenFromEditorOptions,
-            widgetOptions: ref ?
-                { area: 'main', mode: 'tab-after', ref } :
-                { area: 'main', mode: 'split-right' }
+        await this.open(ref.editor.uri, {
+            mode: 'reveal',
+            widgetOptions: { ref, mode: 'split-right' }
         });
     }
 

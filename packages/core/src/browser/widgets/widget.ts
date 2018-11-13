@@ -219,6 +219,8 @@ export function addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element
 
 /**
  * Tracks the current and active widgets in the application. Also provides access to the currently active and current widgets.
+ *
+ * FIXME: remove it from Widget public API, this file should be about BaseWidget, not shell internals
  */
 export const WidgetTracker = Symbol('WidgetTracker');
 export interface WidgetTracker {
