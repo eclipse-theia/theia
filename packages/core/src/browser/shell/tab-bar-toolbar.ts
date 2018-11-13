@@ -35,7 +35,8 @@ export interface TabBarToolbarFactory {
  */
 export class TabBarToolbar extends BaseWidget {
 
-    protected readonly items: Map<TabBarToolbarItem, HTMLElement> = new Map();
+    protected current: Widget | undefined;
+    protected readonly items = new Map<TabBarToolbarItem, HTMLElement>();
     protected readonly toDisposeOnUpdate: DisposableCollection = new DisposableCollection();
 
     constructor(protected readonly commandService: CommandService, protected readonly labelParser: LabelParser) {
@@ -45,14 +46,15 @@ export class TabBarToolbar extends BaseWidget {
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_HIDDEN);
     }
 
-    updateItems(...items: TabBarToolbarItem[]): void {
+    updateItems(items: TabBarToolbarItem[], current: Widget | undefined): void {
+        this.current = current;
         const copy = items.slice().sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse();
         if (this.areSame(copy, Array.from(this.items.keys()))) {
             return;
         }
         this.toDisposeOnUpdate.dispose();
         this.removeItems();
-        this.createItems(...copy);
+        this.createItems(copy);
     }
 
     protected removeItems(): void {
@@ -65,13 +67,13 @@ export class TabBarToolbar extends BaseWidget {
         this.items.clear();
     }
 
-    protected createItems(...items: TabBarToolbarItem[]): void {
+    protected createItems(items: TabBarToolbarItem[]): void {
         for (const item of items) {
             const itemContainer = document.createElement('div');
             itemContainer.classList.add(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM);
             for (const labelPart of this.labelParser.parse(item.text)) {
                 const child = document.createElement('div');
-                const listener = () => this.commandService.executeCommand(item.command);
+                const listener = () => this.commandService.executeCommand(item.command, this.current);
                 child.addEventListener('click', listener);
                 this.toDisposeOnUpdate.push(Disposable.create(() => itemContainer.removeEventListener('click', listener)));
                 if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
@@ -171,11 +173,6 @@ export interface TabBarToolbarItem {
     readonly text: string;
 
     /**
-     * Function that evaluates to `true` if the toolbar item is visible for the given widget. Otherwise, `false`.
-     */
-    readonly isVisible: (widget: Widget) => boolean;
-
-    /**
      * Priority among the items. Can be negative. The smaller the number the left-most the item will be placed in the toolbar. It is `0` by default.
      */
     readonly priority?: number;
@@ -237,9 +234,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * By default returns with all items where the command is enabled and `item.isVisible` is `true`.
      */
     visibleItems(widget: Widget): TabBarToolbarItem[] {
-        return Array.from(this.items.values())
-            .filter(item => this.commandRegistry.isEnabled(item.command))
-            .filter(item => item.isVisible(widget));
+        return [...this.items.values()].filter(item => this.commandRegistry.isVisible(item.command, widget));
     }
 
 }
