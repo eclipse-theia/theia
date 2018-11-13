@@ -24,6 +24,7 @@ export interface WebviewWidgetOptions {
 
 export interface WebviewEvents {
     onMessage?(message: any): void;
+    onKeyboardEvent?(e: KeyboardEvent): void;
     onLoad?(contentDocument: Document): void;
 }
 
@@ -140,6 +141,18 @@ export class WebviewWidget extends BaseWidget {
 
                 // // Bubble out link clicks
                 // contentDocument.body.addEventListener('click', handleInnerClick);
+
+                if (this.eventDelegate && this.eventDelegate.onKeyboardEvent) {
+                    const eventNames = ['keydown', 'keypress', 'click'];
+                    // Delegate events from the `iframe` to the application.
+                    eventNames.forEach((eventName: string) => {
+                        contentDocument.addEventListener(eventName, this.eventDelegate.onKeyboardEvent!, true);
+                        this.toDispose.push(Disposable.create(() => contentDocument.removeEventListener(eventName, this.eventDelegate.onKeyboardEvent!)));
+                    });
+                }
+                if (this.eventDelegate && this.eventDelegate.onLoad) {
+                    this.eventDelegate.onLoad(<Document>contentDocument);
+                }
             }
 
             // const newFrame = getPendingFrame();

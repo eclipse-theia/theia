@@ -20,6 +20,7 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
 import { WebviewOptions, WebviewPanelOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WebviewWidget } from './webview/webview';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeRulesService } from './webview/theme-rules-service';
@@ -28,6 +29,7 @@ import { DisposableCollection } from '@theia/core';
 export class WebviewsMainImpl implements WebviewsMain {
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
+    protected readonly keybindingRegistry: KeybindingRegistry;
     protected readonly toDispose: DisposableCollection;
     protected readonly themeService = ThemeService.get();
     protected readonly themeRulesService = ThemeRulesService.get();
@@ -37,6 +39,7 @@ export class WebviewsMainImpl implements WebviewsMain {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
+        this.keybindingRegistry = container.get(KeybindingRegistry);
         this.toDispose = new DisposableCollection();
     }
 
@@ -53,6 +56,9 @@ export class WebviewsMainImpl implements WebviewsMain {
         }, {
             onMessage: m => {
                 this.proxy.$onMessage(viewId, m);
+            },
+            onKeyboardEvent: e => {
+                this.keybindingRegistry.run(e);
             },
             onLoad: contentDocument => {
                 const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
