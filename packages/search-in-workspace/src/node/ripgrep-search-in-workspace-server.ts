@@ -68,13 +68,29 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             '--max-count=100',
             '--max-columns=250'];
         args.push(options && options.matchCase ? '--case-sensitive' : '--ignore-case');
-        if (options && options.matchWholeWord) {
-            args.push('--word-regexp');
-        }
         if (options && options.includeIgnored) {
             args.push('-uu');
         }
-        args.push(options && options.useRegExp ? '--regexp' : '--fixed-strings');
+        if (options && options.include) {
+            for (const include of options.include) {
+                if (include !== '') {
+                    args.push('--glob=**/' + include);
+                }
+            }
+        }
+        if (options && options.exclude) {
+            for (const exclude of options.exclude) {
+                if (exclude !== '') {
+                    args.push('--glob=!**/' + exclude);
+                }
+            }
+        }
+        if (options && options.useRegExp || options && options.matchWholeWord) {
+            args.push('--regexp');
+        } else {
+            args.push('--fixed-strings');
+            args.push('--');
+        }
         return args;
     }
 
@@ -85,24 +101,21 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
         const args = this.getArgs(opts);
-        const globs = [];
-        if (opts && opts.include) {
-            for (const include of opts.include) {
-                if (include !== '') {
-                    globs.push('--glob=**/' + include);
-                }
+        // if we use matchWholeWord we use regExp internally,
+        // so, we need to escape regexp characters if we actually not set regexp true in UI.
+        if (opts && opts.matchWholeWord && !opts.useRegExp) {
+            what = what.replace(/[\-\\\{\}\*\+\?\|\^\$\.\[\]\(\)\#]/g, '\\$&');
+            if (!/\B/.test(what.charAt(0))) {
+                what = '\\b' + what;
+            }
+            if (!/\B/.test(what.charAt(what.length - 1))) {
+                what = what + '\\b';
             }
         }
-        if (opts && opts.exclude) {
-            for (const exclude of opts.exclude) {
-                if (exclude !== '') {
-                    globs.push('--glob=!**/' + exclude);
-                }
-            }
-        }
+
         const processOptions: RawProcessOptions = {
             command: rgPath,
-            args: [...args, what, ...globs, FileUri.fsPath(rootUri)]
+            args: [...args, what, FileUri.fsPath(rootUri)]
         };
         const process: RawProcess = this.rawProcessFactory(processOptions);
         this.ongoingSearches.set(searchId, process);
