@@ -19,7 +19,6 @@ import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt } from '../../../api/plug
 import { RPCProtocol } from '@theia/plugin-ext/src/api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
 import { Message } from '@phosphor/messaging';
-
 import {
     TreeWidget,
     ContextMenuRenderer,
@@ -32,13 +31,15 @@ import {
     ExpandableTreeNode,
     CompositeTreeNode,
     TreeImpl,
-    Tree
+    Tree,
+    TREE_NODE_SEGMENT_CLASS,
+    TREE_NODE_SEGMENT_GROW_CLASS
 } from '@theia/core/lib/browser';
-
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
-
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
+
+export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 
 export class TreeViewsMainImpl implements TreeViewsMain {
 
@@ -237,6 +238,55 @@ export class TreeViewWidget extends TreeWidget {
         }
 
         return undefined;
+    }
+
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+        const classes = [TREE_NODE_SEGMENT_CLASS];
+        if (!this.hasTrailingSuffixes(node)) {
+            classes.push(TREE_NODE_SEGMENT_GROW_CLASS);
+        }
+        const className = classes.join(' ');
+        let attrs = this.decorateCaption(node, {
+            className, id: node.id
+        });
+
+        if (node.description) {
+            attrs = {
+                ...attrs,
+                title: node.description
+            };
+        }
+
+        const children = this.getCaption(node);
+        return React.createElement('div', attrs, ...children);
+    }
+
+    getCaption(node: TreeNode): React.ReactNode[] {
+        const nodes: React.ReactNode[] = [];
+
+        let work = node.name;
+
+        const regex = /\[([^\[]+)\]\(([^\)]+)\)/g;
+        const matchResult = node.name.match(regex);
+
+        if (matchResult) {
+            matchResult.forEach(match => {
+                const part = work.substring(0, work.indexOf(match));
+                nodes.push(part);
+
+                const execResult = regex.exec(node.name);
+                const link = <a href={execResult![2]}
+                    target='_blank'
+                    className={TREE_NODE_HYPERLINK}
+                    onClick={e => e.stopPropagation()}>{execResult![1]}</a >;
+                nodes.push(link);
+
+                work = work.substring(work.indexOf(match) + match.length);
+            });
+        }
+
+        nodes.push(work);
+        return nodes;
     }
 
 }
