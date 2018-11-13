@@ -634,7 +634,7 @@ export class ApplicationShell extends Widget implements WidgetTracker {
      *
      * Widgets added to the top area are not tracked regarding the _current_ and _active_ states.
      */
-    addWidget(widget: Widget, options: ApplicationShell.WidgetOptions) {
+    addWidget(widget: Widget, options: Readonly<ApplicationShell.WidgetOptions> = {}) {
         if (!widget.id) {
             console.error('Widgets added to the application shell must have a unique id property.');
             return;
@@ -656,7 +656,7 @@ export class ApplicationShell extends Widget implements WidgetTracker {
                 this.rightPanelHandler.addWidget(widget, options);
                 break;
             default:
-                throw new Error('Illegal argument: ' + options.area);
+                this.mainPanel.addWidget(widget, options);
         }
         if (options.area !== 'top') {
             this.track(widget);
@@ -1319,7 +1319,7 @@ export namespace ApplicationShell {
         /**
          * The area of the application shell where the widget will reside.
          */
-        area: Area;
+        area?: Area;
     }
 
     /**

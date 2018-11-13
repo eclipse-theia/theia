@@ -81,8 +81,8 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
         const mergedOptions = await this.options(uri, options);
         const widget = await this.widgetManager.getOrCreateWidget<MiniBrowser>(MiniBrowser.Factory.ID, mergedOptions);
         await this.doOpen(widget, mergedOptions);
-        const { area } = mergedOptions.widgetOptions;
-        if (area !== 'main') {
+        const area = this.shell.getAreaFor(widget);
+        if (area && area !== 'main') {
             this.shell.resize(this.shell.mainPanel.node.offsetWidth / 2, area);
         }
         return widget;
