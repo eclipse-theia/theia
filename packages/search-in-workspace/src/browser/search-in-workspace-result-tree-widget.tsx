@@ -133,6 +133,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }));
     }
 
+    get fileNumber(): number {
+        return this.resultTree.size;
+    }
+
     set showReplaceButtons(srb: boolean) {
         this._showReplaceButtons = srb;
         this.update();
