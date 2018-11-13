@@ -162,8 +162,8 @@
   z-index: 1001; /* Due to the scrollbar (`z-index: 1000;`) it has a greater `z-index`. */
   display: flex;
   flex-direction: row-reverse;
-  flex-grow: 1;
   padding: 4px;
+  padding-left: 0px;
   margin-right: 4px;
 }
 
@@ -173,7 +173,7 @@
 
 .p-TabBar-content-container {
   display: flex;
-  background: var(--theia-layout-color0);
+  flex: 1;
 }
 
 .p-TabBar-toolbar .item {
