@@ -19,8 +19,9 @@ const https = require('https');
 const http = require('http');
 const path = require('path');
 
+const pck = require('../package.json');
 const packagePath = path.join(__dirname, '..');
-const downloadUrl = 'https://dl.bintray.com/vscjavaci/javadebug/releases/0.15.0/plugins/com.microsoft.java.debug.plugin_0.15.0.jar';
+const downloadUrl = pck.javaExtension.downloadUrl;
 const filename = 'java-debug.jar';
 const downloadDir = 'download';
 const downloadPath = path.join(packagePath, downloadDir);

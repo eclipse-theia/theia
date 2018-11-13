@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { JavaExtensionContribution } from './java-extension-model';
 import * as path from 'path';
+import { JavaExtensionContribution } from '@theia/java/lib/node';
 
 @injectable()
 export class JavaExtensionContributionImpl implements JavaExtensionContribution {

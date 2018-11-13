@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,17 +15,9 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { bindContributionProvider } from '@theia/core/lib/common';
-import { CliContribution } from '@theia/core/lib/node/cli';
-import { LanguageServerContribution } from '@theia/languages/lib/node';
-import { JavaContribution } from './java-contribution';
-import { JavaCliContribution } from './java-cli-contribution';
-import { JavaExtensionContribution } from './java-extension-model';
+import { JavaExtensionContributionImpl } from './java-extension-contribution';
+import { JavaExtensionContribution } from '@theia/java/lib/node/java-extension-model';
 
 export default new ContainerModule(bind => {
-    bind(LanguageServerContribution).to(JavaContribution).inSingletonScope();
-    bind(JavaCliContribution).toSelf().inSingletonScope();
-    bind(CliContribution).toService(JavaCliContribution);
-
-    bindContributionProvider(bind, JavaExtensionContribution);
+    bind(JavaExtensionContribution).to(JavaExtensionContributionImpl).inSingletonScope();
 });
