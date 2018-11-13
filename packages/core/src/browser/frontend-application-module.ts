@@ -148,7 +148,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(QuickPickService).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
+    [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
     );
 

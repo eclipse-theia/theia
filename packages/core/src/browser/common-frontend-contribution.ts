@@ -47,6 +47,7 @@ export namespace CommonMenus {
     export const EDIT_FIND = [...EDIT, '3_find'];
 
     export const VIEW = [...MAIN_MENU_BAR, '4_view'];
+    export const VIEW_PRIMARY = [...VIEW, '0_primary'];
     export const VIEW_VIEWS = [...VIEW, '1_views'];
     export const VIEW_LAYOUT = [...VIEW, '2_layout'];
 

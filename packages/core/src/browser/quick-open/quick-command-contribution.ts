@@ -15,17 +15,18 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { Command, CommandRegistry, CommandContribution } from '../../common';
+import { Command, CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '../../common';
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 import { PrefixQuickOpenService, QuickOpenHandlerRegistry } from './prefix-quick-open-service';
+import { CommonMenus } from '../common-frontend-contribution';
 
 export const quickCommand: Command = {
     id: 'quickCommand',
-    label: 'Open Quick Command'
+    label: 'Find Command ...'
 };
 
 @injectable()
-export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution {
+export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(PrefixQuickOpenService)
     protected readonly quickOpenService: PrefixQuickOpenService;
@@ -35,6 +36,12 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
             execute: () => this.quickOpenService.open('>')
+        });
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
+        menus.registerMenuAction(CommonMenus.VIEW_PRIMARY, {
+            commandId: quickCommand.id
         });
     }
 
