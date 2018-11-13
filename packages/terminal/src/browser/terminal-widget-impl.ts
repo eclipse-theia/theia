@@ -18,7 +18,8 @@ import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop } from '@theia/core/lib/browser';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
+import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
@@ -28,6 +29,7 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { TerminalPreferences } from './terminal-preferences';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -72,6 +74,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
     @inject('terminal-dom-id') public readonly id: string;
+    @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -114,7 +117,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 selection: cssProps.selection
             });
         }));
-
+        this.attachCustomKeyEventHandler();
         this.term.on('title', (title: string) => {
             if (this.options.useServerTitle) {
                 this.title.label = title;
@@ -403,4 +406,29 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const { cols, rows } = this.term;
         this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
+
+    protected get enableCopy(): boolean {
+        return this.preferences['terminal.enableCopy'];
+    }
+
+    protected get enablePaste(): boolean {
+        return this.preferences['terminal.enablePaste'];
+    }
+
+    protected customKeyHandler(event: KeyboardEvent): boolean {
+        const keyBindings = KeyCode.createKeyCode(event).toString();
+        const ctrlCmdCopy = (isOSX && keyBindings === 'meta+c') || (!isOSX && keyBindings === 'ctrl+c');
+        const ctrlCmdPaste = (isOSX && keyBindings === 'meta+v') || (!isOSX && keyBindings === 'ctrl+v');
+        if (ctrlCmdCopy && this.enableCopy && this.term.hasSelection()) {
+            return false;
+        }
+        if (ctrlCmdPaste && this.enablePaste) {
+            return false;
+        }
+        return true;
+    }
+    protected attachCustomKeyEventHandler(): void {
+        this.term.attachCustomKeyEventHandler(e => this.customKeyHandler(e));
+    }
+
 }
