@@ -241,14 +241,14 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             isEnabled: () => this.hasMultipleRepositories()
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_FILE, {
-            execute: () => this.openFile(),
-            isEnabled: () => !!this.openFileOptions,
-            isVisible: () => !!this.openFileOptions
+            execute: widget => this.openFile(widget),
+            isEnabled: widget => !!this.getOpenFileOptions(widget),
+            isVisible: widget => !!this.getOpenFileOptions(widget)
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGES, {
-            execute: () => this.openChanges(),
-            isEnabled: () => !!this.openChangesOptions,
-            isVisible: () => !!this.openChangesOptions
+            execute: widget => this.openChanges(widget),
+            isEnabled: widget => !!this.getOpenChangesOptions(widget),
+            isVisible: widget => !!this.getOpenChangesOptions(widget)
         });
         registry.registerCommand(GIT_COMMANDS.SYNC, {
             execute: () => this.syncService.sync(),
@@ -279,14 +279,12 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             id: GIT_COMMANDS.OPEN_FILE.id,
             command: GIT_COMMANDS.OPEN_FILE.id,
             text: '$(file-o)',
-            isVisible: widget => !!this.getOpenFileOptions(widget),
             tooltip: GIT_COMMANDS.OPEN_FILE.label
         });
         registry.registerItem({
             id: GIT_COMMANDS.OPEN_CHANGES.id,
             command: GIT_COMMANDS.OPEN_CHANGES.id,
             text: '$(files-o)',
-            isVisible: widget => !!this.getOpenChangesOptions(widget),
             tooltip: GIT_COMMANDS.OPEN_CHANGES.label
         });
     }
@@ -299,47 +297,41 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
         return !changes.some(c => !c.staged);
     }
 
-    protected async openFile(): Promise<EditorWidget | undefined> {
-        const options = this.openFileOptions;
+    protected async openFile(widget?: Widget): Promise<EditorWidget | undefined> {
+        const options = this.getOpenFileOptions(widget);
         return options && this.editorManager.open(options.uri, options.options);
     }
-
-    protected get openFileOptions(): GitOpenFileOptions | undefined {
-        return this.getOpenFileOptions(this.editorManager.currentEditor);
-    }
-    protected getOpenFileOptions(widget: Widget | undefined): GitOpenFileOptions | undefined {
-        if (widget instanceof EditorWidget && DiffUris.isDiffUri(widget.editor.uri)) {
-            const [, right] = DiffUris.decode(widget.editor.uri);
+    protected getOpenFileOptions(widget?: Widget): GitOpenFileOptions | undefined {
+        const ref = widget ? widget : this.editorManager.currentEditor;
+        if (ref instanceof EditorWidget && DiffUris.isDiffUri(ref.editor.uri)) {
+            const [, right] = DiffUris.decode(ref.editor.uri);
             const uri = right.withScheme('file');
-            const selection = widget.editor.selection;
-            return { uri, options: { selection } };
+            const selection = ref.editor.selection;
+            return { uri, options: { selection, widgetOptions: { ref } } };
         }
         return undefined;
     }
 
-    async openChanges(): Promise<EditorWidget | undefined> {
-        const options = this.openChangesOptions;
+    async openChanges(widget?: Widget): Promise<EditorWidget | undefined> {
+        const options = this.getOpenChangesOptions(widget);
         if (options) {
             const view = await this.widget;
             return view.openChange(options.change, options.options);
         }
         return undefined;
     }
-
-    protected get openChangesOptions(): GitOpenChangesOptions | undefined {
-        return this.getOpenChangesOptions(this.editorManager.currentEditor);
-    }
-    protected getOpenChangesOptions(widget: Widget | undefined): GitOpenChangesOptions | undefined {
+    protected getOpenChangesOptions(widget?: Widget): GitOpenChangesOptions | undefined {
         const view = this.tryGetWidget();
         if (!view) {
             return undefined;
         }
-        if (widget instanceof EditorWidget && !DiffUris.isDiffUri(widget.editor.uri)) {
-            const uri = widget.editor.uri;
+        const ref = widget ? widget : this.editorManager.currentEditor;
+        if (ref instanceof EditorWidget && !DiffUris.isDiffUri(ref.editor.uri)) {
+            const uri = ref.editor.uri;
             const change = view.findChange(uri);
             if (change && view.getUriToOpen(change).toString() !== uri.toString()) {
-                const selection = widget.editor.selection;
-                return { change, options: { selection } };
+                const selection = ref.editor.selection;
+                return { change, options: { selection, widgetOptions: { ref } } };
             }
         }
         return undefined;
