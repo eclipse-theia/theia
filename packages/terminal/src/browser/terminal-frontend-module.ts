@@ -27,11 +27,13 @@ import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } fro
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
 import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
+import { bindTerminalPreferences } from './terminal-preferences';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
 
 export default new ContainerModule(bind => {
+    bindTerminalPreferences(bind);
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
 
     bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
