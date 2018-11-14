@@ -144,6 +144,7 @@ export class TheiaPluginScanner implements PluginScanner {
         return contributions;
     }
 
+    // tslint:disable-next-line:no-any
     private readConfiguration(rawConfiguration: any, pluginPath: string): any {
         return {
             type: rawConfiguration.type,

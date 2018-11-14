@@ -115,6 +115,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
      * Grab the github file specified by the plugin's ID
      */
     protected grabGithubFile(pluginResolverContext: PluginDeployerResolverContext, orgName: string, repoName: string, filename: string, version: string,
+        // tslint:disable-next-line:no-any
         resolve: (value?: void | PromiseLike<void>) => void, reject: (reason?: any) => void): void {
 
         const unpackedPath = path.resolve(this.unpackedFolder, path.basename(version + filename));

@@ -23,6 +23,7 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
 
     private currentPath: string;
 
+    // tslint:disable-next-line:no-any
     private map: Map<string, any>;
 
     private resolved: boolean;

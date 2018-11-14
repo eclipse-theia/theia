@@ -389,6 +389,7 @@ export function toInternalCommand(command: theia.Command): Command {
     };
 }
 
+// tslint:disable-next-line:no-any
 export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): WorkspaceEditDto {
     const result: WorkspaceEditDto = {
         edits: []

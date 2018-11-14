@@ -653,6 +653,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addKeyListener(this.node, up, event => this.handleUp(event));
         this.addKeyListener(this.node, down, event => this.handleDown(event));
         this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
+        // tslint:disable-next-line:no-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.view && this.view.list && this.view.list.Grid) {
                 const { scrollTop } = e.target;

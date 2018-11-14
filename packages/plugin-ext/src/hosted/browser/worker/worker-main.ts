@@ -107,6 +107,7 @@ const apiFactory = createAPIFactory(rpc, pluginManager, envExt, preferenceRegist
 let defaultApi: typeof theia;
 
 const handler = {
+    // tslint:disable-next-line:no-any
     get: (target: any, name: string) => {
         const plugin = pluginsModulesNames.get(name);
         if (plugin) {

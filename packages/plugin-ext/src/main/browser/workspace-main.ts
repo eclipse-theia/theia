@@ -140,6 +140,7 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         maxResults?: number, token?: theia.CancellationToken): Promise<UriComponents[]> {
         const uris: UriComponents[] = new Array();
         let j = 0;
+        // tslint:disable-next-line:no-any
         const promises: Promise<any>[] = new Array();
         for (const root of this.roots) {
             promises[j++] = this.fileSearchService.find(includePattern, { rootUri: root.uri }).then(value => {

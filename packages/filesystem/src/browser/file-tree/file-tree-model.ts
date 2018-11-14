@@ -212,6 +212,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
      *  Read all entries within a folder by block of 100 files or folders until the
      *  whole folder has been read.
      */
+    // tslint:disable-next-line:no-any
     protected readEntries(entry: WebKitDirectoryEntry, cb: (items: any) => void): void {
         const reader = entry.createReader();
         const getEntries = () => {
@@ -232,6 +233,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     }
 
     protected uploadFileEntry(base: URI, entry: WebKitFileEntry): void {
+        // tslint:disable-next-line:no-any
         entry.file(file => this.uploadFile(base, file as any));
     }
 

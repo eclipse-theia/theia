@@ -31,6 +31,7 @@ let previewHandler: MarkdownPreviewHandler;
 
 before(() => {
     previewHandler = new MarkdownPreviewHandler();
+    // tslint:disable-next-line:no-any
     (previewHandler as any).linkNormalizer = {
         normalizeLink: (documentUri: URI, link: string) =>
             'endpoint/' + documentUri.parent.resolve(link).path.toString().substr(1)

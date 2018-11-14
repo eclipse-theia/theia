@@ -74,6 +74,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     }
 
+    // tslint:disable-next-line:no-any
     handle(context: PluginDeployerDirectoryHandlerContext): Promise<any> {
         const packageJson: PluginPackage = context.pluginEntry().getValue('package.json');
         if (packageJson.main) {

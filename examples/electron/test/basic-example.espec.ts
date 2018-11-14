@@ -26,13 +26,14 @@ const { app } = require('electron');
 
 describe('basic-example-spec', () => {
     describe('01 #start example app', () => {
-        it('should start the electron example app', (done) => {
+        it('should start the electron example app', done => {
             if (app.isReady()) {
                 require('../src-gen/backend/main'); // start the express server
 
                 mainWindow.webContents.openDevTools();
                 mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
             }
+            // tslint:disable-next-line:no-unused-expression
             expect(mainWindow.isVisible()).to.be.true;
             done();
         });
