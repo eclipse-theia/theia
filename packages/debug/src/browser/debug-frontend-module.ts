@@ -34,6 +34,7 @@ import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-sess
 import { InDebugModeContext } from './debug-keybinding-contexts';
 import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model';
 import './debug-monaco-contribution';
+import { bindDebugPreferences } from './debug-preferences';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugSessionContribution);
@@ -64,4 +65,6 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(KeybindingContext).to(InDebugModeContext).inSingletonScope();
     bindViewContribution(bind, DebugFrontendApplicationContribution);
     bind(FrontendApplicationContribution).toService(DebugFrontendApplicationContribution);
+
+    bindDebugPreferences(bind);
 });
