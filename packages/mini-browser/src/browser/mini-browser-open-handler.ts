@@ -14,16 +14,29 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { Widget } from '@phosphor/widgets';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { NavigatableWidget, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser/navigatable';
+import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
-import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
+import { WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
+
+export namespace MiniBrowserCommands {
+    export const PREVIEW: Command = {
+        id: 'mini-browser.preview'
+    };
+    export const OPEN_SOURCE: Command = {
+        id: 'mini-browser.open.source'
+    };
+}
 
 /**
  * Further options for opening a new `Mini Browser` widget.
@@ -33,7 +46,8 @@ export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrows
 }
 
 @injectable()
-export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> implements FrontendApplicationContribution {
+export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBrowser>
+    implements FrontendApplicationContribution, CommandContribution, TabBarToolbarContribution {
 
     /**
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
@@ -45,14 +59,11 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
      */
     protected readonly supportedExtensions: Map<string, number> = new Map();
 
-    readonly id = 'mini-browser-open-handler';
-    readonly label = 'Mini Browser';
+    readonly id = MiniBrowser.ID;
+    readonly label = 'Preview';
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
-    @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -60,11 +71,11 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
     @inject(MiniBrowserService)
     protected readonly miniBrowserService: MiniBrowserService;
 
-    async onStart(): Promise<void> {
-        (await this.miniBrowserService.supportedFileExtensions()).forEach(entry => {
+    onStart(): void {
+        (async () => (await this.miniBrowserService.supportedFileExtensions()).forEach(entry => {
             const { extension, priority } = entry;
             this.supportedExtensions.set(extension, priority);
-        });
+        }))();
     }
 
     canHandle(uri: URI): number {
@@ -77,10 +88,8 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
         return 0;
     }
 
-    async open(uri?: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
-        const mergedOptions = await this.options(uri, options);
-        const widget = await this.widgetManager.getOrCreateWidget<MiniBrowser>(MiniBrowser.Factory.ID, mergedOptions);
-        await this.doOpen(widget, mergedOptions);
+    async open(uri: URI = MiniBrowser.URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+        const widget = await super.open(uri, options);
         const area = this.shell.getAreaFor(widget);
         if (area && area !== 'main') {
             this.shell.resize(this.shell.mainPanel.node.offsetWidth / 2, area);
@@ -88,13 +97,19 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
         return widget;
     }
 
+    protected async getOrCreateWidget(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+        const props = await this.options(uri, options);
+        const widget = await super.getOrCreateWidget(uri, props);
+        widget.setProps(props);
+        return widget;
+    }
     protected async options(uri?: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowserOpenerOptions & { widgetOptions: ApplicationShell.WidgetOptions }> {
         // Get the default options.
         let result = await this.defaultOptions();
         if (uri) {
             // Decorate it with a few properties inferred from the URI.
             const startPage = uri.toString();
-            const name = await this.labelProvider.getName(uri);
+            const name = this.labelProvider.getName(uri);
             const iconClass = `${await this.labelProvider.getIcon(uri)} file-icon`;
             // The background has to be reset to white only for "real" web-pages but not for images, for instance.
             const resetBackground = await this.resetBackground(uri);
@@ -132,8 +147,80 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
         };
     }
 
-    protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions | undefined): Object {
-        throw new Error('Method not supported.');
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(MiniBrowserCommands.PREVIEW, {
+            execute: widget => this.preview(widget),
+            isEnabled: widget => this.canPreviewWidget(widget),
+            isVisible: widget => this.canPreviewWidget(widget)
+        });
+        commands.registerCommand(MiniBrowserCommands.OPEN_SOURCE, {
+            execute: widget => this.openSource(widget),
+            isEnabled: widget => !!this.getSourceUri(widget),
+            isVisible: widget => !!this.getSourceUri(widget)
+        });
+    }
+
+    registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        toolbar.registerItem({
+            id: MiniBrowserCommands.PREVIEW.id,
+            command: MiniBrowserCommands.PREVIEW.id,
+            text: '$(eye)',
+            tooltip: 'Open Preview to the Side'
+        });
+        toolbar.registerItem({
+            id: MiniBrowserCommands.OPEN_SOURCE.id,
+            command: MiniBrowserCommands.OPEN_SOURCE.id,
+            text: '$(file-o)',
+            tooltip: 'Open Source'
+        });
+    }
+
+    protected canPreviewWidget(widget?: Widget): boolean {
+        const uri = this.getUriToPreview(widget);
+        return !!uri && !!this.canHandle(uri);
+    }
+
+    protected getUriToPreview(widget?: Widget): URI | undefined {
+        const current = this.getWidgetToPreview(widget);
+        return current && current.getResourceUri();
+    }
+
+    protected getWidgetToPreview(widget?: Widget): NavigatableWidget | undefined {
+        const current = widget ? widget : this.shell.currentWidget;
+        // MiniBrowser is NavigatableWidget and should be excluded from widgets to preview
+        return !(current instanceof MiniBrowser) && NavigatableWidget.is(current) && current || undefined;
+    }
+
+    protected async preview(widget?: Widget): Promise<void> {
+        const ref = this.getWidgetToPreview(widget);
+        if (!ref) {
+            return;
+        }
+        const uri = ref.getResourceUri();
+        if (!uri) {
+            return;
+        }
+        await this.open(uri, {
+            mode: 'reveal',
+            widgetOptions: { ref, mode: 'open-to-right' }
+        });
+    }
+
+    protected async openSource(ref?: Widget): Promise<void> {
+        const uri = this.getSourceUri(ref);
+        if (uri) {
+            await open(this.openerService, uri, {
+                widgetOptions: { ref, mode: 'open-to-left' }
+            });
+        }
+    }
+
+    protected getSourceUri(ref?: Widget): URI | undefined {
+        const uri = ref instanceof MiniBrowser && ref.getResourceUri() || undefined;
+        if (!uri || uri.scheme === 'http' || uri.scheme === 'https') {
+            return undefined;
+        }
+        return uri;
     }
 
 }
