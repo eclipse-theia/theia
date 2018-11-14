@@ -41,7 +41,7 @@ export interface PreviewWidgetOptions {
 @injectable()
 export class PreviewWidget extends BaseWidget implements Navigatable {
 
-    protected readonly uri: URI;
+    readonly uri: URI;
     protected readonly resource: Resource;
     protected previewHandler: PreviewHandler | undefined;
     protected firstUpdate: (() => void) | undefined = undefined;

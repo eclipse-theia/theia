@@ -37,6 +37,9 @@ export namespace PreviewCommands {
     export const OPEN: Command = {
         id: 'preview:open'
     };
+    export const OPEN_SOURCE: Command = {
+        id: 'preview.open.source'
+    };
 }
 
 export interface PreviewOpenerOptions extends WidgetOpenerOptions {
@@ -124,9 +127,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     protected registerOpenOnDoubleClick(ref: PreviewWidget): void {
         const disposable = ref.onDidDoubleClick(async location => {
-            const { editor } = await this.editorManager.open(new URI(location.uri), {
-                widgetOptions: { ref, mode: 'open-to-left' }
-            });
+            const { editor } = await this.openSource(ref);
             editor.revealPosition(location.range.start);
             editor.selection = location.range;
             ref.revealForSourceLine(location.range.start.line);
@@ -175,7 +176,12 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerCommand(PreviewCommands.OPEN, {
             execute: widget => this.openForEditor(widget),
             isEnabled: widget => this.canHandleEditorUri(widget),
-            isVisible: widget => this.canHandleEditorUri(widget),
+            isVisible: widget => this.canHandleEditorUri(widget)
+        });
+        registry.registerCommand(PreviewCommands.OPEN_SOURCE, {
+            execute: widget => this.openSource(widget),
+            isEnabled: widget => widget instanceof PreviewWidget,
+            isVisible: widget => widget instanceof PreviewWidget
         });
     }
 
@@ -190,8 +196,14 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
             command: PreviewCommands.OPEN.id,
-            text: '$(columns)',
+            text: '$(eye)',
             tooltip: 'Open Preview to the Side'
+        });
+        registry.registerItem({
+            id: PreviewCommands.OPEN_SOURCE.id,
+            command: PreviewCommands.OPEN_SOURCE.id,
+            text: '$(file-o)',
+            tooltip: 'Open Source'
         });
     }
 
@@ -217,6 +229,15 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
             mode: 'reveal',
             widgetOptions: { ref, mode: 'open-to-right' }
         });
+    }
+
+    protected async openSource(ref: PreviewWidget): Promise<EditorWidget>;
+    protected async openSource(ref?: Widget): Promise<EditorWidget | undefined> {
+        if (ref instanceof PreviewWidget) {
+            return this.editorManager.open(ref.uri, {
+                widgetOptions: { ref, mode: 'open-to-left' }
+            });
+        }
     }
 
 }
