@@ -36,6 +36,7 @@ export class DocumentFormattingAdapter {
 
         const doc = document.document;
 
+        // tslint:disable-next-line:no-any
         return Promise.resolve(this.provider.provideDocumentFormattingEdits(doc, <any>options, createToken())).then(value => {
             if (Array.isArray(value)) {
                 return value.map(Converter.fromTextEdit);

@@ -15,22 +15,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { IRawTheme, Registry } from 'vscode-textmate';
 
-export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData {}
+export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
 
 export class MonacoThemeRegistry {
 
     protected themes = new Map<string, ThemeMix>();
 
-    public getTheme(name: string): IRawTheme| undefined {
+    public getTheme(name: string): IRawTheme | undefined {
         return this.themes.get(name);
     }
 
     /**
      * Register VS Code compatible themes
      */
-    public register(json: any, includes?: {[includePath: string]: any}, givenName?: string, monacoBase?: monaco.editor.BuiltinTheme): ThemeMix {
+    public register(json: any, includes?: { [includePath: string]: any }, givenName?: string, monacoBase?: monaco.editor.BuiltinTheme): ThemeMix {
         const name = givenName || json.name!;
         const result: ThemeMix = {
             name,
@@ -83,7 +85,7 @@ export class MonacoThemeRegistry {
         return result;
     }
 
-    protected transform(tokenColor: any, acceptor: (rule: monaco.editor.ITokenThemeRule) => void)  {
+    protected transform(tokenColor: any, acceptor: (rule: monaco.editor.ITokenThemeRule) => void) {
         if (typeof tokenColor.scope === 'undefined') {
             tokenColor.scope = [''];
         } else if (typeof tokenColor.scope === 'string') {

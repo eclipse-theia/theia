@@ -27,6 +27,7 @@ export class MockPreferenceService implements PreferenceService {
     get<T>(preferenceName: string, defaultValue?: T): T | undefined {
         return undefined;
     }
+    // tslint:disable-next-line:no-any
     set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
     ready: Promise<void> = Promise.resolve();
     readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;

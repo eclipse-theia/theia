@@ -13,6 +13,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+// tslint:disable:no-any
+
 import { injectable, optional, multiInject, inject } from 'inversify';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,

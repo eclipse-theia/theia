@@ -1067,6 +1067,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return this.entries().length;
     }
 
+    // tslint:disable-next-line:no-any
     toJSON(): any {
         return this.entries();
     }
@@ -1204,14 +1205,14 @@ export class DocumentSymbol {
 }
 
 export enum FileChangeType {
-	Changed = 1,
-	Created = 2,
-	Deleted = 3,
+    Changed = 1,
+    Created = 2,
+    Deleted = 3,
 }
 
 export enum FileType {
-	Unknown = 0,
-	File = 1,
-	Directory = 2,
-	SymbolicLink = 64
+    Unknown = 0,
+    File = 1,
+    Directory = 2,
+    SymbolicLink = 64
 }

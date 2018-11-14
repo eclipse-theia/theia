@@ -24,8 +24,8 @@ const expect = chai.expect;
 
 class NoTransform extends stream.Transform {
 
+    // tslint:disable-next-line:no-any
     public _transform(chunk: any, encoding: string, callback: Function): void {
-        // console.log((chunk as Buffer).toString())
         callback(undefined, chunk);
     }
 }

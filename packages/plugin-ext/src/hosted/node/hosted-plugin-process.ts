@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
 import * as path from 'path';
 import * as cp from 'child_process';
 import { injectable, inject } from 'inversify';
@@ -52,10 +53,12 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     }
 
+    // tslint:disable-next-line:no-any
     public acceptMessage(jsonMessage: any): boolean {
         return jsonMessage.type !== undefined && jsonMessage.id;
     }
 
+    // tslint:disable-next-line:no-any
     public onMessage(jsonMessage: any): void {
         if (this.childProcess) {
             this.childProcess.send(JSON.stringify(jsonMessage));

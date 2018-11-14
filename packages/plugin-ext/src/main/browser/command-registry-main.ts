@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
 import { interfaces } from 'inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
@@ -33,6 +34,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
         this.disposables.set(
             command.id,
             this.delegate.registerCommand(command, {
+                // tslint:disable-next-line:no-any
                 execute: (...args: any[]) => {
                     this.proxy.$executeCommand(command.id, ...args);
                 },
@@ -47,6 +49,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
             this.disposables.delete(id);
         }
     }
+    // tslint:disable-next-line:no-any
     $executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined> {
         try {
             return Promise.resolve(this.delegate.executeCommand(id, ...args));

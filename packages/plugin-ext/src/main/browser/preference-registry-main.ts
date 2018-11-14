@@ -42,6 +42,7 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
         });
     }
 
+    // tslint:disable-next-line:no-any
     $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
         return this.preferenceService.set(key, value, scope);

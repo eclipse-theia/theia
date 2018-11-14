@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
 import {
     LanguagesMain,
     SerializedLanguageConfiguration,
@@ -76,6 +77,7 @@ export class LanguagesMainImpl implements LanguagesMain {
                     return {
                         suggestions: result.completions,
                         incomplete: result.incomplete,
+                        // tslint:disable-next-line:no-any
                         dispose: () => this.proxy.$releaseCompletionItems(handle, (<any>result)._id)
                     };
                 }),
@@ -220,6 +222,7 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
     }
 
+    // tslint:disable-next-line:no-any
     $emitCodeLensEvent(eventHandle: number, event?: any): void {
         const obj = this.disposables.get(eventHandle);
         if (obj instanceof Emitter) {
@@ -271,7 +274,7 @@ export class LanguagesMainImpl implements LanguagesMain {
                     if (Array.isArray(result)) {
                         const references: monaco.languages.Location[] = [];
                         for (const item of result) {
-                            references.push({...item, uri: monaco.Uri.revive(item.uri) });
+                            references.push({ ...item, uri: monaco.Uri.revive(item.uri) });
                         }
                         return references;
                     }
