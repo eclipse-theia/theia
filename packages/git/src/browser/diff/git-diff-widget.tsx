@@ -218,6 +218,9 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
             const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
+        if (!files.length) {
+            return <div>No files changed.</div>;
+        }
         return <GitDiffListContainer
             ref={ref => this.listView = ref || undefined}
             id={this.scrollContainer}
