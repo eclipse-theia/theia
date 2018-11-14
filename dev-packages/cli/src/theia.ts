@@ -121,6 +121,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
         .command(rebuildCommand('rebuild:electron', 'electron'));
 
     // see https://github.com/yargs/yargs/issues/287#issuecomment-314463783
+    // tslint:disable-next-line:no-any
     const commands = (yargs as any).getCommandInstance().getCommands();
     const argv = yargs.demandCommand(1).argv;
     const command = argv._[0];

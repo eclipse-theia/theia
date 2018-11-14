@@ -19,8 +19,8 @@ import { TreeNode, CompositeTreeNode } from './tree';
 
 describe('Tree', () => {
 
-    it('addChildren', () => {
-        assertTreeNode(`{
+  it('addChildren', () => {
+    assertTreeNode(`{
   "id": "parent",
   "name": "parent",
   "children": [
@@ -45,12 +45,12 @@ describe('Tree', () => {
     }
   ]
 }`, getNode());
-    });
+  });
 
-    it('removeChild - first', () => {
-        const node = getNode();
-        CompositeTreeNode.removeChild(node, node.children[0]);
-        assertTreeNode(`{
+  it('removeChild - first', () => {
+    const node = getNode();
+    CompositeTreeNode.removeChild(node, node.children[0]);
+    assertTreeNode(`{
   "id": "parent",
   "name": "parent",
   "children": [
@@ -68,12 +68,12 @@ describe('Tree', () => {
     }
   ]
 }`, node);
-    });
+  });
 
-    it('removeChild - second', () => {
-        const node = getNode();
-        CompositeTreeNode.removeChild(node, node.children[1]);
-        assertTreeNode(`{
+  it('removeChild - second', () => {
+    const node = getNode();
+    CompositeTreeNode.removeChild(node, node.children[1]);
+    assertTreeNode(`{
   "id": "parent",
   "name": "parent",
   "children": [
@@ -91,12 +91,12 @@ describe('Tree', () => {
     }
   ]
 }`, node);
-    });
+  });
 
-    it('removeChild - thrid', () => {
-        const node = getNode();
-        CompositeTreeNode.removeChild(node, node.children[2]);
-        assertTreeNode(`{
+  it('removeChild - thrid', () => {
+    const node = getNode();
+    CompositeTreeNode.removeChild(node, node.children[2]);
+    assertTreeNode(`{
   "id": "parent",
   "name": "parent",
   "children": [
@@ -114,36 +114,37 @@ describe('Tree', () => {
     }
   ]
 }`, node);
-    });
+  });
 
-    function getNode(): CompositeTreeNode {
-        return CompositeTreeNode.addChildren({
-            id: 'parent',
-            name: 'parent',
-            children: [],
-            parent: undefined
-        }, [{
-            id: 'foo',
-            name: 'foo',
-            parent: undefined
-        }, {
-            id: 'bar',
-            name: 'bar',
-            parent: undefined
-        }, {
-            id: 'baz',
-            name: 'baz',
-            parent: undefined
-        }]);
-    }
+  function getNode(): CompositeTreeNode {
+    return CompositeTreeNode.addChildren({
+      id: 'parent',
+      name: 'parent',
+      children: [],
+      parent: undefined
+    }, [{
+      id: 'foo',
+      name: 'foo',
+      parent: undefined
+    }, {
+      id: 'bar',
+      name: 'bar',
+      parent: undefined
+    }, {
+      id: 'baz',
+      name: 'baz',
+      parent: undefined
+    }]);
+  }
 
-    function assertTreeNode(expectation: string, node: TreeNode): void {
-        assert.deepEqual(expectation, JSON.stringify(node, (key: keyof CompositeTreeNode, value: any) => {
-            if (key === 'parent' || key === 'previousSibling' || key === 'nextSibling') {
-                return value && value.id;
-            }
-            return value;
-        }, 2));
-    }
+  function assertTreeNode(expectation: string, node: TreeNode): void {
+    // tslint:disable-next-line:no-any
+    assert.deepEqual(expectation, JSON.stringify(node, (key: keyof CompositeTreeNode, value: any) => {
+      if (key === 'parent' || key === 'previousSibling' || key === 'nextSibling') {
+        return value && value.id;
+      }
+      return value;
+    }, 2));
+  }
 
 });

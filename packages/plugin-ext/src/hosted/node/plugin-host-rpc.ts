@@ -30,6 +30,7 @@ export class PluginHostRPC {
 
     private pluginManager: PluginManagerExtImpl;
 
+    // tslint:disable-next-line:no-any
     constructor(protected readonly rpc: any) {
     }
 

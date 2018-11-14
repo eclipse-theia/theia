@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
 import { interfaces } from 'inversify';
 import * as theia from '@theia/plugin';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -44,7 +45,9 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
         return this.showMessage(MessageType.Error, message, optionsOrFirstItem, ...items);
     }
 
+    // tslint:disable-next-line:no-any
     protected showMessage(type: MessageType, message: string, ...args: any[]): PromiseLike<string | theia.MessageItem | undefined> {
+        // tslint:disable-next-line:no-any
         const actionsMap = new Map<string, any>();
         const actionTitles: string[] = [];
         const options: theia.MessageOptions = { modal: false };

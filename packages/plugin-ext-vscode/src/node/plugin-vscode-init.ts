@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 
@@ -36,7 +38,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
             } else {
                 commandLabel = commandItem.title;
             }
-            vscode.commands.registerCommand({id: commandItem.command, label: commandLabel });
+            vscode.commands.registerCommand({ id: commandItem.command, label: commandLabel });
         });
     }
 

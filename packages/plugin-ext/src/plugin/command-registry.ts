@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
 import * as theia from '@theia/plugin';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
@@ -153,6 +154,7 @@ export class CommandsConverter {
         }
     }
 
+    // tslint:disable-next-line:no-any
     private executeConvertedCommand(...args: any[]): PromiseLike<any> {
         const actualCmd = this.cache.get(args[0]);
         if (!actualCmd) {
@@ -164,7 +166,9 @@ export class CommandsConverter {
     /**
      * @returns `false` if the provided object is an array and not empty.
      */
+    // tslint:disable-next-line:no-any
     private static isFalsyOrEmpty(obj: any): boolean {
+        // tslint:disable-next-line:no-any
         return !Array.isArray(obj) || (<Array<any>>obj).length === 0;
     }
 }

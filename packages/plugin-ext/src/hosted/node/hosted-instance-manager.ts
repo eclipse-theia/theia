@@ -143,7 +143,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     terminate(): void {
         if (this.isPluginRunnig) {
+            // tslint:disable-next-line:no-any
             processTree(this.hostedInstanceProcess.pid, (err: Error, children: Array<any>) => {
+                // tslint:disable-next-line:no-any
                 const args = ['-SIGTERM', this.hostedInstanceProcess.pid.toString()].concat(children.map((p: any) => p.PID));
                 cp.spawn('kill', args);
             });

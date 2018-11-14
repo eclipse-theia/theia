@@ -42,6 +42,7 @@ export class FileDialogWidget extends FileTreeWidget {
     }
 
     protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+        // tslint:disable-next-line:no-any
         const attr = super.createNodeAttributes(node, props) as any;
         if (this.shouldDisableSelection(node)) {
             const keys = Object.keys(attr);
