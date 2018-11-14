@@ -17,6 +17,7 @@
 .theia-mini-browser {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .theia-mini-browser-toolbar {
@@ -81,22 +82,22 @@
 .theia-mini-browser-previous::before {
     content: "\f053";
 }
-  
+
 .theia-mini-browser-next::before {
     content: "\f054";
 }
-  
+
 .theia-mini-browser-refresh::before {
     content: "\f021";
 }
-  
+
 .theia-mini-browser-open::before {
     content: "\f08e";
 }
 
 .theia-mini-browser-content-area {
     position: relative;
-    display: flex; 
+    display: flex;
     height: 100%;
     width: 100%;
     flex-direction: column;
@@ -106,7 +107,7 @@
 
 .theia-mini-browser-pdf-container {
     width: 100%;
-    height: 100%;   
+    height: 100%;
 }
 
 .theia-mini-browser-load-indicator {
