@@ -88,6 +88,8 @@ export namespace GIT_COMMANDS {
     };
 }
 
+export const TOGGLE_GIT_VIEW_COMMAND_ID = 'gitView:toggle';
+
 @injectable()
 export class GitViewContribution extends AbstractViewContribution<GitWidget>
     implements FrontendApplicationContribution, CommandContribution, MenuContribution, TabBarToolbarContribution {
@@ -95,6 +97,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
     static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
     static GIT_REPOSITORY_STATUS = 'git-repository-status';
     static GIT_SYNC_STATUS = 'git-sync-status';
+    static GIT_CHANGES_STATUS = 'git-changes-status';
 
     protected toDispose = new DisposableCollection();
 
@@ -113,7 +116,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
                 area: 'left',
                 rank: 200
             },
-            toggleCommandId: 'gitView:toggle',
+            toggleCommandId: TOGGLE_GIT_VIEW_COMMAND_ID,
             toggleKeybinding: 'ctrlcmd+shift+g'
         });
     }
@@ -141,6 +144,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
                 this.statusBar.removeElement(GitViewContribution.GIT_SELECTED_REPOSITORY);
                 this.statusBar.removeElement(GitViewContribution.GIT_REPOSITORY_STATUS);
                 this.statusBar.removeElement(GitViewContribution.GIT_SYNC_STATUS);
+                this.statusBar.removeElement(GitViewContribution.GIT_CHANGES_STATUS);
             }
         });
         this.repositoryTracker.onGitEvent(event => {
@@ -165,6 +169,12 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
                 alignment: StatusBarAlignment.LEFT,
                 priority: 101,
                 command: GIT_COMMANDS.CHECKOUT.id
+            });
+            this.statusBar.setElement(GitViewContribution.GIT_CHANGES_STATUS, {
+                text: `Changes: ${status.changes.length}`,
+                alignment: StatusBarAlignment.LEFT,
+                priority: 100,
+                command: TOGGLE_GIT_VIEW_COMMAND_ID,
             });
             this.updateSyncStatusBarEntry();
         });
