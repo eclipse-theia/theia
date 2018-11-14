@@ -22,8 +22,8 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
 import * as net from 'net';
-import { injectable, inject } from 'inversify';
-import { Disposable, DisposableCollection } from '@theia/core';
+import { injectable, inject, named } from 'inversify';
+import { Disposable, DisposableCollection, ILogger } from '@theia/core';
 import {
     RawProcessFactory,
     ProcessManager,
@@ -90,7 +90,8 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     constructor(
         readonly id: string,
-        protected readonly communicationProvider: CommunicationProvider
+        protected readonly communicationProvider: CommunicationProvider,
+        protected readonly logger: ILogger,
     ) {
         this.contentLength = -1;
         this.buffer = new Buffer(0);
@@ -173,11 +174,13 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     protected send(message: string): void {
         if (this.channel) {
+            this.logger.debug('theia to debug adapter', message);
             this.channel.send(message);
         }
     }
 
     protected write(message: string): void {
+        this.logger.debug('debug adapter to theia', message);
         this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(message, 'utf8')}\r\n\r\n${message}`, 'utf8');
     }
 
@@ -192,10 +195,15 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 @injectable()
 export class DebugAdapterSessionFactoryImpl implements DebugAdapterSessionFactory {
 
+    @inject(ILogger)
+    @named('debug')
+    protected readonly logger: ILogger;
+
     get(sessionId: string, communicationProvider: CommunicationProvider): DebugAdapterSession {
         return new DebugAdapterSessionImpl(
             sessionId,
-            communicationProvider
+            communicationProvider,
+            this.logger,
         );
     }
 }
