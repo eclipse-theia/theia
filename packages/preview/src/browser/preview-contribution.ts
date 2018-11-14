@@ -61,16 +61,6 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     protected readonly synchronizedUris = new Set<string>();
 
-    protected readonly defaultOpenFromEditorOptions: PreviewOpenerOptions = {
-        widgetOptions: { area: 'main', mode: 'split-right' },
-        mode: 'reveal'
-    };
-
-    protected readonly defaultOpenOptions: PreviewOpenerOptions = {
-        widgetOptions: { area: 'main', mode: 'tab-after' },
-        mode: 'activate'
-    };
-
     onStart() {
         this.onCreated(previewWidget => {
             this.registerOpenOnDoubleClick(previewWidget);
@@ -132,19 +122,16 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         });
     }
 
-    protected registerOpenOnDoubleClick(previewWidget: PreviewWidget): void {
-        const disposable = previewWidget.onDidDoubleClick(async location => {
-            const ref = this.findWidgetInMainAreaToAddAfter();
+    protected registerOpenOnDoubleClick(ref: PreviewWidget): void {
+        const disposable = ref.onDidDoubleClick(async location => {
             const { editor } = await this.editorManager.open(new URI(location.uri), {
-                widgetOptions: ref ?
-                    { area: 'main', mode: 'tab-after', ref } :
-                    { area: 'main', mode: 'split-left' }
+                widgetOptions: { ref, mode: 'open-to-left' }
             });
             editor.revealPosition(location.range.start);
             editor.selection = location.range;
-            previewWidget.revealForSourceLine(location.range.start.line);
+            ref.revealForSourceLine(location.range.start.line);
         });
-        previewWidget.disposed.connect(() => disposable.dispose());
+        ref.disposed.connect(() => disposable.dispose());
     }
 
     canHandle(uri: URI): number {
@@ -174,35 +161,14 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     }
 
     protected async resolveOpenerOptions(options?: PreviewOpenerOptions): Promise<PreviewOpenerOptions> {
-        if (!options) {
-            const ref = this.findWidgetInMainAreaToAddAfter();
+        const resolved: PreviewOpenerOptions = { mode: 'activate', ...options };
+        if (resolved.originUri) {
+            const ref = await this.getWidget(resolved.originUri);
             if (ref) {
-                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref } };
-            }
-            return this.defaultOpenOptions;
-        }
-        if (options.originUri) {
-            const ref = await this.getWidget(options.originUri);
-            if (ref) {
-                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref } };
+                resolved.widgetOptions = { ...resolved.widgetOptions, ref };
             }
         }
-        return { ...this.defaultOpenOptions, ...options };
-    }
-
-    protected findWidgetInMainAreaToAddAfter(): Widget | undefined {
-        const mainTabBars = this.shell.mainAreaTabBars;
-        const defaultTabBar = this.shell.getTabBarFor('main');
-        if (mainTabBars.length > 1 && defaultTabBar) {
-            // FIXME: what if this.shell.currentTabBar does not belong to mainTabBars?
-            const currentTabBar = this.shell.currentTabBar || defaultTabBar;
-            const currentIndex = currentTabBar.currentIndex;
-            const currentTitle = currentTabBar.titles[currentIndex];
-            if (currentTitle) {
-                return currentTitle.owner;
-            }
-        }
-        return undefined;
+        return resolved;
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -249,7 +215,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         }
         await this.open(ref.editor.uri, {
             mode: 'reveal',
-            widgetOptions: { ref, mode: 'split-right' }
+            widgetOptions: { ref, mode: 'open-to-right' }
         });
     }
 
