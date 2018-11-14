@@ -15,14 +15,19 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { NavigatableWidgetOptions } from '@theia/core/lib/browser/navigatable';
 import { MiniBrowserOpenHandler } from './mini-browser-open-handler';
 import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
-import { MiniBrowser, MiniBrowserProps, MiniBrowserMouseClickTracker } from './mini-browser';
+import { MiniBrowser, MiniBrowserOptions } from './mini-browser';
+import { MiniBrowserProps, MiniBrowserContentFactory, MiniBrowserMouseClickTracker, MiniBrowserContent } from './mini-browser-content';
 import { LocationMapperService, FileLocationMapper, HttpLocationMapper, HttpsLocationMapper, LocationMapper } from './location-mapper-service';
 
 import '../../src/browser/style/index.css';
@@ -31,13 +36,22 @@ export default new ContainerModule(bind => {
     bind(MiniBrowserMouseClickTracker).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MiniBrowserMouseClickTracker);
 
+    bind(MiniBrowserContent).toSelf();
+    bind(MiniBrowserContentFactory).toFactory(context => (props: MiniBrowserProps) => {
+        const { container } = context;
+        const child = container.createChild();
+        child.bind(MiniBrowserProps).toConstantValue(props);
+        return child.get(MiniBrowserContent);
+    });
+
     bind(MiniBrowser).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
-        id: MiniBrowser.Factory.ID,
-        async createWidget(props: MiniBrowserProps): Promise<MiniBrowser> {
+        id: MiniBrowser.ID,
+        async createWidget(options: NavigatableWidgetOptions): Promise<MiniBrowser> {
             const { container } = context;
             const child = container.createChild();
-            child.bind(MiniBrowserProps).toConstantValue(props);
+            const uri = new URI(options.uri);
+            child.bind(MiniBrowserOptions).toConstantValue({ uri });
             return child.get(MiniBrowser);
         }
     })).inSingletonScope();
@@ -45,6 +59,8 @@ export default new ContainerModule(bind => {
     bind(MiniBrowserOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(MiniBrowserOpenHandler);
     bind(FrontendApplicationContribution).toService(MiniBrowserOpenHandler);
+    bind(CommandContribution).toService(MiniBrowserOpenHandler);
+    bind(TabBarToolbarContribution).toService(MiniBrowserOpenHandler);
 
     bindContributionProvider(bind, LocationMapper);
     bind(LocationMapper).to(FileLocationMapper).inSingletonScope();

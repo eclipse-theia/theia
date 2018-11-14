@@ -292,7 +292,7 @@ export class SvgHandler implements MiniBrowserEndpointHandler {
     }
 
     priority(): number {
-        return CODE_EDITOR_PRIORITY + 1;
+        return 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
