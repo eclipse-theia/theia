@@ -22,6 +22,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Emitter, Event, DisposableCollection, Disposable } from '@theia/core';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { DebugAdapterPath } from '../common/debug-service';
+import { OutputChannel } from '@theia/output/lib/common/output-channel';
 
 export interface DebugExitEvent {
     code?: number
@@ -102,7 +103,8 @@ export class DebugSessionConnection implements Disposable {
 
     constructor(
         readonly sessionId: string,
-        protected readonly connectionProvider: WebSocketConnectionProvider
+        protected readonly connectionProvider: WebSocketConnectionProvider,
+        protected readonly traceOutputChannel: OutputChannel | undefined
     ) {
         this.connection = this.createConnection();
     }
@@ -181,10 +183,18 @@ export class DebugSessionConnection implements Disposable {
 
     protected async send(message: DebugProtocol.ProtocolMessage): Promise<void> {
         const connection = await this.connection;
-        connection.send(JSON.stringify(message));
+        const messageStr = JSON.stringify(message);
+        if (this.traceOutputChannel) {
+            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} theia -> adapter: ${messageStr}`);
+        }
+        connection.send(messageStr);
     }
 
     protected handleMessage(data: string) {
+        if (this.traceOutputChannel) {
+            this.traceOutputChannel.append(`${this.sessionId.substring(0, 8)} theia <- adapter: ${data}`);
+            this.traceOutputChannel.appendLine(data);
+        }
         const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
         if (message.type === 'request') {
             this.handleRequest(message as DebugProtocol.Request);

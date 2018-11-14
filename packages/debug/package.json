@@ -10,6 +10,7 @@
     "@theia/markers": "^0.3.16",
     "@theia/monaco": "^0.3.16",
     "@theia/process": "^0.3.16",
+    "@theia/output": "^0.3.16",
     "@theia/terminal": "^0.3.16",
     "@theia/variable-resolver": "^0.3.16",
     "@theia/workspace": "^0.3.16",

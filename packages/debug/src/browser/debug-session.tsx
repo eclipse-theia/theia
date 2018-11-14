@@ -34,6 +34,7 @@ import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration } from '../common/debug-common';
+import { OutputChannel } from '@theia/output/lib/common/output-channel';
 
 export enum DebugState {
     Inactive,
@@ -69,9 +70,10 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly editorManager: EditorManager,
         protected readonly breakpoints: BreakpointManager,
         protected readonly labelProvider: LabelProvider,
-        protected readonly messages: MessageClient
+        protected readonly messages: MessageClient,
+        protected readonly traceOutputChannel: OutputChannel | undefined,
     ) {
-        this.connection = new DebugSessionConnection(id, connectionProvider);
+        this.connection = new DebugSessionConnection(id, connectionProvider, traceOutputChannel);
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
         this.toDispose.pushAll([
             this.onDidChangeEmitter,
