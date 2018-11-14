@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2017-2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -62,7 +62,7 @@ export class OutlineViewWidget extends TreeWidget {
         this.addClass('theia-outline-view');
     }
 
-    public setOutlineTree(roots: OutlineSymbolInformationNode[]) {
+    public setOutlineTree(roots: OutlineSymbolInformationNode[]): void {
         const nodes = this.reconcileTreeState(roots);
         this.model.root = {
             id: 'outline-view-root',
@@ -87,12 +87,12 @@ export class OutlineViewWidget extends TreeWidget {
         return nodes;
     }
 
-    protected onAfterHide(msg: Message) {
+    protected onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.onDidChangeOpenStateEmitter.fire(false);
     }
 
-    protected onAfterShow(msg: Message) {
+    protected onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.onDidChangeOpenStateEmitter.fire(true);
     }
@@ -101,12 +101,18 @@ export class OutlineViewWidget extends TreeWidget {
         if (OutlineSymbolInformationNode.is(node)) {
             return <div className={'symbol-icon symbol-icon-center ' + node.iconClass}></div>;
         }
-        // tslint:disable-next-line:no-null-keyword
-        return null;
+        return undefined;
     }
 
     protected isExpandable(node: TreeNode): node is ExpandableTreeNode {
         return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
+    }
+
+    protected renderTree(model: TreeModel): React.ReactNode {
+        if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
+            return <div className='no-outline'>No outline information available.</div>;
+        }
+        return super.renderTree(model);
     }
 
 }
