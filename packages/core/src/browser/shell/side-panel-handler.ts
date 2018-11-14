@@ -17,13 +17,13 @@
 import { injectable, inject } from 'inversify';
 import { find, map, toArray, some } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel } from '@phosphor/widgets';
-import { Signal } from '@phosphor/signaling';
 import { MimeData } from '@phosphor/coreutils';
 import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
+import { TheiaDockPanel } from './theia-dock-panel';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -607,43 +607,4 @@ export namespace SidePanel {
         expanded = 'expanded',
         collapsing = 'collapsing'
     }
-}
-
-/**
- * This specialization of DockPanel adds various events that are used for implementing the
- * side panels of the application shell.
- */
-export class TheiaDockPanel extends DockPanel {
-
-    /**
-     * Emitted when a widget is added to the panel.
-     */
-    readonly widgetAdded = new Signal<this, Widget>(this);
-    /**
-     * Emitted when a widget is activated by calling `activateWidget`.
-     */
-    readonly widgetActivated = new Signal<this, Widget>(this);
-    /**
-     * Emitted when a widget is removed from the panel.
-     */
-    readonly widgetRemoved = new Signal<this, Widget>(this);
-
-    addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
-        if (this.mode === 'single-document' && widget.parent === this) {
-            return;
-        }
-        super.addWidget(widget, options);
-        this.widgetAdded.emit(widget);
-    }
-
-    activateWidget(widget: Widget): void {
-        super.activateWidget(widget);
-        this.widgetActivated.emit(widget);
-    }
-
-    protected onChildRemoved(msg: Widget.ChildMessage): void {
-        super.onChildRemoved(msg);
-        this.widgetRemoved.emit(msg.child);
-    }
-
 }
