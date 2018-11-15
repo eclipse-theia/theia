@@ -111,7 +111,6 @@ body {
 
 button, .theia-button {
     border: none;
-    border-radius: 0;
     color: var(--theia-ui-button-font-color);
     background-color: var(--theia-ui-button-color);
     min-width: 65px;
@@ -184,3 +183,4 @@ textarea {
 @import './ansi.css';
 @import './view-container.css';
 @import './notification.css';
+@import './alert-messages.css';

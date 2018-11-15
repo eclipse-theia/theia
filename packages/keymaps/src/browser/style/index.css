@@ -159,19 +159,6 @@
     display: flex;
 }
 
-.kb-search-notification {
-    padding: 10px;
-    display: flex;
-}
-
-.kb-search-notification div {
-    background-color: var(--theia-warn-color0);
-    border-radius: 5px;
-    color: var(--theia-warn-font-color0);
-    flex: 1;
-    padding: 10px;
-}
-
 .kb-item-row td a,
 .kb-item-row td a:active,
 .kb-item-row td a:focus {
