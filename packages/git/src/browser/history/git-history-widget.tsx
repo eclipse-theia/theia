@@ -32,6 +32,7 @@ import { GitCommitDetails } from './git-commit-detail-widget';
 import { GitNavigableListWidget } from '../git-navigable-list-widget';
 import { GitFileChangeNode } from '../git-widget';
 import * as React from 'react';
+import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 
 export interface GitCommitNode extends GitCommitDetails {
     fileChanges?: GitFileChange[];
@@ -250,14 +251,13 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 const relPath = this.relativePath(this.options.uri);
                 const repo = this.repositoryProvider.findRepository(new URI(this.options.uri));
                 const repoName = repo ? ` in ${new URI(repo.localUri).displayName}` : '';
-                path = <React.Fragment> for <i>/{decodeURIComponent(relPath)}</i>{repoName}</React.Fragment>;
+                path = ` for ${decodeURIComponent(relPath)}${repoName}`;
             }
-            content = <div className='message-container'>
-                <div className='no-history-message'>
-                    <div>There is no Git history available{path}.</div>
-                    <div>{reason}</div>
-                </div>
-            </div>;
+            content = <AlertMessage
+                type='WARNING'
+                header={`There is no Git history available${path}`}>
+                {reason}
+                </AlertMessage>;
         } else {
             content = <div className='spinnerContainer'>
                 <span className='fa fa-spinner fa-pulse fa-3x fa-fw'></span>

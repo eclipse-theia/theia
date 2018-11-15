@@ -23,6 +23,7 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
 import { KeymapsService, KeybindingJson } from './keymaps-service';
+import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 
 export interface KeybindingItem {
     id: string,
@@ -150,7 +151,10 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected renderMessage(): React.ReactNode {
-        return <div className='kb-search-notification'><div>No results found!</div></div>;
+        return <AlertMessage
+            type='WARNING'
+            header='No results found!'
+        />;
     }
 
     protected renderTable(): React.ReactNode {

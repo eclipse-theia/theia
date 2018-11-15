@@ -29,6 +29,7 @@ import { GitAvatarService } from './history/git-avatar-service';
 import * as React from 'react';
 import { GitErrorHandler } from './git-error-handler';
 import { GitDiffWidget } from './diff/git-diff-widget';
+import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -378,6 +379,12 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     protected render(): React.ReactNode {
         const repository = this.repositoryProvider.selectedRepository;
+        if (!repository) {
+            return <AlertMessage
+                type='WARNING'
+                header='Version control is not available at this time'
+            />;
+        }
         return <div className={GitWidget.Styles.MAIN_CONTAINER}>
             <div className='headerContainer'>
                 {this.renderCommitMessage()}
