@@ -197,16 +197,6 @@
     height: 20px;
 }
 
-.theia-git .no-history-message {
-    background-color: var(--theia-warn-color0) !important;
-    color: var(--theia-warn-font-color0);
-    padding: 5px;
-}
-
-.theia-git .no-history-message div {
-    margin: 5px;
-}
-
 .theia-git .message-container {
     height: 100%;
     display: flex;

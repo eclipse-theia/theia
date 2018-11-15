@@ -344,3 +344,13 @@
     padding: 0 5px;
     text-align: center;
 }
+
+.theia-git .warning-message {
+    background-color: var(--theia-warn-color0) !important;
+    color: var(--theia-warn-font-color0);
+    padding: 5px;
+}
+
+.theia-git .warning-message div {
+    margin: 5px;
+}

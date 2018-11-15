@@ -253,8 +253,11 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 path = <React.Fragment> for <i>/{decodeURIComponent(relPath)}</i>{repoName}</React.Fragment>;
             }
             content = <div className='message-container'>
-                <div className='no-history-message'>
-                    <div>There is no Git history available{path}.</div>
+                <div className='warning-message'>
+                    <div>
+                        <i className='fa fa-exclamation-triangle'></i>&nbsp;
+                        There is no Git history available{path}.
+                    </div>
                     <div>{reason}</div>
                 </div>
             </div>;
