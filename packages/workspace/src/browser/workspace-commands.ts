@@ -85,10 +85,7 @@ export namespace WorkspaceCommands {
         label: 'New Folder'
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
-        id: `file.openWith.${opener.id}`,
-        category: FILE_CATEGORY,
-        label: opener.label,
-        iconClass: opener.iconClass
+        id: `file.openWith.${opener.id}`
     });
     export const FILE_RENAME: Command = {
         id: 'file.rename',

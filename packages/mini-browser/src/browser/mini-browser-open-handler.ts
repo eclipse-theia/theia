@@ -20,6 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NavigatableWidget, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser/navigatable';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
@@ -31,7 +32,8 @@ import { MiniBrowser, MiniBrowserProps } from './mini-browser';
 
 export namespace MiniBrowserCommands {
     export const PREVIEW: Command = {
-        id: 'mini-browser.preview'
+        id: 'mini-browser.preview',
+        label: 'Open Preview'
     };
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source'
@@ -47,7 +49,7 @@ export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrows
 
 @injectable()
 export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBrowser>
-    implements FrontendApplicationContribution, CommandContribution, TabBarToolbarContribution {
+    implements FrontendApplicationContribution, CommandContribution, MenuContribution, TabBarToolbarContribution {
 
     /**
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
@@ -157,6 +159,12 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             execute: widget => this.openSource(widget),
             isEnabled: widget => !!this.getSourceUri(widget),
             isVisible: widget => !!this.getSourceUri(widget)
+        });
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
+        menus.registerMenuAction(['editor_context_menu', 'navigation'], {
+            commandId: MiniBrowserCommands.PREVIEW.id
         });
     }
 
