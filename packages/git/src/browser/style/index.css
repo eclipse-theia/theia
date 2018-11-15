@@ -329,3 +329,18 @@
 .git-tab-icon::before {
     content: "\f126"
 }
+
+.git-change-count {
+    align-self: center;
+    background-color: var(--theia-ui-font-color3);
+    border-radius: 20px;
+    color: var(--theia-ui-font-color0);
+    float: right;
+    font-size: calc(var(--theia-ui-font-size0) * 0.8);
+    font-weight: 500;
+    height: calc(var(--theia-private-horizontal-tab-height) * 0.7);
+    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.7);
+    min-width: 6px;
+    padding: 0 5px;
+    text-align: center;
+}
