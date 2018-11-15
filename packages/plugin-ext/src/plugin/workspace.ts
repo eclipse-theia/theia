@@ -25,24 +25,26 @@ import {
 } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { WorkspaceFoldersChangeEvent } from '../api/model';
+import { WorkspaceFoldersChangeEvent, FileChangeEvent } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { toWorkspaceFolder } from './type-converters';
+import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
 import URI from 'vscode-uri';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
     private proxy: WorkspaceMain;
+    private fileSystemWatcherManager: InPluginFileSystemWatcherProxy;
 
     private workspaceFoldersChangedEmitter = new Emitter<WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
 
     private folders: theia.WorkspaceFolder[] | undefined;
-
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
 
     constructor(rpc: RPCProtocol, private editorsAndDocuments: EditorsAndDocumentsExtImpl) {
         this.proxy = rpc.getProxy(Ext.WORKSPACE_MAIN);
+        this.fileSystemWatcherManager = new InPluginFileSystemWatcherProxy(this.proxy);
     }
 
     get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
@@ -116,8 +118,11 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     createFileSystemWatcher(globPattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
-        // FIXME: to implement
-        return new Proxy(<theia.FileSystemWatcher>{}, {});
+        return this.fileSystemWatcherManager.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
+    }
+
+    $fileChanged(event: FileChangeEvent): void {
+        this.fileSystemWatcherManager.onFileSystemEvent(event.subscriberId, URI.revive(event.uri), event.type);
     }
 
     registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {

@@ -29,6 +29,8 @@ import { FileSearchService } from '@theia/file-search/lib/common/file-search-ser
 import URI from '@theia/core/lib/common/uri';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Emitter, Event, Disposable, ResourceResolver } from '@theia/core';
+import { FileWatcherSubscriberOptions } from '../../api/model';
+import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
 
 export class WorkspaceMainImpl implements WorkspaceMain {
 
@@ -37,6 +39,8 @@ export class WorkspaceMainImpl implements WorkspaceMain {
     private quickOpenService: MonacoQuickOpenService;
 
     private fileSearchService: FileSearchService;
+
+    private inPluginFileSystemWatcherManager: InPluginFileSystemWatcherManager;
 
     private roots: FileStat[];
 
@@ -48,6 +52,8 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         const workspaceService = container.get(WorkspaceService);
         this.fileSearchService = container.get(FileSearchService);
         this.resourceResolver = container.get(TextContentResourceResolver);
+
+        this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
 
         workspaceService.roots.then(roots => {
             this.roots = roots;
@@ -161,6 +167,15 @@ export class WorkspaceMainImpl implements WorkspaceMain {
             });
             return Promise.resolve(uris);
         });
+    }
+
+    $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string> {
+        return Promise.resolve(this.inPluginFileSystemWatcherManager.registerFileWatchSubscription(options));
+    }
+
+    $unregisterFileSystemWatcher(watcherId: string): Promise<void> {
+        this.inPluginFileSystemWatcherManager.unregisterFileWatchSubscription(watcherId);
+        return Promise.resolve();
     }
 
     async $registerTextDocumentContentProvider(scheme: string): Promise<void> {
