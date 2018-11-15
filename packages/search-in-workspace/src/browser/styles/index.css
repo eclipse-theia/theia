@@ -313,22 +313,8 @@
     align-self: center;
 }
 
-.theia-TreeNode:hover .result-number {
+.theia-TreeNode:hover .notification-count-container {
     display: none;
-}
-
-.theia-TreeNode .result-number {
-    background-color: var(--theia-ui-font-color2);
-    border-radius: 10px;
-    padding: 0 5px;
-    text-align: center;
-    font-size: calc(var(--theia-ui-font-size0) * 0.8);
-    color: var(--theia-inverse-ui-font-color0);
-    font-weight: 400;
-    min-width: 7px;
-    height: 16px;
-    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
-    align-self: center;
 }
 
 .result-node-buttons .remove-node {
