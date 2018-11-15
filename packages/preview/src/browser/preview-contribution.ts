@@ -35,7 +35,8 @@ export namespace PreviewCommands {
      * See in (`WorkspaceCommandContribution`)[https://bit.ly/2DncrSD].
      */
     export const OPEN: Command = {
-        id: 'preview:open'
+        id: 'preview:open',
+        label: 'Open Preview'
     };
     export const OPEN_SOURCE: Command = {
         id: 'preview.open.source'
@@ -187,8 +188,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
-            commandId: PreviewCommands.OPEN.id,
-            label: 'Open Preview',
+            commandId: PreviewCommands.OPEN.id
         });
     }
 

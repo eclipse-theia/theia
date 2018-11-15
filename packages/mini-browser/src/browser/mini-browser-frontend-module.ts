@@ -23,6 +23,7 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/w
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandContribution } from '@theia/core/lib/common/command';
+import { MenuContribution } from '@theia/core/lib/common/menu';
 import { NavigatableWidgetOptions } from '@theia/core/lib/browser/navigatable';
 import { MiniBrowserOpenHandler } from './mini-browser-open-handler';
 import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
@@ -60,6 +61,7 @@ export default new ContainerModule(bind => {
     bind(OpenHandler).toService(MiniBrowserOpenHandler);
     bind(FrontendApplicationContribution).toService(MiniBrowserOpenHandler);
     bind(CommandContribution).toService(MiniBrowserOpenHandler);
+    bind(MenuContribution).toService(MiniBrowserOpenHandler);
     bind(TabBarToolbarContribution).toService(MiniBrowserOpenHandler);
 
     bindContributionProvider(bind, LocationMapper);
