@@ -116,7 +116,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
                 registry.registerMenuAction(NavigatorContextMenu.OPEN_WITH, {
-                    commandId: openWithCommand.id
+                    commandId: openWithCommand.id,
+                    label: opener.label,
+                    icon: opener.iconClass
                 });
             }
         });
