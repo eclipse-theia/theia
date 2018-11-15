@@ -133,7 +133,9 @@ export class ProblemWidget extends TreeWidget {
             <div className={(node.icon || '') + ' file-icon'}></div>
             <div>{node.name}</div>
             <div className='path'>{node.description || ''}</div>
-            <div className='counter'>{node.numberOfMarkers.toString()}</div>
+            <div className='notification-count-container'>
+                <span className='notification-count'>{node.numberOfMarkers.toString()}</span>
+            </div>
         </div>;
     }
 
