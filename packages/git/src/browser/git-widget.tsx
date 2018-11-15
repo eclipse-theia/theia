@@ -800,7 +800,10 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     protected renderMergeChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.props.mergeChanges.length > 0) {
             return <div id='mergeChanges' className='changesContainer'>
-                <div className='theia-header'>Merge Changes</div>
+                <div className='theia-header'>
+                    Merge Changes
+                    {this.renderChangeCount(this.props.mergeChanges.length)}
+                </div>
                 {this.props.mergeChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
         } else {
@@ -813,7 +816,8 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
             return <div id='stagedChanges' className='changesContainer'>
                 <div className='theia-header'>
                     Staged Changes
-            </div>
+                    {this.renderChangeCount(this.props.stagedChanges.length)}
+                </div>
                 {this.props.stagedChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
         } else {
@@ -824,11 +828,17 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     protected renderUnstagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.props.unstagedChanges.length > 0) {
             return <div id='unstagedChanges' className='changesContainer'>
-                <div className='theia-header'>Changed</div>
+                <div className='theia-header'>
+                    Changes
+                    {this.renderChangeCount(this.props.unstagedChanges.length)}
+                </div>
                 {this.props.unstagedChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
         }
-
         return undefined;
+    }
+
+    protected renderChangeCount(changes: number): React.ReactNode {
+        return <span className='git-change-count'>{changes}</span>;
     }
 }
