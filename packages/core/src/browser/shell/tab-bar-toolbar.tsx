@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as React from 'react';
 import { inject, injectable, named } from 'inversify';
-import { Widget, BaseWidget } from '../widgets';
+import { Widget, ReactWidget } from '../widgets';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution } from '../frontend-application';
-import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CommandRegistry, CommandService } from '../../common/command';
+import { Disposable } from '../../common/disposable';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -33,84 +34,58 @@ export interface TabBarToolbarFactory {
 /**
  * Tab-bar toolbar widget representing the active [tab-bar toolbar items](TabBarToolbarItem).
  */
-export class TabBarToolbar extends BaseWidget {
+export class TabBarToolbar extends ReactWidget {
 
-    protected current: Widget | undefined;
-    protected readonly items = new Map<TabBarToolbarItem, HTMLElement>();
-    protected readonly toDisposeOnUpdate: DisposableCollection = new DisposableCollection();
+    protected current: Widget | undefined;
+    protected items = new Map<string, TabBarToolbarItem>();
 
     constructor(protected readonly commandService: CommandService, protected readonly labelParser: LabelParser) {
         super();
-        this.toDispose.push(Disposable.create(() => this.removeItems()));
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR);
-        this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_HIDDEN);
+        this.hide();
     }
 
     updateItems(items: TabBarToolbarItem[], current: Widget | undefined): void {
+        this.items = new Map(items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse().map(item => [item.id, item] as [string, TabBarToolbarItem]));
         this.current = current;
-        const copy = items.slice().sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse();
-        if (this.areSame(copy, Array.from(this.items.keys()))) {
-            return;
+        if (!this.items.size) {
+            this.hide();
         }
-        this.toDisposeOnUpdate.dispose();
-        this.removeItems();
-        this.createItems(copy);
+        this.onRender.push(Disposable.create(() => {
+            if (this.items.size) {
+                this.show();
+            }
+        }));
+        this.update();
     }
 
-    protected removeItems(): void {
-        for (const element of this.items.values()) {
-            const { parentElement } = element;
-            if (parentElement) {
-                parentElement.removeChild(element);
-            }
-        }
-        this.items.clear();
+    protected render(): React.ReactNode {
+        return <React.Fragment>
+            {[...this.items.values()].map(item => this.renderItem(item))}
+        </React.Fragment>;
     }
 
-    protected createItems(items: TabBarToolbarItem[]): void {
-        for (const item of items) {
-            const itemContainer = document.createElement('div');
-            itemContainer.classList.add(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM);
-            for (const labelPart of this.labelParser.parse(item.text)) {
-                const child = document.createElement('div');
-                const listener = () => this.commandService.executeCommand(item.command, this.current);
-                child.addEventListener('click', listener);
-                this.toDisposeOnUpdate.push(Disposable.create(() => itemContainer.removeEventListener('click', listener)));
-                if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
-                    const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
-                    child.classList.add(...className.split(' '));
-                } else {
-                    child.innerText = labelPart;
-                }
-                if (item.tooltip) {
-                    child.title = item.tooltip;
-                }
-                itemContainer.appendChild(child);
+    protected renderItem(item: TabBarToolbarItem): React.ReactNode {
+        let innerText = '';
+        const classNames = [];
+        for (const labelPart of this.labelParser.parse(item.text)) {
+            if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
+                const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
+                classNames.push(...className.split(' '));
+            } else {
+                innerText = labelPart;
             }
-            this.node.appendChild(itemContainer);
-            this.items.set(item, itemContainer);
         }
-        if (this.items.size === 0) {
-            this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_HIDDEN);
-        } else {
-            this.removeClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR_HIDDEN);
-        }
+        return <div key={item.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM} >
+            <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={item.tooltip}>{innerText}</div>
+        </div>;
     }
 
-    /**
-     * `true` if `left` and `right` contains the same items in the same order. Otherwise, `false`.
-     * We consider two items the same, if the IDs of the corresponding items are the same.
-     */
-    protected areSame(left: TabBarToolbarItem[], right: TabBarToolbarItem[]): boolean {
-        if (left.length === right.length) {
-            for (let i = 0; i < left.length; i++) {
-                if (left[0].id !== right[0].id) {
-                    return false;
-                }
-            }
-            return true;
+    protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
+        const item = this.items.get(e.currentTarget.id);
+        if (item) {
+            this.commandService.executeCommand(item.command, this.current);
         }
-        return false;
     }
 
 }
@@ -121,7 +96,6 @@ export namespace TabBarToolbar {
 
         export const TAB_BAR_TOOLBAR = 'p-TabBar-toolbar';
         export const TAB_BAR_TOOLBAR_ITEM = 'item';
-        export const TAB_BAR_TOOLBAR_HIDDEN = 'hidden';
 
     }
 
