@@ -82,19 +82,6 @@
     text-overflow: ellipsis;
 }
 
-.theia-marker-container .markerFileNode .counter {
-    background-color: var(--theia-ui-font-color2);
-    border-radius: 20px;
-    padding: 0 5px;
-    text-align: center;
-    font-size: calc(var(--theia-ui-font-size0) * 0.8);
-    color: var(--theia-inverse-ui-font-color0);
-    font-weight: 400;
-    min-width: 8px;
-    height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
-    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
-}
-
 .problem-tab-icon::before {
     content: "\f06a"
 }

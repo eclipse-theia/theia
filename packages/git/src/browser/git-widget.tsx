@@ -839,6 +839,8 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     }
 
     protected renderChangeCount(changes: number): React.ReactNode {
-        return <span className='git-change-count'>{changes}</span>;
+        return <div className='notification-count-container git-change-count'>
+            <span className='notification-count'>{changes}</span>
+        </div>;
     }
 }

@@ -396,8 +396,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         {node.path}
                     </span>
                 </div>
-                <span className={'result-number'}>
-                    {node.children.length.toString()}
+                <span className='notification-count-container'>
+                    <span className='notification-count'>
+                        {node.children.length.toString()}
+                    </span>
                 </span>
             </div>
         </div>;
