@@ -32,7 +32,6 @@ import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, Scrol
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
-import { WidgetTracker } from '../widgets';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -50,7 +49,7 @@ const LAYOUT_DATA_VERSION = '2.0';
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
 export interface DockPanelRendererFactory {
-    (widgetTracker: WidgetTracker): DockPanelRenderer
+    (): DockPanelRenderer
 }
 
 /**
@@ -64,13 +63,12 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        @inject(WidgetTracker) protected readonly widgetTracker: WidgetTracker,
         @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: () => TabBarToolbar
     ) { }
 
     createTabBar(): TabBar<Widget> {
         const renderer = this.tabBarRendererFactory();
-        const tabBar = new ToolbarAwareTabBar(this.tabBarToolbarRegistry, this.widgetTracker, this.tabBarToolbarFactory, {
+        const tabBar = new ToolbarAwareTabBar(this.tabBarToolbarRegistry, this.tabBarToolbarFactory, {
             renderer,
             // Scroll bar options
             handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
@@ -113,7 +111,7 @@ interface WidgetDragState {
  * add, remove, or activate a widget.
  */
 @injectable()
-export class ApplicationShell extends Widget implements WidgetTracker {
+export class ApplicationShell extends Widget {
 
     /**
      * The dock panel in the main shell area. This is where editors usually go to.
@@ -164,7 +162,7 @@ export class ApplicationShell extends Widget implements WidgetTracker {
      * Construct a new application shell.
      */
     constructor(
-        @inject(DockPanelRendererFactory) protected dockPanelRendererFactory: (widgetTracker: WidgetTracker) => DockPanelRenderer,
+        @inject(DockPanelRendererFactory) protected dockPanelRendererFactory: () => DockPanelRenderer,
         @inject(StatusBarImpl) protected readonly statusBar: StatusBarImpl,
         @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
@@ -364,7 +362,7 @@ export class ApplicationShell extends Widget implements WidgetTracker {
      * Create the dock panel in the main shell area.
      */
     protected createMainPanel(): TheiaDockPanel {
-        const renderer = this.dockPanelRendererFactory(this);
+        const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
         const dockPanel = new TheiaDockPanel({
@@ -380,7 +378,7 @@ export class ApplicationShell extends Widget implements WidgetTracker {
      * Create the dock panel in the bottom shell area.
      */
     protected createBottomPanel(): TheiaDockPanel {
-        const renderer = this.dockPanelRendererFactory(this);
+        const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(BOTTOM_AREA_CLASS);
         const dockPanel = new TheiaDockPanel({
@@ -709,14 +707,29 @@ export class ApplicationShell extends Widget implements WidgetTracker {
         }
     }
 
+    /**
+     * The current widget in the application shell. The current widget is the last widget that
+     * was active and not yet closed. See the remarks to `activeWidget` on what _active_ means.
+     */
     get currentWidget(): Widget | undefined {
         return this.tracker.currentWidget || undefined;
     }
 
+    /**
+     * The active widget in the application shell. The active widget is the one that has focus
+     * (either the widget itself or any of its contents).
+     *
+     * _Note:_ Focus is taken by a widget through the `onActivateRequest` method. It is up to the
+     * widget implementation which DOM element will get the focus. The default implementation
+     * does not take any focus; in that case the widget is never returned by this property.
+     */
     get activeWidget(): Widget | undefined {
         return this.tracker.activeWidget || undefined;
     }
 
+    /**
+     * A signal emitted whenever the `currentWidget` property is changed.
+     */
     readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
     /**
@@ -726,6 +739,9 @@ export class ApplicationShell extends Widget implements WidgetTracker {
         this.currentChanged.emit(args);
     }
 
+    /**
+     * A signal emitted whenever the `activeWidget` property is changed.
+     */
     readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
     /**
@@ -1094,6 +1110,7 @@ export class ApplicationShell extends Widget implements WidgetTracker {
         }
         return undefined;
     }
+
     protected getAreaPanelFor(widget: Widget): DockPanel | undefined {
         const title = widget.title;
         const mainPanelTabBar = this.mainPanel.findTabBar(title);
