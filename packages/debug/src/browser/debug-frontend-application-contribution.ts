@@ -256,7 +256,7 @@ function updateTheme(): void {
     if (theme === 'dark') {
         lightCss.unuse();
         darkCss.use();
-    } else {
+    } else if (theme === 'light') {
         darkCss.unuse();
         lightCss.use();
     }
