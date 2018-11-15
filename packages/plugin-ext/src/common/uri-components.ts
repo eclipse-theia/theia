@@ -1,4 +1,3 @@
-
 /********************************************************************************
  * Copyright (C) 2018 Red Hat, Inc. and others.
  *
@@ -14,6 +13,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+import URI from '@theia/core/lib/common/uri';
+
 export interface UriComponents {
     scheme: string;
     authority: string;
@@ -27,4 +29,14 @@ export interface UriComponents {
 export namespace Schemes {
     export const File = 'file';
     export const Untitled = 'untitled';
+}
+
+export function theiaUritoUriComponents(uri: URI): UriComponents {
+    return {
+        scheme: uri.scheme,
+        authority: uri.authority,
+        path: uri.path.toString(),
+        query: uri.query,
+        fragment: uri.fragment
+    };
 }
