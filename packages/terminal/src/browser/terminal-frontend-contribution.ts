@@ -26,8 +26,9 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry
+    KeyModifier, KeybindingRegistry, Widget
 } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
@@ -62,10 +63,15 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Open in Terminal'
     };
+    export const SPLIT: Command = {
+        id: 'terminal:split',
+        category: TERMINAL_CATEGORY,
+        label: 'Split Terminal'
+    };
 }
 
 @injectable()
-export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution {
+export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -75,14 +81,13 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(TerminalCommands.NEW);
-        commands.registerHandler(TerminalCommands.NEW.id, {
-            isEnabled: () => true,
-            execute: async () => {
-                const termWidget = await this.newTerminal({});
-                termWidget.start();
-                this.activateTerminal(termWidget);
-            }
+        commands.registerCommand(TerminalCommands.NEW, {
+            execute: () => this.openTerminal()
+        });
+        commands.registerCommand(TerminalCommands.SPLIT, {
+            execute: widget => this.splitTerminal(widget),
+            isEnabled: widget => !!this.getTerminalRef(widget),
+            isVisible: widget => !!this.getTerminalRef(widget)
         });
 
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
@@ -117,8 +122,21 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             label: 'New Terminal',
             order: '0'
         });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
+            commandId: TerminalCommands.SPLIT.id,
+            order: '1'
+        });
         menus.registerMenuAction(TerminalMenus.TERMINAL_NAVIGATOR_CONTEXT_MENU, {
             commandId: TerminalCommands.TERMINAL_CONTEXT.id
+        });
+    }
+
+    registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        toolbar.registerItem({
+            id: TerminalCommands.SPLIT.id,
+            command: TerminalCommands.SPLIT.id,
+            text: '$(columns)',
+            tooltip: TerminalCommands.SPLIT.label
         });
     }
 
@@ -225,11 +243,28 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         return widget;
     }
 
-    activateTerminal(widget: TerminalWidget): void {
+    activateTerminal(widget: TerminalWidget, options: ApplicationShell.WidgetOptions = { area: 'bottom' }): void {
         const tabBar = this.shell.getTabBarFor(widget);
         if (!tabBar) {
-            this.shell.addWidget(widget, { area: 'bottom' });
+            this.shell.addWidget(widget, options);
         }
         this.shell.activateWidget(widget.id);
+    }
+
+    protected async splitTerminal(widget?: Widget): Promise<void> {
+        const ref = this.getTerminalRef(widget);
+        if (ref) {
+            await this.openTerminal({ ref, mode: 'split-right' });
+        }
+    }
+    protected getTerminalRef(widget?: Widget): TerminalWidget | undefined {
+        const ref = widget ? widget : this.shell.currentWidget;
+        return ref instanceof TerminalWidget ? ref : undefined;
+    }
+
+    protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
+        const termWidget = await this.newTerminal({});
+        termWidget.start();
+        this.activateTerminal(termWidget, options);
     }
 }
