@@ -24,7 +24,6 @@ import { Message } from '@phosphor/messaging';
 import { ArrayExt } from '@phosphor/algorithm';
 import { ElementExt } from '@phosphor/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
-import { WidgetTracker } from '../widgets';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -301,8 +300,6 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        // TODO: WidgetTracker is not needed anymore: remove? or make sure that noone can access it from the main container?
-        protected readonly widgetTracker: WidgetTracker,
         protected readonly tabBarToolbarFactory: () => TabBarToolbar,
         protected readonly options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
 
@@ -352,6 +349,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         super.onUpdateRequest(msg);
         this.updateToolbar();
     }
+
     protected updateToolbar(): void {
         if (!this.toolbar) {
             return;

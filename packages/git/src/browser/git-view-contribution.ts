@@ -301,6 +301,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
         const options = this.getOpenFileOptions(widget);
         return options && this.editorManager.open(options.uri, options.options);
     }
+
     protected getOpenFileOptions(widget?: Widget): GitOpenFileOptions | undefined {
         const ref = widget ? widget : this.editorManager.currentEditor;
         if (ref instanceof EditorWidget && DiffUris.isDiffUri(ref.editor.uri)) {
@@ -320,6 +321,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
         }
         return undefined;
     }
+
     protected getOpenChangesOptions(widget?: Widget): GitOpenChangesOptions | undefined {
         const view = this.tryGetWidget();
         if (!view) {
