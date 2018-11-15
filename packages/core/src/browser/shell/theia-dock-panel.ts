@@ -53,13 +53,16 @@ export class TheiaDockPanel extends DockPanel {
     get currentTitle(): Title<Widget> | undefined {
         return this._currentTitle;
     }
+
     get currentTabBar(): TabBar<Widget> | undefined {
         return this._currentTitle && this.findTabBar(this._currentTitle);
     }
+
     findTabBar(title: Title<Widget>): TabBar<Widget> | undefined {
         return find(this.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, title) > -1);
     }
-    markAsCurrent(title: Title<Widget> | undefined): void {
+
+    markAsCurrent(title: Title<Widget> | undefined): void {
         this._currentTitle = title;
     }
 
@@ -86,6 +89,7 @@ export class TheiaDockPanel extends DockPanel {
         const next = current && this.nextTabBarInPanel(current);
         return next && next.currentTitle && next.currentTitle.owner || undefined;
     }
+
     nextTabBarInPanel(tabBar: TabBar<Widget>): TabBar<Widget> | undefined {
         const tabBars = toArray(this.tabBars());
         const index = tabBars.indexOf(tabBar);
@@ -100,6 +104,7 @@ export class TheiaDockPanel extends DockPanel {
         const previous = current && this.previousTabBarInPanel(current);
         return previous && previous.currentTitle && previous.currentTitle.owner || undefined;
     }
+
     previousTabBarInPanel(tabBar: TabBar<Widget>): TabBar<Widget> | undefined {
         const tabBars = toArray(this.tabBars());
         const index = tabBars.indexOf(tabBar);

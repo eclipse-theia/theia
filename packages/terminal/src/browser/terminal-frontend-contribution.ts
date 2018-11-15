@@ -257,6 +257,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             await this.openTerminal({ ref, mode: 'split-right' });
         }
     }
+
     protected getTerminalRef(widget?: Widget): TerminalWidget | undefined {
         const ref = widget ? widget : this.shell.currentWidget;
         return ref instanceof TerminalWidget ? ref : undefined;

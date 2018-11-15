@@ -211,10 +211,12 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         const uri = this.getCurrentEditorUri(widget);
         return !!uri && this.previewHandlerProvider.canHandle(uri);
     }
+
     protected getCurrentEditorUri(widget?: Widget): URI | undefined {
         const current = this.getCurrentEditor(widget);
         return current && current.editor.uri;
     }
+
     protected getCurrentEditor(widget?: Widget): EditorWidget | undefined {
         const current = widget ? widget : this.editorManager.currentEditor;
         return current instanceof EditorWidget && current || undefined;
