@@ -27,6 +27,7 @@ import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
+import { environment } from '../common';
 
 export namespace CommonMenus {
 
@@ -188,6 +189,8 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 
 @injectable()
 export class CommonFrontendContribution implements MenuContribution, CommandContribution, KeybindingContribution {
+
+    protected readonly isElectron = environment.electron.is();
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -473,7 +476,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             },
             {
                 command: CommonCommands.CLOSE_TAB.id,
-                keybinding: 'alt+w'
+                keybinding: (this.isElectron) ? 'ctrlcmd+w' : 'alt+w'
             },
             {
                 command: CommonCommands.CLOSE_OTHER_TABS.id,
