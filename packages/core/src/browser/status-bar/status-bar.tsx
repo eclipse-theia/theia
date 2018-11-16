@@ -62,6 +62,7 @@ export const StatusBar = Symbol('StatusBar');
 
 export interface StatusBar {
     setBackgroundColor(color?: string): Promise<void>;
+    setColor(color?: string): Promise<void>;
     setElement(id: string, entry: StatusBarEntry): Promise<void>;
     removeElement(id: string): Promise<void>;
 }
@@ -70,6 +71,7 @@ export interface StatusBar {
 export class StatusBarImpl extends ReactWidget implements StatusBar {
 
     protected backgroundColor: string | undefined;
+    protected color: string | undefined;
     protected entries: Map<string, StatusBarEntry> = new Map();
 
     constructor(
@@ -101,12 +103,23 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     async setBackgroundColor(color?: string): Promise<void> {
         await this.ready;
         this.internalSetBackgroundColor(color);
+        this.update();
     }
 
     protected internalSetBackgroundColor(color?: string): void {
         this.backgroundColor = color;
         // tslint:disable-next-line:no-null-keyword
         this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
+    }
+
+    async setColor(color?: string): Promise<void> {
+        await this.ready;
+        this.internalSetColor(color);
+        this.update();
+    }
+
+    protected internalSetColor(color?: string): void {
+        this.color = color;
     }
 
     protected render(): JSX.Element {
@@ -161,11 +174,9 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             attrs.title = entry.tooltip;
         }
 
-        if (entry.color) {
-            attrs.style = {
-                color: entry.color
-            };
-        }
+        attrs.style = {
+            color: entry.color || this.color
+        };
 
         if (entry.className) {
             attrs.className += ' ' + entry.className;
