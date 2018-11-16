@@ -22,7 +22,7 @@ import { CommonMenus } from '../common-frontend-contribution';
 
 export const quickCommand: Command = {
     id: 'quickCommand',
-    label: 'Find Command ...'
+    label: 'Find Command...'
 };
 
 @injectable()
