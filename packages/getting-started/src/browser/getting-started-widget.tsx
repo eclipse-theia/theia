@@ -25,6 +25,7 @@ import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 @injectable()
 export class GettingStartedWidget extends ReactWidget {
@@ -33,6 +34,7 @@ export class GettingStartedWidget extends ReactWidget {
     static readonly LABEL = 'Getting Started';
 
     protected applicationInfo: ApplicationInfo | undefined;
+    protected applicationName = FrontendApplicationConfigProvider.get().applicationName;
 
     protected stat: FileStat | undefined;
     protected home: string | undefined;
@@ -104,7 +106,7 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected renderHeader(): React.ReactNode {
         return <div className='gs-header'>
-            <h1>Theia <span className='gs-sub-header'>Getting Started</span></h1>
+            <h1>{this.applicationName}<span className='gs-sub-header'> Getting Started</span></h1>
         </div>;
     }
 
@@ -182,7 +184,7 @@ export class GettingStartedWidget extends ReactWidget {
     protected renderVersion(): React.ReactNode {
         return <div className='gs-section'>
             <div className='gs-action-container'>
-                <p className='gs-sub-header gs-version' >
+                <p className='gs-sub-header' >
                     {this.applicationInfo ? 'Version ' + this.applicationInfo.version : ''}
                 </p>
             </div>
