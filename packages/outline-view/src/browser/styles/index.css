@@ -19,7 +19,7 @@
 }
 
 .no-outline {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-ui-font-color0);
     padding: 10px;
-    text-align: center;
+    text-align: left;
 }
