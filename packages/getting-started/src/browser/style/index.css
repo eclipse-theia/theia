@@ -46,7 +46,6 @@ html, body {
     color: var(--theia-ui-font-color0);
     flex: 1;
     font-weight: 600;
-    text-transform: uppercase;
 }
 
 .gs-hr {
@@ -84,7 +83,7 @@ html, body {
 }
 
 .gs-sub-header {
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-ui-font-color2);
     text-transform: capitalize;
     font-weight: 400;
 }
