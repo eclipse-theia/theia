@@ -113,7 +113,8 @@ export class GitRepositoryProvider {
 
     async refresh(options?: GitRefreshOptions): Promise<void> {
         const roots: FileStat[] = [];
-        for (const root of await this.workspaceService.roots) {
+        await this.workspaceService.roots;
+        for (const root of this.workspaceService.tryGetRoots()) {
             if (await this.fileSystem.exists(root.uri)) {
                 roots.push(root);
             }
