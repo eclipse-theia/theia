@@ -199,16 +199,18 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
 
     protected handleOnline() {
         this.statusBar.setBackgroundColor(undefined);
+        this.statusBar.setColor(undefined);
         this.statusBar.removeElement(this.statusbarId);
     }
 
     protected handleOffline() {
-        this.statusBar.setBackgroundColor('var(--theia-warn-color0)');
         this.statusBar.setElement(this.statusbarId, {
             alignment: StatusBarAlignment.LEFT,
             text: 'Offline',
             tooltip: 'Cannot connect to backend.',
             priority: 5000
         });
+        this.statusBar.setBackgroundColor('var(--theia-warn-color0)');
+        this.statusBar.setColor('var(--theia-warn-font-color0)');
     }
 }
