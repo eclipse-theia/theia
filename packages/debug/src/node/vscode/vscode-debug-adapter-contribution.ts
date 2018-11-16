@@ -105,7 +105,11 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
         return debuggerContribution;
     }
 
+    protected schemaAttributes: Promise<IJSONSchema[]> | undefined;
     async getSchemaAttributes(): Promise<IJSONSchema[]> {
+        return this.schemaAttributes || (this.schemaAttributes = this.resolveSchemaAttributes());
+    }
+    protected async resolveSchemaAttributes(): Promise<IJSONSchema[]> {
         const debuggerContribution = await this.debuggerContribution;
         if (!debuggerContribution.configurationAttributes) {
             return [];
