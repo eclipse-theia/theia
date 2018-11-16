@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { AbstractGenerator } from './abstract-generator';
+import * as fs from 'fs-extra';
 
 export class FrontendGenerator extends AbstractGenerator {
 
@@ -28,11 +29,18 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     protected compileIndexHtml(frontendModules: Map<string, string>): string {
+        const customHeadFile = this.pck.path('custom-html-head.html');
+        const exists = fs.pathExistsSync(customHeadFile);
+        const defaultHeadContent = `<%
+for (key in htmlWebpackPlugin.files.chunks) { %>
+  <script src="<%= htmlWebpackPlugin.files.chunks[key].entry %>" type="text/javascript" charset="utf-8"></script><%
+}%>`;
+        const headContent = exists ? fs.readFileSync(customHeadFile, 'utf8') : defaultHeadContent;
         return `<!DOCTYPE html>
 <html>
 
 <head>${this.compileIndexHead(frontendModules)}
-  <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
+    ${headContent}
 </head>
 
 <body>

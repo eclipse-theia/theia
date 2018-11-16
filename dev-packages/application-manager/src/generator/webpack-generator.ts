@@ -37,24 +37,47 @@ const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
-const { mode }  = yargs.option('mode', {
+const { mode, env: { optimized, customtemplateparams } }  = yargs.option('mode', {
     description: "Mode to use",
     choices: ["development", "production"],
     default: "production"
+}).option('env.optimized', {
+    description: "Split runtime vendor and runtime chunks, and use content hashes",
+    type: "boolean",
+    default: false
+}).option('env.customtemplateparams', {
+    description: "Json object with the custom template parameters used by the HTML template",
+    type: "string",
+    default: '{}'
 }).argv;
+
 const development = mode === 'development';${this.ifMonaco(() => `
 
 const monacoEditorCorePath = development ? '${this.resolve('@typefox/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@typefox/monaco-editor-core', 'min/vs')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
 const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
 
+const optimizeOptions = optimized ? {
+    runtimeChunk: 'single',
+    splitChunks: {
+      cacheGroups: {
+        commons: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    }
+} : {};
+
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
-        filename: 'bundle.js',
+        filename: optimized ? '[name].[contenthash].js' : 'bundle.js',
         path: outputPath
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
@@ -67,6 +90,7 @@ module.exports = {
         net: 'empty',
         crypto: 'empty'`)}
     },
+    optimization: optimizeOptions,
     module: {
         rules: [
             {
@@ -135,6 +159,13 @@ module.exports = {
     },
     devtool: 'source-map',
     plugins: [
+        new HtmlWebpackPlugin({
+            filename: 'index.html',
+            template: 'src-gen/frontend/index.html',
+            inject: false,
+            customparams: JSON.parse(customtemplateparams)
+        }),
+        new webpack.HashedModuleIdsPlugin(),
         new CopyWebpackPlugin([${this.ifMonaco(() => `
             {
                 from: monacoEditorCorePath,
