@@ -30,7 +30,7 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.toDispose.push(
             this.workspaceService.onWorkspaceChanged(event => {
                 this.updateRoot();
