@@ -16,6 +16,7 @@
 
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import { JsonRpcServer, ApplicationError } from '@theia/core/lib/common';
+import { injectable } from 'inversify';
 export const fileSystemPath = '/services/filesystem';
 
 export const FileSystem = Symbol('FileSystem');
@@ -189,6 +190,23 @@ export interface FileSystemClient {
     shouldOverwrite: FileShouldOverwrite;
 
     onDidMove(sourceUri: string, targetUri: string): void;
+
+}
+
+@injectable()
+export class DispatchingFileSystemClient implements FileSystemClient {
+
+    readonly clients = new Set<FileSystemClient>();
+
+    shouldOverwrite(originalStat: FileStat, currentStat: FileStat): Promise<boolean> {
+        return Promise.race([...this.clients].map(client =>
+            client.shouldOverwrite(originalStat, currentStat))
+        );
+    }
+
+    onDidMove(sourceUri: string, targetUri: string): void {
+        this.clients.forEach(client => client.onDidMove(sourceUri, targetUri));
+    }
 
 }
 
