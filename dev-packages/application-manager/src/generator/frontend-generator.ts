@@ -102,7 +102,7 @@ if (process.env.LC_ALL) {
 process.env.LC_NUMERIC = 'C';
 
 const electron = require('electron');
-const { join } = require('path');
+const { join, resolve } = require('path');
 const { isMaster } = require('cluster');
 const { fork } = require('child_process');
 const { app, BrowserWindow, ipcMain, Menu } = electron;
@@ -176,6 +176,12 @@ if (isMaster) {
         const loadMainWindow = (port) => {
             mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
         };
+
+        // We cannot use the \`process.cwd()\` as the application project path (the location of the \`package.json\` in other words)
+        // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
+        // https://github.com/theia-ide/theia/issues/3297#issuecomment-439172274
+        process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
+
         const mainPath = join(__dirname, '..', 'backend', 'main');
         // We need to distinguish between bundled application and development mode when starting the clusters.
         // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
