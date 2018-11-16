@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { injectable } from 'inversify';
 import { JsonRpcServer } from './messaging/proxy-factory';
 
 export const ILoggerServer = Symbol('ILoggerServer');
@@ -37,6 +38,17 @@ export interface ILogLevelChangedEvent {
 
 export interface ILoggerClient {
     onLogLevelChanged(event: ILogLevelChangedEvent): void;
+}
+
+@injectable()
+export class DispatchingLoggerClient implements ILoggerClient {
+
+    readonly clients = new Set<ILoggerClient>();
+
+    onLogLevelChanged(event: ILogLevelChangedEvent): void {
+        this.clients.forEach(client => client.onLogLevelChanged(event));
+    }
+
 }
 
 export const rootLoggerName = 'root';

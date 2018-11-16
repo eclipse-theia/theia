@@ -17,18 +17,25 @@
 import { ContainerModule, Container, interfaces } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '../common/messaging';
 import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
-import { ILoggerServer, ILoggerClient, loggerPath } from '../common/logger-protocol';
+import { ILoggerServer, ILoggerClient, loggerPath, DispatchingLoggerClient } from '../common/logger-protocol';
 import { ConsoleLoggerServer } from './console-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { BackendApplicationContribution } from './backend-application';
 import { CliContribution } from './cli';
 import { LogLevelCliContribution } from './logger-cli-contribution';
 
-export function bindLogger(bind: interfaces.Bind): void {
+export function bindLogger(bind: interfaces.Bind, props?: {
+    onLoggerServerActivation?: (context: interfaces.Context, server: ILoggerServer) => void
+}): void {
     bind(LoggerName).toConstantValue(rootLoggerName);
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
-    bind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
+    bind<ILoggerServer>(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope().onActivation((context, server) => {
+        if (props && props.onLoggerServerActivation) {
+            props.onLoggerServerActivation(context, server);
+        }
+        return server;
+    });
     bind(LogLevelCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(LogLevelCliContribution);
     bind(LoggerFactory).toFactory(ctx =>
@@ -53,13 +60,22 @@ export const loggerBackendModule = new ContainerModule(bind => {
             }
         }));
 
-    bindLogger(bind);
+    bind(DispatchingLoggerClient).toSelf().inSingletonScope();
+    bindLogger(bind, {
+        onLoggerServerActivation: ({ container }, server) => {
+            server.setClient(container.get(DispatchingLoggerClient));
+            server.setClient = () => {
+                throw new Error('use DispatchingLoggerClient');
+            };
+        }
+    });
 
-    bind(ConnectionHandler).toDynamicValue(ctx =>
+    bind(ConnectionHandler).toDynamicValue(({ container }) =>
         new JsonRpcConnectionHandler<ILoggerClient>(loggerPath, client => {
-            const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
-            loggerServer.setClient(client);
-            return loggerServer;
+            const dispatching = container.get(DispatchingLoggerClient);
+            dispatching.clients.add(client);
+            client.onDidCloseConnection(() => dispatching.clients.delete(client));
+            return container.get<ILoggerServer>(ILoggerServer);
         })
     ).inSingletonScope();
 });
