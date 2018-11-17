@@ -17,7 +17,6 @@
 import { injectable, postConstruct, inject, interfaces, Container } from 'inversify';
 import { BaseWidget, PanelLayout, Message, ApplicationShell, Widget } from '@theia/core/lib/browser';
 import { DebugSessionWidget } from './debug-session-widget';
-import { DebugConfigurationWidget } from './debug-configuration-widget';
 import { DebugViewModel } from './debug-view-model';
 import { DebugSessionManager } from '../debug-session-manager';
 
@@ -26,7 +25,6 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
 
     static createContainer(parent: interfaces.Container): Container {
         const child = DebugSessionWidget.createContainer(parent, {});
-        child.bind(DebugConfigurationWidget).toSelf();
         child.bind(DebugWidget).toSelf();
         return child;
     }
@@ -43,9 +41,6 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
     @inject(DebugSessionManager)
     readonly sessionManager: DebugSessionManager;
 
-    @inject(DebugConfigurationWidget)
-    protected readonly toolbar: DebugConfigurationWidget;
-
     @inject(DebugSessionWidget)
     protected readonly sessionWidget: DebugSessionWidget;
 
@@ -58,7 +53,6 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
         this.title.iconClass = 'fa debug-tab-icon';
         this.addClass('theia-debug-container');
         this.toDispose.pushAll([
-            this.toolbar,
             this.sessionWidget,
             this.sessionManager.onDidCreateDebugSession(session => this.model.push(session)),
             this.sessionManager.onDidDestroyDebugSession(session => this.model.delete(session))
@@ -68,13 +62,11 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
         }
 
         const layout = this.layout = new PanelLayout();
-        layout.addWidget(this.toolbar);
         layout.addWidget(this.sessionWidget);
     }
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.toolbar.focus();
     }
 
     getTrackableWidgets(): Widget[] {
