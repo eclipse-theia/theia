@@ -92,6 +92,12 @@ module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendMo
     protected compileElectronMain(): string {
         return `// @ts-check
 
+// Useful for Electron/NW.js apps as GUI apps on macOS doesn't inherit the \`$PATH\` define
+// in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
+// https://github.com/electron/electron/issues/550#issuecomment-162037357
+// https://github.com/theia-ide/theia/pull/3534#issuecomment-439689082
+require('fix-path')();
+
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
 // LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
