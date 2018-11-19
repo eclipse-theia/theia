@@ -34,9 +34,15 @@ export {
     LanguageContribution, IConnection, Message
 };
 
+export interface LanguageServerStartOptions {
+    sessionId: string
+    // tslint:disable-next-line:no-any
+    parameters?: any
+}
+
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
 export interface LanguageServerContribution extends LanguageContribution {
-    start(clientConnection: IConnection): void;
+    start(clientConnection: IConnection, options: LanguageServerStartOptions): void;
 }
 
 @injectable()
@@ -51,7 +57,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     @inject(ProcessManager)
     protected readonly processManager: ProcessManager;
 
-    abstract start(clientConnection: IConnection): void;
+    abstract start(clientConnection: IConnection, options: LanguageServerStartOptions): void;
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
         forward(clientConnection, serverConnection, this.map.bind(this));
