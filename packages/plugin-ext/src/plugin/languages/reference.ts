@@ -17,11 +17,11 @@
 import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
-import * as types from '../types-impl';
 import { ReferenceContext, Location } from '../../api/model';
 import * as Converter from '../type-converters';
 import { Position } from '../../api/plugin-api';
 import { createToken } from '../token-provider';
+import { isLocationArray } from './util';
 
 export class ReferenceAdapter {
 
@@ -39,15 +39,15 @@ export class ReferenceAdapter {
         const document = documentData.document;
         const zeroBasedPosition = Converter.toPosition(position);
 
-        return Promise.resolve(this.provider.provideReferences(document, zeroBasedPosition, context, createToken())).then(referencce => {
-            if (!referencce) {
+        return Promise.resolve(this.provider.provideReferences(document, zeroBasedPosition, context, createToken())).then(reference => {
+            if (!reference) {
                 return undefined;
             }
 
-            if (this.isLocationArray(referencce)) {
+            if (isLocationArray(reference)) {
                 const locations: Location[] = [];
 
-                for (const location of referencce) {
+                for (const location of reference) {
                     locations.push(Converter.fromLocation(location));
                 }
 
@@ -56,8 +56,4 @@ export class ReferenceAdapter {
         });
     }
 
-    /* tslint:disable-next-line:no-any */
-    private isLocationArray(array: any): array is types.Location[] {
-        return Array.isArray(array) && array.length > 0 && array[0] instanceof types.Location;
-    }
 }
