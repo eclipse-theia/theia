@@ -24,15 +24,14 @@ import { Definition, DefinitionLink, Location } from '../../api/model';
 import { createToken } from '../token-provider';
 import { isDefinitionLinkArray, isLocationArray} from './util';
 
-export class DefinitionAdapter {
+export class TypeDefinitionAdapter {
 
     constructor(
-        private readonly delegate: theia.DefinitionProvider,
-        private readonly documents: DocumentsExtImpl) {
+        private readonly provider: theia.TypeDefinitionProvider,
+        private readonly documents: DocumentsExtImpl
+    ) { }
 
-    }
-
-    provideDefinition(resource: URI, position: Position): Promise<Definition | DefinitionLink[] | undefined> {
+    provideTypeDefinition(resource: URI, position: Position): Promise<Definition | DefinitionLink[] | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -41,7 +40,7 @@ export class DefinitionAdapter {
         const document = documentData.document;
         const zeroBasedPosition = Converter.toPosition(position);
 
-        return Promise.resolve(this.delegate.provideDefinition(document, zeroBasedPosition, createToken())).then(definition => {
+        return Promise.resolve(this.provider.provideTypeDefinition(document, zeroBasedPosition, createToken())).then(definition => {
             if (!definition) {
                 return undefined;
             }
@@ -71,4 +70,5 @@ export class DefinitionAdapter {
             }
         });
     }
+
 }
