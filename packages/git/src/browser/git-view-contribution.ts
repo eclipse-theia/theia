@@ -27,6 +27,7 @@ import { GitWidget } from './git-widget';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitQuickOpenService } from './git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export const GIT_WIDGET_FACTORY_ID = 'git';
 
@@ -102,6 +103,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
     @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService;
     @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
     @inject(GitSyncService) protected readonly syncService: GitSyncService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor() {
         super({
@@ -261,6 +263,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             isVisible: () => this.syncService.canPublish()
         });
         registry.registerCommand(GIT_COMMANDS.CLONE, {
+            isEnabled: () => this.workspaceService.opened,
             // tslint:disable-next-line:no-any
             execute: (args: any[]) => {
                 let url: string | undefined = undefined;

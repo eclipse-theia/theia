@@ -258,6 +258,10 @@
     padding-left: 4px;
 }
 
+.theia-git-commit-message-container textarea:focus {
+    border: 1px solid var(--theia-border-color0);
+}
+
 .theia-git-commit-message {
     width: 100%;
 }
