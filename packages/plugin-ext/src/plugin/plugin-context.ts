@@ -375,6 +375,9 @@ export function createAPIFactory(
             registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, ...triggerCharacters: string[]): theia.Disposable {
                 return languagesExt.registerSignatureHelpProvider(selector, provider, ...triggerCharacters);
             },
+            registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider): theia.Disposable {
+                return languagesExt.registerTypeDefinitionProvider(selector, provider);
+            },
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider);
             },

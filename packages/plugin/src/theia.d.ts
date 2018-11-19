@@ -613,6 +613,24 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The type definition provider defines the contract between extensions and
+     * the go to type definition feature.
+     */
+    export interface TypeDefinitionProvider {
+
+        /**
+         * Provide the type definition of the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @return A definition or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideTypeDefinition(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Definition | DefinitionLink[]>;
+    }
+
+    /**
      * The MarkdownString represents human readable text that supports formatting via the
      * markdown syntax. Standard markdown is supported, also tables, but no embedded html.
      */
@@ -5261,6 +5279,19 @@ declare module '@theia/plugin' {
         export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): Disposable;
 
         /**
+         * Register a type definition provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A type definition provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerTypeDefinitionProvider(selector: DocumentSelector, provider: TypeDefinitionProvider): Disposable;
+
+        /**
          * Register a hover provider.
          *
          * Multiple providers can be registered for a language. In that case providers are asked in
@@ -5514,7 +5545,7 @@ declare module '@theia/plugin' {
 		 */
 		resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
     }
-    
+
 	/**
 	 * Namespace for debug functionality.
 	 */
@@ -5531,7 +5562,7 @@ declare module '@theia/plugin' {
 		 * An [event](#Event) which fires when a [debug session](#DebugSession) has terminated.
 		 */
         export const onDidTerminateDebugSession: Event<DebugSession>;
-        
+
  		/**
 		 * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
 		 * More than one provider can be registered for the same type.
