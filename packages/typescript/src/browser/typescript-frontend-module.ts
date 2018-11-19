@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
+import { KeybindingContext, KeybindingContribution, WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { CallHierarchyService } from '@theia/callhierarchy/lib/browser';
@@ -27,10 +27,14 @@ import { JavascriptGrammarContribution } from './javascript-language-config';
 import { TypeScriptFrontendContribution } from './typescript-frontend-contribution';
 import { TypeScriptEditorTextFocusContext } from './typescript-keybinding-contexts';
 import { bindTypescriptPreferences } from './typescript-preferences';
+import { TypescriptVersionService, typescriptVersionPath } from '../common/typescript-version-service';
 
 export default new ContainerModule(bind => {
     bindTypescriptPreferences(bind);
 
+    bind(TypescriptVersionService).toDynamicValue(({ container }) =>
+        WebSocketConnectionProvider.createProxy(container, typescriptVersionPath)
+    ).inSingletonScope();
     bind(TypeScriptClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toService(TypeScriptClientContribution);
 
@@ -44,6 +48,7 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(TypeScriptFrontendContribution);
     bind(MenuContribution).toService(TypeScriptFrontendContribution);
     bind(KeybindingContribution).toService(TypeScriptFrontendContribution);
+    bind(FrontendApplicationContribution).toService(TypeScriptFrontendContribution);
 
     bind(KeybindingContext).to(TypeScriptEditorTextFocusContext).inSingletonScope();
 });

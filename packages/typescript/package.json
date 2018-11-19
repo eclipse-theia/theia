@@ -8,9 +8,12 @@
     "@theia/filesystem": "^0.3.17",
     "@theia/editor": "^0.3.17",
     "@theia/core": "^0.3.17",
+    "@theia/filesystem": "^0.3.17",
     "@theia/languages": "^0.3.17",
     "@theia/monaco": "^0.3.17",
-    "typescript-language-server": "^0.3.5"
+    "@theia/workspace": "^0.3.17",
+    "command-exists": "^1.2.8",
+    "typescript-language-server": "^0.3.7"
   },
   "publishConfig": {
     "access": "public"

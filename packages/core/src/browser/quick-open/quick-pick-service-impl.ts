@@ -67,10 +67,12 @@ export class QuickPickServiceImpl implements QuickPickService {
         const label = typeof element === 'string' ? element : element.label;
         const value = typeof element === 'string' ? element : element.value;
         const description = typeof element === 'string' ? undefined : element.description;
+        const detail = typeof element === 'string' ? undefined : element.detail;
         const iconClass = typeof element === 'string' ? undefined : element.iconClass;
         return {
             label,
             description,
+            detail,
             iconClass,
             run: mode => {
                 if (mode !== QuickOpenMode.OPEN) {

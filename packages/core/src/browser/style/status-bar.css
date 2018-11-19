@@ -33,12 +33,12 @@
 
 #theia-statusBar .area.left {
     justify-content: flex-start;
-    padding-left: 20px;
+    padding-left: calc(var(--theia-ui-padding)*2);
 }
 
 #theia-statusBar .area.right {
     justify-content: flex-end;
-    padding-right: 20px;
+    padding-right: calc(var(--theia-ui-padding)*2);
 }
 
 #theia-statusBar .area .element {
@@ -55,9 +55,9 @@
 }
 
 #theia-statusBar .area.left .element {
-    margin-right: 15px;
+    margin-right: var(--theia-ui-padding);
 }
 
 #theia-statusBar .area.right .element {
-    margin-left: 15px;
+    margin-left: var(--theia-ui-padding);
 }
