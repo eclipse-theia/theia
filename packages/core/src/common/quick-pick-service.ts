@@ -30,6 +30,7 @@ export interface QuickPickValue<T> {
     label: string
     value: T
     description?: string
+    detail?: string
     iconClass?: string
 }
 

@@ -15,9 +15,19 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
+import { JsonRpcConnectionHandler, ConnectionHandler } from '@theia/core/lib/common';
 import { LanguageServerContribution } from '@theia/languages/lib/node';
 import { TypeScriptContribution } from './typescript-contribution';
+import { typescriptVersionPath, TypescriptVersionService } from '../common/typescript-version-service';
+import { TypescriptVersionServiceImpl } from './typescript-version-service-impl';
 
 export default new ContainerModule(bind => {
     bind(LanguageServerContribution).to(TypeScriptContribution).inSingletonScope();
+
+    bind(TypescriptVersionService).to(TypescriptVersionServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(typescriptVersionPath, () =>
+            ctx.container.get(TypescriptVersionService)
+        )
+    ).inSingletonScope();
 });

@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { TypescriptVersion } from './typescript-version-service';
+
 export const TYPESCRIPT_LANGUAGE_ID = 'typescript';
 export const TYPESCRIPT_LANGUAGE_NAME = 'TypeScript';
 
@@ -25,3 +27,14 @@ export const JAVASCRIPT_LANGUAGE_NAME = 'JavaScript';
 
 export const JAVASCRIPT_REACT_LANGUAGE_ID = 'javascriptreact';
 export const JAVASCRIPT_REACT_LANGUAGE_NAME = 'JavaScript React';
+
+export const TS_JS_LANGUAGES = new Set([
+    TYPESCRIPT_LANGUAGE_ID,
+    TYPESCRIPT_REACT_LANGUAGE_ID,
+    JAVASCRIPT_LANGUAGE_ID,
+    JAVASCRIPT_REACT_LANGUAGE_ID
+]);
+
+export interface TypescriptStartParams {
+    version?: TypescriptVersion
+}
