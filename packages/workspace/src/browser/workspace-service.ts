@@ -498,12 +498,12 @@ export interface WorkspaceInput {
 
 }
 
-interface WorkspaceData {
+export interface WorkspaceData {
     folders: Array<{ path: string }>;
     // TODO add workspace settings settings?: { [id: string]: any };
 }
 
-namespace WorkspaceData {
+export namespace WorkspaceData {
     const validateSchema = new Ajv().compile({
         type: 'object',
         properties: {
