@@ -155,6 +155,27 @@ export function createAPIFactory(
             onDidChangeTextEditorVisibleRanges(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
+            async showTextDocument(documentArg: theia.TextDocument | Uri,
+                                   optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
+                                   preserveFocus?: boolean
+            ): Promise<theia.TextEditor> {
+                // Todo pass additional arguments to documents service, when the API will support them.
+                let documentOptions: theia.TextDocumentShowOptions | undefined;
+                const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
+                if (optionsArg) {
+                    const optionsAny: any = optionsArg;
+                    if (optionsAny.selection) {
+                        documentOptions = optionsArg as theia.TextDocumentShowOptions;
+                    }
+                }
+                await documents.openDocument(uri, documentOptions);
+                const textEditor = editors.getVisibleTextEditors().find(editor => editor.document.uri.toString() === uri.toString());
+                if (textEditor) {
+                    return Promise.resolve(textEditor);
+                } else {
+                    throw new Error(`Failed to show text document ${documentArg.toString()}`);
+                }
+            },
             // tslint:disable-next-line:no-any
             showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
                 if (token) {

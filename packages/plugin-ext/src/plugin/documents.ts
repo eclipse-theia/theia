@@ -23,6 +23,7 @@ import { DocumentDataExt, setWordDefinitionFor } from './document-data';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Range } from '../api/model';
 
 export class DocumentsExtImpl implements DocumentsExt {
     private toDispose = new DisposableCollection();
@@ -120,7 +121,7 @@ export class DocumentsExtImpl implements DocumentsExt {
         return undefined;
     }
 
-    async openDocument(uri: URI): Promise<DocumentDataExt | undefined> {
+    async openDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
         const cached = this.editorsAndDocuments.getDocument(uri.toString());
         if (cached) {
             return cached;
@@ -135,7 +136,7 @@ export class DocumentsExtImpl implements DocumentsExt {
 
         try {
             // start opening document
-            const document = this.loadDocument(uri);
+            const document = this.loadDocument(uri, options);
             // add loader to the map
             this.loadingDocuments.set(uri.toString(), document);
             // wait the document being opened
@@ -150,8 +151,18 @@ export class DocumentsExtImpl implements DocumentsExt {
         }
     }
 
-    private async loadDocument(uri: URI): Promise<DocumentDataExt | undefined> {
-        await this.proxy.$tryOpenDocument(uri);
+    private async loadDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
+        let range: Range | undefined;
+        if (options && options.selection) {
+            const { start, end } = options.selection;
+            range = {
+                startLineNumber: start.line,
+                startColumn: start.character,
+                endLineNumber: end.line,
+                endColumn: end.character
+            };
+        }
+        await this.proxy.$tryOpenDocument(uri, { selection: range });
         return this.editorsAndDocuments.getDocument(uri.toString());
     }
 
