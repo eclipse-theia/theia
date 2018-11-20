@@ -19,6 +19,10 @@ import { UriComponents } from '../common/uri-components';
 
 // Should contains internal Plugin API types
 
+export interface TextDocumentShowOptions {
+    selection?: Range;
+}
+
 export interface Range {
     /**
      * Line number on which the range starts (starts at 1).
