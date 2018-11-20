@@ -125,7 +125,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         return this.currentWidget && this.currentWidget.getResourceUri();
     }
 
-    protected getWorkspaceRelativePath(uri: URI): string | undefined {
+    getWorkspaceRelativePath(uri: URI): string | undefined {
         const workspaceRootUri = this.getWorkspaceRootUri(uri);
         const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
         return path && path.toString();
