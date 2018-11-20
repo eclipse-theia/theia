@@ -22,7 +22,7 @@ import { Emitter, ILogger, Logger } from '@theia/core';
 import {
     CompositeTreeNode, DefaultOpenerService, ExpandableTreeNode, LabelProvider, OpenerService,
     Tree, TreeNode, TreeSelectionService, TreeExpansionService, TreeExpansionServiceImpl,
-    TreeNavigationService, TreeSearch
+    TreeNavigationService, TreeSearch, CorePreferences
 } from '@theia/core/lib/browser';
 import { TreeSelectionServiceImpl } from '@theia/core/lib/browser/tree/tree-selection-impl';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
@@ -32,6 +32,7 @@ import { DirNode, FileChange, FileMoveEvent, FileTreeModel, FileStatNode } from 
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileNavigatorTree, WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
+import { createMockPreferenceProxy } from '@theia/core/lib/browser/preferences/test';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import * as sinon from 'sinon';
@@ -125,6 +126,7 @@ describe('FileNavigatorModel', () => {
     let mockTreeExpansionService: TreeExpansionService;
     let mockTreeNavigationService: TreeNavigationService;
     let mockTreeSearch: TreeSearch;
+    let mockPreferences: CorePreferences;
 
     const mockWorkspaceServiceEmitter: Emitter<FileStat[]> = new Emitter();
     const mockFileChangeEmitter: Emitter<FileChange[]> = new Emitter();
@@ -154,6 +156,7 @@ describe('FileNavigatorModel', () => {
         mockTreeExpansionService = sinon.createStubInstance(TreeExpansionServiceImpl);
         mockTreeNavigationService = sinon.createStubInstance(TreeNavigationService);
         mockTreeSearch = sinon.createStubInstance(TreeSearch);
+        mockPreferences = createMockPreferenceProxy({});
 
         testContainer = new Container();
         testContainer.bind(FileNavigatorModel).toSelf().inSingletonScope();
@@ -169,6 +172,7 @@ describe('FileNavigatorModel', () => {
         testContainer.bind(TreeExpansionService).toConstantValue(mockTreeExpansionService);
         testContainer.bind(TreeNavigationService).toConstantValue(mockTreeNavigationService);
         testContainer.bind(TreeSearch).toConstantValue(mockTreeSearch);
+        testContainer.bind(CorePreferences).toConstantValue(mockPreferences);
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockWorkspaceServiceEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
