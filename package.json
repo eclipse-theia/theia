@@ -48,7 +48,7 @@
   "scripts": {
     "prepare": "yarn prepare:travis && yarn prepare:hoisting && yarn rebuild:clean && yarn build:clean",
     "prepare:travis": "node scripts/prepare-travis",
-    "prepare:hoisting": "node scripts/check-hoisting",
+    "prepare:hoisting": "cross-env THEIA_CHECK_HOISTING_NO_BAIL=true ts-node scripts/check-hoisting.ts",
     "build": "run build",
     "build:clean": "run prepare",
     "docs": "run docs \"@theia/!(example-)*\"",
