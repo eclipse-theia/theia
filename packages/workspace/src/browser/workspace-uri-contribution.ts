@@ -17,26 +17,22 @@
 import { DefaultUriLabelProviderContribution, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
-import { IWorkspaceService } from './workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { MaybePromise } from '@theia/core';
+import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
-    @inject(IWorkspaceService)
-    protected workspaceService: IWorkspaceService;
     @inject(FileSystem)
-    protected fileSystem: FileSystem;
+    protected readonly fileSystem: FileSystem;
 
-    wsRoot: URI;
+    @inject(WorkspaceVariableContribution)
+    protected readonly workspaceVariable: WorkspaceVariableContribution;
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const root = (await this.workspaceService.roots)[0];
-        if (root) {
-            this.wsRoot = new URI(root.uri);
-        }
+        // no-op, backward compatibility
     }
 
     canHandle(element: object): number {
@@ -86,15 +82,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
      */
     getLongName(element: URI | FileStat): string {
         const uri = this.getUri(element);
-
-        if (this.wsRoot) {
-            const relativeUri = this.wsRoot.relative(uri);
-            if (relativeUri) {
-                return relativeUri.toString();
-            }
-
-        }
-
-        return super.getLongName(uri);
+        const relativePath = this.workspaceVariable.getWorkspaceRelativePath(uri);
+        return relativePath || super.getLongName(uri);
     }
 }
