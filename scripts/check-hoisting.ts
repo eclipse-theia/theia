@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 /********************************************************************************
  * Copyright (c) 2018 TypeFox and others
  *
@@ -16,8 +16,8 @@
  ********************************************************************************/
 // @ts-check
 
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * This script makes sure all the dependencies are hoisted into the root `node_modules` after running `yarn`.
@@ -36,16 +36,25 @@ const path = require('path');
  * ```
  */
 
+type DiagnosticType = 'error' | 'warn';
+
+interface Diagnostic {
+    severity: number,
+    message: string,
+}
+
+type DiagnosticMap = Map<string, Diagnostic[]>;
+
 (() => {
 
-    function collectIssues() {
+    function collectIssues(): DiagnosticMap {
 
         console.log('🔍  Analyzing hoisted dependencies in the Theia extensions:');
         const root = path.join(__dirname, '..');
         const rootNodeModules = path.join(root, 'node_modules');
         const packages = path.join(root, 'packages');
 
-        const issues = new Map();
+        const issues = new Map<string, Diagnostic[]>();
         for (const extension of fs.readdirSync(packages)) {
             console.log(` - Checking @theia/${extension}...`);
             const extensionPath = path.join(packages, extension);
@@ -71,7 +80,7 @@ const path = require('path');
         return issues;
     }
 
-    function versionOf(npmPackagePath) {
+    function versionOf(npmPackagePath: string): string {
         const packageJsonPath = path.join(npmPackagePath, 'package.json');
         if (fs.existsSync(packageJsonPath)) {
             return require(packageJsonPath).version || '';
@@ -79,25 +88,24 @@ const path = require('path');
         return '';
     }
 
-    function warn(issues, extension, message) {
-        return log(issues, extension, message, 'warn');
+    function warn(issues: DiagnosticMap, extension: string, message: string): void {
+        log(issues, extension, message, 'warn');
     }
 
-    function error(issues, extension, message) {
-        return log(issues, extension, message, 'error');
+    function error(issues: DiagnosticMap, extension: string, message: string): void {
+        log(issues, extension, message, 'error');
     }
 
-    function log(issues, extension, message, type) {
+    function log(issues: DiagnosticMap, extension: string, message: string, type: DiagnosticType): void {
         const key = `@theia/${extension}`;
         if (!issues.has(key)) {
             issues.set(key, []);
         }
         const severity = toSeverity(type);
-        issues.get(key).push({ severity, message });
-        return issues;
+        issues.get(key)!.push({ severity, message });
     }
 
-    function toSeverity(type) {
+    function toSeverity(type: DiagnosticType): number {
         switch (type) {
             case 'error': return 0;
             case 'warn': return 1;
@@ -105,20 +113,20 @@ const path = require('path');
         }
     }
 
-    function toType(severity) {
+    function toType(severity: number): DiagnosticType {
         switch (severity) {
             case 0: return 'error';
-            case 1: return 'warning';
+            case 1: return 'warn';
             default: throw new Error(`Unexpected severity: ${severity}.`);
         }
     }
 
-    function assert(issues) {
+    function assert(issues: DiagnosticMap): void {
         console.log('📖  Summary:');
         let code = 0;
-        if (issues && issues.length > 0) {
-            for (const extension of issues.keys()) {
-                const issuesPerExtension = issues.get(extension).sort((left, right) => left.severity - right.severity);
+        if (issues.size > 0) {
+            for (const [extension, issuesPerExtension] of issues.entries()) {
+                issuesPerExtension.sort((left, right) => left.severity - right.severity);
                 if (issuesPerExtension) {
                     console.log(`The following dependency issues were detected in '${extension}':`);
                     for (const { severity, message } of issuesPerExtension) {
@@ -141,5 +149,4 @@ const path = require('path');
     }
 
     assert(collectIssues());
-
 })();
