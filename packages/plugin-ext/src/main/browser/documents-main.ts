@@ -21,9 +21,10 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
 import { createUntitledResource } from './editor/untitled-resource';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Saveable } from '@theia/core/lib/browser';
+import { TextDocumentShowOptions } from '../../api/model';
 
 export class DocumentsMainImpl implements DocumentsMain {
 
@@ -103,12 +104,22 @@ export class DocumentsMainImpl implements DocumentsMain {
         return createUntitledResource(content, language);
     }
 
-    async $tryOpenDocument(uri: UriComponents): Promise<void> {
+    async $tryOpenDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
         // Removing try-catch block here makes it not possible to handle errors.
         // Following message is appeared in browser console
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
         try {
-            await this.editorManger.open(new URI(uri.external!));
+            let editorOpenerOptions: EditorOpenerOptions | undefined;
+            if (options && options.selection) {
+                const selection = options.selection;
+                editorOpenerOptions = {
+                    selection: {
+                        start: { line: selection.startLineNumber - 1, character: selection.startColumn - 1 },
+                        end: { line: selection.endLineNumber - 1, character: selection.endColumn - 1 }
+                    }
+                };
+            }
+            await this.editorManger.open(new URI(uri.external!), editorOpenerOptions);
         } catch (err) {
             throw new Error(err);
         }
