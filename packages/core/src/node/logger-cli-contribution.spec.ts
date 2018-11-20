@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as chai from 'chai';
+import { expect } from 'chai';
 import * as yargs from 'yargs';
 import * as temp from 'temp';
 import * as fs from 'fs';
@@ -26,42 +26,39 @@ import * as sinon from 'sinon';
 // Allow creating temporary files, but remove them when we are done.
 const track = temp.track();
 
-const expect = chai.expect;
-
 let cli: LogLevelCliContribution;
-
 let consoleErrorSpy: sinon.SinonSpy;
 
-beforeEach(function() {
-    const container = new Container();
+describe('log-level-cli-contribution', () => {
 
-    const module = new ContainerModule(bind => {
-        bind(LogLevelCliContribution).toSelf().inSingletonScope();
+    beforeEach(() => {
+        const container = new Container();
+
+        const module = new ContainerModule(bind => {
+            bind(LogLevelCliContribution).toSelf().inSingletonScope();
+        });
+
+        container.load(module);
+
+        cli = container.get(LogLevelCliContribution);
+        yargs.reset();
+        cli.configure(yargs);
+
+        consoleErrorSpy = sinon.spy(console, 'error');
     });
 
-    container.load(module);
+    afterEach(() => {
+        consoleErrorSpy.restore();
+    });
 
-    cli = container.get(LogLevelCliContribution);
-    yargs.reset();
-    cli.configure(yargs);
-
-    consoleErrorSpy = sinon.spy(console, 'error');
-});
-
-afterEach(function() {
-    consoleErrorSpy.restore();
-});
-
-describe('log-level-cli-contribution', function() {
-
-    it('should use --log-level flag', async function() {
+    it('should use --log-level flag', async () => {
         const args: yargs.Arguments = yargs.parse(['--log-level=debug']);
         await cli.setArguments(args);
 
         expect(cli.defaultLogLevel).eq(LogLevel.DEBUG);
     });
 
-    it('should read json config file', async function() {
+    it('should read json config file', async () => {
         const file = track.openSync();
         fs.writeFileSync(file.fd, JSON.stringify({
             defaultLevel: 'info',
@@ -83,7 +80,7 @@ describe('log-level-cli-contribution', function() {
         });
     });
 
-    it('should use info as default log level', async function() {
+    it('should use info as default log level', async () => {
         const args: yargs.Arguments = yargs.parse([]);
         await cli.setArguments(args);
 
@@ -91,7 +88,7 @@ describe('log-level-cli-contribution', function() {
         expect(cli.logLevels).eql({});
     });
 
-    it('should reject wrong default log level', async function() {
+    it('should reject wrong default log level', async () => {
         const file = track.openSync();
         fs.writeFileSync(file.fd, JSON.stringify({
             defaultLevel: 'potato',
@@ -106,7 +103,7 @@ describe('log-level-cli-contribution', function() {
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown default log level in');
     });
 
-    it('should reject wrong logger log level', async function() {
+    it('should reject wrong logger log level', async () => {
         const file = track.openSync();
         fs.writeFileSync(file.fd, JSON.stringify({
             defaultLevel: 'info',
@@ -121,13 +118,13 @@ describe('log-level-cli-contribution', function() {
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Unknown log level for logger hello in');
     });
 
-    it('should reject nonexistent config files', async function() {
+    it('should reject nonexistent config files', async () => {
         const args: yargs.Arguments = yargs.parse(['--log-config', '/tmp/cacaca']);
         await cli.setArguments(args);
         sinon.assert.calledWithMatch(consoleErrorSpy, 'no such file or directory');
     });
 
-    it('should reject config file with invalid JSON', async function() {
+    it('should reject config file with invalid JSON', async () => {
         const file = track.openSync();
         const text = JSON.stringify({
             defaultLevel: 'info',
@@ -148,7 +145,7 @@ describe('log-level-cli-contribution', function() {
     // 4) in parallel for a few minutes without failure:
     //
     //  $ while ./node_modules/.bin/mocha --opts configs/mocha.opts packages/core/lib/node/logger-cli-contribution.spec.js  --grep watch; do true; done
-    it.skip('should watch the config file', async function() {
+    it.skip('should watch the config file', async () => {
         let filename: string;
         {
             const file = track.openSync();
@@ -199,7 +196,7 @@ describe('log-level-cli-contribution', function() {
         });
     });
 
-    it('should keep original levels when changing the log levels file with a broken one', async function() {
+    it('should keep original levels when changing the log levels file with a broken one', async function () {
         this.timeout(5000);
 
         const file = track.openSync();
