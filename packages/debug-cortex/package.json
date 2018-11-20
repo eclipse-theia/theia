@@ -1,0 +1,53 @@
+{
+  "name": "@theia/debug-cortex",
+  "version": "0.3.16",
+  "description": "Theia - Cortex Debug Extension",
+  "dependencies": {
+    "@theia/debug": "^0.3.16",
+    "vscode-debugprotocol": "^1.32.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "backend": "lib/node/debug-cortex-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension, debug, cortex"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src",
+    "scripts"
+  ],
+  "scripts": {
+    "postinstall": "node ./scripts/download-adapters.js",
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.16",
+    "unzip-stream": "^0.3.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  },
+  "adapters": {
+    "cortex-debug": "https://github.com/Marus/cortex-debug/releases/download/v0.1.21-test2/cortex-debug-0.1.21-test2.vsix"
+  }
+}
