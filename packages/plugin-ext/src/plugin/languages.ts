@@ -59,6 +59,7 @@ import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
 import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
 import { DefinitionAdapter } from './languages/definition';
+import { ImplementationAdapter } from './languages/implementation';
 import { TypeDefinitionAdapter } from './languages/type-definition';
 import { CodeActionAdapter } from './languages/code-action';
 import { LinkProviderAdapter } from './languages/link-provider';
@@ -74,6 +75,7 @@ type Adapter = CompletionAdapter |
     RangeFormattingAdapter |
     OnTypeFormattingAdapter |
     DefinitionAdapter |
+    ImplementationAdapter |
     TypeDefinitionAdapter |
     LinkProviderAdapter |
     CodeLensAdapter |
@@ -235,6 +237,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.diagnostics.createDiagnosticCollection(name);
     }
     // ### Diagnostics end
+
+    // ### Implementation provider begin
+    $provideImplementation(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined> {
+        return this.withAdapter(handle, ImplementationAdapter, adapter => adapter.provideImplementation(URI.revive(resource), position));
+    }
+
+    registerImplementationProvider(selector: theia.DocumentSelector, provider: theia.ImplementationProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new ImplementationAdapter(provider, this.documents));
+        this.proxy.$registerImplementationProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+    // ### Implementation provider end
 
     // ### Type Definition provider begin
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined> {

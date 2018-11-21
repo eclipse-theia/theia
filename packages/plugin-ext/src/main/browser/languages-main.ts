@@ -170,6 +170,48 @@ export class LanguagesMainImpl implements LanguagesMain {
         }
     }
 
+    $registerImplementationProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const implementationProvider = this.createImplementationProvider(handle, languageSelector);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerImplementationProvider(language, implementationProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createImplementationProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.ImplementationProvider {
+        return {
+            provideImplementation: (model, position, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideImplementation(handle, model.uri, position).then(result => {
+                    if (!result) {
+                        return undefined!;
+                    }
+
+                    if (Array.isArray(result)) {
+                        // using DefinitionLink because Location is mandatory part of DefinitionLink
+                        const definitionLinks: monaco.languages.DefinitionLink[] = [];
+                        for (const item of result) {
+                            definitionLinks.push({ ...item, uri: monaco.Uri.revive(item.uri) });
+                        }
+                        return definitionLinks;
+                    } else {
+                        // single Location
+                        return <monaco.languages.Location>{
+                            uri: monaco.Uri.revive(result.uri),
+                            range: result.range
+                        };
+                    }
+                });
+            }
+        };
+    }
+
     $registerTypeDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const typeDefinitionProvider = this.createTypeDefinitionProvider(handle, languageSelector);
