@@ -49,14 +49,13 @@ type DiagnosticMap = Map<string, Diagnostic[]>;
 
     function collectIssues(): DiagnosticMap {
 
-        console.log('🔍  Analyzing hoisted dependencies in the Theia extensions:');
+        console.log('🔍  Analyzing hoisted dependencies in the Theia extensions...');
         const root = path.join(__dirname, '..');
         const rootNodeModules = path.join(root, 'node_modules');
         const packages = path.join(root, 'packages');
 
         const issues = new Map<string, Diagnostic[]>();
         for (const extension of fs.readdirSync(packages)) {
-            console.log(` - Checking @theia/${extension}...`);
             const extensionPath = path.join(packages, extension);
             const nodeModulesPath = path.join(extensionPath, 'node_modules');
             if (fs.existsSync(nodeModulesPath)) {
