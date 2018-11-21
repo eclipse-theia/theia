@@ -230,6 +230,26 @@ export class LanguagesMainImpl implements LanguagesMain {
         }
     }
 
+    $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const symbolProvider = this.createDocumentSymbolProvider(handle, languageSelector);
+
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerDocumentSymbolProvider(language, symbolProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+	}
+
+    protected createDocumentSymbolProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.DocumentSymbolProvider {
+        return {
+            provideDocumentSymbols: (model, token) =>
+                this.proxy.$provideDocumentSymbols(handle, model.uri).then(v => v!)
+        };
+    }
+
     protected createDefinitionProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.DefinitionProvider {
         return {
             provideDefinition: (model, position, token) => {
