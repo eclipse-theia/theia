@@ -192,8 +192,7 @@ export class DebugSessionConnection implements Disposable {
 
     protected handleMessage(data: string) {
         if (this.traceOutputChannel) {
-            this.traceOutputChannel.append(`${this.sessionId.substring(0, 8)} theia <- adapter: ${data}`);
-            this.traceOutputChannel.appendLine(data);
+            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} theia <- adapter: ${data}`);
         }
         const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
         if (message.type === 'request') {
