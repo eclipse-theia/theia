@@ -55,7 +55,7 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         });
     }
 
-    notifyWorkspaceFoldersChanged() {
+    notifyWorkspaceFoldersChanged(): void {
         if (this.roots && this.roots.length) {
             const folders = this.roots.map(root => {
                 const uri = Uri.parse(root.uri);
@@ -64,18 +64,18 @@ export class WorkspaceMainImpl implements WorkspaceMain {
                     uri: uri,
                     name: path.base,
                     index: 0
-                } as theia.WorkspaceFolder;
+                };
             });
 
             this.proxy.$onWorkspaceFoldersChanged({
                 added: folders,
                 removed: []
-            } as theia.WorkspaceFoldersChangeEvent);
+            });
         } else {
             this.proxy.$onWorkspaceFoldersChanged({
                 added: [],
                 removed: []
-            } as theia.WorkspaceFoldersChangeEvent);
+            });
         }
     }
 

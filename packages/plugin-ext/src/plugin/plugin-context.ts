@@ -165,7 +165,7 @@ export function createAPIFactory(
                     return quickOpenExt.showQuickPick(items, options);
                 }
             },
-            showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions) {
+            showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
                 return workspaceExt.pickWorkspaceFolder(options);
             },
             showInformationMessage(message: string,
