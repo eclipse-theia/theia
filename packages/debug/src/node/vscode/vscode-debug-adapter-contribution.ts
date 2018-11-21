@@ -86,13 +86,18 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
         this.languages = this.debuggerContribution.then(({ languages }) => languages);
     }
     protected async parse(): Promise<VSCodeDebuggerContribution> {
-        const nlsMap = require(path.join(this.extensionPath, 'package.nls.json'));
         const pckPath = path.join(this.extensionPath, 'package.json');
         let text = (await fs.readFile(pckPath)).toString();
-        for (const key of Object.keys(nlsMap)) {
-            const value = nlsMap[key];
-            text = text.split('%' + key + '%').join(value);
+
+        const nlsPath = path.join(this.extensionPath, 'package.nls.json');
+        if (fs.existsSync(nlsPath)) {
+            const nlsMap = require(nlsPath);
+            for (const key of Object.keys(nlsMap)) {
+                const value = nlsMap[key];
+                text = text.split('%' + key + '%').join(value);
+            }
         }
+
         const pck: {
             contributes: {
                 debuggers: VSCodeDebuggerContribution[]
