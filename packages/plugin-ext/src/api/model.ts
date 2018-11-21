@@ -299,3 +299,14 @@ export interface WorkspaceEdit {
     edits: Array<ResourceTextEdit | ResourceFileEdit>;
     rejectReason?: string;
 }
+
+export interface WorkspaceFoldersChangeEvent {
+    added: WorkspaceFolder[];
+    removed: WorkspaceFolder[];
+}
+
+export interface WorkspaceFolder {
+    uri: UriComponents;
+    name: string;
+    index: number;
+}

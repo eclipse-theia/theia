@@ -15,23 +15,12 @@
  ********************************************************************************/
 
 import { EditorPosition, Selection, Position, DecorationOptions, WorkspaceEditDto, ResourceTextEditDto, ResourceFileEditDto } from '../api/plugin-api';
-import {
-    Range,
-    Hover,
-    MarkdownString,
-    CompletionType,
-    SingleEditOperation,
-    MarkerData,
-    RelatedInformation,
-    Location,
-    DefinitionLink,
-    DocumentLink,
-    Command
-} from '../api/model';
+import * as model from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
 import { isMarkdownString } from './markdown-string';
+import URI from 'vscode-uri';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -66,7 +55,7 @@ export function fromSelection(selection: types.Selection): Selection {
     };
 }
 
-export function toRange(range: Range): types.Range {
+export function toRange(range: model.Range): types.Range {
     // if (!range) {
     //     return undefined;
     // }
@@ -75,7 +64,7 @@ export function toRange(range: Range): types.Range {
     return new types.Range(startLineNumber - 1, startColumn - 1, endLineNumber - 1, endColumn - 1);
 }
 
-export function fromRange(range: theia.Range | undefined): Range | undefined {
+export function fromRange(range: theia.Range | undefined): model.Range | undefined {
     if (!range) {
         return undefined;
     }
@@ -135,7 +124,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
     }
 }
 
-export function fromManyMarkdown(markup: (theia.MarkdownString | theia.MarkedString)[]): MarkdownString[] {
+export function fromManyMarkdown(markup: (theia.MarkdownString | theia.MarkedString)[]): model.MarkdownString[] {
     return markup.map(fromMarkdown);
 }
 
@@ -151,7 +140,7 @@ function isCodeblock(thing: any): thing is Codeblock {
         && typeof (<Codeblock>thing).value === 'string';
 }
 
-export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): MarkdownString {
+export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): model.MarkdownString {
     if (isCodeblock(markup)) {
         const { language, value } = markup;
         return { value: '```' + language + '\n' + value + '\n```\n' };
@@ -198,7 +187,7 @@ function isRelativePattern(obj: {}): obj is theia.RelativePattern {
     return rp && typeof rp.base === 'string' && typeof rp.pattern === 'string';
 }
 
-export function fromCompletionItemKind(kind?: types.CompletionItemKind): CompletionType {
+export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.CompletionType {
     switch (kind) {
         case types.CompletionItemKind.Method: return 'method';
         case types.CompletionItemKind.Function: return 'function';
@@ -229,7 +218,7 @@ export function fromCompletionItemKind(kind?: types.CompletionItemKind): Complet
     return 'property';
 }
 
-export function toCompletionItemKind(type?: CompletionType): types.CompletionItemKind {
+export function toCompletionItemKind(type?: model.CompletionType): types.CompletionItemKind {
     if (type) {
         switch (type) {
             case 'method': return types.CompletionItemKind.Method;
@@ -262,8 +251,8 @@ export function toCompletionItemKind(type?: CompletionType): types.CompletionIte
     return types.CompletionItemKind.Property;
 }
 
-export function fromTextEdit(edit: theia.TextEdit): SingleEditOperation {
-    return <SingleEditOperation>{
+export function fromTextEdit(edit: theia.TextEdit): model.SingleEditOperation {
+    return <model.SingleEditOperation>{
         text: edit.newText,
         range: fromRange(edit.range)
     };
@@ -285,7 +274,7 @@ export function fromLanguageSelector(selector: theia.DocumentSelector): Language
     }
 }
 
-export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): MarkerData {
+export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): model.MarkerData {
     return {
         code: convertCode(diagnostic.code),
         severity: convertSeverity(diagnostic.severity),
@@ -317,12 +306,12 @@ function convertSeverity(severity: types.DiagnosticSeverity): types.MarkerSeveri
     }
 }
 
-function convertRelatedInformation(diagnosticsRelatedInformation: theia.DiagnosticRelatedInformation[] | undefined): RelatedInformation[] | undefined {
+function convertRelatedInformation(diagnosticsRelatedInformation: theia.DiagnosticRelatedInformation[] | undefined): model.RelatedInformation[] | undefined {
     if (!diagnosticsRelatedInformation) {
         return undefined;
     }
 
-    const relatedInformation: RelatedInformation[] = [];
+    const relatedInformation: model.RelatedInformation[] = [];
     for (const item of diagnosticsRelatedInformation) {
         relatedInformation.push({
             resource: item.location.uri,
@@ -350,22 +339,22 @@ function convertTags(tags: types.DiagnosticTag[] | undefined): types.MarkerTag[]
     return markerTags;
 }
 
-export function fromHover(hover: theia.Hover): Hover {
-    return <Hover>{
+export function fromHover(hover: theia.Hover): model.Hover {
+    return <model.Hover>{
         range: fromRange(hover.range),
         contents: fromManyMarkdown(hover.contents)
     };
 }
 
-export function fromLocation(location: theia.Location): Location {
-    return <Location>{
+export function fromLocation(location: theia.Location): model.Location {
+    return <model.Location>{
         uri: location.uri,
         range: fromRange(location.range)
     };
 }
 
-export function fromDefinitionLink(definitionLink: theia.DefinitionLink): DefinitionLink {
-    return <DefinitionLink>{
+export function fromDefinitionLink(definitionLink: theia.DefinitionLink): model.DefinitionLink {
+    return <model.DefinitionLink>{
         uri: definitionLink.targetUri,
         range: fromRange(definitionLink.targetRange),
         origin: definitionLink.originSelectionRange ? fromRange(definitionLink.originSelectionRange) : undefined,
@@ -373,14 +362,14 @@ export function fromDefinitionLink(definitionLink: theia.DefinitionLink): Defini
     };
 }
 
-export function fromDocumentLink(definitionLink: theia.DocumentLink): DocumentLink {
-    return <DocumentLink>{
+export function fromDocumentLink(definitionLink: theia.DocumentLink): model.DocumentLink {
+    return <model.DocumentLink>{
         range: fromRange(definitionLink.range),
         url: definitionLink.target && definitionLink.target.toString()
     };
 }
 
-export function toInternalCommand(command: theia.Command): Command {
+export function toInternalCommand(command: theia.Command): model.Command {
     return {
         id: command.id,
         title: command.label || '',
@@ -406,4 +395,12 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
         }
     }
     return result;
+}
+
+export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.WorkspaceFolder {
+    return {
+        uri: URI.revive(folder.uri),
+        name: folder.name,
+        index: folder.index
+    };
 }
