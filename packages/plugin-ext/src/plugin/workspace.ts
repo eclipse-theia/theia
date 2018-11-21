@@ -14,15 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {
-    WorkspaceFolder,
-    WorkspaceFoldersChangeEvent,
-    WorkspaceFolderPickOptions,
-    GlobPattern,
-    FileSystemWatcher,
-    TextDocumentContentProvider,
-    Disposable
-} from '@theia/plugin';
+import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import {
@@ -33,7 +25,9 @@ import {
 } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../api/rpc-protocol';
+import { WorkspaceFoldersChangeEvent } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
+import { toWorkspaceFolder } from './type-converters';
 import URI from 'vscode-uri';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
@@ -43,15 +37,15 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     private workspaceFoldersChangedEmitter = new Emitter<WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
 
-    private folders: WorkspaceFolder[] | undefined;
+    private folders: theia.WorkspaceFolder[] | undefined;
 
-    private documentContentProviders = new Map<string, TextDocumentContentProvider>();
+    private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
 
     constructor(rpc: RPCProtocol, private editorsAndDocuments: EditorsAndDocumentsExtImpl) {
         this.proxy = rpc.getProxy(Ext.WORKSPACE_MAIN);
     }
 
-    get workspaceFolders(): WorkspaceFolder[] | undefined {
+    get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
         return this.folders;
     }
 
@@ -64,16 +58,22 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     $onWorkspaceFoldersChanged(event: WorkspaceFoldersChangeEvent): void {
-        this.folders = event.added;
+        // TODO add support for multiroot workspace
+        this.folders = [];
+
+        const added: theia.WorkspaceFolder[] = [];
+        event.added.map(folder => added.push(toWorkspaceFolder(folder)));
+        event.added = added;
+        this.folders = added;
         this.workspaceFoldersChangedEmitter.fire(event);
     }
 
-    pickWorkspaceFolder(options?: WorkspaceFolderPickOptions): PromiseLike<WorkspaceFolder | undefined> {
+    pickWorkspaceFolder(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
         return new Promise((resolve, reject) => {
-            const optionsMain = {
+            const optionsMain: WorkspaceFolderPickOptionsMain = {
                 placeHolder: options && options.placeHolder ? options.placeHolder : undefined,
                 ignoreFocusOut: options && options.ignoreFocusOut
-            } as WorkspaceFolderPickOptionsMain;
+            };
 
             this.proxy.$pickWorkspaceFolder(optionsMain).then(value => {
                 resolve(value);
@@ -81,7 +81,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         });
     }
 
-    findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number,
+    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number,
         token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
         let includePattern: string;
         if (include) {
@@ -115,12 +115,12 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             .then(data => Array.isArray(data) ? data.map(URI.revive) : []);
     }
 
-    createFileSystemWatcher(globPattern: GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher {
+    createFileSystemWatcher(globPattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
         // FIXME: to implement
-        return new Proxy(<FileSystemWatcher>{}, {});
+        return new Proxy(<theia.FileSystemWatcher>{}, {});
     }
 
-    registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable {
+    registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
         if (scheme === 'file' || scheme === 'untitled' || this.documentContentProviders.has(scheme)) {
             throw new Error(`Text Content Document Provider for scheme '${scheme}' is already registered`);
         }
@@ -128,7 +128,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         this.documentContentProviders.set(scheme, provider);
         this.proxy.$registerTextDocumentContentProvider(scheme);
 
-        let onDidChangeSubscription: Disposable;
+        let onDidChangeSubscription: theia.Disposable;
         if (typeof provider.onDidChange === 'function') {
             onDidChangeSubscription = provider.onDidChange(async uri => {
                 if (uri.scheme === scheme && this.editorsAndDocuments.getDocument(uri.toString())) {
