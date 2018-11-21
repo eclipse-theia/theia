@@ -413,6 +413,9 @@ export function createAPIFactory(
             registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider): theia.Disposable {
                 return languagesExt.registerTypeDefinitionProvider(selector, provider);
             },
+            registerImplementationProvider(selector: theia.DocumentSelector, provider: theia.ImplementationProvider): theia.Disposable {
+                return languagesExt.registerImplementationProvider(selector, provider);
+            },
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider);
             },
