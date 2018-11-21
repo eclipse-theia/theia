@@ -16,13 +16,17 @@
 
 import { injectable } from 'inversify';
 import { ipcRenderer } from 'electron';
-import { DefaultWindowService } from '../../browser/window/window-service';
+import { WindowService, NewWindowOptions } from '../../browser/window/window-service';
 
 @injectable()
-export class ElectronWindowService extends DefaultWindowService {
+export class ElectronWindowService implements WindowService {
 
-    openNewWindow(url: string): void {
-        ipcRenderer.send('create-new-window', url);
+    openNewWindow(url: string, { external }: NewWindowOptions = {}): void {
+        if (external) {
+            ipcRenderer.send('open-external', url);
+        } else {
+            ipcRenderer.send('create-new-window', url);
+        }
     }
 
 }

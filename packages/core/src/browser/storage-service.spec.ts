@@ -15,6 +15,8 @@
  ********************************************************************************/
 
 import { Container } from 'inversify';
+import { WindowService } from './window/window-service';
+import { MockWindowService } from './window/test/mock-window-service';
 import { LocalStorageService, StorageService } from './storage-service';
 import { expect } from 'chai';
 import { ILogger } from '../common/logger';
@@ -36,6 +38,7 @@ before(() => {
         return logger;
     });
     testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
+    testContainer.bind(WindowService).to(MockWindowService).inSingletonScope();
     testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
 
     testContainer.bind(MessageClient).toSelf().inSingletonScope();
