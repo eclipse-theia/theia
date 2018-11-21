@@ -16,26 +16,28 @@
 
 import * as chai from 'chai';
 import * as path from 'path';
-import * as electron from 'electron';
+import { app, BrowserWindow } from 'electron';
 
 const expect = chai.expect;
 
-const mainWindow: Electron.BrowserWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+describe.skip('basic-example-spec', () => {
 
-const { app } = require('electron');
+    const mainWindow: Electron.BrowserWindow = new BrowserWindow({ show: false });
+    mainWindow.on('ready-to-show', () => mainWindow.show());
 
-describe('basic-example-spec', () => {
     describe('01 #start example app', () => {
-        it('should start the electron example app', done => {
-            if (app.isReady()) {
-                require('../src-gen/backend/main'); // start the express server
-
-                mainWindow.webContents.openDevTools();
-                mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
+        it('should start the electron example app', async () => {
+            if (!app.isReady()) {
+                await new Promise(resolve => app.on('ready', resolve));
             }
+
+            require('../src-gen/backend/main'); // start the express server
+
+            mainWindow.webContents.openDevTools();
+            mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
+
             // tslint:disable-next-line:no-unused-expression
             expect(mainWindow.isVisible()).to.be.true;
-            done();
         });
     });
 });
