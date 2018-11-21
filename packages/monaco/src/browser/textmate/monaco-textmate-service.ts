@@ -106,7 +106,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         }
     }
 
-    protected async activateLanguage(languageId: string) {
+    async activateLanguage(languageId: string) {
         const scopeName = this.textmateRegistry.getScope(languageId);
         if (!scopeName) {
             return;

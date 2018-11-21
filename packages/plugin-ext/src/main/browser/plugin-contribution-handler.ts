@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-textmate';
-import { TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
+import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
@@ -39,6 +39,9 @@ export class PluginContributionHandler {
 
     @inject(PreferenceSchemaProvider)
     private readonly preferenceSchemaProvider: PreferenceSchemaProvider;
+
+    @inject(MonacoTextmateService)
+    private readonly monacoTextmateService: MonacoTextmateService;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {
@@ -99,6 +102,7 @@ export class PluginContributionHandler {
                         embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages),
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                     });
+                    monaco.languages.onLanguage(grammar.language, () => this.monacoTextmateService.activateLanguage(grammar.language!));
                 }
             }
         }
