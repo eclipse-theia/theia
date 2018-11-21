@@ -577,3 +577,22 @@ function provideLenses(document: theia.TextDocument): theia.ProviderResult<theia
     // code here
 }
 ```
+
+#### Code Symbol Provider
+
+A document symbol provider allows to add a custom logic for symbols detection.
+
+Example of code symbol provider registration:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const provider = { provideDocumentSymbols: provideSymbols };
+
+const disposable = theia.languages.registerDocumentSymbolProvider(documentsSelector, provider);
+
+...
+
+function provideSymbols(document: theia.TextDocument): theia.ProviderResult<theia.SymbolInformation[] | theia.DocumentSymbol[]> {
+    // code here
+}
+```
