@@ -47,6 +47,7 @@ import {
     DefinitionLink,
     DocumentLink,
     CodeLensSymbol,
+    DocumentSymbol,
     ReferenceContext,
     Location
 } from '../api/model';
@@ -62,6 +63,7 @@ import { CodeActionAdapter } from './languages/code-action';
 import { LinkProviderAdapter } from './languages/link-provider';
 import { CodeLensAdapter } from './languages/lens';
 import { CommandRegistryImpl } from './command-registry';
+import { OutlineAdapter } from './languages/outline';
 import { ReferenceAdapter } from './languages/reference';
 
 type Adapter = CompletionAdapter |
@@ -74,6 +76,7 @@ type Adapter = CompletionAdapter |
     LinkProviderAdapter |
     CodeLensAdapter |
     CodeActionAdapter |
+    OutlineAdapter |
     LinkProviderAdapter |
     ReferenceAdapter;
 
@@ -362,8 +365,13 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Document Symbol Provider begin
     registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
-        // FIXME: to implement
-        return new Disposable(() => { });
+        const callId = this.addNewAdapter(new OutlineAdapter(this.documents, provider));
+        this.proxy.$registerOutlineSupport(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideDocumentSymbols(handle: number, resource: UriComponents): Promise<DocumentSymbol[] | undefined> {
+        return this.withAdapter(handle, OutlineAdapter, adapter => adapter.provideDocumentSymbols(URI.revive(resource)));
     }
     // ### Document Symbol Provider end
 

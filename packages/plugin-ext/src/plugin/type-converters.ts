@@ -397,6 +397,78 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
     return result;
 }
 
+export namespace SymbolKind {
+    // tslint:disable-next-line:no-null-keyword
+    const fromMapping: { [kind: number]: model.SymbolKind } = Object.create(null);
+    fromMapping[types.SymbolKind.File] = model.SymbolKind.File;
+    fromMapping[types.SymbolKind.Module] = model.SymbolKind.Module;
+    fromMapping[types.SymbolKind.Namespace] = model.SymbolKind.Namespace;
+    fromMapping[types.SymbolKind.Package] = model.SymbolKind.Package;
+    fromMapping[types.SymbolKind.Class] = model.SymbolKind.Class;
+    fromMapping[types.SymbolKind.Method] = model.SymbolKind.Method;
+    fromMapping[types.SymbolKind.Property] = model.SymbolKind.Property;
+    fromMapping[types.SymbolKind.Field] = model.SymbolKind.Field;
+    fromMapping[types.SymbolKind.Constructor] = model.SymbolKind.Constructor;
+    fromMapping[types.SymbolKind.Enum] = model.SymbolKind.Enum;
+    fromMapping[types.SymbolKind.Interface] = model.SymbolKind.Interface;
+    fromMapping[types.SymbolKind.Function] = model.SymbolKind.Function;
+    fromMapping[types.SymbolKind.Variable] = model.SymbolKind.Variable;
+    fromMapping[types.SymbolKind.Constant] = model.SymbolKind.Constant;
+    fromMapping[types.SymbolKind.String] = model.SymbolKind.String;
+    fromMapping[types.SymbolKind.Number] = model.SymbolKind.Number;
+    fromMapping[types.SymbolKind.Boolean] = model.SymbolKind.Boolean;
+    fromMapping[types.SymbolKind.Array] = model.SymbolKind.Array;
+    fromMapping[types.SymbolKind.Object] = model.SymbolKind.Object;
+    fromMapping[types.SymbolKind.Key] = model.SymbolKind.Key;
+    fromMapping[types.SymbolKind.Null] = model.SymbolKind.Null;
+    fromMapping[types.SymbolKind.EnumMember] = model.SymbolKind.EnumMember;
+    fromMapping[types.SymbolKind.Struct] = model.SymbolKind.Struct;
+    fromMapping[types.SymbolKind.Event] = model.SymbolKind.Event;
+    fromMapping[types.SymbolKind.Operator] = model.SymbolKind.Operator;
+    fromMapping[types.SymbolKind.TypeParameter] = model.SymbolKind.TypeParameter;
+
+    export function fromSymbolKind(kind: theia.SymbolKind): model.SymbolKind {
+        return fromMapping[kind] || model.SymbolKind.Property;
+    }
+
+    export function toSymbolKind(kind: model.SymbolKind): theia.SymbolKind {
+        for (const k in fromMapping) {
+            if (fromMapping[k] === kind) {
+                return Number(k);
+            }
+        }
+        return types.SymbolKind.Property;
+    }
+}
+
+export function fromDocumentSymbol(info: theia.DocumentSymbol): model.DocumentSymbol {
+    const result: model.DocumentSymbol = {
+        name: info.name,
+        detail: info.detail,
+        range: fromRange(info.range)!,
+        selectionRange: fromRange(info.selectionRange)!,
+        kind: SymbolKind.fromSymbolKind(info.kind)
+    };
+    if (info.children) {
+        result.children = info.children.map(fromDocumentSymbol);
+    }
+    return result;
+}
+
+export function toDocumentSymbol(info: model.DocumentSymbol): theia.DocumentSymbol {
+    const result = new types.DocumentSymbol(
+        info.name,
+        info.detail,
+        SymbolKind.toSymbolKind(info.kind),
+        toRange(info.range),
+        toRange(info.selectionRange),
+    );
+    if (info.children) {
+        result.children = info.children.map(toDocumentSymbol) as any;
+    }
+    return result;
+}
+
 export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.WorkspaceFolder {
     return {
         uri: URI.revive(folder.uri),

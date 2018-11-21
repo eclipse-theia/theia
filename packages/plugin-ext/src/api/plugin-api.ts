@@ -43,6 +43,7 @@ import {
     CodeLensSymbol,
     Command,
     TextEdit,
+    DocumentSymbol,
     ReferenceContext,
     Location
 } from './model';
@@ -752,6 +753,7 @@ export interface LanguagesExt {
         rangeOrSelection: Range | Selection,
         context: monaco.languages.CodeActionContext
     ): Promise<monaco.languages.CodeAction[]>;
+    $provideDocumentSymbols(handle: number, resource: UriComponents): Promise<DocumentSymbol[] | undefined>;
 }
 
 export interface LanguagesMain {
@@ -772,6 +774,7 @@ export interface LanguagesMain {
     $registerDocumentLinkProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerCodeLensSupport(handle: number, selector: SerializedDocumentFilter[], eventHandle?: number): void;
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
+    $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {
