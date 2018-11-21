@@ -151,17 +151,6 @@ class ProgressNotificationImpl implements ProgressNotification {
             return;
         }
         element.remove();
-        const actions = this.properties.actions;
-        if (!actions) {
-            return;
-        }
-        actions.filter(action => action.label === 'Close')
-            .forEach(action => action.fn(
-                <Notification>{
-                    element,
-                    properties: this.properties
-                })
-            );
     }
 
     show(): void {

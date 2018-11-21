@@ -16,6 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ILogger } from './logger';
+import { CancellationToken } from './cancellation';
 
 export const messageServicePath = '/services/messageService';
 
@@ -28,20 +29,46 @@ export enum MessageType {
 }
 
 export interface Message {
-    type: MessageType;
-    text: string;
-    actions?: string[];
-    options?: MessageOptions;
+    readonly type?: MessageType;
+    readonly text: string;
+    readonly actions?: string[];
+    readonly options?: MessageOptions;
 }
 
-export interface ProgressMessageArguments {
-    text: string;
-    onCancel?: (id: string) => void;
-    actions?: string[];
+export interface ProgressMessage extends Message {
+    readonly type?: MessageType.Progress;
+    readonly options?: ProgressMessageOptions;
+}
+export namespace ProgressMessage {
+    export const Cancel = 'Cancel';
+    export function isCancelable(message: ProgressMessage): boolean {
+        return !message.options
+            || message.options.cancelable === undefined
+            || message.options.cancelable === true;
+    }
 }
 
 export interface MessageOptions {
-    timeout?: number;
+    readonly timeout?: number;
+}
+
+export interface ProgressMessageOptions extends MessageOptions {
+    /**
+     * Default: `true`
+     */
+    readonly cancelable?: boolean;
+}
+
+export interface Progress {
+    readonly id: string;
+    readonly report: (update: ProgressUpdate) => void;
+    readonly cancel: () => void;
+    readonly result: Promise<string | undefined>;
+}
+
+export interface ProgressUpdate {
+    readonly value?: string;
+    readonly increment?: number;
 }
 
 @injectable()
@@ -66,16 +93,8 @@ export class MessageClient {
      *
      * To be implemented by an extension, e.g. by the messages extension.
      */
-    newProgress(message: ProgressMessageArguments): Promise<ProgressToken| undefined> {
-        return Promise.resolve(undefined);
-    }
-
-    /**
-     * Hide progress message.
-     *
-     * To be implemented by an extension, e.g. by the messages extension.
-     */
-    stopProgress(progress: ProgressToken): Promise<void> {
+    showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
+        this.logger.info(message.text);
         return Promise.resolve(undefined);
     }
 
@@ -84,7 +103,7 @@ export class MessageClient {
      *
      * To be implemented by an extension, e.g. by the messages extension.
      */
-    reportProgress(progress: ProgressToken, update: ProgressUpdate): Promise<void> {
+    reportProgress(progressId: string, update: ProgressUpdate): Promise<void> {
         return Promise.resolve(undefined);
     }
 }
@@ -100,13 +119,16 @@ export class DispatchingMessageClient extends MessageClient {
         ));
     }
 
-}
+    showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
+        return Promise.race([...this.clients].map(client =>
+            client.showProgress(progressId, message, cancellationToken)
+        ));
+    }
 
-export interface ProgressToken {
-    id: string;
-}
+    reportProgress(progressId: string, update: ProgressUpdate): Promise<void> {
+        return Promise.race([...this.clients].map(client =>
+            client.reportProgress(progressId, update)
+        ));
+    }
 
-export interface ProgressUpdate {
-    value?: string;
-    increment?: number;
 }

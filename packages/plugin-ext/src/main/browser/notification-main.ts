@@ -15,39 +15,42 @@
  ********************************************************************************/
 
 import { MAIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../../api/plugin-api';
-import { MessageService } from '@theia/core/lib/common/message-service';
+import { MessageService, Progress } from '@theia/core/lib/common';
 import { interfaces } from 'inversify';
 import { RPCProtocol } from '../../api/rpc-protocol';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export class NotificationMainImpl implements NotificationMain {
 
     private readonly proxy: NotificationExt;
     private readonly messageService: MessageService;
+    private readonly progress = new Map<string, Progress>();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTIFICATION_EXT);
         this.messageService = container.get(MessageService);
     }
 
-    async $startProgress(message: string): Promise<string | undefined> {
-        const progress = await this.messageService.newProgress({
-            text: message,
-            onCancel: id => {
-                this.proxy.$onCancel(id);
-            }
-        });
-        if (progress) {
-            return Promise.resolve(progress.id);
-        } else {
-            throw new Error('Failed to start progress notification');
-        }
+    async $startProgress(message: string): Promise<string> {
+        const deferredId = new Deferred<string>();
+        const onDidClose = async () => this.proxy.$onCancel(await deferredId.promise);
+        const progress = await this.messageService.showProgress({ text: message, options: { cancelable: true } }, onDidClose);
+        deferredId.resolve(progress.id);
+        this.progress.set(progress.id, progress);
+        return progress.id;
     }
 
     $stopProgress(id: string): void {
-        this.messageService.stopProgress({ id });
+        const progress = this.progress.get(id);
+        if (progress) {
+            progress.cancel();
+        }
     }
 
     $updateProgress(id: string, item: { message?: string, increment?: number }): void {
-        this.messageService.reportProgress({ id }, { value: item.message, increment: item.increment });
+        const progress = this.progress.get(id);
+        if (progress) {
+            progress.report({ value: item.message, increment: item.increment });
+        }
     }
 }

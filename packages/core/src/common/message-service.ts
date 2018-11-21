@@ -19,10 +19,11 @@ import {
     MessageClient,
     MessageType,
     MessageOptions,
-    ProgressToken,
+    Progress,
     ProgressUpdate,
-    ProgressMessageArguments
+    ProgressMessage
 } from './message-service-protocol';
+import { CancellationTokenSource } from './cancellation';
 
 @injectable()
 export class MessageService {
@@ -72,15 +73,37 @@ export class MessageService {
         return this.client.showMessage({ type, text });
     }
 
-    newProgress(message: ProgressMessageArguments): Promise<ProgressToken | undefined> {
-        return this.client.newProgress(message);
+    async showProgress(message: ProgressMessage, onDidCancel?: () => void): Promise<Progress> {
+        const id = this.newProgressId();
+        const cancellationSource = new CancellationTokenSource();
+        const report = (update: ProgressUpdate) => {
+            this.client.reportProgress(id, update);
+        };
+        let clientMessage = message;
+        if (ProgressMessage.isCancelable(message)) {
+            const actions = new Set<string>(message.actions);
+            actions.add(ProgressMessage.Cancel);
+            clientMessage = { ...message, actions: Array.from(actions) };
+        }
+        const result = this.client.showProgress(id, clientMessage, cancellationSource.token);
+        if (ProgressMessage.isCancelable(message) && typeof onDidCancel === 'function') {
+            result.then(value => {
+                if (value === ProgressMessage.Cancel) {
+                    onDidCancel();
+                }
+            });
+        }
+        return {
+            id,
+            cancel: () => cancellationSource.cancel(),
+            result,
+            report
+        };
     }
 
-    stopProgress(progress: ProgressToken): Promise<void> {
-        return this.client.stopProgress(progress);
-    }
-
-    reportProgress(progress: ProgressToken, update: ProgressUpdate): Promise<void> {
-        return this.client.reportProgress(progress, update);
+    private progressIdPrefix = Math.random().toString(36).substring(5);
+    private counter = 0;
+    protected newProgressId(): string {
+        return `${this.progressIdPrefix}-${++this.counter}`;
     }
 }

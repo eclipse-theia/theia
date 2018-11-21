@@ -19,9 +19,9 @@ import {
     MessageClient,
     MessageType,
     Message,
-    ProgressMessageArguments,
-    ProgressToken,
-    ProgressUpdate
+    ProgressMessage,
+    ProgressUpdate,
+    CancellationToken
 } from '@theia/core/lib/common';
 import { Notifications, NotificationAction, NotificationProperties, ProgressNotification} from './notifications';
 import { NotificationPreferences } from './notification-preferences';
@@ -36,41 +36,37 @@ export class NotificationsMessageClient extends MessageClient {
         return this.show(message);
     }
 
-    newProgress(message: ProgressMessageArguments): Promise<ProgressToken | undefined> {
-        const messageArguments = { type: MessageType.Progress, text: message.text, options: { timeout: 0 }, actions: message.actions };
-        const key = this.getKey(messageArguments);
-        if (this.visibleProgressNotifications.has(key)) {
-            return Promise.resolve({ id: key });
+    showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
+        const messageArguments = { ...message, type: MessageType.Progress, options: { ...(message.options || {}), timeout: 0 } };
+        if (this.visibleProgressNotifications.has(progressId)) {
+            throw new Error('Cannot show new progress with already existing id.');
         }
-        const progressNotification = this.notifications.create(this.getNotificationProperties(
-            key,
-            messageArguments,
-            () => {
-                const onCancel = message.onCancel;
-                if (onCancel) {
-                    onCancel(key);
-                }
-                this.visibleProgressNotifications.delete(key);
+        return new Promise(resolve => {
+            const progressNotification = this.notifications.create(this.getNotificationProperties(progressId, messageArguments, action => {
+                this.visibleProgressNotifications.delete(progressId);
+                resolve(action);
             }));
-        this.visibleProgressNotifications.set(key, progressNotification);
-        progressNotification.show();
-        return Promise.resolve({ id: key });
+            this.visibleProgressNotifications.set(progressId, progressNotification);
+            progressNotification.show();
+            const cancel = () => {
+                if (message.options && message.options.cancelable) {
+                    resolve(ProgressMessage.Cancel);
+                }
+                progressNotification.close();
+            };
+            if (cancellationToken.isCancellationRequested) {
+                cancel();
+            } else {
+                cancellationToken.onCancellationRequested(cancel);
+            }
+        });
     }
 
-    stopProgress(progress: ProgressToken): Promise<void> {
-        const progressMessage = this.visibleProgressNotifications.get(progress.id);
-        if (progressMessage) {
-            progressMessage.close();
-        }
-        return Promise.resolve(undefined);
-    }
-
-    reportProgress(progress: ProgressToken, update: ProgressUpdate): Promise<void> {
-        const notification = this.visibleProgressNotifications.get(progress.id);
+    async reportProgress(progressId: string, update: ProgressUpdate): Promise<void> {
+        const notification = this.visibleProgressNotifications.get(progressId);
         if (notification) {
             notification.update({ message: update.value, increment: update.increment });
         }
-        return Promise.resolve(undefined);
     }
 
     protected visibleMessages = new Set<string>();
@@ -82,9 +78,9 @@ export class NotificationsMessageClient extends MessageClient {
         }
         this.visibleMessages.add(key);
         return new Promise(resolve => {
-            this.notifications.show(this.getNotificationProperties(key, message, a => {
+            this.notifications.show(this.getNotificationProperties(key, message, action => {
                 this.visibleMessages.delete(key);
-                resolve(a);
+                resolve(action);
             }));
         });
     }
@@ -120,7 +116,7 @@ export class NotificationsMessageClient extends MessageClient {
         };
     }
 
-    protected iconFor(type: MessageType): string {
+    protected iconFor(type: MessageType | undefined): string {
         switch (type) {
             case MessageType.Error: return 'error';
             case MessageType.Warning: return 'warning';
