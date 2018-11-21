@@ -17,6 +17,7 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
+import { WindowService } from './window/window-service';
 
 export const StorageService = Symbol('IStorageService');
 /**
@@ -44,8 +45,10 @@ interface LocalStorage {
 @injectable()
 export class LocalStorageService implements StorageService {
     private storage: LocalStorage;
+
     @inject(ILogger) protected logger: ILogger;
     @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(WindowService) protected readonly windowService: WindowService;
 
     @postConstruct()
     protected init() {
@@ -93,7 +96,7 @@ export class LocalStorageService implements StorageService {
         your browser's local storage or choose to clear all.`;
         this.messageService.warn(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION, CLEAR_STORAGE_ACTION).then(async selected => {
             if (READ_INSTRUCTIONS_ACTION === selected) {
-                window.open('https://github.com/theia-ide/theia/wiki/Cleaning-Local-Storage');
+                this.windowService.openNewWindow('https://github.com/theia-ide/theia/wiki/Cleaning-Local-Storage', { external: true });
             } else if (CLEAR_STORAGE_ACTION === selected) {
                 this.clearStorage();
             }

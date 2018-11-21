@@ -158,6 +158,9 @@ if (isMaster) {
         ipcMain.on('create-new-window', (event, url) => {
             createNewWindow(url);
         });
+        ipcMain.on('open-external', (event, url) => {
+            shell.openExternal(url);
+        });
 
         // Check whether we are in bundled application or development mode.
         // @ts-ignore
