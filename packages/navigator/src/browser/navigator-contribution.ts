@@ -18,25 +18,29 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-    OpenerService, FrontendApplicationContribution, FrontendApplication
+    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
-import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from '@theia/core/lib/common';
+import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command } from '@theia/core/lib/common';
 import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
 import { WorkspaceCommands, WorkspaceService, WorkspacePreferences } from '@theia/workspace/lib/browser';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from './navigator-filter';
+import { WorkspaceNode } from './navigator-tree';
 
 export namespace FileNavigatorCommands {
-    export const REVEAL_IN_NAVIGATOR = {
+    export const REVEAL_IN_NAVIGATOR: Command = {
         id: 'navigator.reveal',
         label: 'Reveal in Files'
     };
-    export const TOGGLE_HIDDEN_FILES = {
+    export const TOGGLE_HIDDEN_FILES: Command = {
         id: 'navigator.toggle.hidden.files',
         label: 'Toggle Hidden Files'
+    };
+    export const COLLAPSE_ALL: Command = {
+        id: 'navigator.collapse.all'
     };
 }
 
@@ -50,6 +54,7 @@ export namespace NavigatorContextMenu {
     export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
     export const DIFF = [...NAVIGATOR_CONTEXT_MENU, '5_diff'];
     export const WORKSPACE = [...NAVIGATOR_CONTEXT_MENU, '6_workspace'];
+    export const ACTIONS = [...NAVIGATOR_CONTEXT_MENU, '7_actions'];
 }
 
 @injectable()
@@ -97,6 +102,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             },
             isEnabled: () => true,
             isVisible: () => true
+        });
+        registry.registerCommand(FileNavigatorCommands.COLLAPSE_ALL, {
+            execute: () => this.collapseFileNavigatorTree(),
+            isEnabled: () => this.workspaceService.opened,
+            isVisible: () => this.workspaceService.opened
         });
     }
 
@@ -157,6 +167,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.DIFF, {
             commandId: WorkspaceCommands.FILE_COMPARE.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.ACTIONS, {
+            commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
+            label: 'Collapse All'
         });
 
         this.workspacePreferences.ready.then(() => {
@@ -228,4 +242,28 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             this.selectWidgetFileNode(this.shell.currentWidget);
         }
     }
+
+    /**
+     * Collapse file navigator nodes and set focus on first visible node
+     * - single root workspace: collapse all nodes except root
+     * - multiple root workspace: collapse all nodes, even roots
+     */
+    async collapseFileNavigatorTree(): Promise<void> {
+        const { model } = await this.widget;
+
+        // collapse all child nodes which are not the root (single root workspace)
+        // collapse all root nodes (multiple root workspace)
+        let root = model.root as CompositeTreeNode;
+        if (WorkspaceNode.is(root) && root.children.length === 1) {
+            root = root.children[0];
+        }
+        root.children.forEach(child => CompositeTreeNode.is(child) && model.collapseAll(child));
+
+        // select first visible node
+        const firstChild = WorkspaceNode.is(root) ? root.children[0] : root;
+        if (SelectableTreeNode.is(firstChild)) {
+            await model.selectNode(firstChild);
+        }
+    }
+
 }
