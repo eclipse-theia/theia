@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { isOSX } from '@theia/core/lib/common/os';
 import { EditorManager } from '@theia/editor/lib/browser';
 import {
     KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry
@@ -44,7 +45,7 @@ export class CppKeybindingContribution implements KeybindingContribution {
             {
                 command: 'switch_source_header',
                 context: this.cppKeybindingContext.id,
-                keybinding: 'alt+o'
+                keybinding: isOSX ? 'option+cmd+o' : 'alt+o'
             }
         ].forEach(binding => {
             registry.registerKeybinding(binding);
