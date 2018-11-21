@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { CommonCommands, CorePreferences } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode,
@@ -38,6 +38,8 @@ export const CLASS = 'theia-Files';
 
 @injectable()
 export class FileNavigatorWidget extends FileTreeWidget {
+
+    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -190,6 +192,13 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 </button>
             </div>
         </div>;
+    }
+
+    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        if (node && this.corePreferences['list.openMode'] === 'singleClick') {
+            this.model.previewNode(node);
+        }
+        super.handleClickEvent(node, event);
     }
 
 }
