@@ -148,6 +148,13 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             return false;
         }
         const targetUri = node.uri.resolve(uri.path.base);
+        /* Check if the folder is copied on itself */
+        const sourcePath = uri.path.toString();
+        const targetPath = node.uri.path.toString();
+        if (sourcePath === targetPath) {
+            return false;
+        }
+
         this.fileSystem.copy(uri.toString(), targetUri.toString());
         return true;
     }
