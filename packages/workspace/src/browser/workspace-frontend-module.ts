@@ -40,6 +40,8 @@ import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribut
 import { bindWorkspacePreferences } from './workspace-preferences';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
+import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
+import { WorkspaceUtils } from './workspace-utils';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -70,6 +72,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
     bind(WorkspaceDeleteHandler).toSelf().inSingletonScope();
+    bind(WorkspaceDuplicateHandler).toSelf().inSingletonScope();
 
     bind(WorkspaceStorageService).toSelf().inSingletonScope();
     rebind(StorageService).toService(WorkspaceStorageService);
@@ -78,4 +81,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(VariableContribution).to(WorkspaceVariableContribution).inSingletonScope();
 
     bind(QuickOpenWorkspace).toSelf().inSingletonScope();
+
+    bind(WorkspaceUtils).toSelf().inSingletonScope();
 });
