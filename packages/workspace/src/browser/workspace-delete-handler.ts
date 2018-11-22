@@ -37,6 +37,10 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         return !!uris.length && !this.isRootDeleted(uris);
     }
 
+    isEnabled(uris: URI[]): boolean {
+        return !!uris.length && !this.isRootDeleted(uris);
+    }
+
     protected isRootDeleted(uris: URI[]): boolean {
         const rootUris = this.workspaceService.tryGetRoots().map(root => new URI(root.uri));
         return rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
