@@ -30,6 +30,8 @@ import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspacePreferences } from './workspace-preferences';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
+import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
+import { FileSystemUtils } from '@theia/filesystem/lib/common';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -150,6 +152,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspacePreferences) protected readonly preferences: WorkspacePreferences;
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
+    @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
 
     registerCommands(registry: CommandRegistry): void {
         this.openerService.getOpeners().then(openers => {
@@ -166,7 +169,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
                     const parentUri = new URI(parent.uri);
-                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
+                    const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, 'Untitled', '.txt');
                     const dialog = new SingleTextInputDialog({
                         title: 'New File',
                         initialValue: vacantChildUri.path.base,
@@ -187,7 +190,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
                     const parentUri = new URI(parent.uri);
-                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
+                    const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, 'Untitled');
                     const dialog = new SingleTextInputDialog({
                         title: 'New Folder',
                         initialValue: vacantChildUri.path.base,
@@ -234,24 +237,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             })
         }));
-        registry.registerCommand(WorkspaceCommands.FILE_DUPLICATE, this.newMultiUriAwareCommandHandler({
-            execute: async uris => {
-                await Promise.all(uris.map(async uri => {
-                    const parent = await this.getParent(uri);
-                    if (parent) {
-                        const parentUri = new URI(parent.uri);
-                        const name = uri.path.name + '_copy';
-                        const ext = uri.path.ext;
-                        const target = this.findVacantChildUri(parentUri, parent, name, ext);
-                        try {
-                            this.fileSystem.copy(uri.toString(), target.toString());
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    }
-                }));
-            }
-        }));
+        registry.registerCommand(WorkspaceCommands.FILE_DUPLICATE, this.newMultiUriAwareCommandHandler(this.duplicateHandler));
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler(this.deleteHandler));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
             isVisible: uris => uris.length === 2,
@@ -368,18 +354,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
     protected getParent(candidate: URI): Promise<FileStat | undefined> {
         return this.fileSystem.getFileStat(candidate.parent.toString());
-    }
-
-    protected findVacantChildUri(parentUri: URI, parent: FileStat, name: string, ext: string = ''): URI {
-        const children = !parent.children ? [] : parent.children!.map(child => new URI(child.uri));
-
-        let index = 1;
-        let base = name + ext;
-        while (children.some(child => child.path.base === base)) {
-            index = index + 1;
-            base = name + '_' + index + ext;
-        }
-        return parentUri.resolve(base);
     }
 
     protected async addFolderToWorkspace(uri: URI | undefined): Promise<void> {

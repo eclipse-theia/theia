@@ -20,7 +20,12 @@ import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } fr
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
+import { WorkspaceUtils } from './workspace-utils';
 
+/**
+ * Workspace Delete URI CommandHandler
+ * @class
+ */
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
@@ -30,22 +35,35 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(WorkspaceUtils)
+    protected readonly workspaceUtils: WorkspaceUtils;
+
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    /**
+     * Determine if the given command is visible
+     * @param uris
+     * @returns true if the given @param uris is not undefined, and does not contain a root directory
+     */
     isVisible(uris: URI[]): boolean {
-        return !!uris.length && !this.isRootDeleted(uris);
+        return !!uris.length && !this.workspaceUtils.containsRootDirectory(uris);
     }
 
+    /**
+     * Determine if the given command is enabled
+     * @param uris
+     * @returns true if the given @param uris is not undefined, and does not contain a root directory
+     */
     isEnabled(uris: URI[]): boolean {
-        return !!uris.length && !this.isRootDeleted(uris);
+        return !!uris.length && !this.workspaceUtils.containsRootDirectory(uris);
     }
 
-    protected isRootDeleted(uris: URI[]): boolean {
-        const rootUris = this.workspaceService.tryGetRoots().map(root => new URI(root.uri));
-        return rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
-    }
-
+    /**
+     * Excute the given command
+     * @param uris
+     * @returns Promise<void>
+     */
     async execute(uris: URI[]): Promise<void> {
         const distinctUris = URI.getDistinctParents(uris);
         if (await this.confirm(distinctUris)) {
@@ -53,6 +71,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         }
     }
 
+    /**
+     * Confirm delete action
+     * @param uris
+     * @returns Promise<boolean | undefined>
+     */
     protected confirm(uris: URI[]): Promise<boolean | undefined> {
         return new ConfirmDialog({
             title: `Delete File${uris.length === 1 ? '' : 's'}`,
@@ -60,6 +83,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         }).open();
     }
 
+    /**
+     * Get delete confirmation message
+     * @param uris
+     * @returns string | HTMLElement
+     */
     protected getConfirmMessage(uris: URI[]): string | HTMLElement {
         const dirty = this.getDirty(uris);
         if (dirty.length) {
@@ -87,6 +115,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         return messageContainer;
     }
 
+    /**
+     * Get URIs which are dirty
+     * @param uris
+     * @returns URI[]
+     */
     protected getDirty(uris: URI[]): URI[] {
         const dirty = new Map<string, URI>();
         const widgets = NavigatableWidget.getAffected(SaveableWidget.getDirty(this.shell.widgets), uris);
@@ -96,6 +129,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         return [...dirty.values()];
     }
 
+    /**
+     * Perform deletion
+     * @param uri to be deleted
+     * @returns Promise<void>
+     */
     protected async delete(uri: URI): Promise<void> {
         try {
             this.closeWithoutSaving(uri);
@@ -105,6 +143,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         }
     }
 
+    /**
+     * Close widget without saving
+     * @param uri
+     * @returns Promise<void>
+     */
     protected async closeWithoutSaving(uri: URI): Promise<void> {
         for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, uri)) {
             if (SaveableWidget.is(widget)) {
