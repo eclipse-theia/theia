@@ -36,7 +36,8 @@ import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
 import {
     QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickPickService, QuickOpenContribution,
-    QuickOpenHandlerRegistry, CommandQuickOpenContribution, HelpQuickOpenHandler, QuickOpenFrontendContribution, PrefixQuickOpenService
+    QuickOpenHandlerRegistry, CommandQuickOpenContribution, HelpQuickOpenHandler,
+    QuickOpenFrontendContribution, PrefixQuickOpenService, QuickInputService
 } from './quick-open';
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
@@ -145,6 +146,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(QuickOpenService).toSelf().inSingletonScope();
     bind(QuickPickService).toSelf().inSingletonScope();
+    bind(QuickInputService).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>

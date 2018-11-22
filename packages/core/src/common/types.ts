@@ -23,7 +23,7 @@ export type RecursivePartial<T> = {
     [P in keyof T]?: RecursivePartial<T[P]>;
 };
 export type MaybeArray<T> = T | T[];
-export type MaybePromise<T> = T | Promise<T>;
+export type MaybePromise<T> = T | Promise<T> | PromiseLike<T>;
 
 export interface Prioritizeable<T> {
     readonly priority: number;

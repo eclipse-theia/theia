@@ -16,12 +16,15 @@
 
 import { injectable } from 'inversify';
 import { QuickOpenModel } from './quick-open-model';
+import { MessageType } from '../../common/message-service-protocol';
 
 export type QuickOpenOptions = Partial<QuickOpenOptions.Resolved>;
 export namespace QuickOpenOptions {
     export interface Resolved {
         readonly prefix: string;
         readonly placeholder: string;
+        readonly password: boolean;
+        readonly ignoreFocusOut: boolean;
 
         readonly fuzzyMatchLabel: boolean;
         readonly fuzzyMatchDetail: boolean;
@@ -43,6 +46,8 @@ export namespace QuickOpenOptions {
     export const defaultOptions: Resolved = Object.freeze({
         prefix: '',
         placeholder: '',
+        password: false,
+        ignoreFocusOut: false,
 
         fuzzyMatchLabel: false,
         fuzzyMatchDetail: false,
@@ -67,7 +72,7 @@ export class QuickOpenService {
     /**
      * It should be implemented by an extension, e.g. by the monaco extension.
      */
-    open(model: QuickOpenModel, options?: QuickOpenOptions): void {
-        // no-op
-    }
+    open(model: QuickOpenModel, options?: QuickOpenOptions): void {}
+    showDecoration(type: MessageType): void {}
+    hideDecoration(): void {}
 }
