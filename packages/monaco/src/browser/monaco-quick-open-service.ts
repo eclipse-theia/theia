@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
+import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenOptions,
     QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
 } from '@theia/core/lib/browser';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { ILogger } from '@theia/core';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -38,7 +38,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
     protected opts: MonacoQuickOpenControllerOpts | undefined;
     protected previousActiveElement: Element | undefined;
 
-    constructor(@inject(ILogger) protected readonly logger: ILogger) {
+    constructor() {
         super();
         const overlayWidgets = document.createElement('div');
         overlayWidgets.classList.add('quick-open-overlay');
@@ -55,9 +55,23 @@ export class MonacoQuickOpenService extends QuickOpenService {
         this.internalOpen(new MonacoQuickOpenControllerOptsImpl(model, options));
     }
 
+    showDecoration(type: MessageType): void {
+        let decoration = monaco.MarkerSeverity.Info;
+        if (type === MessageType.Warning) {
+            decoration = monaco.MarkerSeverity.Warning;
+        } else if (type === MessageType.Error) {
+            decoration = monaco.MarkerSeverity.Error;
+        }
+        this.showInputDecoration(decoration);
+    }
+    hideDecoration(): void {
+        this.clearInputDecoration();
+    }
+
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
         this.opts = opts;
-        this.previousActiveElement = window.document.activeElement || undefined;
+        this.previousActiveElement = window.document.activeElement || undefined;
+        this.hideDecoration();
         this.widget.show(this.opts.prefix || '');
         this.setPlaceHolder(opts.inputAriaLabel);
         this.setPassword(opts.password ? true : false);
@@ -167,8 +181,16 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         return this.options.prefix;
     }
 
+    get password(): boolean {
+        return this.options.password;
+    }
+
+    get ignoreFocusOut(): boolean {
+        return this.options.ignoreFocusOut;
+    }
+
     get inputAriaLabel(): string {
-        return this.options.placeholder;
+        return this.options.placeholder || '';
     }
 
     onClose(cancelled: boolean): void {

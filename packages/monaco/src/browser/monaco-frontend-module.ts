@@ -40,7 +40,6 @@ import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { MonacoStrictEditorTextFocusContext } from './monaco-keybinding-contexts';
 import { MonacoFrontendApplicationContribution } from './monaco-frontend-application-contribution';
 import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bindings';
-import { QuickInputService } from './monaco-quick-input-service';
 import { MonacoSemanticHighlightingService } from './monaco-semantic-highlighting-service';
 import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
@@ -96,8 +95,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(QuickOpenService).toService(MonacoQuickOpenService);
 
     MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);
-
-    bind(QuickInputService).toSelf().inSingletonScope();
 
     bind(MonacoSemanticHighlightingService).toSelf().inSingletonScope();
     rebind(SemanticHighlightingService).to(MonacoSemanticHighlightingService).inSingletonScope();
