@@ -25,6 +25,7 @@ import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../api/model';
+import { Range } from 'vscode-languageserver-types';
 
 export class DocumentsMainImpl implements DocumentsMain {
 
@@ -110,13 +111,18 @@ export class DocumentsMainImpl implements DocumentsMain {
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
         try {
             let editorOpenerOptions: EditorOpenerOptions | undefined;
-            if (options && options.selection) {
-                const selection = options.selection;
-                editorOpenerOptions = {
-                    selection: {
+            if (options) {
+                let range: Range | undefined;
+                if (options.selection) {
+                    const selection = options.selection;
+                    range = {
                         start: { line: selection.startLineNumber - 1, character: selection.startColumn - 1 },
                         end: { line: selection.endLineNumber - 1, character: selection.endColumn - 1 }
-                    }
+                    };
+                }
+                editorOpenerOptions = {
+                    selection: range,
+                    mode: options.preserveFocus ? 'open' : 'activate'
                 };
             }
             await this.editorManger.open(new URI(uri.external!), editorOpenerOptions);

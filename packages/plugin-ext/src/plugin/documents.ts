@@ -23,7 +23,7 @@ import { DocumentDataExt, setWordDefinitionFor } from './document-data';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Range } from '../api/model';
+import { Range, TextDocumentShowOptions } from '../api/model';
 
 export class DocumentsExtImpl implements DocumentsExt {
     private toDispose = new DisposableCollection();
@@ -152,17 +152,24 @@ export class DocumentsExtImpl implements DocumentsExt {
     }
 
     private async loadDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
-        let range: Range | undefined;
-        if (options && options.selection) {
-            const { start, end } = options.selection;
-            range = {
-                startLineNumber: start.line,
-                startColumn: start.character,
-                endLineNumber: end.line,
-                endColumn: end.character
+        let documentOptions: TextDocumentShowOptions | undefined;
+        if (options) {
+            let selection: Range | undefined;
+            if (options.selection) {
+                const { start, end } = options.selection;
+                selection = {
+                    startLineNumber: start.line,
+                    startColumn: start.character,
+                    endLineNumber: end.line,
+                    endColumn: end.character
+                };
+            }
+            documentOptions = {
+                selection,
+                preserveFocus: options.preserveFocus
             };
         }
-        await this.proxy.$tryOpenDocument(uri, { selection: range });
+        await this.proxy.$tryOpenDocument(uri, documentOptions);
         return this.editorsAndDocuments.getDocument(uri.toString());
     }
 

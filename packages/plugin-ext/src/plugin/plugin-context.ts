@@ -164,8 +164,15 @@ export function createAPIFactory(
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
                 if (optionsArg) {
                     const optionsAny: any = optionsArg;
-                    if (optionsAny.selection) {
+                    if (optionsAny.preserveFocus || optionsAny.preview || optionsAny.selection) {
                         documentOptions = optionsArg as theia.TextDocumentShowOptions;
+                    }
+                }
+                if (preserveFocus) {
+                    if (documentOptions) {
+                        documentOptions.preserveFocus = preserveFocus;
+                    } else {
+                        documentOptions = { preserveFocus };
                     }
                 }
                 await documents.openDocument(uri, documentOptions);
