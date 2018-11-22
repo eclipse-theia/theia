@@ -19,8 +19,19 @@ import { UriComponents } from '../common/uri-components';
 
 // Should contains internal Plugin API types
 
+/**
+ * Represents options to configure the behavior of showing a document in an editor.
+ */
 export interface TextDocumentShowOptions {
+    /**
+     * An optional selection to apply for the document in the editor.
+     */
     selection?: Range;
+
+    /**
+     * An optional flag that when `true` will stop the editor from taking focus.
+     */
+    preserveFocus?: boolean;
 }
 
 export interface Range {
