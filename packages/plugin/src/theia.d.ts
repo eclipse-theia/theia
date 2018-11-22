@@ -2376,7 +2376,7 @@ declare module '@theia/plugin' {
          * @param preserveFocus When `true` the editor will not take focus.
          * @return A promise that resolves to an [editor](#TextEditor).
          */
-        export function showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Thenable<TextEditor>;
+        export function showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): PromiseLike<TextEditor>;
 
         /**
          * Show the given document in a text editor. [Options](#TextDocumentShowOptions) can be provided
@@ -2386,7 +2386,7 @@ declare module '@theia/plugin' {
          * @param options [Editor options](#TextDocumentShowOptions) to configure the behavior of showing the [editor](#TextEditor).
          * @return A promise that resolves to an [editor](#TextEditor).
          */
-        export function showTextDocument(document: TextDocument, options?: TextDocumentShowOptions): Thenable<TextEditor>;
+        export function showTextDocument(document: TextDocument, options?: TextDocumentShowOptions): PromiseLike<TextEditor>;
 
         /**
          * A short-hand for `openTextDocument(uri).then(document => showTextDocument(document, options))`.
@@ -2397,7 +2397,7 @@ declare module '@theia/plugin' {
          * @param options [Editor options](#TextDocumentShowOptions) to configure the behavior of showing the [editor](#TextEditor).
          * @return A promise that resolves to an [editor](#TextEditor).
          */
-        export function showTextDocument(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
+        export function showTextDocument(uri: Uri, options?: TextDocumentShowOptions): PromiseLike<TextEditor>;
 
         /**
          * Shows a selection list.
