@@ -59,7 +59,7 @@ export class LocationMapperService {
     }
 
     protected defaultMapper(): (location: string) => MaybePromise<string> {
-        return location => `http://${location}`;
+        return location => `${new Endpoint().httpScheme}//${location}`;
     }
 
     protected async prioritize(location: string): Promise<LocationMapper[]> {
