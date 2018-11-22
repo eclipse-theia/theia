@@ -284,6 +284,7 @@ export class MiniBrowserContent extends BaseWidget {
 
     constructor(@inject(MiniBrowserProps) protected readonly props: MiniBrowserProps) {
         super();
+        this.node.tabIndex = 0;
         this.addClass(MiniBrowserContent.Styles.MINI_BROWSER);
         this.input = this.createToolbar(this.node).input;
         const contentArea = this.createContentArea(this.node);
@@ -315,15 +316,18 @@ export class MiniBrowserContent extends BaseWidget {
         }));
         const { startPage } = this.props;
         if (startPage) {
-            setTimeout(() => this.go(startPage, true), 500);
+            setTimeout(() => this.go(startPage), 500);
             this.listenOnContentChange(startPage);
         }
     }
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        (this.getToolbarProps() !== 'hide' ? this.input : this.frame).focus();
-        this.update();
+        if (this.getToolbarProps() !== 'hide') {
+            this.input.focus();
+        } else {
+            this.node.focus();
+        }
     }
 
     protected async listenOnContentChange(location: string): Promise<void> {
@@ -334,7 +338,9 @@ export class MiniBrowserContent extends BaseWidget {
                 this.toDispose.push(watcher);
                 const onFileChange = (event: FileChangeEvent) => {
                     if (FileChangeEvent.isChanged(event, fileUri)) {
-                        this.go(location, false, false);
+                        this.go(location, {
+                            showLoadIndicator: false
+                        });
                     }
                 };
                 this.toDispose.push(this.fileSystemWatcher.onFilesChanged(debounce(onFileChange, 500)));
@@ -372,7 +378,9 @@ export class MiniBrowserContent extends BaseWidget {
         loadIndicator.style.display = 'none';
 
         const frame = this.createIFrame();
-        this.submitInputEmitter.event(input => this.go(input, true));
+        this.submitInputEmitter.event(input => this.go(input, {
+            preserveFocus: false
+        }));
         this.navigateBackEmitter.event(this.handleBack.bind(this));
         this.navigateForwardEmitter.event(this.handleForward.bind(this));
         this.refreshEmitter.event(this.handleRefresh.bind(this));
@@ -406,20 +414,6 @@ export class MiniBrowserContent extends BaseWidget {
 
     protected onFrameLoad(): void {
         this.hideLoadIndicator();
-        this.focus();
-    }
-
-    protected focus(): void {
-        const contentDocument = this.contentDocument();
-        if (contentDocument !== null && contentDocument.body) {
-            contentDocument.body.focus();
-        } else if (this.pdfContainer.style.display !== 'none') {
-            this.pdfContainer.focus();
-        } else if (this.getToolbarProps() !== 'hide') {
-            this.input.focus();
-        } else if (this.frame.parentElement) {
-            this.frame.parentElement.focus();
-        }
     }
 
     protected showLoadIndicator(): void {
@@ -458,7 +452,9 @@ export class MiniBrowserContent extends BaseWidget {
             // Security exception due to CORS when trying to access the `location.href` of the content document.
         }
         if (location) {
-            this.go(location, false, true);
+            this.go(location, {
+                preserveFocus: false
+            });
         }
     }
 
@@ -575,7 +571,17 @@ export class MiniBrowserContent extends BaseWidget {
         }
     }
 
-    protected async go(location: string, register: boolean = false, showLoadIndicator: boolean = true): Promise<void> {
+    protected async go(location: string, options?: Partial<{
+        /* default: true */
+        showLoadIndicator: boolean,
+        /* default: true */
+        preserveFocus: boolean
+    }>): Promise<void> {
+        const { showLoadIndicator, preserveFocus } = {
+            showLoadIndicator: true,
+            preserveFocus: true,
+            ...options
+        };
         if (location) {
             try {
                 this.toDisposeOnGo.dispose();
@@ -595,6 +601,9 @@ export class MiniBrowserContent extends BaseWidget {
                         fallbackLink: `<p style="padding: 0px 15px 0px 15px">Your browser does not support inline PDFs. Click on this <a href='[url]' target="_blank">link</a> to open the PDF in a new tab.</p>`
                     });
                     this.hideLoadIndicator();
+                    if (!preserveFocus) {
+                        this.pdfContainer.focus();
+                    }
                 } else {
                     if (this.props.resetBackground === true) {
                         this.frame.addEventListener('load', () => this.frame.style.backgroundColor = 'white', { once: true });
@@ -603,6 +612,14 @@ export class MiniBrowserContent extends BaseWidget {
                     this.frame.style.display = 'block';
                     this.frame.src = url;
                     // The load indicator will hide itself if the content of the iframe was loaded.
+                    if (!preserveFocus) {
+                        this.frame.addEventListener('load', () => {
+                            const window = this.frame.contentWindow;
+                            if (window) {
+                                window.focus();
+                            }
+                        }, { once: true });
+                    }
                 }
                 // Delegate all the `keypress` events from the `iframe` to the application.
                 this.toDisposeOnGo.push(addEventListener(this.frame, 'load', () => {
