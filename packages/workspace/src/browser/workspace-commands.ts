@@ -125,6 +125,11 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Save Workspace As...'
     };
+    export const LIANG_COM: Command = {
+        id: 'workspace:liang',
+        category: WORKSPACE_CATEGORY,
+        label: 'Run Liang Command'
+    };
 }
 
 @injectable()
@@ -292,6 +297,18 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     }
                 }
             }
+        }));
+        registry.registerCommand(WorkspaceCommands.LIANG_COM, this.newMultiUriAwareCommandHandler({
+            isEnabled: () => true,
+            isVisible: () => true,
+            execute: async uris =>
+                new Promise(resolve => {
+                    setTimeout(() => {
+                        console.log('Liang promise resolved');
+                        resolve();
+                    }, 5000);
+                }
+                )
         }));
         this.preferences.ready.then(() => {
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({

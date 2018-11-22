@@ -17,10 +17,10 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextDocumentSaveReason } from '@theia/languages/lib/browser';
-import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget, TextEditor, EditorPreferences } from '@theia/editor/lib/browser';
 import { EditorconfigService } from '../common/editorconfig-interface';
 import { KnownProps } from 'editorconfig';
-
+import { CommandService } from '@theia/core';
 @injectable()
 export class EditorconfigDocumentManager {
 
@@ -29,11 +29,17 @@ export class EditorconfigDocumentManager {
         CRLF: '\r\n'
     };
 
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
     @inject(EditorconfigService)
     protected readonly editorconfigServer: EditorconfigService;
+
+    @inject(EditorPreferences)
+    protected readonly editorPreferences: EditorPreferences;
 
     private properties: { [file: string]: KnownProps } = {};
 
@@ -61,29 +67,63 @@ export class EditorconfigDocumentManager {
     protected addOnSaveHandler(editorWidget: EditorWidget) {
         const monacoEditor = MonacoEditor.get(editorWidget);
         if (monacoEditor) {
+            monacoEditor.document.onDidSaveModel(event => {
+                // monacoEditor.document.save();
+                console.log(`onDidSaveModel   dirty: ${monacoEditor.document.dirty}`);
+            });
             monacoEditor.document.onWillSaveModel(event => {
+                console.log('onWillSaveModel should be first');
+                // this.formatDocument(monacoEditor).then(() => {
+                console.log(`------------command should have been done----------------- event: ${event}`);
                 event.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(resolve => {
                     const uri = monacoEditor.uri.toString();
                     const properties = this.properties[uri];
 
-                    const edits = [];
-                    edits.push(...this.getEditsTrimmingTrailingWhitespaces(monacoEditor, properties, event.reason));
-
+                    const edits: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                    // edits.push(...this.getEditsTrimmingTrailingWhitespaces(monacoEditor, properties, event.reason));
                     const edit = this.getEditInsertingFinalNewLine(monacoEditor, properties);
-                    if (edit) {
-                        edits.push(edit);
+                    return Promise.all([
+                        this.getEditsTrimmingTrailingWhitespaces(monacoEditor, properties, event.reason),
+                        this.formatDocument(monacoEditor)
+                    ]).then(() => {
+                        if (edit) {
+                            edits.push(edit);
 
-                        // get current cursor position
-                        const cursor = monacoEditor.cursor;
+                            // get current cursor position
+                            const cursor = monacoEditor.cursor;
 
-                        // and then restore it after resolving the promise
-                        setTimeout(() => {
-                            monacoEditor.cursor = cursor;
-                        }, 0);
-                    }
+                            // and then restore it after resolving the promise
+                            setTimeout(() => {
+                                monacoEditor.cursor = cursor;
+                            }, 0);
+                        }
+                        console.log('JB --- reformat should have been done');
+                        return resolve(edits);
+                    });
+                    // return this.formatDocument(monacoEditor).then(() => {
+                    //     // if (this.editorPreferences['editor.formatOnSave']) {
+                    //     //    monacoEditor.commandService.executeCommand('editor.action.formatDocument').then(() => {
 
-                    resolve(edits);
+                    //     if (edit) {
+                    //         edits.push(edit);
+
+                    //         // get current cursor position
+                    //         const cursor = monacoEditor.cursor;
+
+                    //         // and then restore it after resolving the promise
+                    //         setTimeout(() => {
+                    //             monacoEditor.cursor = cursor;
+                    //         }, 0);
+                    //     }
+                    //     console.log('JB --- reformat should have been done');
+                    //     return resolve(edits);
+                    // });
+
+                    // }
+
+                    // resolve(edits);
                 }));
+                // });
             });
         }
     }
@@ -206,10 +246,16 @@ export class EditorconfigDocumentManager {
      * preceding newline characters and false to ensure it doesn't.
      */
     ensureTrimTrailingWhitespace(editor: MonacoEditor, properties: KnownProps): void {
-        const edits = this.getEditsTrimmingTrailingWhitespaces(editor, properties);
-        if (edits.length > 0) {
-            editor.document.textEditorModel.applyEdits(edits);
-        }
+        // const edits = this.getEditsTrimmingTrailingWhitespaces(editor, properties);
+        // if (edits.length > 0) {
+        //     editor.document.textEditorModel.applyEdits(edits);
+        // }
+
+        this.getEditsTrimmingTrailingWhitespaces(editor, properties).then(edits => {
+            if (edits.length > 0) {
+                editor.document.textEditorModel.applyEdits(edits);
+            }
+        });
     }
 
     /**
@@ -218,14 +264,16 @@ export class EditorconfigDocumentManager {
      * @param editor editor
      * @param properties editorconfig properties
      */
-    private getEditsTrimmingTrailingWhitespaces(editor: MonacoEditor, properties: KnownProps, saveReason?: TextDocumentSaveReason): monaco.editor.IIdentifiedSingleEditOperation[] {
+    private async getEditsTrimmingTrailingWhitespaces(
+        editor: MonacoEditor, properties: KnownProps, saveReason?: TextDocumentSaveReason
+    ): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
         const edits = [];
 
         if (MonacoEditor.get(this.editorManager.activeEditor) === editor) {
             const trimReason = (saveReason !== TextDocumentSaveReason.Manual) ? 'auto-save' : undefined;
-            editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
+            await new Promise((resolve, reject) => editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
                 reason: trimReason
-            });
+            }).then(resolve, reject));
             return [];
         }
 
@@ -294,6 +342,37 @@ export class EditorconfigDocumentManager {
         }
 
         return undefined;
+    }
+
+    /**
+     * Format the document when the preference "editor.formatOnSave" is set and the
+     * "editor.autoSave" is set to "OFF". Only re-format when saving is done manually.
+     *
+     * @param editor editor
+     */
+    private async formatDocument(editor: MonacoEditor): Promise<void> {
+        if (MonacoEditor.get(this.editorManager.activeEditor) === editor) {
+            // console.log(`--JB formatOnSave: ${this.editorPreferences['editor.formatOnSave']}  editor.autoSave: ${this.editorPreferences['editor.autoSave']} `);
+            // if (this.editorPreferences['editor.formatOnSave'] && (this.editorPreferences['editor.autoSave']) === 'off') {
+            //     await editor.commandService.executeCommand('editor.action.formatDocument', {
+            //         aa: console.log('-----JBJB format document -------JBJB'),
+            //     });
+            // } else {
+            //     console.log('-----===== JB **NO** FORMAT on save');
+            // }
+            if (this.editorPreferences['editor.formatOnSave'] && (this.editorPreferences['editor.autoSave']) === 'off') {
+                await new Promise((resolve, reject) => {
+                    editor.commandService.executeCommand('editor.action.formatDocument').then(() => {
+                        console.log('----------------formatDocument JB----------------');
+                        resolve();
+                    }, () => {
+                        console.log('command rejected');
+                        reject();
+                    });
+                });
+
+            }
+        }
     }
 
 }
