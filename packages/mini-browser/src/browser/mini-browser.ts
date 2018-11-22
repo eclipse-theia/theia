@@ -34,11 +34,6 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
 
     static ID = 'mini-browser';
     static ICON = 'fa fa-globe';
-    /**
-     * A default URI to open the mini browser view (singleton widget).
-     * In order to create a new mini browser widget, a custom URI should be passed, e.g. a file URI.
-     */
-    static URI = new URI().withScheme('__minibrowser');
 
     @inject(MiniBrowserOptions)
     protected readonly options: MiniBrowserOptions;
@@ -49,11 +44,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
     @postConstruct()
     protected init(): void {
         const { uri } = this.options;
-        if (uri.toString() === MiniBrowser.URI.toString()) {
-            this.id = MiniBrowser.ID;
-        } else {
-            this.id = `${MiniBrowser.ID}:${uri.toString()}`;
-        }
+        this.id = `${MiniBrowser.ID}:${uri.toString()}`;
         this.title.closable = true;
         this.layout = new PanelLayout();
     }

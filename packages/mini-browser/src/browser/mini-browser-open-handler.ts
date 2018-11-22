@@ -18,6 +18,7 @@ import { Widget } from '@phosphor/widgets';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import { QuickInputService } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
@@ -37,6 +38,11 @@ export namespace MiniBrowserCommands {
     };
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source'
+    };
+    export const OPEN_URL: Command = {
+        id: 'mini-browser.openUrl',
+        category: 'Preview',
+        label: 'Open URL'
     };
 }
 
@@ -70,6 +76,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
     @inject(MiniBrowserService)
     protected readonly miniBrowserService: MiniBrowserService;
 
@@ -90,7 +99,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         return 0;
     }
 
-    async open(uri: URI = MiniBrowser.URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+    async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
         const widget = await super.open(uri, options);
         const area = this.shell.getAreaFor(widget);
         if (area && area !== 'main') {
@@ -159,6 +168,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             execute: widget => this.openSource(widget),
             isEnabled: widget => !!this.getSourceUri(widget),
             isVisible: widget => !!this.getSourceUri(widget)
+        });
+        commands.registerCommand(MiniBrowserCommands.OPEN_URL, {
+            execute: () => this.openUrl()
         });
     }
 
@@ -229,6 +241,31 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             return undefined;
         }
         return uri;
+    }
+
+    protected async openUrl(): Promise<void> {
+        const url = await this.quickInputService.open({
+            prompt: 'URL to open',
+            placeHolder: 'Type a URL'
+        });
+        if (url) {
+            await this.openPreview(url);
+        }
+    }
+
+    static PREVIEW_URI = new URI().withScheme('__minibrowser__preview__');
+    async openPreview(startPage: string): Promise<MiniBrowser> {
+        return this.open(MiniBrowserOpenHandler.PREVIEW_URI, this.getOpenPreviewProps(startPage));
+    }
+    protected getOpenPreviewProps(startPage: string): MiniBrowserOpenerOptions {
+        return {
+            name: 'Preview',
+            startPage,
+            toolbar: 'read-only',
+            widgetOptions: {
+                area: 'right'
+            }
+        };
     }
 
 }
