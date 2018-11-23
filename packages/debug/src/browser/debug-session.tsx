@@ -19,12 +19,12 @@
 import * as React from 'react';
 import { WebSocketConnectionProvider, LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType } from '@theia/core/lib/common';
+import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable } from '@theia/core/lib/common';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';
-import { DebugThread, StoppedDetails } from './model/debug-thread';
+import { DebugThread, StoppedDetails, DebugThreadData } from './model/debug-thread';
 import { DebugScope } from './console/debug-console-items';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugSource } from './model/debug-source';
@@ -375,10 +375,11 @@ export class DebugSession implements CompositeTreeElement {
             const id = raw.id;
             const thread = existing.get(id) || new DebugThread(this);
             this._threads.set(id, thread);
-            thread.update({
-                raw,
-                stoppedDetails: stoppedDetails && stoppedDetails.threadId === id ? stoppedDetails : undefined
-            });
+            const data: Partial<Mutable<DebugThreadData>> = { raw };
+            if (stoppedDetails && (stoppedDetails.allThreadsStopped || stoppedDetails.threadId === id)) {
+                data.stoppedDetails = stoppedDetails;
+            }
+            thread.update(data);
         }
         this.updateCurrentThread(stoppedDetails);
     }
