@@ -39,7 +39,6 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MEMORY_TEXT } from './in-memory-text-resource';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import * as React from 'react';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 
 export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, SelectableTreeNode {
     children: SearchInWorkspaceResultLineNode[];
@@ -86,7 +85,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -189,8 +187,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     }
                 } else {
                     const children: SearchInWorkspaceResultLineNode[] = [];
-                    const fileStat = await this.fileSystem.getFileStat(result.file);
-                    const icon = fileStat ? await this.labelProvider.getIcon(fileStat) : undefined;
+                    const icon = await this.labelProvider.getIcon(new URI(result.file).withScheme('file'));
                     if (CompositeTreeNode.is(this.model.root)) {
                         resultElement = {
                             selected: false,
