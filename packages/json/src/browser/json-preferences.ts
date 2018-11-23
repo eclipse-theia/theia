@@ -63,16 +63,6 @@ export const jsonPreferenceSchema: PreferenceSchema = {
             'default': true,
             'description': 'Enable/disable default JSON formatter'
         },
-        'json.trace.server': {
-            'type': 'string',
-            'enum': [
-                'off',
-                'messages',
-                'verbose'
-            ],
-            'default': 'off',
-            'description': 'Enable/disable tracing communications with the JSON language server'
-        }
     }
 };
 
