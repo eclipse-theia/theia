@@ -38,8 +38,8 @@ export interface ProcessOptions {
 export abstract class Process {
 
     readonly id: number;
-    readonly exitEmitter: Emitter<IProcessExitEvent>;
-    readonly errorEmitter: Emitter<Error>;
+    protected readonly exitEmitter: Emitter<IProcessExitEvent> = new Emitter<IProcessExitEvent>();
+    protected readonly errorEmitter: Emitter<Error> = new Emitter<Error>();
     abstract readonly pid: number;
     protected _killed = false;
 
@@ -49,8 +49,6 @@ export abstract class Process {
         @unmanaged() protected readonly type: ProcessType,
         protected readonly options: ProcessOptions
     ) {
-        this.exitEmitter = new Emitter<IProcessExitEvent>();
-        this.errorEmitter = new Emitter<Error>();
         this.id = this.processManager.register(this);
     }
 
