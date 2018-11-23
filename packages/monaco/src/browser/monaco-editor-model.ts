@@ -332,22 +332,28 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.fireDidSaveModel();
     }
 
-    protected fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
-        const model = this;
-        return new Promise<void>(resolve => {
-            this.onWillSaveModelEmitter.fire({
-                model, reason,
-                waitUntil: thenable =>
-                    thenable.then(operations => {
-                        if (token.isCancellationRequested) {
-                            resolve();
-                        }
-                        this.applyEdits(operations, {
-                            ignoreDirty: true
-                        });
-                        resolve();
-                    })
-            });
+    protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
+        const waitables: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>[] = [];
+
+        // The firing is synchronous.
+        // Every listener will register something for us to wait after.
+        this.onWillSaveModelEmitter.fire({
+            model: this, reason,
+            waitUntil: thenable => {
+                waitables.push(thenable);
+            }
+        });
+
+        // Wait for all listeners to resolve the edits.
+        return Promise.all(waitables).then(allOperations => {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            for (const operations of allOperations) {
+                this.applyEdits(operations, {
+                    ignoreDirty: true,
+                });
+            }
         });
     }
 
