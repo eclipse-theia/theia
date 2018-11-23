@@ -1,22 +1,22 @@
 {
-  "name": "@theia/debug-nodejs",
+  "name": "@theia/java-debug",
   "version": "0.3.17",
-  "description": "Theia - NodeJS Debug Extension",
+  "description": "Theia - Java Debug Extension",
   "dependencies": {
     "@theia/debug": "^0.3.17",
-    "ps-list": "5.0.1",
-    "vscode-debugprotocol": "^1.32.0"
+    "@theia/java": "^0.3.17",
+    "lodash": "^4.17.10"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "backend": "lib/node/debug-nodejs-backend-module"
+      "backend": "lib/node/java-debug-backend-module"
     }
   ],
   "keywords": [
-    "theia-extension", "debug", "nodejs"
+    "theia-extension", "debug", "java"
   ],
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
@@ -48,7 +48,6 @@
     "extends": "../../configs/nyc.json"
   },
   "adapters": {
-    "node-debug": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug/1.29.2/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage",
-    "node-debug2": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug2/1.29.2/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+    "java-debug": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/vscjava/extension/vscode-java-debug/0.15.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
   }
 }
