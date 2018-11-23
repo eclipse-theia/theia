@@ -43,5 +43,4 @@ export default new ContainerModule(bind => {
 
     bind(LanguageClientProviderImpl).toSelf().inSingletonScope();
     bind(LanguageClientProvider).toService(LanguageClientProviderImpl);
-
 });

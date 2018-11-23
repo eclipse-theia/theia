@@ -2,6 +2,7 @@
 
 ## v0.3.18
 - [core] Fix `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
+- [languages] Add a preference for every language contribution to be able to trace the communication client <-> server
 
 ## v0.3.17
 
