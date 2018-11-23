@@ -23,6 +23,7 @@ export namespace FileSystemUtils {
     /**
      * Tildify path, replacing `home` with `~` if user's `home` is present at the beginning of the path.
      * This is a non-operation for Windows.
+     *
      * @param resourcePath
      * @param home
      */
@@ -39,8 +40,9 @@ export namespace FileSystemUtils {
 
     /**
      * Generate unique URI for a given parent which does not collide
-     * @param parentUri the parent URI
-     * @param parent the parent FileStat
+     *
+     * @param parentUri the `URI` of the parent
+     * @param parent the `FileStat` of the parent
      * @param name the resource name
      * @param ext the resource extension
      */

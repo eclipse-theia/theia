@@ -22,10 +22,6 @@ import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceUtils } from './workspace-utils';
 
-/**
- * Workspace Delete URI CommandHandler
- * @class
- */
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
@@ -42,27 +38,29 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     protected readonly workspaceService: WorkspaceService;
 
     /**
-     * Determine if the given command is visible
-     * @param uris
-     * @returns true if the given @param uris is not undefined, and does not contain a root directory
+     * Determine if the command is visible.
+     *
+     * @param uris URIs of selected resources.
+     * @returns `true` if the command is visible.
      */
     isVisible(uris: URI[]): boolean {
         return !!uris.length && !this.workspaceUtils.containsRootDirectory(uris);
     }
 
     /**
-     * Determine if the given command is enabled
-     * @param uris
-     * @returns true if the given @param uris is not undefined, and does not contain a root directory
+     * Determine if the command is enabled.
+     *
+     * @param uris URIs of selected resources.
+     * @returns `true` if the command is enabled.
      */
     isEnabled(uris: URI[]): boolean {
         return !!uris.length && !this.workspaceUtils.containsRootDirectory(uris);
     }
 
     /**
-     * Excute the given command
-     * @param uris
-     * @returns Promise<void>
+     * Execute the command.
+     *
+     * @param uris URIs of selected resources.
      */
     async execute(uris: URI[]): Promise<void> {
         const distinctUris = URI.getDistinctParents(uris);
@@ -72,9 +70,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Confirm delete action
-     * @param uris
-     * @returns Promise<boolean | undefined>
+     * Display dialog to confirm deletion.
+     *
+     * @param uris URIs of selected resources.
      */
     protected confirm(uris: URI[]): Promise<boolean | undefined> {
         return new ConfirmDialog({
@@ -84,9 +82,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Get delete confirmation message
-     * @param uris
-     * @returns string | HTMLElement
+     * Get the dialog confirmation message for deletion.
+     *
+     * @param uris URIs of selected resources.
      */
     protected getConfirmMessage(uris: URI[]): string | HTMLElement {
         const dirty = this.getDirty(uris);
@@ -116,9 +114,10 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Get URIs which are dirty
-     * @param uris
-     * @returns URI[]
+     * Get which URI are presently dirty.
+     *
+     * @param uris URIs of selected resources.
+     * @returns An array of dirty URI.
      */
     protected getDirty(uris: URI[]): URI[] {
         const dirty = new Map<string, URI>();
@@ -130,9 +129,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Perform deletion
-     * @param uri to be deleted
-     * @returns Promise<void>
+     * Perform deletion of a given URI.
+     *
+     * @param uris URIs of selected resources.
      */
     protected async delete(uri: URI): Promise<void> {
         try {
@@ -144,9 +143,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Close widget without saving
-     * @param uri
-     * @returns Promise<void>
+     * Close widget without saving changes.
+     *
+     * @param uri URI of a selected resource.
      */
     protected async closeWithoutSaving(uri: URI): Promise<void> {
         for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, uri)) {
