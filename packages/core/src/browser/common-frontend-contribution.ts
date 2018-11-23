@@ -289,9 +289,9 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
-        commandRegistry.registerCommand(CommonCommands.OPEN, new UriAwareCommandHandler<URI>(this.selectionService, {
-            execute: uri => open(this.openerService, uri)
-        }));
+        commandRegistry.registerCommand(CommonCommands.OPEN, new UriAwareCommandHandler<URI[]>(this.selectionService, {
+            execute: uris => uris.map(uri => open(this.openerService, uri)),
+        }, { multi: true }));
         commandRegistry.registerCommand(CommonCommands.CUT, {
             execute: () => {
                 if (supportCut) {
