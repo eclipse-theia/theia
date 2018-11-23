@@ -55,3 +55,14 @@ export namespace ActionableNotification {
 export namespace SemanticHighlight {
     export const type = new NotificationType<SemanticHighlightingParams, void>('textDocument/semanticHighlighting');
 }
+
+export enum CompileWorkspaceStatus {
+    FAILED = 0,
+    SUCCEED = 1,
+    WITHERROR = 2,
+    CANCELLED = 3,
+}
+
+export namespace CompileWorkspaceRequest {
+    export const type = new RequestType<boolean, CompileWorkspaceStatus, void, void>('java/buildWorkspace');
+}

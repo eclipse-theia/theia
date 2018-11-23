@@ -18,7 +18,8 @@
     "@types/p-debounce": "^1.0.0",
     "jsonc-parser": "^2.0.2",
     "p-debounce": "^1.0.0",
-    "vscode-debugprotocol": "^1.32.0"
+    "vscode-debugprotocol": "^1.32.0",
+    "unzip-stream": "^0.3.0"
   },
   "publishConfig": {
     "access": "public"
@@ -30,7 +31,7 @@
     }
   ],
   "keywords": [
-    "theia-extension, debug"
+    "theia-extension", "debug"
   ],
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
@@ -41,6 +42,9 @@
     "url": "https://github.com/theia-ide/theia/issues"
   },
   "homepage": "https://github.com/theia-ide/theia",
+  "bin": {
+    "download-debug-adapters": "./bin/download-adapters.js"
+  },
   "files": [
     "lib",
     "src"

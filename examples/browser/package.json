@@ -25,6 +25,7 @@
     "@theia/getting-started": "^0.3.17",
     "@theia/git": "^0.3.17",
     "@theia/java": "^0.3.17",
+    "@theia/java-debug": "^0.3.17",
     "@theia/json": "^0.3.17",
     "@theia/keymaps": "^0.3.17",
     "@theia/languages": "^0.3.17",

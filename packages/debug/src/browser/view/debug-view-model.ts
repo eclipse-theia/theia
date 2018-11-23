@@ -146,9 +146,11 @@ export class DebugViewModel implements Disposable {
             return;
         }
         const newSession = await this.manager.start(session.options);
-        this._sessions.delete(session);
-        this._sessions.add(newSession);
-        this.fireDidChange();
+        if (newSession) {
+            this._sessions.delete(session);
+            this._sessions.add(newSession);
+            this.fireDidChange();
+        }
     }
 
     async restart(): Promise<void> {

@@ -105,14 +105,14 @@ export class DebugSessionManager {
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
     }
 
-    async start(options: DebugSessionOptions): Promise<DebugSession> {
+    async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         try {
             const resolved = await this.resolveConfiguration(options);
             const sessionId = await this.debugService.create(resolved.configuration);
             return this.doStart(sessionId, resolved);
         } catch (e) {
             if (DebugError.NotFound.is(e)) {
-                this.messageService.error(e.message);
+                return undefined;
             }
             throw e;
         }
@@ -171,7 +171,7 @@ export class DebugSessionManager {
     async restart(session: DebugSession | undefined = this.currentSession): Promise<DebugSession | undefined> {
         return session && this.doRestart(session);
     }
-    protected async doRestart(session: DebugSession, restart?: any): Promise<DebugSession> {
+    protected async doRestart(session: DebugSession, restart?: any): Promise<DebugSession | undefined> {
         if (await session.restart()) {
             return session;
         }

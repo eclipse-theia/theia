@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
@@ -17,10 +18,11 @@
 const request = require('request');
 const unzip = require('unzip-stream');
 const path = require('path');
+const process = require('process');
 
-const pck = require('../package.json');
+const pck = require(path.resolve(process.cwd(), 'package.json'));
 for (const name in pck.adapters) {
     const url = pck.adapters[name];
-    const targetPath = path.join(__dirname, '../download', name);
+    const targetPath = path.join(process.cwd(), '/download', name);
     request(url).pipe(unzip.Extract({ path: targetPath }));
 }
