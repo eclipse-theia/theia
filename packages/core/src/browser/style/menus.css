@@ -164,7 +164,7 @@
   display: block;
   position: relative;
   top: 4px;
-  border-top: var(--theia-border-width) solid var(--theia-border-color1);
+  border-top: var(--theia-border-width) solid var(--theia-ui-font-color3);
 }
 
 .p-Menu-itemIcon::before,
