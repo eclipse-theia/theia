@@ -1087,10 +1087,17 @@ export class TreeItem {
 
     command?: theia.Command;
 
-    collapsibleState?: TreeItemCollapsibleState;
-
     contextValue?: string;
 
+    constructor(label: string, collapsibleState?: theia.TreeItemCollapsibleState)
+    constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)
+    constructor(arg1: string | URI, public collapsibleState: theia.TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
+        if (arg1 instanceof URI) {
+            this.resourceUri = arg1;
+        } else {
+            this.label = arg1;
+        }
+    }
 }
 
 export enum TreeItemCollapsibleState {
