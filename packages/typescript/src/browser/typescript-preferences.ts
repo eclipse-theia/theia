@@ -27,16 +27,6 @@ import {
 export const typescriptPreferenceSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
-        'typescript.trace.server': {
-            'type': 'string',
-            'enum': [
-                'off',
-                'messages',
-                'verbose'
-            ],
-            'default': 'off',
-            'description': 'Enable/disable tracing communications with the TS language server.'
-        },
         'typescript.server.log': {
             'type': 'string',
             'enum': [

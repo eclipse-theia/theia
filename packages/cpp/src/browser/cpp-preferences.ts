@@ -56,16 +56,6 @@ export const cppPreferencesSchema: PreferenceSchema = {
             default: false,
             type: 'boolean'
         },
-        'cpp.trace.server': {
-            type: 'string',
-            enum: [
-                'off',
-                'messages',
-                'verbose'
-            ],
-            default: 'off',
-            description: 'Enable/disable tracing communications with the C/C++ language server'
-        }
     }
 };
 
