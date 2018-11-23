@@ -38,9 +38,11 @@ configurations.set('linux', 'config_linux');
 @injectable()
 export class JavaContribution extends BaseLanguageServerContribution {
 
-    private javaBundles: string[] | undefined;
     readonly id = JAVA_LANGUAGE_ID;
     readonly name = JAVA_LANGUAGE_NAME;
+
+    private javaBundles: string[] = [];
+    protected readonly ready: Promise<void>;
 
     constructor(
         @inject(JavaCliContribution) protected readonly cli: JavaCliContribution,
@@ -48,13 +50,22 @@ export class JavaContribution extends BaseLanguageServerContribution {
         protected readonly contributions: ContributionProvider<JavaExtensionContribution>
     ) {
         super();
-        this.javaBundles = [];
+        this.ready = this.collectExtensionBundles();
+    }
+
+    protected async collectExtensionBundles(): Promise<void> {
         for (const contrib of this.contributions.getContributions()) {
-            this.javaBundles = this.javaBundles.concat(contrib.getExtensionBundles());
+            try {
+                const javaBundles = await contrib.getExtensionBundles();
+                this.javaBundles = this.javaBundles.concat(javaBundles);
+            } catch (e) {
+                console.error(e);
+            }
         }
     }
 
-    start(clientConnection: IConnection): void {
+    async start(clientConnection: IConnection): Promise<void> {
+        await this.ready;
 
         const socketPort = this.cli.lsPort();
         if (socketPort) {

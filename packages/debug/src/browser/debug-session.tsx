@@ -254,7 +254,7 @@ export class DebugSession implements CompositeTreeElement {
                 await this.sendRequest('launch', this.configuration);
             }
         } catch (reason) {
-            this.connection['fire']('exited', { reason });
+            this.fireExited(reason);
             await this.messages.showMessage({
                 type: MessageType.Error,
                 text: reason.message || 'Debug session initialization failed. See console for details.',
@@ -287,6 +287,22 @@ export class DebugSession implements CompositeTreeElement {
             await this.disconnect(restart);
         }
     }
+    protected async disconnect(restart?: boolean): Promise<void> {
+        try {
+            await this.sendRequest('disconnect', { restart });
+        } catch (reason) {
+            this.fireExited(reason);
+            return;
+        }
+        const timeout = 500;
+        if (!await this.exited(timeout)) {
+            this.fireExited(new Error(`timeout after ${timeout} ms`));
+        }
+    }
+
+    protected fireExited(reason?: Error): void {
+        this.connection['fire']('exited', { reason });
+    }
     protected exited(timeout: number): Promise<boolean> {
         return new Promise<boolean>(resolve => {
             const listener = this.on('exited', () => {
@@ -298,9 +314,6 @@ export class DebugSession implements CompositeTreeElement {
                 resolve(false);
             }, timeout);
         });
-    }
-    protected async disconnect(restart?: boolean): Promise<void> {
-        await this.sendRequest('disconnect', { restart });
     }
 
     async restart(): Promise<boolean> {
@@ -362,7 +375,9 @@ export class DebugSession implements CompositeTreeElement {
         return this.pendingThreads = this.pendingThreads.then(async () => {
             try {
                 const response = await this.sendRequest('threads', {});
-                this.doUpdateThreads(response.body.threads, stoppedDetails);
+                // java debugger returns an empty body sometimes
+                const threads = response && response.body && response.body.threads || [];
+                this.doUpdateThreads(threads, stoppedDetails);
             } catch (e) {
                 console.error(e);
             }

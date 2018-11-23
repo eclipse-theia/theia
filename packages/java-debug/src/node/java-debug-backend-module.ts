@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,20 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MaybePromise } from '@theia/core/lib/common/types';
+import { ContainerModule } from 'inversify';
+import { JavaExtensionContribution } from '@theia/java/lib/node';
+import { DebugAdapterContribution } from '@theia/debug/lib/node/debug-model';
+import { JavaDebugAdapterContribution, JavaDebugExtensionContribution } from './java-debug-adapter-contribution';
 
-/**
- * JavaExtensionContribution symbol for DI.
- */
-export const JavaExtensionContribution = Symbol('JavaExtensionContribution');
-
-/**
- * A contribution point for extensions to jdt.ls.
- */
-export interface JavaExtensionContribution {
-    /**
-     * Returns an array of paths to the bundle jar files.
-     * The paths should be absolute.
-     */
-    getExtensionBundles(): MaybePromise<string[]>;
-}
+export default new ContainerModule(bind => {
+    /* explcit inTransientScope because it is very important, that
+       each web socket connection gets its own instance,
+       since it is using frontend services via this connection */
+    bind(DebugAdapterContribution).to(JavaDebugAdapterContribution).inTransientScope();
+    bind(JavaExtensionContribution).to(JavaDebugExtensionContribution).inSingletonScope();
+});

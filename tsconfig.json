@@ -58,6 +58,9 @@
       "@theia/java/lib/*": [
         "packages/java/src/*"
       ],
+      "@theia/java-debug/lib/*": [
+        "packages/java-debug/src/*"
+      ],
       "@theia/debug/lib/*": [
         "packages/debug/src/*"
       ],
