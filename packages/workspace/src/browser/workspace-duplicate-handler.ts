@@ -22,10 +22,6 @@ import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 
-/**
- * Workspace Duplicate URI CommandHandler
- * @class
- */
 @injectable()
 export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
 
@@ -39,27 +35,29 @@ export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
     protected readonly workspaceService: WorkspaceService;
 
     /**
-     * Determine if the given command is visible
-     * @param uris
-     * @returns true if @param uris is not undefined, and does not contain a root directory
+     * Determine if the command is visible.
+     *
+     * @param uris URIs of selected resources.
+     * @returns `true` if the command is visible.
      */
     isVisible(uris: URI[]): boolean {
         return !!uris.length && !this.workspaceUtils.containsRootDirectory(uris);
     }
 
     /**
-     * Determine if the given command is enabled
-     * @param uris
-     * @readonly true if @param uris is not undefined, and does not contain a root directory
+     * Determine if the command is enabled.
+     *
+     * @param uris URIs of selected resources.
+     * @returns `true` if the command is enabled.
      */
     isEnabled(uris: URI[]): boolean {
         return !!uris.length && !this.workspaceUtils.containsRootDirectory(uris);
     }
 
     /**
-     * Execute the given command
-     * @param uris
-     * @returns Promise<void>
+     * Execute the command.
+     *
+     * @param uris URIs of selected resources.
      */
     async execute(uris: URI[]): Promise<void> {
         await Promise.all(uris.map(async uri => {
