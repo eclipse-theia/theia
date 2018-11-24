@@ -21,7 +21,7 @@
 
 .theia-caption-suffix {
     white-space: nowrap;
-    padding-left: 2px;
+    padding: 0px 2px 0px 2px;
 }
 
 .theia-caption-suffix-tail {
