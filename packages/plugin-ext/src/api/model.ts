@@ -32,6 +32,19 @@ export interface TextDocumentShowOptions {
      * An optional flag that when `true` will stop the editor from taking focus.
      */
     preserveFocus?: boolean;
+
+    /**
+     * An optional flag that controls if an editor-tab will be replaced
+     * with the next editor or if it will be kept.
+     */
+    preview?: boolean;
+
+    /**
+     * Denotes a location of an editor in the window. Editors can be arranged in a grid
+     * and each column represents one editor location in that grid by counting the editors
+     * in order of their appearance.
+     */
+    viewColumn?: theia.ViewColumn;
 }
 
 export interface Range {

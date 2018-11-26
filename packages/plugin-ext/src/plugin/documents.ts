@@ -166,7 +166,9 @@ export class DocumentsExtImpl implements DocumentsExt {
             }
             documentOptions = {
                 selection,
-                preserveFocus: options.preserveFocus
+                preserveFocus: options.preserveFocus,
+                preview: options.preview,
+                viewColumn: options.viewColumn
             };
         }
         await this.proxy.$tryOpenDocument(uri, documentOptions);
