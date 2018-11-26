@@ -23,7 +23,7 @@ import {
     bindContributionProvider,
     SelectionService,
     ResourceProvider, ResourceResolver, DefaultResourceProvider,
-    CommandContribution, CommandRegistry, CommandService,
+    CommandContribution, CommandRegistry, CommandService, commandServicePath,
     MenuModelRegistry, MenuContribution,
     MessageService,
     MessageClient,
@@ -124,7 +124,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ResourceResolver).toService(InMemoryResources);
 
     bind(SelectionService).toSelf().inSingletonScope();
-    bind(CommandRegistry).toSelf().inSingletonScope();
+    bind(CommandRegistry).toSelf().inSingletonScope().onActivation(({ container }, registry) => {
+        WebSocketConnectionProvider.createProxy(container, commandServicePath, registry);
+        return registry;
+    });
     bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
     bind(QuickOpenContribution).to(CommandQuickOpenContribution);

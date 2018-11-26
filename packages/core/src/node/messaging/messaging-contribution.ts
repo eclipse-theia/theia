@@ -18,12 +18,13 @@ import * as ws from 'ws';
 import * as url from 'url';
 import * as http from 'http';
 import * as https from 'https';
-import { injectable, inject, named, postConstruct } from 'inversify';
+import { injectable, inject, named, postConstruct, interfaces } from 'inversify';
+// tslint:disable-next-line:no-implicit-dependencies
 import { MessageConnection } from 'vscode-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';
-import { ContributionProvider, ConnectionHandler } from '../../common';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
@@ -31,11 +32,17 @@ import { ConsoleLogger } from './logger';
 
 import Route = require('route-parser');
 
+export const MessagingContainer = Symbol('MessagingContainer');
+export const ConnectionContainerModule = Symbol('ConnectionContainerModule');
+
 @injectable()
 export class MessagingContribution implements BackendApplicationContribution, MessagingService {
 
-    @inject(ContributionProvider) @named(ConnectionHandler)
-    protected readonly handlers: ContributionProvider<ConnectionHandler>;
+    @inject(MessagingContainer)
+    protected readonly container: interfaces.Container;
+
+    @inject(ContributionProvider) @named(ConnectionContainerModule)
+    protected readonly connectionModules: ContributionProvider<interfaces.ContainerModule>;
 
     @inject(ContributionProvider) @named(MessagingService.Contribution)
     protected readonly contributions: ContributionProvider<MessagingService.Contribution>;
@@ -48,11 +55,6 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         this.ws(WebSocketChannel.wsPath, (_, socket) => this.handleChannels(socket));
         for (const contribution of this.contributions.getContributions()) {
             contribution.configure(this);
-        }
-        for (const handler of this.handlers.getContributions()) {
-            this.listen(handler.path, (params, connection) =>
-                handler.onConnection(connection)
-            );
         }
     }
 
@@ -111,6 +113,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     protected handleChannels(socket: ws): void {
+        const channelHandlers = this.getConnectionChannelHandlers(socket);
         const channels = new Map<number, WebSocketChannel>();
         socket.on('message', data => {
             try {
@@ -118,7 +121,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
                 if (message.kind === 'open') {
                     const { id, path } = message;
                     const channel = this.createChannel(id, socket);
-                    if (this.channelHandlers.route(path, channel)) {
+                    if (channelHandlers.route(path, channel)) {
                         channel.ready();
                         channels.set(id, channel);
                         channel.onClose(() => channels.delete(id));
@@ -151,6 +154,22 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         });
     }
 
+    protected getConnectionChannelHandlers(socket: ws): MessagingContribution.ConnectionHandlers<WebSocketChannel> {
+        const connectionContainer = this.container.createChild();
+        connectionContainer.bind(ws).toConstantValue(socket);
+        bindContributionProvider(connectionContainer, ConnectionHandler);
+        connectionContainer.load(...this.connectionModules.getContributions());
+        const connectionChannelHandlers = new MessagingContribution.ConnectionHandlers(this.channelHandlers);
+        const connectionHandlers = connectionContainer.getNamed<ContributionProvider<ConnectionHandler>>(ContributionProvider, ConnectionHandler);
+        for (const connectionHandler of connectionHandlers.getContributions(true)) {
+            connectionChannelHandlers.push(connectionHandler.path, (_, channel) => {
+                const connection = createWebSocketConnection(channel, new ConsoleLogger());
+                connectionHandler.onConnection(connection);
+            });
+        }
+        return connectionChannelHandlers;
+    }
+
     protected createChannel(id: number, socket: ws): WebSocketChannel {
         return new WebSocketChannel(id, content => {
             if (socket.readyState < ws.CLOSING) {
@@ -167,6 +186,10 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 export namespace MessagingContribution {
     export class ConnectionHandlers<T> {
         protected readonly handlers: ((path: string, connection: T) => string | false)[] = [];
+
+        constructor(
+            protected readonly parent?: ConnectionHandlers<T>
+        ) { }
 
         push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
             const route = new Route(spec);
@@ -190,6 +213,9 @@ export namespace MessagingContribution {
                 } catch (e) {
                     console.error(e);
                 }
+            }
+            if (this.parent) {
+                return this.parent.route(path, connection);
             }
             return false;
         }
