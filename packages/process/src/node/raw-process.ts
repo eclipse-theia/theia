@@ -18,11 +18,13 @@ import { injectable, inject, named } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions } from './process';
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess, spawn, fork } from 'child_process';
 import * as stream from 'stream';
 
 export const RawProcessOptions = Symbol('RawProcessOptions');
 export interface RawProcessOptions extends ProcessOptions {
+    /** default: spawn */
+    type?: 'spawn' | 'fork';
 }
 
 export const RawProcessFactory = Symbol('RawProcessFactory');
@@ -69,10 +71,17 @@ export class RawProcess extends Process {
            normalize the error handling by calling the error handler
            instead.  */
         try {
-            this.process = spawn(
-                options.command,
-                options.args,
-                options.options);
+            if (options.type === 'fork') {
+                this.process = fork(
+                    options.command,
+                    options.args,
+                    options.options);
+            } else {
+                this.process = spawn(
+                    options.command,
+                    options.args,
+                    options.options);
+            }
 
             this.process.on('error', this.emitOnError.bind(this));
             this.process.on('exit', this.emitOnExit.bind(this));
