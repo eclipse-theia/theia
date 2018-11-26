@@ -2,10 +2,12 @@
 
 ## v0.3.18
 - [core] Fix `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
+- [core] Add a preference to define how to handle application exit.
+- [core] Add a way to prevent application exit from extensions.
 - [languages] Add a preference for every language contribution to be able to trace the communication client <-> server
 
-## v0.3.17
 
+## v0.3.17
 - Added better widget error handling for different use cases (ex: no workspace present, no repository present, ...)
 - Addressed multiple backend memory leaks
 - Prefixed quick-open commands for easier categorization and searching
