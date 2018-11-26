@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry, DebugConfiguration } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedInstanceManager } from './hosted-instance-manager';
@@ -21,6 +21,8 @@ import { HostedPluginSupport } from './hosted-plugin';
 import { HostedPluginsManager } from './hosted-plugins-manager';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core';
+import { ContributionProvider } from '@theia/core';
+import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
@@ -29,6 +31,10 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     protected readonly logger: ILogger;
     @inject(HostedPluginsManager)
     protected readonly hostedPluginsManager: HostedPluginsManager;
+
+    @inject(ContributionProvider)
+    @named(Symbol.for(ExtPluginApiProvider))
+    protected readonly extPluginAPIContributions: ContributionProvider<ExtPluginApiProvider>;
 
     /**
      * Managed plugin metadata backend entries.
@@ -158,4 +164,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return this.hostedPluginsManager.isWatchCompilationRunning(path);
     }
 
+    getExtPluginAPI(): Promise<ExtPluginApi[]> {
+        return Promise.resolve(this.extPluginAPIContributions.getContributions().map(p => p.provideApi()));
+    }
 }

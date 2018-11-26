@@ -23,6 +23,7 @@ import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { EnvExtImpl } from '../../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
+import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -100,6 +101,19 @@ const pluginManager = new PluginManagerExtImpl({
         }
 
         return [result, foreign];
+    },
+    initExtApi(extApi: ExtPluginApi[]) {
+        for (const api of extApi) {
+            try {
+                if (api.frontendExtApi) {
+                    ctx.importScripts(api.frontendExtApi.initPath);
+                    ctx[api.frontendExtApi.initVariable][api.frontendExtApi.initFunction](rpc, pluginsModulesNames);
+                }
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
     }
 }, envExt, preferenceRegistryExt);
 
