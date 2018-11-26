@@ -16,7 +16,10 @@
 
 import { ContainerModule, interfaces, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
-import { bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler } from '../common';
+import {
+    bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
+    CommandService, commandServicePath, JsonRpcProxyFactory
+} from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFactory } from './cluster';
@@ -25,6 +28,7 @@ import { ApplicationServerImpl } from './application-server';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { EnvVariablesServerImpl } from './env-variables';
+import { ConnectionContainerModule } from './messaging/messaging-contribution';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -34,7 +38,19 @@ export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMa
     bind(BackendApplicationContribution).toService(ServerProcess);
 }
 
+const commandConnectionModule = new ContainerModule(bind => {
+    const commandServiceFactory = new JsonRpcProxyFactory<CommandService>();
+    const commandService = commandServiceFactory.createProxy();
+    bind<ConnectionHandler>(ConnectionHandler).toConstantValue({
+        path: commandServicePath,
+        onConnection: connection => commandServiceFactory.listen(connection)
+    });
+    bind<CommandService>(CommandService).toConstantValue(commandService);
+});
+
 export const backendApplicationModule = new ContainerModule(bind => {
+    bind(ConnectionContainerModule).toConstantValue(commandConnectionModule);
+
     bind(CliManager).toSelf().inSingletonScope();
     bindContributionProvider(bind, CliContribution);
 
