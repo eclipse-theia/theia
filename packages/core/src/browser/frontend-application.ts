@@ -23,6 +23,7 @@ import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime } from './browser';
+import { CorePreferences } from './core-preferences';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -40,6 +41,13 @@ export interface FrontendApplicationContribution {
      * Should return a promise if it runs asynchronously.
      */
     onStart?(app: FrontendApplication): MaybePromise<void>;
+
+    /**
+     * Called on `beforeunload` event, right before the window closes.
+     * Return `true` in order to prevent exit.
+     * Note: No async code allowed, this function has to run on one tick.
+     */
+    onWillStop?(app: FrontendApplication): boolean | void;
 
     /**
      * Called when an application is stopped or unloaded.
@@ -71,6 +79,9 @@ export abstract class DefaultFrontendApplicationContribution implements Frontend
 
 @injectable()
 export class FrontendApplication {
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
@@ -138,6 +149,13 @@ export class FrontendApplication {
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
+        window.addEventListener('beforeunload', event => {
+            if (this.preventStop()) {
+                event.returnValue = '';
+                event.preventDefault();
+                return '';
+            }
+        });
         window.addEventListener('unload', () => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
@@ -222,6 +240,24 @@ export class FrontendApplication {
                 );
             }
         }
+    }
+
+    /**
+     * `beforeunload` listener implementation
+     */
+    protected preventStop(): boolean {
+        const confirmExit = this.corePreferences['application.confirmExit'];
+        if (confirmExit === 'never') {
+            return false;
+        }
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.onWillStop) {
+                if (!!contribution.onWillStop(this)) {
+                    return true;
+                }
+            }
+        }
+        return confirmExit === 'always';
     }
 
     /**

@@ -28,12 +28,23 @@ export const corePreferenceSchema: PreferenceSchema = {
             ],
             default: 'singleClick',
             description: 'Controls how to open items in trees using the mouse.'
+        },
+        'application.confirmExit': {
+            type: 'string',
+            enum: [
+                'never',
+                'ifRequired',
+                'always',
+            ],
+            default: 'ifRequired',
+            description: 'When to confirm before closing the application window.',
         }
     }
 };
 
 export interface CoreConfiguration {
-    'list.openMode': string;
+    'application.confirmExit': 'never' | 'ifRequired' | 'always';
+    'list.openMode': 'singleClick' | 'doubleClick';
 }
 
 export const CorePreferences = Symbol('CorePreferences');
@@ -48,5 +59,5 @@ export function bindCorePreferences(bind: interfaces.Bind): void {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         return createCorePreferences(preferences);
     }).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: corePreferenceSchema});
+    bind(PreferenceContribution).toConstantValue({ schema: corePreferenceSchema });
 }
