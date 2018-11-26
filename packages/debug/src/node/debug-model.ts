@@ -65,6 +65,8 @@ export interface DebugAdapterSessionFactory {
  */
 export interface DebugAdapterExecutable {
     command: string
+    /** default: spawn */
+    type?: 'spawn' | 'fork';
     args?: string[]
 }
 

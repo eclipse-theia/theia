@@ -51,7 +51,8 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     protected readonly processManager: ProcessManager;
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
-        const process = this.spawnProcess(executable);
+        const process = this.childProcess(executable);
+
         // FIXME: propagate onError + onExit
         return {
             input: process.input,
@@ -60,9 +61,13 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
         };
     }
 
-    private spawnProcess(executable: DebugAdapterExecutable): RawProcess {
-        const { command, args } = executable;
-        return this.processFactory({ command, args, options: { stdio: ['pipe', 'pipe', 2] } });
+    private childProcess(executable: DebugAdapterExecutable): RawProcess {
+        const { command, args, type } = executable;
+        const options = { stdio: ['pipe', 'pipe', 2] };
+        if (type === 'fork') {
+            options.stdio.push('ipc');
+        }
+        return this.processFactory({ type, command, args, options });
     }
 
     connect(debugServerPort: number): CommunicationProvider {
