@@ -29,6 +29,7 @@ import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins
 import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath } from '../../common/plugin-protocol';
 import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess } from './hosted-plugin-process';
+import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
@@ -61,4 +62,5 @@ export function bindHostedBackend(bind: interfaces.Bind): void {
     bind(HostedInstanceManager).to(NodeHostedPluginRunner).inSingletonScope();
     bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
     bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
+    bindContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
 }

@@ -16,17 +16,18 @@
 
 // tslint:disable:no-any
 
-import { injectable, inject, interfaces } from 'inversify';
+import { injectable, inject, interfaces, named } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
-import { ILogger } from '@theia/core';
+import { ILogger, ContributionProvider } from '@theia/core';
 import { PreferenceServiceImpl } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
+import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 
 @injectable()
 export class HostedPluginSupport {
@@ -44,6 +45,10 @@ export class HostedPluginSupport {
     @inject(PluginContributionHandler)
     private readonly contributionHandler: PluginContributionHandler;
 
+    @inject(ContributionProvider)
+    @named(MainPluginApiProvider)
+    protected readonly mainPluginApiProviders: ContributionProvider<MainPluginApiProvider>;
+
     private theiaReadyPromise: Promise<any>;
 
     constructor(
@@ -58,23 +63,29 @@ export class HostedPluginSupport {
     }
 
     public initPlugins(): void {
-        Promise.all([this.server.getDeployedMetadata(), this.server.getHostedPlugin()]).then(metadata => {
+        Promise.all([this.server.getDeployedMetadata(), this.server.getHostedPlugin(), this.server.getExtPluginAPI()]).then(metadata => {
             const plugins = [...metadata['0']];
             if (metadata['1']) {
                 plugins.push(metadata['1']!);
             }
-            this.loadPlugins(plugins, this.container);
+            this.loadPlugins(plugins, this.container, metadata['2']);
         });
 
     }
-    loadPlugins(pluginsMetadata: PluginMetadata[], container: interfaces.Container): void {
+    loadPlugins(pluginsMetadata: PluginMetadata[], container: interfaces.Container, extApi: ExtPluginApi[]): void {
         const [frontend, backend] = this.initContributions(pluginsMetadata);
         this.theiaReadyPromise.then(() => {
             if (frontend) {
                 const worker = new PluginWorker();
                 const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                hostedExtManager.$init({ plugins: pluginsMetadata, preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
+                hostedExtManager.$init({
+                    plugins: pluginsMetadata,
+                    preferences: this.preferenceServiceImpl.getPreferences(),
+                    env: { queryParams: getQueryParameters() },
+                    extApi: extApi
+                });
                 setUpPluginApi(worker.rpc, container);
+                this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
             }
 
             if (backend) {
@@ -98,8 +109,14 @@ export class HostedPluginSupport {
                     }
                     const rpc = this.createServerRpc(pluginID, hostKey);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                    hostedExtManager.$init({ plugins: plugins, preferences: this.preferenceServiceImpl.getPreferences(), env: { queryParams: getQueryParameters() } });
+                    hostedExtManager.$init({
+                        plugins: plugins,
+                        preferences: this.preferenceServiceImpl.getPreferences(),
+                        env: { queryParams: getQueryParameters() },
+                        extApi: extApi
+                    });
                     setUpPluginApi(rpc, container);
+                    this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
                 });
             }
         });

@@ -18,7 +18,7 @@ import '../../../src/main/style/status-bar.css';
 
 import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -43,6 +43,7 @@ import { MenusContributionPointHandler } from './menus/menus-contribution-handle
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
 import { TextContentResourceResolver } from './workspace-main';
+import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 
 export default new ContainerModule(bind => {
     bindHostedPluginPreferences(bind);
@@ -98,4 +99,5 @@ export default new ContainerModule(bind => {
 
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
+    bindContributionProvider(bind, MainPluginApiProvider);
 });
