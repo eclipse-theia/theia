@@ -74,31 +74,22 @@ Read below how to engage with Theia community:
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
 
 ## Roadmap
-During the first half of 2018, the team is focusing on the following features:
 
  - __Debugging__
 
    A visual debugger leveraging the Debug Server Protocol defined by the VS Code team.
+   
+ - __Plug-in System__
+ 
+   A plug-in system supporting VS Code extensions.
 
  - __Workbench Improvements__
 
    Theia's workbench shell will be improved, such that the user can drag and drop widgets from the side bar to the main area and vice-versa.
 
- - __Search__
+ - __Test Adapter Support__
 
-   Theia already can search files by name (<kbd>CMD</kbd> + <kbd>P</kbd>). In early 2018 a full text search shall be developed and added.
-
- - __More Git Support__
-
-   In addition to the already present commit staging view, the team will add a git history and git diff view to better visualize the different states of git repositories.
-
- - __Navigator Improvements__
-
-   The file navigator shall support decorations, which are to be used by the git and the problems view extensions. It will allow to signal on a file whether there are git changes resp. diagnostics.
-
- - __Better Markdown Support__
-
-   The Markdown support shall be improved to allow better preview that syncs scrolling. Also rendering plug-ins based on `markdown-it` shall be supported and tools like linters and dead link checkers shall be integrated.
+   Integration with testing frameworks, based on a Test Adapter Protocol.
 
  - __Robustness and Improved UX__
    We will further work on simplifying Theia and its UI / UX, improve the performance and keep working on bug reports that are rolling in.
