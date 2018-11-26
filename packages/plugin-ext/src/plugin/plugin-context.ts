@@ -159,12 +159,11 @@ export function createAPIFactory(
                                    optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
                                    preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
-                // Todo pass additional arguments to documents service, when the API will support them.
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
                 if (optionsArg) {
                     const optionsAny: any = optionsArg;
-                    if (optionsAny.preserveFocus || optionsAny.preview || optionsAny.selection) {
+                    if (optionsAny.preserveFocus || optionsAny.preview || optionsAny.selection || optionsAny.viewColumn) {
                         documentOptions = optionsArg as theia.TextDocumentShowOptions;
                     }
                 }

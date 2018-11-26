@@ -21,11 +21,13 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
 import { createUntitledResource } from './editor/untitled-resource';
-import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { Saveable } from '@theia/core/lib/browser';
+import { ApplicationShell, OpenerOptions, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../api/model';
 import { Range } from 'vscode-languageserver-types';
+import { OpenerService } from '@theia/core/lib/browser/opener-service';
+import { ViewColumn } from '../../plugin/types-impl';
 
 export class DocumentsMainImpl implements DocumentsMain {
 
@@ -38,7 +40,8 @@ export class DocumentsMainImpl implements DocumentsMain {
         editorsAndDocuments: EditorsAndDocumentsMain,
         modelService: EditorModelService,
         rpc: RPCProtocol,
-        private editorManger: EditorManager
+        private editorManger: EditorManager,
+        private openerService: OpenerService
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -110,7 +113,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         // Following message is appeared in browser console
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
         try {
-            let editorOpenerOptions: EditorOpenerOptions | undefined;
+            let openerOptions: OpenerOptions | undefined;
             if (options) {
                 let range: Range | undefined;
                 if (options.selection) {
@@ -120,12 +123,40 @@ export class DocumentsMainImpl implements DocumentsMain {
                         end: { line: selection.endLineNumber - 1, character: selection.endColumn - 1 }
                     };
                 }
-                editorOpenerOptions = {
+                let widgetOptions: ApplicationShell.WidgetOptions | undefined;
+                if (options.viewColumn) {
+                    const viewColumn = options.viewColumn;
+                    const visibleEditors = this.editorManger.all;
+                    let editorIndex = -1;
+                    if (viewColumn > 0) {
+                        editorIndex = viewColumn - 1;
+                    } else {
+                        const activeEditor = this.editorManger.activeEditor;
+                        if (activeEditor) {
+                            const activeEditorIndex = visibleEditors.indexOf(activeEditor);
+                            if (viewColumn === ViewColumn.Active) {
+                                editorIndex = activeEditorIndex;
+                            } else if (viewColumn === ViewColumn.Beside) {
+                                editorIndex = activeEditorIndex + 1;
+                            }
+                        }
+                    }
+                    if (editorIndex > -1 && visibleEditors.length > editorIndex) {
+                        widgetOptions = { ref: visibleEditors[editorIndex] };
+                    } else {
+                        widgetOptions = { mode: 'split-right' };
+                    }
+                }
+                openerOptions = {
                     selection: range,
-                    mode: options.preserveFocus ? 'open' : 'activate'
+                    mode: options.preserveFocus ? 'open' : 'activate',
+                    preview: options.preview,
+                    widgetOptions
                 };
             }
-            await this.editorManger.open(new URI(uri.external!), editorOpenerOptions);
+            const uriArg = new URI(uri.external!);
+            const opener = await this.openerService.getOpener(uriArg, openerOptions);
+            opener.open(uriArg, openerOptions);
         } catch (err) {
             throw new Error(err);
         }
