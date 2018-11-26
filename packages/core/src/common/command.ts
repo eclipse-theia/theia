@@ -102,6 +102,7 @@ export interface CommandContribution {
     registerCommands(commands: CommandRegistry): void;
 }
 
+export const commandServicePath = '/services/commands';
 export const CommandService = Symbol('CommandService');
 /**
  * The command service should be used to execute commands.
@@ -234,13 +235,14 @@ export class CommandRegistry implements CommandService {
      * Reject if a command cannot be executed.
      */
     // tslint:disable-next-line:no-any
-    executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
+    async executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(command, ...args);
         if (handler) {
-            return Promise.resolve(handler.execute(...args));
+            const result = await handler.execute(...args);
+            return result;
         }
         const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
-        return Promise.reject(`The command '${command}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
+        throw new Error(`The command '${command}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
     }
 
     /**
