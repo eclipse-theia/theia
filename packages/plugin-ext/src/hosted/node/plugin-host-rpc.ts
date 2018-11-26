@@ -20,6 +20,7 @@ import { PluginMetadata } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
+import { ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 
 /**
  * Handle the RPC calls.
@@ -37,7 +38,7 @@ export class PluginHostRPC {
     initialize() {
         const envExt = new EnvExtImpl(this.rpc);
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt);
+        this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
         PluginHostRPC.apiFactory = createAPIFactory(this.rpc, this.pluginManager, envExt, preferenceRegistryExt);
@@ -54,7 +55,8 @@ export class PluginHostRPC {
         }
     }
 
-    createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl): PluginManagerExtImpl {
+    // tslint:disable-next-line:no-any
+    createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
         const pluginManager = new PluginManagerExtImpl({
             loadPlugin(plugin: Plugin): void {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
@@ -101,6 +103,18 @@ export class PluginHostRPC {
                     }
                 }
                 return [result, foreign];
+            },
+            initExtApi(extApi: ExtPluginApi[]) {
+                for (const api of extApi) {
+                    if (api.backendInitPath) {
+                        try {
+                            const extApiInit = require(api.backendInitPath);
+                            extApiInit.provideApi(rpc, pluginManager);
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
             }
         }, envExt, preferencesManager);
         return pluginManager;

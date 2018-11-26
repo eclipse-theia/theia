@@ -17,12 +17,12 @@
 import { PluginManagerExt, PluginInitData, PluginManager, Plugin, PluginAPI } from '../api/plugin-api';
 import { PluginMetadata } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
-
 import { join } from 'path';
 import { dispose } from '../common/disposable-util';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
+import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 
 export interface PluginHost {
 
@@ -30,6 +30,8 @@ export interface PluginHost {
     loadPlugin(plugin: Plugin): any;
 
     init(data: PluginMetadata[]): [Plugin[], Plugin[]];
+
+    initExtApi(extApi: ExtPluginApi[]): void;
 }
 
 interface StopFn {
@@ -74,6 +76,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.envExt.setQueryParameters(pluginInit.env.queryParams);
 
         this.preferencesManager.init(pluginInit.preferences);
+
+        if (pluginInit.extApi) {
+            this.host.initExtApi(pluginInit.extApi);
+        }
 
         const [plugins, foreignPlugins] = this.host.init(pluginInit.plugins);
         // add foreign plugins

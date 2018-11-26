@@ -50,11 +50,13 @@ import {
     FileChangeEvent,
     TextDocumentShowOptions
 } from './model';
+import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
     preferences: { [key: string]: any };
     env: EnvInit;
+    extApi?: ExtPluginApi[];
 }
 
 export interface Plugin {

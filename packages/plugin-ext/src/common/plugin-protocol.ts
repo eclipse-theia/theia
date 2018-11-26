@@ -19,6 +19,7 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plugin-api';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
+import { ExtPluginApi } from './plugin-ext-api-contribution';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -467,6 +468,8 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     getDeployedBackendMetadata(): Promise<PluginMetadata[]>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+
+    getExtPluginAPI(): Promise<ExtPluginApi[]>;
 
     onMessage(message: string): Promise<void>;
 
