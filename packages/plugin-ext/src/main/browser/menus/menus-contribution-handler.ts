@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { MenuPath, MessageService } from '@theia/core';
+import { MenuPath, ILogger } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
@@ -27,8 +27,8 @@ export class MenusContributionPointHandler {
     @inject(MenuModelRegistry)
     protected readonly menuRegistry: MenuModelRegistry;
 
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     handle(contributions: PluginContribution): void {
         if (!contributions.menus) {
@@ -39,7 +39,7 @@ export class MenusContributionPointHandler {
             if (contributions.menus.hasOwnProperty(location)) {
                 const menuPath = this.parseMenuPath(location);
                 if (!menuPath) {
-                    this.messageService.warn(`Plugin contributes items to a menu with invalid identifier: ${location}`);
+                    this.logger.warn(`Plugin contributes items to a menu with invalid identifier: ${location}`);
                     continue;
                 }
                 const menus = contributions.menus[location];
