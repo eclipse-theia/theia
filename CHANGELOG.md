@@ -4,6 +4,7 @@
 - [core] Fix `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
 - [core] Add a preference to define how to handle application exit.
 - [core] Add a way to prevent application exit from extensions.
+- [core] Prevent application exit if some editors are dirty.
 - [languages] Add a preference for every language contribution to be able to trace the communication client <-> server
 
 
