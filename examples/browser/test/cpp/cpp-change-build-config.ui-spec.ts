@@ -18,12 +18,12 @@ import * as utils from '../utils';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
-import { MainPage } from '../main-page/main-page';
-import { TopPanel } from '../top-panel/top-panel';
-import { LeftPanel } from '../left-panel/left-panel';
-import { BottomPanel } from '../bottom-panel/bottom-panel';
+import { TopPanel } from '../panel/top-panel';
+import { LeftPanel } from '../panel/left-panel';
+import { MainPanel } from '../panel/main-panel';
+import { BottomPanel } from '../panel/bottom-panel';
 
-let mainPage: MainPage;
+let mainPage: MainPanel;
 let topPanel: TopPanel;
 let leftPanel: LeftPanel;
 let bottomPanel: BottomPanel;
@@ -35,7 +35,7 @@ before(() => {
     driver.localStorage('DELETE');
     driver.refresh();
 
-    mainPage = new MainPage(driver);
+    mainPage = new MainPanel(driver);
     topPanel = new TopPanel(driver);
     leftPanel = new LeftPanel(driver);
     bottomPanel = new BottomPanel(driver);
@@ -100,7 +100,7 @@ int main() {}
  */
 function hasClangd() {
     try {
-        const out = cp.execSync('clangd -version', {encoding: 'utf8'});
+        const out = cp.execSync('clangd -version', { encoding: 'utf8' });
         // Match 'clangd version' at the start of
         // 'clangd version 8.0.0 (trunk 341484) (llvm/trunk 341481)'.
         return out.indexOf('clangd version') === 0;
@@ -124,8 +124,8 @@ function changeBuildConfig(name: string, driver: WebdriverIO.Client<void>) {
     driver.pause(300);
 }
 
-describe('cpp extension', function() {
-    it('should be able to change build config', function() {
+describe.skip('cpp extension', function () {
+    it('should be able to change build config', function () {
         if (!hasClangd()) {
             this.skip();
             return;
@@ -140,9 +140,13 @@ describe('cpp extension', function() {
         prepareWorkspace();
 
         // Open Files and Problems views
-        topPanel.toggleFilesView();
-        topPanel.openProblemsView();
-        bottomPanel.waitForProblemsView();
+        if (!leftPanel.isFileViewVisible()) {
+            topPanel.toggleFilesView();
+        }
+
+        if (!bottomPanel.problemsViewExists()) {
+            topPanel.openProblemsView();
+        }
 
         // Open our test source file
         leftPanel.toggleDirectoryInFilesView('cpp');

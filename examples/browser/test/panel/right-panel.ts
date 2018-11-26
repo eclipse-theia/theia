@@ -14,43 +14,44 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import 'webdriverio';
-
+/**
+ * Set of Right Panel Functions for Testing Purposes
+ */
 export class RightPanel {
 
     constructor(protected readonly driver: WebdriverIO.Client<void>) { }
 
-    doesTabExist(tabName: string): boolean {
-        return this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').isExisting(`div=${tabName}`);
+    /**
+     * Determine if the given tab exists.
+     *
+     * @param name the tab name.
+     * @returns `true` if the given tab exists.
+     */
+    tabExists(name: string): boolean {
+        return this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').isExisting(`div=${name}`);
     }
 
-    isTabActive(tabName: string): boolean {
-        const tab = this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').element(`div=${tabName}`);
-        /* Check if the parent li container has the p-mod-current class which makes it active */
-        return (tab.$('..').getAttribute('class').split(' ').indexOf('p-mod-current') !== -1);
-    }
-
-    openCloseTab(tabName: string) {
-        this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').click(`div=${tabName}`);
-        // Wait for animations to finish
-        this.driver.pause(300);
-    }
-
-    collapseTab(tabName: string) {
-        this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').rightClick(`div=${tabName}`);
-        this.driver.element('.p-Widget.p-Menu .p-Menu-content').click('div=Collapse');
-    }
-
+    /**
+     * Determine if the output view is visible.
+     *
+     * @returns `true` if the output view is visible.
+     */
     isOutlineViewVisible(): boolean {
         return (this.isPanelVisible() && this.driver.isExisting('#outline-view'));
     }
 
-    waitForOutlineViewVisible(): void {
-        this.driver.waitForVisible('#outline-view');
-        // Wait for animations to finish
-        this.driver.pause(300);
+    /**
+     * Wait for the output view to be visible.
+     */
+    waitForOutlineView(): void {
+        this.driver.waitForVisible('#outline-view', 3000);
     }
 
+    /**
+     * Determine if the right side panel is visible.
+     *
+     * @returns `true` if the right side panel is visible.
+     */
     protected isPanelVisible(): boolean {
         return (this.driver.element('#theia-right-side-panel').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1);
     }
