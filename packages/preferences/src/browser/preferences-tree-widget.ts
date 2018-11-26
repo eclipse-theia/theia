@@ -158,7 +158,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             this.deferredEditors.resolve(this.editors);
         });
         this.editorsContainer.onEditorChanged(editor => {
-            if (this.currentEditor) {
+            if (this.currentEditor && this.currentEditor.editor.uri.toString() !== editor.editor.uri.toString()) {
                 this.currentEditor.saveable.save();
             }
             this.currentEditor = editor;
