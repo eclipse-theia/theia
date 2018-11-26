@@ -36,6 +36,7 @@ let handler: MenusContributionPointHandler;
 
 let notificationWarnSpy: sinon.SinonSpy;
 let registerMenuSpy: sinon.SinonSpy;
+let loggerWarnSpy: sinon.SinonSpy;
 
 const testCommandId = 'core.about';
 
@@ -56,6 +57,9 @@ before(() => {
 beforeEach(() => {
     handler = testContainer.get(MenusContributionPointHandler);
 
+    const logger = testContainer.get<ILogger>(ILogger);
+    loggerWarnSpy = sinon.spy(logger, 'warn');
+
     const messageService = testContainer.get(MessageService);
     notificationWarnSpy = sinon.spy(messageService, 'warn');
 
@@ -66,6 +70,7 @@ beforeEach(() => {
 afterEach(function () {
     notificationWarnSpy.restore();
     registerMenuSpy.restore();
+    loggerWarnSpy.restore();
 });
 
 describe('MenusContributionHandler', () => {
@@ -137,7 +142,7 @@ describe('MenusContributionHandler', () => {
             }
         });
 
-        sinon.assert.called(notificationWarnSpy);
+        sinon.assert.called(loggerWarnSpy);
     });
 
     function assertItemIsRegistered(menuPath: MenuPath, menuGroup: string = '', order?: string) {
