@@ -36,7 +36,7 @@ import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-servi
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
 import {
-    QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickPickService, QuickOpenContribution,
+    QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickOpenContribution,
     QuickOpenHandlerRegistry, CommandQuickOpenContribution, HelpQuickOpenHandler,
     QuickOpenFrontendContribution, PrefixQuickOpenService, QuickInputService
 } from './quick-open';
@@ -65,6 +65,8 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { bindCorePreferences } from './core-preferences';
+import { QuickPickServiceImpl } from './quick-open/quick-pick-service-impl';
+import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -141,7 +143,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, KeybindingContribution);
 
     bind(MessageClient).toSelf().inSingletonScope();
-    bind(MessageService).toSelf().inSingletonScope().onActivation(({container}, messages) => {
+    bind(MessageService).toSelf().inSingletonScope().onActivation(({ container }, messages) => {
         const client = container.get(MessageClient);
         WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
         return messages;
@@ -153,13 +155,17 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     );
 
     bind(QuickOpenService).toSelf().inSingletonScope();
-    bind(QuickPickService).toSelf().inSingletonScope();
     bind(QuickInputService).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
     );
+
+    bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService) => {
+        WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
+        return quickPickService;
+    });
 
     bind(PrefixQuickOpenService).toSelf().inSingletonScope();
     bindContributionProvider(bind, QuickOpenContribution);

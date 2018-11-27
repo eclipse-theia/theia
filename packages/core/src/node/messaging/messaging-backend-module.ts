@@ -17,7 +17,8 @@
 import { ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../../common';
 import { BackendApplicationContribution } from '../backend-application';
-import { MessagingContribution, ConnectionContainerModule, MessagingContainer } from './messaging-contribution';
+import { MessagingContribution, MessagingContainer } from './messaging-contribution';
+import { ConnectionContainerModule } from './connection-container-module';
 import { MessagingService } from './messaging-service';
 
 export const messagingBackendModule = new ContainerModule(bind => {
