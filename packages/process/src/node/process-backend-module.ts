@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule, Container } from 'inversify';
-import { RawProcess, RawProcessOptions, RawProcessFactory } from './raw-process';
+import { RawProcess, RawProcessOptions, RawProcessFactory, RawForkOptions } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ProcessManager } from './process-manager';
@@ -31,7 +31,7 @@ export default new ContainerModule(bind => {
         return parentLogger.child('process');
     }).inSingletonScope().whenTargetNamed('process');
     bind(RawProcessFactory).toFactory(ctx =>
-        (options: RawProcessOptions) => {
+        (options: RawProcessOptions | RawForkOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
 
