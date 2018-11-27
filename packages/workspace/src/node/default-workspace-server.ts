@@ -24,7 +24,6 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { MessageService, ILogger } from '@theia/core';
 import { WorkspaceServer } from '../common';
 
 @injectable()
@@ -66,12 +65,6 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
-
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
-
-    @inject(ILogger)
-    protected readonly logger: ILogger;
 
     @postConstruct()
     protected async init() {
@@ -153,16 +146,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     private async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
         const filePath = this.getUserStoragePath();
         const data = await this.readJsonFromFile(filePath);
-        if (data && RecentWorkspacePathsData.is(data)) {
-            return data;
-        }
-        fs.exists(filePath, exists => {
-            if (exists) {
-                const message = `Unable to retrieve recent workspaces from the file: '${filePath}'. Please check if the file is corrupted.`;
-                this.messageService.error(message);
-                this.logger.error('[CAUGHT]', message);
-            }
-        });
+        return RecentWorkspacePathsData.is(data) ? data : undefined;
     }
 
     private async readJsonFromFile(filePath: string): Promise<object | undefined> {
@@ -183,8 +167,7 @@ interface RecentWorkspacePathsData {
 }
 
 namespace RecentWorkspacePathsData {
-    // tslint:disable-next-line:no-any
-    export function is(data: any): data is RecentWorkspacePathsData {
-        return data.recentRoots !== undefined && Array.isArray(data.recentRoots);
+    export function is(data: Object | undefined): data is RecentWorkspacePathsData {
+        return !!data && typeof data === 'object' && ('recentRoots' in data) && Array.isArray(data['recentRoots']);
     }
 }

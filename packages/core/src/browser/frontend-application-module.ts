@@ -27,7 +27,8 @@ import {
     MenuModelRegistry, MenuContribution,
     MessageService,
     MessageClient,
-    InMemoryResources
+    InMemoryResources,
+    messageServicePath
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
@@ -140,7 +141,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, KeybindingContribution);
 
     bind(MessageClient).toSelf().inSingletonScope();
-    bind(MessageService).toSelf().inSingletonScope();
+    bind(MessageService).toSelf().inSingletonScope().onActivation(({container}, messages) => {
+        const client = container.get(MessageClient);
+        WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
+        return messages;
+    });
 
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
     [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
