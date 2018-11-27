@@ -18,7 +18,7 @@ import { ContainerModule, interfaces, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
-    CommandService, commandServicePath, JsonRpcProxyFactory, messageServicePath
+    CommandService, commandServicePath, messageServicePath
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -28,7 +28,8 @@ import { ApplicationServerImpl } from './application-server';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { EnvVariablesServerImpl } from './env-variables';
-import { ConnectionContainerModule } from './messaging/messaging-contribution';
+import { ConnectionContainerModule } from './messaging/connection-container-module';
+import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -38,30 +39,23 @@ export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMa
     bind(BackendApplicationContribution).toService(ServerProcess);
 }
 
-const commandConnectionModule = new ContainerModule(bind => {
-    const commandServiceFactory = new JsonRpcProxyFactory<CommandService>();
-    const commandService = commandServiceFactory.createProxy();
-    bind<ConnectionHandler>(ConnectionHandler).toConstantValue({
-        path: commandServicePath,
-        onConnection: connection => commandServiceFactory.listen(connection)
-    });
-    bind<CommandService>(CommandService).toConstantValue(commandService);
+const commandConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
+    bindFrontendService(commandServicePath, CommandService);
 });
 
-const messageConnectionModule = new ContainerModule(bind => {
-    const messageClientFactory = new JsonRpcProxyFactory<MessageClient>();
-    const messageClient = messageClientFactory.createProxy();
-    bind<ConnectionHandler>(ConnectionHandler).toConstantValue({
-        path: messageServicePath,
-        onConnection: connection => messageClientFactory.listen(connection)
-    });
-    bind<MessageClient>(MessageClient).toConstantValue(messageClient);
+const messageConnectionModule = ConnectionContainerModule.create(({ bind, bindFrontendService }) => {
+    bindFrontendService(messageServicePath, MessageClient);
     bind(MessageService).toSelf().inSingletonScope();
+});
+
+const quickPickConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
+    bindFrontendService(quickPickServicePath, QuickPickService);
 });
 
 export const backendApplicationModule = new ContainerModule(bind => {
     bind(ConnectionContainerModule).toConstantValue(commandConnectionModule);
     bind(ConnectionContainerModule).toConstantValue(messageConnectionModule);
+    bind(ConnectionContainerModule).toConstantValue(quickPickConnectionModule);
 
     bind(CliManager).toSelf().inSingletonScope();
     bindContributionProvider(bind, CliContribution);

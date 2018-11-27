@@ -1,5 +1,6 @@
 {
   "rules": {
+    "deprecation": true,
     "await-promise": {
       "severity": "warning",
       "options": [
