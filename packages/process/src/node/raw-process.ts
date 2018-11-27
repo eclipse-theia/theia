@@ -17,17 +17,37 @@
 import { injectable, inject, named } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions } from './process';
-import { ChildProcess, spawn } from 'child_process';
+import { Process, ProcessType, ProcessOptions, ForkOptions } from './process';
+import { ChildProcess, spawn, fork } from 'child_process';
 import * as stream from 'stream';
 
 export const RawProcessOptions = Symbol('RawProcessOptions');
+
+/**
+ * Options to spawn a new process (`spawn`).
+ *
+ * For more information please refer to the spawn function of Node's
+ * child_process module:
+ *
+ *   https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
+ */
 export interface RawProcessOptions extends ProcessOptions {
+}
+
+/**
+ * Options to fork a new process using the current Node interpeter (`fork`).
+ *
+ * For more information please refer to the fork function of Node's
+ * child_process module:
+ *
+ *   https://nodejs.org/api/child_process.html#child_process_child_process_fork_modulepath_args_options
+ */
+export interface RawForkOptions extends ForkOptions {
 }
 
 export const RawProcessFactory = Symbol('RawProcessFactory');
 export interface RawProcessFactory {
-    (options: RawProcessOptions): RawProcess;
+    (options: RawProcessOptions | RawForkOptions): RawProcess;
 }
 
 /* A Node stream like /dev/null.
@@ -54,13 +74,14 @@ export class RawProcess extends Process {
     readonly process: ChildProcess;
 
     constructor(
-        @inject(RawProcessOptions) options: RawProcessOptions,
+        @inject(RawProcessOptions) options: RawProcessOptions | RawForkOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) @named('process') logger: ILogger
     ) {
         super(processManager, logger, ProcessType.Raw, options);
+        const executable = this.isForkOptions(options) ? options.modulePath : options.command;
 
-        this.logger.debug(`Starting raw process: ${options.command},`
+        this.logger.debug(`Starting raw process: ${executable},`
             + ` with args: ${options.args ? options.args.join(' ') : ''}, `
             + ` with options: ${JSON.stringify(options.options)}`);
 
@@ -69,10 +90,17 @@ export class RawProcess extends Process {
            normalize the error handling by calling the error handler
            instead.  */
         try {
-            this.process = spawn(
-                options.command,
-                options.args,
-                options.options);
+            if (this.isForkOptions(options)) {
+                this.process = fork(
+                    options.modulePath,
+                    options.args,
+                    options.options);
+            } else {
+                this.process = spawn(
+                    options.command,
+                    options.args,
+                    options.options);
+            }
 
             this.process.on('error', this.emitOnError.bind(this));
             this.process.on('exit', this.emitOnExit.bind(this));
