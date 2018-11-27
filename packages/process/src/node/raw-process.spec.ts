@@ -20,6 +20,7 @@ import { createProcessTestContainer } from './test/process-test-container';
 import { RawProcessFactory } from './raw-process';
 import * as temp from 'temp';
 import * as fs from 'fs';
+import * as path from 'path';
 import { isWindows } from '@theia/core';
 
 /* Allow to create temporary files, but delete them when we're done.  */
@@ -30,6 +31,7 @@ const track = temp.track();
  */
 
 const expect = chai.expect;
+const FORK_TEST_FILE = path.join(__dirname, 'test', 'process-fork-test.js');
 
 describe('RawProcess', function () {
 
@@ -129,6 +131,47 @@ describe('RawProcess', function () {
     it('test pipe stderr stream', async function () {
         const args = ['invalidarg'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
+
+        const outStream = new stream.PassThrough();
+
+        const p = new Promise<string>((resolve, reject) => {
+            let version = '';
+            outStream.on('data', data => {
+                version += data.toString();
+            });
+            outStream.on('end', () => {
+                resolve(version.trim());
+            });
+        });
+
+        rawProcess.errorOutput.pipe(outStream);
+
+        expect(await p).to.have.string('Error');
+    });
+
+    it('test forked pipe stdout stream', async function () {
+        const args = ['version'];
+        const rawProcess = rawProcessFactory({ modulePath: FORK_TEST_FILE, args, options: { stdio: 'pipe' } });
+
+        const outStream = new stream.PassThrough();
+
+        const p = new Promise<string>((resolve, reject) => {
+            let version = '';
+            outStream.on('data', data => {
+                version += data.toString();
+            });
+            outStream.on('end', () => {
+                resolve(version.trim());
+            });
+        });
+
+        rawProcess.output.pipe(outStream);
+
+        expect(await p).to.be.equal('1.0.0');
+    });
+
+    it('test forked pipe stderr stream', async function () {
+        const rawProcess = rawProcessFactory({ modulePath: FORK_TEST_FILE, args: [], options: { stdio: 'pipe' } });
 
         const outStream = new stream.PassThrough();
 

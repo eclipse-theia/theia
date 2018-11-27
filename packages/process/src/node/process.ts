@@ -28,8 +28,30 @@ export enum ProcessType {
     'Terminal'
 }
 
+/**
+ * Options to spawn a new process (`spawn`).
+ *
+ * For more information please refer to the spawn function of Node's
+ * child_process module:
+ *
+ *   https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
+ */
 export interface ProcessOptions {
     readonly command: string,
+    args?: string[],
+    options?: object
+}
+
+/**
+ * Options to fork a new process using the current Node interpeter (`fork`).
+ *
+ * For more information please refer to the fork function of Node's
+ * child_process module:
+ *
+ *   https://nodejs.org/api/child_process.html#child_process_child_process_fork_modulepath_args_options
+ */
+export interface ForkOptions {
+    readonly modulePath: string,
     args?: string[],
     options?: object
 }
@@ -47,7 +69,7 @@ export abstract class Process {
         protected readonly processManager: ProcessManager,
         protected readonly logger: ILogger,
         @unmanaged() protected readonly type: ProcessType,
-        protected readonly options: ProcessOptions
+        protected readonly options: ProcessOptions | ForkOptions
     ) {
         this.id = this.processManager.register(this);
     }
@@ -75,9 +97,10 @@ export abstract class Process {
     protected handleOnExit(event: IProcessExitEvent) {
         this._killed = true;
         const signalSuffix = event.signal ? `, signal: ${event.signal}` : '';
+        const executable = this.isForkOptions(this.options) ? this.options.modulePath : this.options.command;
 
         this.logger.debug(`Process ${this.pid} has exited with code ${event.code}${signalSuffix}.`,
-            this.options.command, this.options.args);
+            executable, this.options.args);
     }
 
     protected emitOnError(err: Error) {
@@ -90,4 +113,7 @@ export abstract class Process {
         this.logger.error(error);
     }
 
+    protected isForkOptions(options: ForkOptions | any): options is ForkOptions {
+        return !!options && !!options.modulePath;
+    }
 }
