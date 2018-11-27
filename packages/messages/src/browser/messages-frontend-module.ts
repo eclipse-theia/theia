@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { MessageClient, messageServicePath } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { MessageClient } from '@theia/core/lib/common';
 
 import { NotificationsMessageClient } from './notifications-message-client';
 
@@ -26,10 +25,5 @@ import { bindNotificationPreferences } from './notification-preferences';
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindNotificationPreferences(bind);
     bind(NotificationsMessageClient).toSelf().inSingletonScope();
-    rebind(MessageClient).toDynamicValue(context => {
-        const notificationsClient = context.container.get(NotificationsMessageClient);
-        // connect to remote interface
-        WebSocketConnectionProvider.createProxy(context.container, messageServicePath, notificationsClient);
-        return notificationsClient;
-    }).inSingletonScope();
+    rebind(MessageClient).toService(NotificationsMessageClient);
 });
