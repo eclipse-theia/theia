@@ -18,7 +18,7 @@ import { ContainerModule, interfaces, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
-    CommandService, commandServicePath, JsonRpcProxyFactory
+    CommandService, commandServicePath, JsonRpcProxyFactory, messageServicePath
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -48,8 +48,20 @@ const commandConnectionModule = new ContainerModule(bind => {
     bind<CommandService>(CommandService).toConstantValue(commandService);
 });
 
+const messageConnectionModule = new ContainerModule(bind => {
+    const messageClientFactory = new JsonRpcProxyFactory<MessageClient>();
+    const messageClient = messageClientFactory.createProxy();
+    bind<ConnectionHandler>(ConnectionHandler).toConstantValue({
+        path: messageServicePath,
+        onConnection: connection => messageClientFactory.listen(connection)
+    });
+    bind<MessageClient>(MessageClient).toConstantValue(messageClient);
+    bind(MessageService).toSelf().inSingletonScope();
+});
+
 export const backendApplicationModule = new ContainerModule(bind => {
     bind(ConnectionContainerModule).toConstantValue(commandConnectionModule);
+    bind(ConnectionContainerModule).toConstantValue(messageConnectionModule);
 
     bind(CliManager).toSelf().inSingletonScope();
     bindContributionProvider(bind, CliContribution);
@@ -61,9 +73,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindContributionProvider(bind, BackendApplicationContribution);
 
     bindServerProcess(bind, clusterRemoteMasterProcessFactory);
-
-    bind(MessageClient).toSelf().inSingletonScope();
-    bind(MessageService).toSelf().inSingletonScope();
 
     bind(IPCConnectionProvider).toSelf().inSingletonScope();
 

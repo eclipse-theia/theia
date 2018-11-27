@@ -14,8 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { ILogger } from './logger';
+import { injectable } from 'inversify';
 import { CancellationToken } from './cancellation';
 
 export const messageServicePath = '/services/messageService';
@@ -74,8 +73,6 @@ export interface ProgressUpdate {
 @injectable()
 export class MessageClient {
 
-    constructor(@inject(ILogger) protected readonly logger: ILogger) { }
-
     /**
      * Show a message of the given type and possible actions to the user.
      * Resolve to a chosen action.
@@ -84,7 +81,7 @@ export class MessageClient {
      * To be implemented by an extension, e.g. by the messages extension.
      */
     showMessage(message: Message): Promise<string | undefined> {
-        this.logger.info(message.text);
+        console.info(message.text);
         return Promise.resolve(undefined);
     }
 
@@ -94,7 +91,7 @@ export class MessageClient {
      * To be implemented by an extension, e.g. by the messages extension.
      */
     showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
-        this.logger.info(message.text);
+        console.info(message.text);
         return Promise.resolve(undefined);
     }
 
@@ -106,29 +103,4 @@ export class MessageClient {
     reportProgress(progressId: string, update: ProgressUpdate, message: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
         return Promise.resolve(undefined);
     }
-}
-
-@injectable()
-export class DispatchingMessageClient extends MessageClient {
-
-    readonly clients = new Set<MessageClient>();
-
-    showMessage(message: Message): Promise<string | undefined> {
-        return Promise.race([...this.clients].map(client =>
-            client.showMessage(message)
-        ));
-    }
-
-    showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
-        return Promise.race([...this.clients].map(client =>
-            client.showProgress(progressId, message, cancellationToken)
-        ));
-    }
-
-    reportProgress(progressId: string, update: ProgressUpdate, message: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
-        return Promise.race([...this.clients].map(client =>
-            client.reportProgress(progressId, update, message, cancellationToken)
-        ));
-    }
-
 }
