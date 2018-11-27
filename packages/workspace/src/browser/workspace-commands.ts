@@ -204,37 +204,40 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             })
         }));
-        registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newUriAwareCommandHandler({
-            isVisible: uri => !this.isWorkspaceRoot(uri),
-            execute: uri => this.getParent(uri).then(async parent => {
-                if (parent) {
-                    const initialValue = uri.path.base;
-                    const stat = await this.fileSystem.getFileStat(uri.toString());
-                    if (stat === undefined) {
-                        throw new Error(`Unexpected error occurred when renaming. File does not exist. URI: ${uri.toString(true)}.`);
-                    }
-                    const fileType = stat.isDirectory ? 'Directory' : 'File';
-                    const titleStr = `Rename ${fileType}`;
-                    const dialog = new SingleTextInputDialog({
-                        title: titleStr,
-                        initialValue,
-                        initialSelectionRange: {
-                            start: 0,
-                            end: uri.path.name.length
-                        },
-                        validate: (name, mode) => {
-                            if (initialValue === name && mode === 'preview') {
-                                return false;
+        registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newMultiUriAwareCommandHandler({
+            isEnabled: uris => uris.some(uri => !this.isWorkspaceRoot(uri)) && uris.length === 1,
+            isVisible: uris => uris.some(uri => !this.isWorkspaceRoot(uri)) && uris.length === 1,
+            execute: uris => uris.forEach(uri => {
+                this.getParent(uri).then(async parent => {
+                    if (parent) {
+                        const initialValue = uri.path.base;
+                        const stat = await this.fileSystem.getFileStat(uri.toString());
+                        if (stat === undefined) {
+                            throw new Error(`Unexpected error occurred when renaming. File does not exist. URI: ${uri.toString(true)}.`);
+                        }
+                        const fileType = stat.isDirectory ? 'Directory' : 'File';
+                        const titleStr = `Rename ${fileType}`;
+                        const dialog = new SingleTextInputDialog({
+                            title: titleStr,
+                            initialValue,
+                            initialSelectionRange: {
+                                start: 0,
+                                end: uri.path.name.length
+                            },
+                            validate: (name, mode) => {
+                                if (initialValue === name && mode === 'preview') {
+                                    return false;
+                                }
+                                return this.validateFileName(name, parent);
                             }
-                            return this.validateFileName(name, parent);
-                        }
-                    });
-                    dialog.open().then(name => {
-                        if (name) {
-                            this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString());
-                        }
-                    });
-                }
+                        });
+                        dialog.open().then(name => {
+                            if (name) {
+                                this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString());
+                            }
+                        });
+                    }
+                });
             })
         }));
         registry.registerCommand(WorkspaceCommands.FILE_DUPLICATE, this.newMultiUriAwareCommandHandler(this.duplicateHandler));
