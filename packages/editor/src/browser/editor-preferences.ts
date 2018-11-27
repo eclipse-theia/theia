@@ -248,6 +248,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'default': false,
             'description': 'Enable auto indentation adjustment.'
         },
+        'editor.formatOnSave': {
+            'type': 'boolean',
+            'default': false,
+            'description': 'Enable format on save when the autoSave preference is off.'
+        },
         'editor.formatOnType': {
             'type': 'boolean',
             'default': false,
@@ -504,6 +509,7 @@ export interface EditorConfiguration {
     'editor.autoClosingBrackets'?: boolean
     'editor.autoIndent'?: boolean
     'editor.formatOnType'?: boolean
+    'editor.formatOnSave'?: boolean
     'editor.formatOnPaste'?: boolean
     'editor.dragAndDrop'?: boolean
     'editor.suggestOnTriggerCharacters'?: boolean

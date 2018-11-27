@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.3.16",
     "@theia/editor": "^0.3.16",
+    "@theia/languages": "^0.3.16",
     "@theia/monaco": "^0.3.16",
     "editorconfig": "^0.15.0"
   },
