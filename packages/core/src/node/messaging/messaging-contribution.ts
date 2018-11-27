@@ -29,11 +29,11 @@ import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
 import { ConsoleLogger } from './logger';
+import { ConnectionContainerModule } from './connection-container-module';
 
 import Route = require('route-parser');
 
 export const MessagingContainer = Symbol('MessagingContainer');
-export const ConnectionContainerModule = Symbol('ConnectionContainerModule');
 
 @injectable()
 export class MessagingContribution implements BackendApplicationContribution, MessagingService {
@@ -59,25 +59,25 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     listen(spec: string, callback: (params: MessagingService.PathParams, connection: MessageConnection) => void): void {
-        return this.wsChannel(spec, (params, channel) => {
+        this.wsChannel(spec, (params, channel) => {
             const connection = createWebSocketConnection(channel, new ConsoleLogger());
             callback(params, connection);
         });
     }
 
     forward(spec: string, callback: (params: MessagingService.PathParams, connection: IConnection) => void): void {
-        return this.wsChannel(spec, (params, channel) => {
+        this.wsChannel(spec, (params, channel) => {
             const connection = launch.createWebSocketConnection(channel);
             callback(params, connection);
         });
     }
 
     wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: WebSocketChannel) => void): void {
-        return this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
+        this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
     }
 
     ws(spec: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void {
-        return this.wsHandlers.push(spec, callback);
+        this.wsHandlers.push(spec, callback);
     }
 
     protected checkAliveTimeout = 30000;
@@ -97,7 +97,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         setInterval(() => {
             wss.clients.forEach((socket: CheckAliveWS) => {
                 if (socket.alive === false) {
-                    return socket.terminate();
+                    socket.terminate();
+                    return;
                 }
                 socket.alive = false;
                 socket.ping();

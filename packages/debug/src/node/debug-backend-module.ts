@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider, ILogger } from '@theia/core/lib/common';
+import { bindContributionProvider, ILogger } from '@theia/core/lib/common';
 import { ContainerModule } from 'inversify';
 import {
     DebugPath,
@@ -25,7 +25,7 @@ import {
     DebugAdapterSessionFactoryImpl
 } from './debug-adapter';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/messaging-contribution';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
     DebugAdapterContribution,
     DebugAdapterSessionFactory,
@@ -35,16 +35,12 @@ import { DebugServiceImpl } from './debug-service-impl';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
 
-const debugConnectionModule = new ContainerModule(bind => {
+const debugConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, DebugAdapterContribution);
     bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
 
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler(DebugPath, () =>
-            context.container.get<DebugService>(DebugService)
-        )
-    ).inSingletonScope();
+    bindBackendService(DebugPath, DebugService);
 });
 
 export default new ContainerModule(bind => {
