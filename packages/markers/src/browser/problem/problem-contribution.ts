@@ -82,6 +82,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     }
 
     registerMenus(menus: MenuModelRegistry): void {
+        super.registerMenus(menus);
         menus.registerMenuAction(ProblemsMenu.PROBLEMS, {
             commandId: ProblemsCommands.COLLAPSE_ALL.id,
             label: 'Collapse All',
