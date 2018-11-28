@@ -14,14 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as _ from 'lodash';
 import { injectable, inject } from 'inversify';
 // tslint:disable:no-implicit-dependencies
-import { MessageService, CommandService } from '@theia/core/lib/common';
+import { Range, CodeLens } from 'vscode-languageserver-types';
+import URI from '@theia/core/lib/common/uri';
+import { MessageService, CommandContribution, CommandRegistry, Command, DisposableCollection } from '@theia/core/lib/common';
 import { FrontendApplicationContribution, } from '@theia/core/lib/browser';
-import { Workspace } from '@theia/languages/lib/browser';
+import { Workspace, Languages } from '@theia/languages/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 // tslint:enable:no-implicit-dependencies
+import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
+import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
+import { JavaDebugPreferences } from './java-debug-preferences';
 
 enum HcrChangeType {
     ERROR = 'ERROR',
@@ -31,20 +38,39 @@ enum HcrChangeType {
     BUILD_COMPLETE = 'BUILD_COMPLETE',
 }
 
+export namespace JavaDebugCommands {
+    export const RUN: Command = {
+        id: 'java.debug.run'
+    };
+    export const DEBUG: Command = {
+        id: 'java.debug.debug'
+    };
+    export const RESOLVE_MAIN_METHOD = 'vscode.java.resolveMainMethod';
+}
+
 export namespace JavaDebugSession {
     export function is(session: DebugSession): boolean {
         return session.configuration.type === 'java';
     }
 }
 
+interface JavaMainMethod {
+    range: Range;
+    mainClass: string;
+    projectName: string;
+}
+
 @injectable()
-export class JavaDebugFrontendContribution implements FrontendApplicationContribution {
+export class JavaDebugFrontendContribution implements FrontendApplicationContribution, CommandContribution {
 
     @inject(Workspace)
     protected readonly workspace: Workspace;
 
-    @inject(CommandService)
-    protected readonly commands: CommandService;
+    @inject(Languages)
+    protected readonly languages: Languages;
+
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
 
     @inject(MessageService)
     protected readonly messages: MessageService;
@@ -52,9 +78,24 @@ export class JavaDebugFrontendContribution implements FrontendApplicationContrib
     @inject(DebugSessionManager)
     protected readonly sessions: DebugSessionManager;
 
+    @inject(JavaDebugPreferences)
+    protected readonly preferences: JavaDebugPreferences;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(DebugConfigurationManager)
+    protected readonly configurations: DebugConfigurationManager;
+
     protected readonly suppressedReasons = new Set<string>();
 
     initialize(): void {
+        this.updateRunDebugCodeLens();
+        this.preferences.onPreferenceChanged(({ preferenceName }) => {
+            if (preferenceName === 'java.debug.settings.enableRunDebugCodeLens') {
+                this.updateRunDebugCodeLens();
+            }
+        });
         this.sessions.onDidCreateDebugSession(session => {
             if (JavaDebugSession.is(session) && this.sessions.sessions.filter(JavaDebugSession.is).length === 1) {
                 this.updateDebugSettings();
@@ -86,6 +127,97 @@ export class JavaDebugFrontendContribution implements FrontendApplicationContrib
                     }
                 }
             });
+        }
+    }
+
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(JavaDebugCommands.RUN, {
+            execute: (mainClass, projectName, uri) => this.runProgram(mainClass, projectName, uri)
+        });
+        commands.registerCommand(JavaDebugCommands.DEBUG, {
+            execute: (mainClass, projectName, uri) => this.runProgram(mainClass, projectName, uri, false)
+        });
+    }
+
+    protected readonly toDisposeRunDebugCodeLens = new DisposableCollection();
+    protected updateRunDebugCodeLens(): void {
+        if (this.preferences['java.debug.settings.enableRunDebugCodeLens'] && this.toDisposeRunDebugCodeLens.disposed) {
+            if (this.languages.registerCodeLensProvider) {
+                this.toDisposeRunDebugCodeLens.push(this.languages.registerCodeLensProvider([{ language: 'java' }], {
+                    provideCodeLenses: async params => {
+                        if (!this.commands.isEnabled(JavaDebugCommands.RESOLVE_MAIN_METHOD)) {
+                            return [];
+                        }
+                        try {
+                            const uri = params.textDocument.uri;
+                            const mainMethods = await this.commands.executeCommand<JavaMainMethod[]>(JavaDebugCommands.RESOLVE_MAIN_METHOD, uri) || [];
+                            return _.flatten(mainMethods.map(method => <CodeLens[]>[
+                                {
+                                    range: method.range,
+                                    command: {
+                                        title: '▶ Run',
+                                        command: JavaDebugCommands.RUN.id,
+                                        arguments: [method.mainClass, method.projectName, uri]
+                                    }
+                                },
+                                {
+                                    range: method.range,
+                                    command: {
+                                        title: '🐞 Debug',
+                                        command: JavaDebugCommands.DEBUG.id,
+                                        arguments: [method.mainClass, method.projectName, uri]
+                                    }
+                                }
+                            ]));
+                        } catch (e) {
+                            console.error(e);
+                            return [];
+                        }
+
+                    }
+                }));
+            }
+        } else {
+            this.toDisposeRunDebugCodeLens.dispose();
+        }
+    }
+
+    protected async runProgram(mainClass: string, projectName: string, uri: string, noDebug: boolean = true): Promise<void> {
+        const workspaceFolder = this.workspaceService.getWorkspaceRootUri(new URI(uri));
+        const workspaceFolderUri = workspaceFolder && workspaceFolder.toString();
+        const configuration = this.constructDebugConfig(mainClass, projectName, workspaceFolderUri);
+        configuration.projectName = projectName;
+        configuration.noDebug = noDebug;
+        await this.sessions.start({
+            configuration,
+            workspaceFolderUri
+        });
+    }
+    protected constructDebugConfig(mainClass: string, projectName: string, workspaceFolderUri?: string): DebugConfiguration {
+        return _.cloneDeep(this.findConfiguration(mainClass, projectName).next().value || {
+            type: 'java',
+            name: `CodeLens (Launch) - ${mainClass.substr(mainClass.lastIndexOf('.') + 1)}`,
+            request: 'launch',
+            cwd: workspaceFolderUri ? '${workspaceFolder}' : undefined,
+            console: 'internalConsole',
+            stopOnEntry: false,
+            mainClass,
+            args: '',
+            projectName,
+        });
+    }
+    protected * findConfiguration(mainClass: string, projectName: string): IterableIterator<DebugConfiguration> {
+        for (const option of this.configurations.all) {
+            const { configuration } = option;
+            if (configuration.mainClass === mainClass && _.toString(configuration.projectName) === _.toString(projectName)) {
+                yield configuration;
+            }
+        }
+        for (const option of this.configurations.all) {
+            const { configuration } = option;
+            if (configuration.mainClass === mainClass && !configuration.projectName) {
+                yield configuration;
+            }
         }
     }
 
