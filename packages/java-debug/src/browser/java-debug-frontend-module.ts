@@ -15,12 +15,16 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-// tslint:disable-next-line:no-implicit-dependencies
+// tslint:disable:no-implicit-dependencies
+import { CommandContribution } from '@theia/core/lib/common';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+// tslint:enable:no-implicit-dependencies
 import { bindJavaDebugPreferences } from './java-debug-preferences';
 import { JavaDebugFrontendContribution } from './java-debug-frontend-contribution';
 
 export default new ContainerModule(bind => {
     bindJavaDebugPreferences(bind);
-    bind(FrontendApplicationContribution).to(JavaDebugFrontendContribution).inSingletonScope();
+    bind(JavaDebugFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(JavaDebugFrontendContribution);
+    bind(FrontendApplicationContribution).toService(JavaDebugFrontendContribution);
 });
