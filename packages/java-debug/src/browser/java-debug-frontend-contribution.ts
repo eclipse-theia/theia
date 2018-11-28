@@ -15,12 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-// tslint:disable-next-line:no-implicit-dependencies
+// tslint:disable:no-implicit-dependencies
 import { MessageService, CommandService } from '@theia/core/lib/common';
-// tslint:disable-next-line:no-implicit-dependencies
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-// tslint:disable-next-line:no-implicit-dependencies
+import { FrontendApplicationContribution, } from '@theia/core/lib/browser';
 import { Workspace } from '@theia/languages/lib/browser';
+// tslint:enable:no-implicit-dependencies
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 
@@ -61,12 +60,15 @@ export class JavaDebugFrontendContribution implements FrontendApplicationContrib
                 this.updateDebugSettings();
             }
         });
-        this.sessions.onDidReceiveDebugSessionCustomEvent(async ({ session, event, body }) => {
+        this.sessions.onDidReceiveDebugSessionCustomEvent(({ session, event, body }) => {
             if (session.configuration.type !== 'java') {
                 return;
             }
             if (event === 'hotcodereplace' && body) {
-                this.applyCodeChanges(session, body);
+                return this.applyCodeChanges(session, body);
+            }
+            if (event === 'usernotification' && body) {
+                return this.handleUserNotification(body);
             }
         });
         this.sessions.onDidDestroyDebugSession(session => {
@@ -139,6 +141,16 @@ export class JavaDebugFrontendContribution implements FrontendApplicationContrib
             } else if (response === 'Yes') {
                 this.sessions.restart(session);
             }
+        }
+    }
+
+    protected async handleUserNotification({ notificationType, message }: { notificationType?: string, message: string }): Promise<void> {
+        if (notificationType === 'ERROR') {
+            await this.messages.error(message);
+        } else if (notificationType === 'WARNING') {
+            await this.messages.warn(message);
+        } else {
+            await this.messages.info(message);
         }
     }
 
