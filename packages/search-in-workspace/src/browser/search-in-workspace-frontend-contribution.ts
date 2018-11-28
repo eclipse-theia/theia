@@ -75,19 +75,25 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             })
         });
 
-        commands.registerCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER, this.newUriAwareCommandHandler({
-            execute: async fileUri => {
-                const widget: SearchInWorkspaceWidget = await this.openView({
-                    activate: true
-                });
-                let uriStr = this.labelProvider.getLongName(fileUri);
-                const stat = await this.fileSystem.getFileStat(fileUri.toString());
-                if (stat) {
-                    if (!stat.isDirectory) {
-                        uriStr = this.labelProvider.getLongName(fileUri.parent);
+        commands.registerCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER, this.newMultiUriAwareCommandHandler({
+            execute: async uris => {
+                const resources: string[] = [];
+                await Promise.all(uris.map(uri =>
+                    this.fileSystem.getFileStat(uri.toString())
+                )).then(stats => {
+                    for (const stat of stats) {
+                        if (stat) {
+                            const uri = new URI(stat.uri);
+                            let uriStr = this.labelProvider.getLongName(uri);
+                            if (stat && !stat.isDirectory) {
+                                uriStr = this.labelProvider.getLongName(uri.parent);
+                            }
+                            resources.push(uriStr);
+                        }
                     }
-                }
-                widget.findInFolder(uriStr);
+                });
+                const widget: SearchInWorkspaceWidget = await this.openView({ activate: true });
+                widget.findInFolder(resources);
             }
         }));
     }
@@ -112,5 +118,9 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
         return new UriAwareCommandHandler(this.selectionService, handler);
+    }
+
+    protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
+        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true });
     }
 }
