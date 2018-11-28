@@ -41,6 +41,12 @@ export interface DidChangeBreakpointsEvent {
     uri: URI
 }
 
+export interface DebugSessionCustomEvent {
+    readonly body?: any
+    readonly event: string
+    readonly session: DebugSession
+}
+
 @injectable()
 export class DebugSessionManager {
     protected readonly _sessions = new Map<string, DebugSession>();
@@ -60,6 +66,9 @@ export class DebugSessionManager {
 
     protected readonly onDidDestroyDebugSessionEmitter = new Emitter<DebugSession>();
     readonly onDidDestroyDebugSession: Event<DebugSession> = this.onDidDestroyDebugSessionEmitter.event;
+
+    protected readonly onDidReceiveDebugSessionCustomEventEmitter = new Emitter<DebugSessionCustomEvent>();
+    readonly onDidReceiveDebugSessionCustomEvent: Event<DebugSessionCustomEvent> = this.onDidReceiveDebugSessionCustomEventEmitter.event;
 
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<DidChangeBreakpointsEvent>();
     readonly onDidChangeBreakpoints: Event<DidChangeBreakpointsEvent> = this.onDidChangeBreakpointsEmitter.event;
@@ -105,7 +114,7 @@ export class DebugSessionManager {
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
     }
 
-    async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
+    async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         try {
             const resolved = await this.resolveConfiguration(options);
             const sessionId = await this.debugService.create(resolved.configuration);
@@ -163,6 +172,9 @@ export class DebugSessionManager {
         });
         session.on('exited', () => this.destroy(session.id));
         session.start().then(() => this.onDidStartDebugSessionEmitter.fire(session));
+        session.onDidCustomEvent(({ event, body }) =>
+            this.onDidReceiveDebugSessionCustomEventEmitter.fire({ event, body, session })
+        );
         return session;
     }
 
