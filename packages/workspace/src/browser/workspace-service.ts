@@ -483,6 +483,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }));
     }
 
+    getWorkspaceRootUri(uri: URI | undefined): URI | undefined {
+        if (!uri) {
+            const root = this.tryGetRoots()[0];
+            if (root) {
+                return new URI(root.uri);
+            }
+            return undefined;
+        }
+        for (const root of this.tryGetRoots()) {
+            const rootUri = new URI(root.uri);
+            if (rootUri && rootUri.isEqualOrParent(uri)) {
+                return rootUri;
+            }
+        }
+        return undefined;
+    }
+
 }
 
 export function getTemporaryWorkspaceFileUri(home: URI): URI {
