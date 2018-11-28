@@ -22,6 +22,7 @@ import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-c
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -47,6 +48,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
 
     constructor() {
         super({
@@ -78,7 +80,13 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 const widget: SearchInWorkspaceWidget = await this.openView({
                     activate: true
                 });
-                const uriStr = this.labelProvider.getLongName(fileUri);
+                let uriStr = this.labelProvider.getLongName(fileUri);
+                const stat = await this.fileSystem.getFileStat(fileUri.toString());
+                if (stat) {
+                    if (!stat.isDirectory) {
+                        uriStr = this.labelProvider.getLongName(fileUri.parent);
+                    }
+                }
                 widget.findInFolder(uriStr);
             }
         }));
