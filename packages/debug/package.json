@@ -7,6 +7,7 @@
     "@theia/core": "^0.3.16",
     "@theia/editor": "^0.3.16",
     "@theia/filesystem": "^0.3.16",
+    "@theia/json": "^0.3.16",
     "@theia/markers": "^0.3.16",
     "@theia/monaco": "^0.3.16",
     "@theia/process": "^0.3.16",
