@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import * as jsoncparser from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger, Resource, ResourceProvider, MaybePromise } from '@theia/core/lib/common';
+import { ILogger, Resource, ResourceProvider, MaybePromise, MessageService } from '@theia/core';
 import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
 
 @injectable()
@@ -29,6 +29,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     @inject(ILogger) protected readonly logger: ILogger;
 
     @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
+
+    @inject(MessageService) protected readonly messageService: MessageService;
 
     protected resource: Promise<Resource>;
 
@@ -71,10 +73,17 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (resource.saveContents) {
             const content = await this.readContents();
             const formattingOptions = { tabSize: 3, insertSpaces: true, eol: '' };
-            const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
-            const result = jsoncparser.applyEdits(content, edits);
+            try {
+                const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
+                const result = jsoncparser.applyEdits(content, edits);
 
-            await resource.saveContents(result);
+                await resource.saveContents(result);
+            } catch (e) {
+                const message = `Failed to update the value of ${key}.`;
+                this.messageService.error(`${message} Please check if ${resource.uri.toString()} is corrupted.`);
+                this.logger.error(`${message} ${e.toString()}`);
+                return;
+            }
             this.preferences[key] = value;
             this.onDidPreferencesChangedEmitter.fire(undefined);
         }
