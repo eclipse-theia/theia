@@ -199,7 +199,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 Open Workspace
             </button>;
         } else {
-            openButton = <button className='open-workspace-button' title='Select a folder as your workspace root' onClick={this.openWorkspace}>
+            openButton = <button className='open-workspace-button' title='Select a folder as your workspace root' onClick={this.openFolder}>
                 Open Folder
             </button>;
         }
