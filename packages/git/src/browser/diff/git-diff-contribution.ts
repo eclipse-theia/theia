@@ -69,6 +69,8 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newUriAwareCommandHandler({
+            isVisible: uri => !!this.repositoryProvider.findRepository(uri),
+            isEnabled: uri => !!this.repositoryProvider.findRepository(uri),
             execute: async fileUri => {
                 await this.quickOpenService.chooseTagsAndBranches(
                     async (fromRevision, toRevision) => {
