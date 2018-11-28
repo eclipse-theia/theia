@@ -33,7 +33,7 @@ import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
-import { ILogger } from '@theia/core/lib/common/logger';
+import { ILogger, MessageService, MessageClient } from '@theia/core';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { ResourceProvider } from '@theia/core/lib/common/resource';
@@ -131,6 +131,10 @@ function testContainerSetup() {
 
     /* Logger mock */
     testContainer.bind(ILogger).to(MockLogger);
+
+    /* Message Service mocks */
+    testContainer.bind(MessageService).toSelf().inSingletonScope();
+    testContainer.bind(MessageClient).toSelf().inSingletonScope();
 }
 
 describe('Preference Service', function () {
