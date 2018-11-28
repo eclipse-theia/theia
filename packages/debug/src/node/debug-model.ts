@@ -57,16 +57,32 @@ export interface DebugAdapterSessionFactory {
 }
 
 /**
- * Debug adapter executable.
- *
- * Parameters to instantiate the debug adapter. In case of launching adapter
- * the parameters contain a command and arguments. For instance:
- * {'command' : 'COMMAND_TO_LAUNCH_DEBUG_ADAPTER', args : [ { 'arg1', 'arg2' } ] }
+ * Debug adapter executable for spawning.
  */
-export interface DebugAdapterExecutable {
-    command: string
-    args?: string[]
+export interface DebugAdapterSpawnExecutable {
+    command: string;
+    args?: string[];
 }
+
+/**
+ * Debug adapter executable for forking.
+ */
+export interface DebugAdapterForkExecutable {
+    modulePath: string;
+    args?: string[];
+}
+
+/**
+ * Debug adapter executable.
+ * Parameters to instantiate the debug adapter.
+ *
+ * In case of launching adapter the parameters contain a command and arguments. For instance:
+ * {'command' : 'COMMAND_TO_LAUNCH_DEBUG_ADAPTER', args : [ { 'arg1', 'arg2' } ] }
+ *
+ * In case of forking the node process, contain the modulePath to fork. For instance:
+ * {'modulePath' : 'NODE_COMMAND_TO_LAUNCH_DEBUG_ADAPTER', args : [ { 'arg1', 'arg2' } ] }
+ */
+export type DebugAdapterExecutable = DebugAdapterSpawnExecutable | DebugAdapterForkExecutable;
 
 /**
  * Provides some way we can communicate with the running debug adapter. In general there is
