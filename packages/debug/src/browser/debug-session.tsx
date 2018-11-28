@@ -341,11 +341,16 @@ export class DebugSession implements CompositeTreeElement {
         return this.connection.sendRequest(command, args);
     }
 
+    sendCustomRequest<T extends DebugProtocol.Response>(command: string, args?: any): Promise<T> {
+        return this.connection.sendCustomRequest(command, args);
+    }
+
     on<K extends keyof DebugEventTypes>(kind: K, listener: (e: DebugEventTypes[K]) => any): Disposable {
         return this.connection.on(kind, listener);
     }
-    onCustom<E extends DebugProtocol.Event>(kind: string, listener: (e: E) => any): Disposable {
-        return this.connection.onCustom(kind, listener);
+
+    get onDidCustomEvent(): Event<DebugProtocol.Event> {
+        return this.connection.onDidCustomEvent;
     }
 
     protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {

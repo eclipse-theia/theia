@@ -27,10 +27,13 @@ import { JavaResourceResolver } from './java-resource';
 import { JavaEditorTextFocusContext } from './java-keybinding-contexts';
 import { JavaTextmateContribution } from './monaco-contribution/java-textmate-contribution';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
+import { bindJavaPreferences } from './java-preferences';
 
 import './monaco-contribution';
 
 export default new ContainerModule(bind => {
+    bindJavaPreferences(bind);
+
     bind(JavaCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(JavaCommandContribution);
     bind(KeybindingContribution).toService(JavaCommandContribution);
