@@ -148,10 +148,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.refresh();
     }
 
-    findInFolder(uri: string): void {
+    findInFolder(uris: string[]): void {
         this.showSearchDetails = true;
-        const value = `${uri}/**`;
-        this.searchInWorkspaceOptions.include = [value];
+        const values = Array.from(new Set(uris.map(uri => `${uri}/**`)));
+        const value = values.join(', ');
+        this.searchInWorkspaceOptions.include = values;
         const include = document.getElementById('include-glob-field');
         if (include) {
             (include as HTMLInputElement).value = value;
