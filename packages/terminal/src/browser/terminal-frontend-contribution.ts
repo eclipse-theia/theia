@@ -26,7 +26,7 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry, Widget
+    KeyModifier, KeybindingRegistry, Widget, QuickPickService, LabelProvider
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -38,6 +38,7 @@ import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handl
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -52,6 +53,11 @@ export namespace TerminalCommands {
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
         label: 'Open New Terminal'
+    };
+    export const NEW_ACTIVE_WORKSPACE: Command = {
+        id: 'terminal:new:active:workspace',
+        category: TERMINAL_CATEGORY,
+        label: 'Open New Terminal (In Active Workspace)'
     };
     export const TERMINAL_CLEAR: Command = {
         id: 'terminal:clear',
@@ -77,12 +83,24 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(SelectionService) protected readonly selectionService: SelectionService
     ) { }
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(QuickPickService)
+    protected readonly quickPick: QuickPickService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TerminalCommands.NEW, {
             execute: () => this.openTerminal()
+        });
+        commands.registerCommand(TerminalCommands.NEW_ACTIVE_WORKSPACE, {
+            execute: () => this.openActiveWorkspaceTerminal()
         });
         commands.registerCommand(TerminalCommands.SPLIT, {
             execute: widget => this.splitTerminal(widget),
@@ -143,6 +161,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
+            keybinding: 'ctrl+shift+`'
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.NEW_ACTIVE_WORKSPACE.id,
             keybinding: 'ctrl+`'
         });
         keybindings.registerKeybinding({
@@ -251,6 +273,13 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         this.shell.activateWidget(widget.id);
     }
 
+    protected async selectTerminalCwd(): Promise<string | undefined> {
+        const roots = this.workspaceService.tryGetRoots();
+        return this.quickPick.show(roots.map(
+            ({ uri }) => ({ label: this.labelProvider.getLongName(new URI(uri).withoutScheme()), value: uri })
+        ), { placeholder: 'Select current working directory for new terminal' });
+    }
+
     protected async splitTerminal(widget?: Widget): Promise<void> {
         const ref = this.getTerminalRef(widget);
         if (ref) {
@@ -264,6 +293,13 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
+        const cwd = await this.selectTerminalCwd();
+        const termWidget = await this.newTerminal({ cwd });
+        termWidget.start();
+        this.activateTerminal(termWidget, options);
+    }
+
+    protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const termWidget = await this.newTerminal({});
         termWidget.start();
         this.activateTerminal(termWidget, options);
