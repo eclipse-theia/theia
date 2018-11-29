@@ -56,7 +56,7 @@ export class DisposableCollection implements Disposable {
 
     private disposingElements = false;
     dispose(): void {
-        if (this.disposed) {
+        if (this.disposed || this.disposingElements) {
             return;
         }
         this.disposingElements = true;
