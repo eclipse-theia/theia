@@ -1,12 +1,41 @@
 # Change Log
 
 ## v0.3.17
+
+- Added better widget error handling for different use cases (ex: no workspace present, no repository present, ...)
+- Addressed multiple backend memory leaks
+- Prefixed quick-open commands for easier categorization and searching
+- Refactored `Task` menu items into the new `Terminal` menu
+- [core] added `theia.applicationName` to application `package.json` and improved window title
+- [core] added graceful handling of init and reconnection errors
+- [core] added the keybinding `ctrl+alt+a` and `ctrl+alt+d` to switch tabs left/right
+- [core] added the menu item `Find Command...` to easily trigger quick-open commands
+- [core] added toolbar support for tab-bars
+- [core] updated the status-bar display when offline
+- [cpp] updated the keybinding for `Switch Header/Source` from `Option+o` to `Option+Command+o` when on macOS
+- [debug] added the ability to fork a debug adapter
+- [debug] added the ability to trace the debug adapter communication
+- [debug] implemented major frontend and backend debug improvements
+- [electron] miscellaneous stability and usability improvements on Electron
+- [getting-started] added `Getting Started Widget` - used to view common commands, recent workspaces, and helpful links
+- [lsp] added new symbol types and increased existing workspace symbol resilience
+- [lsp] registered 'Restart' commands for each language server started for miscellaneous purposes
+- [markers] added the context menu item `Collapse All` for problem markers
+- [mini-browser] miscellaneous mini-browser improvements
+- [plug-in] added Plug-in API to communicate between Theia and plugins
 - [plug-in] added `languages.registerCodeLensProvider` Plug-in API
 - [plug-in] added `languages.registerDocumentSymbolProvider` Plug-in API
-- [core] `ctrl+alt+a` and `ctrl+alt+d` to switch tabs left/right
-- [core] added `theia.applicationName` to application `package.json` and improved window title
-- [plug-in] added ability to provide custom namespace for Plug-in API
-- [cpp] Use `Option+Command+o` instead of `Option+o` on macOS for 'Switch Header/Source'
+- [plug-in] added `window.showTextDocument` Plug-in API
+- [plug-in] added ability to provide custom namespaces for the Plug-in API
+- [plug-in] registered a type definition provider
+- [preview-editor] added the ability to open editors in preview mode
+- [process] added the ability to create new node processes through forking
+- [search-in-workspace] prompt users when performing `Replace All...` to limit accidental triggering
+- [search-in-workspace] when selecting a file, the command `Find in Folder...` searches from the node's closest parent
+- [terminal] added the menu item and command `Split Terminal`
+- [workspace] added the ability to open multiple files simultaneously from the file navigator
+- [workspace] added the context menu item `Collapse All` for the file navigator
+- [workspace] include workspace path as part of the URL fragment
 
 
 ## v0.3.16
