@@ -36,10 +36,12 @@ import {
     TREE_NODE_SEGMENT_GROW_CLASS
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
+import { MenuPath } from '@theia/core/lib/common/menu';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
+export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
 
 export class TreeViewsMainImpl implements TreeViewsMain {
 
@@ -93,7 +95,9 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     }
 
     createTreeViewContainer(dataProvider: TreeViewDataProviderMain): Container {
-        const child = createTreeContainer(this.container);
+        const child = createTreeContainer(this.container, {
+            contextMenuPath: VIEW_ITEM_CONTEXT_MENU
+        });
 
         child.bind(TreeViewDataProviderMain).toConstantValue(dataProvider);
 

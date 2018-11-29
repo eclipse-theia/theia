@@ -20,6 +20,7 @@ import { MenuModelRegistry } from '@theia/core/lib/common';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { PluginContribution } from '../../../common';
+import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -45,10 +46,16 @@ export class MenusContributionPointHandler {
                 const menus = contributions.menus[location];
                 menus.forEach(menu => {
                     const [group = '', order = undefined] = (menu.group || '').split('@');
-                    this.menuRegistry.registerMenuAction([...menuPath, group], {
-                        commandId: menu.command,
-                        order
-                    });
+                    // Registering a menu action requires the related command to be already registered.
+                    // But Theia plugin registers the commands dynamically via the Commands API.
+                    // Let's wait for ~2 sec. It should be enough to finish registering all the contributed commands.
+                    // FIXME: remove this workaround (timer) once the https://github.com/theia-ide/theia/issues/3344 is fixed
+                    setTimeout(() => {
+                        this.menuRegistry.registerMenuAction([...menuPath, group], {
+                            commandId: menu.command,
+                            order
+                        });
+                    }, 2000);
                 });
             }
         }
@@ -58,6 +65,7 @@ export class MenusContributionPointHandler {
         switch (value) {
             case 'editor/context': return EDITOR_CONTEXT_MENU;
             case 'explorer/context': return NAVIGATOR_CONTEXT_MENU;
+            case 'view/item/context': return VIEW_ITEM_CONTEXT_MENU;
         }
     }
 }
