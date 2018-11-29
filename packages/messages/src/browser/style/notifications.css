@@ -77,8 +77,26 @@
     color: var(--theia-warn-color0);
 }
 
-.theia-Notification .text {
+.theia-Notification .progress {
     order: 2;
+    width: 35px;
+    align-items: center;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    align-self: center;
+    height: 100%;
+}
+
+.theia-Notification .progress > p {
+    margin: 0px;
+    font-size: var(--theia-ui-font-size1);
+    vertical-align: middle;
+}
+
+.theia-Notification .text {
+    order: 3;
     display: flex;
     align-items: center;
     justify-items: left;
@@ -104,7 +122,7 @@
 .theia-Notification .buttons {
     display: flex;
     flex-direction: row;
-    order: 3;
+    order: 4;
     white-space: nowrap;
     align-self: flex-end;
     height: 40px;

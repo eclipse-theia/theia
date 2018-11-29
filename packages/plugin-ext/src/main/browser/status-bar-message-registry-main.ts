@@ -16,14 +16,14 @@
 import {interfaces} from 'inversify';
 import * as types from '../../plugin/types-impl';
 import {StatusBarMessageRegistryMain} from '../../api/plugin-api';
-import {StatusBar, StatusBarAlignment} from '@theia/core/lib/browser/status-bar/status-bar';
+import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
 
 const STATUS_BAR_MESSAGE_PRE = 'status-bar-entry';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain {
     private delegate: StatusBar;
 
-    private ids: string[] = [];
+    private entries: Map<string, StatusBarEntry> = new Map();
 
     constructor(container: interfaces.Container) {
         this.delegate = container.get(StatusBar);
@@ -36,8 +36,6 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
                 tooltip: string | undefined,
                 command: string | undefined): PromiseLike<string> {
         const id = this.uniqueId;
-        this.ids.push(id);
-
         const entry = {
             text,
             priority,
@@ -47,15 +45,21 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             command
         };
 
+        this.entries.set(id, entry);
         return this.delegate.setElement(id, entry).then(() => Promise.resolve(id));
+    }
+
+    $update(id: string, message: string): void {
+        const entry = this.entries.get(id);
+        if (entry) {
+            entry.text = message;
+            this.delegate.setElement(id, entry);
+        }
     }
 
     $dispose(id: string): void {
         this.delegate.removeElement(id).then(() => {
-            const index = this.ids.indexOf(id);
-            if (index > -1) {
-                this.ids.splice(index, 1);
-            }
+            this.entries.delete(id);
         });
     }
 
@@ -63,7 +67,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         let extensionId = STATUS_BAR_MESSAGE_PRE;
         for (let counter = 0; counter < 100; counter++) {
             extensionId = `${STATUS_BAR_MESSAGE_PRE}_id_${('0000' + (Math.random() * Math.pow(36, 4) << 0).toString(36)).slice(-4)}`;
-            if (this.ids.indexOf(extensionId) === -1) {
+            if (!this.entries.get(extensionId)) {
                 break;
             }
         }
