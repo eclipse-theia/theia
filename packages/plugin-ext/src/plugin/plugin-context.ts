@@ -62,6 +62,8 @@ import {
     SignatureInformation,
     SignatureHelp,
     Hover,
+    DocumentHighlightKind,
+    DocumentHighlight,
     DocumentLink,
     CodeLens,
     CodeActionKind,
@@ -432,6 +434,9 @@ export function createAPIFactory(
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider);
             },
+            registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
+                return languagesExt.registerDocumentHighlightProvider(selector, provider);
+            },
             registerDocumentFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentFormattingEditProvider): theia.Disposable {
                 return languagesExt.registerDocumentFormattingEditProvider(selector, provider);
             },
@@ -550,6 +555,8 @@ export function createAPIFactory(
             SignatureInformation,
             SignatureHelp,
             Hover,
+            DocumentHighlightKind,
+            DocumentHighlight,
             DocumentLink,
             CodeLens,
             CodeActionKind,
