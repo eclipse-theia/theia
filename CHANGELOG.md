@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.3.18
+- [core] Fix `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
+
 ## v0.3.17
 
 - Added better widget error handling for different use cases (ex: no workspace present, no repository present, ...)
