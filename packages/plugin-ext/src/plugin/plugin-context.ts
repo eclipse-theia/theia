@@ -55,6 +55,9 @@ import {
     DiagnosticSeverity,
     DiagnosticTag,
     Location,
+    Progress,
+    ProgressOptions,
+    ProgressLocation,
     ParameterInformation,
     SignatureInformation,
     SignatureHelp,
@@ -85,6 +88,8 @@ import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
+import { NotificationExtImpl } from './notification';
+import { StatusBarExtImpl } from './statusBar';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
@@ -101,6 +106,8 @@ export function createAPIFactory(
     const dialogsExt = new DialogsExtImpl(rpc);
     const messageRegistryExt = new MessageRegistryExt(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
+    const notificationExt = rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, new NotificationExtImpl(rpc));
+    const statusBarExt = new StatusBarExtImpl(rpc);
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
@@ -264,6 +271,18 @@ export function createAPIFactory(
             },
             createTreeView<T>(viewId: string, options: { treeDataProvider: theia.TreeDataProvider<T> }): theia.TreeView<T> {
                 return treeViewsExt.createTreeView(viewId, options);
+            },
+            withProgress<R>(
+                options: ProgressOptions,
+                task: (progress: Progress<{ message?: string; increment?: number }>, token: theia.CancellationToken) => PromiseLike<R>
+            ): PromiseLike<R> {
+                switch (options.location) {
+                    case ProgressLocation.Notification: return notificationExt.withProgress(options, task);
+                    case ProgressLocation.Window: return statusBarExt.withProgress(options, task);
+                    case ProgressLocation.SourceControl: return new Promise(() => {
+                        console.error('Progress location \'SourceControl\' is not supported.');
+                    });
+                }
             }
         };
 
@@ -487,6 +506,9 @@ export function createAPIFactory(
             Diagnostic,
             CompletionTriggerKind,
             TextEdit,
+            ProgressLocation,
+            ProgressOptions,
+            Progress,
             ParameterInformation,
             SignatureInformation,
             SignatureHelp,
