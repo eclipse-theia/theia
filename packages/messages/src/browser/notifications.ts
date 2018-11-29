@@ -26,6 +26,7 @@ export interface NotificationAction {
 }
 
 export interface NotificationProperties {
+    id: string;
     icon: string;
     text: string;
     actions?: NotificationAction[];
@@ -36,6 +37,12 @@ export interface NotificationProperties {
 export interface Notification {
     properties: NotificationProperties;
     element: Element;
+}
+
+export interface ProgressNotification {
+    show(): void;
+    close(): void;
+    update(item: { message?: string, work?: { done: number, total: number } }): void;
 }
 
 export class Notifications {
@@ -52,6 +59,10 @@ export class Notifications {
         this.container.appendChild(notificationElement);
     }
 
+    create(properties: NotificationProperties): ProgressNotification {
+        return new ProgressNotificationImpl(this.container, this.createNotificationElement(properties), properties);
+    }
+
     protected createNotificationsContainer(parentContainer: Element): Element {
         const container = document.createElement('div');
         container.classList.add(NOTIFICATIONS_CONTAINER);
@@ -62,18 +73,30 @@ export class Notifications {
         const fragment = document.createDocumentFragment();
         const element = fragment.appendChild(document.createElement('div'));
         element.classList.add(NOTIFICATION);
+        element.id = 'notification-container-' + properties.id;
         const iconContainer = element.appendChild(document.createElement('div'));
         iconContainer.classList.add(ICON);
         const icon = iconContainer.appendChild(document.createElement('i'));
-        icon.classList.add('fa', this.toIconClass(properties.icon), 'fa-fw', properties.icon);
+        icon.classList.add(
+            'fa',
+            this.toIconClass(properties.icon),
+        );
+        if (properties.icon === 'progress') {
+            icon.classList.add('fa-pulse');
+        }
+        icon.classList.add(
+            'fa-fw',
+            properties.icon
+        );
         const textContainer = element.appendChild(document.createElement('div'));
         textContainer.classList.add(TEXT);
         const text = textContainer.appendChild(document.createElement('p'));
+        text.id = 'notification-text-' + properties.id;
         text.innerText = properties.text;
+        const handler = <Notification>{ element, properties };
         const close = () => {
             element.remove();
         };
-        const handler = <Notification>{ element, properties };
         const buttons = element.appendChild(document.createElement('div'));
         buttons.classList.add(BUTTONS);
 
@@ -100,13 +123,60 @@ export class Notifications {
     }
 
     protected toIconClass(icon: string): string {
-        if (icon === 'error') {
-            return 'fa-times-circle';
+        switch (icon) {
+            case 'error': return 'fa-times-circle';
+            case 'warning': return 'fa-warning';
+            case 'progress': return 'fa-spinner';
+            default: return 'fa-info-circle';
         }
-        if (icon === 'warning') {
-            return 'fa-warning';
-        }
-        return 'fa-info-circle';
     }
 
+}
+
+class ProgressNotificationImpl implements ProgressNotification {
+    private readonly node: Node;
+    private readonly container: Element;
+    private readonly properties: NotificationProperties;
+
+    constructor(container: Element, node: Node, properties: NotificationProperties) {
+        this.node = node;
+        this.container = container;
+        this.properties = properties;
+    }
+
+    close(): void {
+        const element = document.getElementById('notification-container-' + this.properties.id);
+        if (!element) {
+            return;
+        }
+        element.remove();
+    }
+
+    show(): void {
+        let container = document.getElementById('notification-container-' + this.properties.id);
+        if (!container) {
+            this.container.appendChild(this.node);
+        }
+        container = document.getElementById('notification-container-' + this.properties.id);
+        if (container) {
+            const progressContainer = container.appendChild(document.createElement('div'));
+            progressContainer.className = 'progress';
+            const progress = progressContainer.appendChild(document.createElement('p'));
+            progress.id = 'notification-progress-' + this.properties.id;
+        }
+    }
+
+    update(item: { message?: string, work?: { done: number, total: number } }): void {
+        const textElement = document.getElementById('notification-text-' + this.properties.id);
+        if (textElement) {
+            if (item.work) {
+                const progressElement = document.getElementById('notification-progress-' + this.properties.id);
+                if (progressElement) {
+                    const progressRate = item.work;
+                    progressElement.innerText = `${Math.floor(progressRate.done / progressRate.total * 100)}%`;
+                }
+            }
+            textElement.innerText = this.properties.text + (item.message ? ': ' + item.message : '');
+        }
+    }
 }

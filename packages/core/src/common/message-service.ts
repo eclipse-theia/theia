@@ -15,7 +15,15 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { MessageClient, MessageType, MessageOptions } from './message-service-protocol';
+import {
+    MessageClient,
+    MessageType,
+    MessageOptions,
+    Progress,
+    ProgressUpdate,
+    ProgressMessage
+} from './message-service-protocol';
+import { CancellationTokenSource } from './cancellation';
 
 @injectable()
 export class MessageService {
@@ -65,4 +73,37 @@ export class MessageService {
         return this.client.showMessage({ type, text });
     }
 
+    async showProgress(message: ProgressMessage, onDidCancel?: () => void): Promise<Progress> {
+        const id = this.newProgressId();
+        const cancellationSource = new CancellationTokenSource();
+        const report = (update: ProgressUpdate) => {
+            this.client.reportProgress(id, update, message, cancellationSource.token);
+        };
+        let clientMessage = message;
+        if (ProgressMessage.isCancelable(message)) {
+            const actions = new Set<string>(message.actions);
+            actions.add(ProgressMessage.Cancel);
+            clientMessage = { ...message, actions: Array.from(actions) };
+        }
+        const result = this.client.showProgress(id, clientMessage, cancellationSource.token);
+        if (ProgressMessage.isCancelable(message) && typeof onDidCancel === 'function') {
+            result.then(value => {
+                if (value === ProgressMessage.Cancel) {
+                    onDidCancel();
+                }
+            });
+        }
+        return {
+            id,
+            cancel: () => cancellationSource.cancel(),
+            result,
+            report
+        };
+    }
+
+    private progressIdPrefix = Math.random().toString(36).substring(5);
+    private counter = 0;
+    protected newProgressId(): string {
+        return `${this.progressIdPrefix}-${++this.counter}`;
+    }
 }

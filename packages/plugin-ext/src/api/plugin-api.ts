@@ -51,6 +51,7 @@ import {
     TextDocumentShowOptions
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
+import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
@@ -234,6 +235,7 @@ export interface StatusBarMessageRegistryMain {
         color: string | undefined,
         tooltip: string | undefined,
         command: string | undefined): PromiseLike<string>;
+    $update(id: string, message: string): void;
     $dispose(id: string): void;
 }
 
@@ -401,6 +403,27 @@ export enum TreeViewItemCollapsibleState {
 
 export interface WindowStateExt {
     $onWindowStateChanged(focus: boolean): void;
+}
+
+export interface NotificationExt {
+    withProgress<R>(
+        options: ProgressOptions,
+        task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
+    ): PromiseLike<R>;
+    $onCancel(id: string): void;
+}
+
+export interface NotificationMain {
+    $startProgress(message: string): Promise<string | undefined>;
+    $stopProgress(id: string): void;
+    $updateProgress(message: string, item: { message?: string, increment?: number }): void;
+}
+
+export interface StatusBarExt {
+    withProgress<R>(
+        options: ProgressOptions,
+        task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
+    ): PromiseLike<R>;
 }
 
 export enum EditorPosition {
@@ -807,6 +830,7 @@ export const PLUGIN_RPC_CONTEXT = {
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
+    NOTIFICATION_MAIN: createProxyIdentifier<NotificationMain>('NotificationMain'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
     TREE_VIEWS_MAIN: createProxyIdentifier<TreeViewsMain>('TreeViewsMain'),
     PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
@@ -820,6 +844,7 @@ export const MAIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
     WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt'),
+    NOTIFICATION_EXT: createProxyIdentifier<NotificationExt>('NotificationExt'),
     WORKSPACE_EXT: createProxyIdentifier<WorkspaceExt>('WorkspaceExt'),
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),

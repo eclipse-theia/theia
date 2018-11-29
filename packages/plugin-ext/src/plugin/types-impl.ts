@@ -1230,3 +1230,49 @@ export enum FileType {
     Directory = 2,
     SymbolicLink = 64
 }
+
+export class ProgressOptions {
+    /**
+     * The location at which progress should show.
+     */
+    location: ProgressLocation;
+    /**
+     * A human-readable string which will be used to describe the
+     * operation.
+     */
+    title?: string;
+    /**
+     * Controls if a cancel button should show to allow the user to
+     * cancel the long running operation.  Note that currently only
+     * `ProgressLocation.Notification` is supporting to show a cancel
+     * button.
+     */
+    cancellable?: boolean;
+    constructor(location: ProgressLocation, title?: string, cancellable?: boolean) {
+        this.location = location;
+    }
+}
+export class Progress<T> {
+    /**
+     * Report a progress update.
+     * @param value A progress item, like a message and/or an
+     * report on how much work finished
+     */
+    report(value: T): void {
+    }
+}
+export enum ProgressLocation {
+    /**
+     * Show progress for the source control viewlet, as overlay for the icon and as progress bar
+     * inside the viewlet (when visible). Neither supports cancellation nor discrete progress.
+     */
+    SourceControl = 1,
+    /**
+     * Show progress in the status bar of the editor. Neither supports cancellation nor discrete progress.
+     */
+    Window = 10,
+    /**
+     * Show progress as notification with an optional cancel button. Supports to show infinite and discrete progress.
+     */
+    Notification = 15
+}
