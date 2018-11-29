@@ -241,6 +241,21 @@ export interface HoverProvider {
     provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
 }
 
+export enum DocumentHighlightKind {
+    Text = 0,
+    Read = 1,
+    Write = 2
+}
+
+export interface DocumentHighlight {
+    range: Range;
+    kind?: DocumentHighlightKind;
+}
+
+export interface DocumentHighlightProvider {
+    provideDocumentHighlights(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): DocumentHighlight[] | undefined;
+}
+
 export interface FormattingOptions {
     tabSize: number;
     insertSpaces: boolean;

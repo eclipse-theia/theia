@@ -498,6 +498,26 @@ theia.languages.registerHoverProvider({scheme: 'file'}, {
 });
 ```
 
+#### Document Highlight provider
+
+It is possible to provide document highlight source for a symbol from within plugin.
+To do this one should register corresponding provider. For example:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const handler: theia.DocumentHighlightProvider = { provideDocumentHighlights: provideDocumentHighlightsHandler };
+
+const disposable = theia.languages.registerDocumentHighlightProvider(documentsSelector, handler);
+
+...
+
+function provideDocumentHighlightsHandler(document: theia.TextDocument, position: theia.Position): theia.ProviderResult<theia.DocumentHighlight[]> {
+    // code here
+}
+```
+
+It is possible to return a few sources, but for most cases only one is enough. Return `undefined` to provide nothing.
+
 #### Definition provider
 
 It is possible to provide definition source for a symbol from within plugin.

@@ -5618,18 +5618,18 @@ declare module '@theia/plugin' {
          */
         export function registerTypeDefinitionProvider(selector: DocumentSelector, provider: TypeDefinitionProvider): Disposable;
 
-		/**
-		 * Register an implementation provider.
-		 *
-		 * Multiple providers can be registered for a language. In that case providers are asked in
-		 * parallel and the results are merged. A failing provider (rejected promise or exception) will
-		 * not cause a failure of the whole operation.
-		 *
-		 * @param selector A selector that defines the documents this provider is applicable to.
-		 * @param provider An implementation provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-		 */
-		export function registerImplementationProvider(selector: DocumentSelector, provider: ImplementationProvider): Disposable;
+        /**
+         * Register an implementation provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider An implementation provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerImplementationProvider(selector: DocumentSelector, provider: ImplementationProvider): Disposable;
 
         /**
          * Register a hover provider.
@@ -5643,6 +5643,19 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable;
+
+        /**
+         * Register a document highlight provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are sorted
+         * by their [score](#languages.match) and groups sequentially asked for document highlights.
+         * The process stops when a provider returns a `non-falsy` or `non-failure` result.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A document highlight provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerDocumentHighlightProvider(selector: DocumentSelector, provider: DocumentHighlightProvider): Disposable;
 
         /**
          * Register a formatting provider for a document.
@@ -5806,6 +5819,72 @@ declare module '@theia/plugin' {
          * signaled by returning `undefined` or `null`.
          */
         provideHover(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<Hover>;
+    }
+
+    /**
+     * A document highlight kind.
+     */
+    export enum DocumentHighlightKind {
+
+        /**
+         * A textual occurrence.
+         */
+        Text = 0,
+
+        /**
+         * Read-access of a symbol, like reading a variable.
+         */
+        Read = 1,
+
+        /**
+         * Write-access of a symbol, like writing to a variable.
+         */
+        Write = 2
+    }
+
+    /**
+     * A document highlight is a range inside a text document which deserves
+     * special attention. Usually a document highlight is visualized by changing
+     * the background color of its range.
+     */
+    export class DocumentHighlight {
+
+        /**
+         * The range this highlight applies to.
+         */
+        range: Range;
+
+        /**
+         * The highlight kind, default is [text](#DocumentHighlightKind.Text).
+         */
+        kind?: DocumentHighlightKind;
+
+        /**
+         * Creates a new document highlight object.
+         *
+         * @param range The range the highlight applies to.
+         * @param kind The highlight kind, default is [text](#DocumentHighlightKind.Text).
+         */
+        constructor(range: Range, kind?: DocumentHighlightKind);
+    }
+
+    /**
+     * The document highlight provider interface defines the contract between extensions and
+     * the word-highlight-feature.
+     */
+    export interface DocumentHighlightProvider {
+
+        /**
+         * Provide a set of document highlights, like all occurrences of a variable or
+         * all exit-points of a function.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @return An array of document highlights or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideDocumentHighlights(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<DocumentHighlight[]>;
     }
 
     /**

@@ -277,6 +277,48 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
     }
 
+    $registerDocumentHighlightProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const documentHighlightProvider = this.createDocumentHighlightProvider(handle, languageSelector);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerDocumentHighlightProvider(language, documentHighlightProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createDocumentHighlightProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.DocumentHighlightProvider {
+        return {
+            provideDocumentHighlights: (model, position, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideDocumentHighlights(handle, model.uri, position).then(result => {
+                    if (!result) {
+                        return undefined!;
+                    }
+
+                    if (Array.isArray(result)) {
+                        const highlights: monaco.languages.DocumentHighlight[] = [];
+                        for (const item of result) {
+                            highlights.push(
+                                {
+                                    ...item,
+                                    kind: (item.kind ? item.kind : monaco.languages.DocumentHighlightKind.Text)
+                                });
+                        }
+                        return highlights;
+                    }
+
+                    return undefined!;
+                });
+
+            }
+        };
+    }
+
     $registerDocumentLinkProvider(handle: number, selector: SerializedDocumentFilter[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const linkProvider = this.createLinkProvider(handle, languageSelector);

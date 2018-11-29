@@ -40,6 +40,7 @@ import {
     SerializedDocumentFilter,
     SignatureHelp,
     Hover,
+    DocumentHighlight,
     Range,
     SingleEditOperation,
     FormattingOptions,
@@ -55,6 +56,7 @@ import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
 import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
+import { DocumentHighlightAdapter } from './languages/document-highlight';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
 import { OnTypeFormattingAdapter } from './languages/on-type-formatting';
@@ -71,6 +73,7 @@ import { ReferenceAdapter } from './languages/reference';
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
     HoverAdapter |
+    DocumentHighlightAdapter |
     DocumentFormattingAdapter |
     RangeFormattingAdapter |
     OnTypeFormattingAdapter |
@@ -273,6 +276,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position));
     }
     // ### Hover Provider end
+
+    // ### Document Highlight Provider begin
+    registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new DocumentHighlightAdapter(provider, this.documents));
+        this.proxy.$registerDocumentHighlightProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position): Promise<DocumentHighlight[] | undefined> {
+        return this.withAdapter(handle, DocumentHighlightAdapter, adapter => adapter.provideDocumentHighlights(URI.revive(resource), position));
+    }
+    // ### Document Highlight Provider end
 
     // ### Document Formatting Edit begin
     registerDocumentFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentFormattingEditProvider): theia.Disposable {
