@@ -29,6 +29,7 @@ import { MessageConnection, ResponseError } from 'vscode-jsonrpc';
 import { LanguageClientFactory } from './language-client-factory';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { InitializeParams } from 'monaco-languageclient';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution extends LanguageContribution {
@@ -97,10 +98,18 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this.workspace.ready;
     }
 
+    protected deferredConnection = new Deferred<MessageConnection>();
+
     protected readonly toDeactivate = new DisposableCollection();
     activate(): Disposable {
         if (this.toDeactivate.disposed) {
-            const toStop = new DisposableCollection(Disposable.NULL); // mark as not disposed
+            if (!this._languageClient) {
+                this._languageClient = this.createLanguageClient(() => this.deferredConnection.promise);
+                this._languageClient.onDidChangeState(({ newState }) => {
+                    this.state = newState;
+                });
+            }
+            const toStop = new DisposableCollection(Disposable.create(() => { })); // mark as not disposed
             this.toDeactivate.push(toStop);
             this.doActivate(toStop);
         }
@@ -131,17 +140,18 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
             this.connectionProvider.listen({
                 path: LanguageContribution.getPath(this, sessionId),
                 onConnection: messageConnection => {
+                    this.deferredConnection.resolve(messageConnection);
+                    messageConnection.onDispose(() => this.deferredConnection = new Deferred<MessageConnection>());
                     if (toStop.disposed) {
                         messageConnection.dispose();
                         return;
                     }
-                    const languageClient = this.createLanguageClient(messageConnection);
                     toStop.push(Disposable.create(() => this.stop = (async () => {
                         try {
                             // avoid calling stop if start failed
-                            await languageClient.onReady();
-                            // remove all listerens and close the connection under the hood
-                            await languageClient.stop();
+                            await this._languageClient!.onReady();
+                            // remove all listerens
+                            await this._languageClient!.stop();
                         } catch {
                             try {
                                 // if start or stop failed make sure the the connection is closed
@@ -150,8 +160,8 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                         }
                     })()));
                     toStop.push(messageConnection.onClose(() => this.restart()));
-                    this.onWillStart(languageClient);
-                    languageClient.start();
+                    this.onWillStart(this._languageClient!);
+                    this._languageClient!.start();
                 }
             }, { reconnecting: false });
         } catch (e) {
@@ -173,9 +183,6 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     protected onWillStart(languageClient: ILanguageClient): void {
-        languageClient.onDidChangeState(({ newState }) => {
-            this.state = newState;
-        });
         languageClient.onReady().then(() => this.onReady(languageClient));
     }
 
@@ -191,7 +198,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         );
     }
 
-    protected createLanguageClient(connection: MessageConnection): ILanguageClient {
+    protected createLanguageClient(connection: MessageConnection | (() => MaybePromise<MessageConnection>)): ILanguageClient {
         const clientOptions = this.createOptions();
         return this.languageClientFactory.get(this, clientOptions, connection);
     }
