@@ -384,6 +384,22 @@ export function fromDocumentLink(definitionLink: theia.DocumentLink): model.Docu
     };
 }
 
+export function fromDocumentHighlightKind(kind?: theia.DocumentHighlightKind): model.DocumentHighlightKind | undefined {
+    switch (kind) {
+        case types.DocumentHighlightKind.Text: return model.DocumentHighlightKind.Text;
+        case types.DocumentHighlightKind.Read: return model.DocumentHighlightKind.Read;
+        case types.DocumentHighlightKind.Write: return model.DocumentHighlightKind.Write;
+    }
+    return model.DocumentHighlightKind.Text;
+}
+
+export function fromDocumentHighlight(documentHighlight: theia.DocumentHighlight): model.DocumentHighlight {
+    return <model.DocumentHighlight>{
+        range: fromRange(documentHighlight.range),
+        kind: fromDocumentHighlightKind(documentHighlight.kind)
+    };
+}
+
 export function toInternalCommand(command: theia.Command): model.Command {
     return {
         id: command.id,

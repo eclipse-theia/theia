@@ -864,6 +864,25 @@ export class Hover {
     }
 }
 
+export enum DocumentHighlightKind {
+    Text = 0,
+    Read = 1,
+    Write = 2
+}
+
+export class DocumentHighlight {
+
+    public range: Range;
+    public kind?: DocumentHighlightKind;
+
+    constructor(
+       range: Range,
+       kind?: DocumentHighlightKind ) {
+        this.range = range;
+        this.kind = kind;
+    }
+}
+
 export type Definition = Location | Location[];
 
 export class DocumentLink {
