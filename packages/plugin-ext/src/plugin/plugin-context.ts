@@ -88,6 +88,7 @@ import { DialogsExtImpl } from './dialogs';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
+import { ConnectionExtImpl } from './connection-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -109,6 +110,7 @@ export function createAPIFactory(
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
+    rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
 
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
