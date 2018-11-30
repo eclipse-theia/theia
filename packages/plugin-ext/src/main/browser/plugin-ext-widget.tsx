@@ -20,6 +20,7 @@ import { DisposableCollection } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
+import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
 
 @injectable()
@@ -68,6 +69,9 @@ export class PluginWidget extends ReactWidget {
 
     protected render(): React.ReactNode {
         if (this.ready) {
+            if (!this.plugins.length) {
+                return <AlertMessage type='INFO' header='No plugins currently available.' />;
+            }
             return <React.Fragment>{this.renderPluginList()}</React.Fragment>;
         } else {
             return <div className='spinnerContainer'>
