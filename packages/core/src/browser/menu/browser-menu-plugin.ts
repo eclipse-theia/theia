@@ -40,7 +40,7 @@ export class BrowserMainMenuFactory {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-        const phosphorCommands = this.createPhosporCommands(menuModel);
+        const phosphorCommands = this.createPhosphorCommands(menuModel);
         // for the main menu we want all items to be visible.
         phosphorCommands.isVisible = () => true;
 
@@ -55,13 +55,13 @@ export class BrowserMainMenuFactory {
 
     createContextMenu(path: MenuPath): MenuWidget {
         const menuModel = this.menuProvider.getMenu(path);
-        const phosphorCommands = this.createPhosporCommands(menuModel);
+        const phosphorCommands = this.createPhosphorCommands(menuModel);
 
         const contextMenu = new DynamicMenuWidget(menuModel, { commands: phosphorCommands });
         return contextMenu;
     }
 
-    protected createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
+    protected createPhosphorCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
         const commands = new PhosphorCommandRegistry();
         this.addPhosphorCommands(commands, menu);
         return commands;
