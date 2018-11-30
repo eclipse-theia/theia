@@ -79,7 +79,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         const basePath = FileUri.fsPath(uri);
         this.debug('Starting watching:', basePath);
         if (fs.existsSync(basePath)) {
-            await this.start(watcherId, basePath, options);
+            this.start(watcherId, basePath, options);
         } else {
             const disposable = new DisposableCollection();
             const timer = setInterval(() => {
