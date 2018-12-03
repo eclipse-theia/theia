@@ -20,7 +20,7 @@ import { LabelProvider } from '@theia/core/lib/browser';
 import { Git, GitFileChange } from '../../common';
 import { GitDiffWidget } from '../diff/git-diff-widget';
 import { GitRepositoryProvider } from '../git-repository-provider';
-import { GitFileChangeNode } from '../git-widget';
+import { GitFileChangeNode } from '../git-file-change-node';
 import * as React from 'react';
 
 export const GIT_COMMIT_DETAIL = 'git-commit-detail-widget';

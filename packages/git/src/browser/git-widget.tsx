@@ -30,21 +30,7 @@ import * as React from 'react';
 import { GitErrorHandler } from './git-error-handler';
 import { GitDiffWidget } from './diff/git-diff-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-
-export interface GitFileChangeNode extends GitFileChange {
-    readonly icon: string;
-    readonly label: string;
-    readonly description: string;
-    readonly caption?: string;
-    readonly extraIconClassName?: string;
-    readonly commitSha?: string;
-    selected?: boolean;
-}
-export namespace GitFileChangeNode {
-    export function is(node: Object | undefined): node is GitFileChangeNode {
-        return !!node && 'uri' in node && 'status' in node && 'description' in node && 'label' in node && 'icon' in node;
-    }
-}
+import { GitFileChangeNode } from './git-file-change-node';
 
 @injectable()
 export class GitWidget extends GitDiffWidget implements StatefulWidget {

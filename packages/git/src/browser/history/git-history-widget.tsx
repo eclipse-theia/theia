@@ -30,7 +30,7 @@ import { GitAvatarService } from './git-avatar-service';
 import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 import { GitCommitDetails } from './git-commit-detail-widget';
 import { GitNavigableListWidget } from '../git-navigable-list-widget';
-import { GitFileChangeNode } from '../git-widget';
+import { GitFileChangeNode } from '../git-file-change-node';
 import * as React from 'react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 
@@ -257,7 +257,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 type='WARNING'
                 header={`There is no Git history available${path}`}>
                 {reason}
-                </AlertMessage>;
+            </AlertMessage>;
         } else {
             content = <div className='spinnerContainer'>
                 <span className='fa fa-spinner fa-pulse fa-3x fa-fw'></span>

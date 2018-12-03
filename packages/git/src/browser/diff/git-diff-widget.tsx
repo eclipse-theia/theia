@@ -22,7 +22,7 @@ import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../..
 import { GitWatcher } from '../../common';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { GitNavigableListWidget } from '../git-navigable-list-widget';
-import { GitFileChangeNode } from '../git-widget';
+import { GitFileChangeNode } from '../git-file-change-node';
 import { Message } from '@phosphor/messaging';
 import * as React from 'react';
 
