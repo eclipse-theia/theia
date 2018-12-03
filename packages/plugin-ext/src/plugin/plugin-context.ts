@@ -165,8 +165,8 @@ export function createAPIFactory(
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
             async showTextDocument(documentArg: theia.TextDocument | Uri,
-                                   optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
-                                   preserveFocus?: boolean
+                optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
+                preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
@@ -352,6 +352,9 @@ export function createAPIFactory(
             registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
                 // FIXME: to implement
                 return new Disposable(() => { });
+            },
+            getWorkspaceFolder(uri: Uri): theia.WorkspaceFolder | Uri | undefined {
+                return workspaceExt.getWorkspaceFolder(uri);
             }
         };
 
