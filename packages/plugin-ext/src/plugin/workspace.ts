@@ -169,4 +169,35 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
+    getWorkspaceFolder(uri: URI): theia.WorkspaceFolder | URI | undefined {
+        if (!this.folders || !this.folders.length) {
+            return undefined;
+        }
+
+        const resourcePath = uri.toString();
+
+        let workspaceFolder: theia.WorkspaceFolder | undefined;
+        for (let i = 0; i < this.folders.length; i++) {
+            const folder = this.folders[i];
+            const folderPath = folder.uri.toString();
+
+            if (resourcePath === folderPath) {
+                // return the input when the given uri is a workspace folder itself
+                return uri;
+            }
+
+            if (this.matchPaths(resourcePath, folderPath) && (!workspaceFolder || folderPath.length > workspaceFolder.uri.toString().length)) {
+                workspaceFolder = folder;
+            }
+        }
+        return workspaceFolder;
+    }
+
+    private matchPaths(resourcePath: string, folderPath: string): boolean {
+        const resourcePathCrumbs = resourcePath.split('/');
+        const folderPathCrumbs = folderPath.split('/');
+
+        return folderPathCrumbs.every((crumb, index) => crumb === resourcePathCrumbs[index]);
+    }
+
 }
