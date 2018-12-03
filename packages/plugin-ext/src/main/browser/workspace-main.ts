@@ -63,13 +63,13 @@ export class WorkspaceMainImpl implements WorkspaceMain {
 
     notifyWorkspaceFoldersChanged(): void {
         if (this.roots && this.roots.length) {
-            const folders = this.roots.map(root => {
+            const folders = this.roots.map((root: FileStat, index: number) => {
                 const uri = Uri.parse(root.uri);
                 const path = new Path(uri.path);
                 return {
                     uri: uri,
                     name: path.base,
-                    index: 0
+                    index: index
                 };
             });
 
