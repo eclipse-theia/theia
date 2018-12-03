@@ -1,4 +1,4 @@
-
+Test
 <br/>
 <div id="theia-logo" align="center">
     <br />
@@ -78,9 +78,9 @@ Read below how to engage with Theia community:
  - __Debugging__
 
    A visual debugger leveraging the Debug Server Protocol defined by the VS Code team.
-   
+
  - __Plug-in System__
- 
+
    A plug-in system supporting VS Code extensions.
 
  - __Workbench Improvements__
