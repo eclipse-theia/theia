@@ -1,4 +1,4 @@
-Test
+
 <br/>
 <div id="theia-logo" align="center">
     <br />
