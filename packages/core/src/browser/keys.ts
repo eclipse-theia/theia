@@ -488,11 +488,11 @@ export namespace KeyModifier {
      * The CTRL key, independently of the platform.
      * _Note:_ In general `KeyModifier.CtrlCmd` should be preferred over this constant.
      */
-    export const CTRL = isOSX ? KeyModifier.MacCtrl : KeyModifier.CtrlCmd;
+    export const CTRL: KeyModifier.MacCtrl | KeyModifier.CtrlCmd = isOSX ? KeyModifier.MacCtrl : KeyModifier.CtrlCmd;
     /**
      * An alias for the SHIFT key (`KeyModifier.Shift`).
      */
-    export const SHIFT = KeyModifier.Shift;
+    export const SHIFT: KeyModifier.Shift = KeyModifier.Shift;
 
     /**
      * `true` if the argument represents a modifier. Otherwise, `false`.
