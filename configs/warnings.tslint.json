@@ -3,13 +3,11 @@
     "await-promise": {
       "severity": "warning",
       "options": [
-        true,
         "Thenable"
       ]
     },
     "no-any": {
-      "severity": "warning",
-      "options": true
+      "severity": "warning"
     },
     "no-implicit-dependencies": {
       "severity": "warning",
@@ -45,8 +43,7 @@
       ]
     },
     "no-return-await": {
-      "severity": "warning",
-      "options": true
+      "severity": "warning"
     },
     "no-void-expression": {
       "severity": "warning",

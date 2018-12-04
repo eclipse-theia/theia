@@ -308,7 +308,7 @@ export class LanguagesMainImpl implements LanguagesMain {
             }
         }
         this.disposables.set(handle, disposable);
-	}
+    }
 
     protected createDocumentSymbolProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.DocumentSymbolProvider {
         return {
