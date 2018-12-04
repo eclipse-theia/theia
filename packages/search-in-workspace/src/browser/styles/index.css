@@ -388,3 +388,7 @@
 .search-in-workspace-tab-icon::before {
     content: "\f002"
 }
+
+.highlighted-count-container {
+    background-color: var(--theia-brand-color0);
+}
