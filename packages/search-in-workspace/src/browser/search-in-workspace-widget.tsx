@@ -107,7 +107,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             this.hasResults = r.size > 0;
             this.resultNumber = 0;
             const results = Array.from(r.values());
-            results.forEach(result => this.resultNumber += result.children.length);
+            results.forEach(rootFolder =>
+                rootFolder.children.forEach(file => this.resultNumber += file.children.length)
+            );
             this.update();
         }));
 
