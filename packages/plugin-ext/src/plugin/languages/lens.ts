@@ -26,58 +26,58 @@ import { CommandsConverter } from '../command-registry';
 /** Adapts the calls from main to extension thread for providing/resolving the code lenses. */
 export class CodeLensAdapter {
 
-	private static readonly BAD_CMD: theia.Command = { id: 'missing', label: '<<MISSING COMMAND>>' };
+    private static readonly BAD_CMD: theia.Command = { id: 'missing', label: '<<MISSING COMMAND>>' };
 
-	private cacheId = 0;
-	private cache = new Map<number, theia.CodeLens>();
+    private cacheId = 0;
+    private cache = new Map<number, theia.CodeLens>();
 
-	constructor(
-		private readonly provider: theia.CodeLensProvider,
-		private readonly documents: DocumentsExtImpl,
-		private readonly commands: CommandsConverter
-	) { }
+    constructor(
+        private readonly provider: theia.CodeLensProvider,
+        private readonly documents: DocumentsExtImpl,
+        private readonly commands: CommandsConverter
+    ) { }
 
-	provideCodeLenses(resource: URI): Promise<CodeLensSymbol[] | undefined> {
-		const document = this.documents.getDocumentData(resource);
-		if (!document) {
-			return Promise.reject(new Error(`There is no document for ${resource}`));
-		}
+    provideCodeLenses(resource: URI): Promise<CodeLensSymbol[] | undefined> {
+        const document = this.documents.getDocumentData(resource);
+        if (!document) {
+            return Promise.reject(new Error(`There is no document for ${resource}`));
+        }
 
-		const doc = document.document;
+        const doc = document.document;
 
-		return Promise.resolve(this.provider.provideCodeLenses(doc, createToken())).then(lenses => {
-			if (Array.isArray(lenses)) {
-				return lenses.map(lens => {
-					const id = this.cacheId++;
-					const lensSymbol = ObjectIdentifier.mixin({
-						range: Converter.fromRange(lens.range)!,
-						command: this.commands.toInternal(lens.command)
-					}, id);
-					this.cache.set(id, lens);
-					return lensSymbol;
-				});
-			}
-			return undefined;
-		});
-	}
+        return Promise.resolve(this.provider.provideCodeLenses(doc, createToken())).then(lenses => {
+            if (Array.isArray(lenses)) {
+                return lenses.map(lens => {
+                    const id = this.cacheId++;
+                    const lensSymbol = ObjectIdentifier.mixin({
+                        range: Converter.fromRange(lens.range)!,
+                        command: this.commands.toInternal(lens.command)
+                    }, id);
+                    this.cache.set(id, lens);
+                    return lensSymbol;
+                });
+            }
+            return undefined;
+        });
+    }
 
-	resolveCodeLens(resource: URI, symbol: CodeLensSymbol): Promise<CodeLensSymbol | undefined> {
-		const lens = this.cache.get(ObjectIdentifier.of(symbol));
-		if (!lens) {
-			return Promise.resolve(undefined);
-		}
+    resolveCodeLens(resource: URI, symbol: CodeLensSymbol): Promise<CodeLensSymbol | undefined> {
+        const lens = this.cache.get(ObjectIdentifier.of(symbol));
+        if (!lens) {
+            return Promise.resolve(undefined);
+        }
 
-		let resolve: Promise<theia.CodeLens | undefined>;
-		if (typeof this.provider.resolveCodeLens !== 'function' || lens.isResolved) {
-			resolve = Promise.resolve(lens);
-		} else {
-			resolve = Promise.resolve(this.provider.resolveCodeLens(lens, createToken()));
-		}
+        let resolve: Promise<theia.CodeLens | undefined>;
+        if (typeof this.provider.resolveCodeLens !== 'function' || lens.isResolved) {
+            resolve = Promise.resolve(lens);
+        } else {
+            resolve = Promise.resolve(this.provider.resolveCodeLens(lens, createToken()));
+        }
 
-		return resolve.then(newLens => {
-			newLens = newLens || lens;
-			symbol.command = this.commands.toInternal(newLens.command || CodeLensAdapter.BAD_CMD);
-			return symbol;
-		});
-	}
+        return resolve.then(newLens => {
+            newLens = newLens || lens;
+            symbol.command = this.commands.toInternal(newLens.command || CodeLensAdapter.BAD_CMD);
+            return symbol;
+        });
+    }
 }
