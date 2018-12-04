@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { inject, injectable, postConstruct } from 'inversify';
 import {
     TreeWidget,
     ContextMenuRenderer,
@@ -24,35 +25,61 @@ import {
     TreeNode,
     NodeProps,
     LabelProvider,
+    TreeProps,
     TreeExpansionService,
     ApplicationShell,
-    DiffUris
+    DiffUris,
+    FOLDER_ICON
 } from '@theia/core/lib/browser';
+import { Path, CancellationTokenSource, Emitter, Event } from '@theia/core';
+import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
-import { TreeProps } from '@theia/core/lib/browser';
-import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
-import { inject, injectable, postConstruct } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
-import { Path, CancellationTokenSource, Emitter, Event } from '@theia/core';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MEMORY_TEXT } from './in-memory-text-resource';
-import { FileResourceResolver } from '@theia/filesystem/lib/browser';
+import URI from '@theia/core/lib/common/uri';
 import * as React from 'react';
 
-export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, SelectableTreeNode {
-    children: SearchInWorkspaceResultLineNode[];
-    path: string;
-    fileUri: string;
+const ROOT_ID = 'ResultTree';
+
+export interface SearchInWorkspaceRoot extends CompositeTreeNode {
+    children: SearchInWorkspaceRootFolderNode[];
 }
-export namespace SearchInWorkspaceResultNode {
+export namespace SearchInWorkspaceRoot {
     // tslint:disable-next-line:no-any
-    export function is(node: any): node is SearchInWorkspaceResultNode {
-        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node;
+    export function is(node: any): node is SearchInWorkspaceRoot {
+        return CompositeTreeNode.is(node) && node.id === ROOT_ID && node.name === ROOT_ID;
+    }
+}
+export interface SearchInWorkspaceRootFolderNode extends ExpandableTreeNode, SelectableTreeNode { // root folder node
+    children: SearchInWorkspaceFileNode[];
+    parent: SearchInWorkspaceRoot;
+    path: string;
+}
+export namespace SearchInWorkspaceRootFolderNode {
+    // tslint:disable-next-line:no-any
+    export function is(node: any): node is SearchInWorkspaceRootFolderNode {
+        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && !('fileUri' in node);
     }
 }
 
-export type SearchInWorkspaceResultLineNode = SelectableTreeNode & SearchInWorkspaceResult;
+export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, SelectableTreeNode { // file node
+    children: SearchInWorkspaceResultLineNode[];
+    parent: SearchInWorkspaceRootFolderNode;
+    path: string;
+    fileUri: string;
+}
+export namespace SearchInWorkspaceFileNode {
+    // tslint:disable-next-line:no-any
+    export function is(node: any): node is SearchInWorkspaceFileNode {
+        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'fileUri' in node;
+    }
+}
+
+export interface SearchInWorkspaceResultLineNode extends SelectableTreeNode, SearchInWorkspaceResult { // line node
+    parent: SearchInWorkspaceFileNode
+}
 export namespace SearchInWorkspaceResultLineNode {
     // tslint:disable-next-line:no-any
     export function is(node: any): node is SearchInWorkspaceResultLineNode {
@@ -63,8 +90,7 @@ export namespace SearchInWorkspaceResultLineNode {
 @injectable()
 export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
-    protected resultTree: Map<string, SearchInWorkspaceResultNode>;
-    protected workspaceRoot: string = '';
+    protected resultTree: Map<string, SearchInWorkspaceRootFolderNode>;
 
     protected _showReplaceButtons = false;
     protected _replaceTerm = '';
@@ -74,7 +100,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     private cancelIndicator = new CancellationTokenSource();
 
-    protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceResultNode>>();
+    protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceRootFolderNode>>();
     // tslint:disable-next-line:no-any
     protected focusInputEmitter = new Emitter<any>();
 
@@ -94,12 +120,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         super(props, model, contextMenuRenderer);
 
         model.root = {
-            id: 'ResultTree',
-            name: 'ResultTree',
+            id: ROOT_ID,
+            name: ROOT_ID,
             parent: undefined,
             visible: false,
             children: []
-        } as CompositeTreeNode;
+        } as SearchInWorkspaceRoot;
 
         this.toDispose.push(model.onSelectionChanged(nodes => {
             const node = nodes[0];
@@ -108,7 +134,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
         }));
 
-        this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
+        this.resultTree = new Map<string, SearchInWorkspaceRootFolderNode>();
         this.toDispose.push(model.onNodeRefreshed(() => this.changeEmitter.fire(this.resultTree)));
     }
 
@@ -116,14 +142,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected init() {
         super.init();
         this.addClass('resultContainer');
-
-        this.workspaceService.roots.then(roots => {
-            const rootFileStat = roots[0];
-            if (rootFileStat) {
-                const uri = new URI(rootFileStat.uri);
-                this.workspaceRoot = uri.withoutScheme().toString();
-            }
-        });
 
         this.toDispose.push(this.changeEmitter);
         this.toDispose.push(this.focusInputEmitter);
@@ -134,7 +152,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     get fileNumber(): number {
-        return this.resultTree.size;
+        let num = 0;
+        for (const rootFolderNode of this.resultTree.values()) {
+            num += rootFolderNode.children.length;
+        }
+        return num;
     }
 
     set showReplaceButtons(srb: boolean) {
@@ -147,7 +169,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.update();
     }
 
-    get onChange(): Event<Map<string, SearchInWorkspaceResultNode>> {
+    get onChange(): Event<Map<string, SearchInWorkspaceRootFolderNode>> {
         return this.changeEmitter.event;
     }
 
@@ -156,13 +178,17 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     collapseAll() {
-        this.resultTree.forEach(v => this.expansionService.collapseNode(v));
+        this.resultTree.forEach(rootFolderNode => {
+            rootFolderNode.children.forEach(fileNode => this.expansionService.collapseNode(fileNode));
+            if (rootFolderNode.visible) {
+                this.expansionService.collapseNode(rootFolderNode);
+            }
+        });
     }
 
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
         this.resultTree.clear();
-        this.resultTree = new Map<string, SearchInWorkspaceResultNode>();
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
@@ -175,34 +201,32 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
-                const { name, path } = this.filenameAndPath(result.fileUri);
+                const { name, path } = this.filenameAndPath(result.root, result.fileUri);
                 const tree = this.resultTree;
-                let resultElement = tree.get(result.fileUri);
+                const rootFolderNode = tree.get(result.root);
 
-                if (resultElement) {
-                    const resultLine = this.createResultLineNode(result, resultElement);
-                    resultElement.children.push(resultLine);
-                    if (resultElement.children.length >= 20) {
-                        resultElement.expanded = false;
+                if (rootFolderNode) {
+                    const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
+                    if (fileNode) {
+                        const line = this.createResultLineNode(result, fileNode);
+                        fileNode.children.push(line);
+                        if (fileNode.children.length >= 20 && fileNode.expanded) {
+                            fileNode.expanded = false;
+                        }
+                    } else {
+                        const newFileNode = await this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                        const line = this.createResultLineNode(result, newFileNode);
+                        newFileNode.children.push(line);
+                        rootFolderNode.children.push(newFileNode);
                     }
+
                 } else {
-                    const children: SearchInWorkspaceResultLineNode[] = [];
-                    const icon = await this.labelProvider.getIcon(new URI(result.fileUri));
-                    if (CompositeTreeNode.is(this.model.root)) {
-                        resultElement = {
-                            selected: false,
-                            name,
-                            path,
-                            children,
-                            expanded: true,
-                            id: path + '-' + name,
-                            parent: this.model.root,
-                            icon,
-                            fileUri: result.fileUri
-                        };
-                        resultElement.children.push(this.createResultLineNode(result, resultElement));
-                        tree.set(result.fileUri, resultElement);
-                    }
+                    const newRootFolderNode = this.createRootFolderNode(result.root);
+                    tree.set(result.root, newRootFolderNode);
+
+                    const newFileNode = await this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
+                    newFileNode.children.push(this.createResultLineNode(result, newFileNode));
+                    newRootFolderNode.children.push(newFileNode);
                 }
             },
             onDone: () => {
@@ -220,7 +244,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     focusFirstResult() {
-        if (CompositeTreeNode.is(this.model.root) && this.model.root.children.length > 0) {
+        if (SearchInWorkspaceRoot.is(this.model.root) && this.model.root.children.length > 0) {
             const node = this.model.root.children[0];
             if (SelectableTreeNode.is(node)) {
                 this.node.focus();
@@ -238,7 +262,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected refreshModelChildren() {
-        if (CompositeTreeNode.is(this.model.root)) {
+        if (SearchInWorkspaceRoot.is(this.model.root)) {
             this.model.root.children = Array.from(this.resultTree.values());
             this.model.refresh();
             this.updateCurrentEditorDecorations();
@@ -250,38 +274,96 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             const currentTitle = tb.currentTitle;
             if (currentTitle && currentTitle.owner instanceof EditorWidget) {
                 const widget = currentTitle.owner;
-                const result = this.resultTree.get(widget.editor.uri.toString());
-                this.decorateEditor(result, widget);
+                const fileNodes = this.getFileNodesByUri(widget.editor.uri);
+                fileNodes.forEach(node => {
+                    this.decorateEditor(node, widget);
+                });
             }
         });
 
         const currentWidget = this.editorManager.currentEditor;
         if (currentWidget) {
-            const result = this.resultTree.get(currentWidget.editor.uri.toString());
-            this.decorateEditor(result, currentWidget);
+            const fileNodes = this.getFileNodesByUri(currentWidget.editor.uri);
+            fileNodes.forEach(node => {
+                this.decorateEditor(node, currentWidget);
+            });
         }
     }
 
-    protected createResultLineNode(result: SearchInWorkspaceResult, resultNode: SearchInWorkspaceResultNode): SearchInWorkspaceResultLineNode {
+    protected createRootFolderNode(rootUri: string): SearchInWorkspaceRootFolderNode {
+        const uri = new URI(rootUri);
+        return {
+            selected: false,
+            name: uri.displayName,
+            path: uri.path.toString(),
+            children: [],
+            expanded: true,
+            id: rootUri,
+            parent: this.model.root as SearchInWorkspaceRoot,
+            icon: FOLDER_ICON,
+            visible: this.workspaceService.workspace && !this.workspaceService.workspace.isDirectory
+        };
+    }
+
+    protected async createFileNode(rootUri: string, name: string, path: string, fileUri: string, parent: SearchInWorkspaceRootFolderNode): Promise<SearchInWorkspaceFileNode> {
+        return {
+            selected: false,
+            name,
+            path,
+            children: [],
+            expanded: true,
+            id: `${rootUri}::${fileUri}`,
+            parent,
+            icon: await this.labelProvider.getIcon(new URI(fileUri).withScheme('file')),
+            fileUri
+        };
+    }
+
+    protected createResultLineNode(result: SearchInWorkspaceResult, fileNode: SearchInWorkspaceFileNode): SearchInWorkspaceResultLineNode {
         return {
             ...result,
             selected: false,
             id: result.fileUri + '-' + result.line + '-' + result.character + '-' + result.length,
             name: result.lineText,
-            parent: resultNode
+            parent: fileNode
         };
     }
 
-    protected filenameAndPath(uriStr: string): { name: string, path: string } {
-        const uri: URI = new URI(uriStr);
-        const name = uri.displayName;
-        const path = new Path(uri.toString().substr(this.workspaceRoot.length + 1)).dir.toString();
+    protected getFileNodesByUri(uri: URI): SearchInWorkspaceFileNode[] {
+        const nodes: SearchInWorkspaceFileNode[] = [];
+        const path = uri.withoutScheme().toString();
+        for (const rootFolderNode of this.resultTree.values()) {
+            const rootUri = new URI(rootFolderNode.path).withScheme('file');
+            if (rootUri.isEqualOrParent(uri)) {
+                for (const fileNode of rootFolderNode.children) {
+                    if (fileNode.fileUri === path) {
+                        nodes.push(fileNode);
+                    }
+                }
+            }
+        }
+        return nodes;
+    }
+
+    protected getFileNodesByLineNode(lineNode: SearchInWorkspaceResultLineNode): SearchInWorkspaceFileNode[] {
+        const nodes: SearchInWorkspaceFileNode[] = [];
+
+        return nodes;
+    }
+
+    protected filenameAndPath(rootUri: string, uriStr: string): { name: string, path: string } {
+        const fileUri: URI = new URI(uriStr);
+        const name = fileUri.displayName;
+        const rootPath = new URI(rootUri).path.toString();
+        const path = new Path(fileUri.path.toString().substr(rootPath.length + 1)).dir.toString();
         return { name, path };
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (SearchInWorkspaceResultNode.is(node)) {
-            return this.renderResultNode(node);
+        if (SearchInWorkspaceRootFolderNode.is(node)) {
+            return this.renderRootFolderNode(node);
+        } else if (SearchInWorkspaceFileNode.is(node)) {
+            return this.renderFileNode(node);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
             return this.renderResultLineNode(node);
         }
@@ -289,10 +371,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        return <div className='result-node-buttons'>
-            {this._showReplaceButtons && this.renderReplaceButton(node)}
-            {this.renderRemoveButton(node)}
-        </div>;
+        if (!SearchInWorkspaceRootFolderNode.is(node)) {
+            return <div className='result-node-buttons'>
+                {this._showReplaceButtons && this.renderReplaceButton(node)}
+                {this.renderRemoveButton(node)}
+            </div>;
+        }
+        return '';
     }
 
     protected readonly replace = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doReplace(node, e);
@@ -315,17 +400,15 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected updateRightResults(node: SearchInWorkspaceResultLineNode) {
-        const result = this.resultTree.get(node.fileUri);
-        if (result) {
-            const rightPositionedNodes = result.children.filter(rl => rl.line === node.line && rl.character > node.character);
-            const diff = this._replaceTerm.length - this.searchTerm.length;
-            rightPositionedNodes.map(r => r.character += diff);
-        }
+        const fileNode = node.parent;
+        const rightPositionedNodes = fileNode.children.filter(rl => rl.line === node.line && rl.character > node.character);
+        const diff = this._replaceTerm.length - this.searchTerm.length;
+        rightPositionedNodes.map(r => r.character += diff);
     }
 
     protected async replaceResult(node: TreeNode) {
         const toReplace: SearchInWorkspaceResultLineNode[] = [];
-        if (SearchInWorkspaceResultNode.is(node)) {
+        if (SearchInWorkspaceFileNode.is(node)) {
             toReplace.push(...node.children);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
             toReplace.push(node);
@@ -365,25 +448,53 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <span className='remove-node' onClick={e => this.remove(node, e)}></span>;
     }
 
-    protected removeNode(node: TreeNode) {
-        if (SearchInWorkspaceResultNode.is(node)) {
-            this.resultTree.delete(node.fileUri);
+    protected removeNode(node: TreeNode): void {
+        if (SearchInWorkspaceFileNode.is(node)) {
+            this.removeFileNode(node);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
-            const result = this.resultTree.get(node.fileUri);
-            if (result) {
-                const index = result.children.findIndex(n => n.fileUri === node.fileUri && n.line === node.line && n.character === node.character);
-                if (index > -1) {
-                    result.children.splice(index, 1);
-                    if (result.children.length === 0) {
-                        this.resultTree.delete(result.fileUri);
-                    }
+            const fileNode = node.parent;
+            const index = fileNode.children.findIndex(n => n.fileUri === node.fileUri && n.line === node.line && n.character === node.character);
+            if (index > -1) {
+                fileNode.children.splice(index, 1);
+                if (fileNode.children.length === 0) {
+                    this.removeFileNode(fileNode);
                 }
             }
         }
         this.refreshModelChildren();
     }
 
-    protected renderResultNode(node: SearchInWorkspaceResultNode): React.ReactNode {
+    private removeFileNode(node: SearchInWorkspaceFileNode): void {
+        const rootFolderNode = node.parent;
+        const index = rootFolderNode.children.findIndex(fileNode => fileNode.id === node.id);
+        if (index > -1) {
+            rootFolderNode.children.splice(index, 1);
+        }
+    }
+
+    protected renderRootFolderNode(node: SearchInWorkspaceRootFolderNode): React.ReactNode {
+        const icon = node.icon;
+        return <div className='result'>
+            <div className='result-head'>
+                <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>
+                    <span className={`file-icon ${icon || ''}`}></span>
+                    <span className={'file-name'}>
+                        {node.name}
+                    </span>
+                    <span className={'file-path'}>
+                        {node.path}
+                    </span>
+                </div>
+                <span className='notification-count-container highlighted-count-container'>
+                    <span className='notification-count'>
+                        {node.children.length}
+                    </span>
+                </span>
+            </div>
+        </div>;
+    }
+
+    protected renderFileNode(node: SearchInWorkspaceFileNode): React.ReactNode {
         const icon = node.icon;
         return <div className='result'>
             <div className='result-head'>
@@ -398,7 +509,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 </div>
                 <span className='notification-count-container'>
                     <span className='notification-count'>
-                        {node.children.length.toString()}
+                        {node.children.length}
                     </span>
                 </span>
             </div>
@@ -429,7 +540,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
         let fileUri: URI;
-        const resultNode = this.resultTree.get(node.fileUri);
+        const resultNode = node.parent;
         if (resultNode && this._showReplaceButtons && preview) {
             const leftUri = new URI(node.fileUri);
             const rightUri = await this.createReplacePreview(resultNode);
@@ -461,8 +572,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return editorWidget;
     }
 
-    protected async createReplacePreview(node: SearchInWorkspaceResultNode): Promise<URI> {
-        const fileUri = new URI(node.fileUri);
+    protected async createReplacePreview(node: SearchInWorkspaceFileNode): Promise<URI> {
+        const fileUri = new URI(node.fileUri).withScheme('file');
         const uri = fileUri.withoutScheme().toString();
         const resource = await this.fileResourceResolver.resolve(fileUri);
         const content = await resource.readContents();
@@ -479,7 +590,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return new URI(uri).withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
     }
 
-    protected decorateEditor(node: SearchInWorkspaceResultNode | undefined, editorWidget: EditorWidget) {
+    protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget) {
         if (!DiffUris.isDiffUri(editorWidget.editor.uri)) {
             const key = `${editorWidget.editor.uri.toString()}#search-in-workspace-matches`;
             const oldDecorations = this.appliedDecorations.get(key) || [];
@@ -492,7 +603,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
     }
 
-    protected createEditorDecorations(resultNode: SearchInWorkspaceResultNode | undefined): EditorDecoration[] {
+    protected createEditorDecorations(resultNode: SearchInWorkspaceFileNode | undefined): EditorDecoration[] {
         const decorations: EditorDecoration[] = [];
         if (resultNode) {
             resultNode.children.map(res => {
