@@ -145,26 +145,22 @@ export class FileSystemWatcher implements Disposable {
      * Resolve when watching is started.
      * Return a disposable to stop file watching under the given uri.
      */
-    watchFileChanges(uri: URI): Promise<Disposable> {
-        return this.createWatchOptions()
-            .then(options =>
-                this.server.watchFileChanges(uri.toString(), options)
-            )
-            .then(watcher => {
-                const toDispose = new DisposableCollection();
-                const toStop = Disposable.create(() =>
-                    this.server.unwatchFileChanges(watcher)
-                );
-                const toRestart = toDispose.push(toStop);
-                this.toRestartAll.push(Disposable.create(() => {
-                    toRestart.dispose();
-                    toStop.dispose();
-                    this.watchFileChanges(uri).then(disposable =>
-                        toDispose.push(disposable)
-                    );
-                }));
-                return toDispose;
-            });
+    async watchFileChanges(uri: URI): Promise<Disposable> {
+        const options = await this.createWatchOptions();
+        const watcherId = await this.server.watchFileChanges(uri.toString(), options);
+        const toDispose = new DisposableCollection();
+        const toStop = Disposable.create(() =>
+            this.server.unwatchFileChanges(watcherId)
+        );
+        const toRestart = toDispose.push(toStop);
+        this.toRestartAll.push(Disposable.create(() => {
+            toRestart.dispose();
+            toStop.dispose();
+            this.watchFileChanges(uri).then(disposable =>
+                toDispose.push(disposable)
+            );
+        }));
+        return toDispose;
     }
 
     protected createWatchOptions(): Promise<WatchOptions> {

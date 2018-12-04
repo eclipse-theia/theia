@@ -39,7 +39,6 @@ describe('nsfw-filesystem-watcher', function () {
         root = FileUri.create(fs.realpathSync(temp.mkdirSync('node-fs-root')));
         watcherServer = createNsfwFileSystemWatcherServer();
         watcherId = await watcherServer.watchFileChanges(root.toString());
-        await sleep(2000);
     });
 
     afterEach(async () => {

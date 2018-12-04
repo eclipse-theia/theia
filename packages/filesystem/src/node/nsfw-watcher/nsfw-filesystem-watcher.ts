@@ -78,25 +78,35 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         const watcherId = this.watcherSequence++;
         const basePath = FileUri.fsPath(uri);
         this.debug('Starting watching:', basePath);
+
         const toDisposeWatcher = new DisposableCollection();
         this.watchers.set(watcherId, toDisposeWatcher);
         toDisposeWatcher.push(Disposable.create(() => this.watchers.delete(watcherId)));
+
         if (fs.existsSync(basePath)) {
-            this.start(watcherId, basePath, options, toDisposeWatcher);
-        } else {
+            this.toDispose.push(toDisposeWatcher);
+            await this.start(watcherId, basePath, options, toDisposeWatcher);
+            return watcherId;
+        }
+
+        return new Promise<number>((resolve, reject) => {
             const toClearTimer = new DisposableCollection();
             const timer = setInterval(() => {
                 if (fs.existsSync(basePath)) {
                     toClearTimer.dispose();
                     this.pushAdded(watcherId, basePath);
                     this.start(watcherId, basePath, options, toDisposeWatcher);
+                    resolve(watcherId);
                 }
             }, 500);
+
             toClearTimer.push(Disposable.create(() => clearInterval(timer)));
             toDisposeWatcher.push(toClearTimer);
-        }
-        this.toDispose.push(toDisposeWatcher);
-        return watcherId;
+            toDisposeWatcher.push(Disposable.create(
+                // If the promise is resolved, no error will actually be thrown.
+                () => reject(new Error(`Watcher setup cancelled: ${uri}`))
+            ));
+        });
     }
 
     protected async start(watcherId: number, basePath: string, rawOptions: WatchOptions | undefined, toDisposeWatcher: DisposableCollection): Promise<void> {
