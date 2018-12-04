@@ -58,6 +58,6 @@
     "extends": "../../configs/nyc.json"
   },
   "ls": {
-    "downloadUrl": "https://github.com/kittaakos/eclipse.jdt.ls-gh-715/raw/master/jdt-language-server-latest.tar.gz"
+    "downloadUrl": "http://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
   }
 }
