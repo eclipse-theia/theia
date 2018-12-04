@@ -765,6 +765,22 @@ describe('NodeFileSystem', function () {
 
     });
 
+    describe('#17 fsPath', async () => {
+
+        it('should return undefined', async function () {
+            expect(await createFileSystem().getFsPath('http://www.theia-ide.org')).to.be.undefined;
+        });
+
+        it('should return a platform specific path', async function () {
+            if (isWindows) {
+                expect(await createFileSystem().getFsPath('file:///C:/user/theia')).to.be.equal('c:\\user\\theia');
+                expect(await createFileSystem().getFsPath('file:///C%3A/user/theia')).to.be.equal('c:\\user\\theia');
+            } else {
+                expect(await createFileSystem().getFsPath('file:///user/home/theia')).to.be.equal('/user/home/theia');
+            }
+        });
+    });
+
     function createFileSystem(): FileSystem {
         return new FileSystemNode();
     }
