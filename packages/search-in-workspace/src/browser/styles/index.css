@@ -380,6 +380,9 @@
 .result-node-buttons .replace-result {
     background-image: var(--theia-icon-replace);
 }
+.result-node-buttons .replace-all-result {
+    background-image: var(--theia-icon-replace-all);
+}
 
 .replace-all-button.disabled {
     opacity: 0.5;
