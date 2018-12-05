@@ -14,7 +14,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-//@ts-check
+// @ts-check
 const path = require('path');
 const cp = require('child_process');
 
@@ -35,11 +35,9 @@ function getExtScript() {
 
 function run(script) {
     return new Promise((resolve, reject) => {
-        let env = process.env;
-        /* Use the root .bin since deps .bin is not hoisted */
-        env.PATH = process.cwd() + '/../../node_modules/.bin:' + process.env.PATH;
+        const env = Object.assign({}, process.env);
         const scriptProcess = cp.exec(script, {
-            'env': env,
+            env,
             cwd: process.cwd()
         });
         scriptProcess.stdout.pipe(process.stdout);
@@ -51,10 +49,16 @@ function run(script) {
 
 (async () => {
     let exitCode = 0;
+    let extScript = undefined;
     try {
-        const extScript = getExtScript();
+        extScript = getExtScript();
         exitCode = await run(extScript);
     } catch (err) {
+        if (extScript) {
+            console.error(`Error occurred in theiaext when executing: '${extScript}'`, err);
+        } else {
+            console.error('Error occurred in theiaext', err);
+        }
         console.log(`${err.name}: ${err.message}`);
         exitCode = 1;
     }
