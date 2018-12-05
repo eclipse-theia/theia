@@ -33,6 +33,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN);
     }
 
+    // tslint:disable-next-line:no-any
     $onMessage(handle: string, message: any): void {
         const panel = this.getWebviewPanel(handle);
         if (panel) {
@@ -126,7 +127,10 @@ export class WebviewImpl implements theia.Webview {
     private _html: string;
     private _options: theia.WebviewOptions;
 
+    // tslint:disable-next-line:no-any
     public readonly onMessageEmitter = new Emitter<any>();
+
+    // tslint:disable-next-line:no-any
     public readonly onDidReceiveMessage: Event<any> = this.onMessageEmitter.event;
 
     constructor(private readonly viewId: string,
@@ -143,6 +147,7 @@ export class WebviewImpl implements theia.Webview {
         this.onMessageEmitter.dispose();
     }
 
+    // tslint:disable-next-line:no-any
     postMessage(message: any): PromiseLike<boolean> {
         this.checkIsDisposed();
         return this.proxy.$postMessage(this.viewId, message);

@@ -17,6 +17,8 @@ import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
 import { Disposable, DisposableCollection } from '@theia/core';
 
+// tslint:disable:no-any
+
 export interface WebviewWidgetOptions {
     readonly allowScripts?: boolean;
 }

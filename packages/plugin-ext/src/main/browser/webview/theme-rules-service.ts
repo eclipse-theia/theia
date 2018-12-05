@@ -57,6 +57,7 @@ export class ThemeRulesService {
         if (this.themeRules.has(themeId)) {
             return <string[]>this.themeRules.get(themeId);
         }
+        // tslint:disable-next-line:no-any
         const styleElement = document.getElementById('theia-theme') as any;
         if (!styleElement) {
             return cssText;
@@ -66,6 +67,7 @@ export class ThemeRulesService {
             insertRule: (rule: string, index: number) => void,
             removeRule: (index: number) => void,
             rules: CSSRuleList
+        // tslint:disable-next-line:no-any
         } | undefined = (<any>styleElement).sheet;
         if (!sheet || !sheet.rules || !sheet.rules.length) {
             return cssText;
@@ -86,6 +88,7 @@ export class ThemeRulesService {
             insertRule: (rule: string, index: number) => void;
             removeRule: (index: number) => void;
             rules: CSSRuleList;
+        // tslint:disable-next-line:no-any
         } | undefined = (<any>styleSheet).sheet;
 
         if (!sheet) {
