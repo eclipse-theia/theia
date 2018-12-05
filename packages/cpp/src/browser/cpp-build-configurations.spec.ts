@@ -28,7 +28,7 @@ import { MockPreferenceService } from '@theia/core/lib/browser/preferences/test/
 
 let container: Container;
 
-beforeEach(function() {
+beforeEach(function () {
     const m = new ContainerModule(bind => {
         bind(CppBuildConfigurationManager).to(CppBuildConfigurationManagerImpl).inSingletonScope();
         bind(StorageService).to(MockStorageService).inSingletonScope();
@@ -76,8 +76,8 @@ async function initializeTest(buildConfigurations: CppBuildConfiguration[] | und
     return configs;
 }
 
-describe('build-configurations', function() {
-    it('should work with no preferences', async function() {
+describe('build-configurations', function () {
+    it('should work with no preferences', async function () {
         const cppBuildConfigurations = await initializeTest(undefined, undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
@@ -87,7 +87,7 @@ describe('build-configurations', function() {
         expect(configs).lengthOf(0);
     });
 
-    it('should work with an empty list of builds', async function() {
+    it('should work with an empty list of builds', async function () {
         const cppBuildConfigurations = await initializeTest([], undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
@@ -97,7 +97,7 @@ describe('build-configurations', function() {
         expect(configs).lengthOf(0);
     });
 
-    it('should work with a simple list of builds', async function() {
+    it('should work with a simple list of builds', async function () {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',
@@ -115,7 +115,7 @@ describe('build-configurations', function() {
         expect(configs).to.have.deep.members(builds);
     });
 
-    it('should work with a simple list of builds and an active config', async function() {
+    it('should work with a simple list of builds and an active config', async function () {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',
@@ -133,7 +133,7 @@ describe('build-configurations', function() {
         expect(configs).to.have.deep.members(builds);
     });
 
-    it("should ignore an active config that doesn't exist", async function() {
+    it("should ignore an active config that doesn't exist", async function () {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',
