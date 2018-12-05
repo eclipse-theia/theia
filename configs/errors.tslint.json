@@ -71,6 +71,12 @@
       "always",
       "ignore-interfaces"
     ],
+    "space-before-function-paren": [
+      true,
+      {
+        "anonymous": "always"
+      }
+    ],
     "trailing-comma": false,
     "triple-equals": [
       true,

@@ -48,8 +48,8 @@ beforeEach(() => {
     server = container.get<ConsoleLoggerServer>(ConsoleLoggerServer);
 });
 
-describe('ConsoleLoggerServer', function() {
-    it('should respect log level config', async function() {
+describe('ConsoleLoggerServer', function () {
+    it('should respect log level config', async function () {
         expect(await server.getLogLevel('test-logger')).eq(LogLevel.DEBUG);
         await server.child('test-logger');
         expect(await server.getLogLevel('test-logger')).eq(LogLevel.DEBUG);

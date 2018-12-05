@@ -100,7 +100,7 @@ int main() {}
  */
 function hasClangd() {
     try {
-        const out = cp.execSync('clangd -version', {encoding: 'utf8'});
+        const out = cp.execSync('clangd -version', { encoding: 'utf8' });
         // Match 'clangd version' at the start of
         // 'clangd version 8.0.0 (trunk 341484) (llvm/trunk 341481)'.
         return out.indexOf('clangd version') === 0;
@@ -124,8 +124,8 @@ function changeBuildConfig(name: string, driver: WebdriverIO.Client<void>) {
     driver.pause(300);
 }
 
-describe('cpp extension', function() {
-    it('should be able to change build config', function() {
+describe('cpp extension', function () {
+    it('should be able to change build config', function () {
         if (!hasClangd()) {
             this.skip();
             return;

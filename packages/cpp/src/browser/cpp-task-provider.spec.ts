@@ -63,7 +63,7 @@ class MockCppBuildConfigurationManager implements CppBuildConfigurationManager {
     ready: Promise<void> = Promise.resolve();
 }
 
-beforeEach(function() {
+beforeEach(function () {
     const container: Container = new Container();
     container.bind(CppTaskProvider).toSelf().inSingletonScope();
     container.bind(TaskResolverRegistry).toSelf().inSingletonScope();
@@ -80,8 +80,8 @@ beforeEach(function() {
     });
 });
 
-describe('CppTaskProvider', function() {
-    it('provide a task for each build config with a build command', async function() {
+describe('CppTaskProvider', function () {
+    it('provide a task for each build config with a build command', async function () {
         const tasks = await taskProvider.provideTasks();
         expect(tasks).length(1);
         expect(tasks[0].config.name === 'Build 1');
