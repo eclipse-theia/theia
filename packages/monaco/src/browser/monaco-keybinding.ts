@@ -50,7 +50,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                             keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
                         }
                     }
-                    const isInDiffEditor = item.when && /(?<!\!\s*)isInDiffEditor/gm.test(item.when.serialize());
+                    const isInDiffEditor = item.when && /(^|[^!])\bisInDiffEditor\b/gm.test(item.when.serialize());
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
