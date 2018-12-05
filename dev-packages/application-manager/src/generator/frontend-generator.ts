@@ -120,7 +120,9 @@ if (isMaster) {
         const { screen } = electron;
 
         // Remove the default electron menus, waiting for the application to set its own.
-        Menu.setApplicationMenu(Menu.buildFromTemplate([]));
+        Menu.setApplicationMenu(Menu.buildFromTemplate([{
+            role: 'help', submenu: [{ role: 'toggledevtools'}]
+        }]));
 
         // Window list tracker.
         const windows = [];
