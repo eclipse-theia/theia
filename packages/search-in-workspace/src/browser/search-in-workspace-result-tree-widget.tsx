@@ -43,7 +43,7 @@ import * as React from 'react';
 export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, SelectableTreeNode {
     children: SearchInWorkspaceResultLineNode[];
     path: string;
-    file: string;
+    fileUri: string;
 }
 export namespace SearchInWorkspaceResultNode {
     // tslint:disable-next-line:no-any
@@ -175,9 +175,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
-                const { name, path } = this.filenameAndPath(result.file);
+                const { name, path } = this.filenameAndPath(result.fileUri);
                 const tree = this.resultTree;
-                let resultElement = tree.get(result.file);
+                let resultElement = tree.get(result.fileUri);
 
                 if (resultElement) {
                     const resultLine = this.createResultLineNode(result, resultElement);
@@ -187,7 +187,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     }
                 } else {
                     const children: SearchInWorkspaceResultLineNode[] = [];
-                    const icon = await this.labelProvider.getIcon(new URI(result.file).withScheme('file'));
+                    const icon = await this.labelProvider.getIcon(new URI(result.fileUri));
                     if (CompositeTreeNode.is(this.model.root)) {
                         resultElement = {
                             selected: false,
@@ -198,10 +198,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             id: path + '-' + name,
                             parent: this.model.root,
                             icon,
-                            file: result.file
+                            fileUri: result.fileUri
                         };
                         resultElement.children.push(this.createResultLineNode(result, resultElement));
-                        tree.set(result.file, resultElement);
+                        tree.set(result.fileUri, resultElement);
                     }
                 }
             },
@@ -250,14 +250,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             const currentTitle = tb.currentTitle;
             if (currentTitle && currentTitle.owner instanceof EditorWidget) {
                 const widget = currentTitle.owner;
-                const result = this.resultTree.get(widget.editor.uri.withoutScheme().toString());
+                const result = this.resultTree.get(widget.editor.uri.toString());
                 this.decorateEditor(result, widget);
             }
         });
 
         const currentWidget = this.editorManager.currentEditor;
         if (currentWidget) {
-            const result = this.resultTree.get(currentWidget.editor.uri.withoutScheme().toString());
+            const result = this.resultTree.get(currentWidget.editor.uri.toString());
             this.decorateEditor(result, currentWidget);
         }
     }
@@ -266,7 +266,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return {
             ...result,
             selected: false,
-            id: result.file + '-' + result.line + '-' + result.character + '-' + result.length,
+            id: result.fileUri + '-' + result.line + '-' + result.character + '-' + result.length,
             name: result.lineText,
             parent: resultNode
         };
@@ -315,7 +315,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected updateRightResults(node: SearchInWorkspaceResultLineNode) {
-        const result = this.resultTree.get(node.file);
+        const result = this.resultTree.get(node.fileUri);
         if (result) {
             const rightPositionedNodes = result.children.filter(rl => rl.line === node.line && rl.character > node.character);
             const diff = this._replaceTerm.length - this.searchTerm.length;
@@ -367,15 +367,15 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected removeNode(node: TreeNode) {
         if (SearchInWorkspaceResultNode.is(node)) {
-            this.resultTree.delete(node.file);
+            this.resultTree.delete(node.fileUri);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
-            const result = this.resultTree.get(node.file);
+            const result = this.resultTree.get(node.fileUri);
             if (result) {
-                const index = result.children.findIndex(n => n.file === node.file && n.line === node.line && n.character === node.character);
+                const index = result.children.findIndex(n => n.fileUri === node.fileUri && n.line === node.line && n.character === node.character);
                 if (index > -1) {
                     result.children.splice(index, 1);
                     if (result.children.length === 0) {
-                        this.resultTree.delete(result.file);
+                        this.resultTree.delete(result.fileUri);
                     }
                 }
             }
@@ -429,13 +429,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
         let fileUri: URI;
-        const resultNode = this.resultTree.get(node.file);
+        const resultNode = this.resultTree.get(node.fileUri);
         if (resultNode && this._showReplaceButtons && preview) {
-            const leftUri = new URI(node.file).withScheme('file');
+            const leftUri = new URI(node.fileUri);
             const rightUri = await this.createReplacePreview(resultNode);
             fileUri = DiffUris.encode(leftUri, rightUri);
         } else {
-            fileUri = new URI(node.file).withScheme('file');
+            fileUri = new URI(node.fileUri);
         }
 
         const opts: EditorOpenerOptions | undefined = !DiffUris.isDiffUri(fileUri) ? {
@@ -462,7 +462,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected async createReplacePreview(node: SearchInWorkspaceResultNode): Promise<URI> {
-        const fileUri = new URI(node.file).withScheme('file');
+        const fileUri = new URI(node.fileUri);
         const uri = fileUri.withoutScheme().toString();
         const resource = await this.fileResourceResolver.resolve(fileUri);
         const content = await resource.readContents();
