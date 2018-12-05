@@ -197,7 +197,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                         const length = byteRangeLengthToCharacterLength(lineText, character, endByte - startByte);
 
                         const result: SearchInWorkspaceResult = {
-                            file,
+                            fileUri: FileUri.create(file).toString(),
                             line,
                             character: character + 1,
                             length,

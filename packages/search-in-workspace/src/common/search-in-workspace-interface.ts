@@ -49,9 +49,9 @@ export interface SearchInWorkspaceOptions {
 
 export interface SearchInWorkspaceResult {
     /**
-     * The path to the file containing the result.
+     * The URI to the file containing the result.
      */
-    file: string;
+    fileUri: string;
 
     /**
      * The (1-based) line number of the result.
@@ -82,8 +82,8 @@ export namespace SearchInWorkspaceResult {
      * and then length.
      */
     export function compare(a: SearchInWorkspaceResult, b: SearchInWorkspaceResult) {
-        if (a.file !== b.file) {
-            return a.file < b.file ? -1 : 1;
+        if (a.fileUri !== b.fileUri) {
+            return a.fileUri < b.fileUri ? -1 : 1;
         }
 
         if (a.line !== b.line) {
