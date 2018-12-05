@@ -4,6 +4,9 @@
   "description": "Theia - Typescript Extension",
   "dependencies": {
     "@theia/callhierarchy": "^0.3.17",
+    "@theia/application-package": "^0.3.17",
+    "@theia/filesystem": "^0.3.17",
+    "@theia/editor": "^0.3.17",
     "@theia/core": "^0.3.17",
     "@theia/languages": "^0.3.17",
     "@theia/monaco": "^0.3.17",
