@@ -388,7 +388,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
-        return <span className='replace-result' onClick={e => this.replace(node, e)}></span>;
+        const isFileNode = SearchInWorkspaceFileNode.is(node);
+        return <span className={isFileNode ? 'replace-all-result' : 'replace-result'}
+            onClick={e => this.replace(node, e)}
+            title={isFileNode ? 'Replace All' : 'Replace'}></span>;
     }
 
     replaceAll(): void {
@@ -445,7 +448,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderRemoveButton(node: TreeNode): React.ReactNode {
-        return <span className='remove-node' onClick={e => this.remove(node, e)}></span>;
+        return <span className='remove-node' onClick={e => this.remove(node, e)} title='Dismiss'></span>;
     }
 
     protected removeNode(node: TreeNode): void {
