@@ -21,6 +21,7 @@ import { bindGit, GitBindingOptions } from '../git-backend-module';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import { NoSyncRepositoryManager } from '.././test/no-sync-repository-manager';
 import { GitEnvProvider, DefaultGitEnvProvider } from '../env/git-env-provider';
+import { GitInit, DefaultGitInit } from '../init/git-init';
 
 // tslint:disable-next-line:no-any
 export function initializeBindings(): { container: Container, bind: interfaces.Bind } {
@@ -28,6 +29,8 @@ export function initializeBindings(): { container: Container, bind: interfaces.B
     const bind = container.bind.bind(container);
     bind(DefaultGitEnvProvider).toSelf().inRequestScope();
     bind(GitEnvProvider).toService(DefaultGitEnvProvider);
+    bind(DefaultGitInit).toSelf();
+    bind(GitInit).toService(DefaultGitInit);
     bindLogger(bind);
     return { container, bind };
 }
