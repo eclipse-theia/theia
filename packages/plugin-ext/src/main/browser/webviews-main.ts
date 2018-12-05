@@ -53,33 +53,33 @@ export class WebviewsMainImpl implements WebviewsMain {
         const view = new WebviewWidget(title, {
             allowScripts: options ? options.enableScripts : false
         }, {
-            onMessage: m => {
-                this.proxy.$onMessage(viewId, m);
-            },
-            onKeyboardEvent: e => {
-                this.keybindingRegistry.run(e);
-            },
-            onLoad: contentDocument => {
-                const styleId = 'webview-widget-theme';
-                let styleElement: HTMLStyleElement | null | undefined;
-                if (!toDispose.disposed) {
-                    // if reload the frame
-                    toDispose.dispose();
-                    styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
-                }
-                if (!styleElement) {
-                    const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
-                    styleElement = this.themeRulesService.createStyleSheet(parent);
-                    styleElement.id = styleId;
-                    parent.appendChild((styleElement));
-                }
+                onMessage: m => {
+                    this.proxy.$onMessage(viewId, m);
+                },
+                onKeyboardEvent: e => {
+                    this.keybindingRegistry.run(e);
+                },
+                onLoad: contentDocument => {
+                    const styleId = 'webview-widget-theme';
+                    let styleElement: HTMLStyleElement | null | undefined;
+                    if (!toDispose.disposed) {
+                        // if reload the frame
+                        toDispose.dispose();
+                        styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
+                    }
+                    if (!styleElement) {
+                        const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
+                        styleElement = this.themeRulesService.createStyleSheet(parent);
+                        styleElement.id = styleId;
+                        parent.appendChild((styleElement));
+                    }
 
-                this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
-                toDispose.push(this.themeService.onThemeChange(() => {
-                    this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
-                }));
-            }
-        });
+                    this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
+                    toDispose.push(this.themeService.onThemeChange(() => {
+                        this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
+                    }));
+                }
+            });
         view.disposed.connect(() => {
             toDispose.dispose();
             this.onCloseView(viewId);
@@ -112,8 +112,9 @@ export class WebviewsMainImpl implements WebviewsMain {
     }
     $setOptions(handle: string, options: WebviewOptions): void {
         const webview = this.getWebview(handle);
-        webview.setOptions( { allowScripts: options ? options.enableScripts : false });
+        webview.setOptions({ allowScripts: options ? options.enableScripts : false });
     }
+    // tslint:disable-next-line:no-any
     $postMessage(handle: string, value: any): Thenable<boolean> {
         const webview = this.getWebview(handle);
         if (webview) {

@@ -113,7 +113,8 @@ export abstract class Process {
         this.logger.error(error);
     }
 
-    protected isForkOptions(options: ForkOptions | any): options is ForkOptions {
+    // tslint:disable-next-line:no-any
+    protected isForkOptions(options: any): options is ForkOptions {
         return !!options && !!options.modulePath;
     }
 }
