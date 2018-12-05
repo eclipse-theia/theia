@@ -31,11 +31,6 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
 
-export const IWorkspaceService = Symbol('IWorkspaceService');
-export interface IWorkspaceService {
-    roots: Promise<FileStat[]>;
-}
-
 /**
  * The workspace service.
  */
@@ -267,7 +262,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             if (preserveWindow) {
                 this._workspace = stat;
             }
-            await this.openWindow(stat, { preserveWindow });
+            this.openWindow(stat, { preserveWindow });
             return;
         }
         throw new Error('Invalid workspace root URI. Expected an existing directory location.');

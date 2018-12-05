@@ -18,25 +18,28 @@ import { Container } from 'inversify';
 import { FileStat, FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { MockFilesystem } from '@theia/filesystem/lib/common/test';
 import { FOLDER_ICON, FILE_ICON, DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
-import { IWorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
-import { MockWorkspaceService } from '../common/test/mock-workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
 let container: Container;
 let labelProvider: WorkspaceUriLabelProviderContribution;
-before(() => {
-    container = new Container();
-    container.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
-    container.bind(IWorkspaceService).to(MockWorkspaceService).inSingletonScope();
-    container.bind(FileSystem).to(MockFilesystem).inSingletonScope();
-    labelProvider = container.get(WorkspaceUriLabelProviderContribution);
-});
+let mockWorkspaceService: WorkspaceService;
 
 describe('WorkspaceUriLabelProviderContribution class', () => {
     const stubs: sinon.SinonStub[] = [];
+
+    beforeEach(() => {
+        mockWorkspaceService = sinon.createStubInstance(WorkspaceService);
+
+        container = new Container();
+        container.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileSystem).to(MockFilesystem).inSingletonScope();
+        labelProvider = container.get(WorkspaceUriLabelProviderContribution);
+    });
 
     afterEach(() => {
         stubs.forEach(s => s.restore());
@@ -145,13 +148,17 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
     });
 
     describe('getLongName()', () => {
+        const workspaceUri = 'file:///workspace';
+
         it('should return the path of a file relative to the workspace from the file\'s URI if the file is in the workspace', () => {
+            stubs.push(sinon.stub(labelProvider, 'baseUri').value(new URI(workspaceUri)));
             const file = new URI('file:///workspace/some/very-long/path.js');
             const longName = labelProvider.getLongName(file);
             expect(longName).eq('some/very-long/path.js');
         });
 
         it('should return the path of a file relative to the workspace from the file\'s FileStat if the file is in the workspace', () => {
+            stubs.push(sinon.stub(labelProvider, 'baseUri').value(new URI(workspaceUri)));
             const file: FileStat = {
                 uri: 'file:///workspace/some/very-long/path.js',
                 lastModification: 0,
@@ -178,7 +185,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return the path of a file if WorkspaceService returns no roots', () => {
-            stubs.push(sinon.stub(labelProvider, 'wsRoot').value(undefined));
+            stubs.push(sinon.stub(labelProvider, 'baseUri').value(undefined));
             const file = new URI('file:///tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
             expect(longName).eq('/tmp/prout.txt');

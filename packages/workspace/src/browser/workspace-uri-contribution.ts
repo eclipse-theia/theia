@@ -17,25 +17,45 @@
 import { DefaultUriLabelProviderContribution, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
-import { IWorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { MaybePromise } from '@theia/core';
+import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
 
 @injectable()
-export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
+export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution implements Disposable {
 
-    @inject(IWorkspaceService)
-    protected workspaceService: IWorkspaceService;
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
     @inject(FileSystem)
     protected fileSystem: FileSystem;
 
-    wsRoot: URI;
+    protected readonly toDispose = new DisposableCollection();
+
+    baseUri: URI | undefined;
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const root = (await this.workspaceService.roots)[0];
-        if (root) {
-            this.wsRoot = new URI(root.uri);
+        this.updateBaseUri(await this.workspaceService.roots);
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(roots => {
+            this.updateBaseUri(roots);
+        }));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    /**
+     * Use the workspace folder uri as the base uri if there is only one root folder in workspace
+     * Otherwise, set base uri to undefined.
+     *
+     * @param roots FileStat of root folders in the workspace
+     */
+    protected updateBaseUri(roots: FileStat[]): void {
+        if (roots.length > 1) {
+            this.baseUri = undefined;
+        } else if (roots[0]) {
+            this.baseUri = new URI(roots[0].uri);
         }
     }
 
@@ -86,13 +106,11 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
      */
     getLongName(element: URI | FileStat): string {
         const uri = this.getUri(element);
-
-        if (this.wsRoot) {
-            const relativeUri = this.wsRoot.relative(uri);
+        if (this.baseUri) {
+            const relativeUri = this.baseUri.relative(uri);
             if (relativeUri) {
                 return relativeUri.toString();
             }
-
         }
 
         return super.getLongName(uri);
