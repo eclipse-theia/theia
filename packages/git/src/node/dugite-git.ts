@@ -45,6 +45,7 @@ import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
 import { GitExecProvider } from './git-exec-provider';
 import { GitEnvProvider } from './env/git-env-provider';
+import { GitInit } from './init/git-init';
 
 /**
  * Parsing and converting raw Git output into Git model instances.
@@ -308,19 +309,31 @@ export class DugiteGit implements Git {
     @inject(GitEnvProvider)
     protected readonly envProvider: GitEnvProvider;
 
+    @inject(GitInit)
+    protected readonly gitInit: GitInit;
+
+    protected ready: Deferred<void> = new Deferred();
     protected gitEnv: Deferred<Object> = new Deferred();
 
     @postConstruct()
     protected init(): void {
         this.envProvider.getEnv().then(env => this.gitEnv.resolve(env));
+        this.gitInit.init()
+            .catch(err => {
+                this.logger.error('An error occurred during the Git initialization.', err);
+                this.ready.resolve();
+            })
+            .then(() => this.ready.resolve());
     }
 
     dispose(): void {
         this.locator.dispose();
         this.execProvider.dispose();
+        this.gitInit.dispose();
     }
 
     async clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository> {
+        await this.ready.promise;
         const { localUri, branch } = options;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         await clone(remoteUrl, this.getFsPath(localUri), { branch }, { exec, env });
@@ -328,6 +341,7 @@ export class DugiteGit implements Git {
     }
 
     async repositories(workspaceRootUri: string, options: Git.Options.Repositories): Promise<Repository[]> {
+        await this.ready.promise;
         const workspaceRootPath = this.getFsPath(workspaceRootUri);
         const repositories: Repository[] = [];
         const containingPath = await this.resolveContainingPath(workspaceRootPath);
@@ -353,6 +367,7 @@ export class DugiteGit implements Git {
     }
 
     async status(repository: Repository): Promise<WorkingDirectoryStatus> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         const dugiteStatus = await getStatus(repositoryPath, true, this.limit, { exec, env });
@@ -360,6 +375,7 @@ export class DugiteGit implements Git {
     }
 
     async add(repository: Repository, uri: string | string[]): Promise<void> {
+        await this.ready.promise;
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         return this.manager.run(repository, () =>
@@ -368,6 +384,7 @@ export class DugiteGit implements Git {
     }
 
     async unstage(repository: Repository, uri: string | string[], options?: Git.Options.Unstage): Promise<void> {
+        await this.ready.promise;
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
         const treeish = options && options.treeish ? options.treeish : undefined;
         const where = options && options.reset ? options.reset : undefined;
@@ -382,6 +399,7 @@ export class DugiteGit implements Git {
     async branch(repository: Repository, options: Git.Options.BranchCommand.Create | Git.Options.BranchCommand.Rename | Git.Options.BranchCommand.Delete): Promise<void>;
     // tslint:disable-next-line:no-any
     async branch(repository: any, options: any): Promise<void | undefined | Branch | Branch[]> {
+        await this.ready.promise;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         const repositoryPath = this.getFsPath(repository);
         if (GitUtils.isBranchList(options)) {
@@ -407,6 +425,7 @@ export class DugiteGit implements Git {
     }
 
     async checkout(repository: Repository, options: Git.Options.Checkout.CheckoutBranch | Git.Options.Checkout.WorkingTreeFile): Promise<void> {
+        await this.ready.promise;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         return this.manager.run(repository, () => {
             const repositoryPath = this.getFsPath(repository);
@@ -422,6 +441,7 @@ export class DugiteGit implements Git {
     }
 
     async commit(repository: Repository, message?: string, options?: Git.Options.Commit): Promise<void> {
+        await this.ready.promise;
         const signOff = options && options.signOff;
         const amend = options && options.amend;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
@@ -431,6 +451,7 @@ export class DugiteGit implements Git {
     }
 
     async fetch(repository: Repository, options?: Git.Options.Fetch): Promise<void> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
         if (r) {
@@ -443,6 +464,7 @@ export class DugiteGit implements Git {
     }
 
     async push(repository: Repository, { remote, localBranch, remoteBranch, setUpstream, force }: Git.Options.Push = {}): Promise<void> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         const currentRemote = await this.getDefaultRemote(repositoryPath, remote);
         if (currentRemote === undefined) {
@@ -472,6 +494,7 @@ export class DugiteGit implements Git {
     }
 
     async pull(repository: Repository, { remote, branch, rebase }: Git.Options.Pull = {}): Promise<void> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         const currentRemote = await this.getDefaultRemote(repositoryPath, remote);
         if (currentRemote === undefined) {
@@ -496,6 +519,7 @@ export class DugiteGit implements Git {
     }
 
     async reset(repository: Repository, options: Git.Options.Reset): Promise<void> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         const mode = this.getResetMode(options.mode);
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
@@ -505,6 +529,7 @@ export class DugiteGit implements Git {
     }
 
     async merge(repository: Repository, options: Git.Options.Merge): Promise<void> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         return this.manager.run(repository, () =>
@@ -513,6 +538,7 @@ export class DugiteGit implements Git {
     }
 
     async show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string> {
+        await this.ready.promise;
         const encoding = options ? options.encoding || 'utf8' : 'utf8';
         const commitish = this.getCommitish(options);
         const repositoryPath = this.getFsPath(repository);
@@ -525,11 +551,13 @@ export class DugiteGit implements Git {
     }
 
     async remote(repository: Repository): Promise<string[]> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         return this.getRemotes(repositoryPath);
     }
 
     async exec(repository: Repository, args: string[], options?: Git.Options.Execution): Promise<GitResult> {
+        await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
         return this.manager.run(repository, async () => {
             const name = options && options.name ? options.name : '';
@@ -550,6 +578,7 @@ export class DugiteGit implements Git {
     }
 
     async diff(repository: Repository, options?: Git.Options.Diff): Promise<GitFileChange[]> {
+        await this.ready.promise;
         const args = ['diff', '--name-status', '-C', '-M', '-z'];
         args.push(this.mapRange((options || {}).range));
         if (options && options.uri) {
@@ -561,6 +590,7 @@ export class DugiteGit implements Git {
     }
 
     async log(repository: Repository, options?: Git.Options.Log): Promise<CommitWithChanges[]> {
+        await this.ready.promise;
         // If remaining commits should be calculated by the backend, then run `git rev-list --count ${fromRevision | HEAD~fromRevision}`.
         // How to use `mailmap` to map authors: https://www.kernel.org/pub/software/scm/git/docs/git-shortlog.html.
         const args = ['log'];
@@ -589,6 +619,7 @@ export class DugiteGit implements Git {
     }
 
     async blame(repository: Repository, uri: string, options?: Git.Options.Blame): Promise<GitFileBlame | undefined> {
+        await this.ready.promise;
         const args = ['blame', '--root', '--incremental'];
         const file = Path.relative(this.getFsPath(repository), this.getFsPath(uri));
         const repositoryPath = this.getFsPath(repository);
@@ -623,6 +654,7 @@ export class DugiteGit implements Git {
 
     // tslint:disable-next-line:no-any
     async lsFiles(repository: Repository, uri: string, options?: Git.Options.LsFiles): Promise<any> {
+        await this.ready.promise;
         const args = ['ls-files'];
         const file = Path.relative(this.getFsPath(repository), this.getFsPath(uri));
         if (options && options.errorUnmatch) {
@@ -645,6 +677,7 @@ export class DugiteGit implements Git {
     // TODO: akitta what about symlinks? What if the workspace root is a symlink?
     // Maybe, we should use `--show-cdup` here instead of `--show-toplevel` because `show-toplevel` dereferences symlinks.
     private async resolveContainingPath(repositoryPath: string): Promise<string | undefined> {
+        await this.ready.promise;
         // Do not log an error if we are not contained in a Git repository. Treat exit code 128 as a success too.
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         const options = { successExitCodes: new Set([0, 128]), exec, env };
@@ -662,6 +695,7 @@ export class DugiteGit implements Git {
     }
 
     private async getRemotes(repositoryPath: string): Promise<string[]> {
+        await this.ready.promise;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         const result = await git(['remote'], repositoryPath, 'remote', { exec, env });
         const out = result.stdout || '';
@@ -677,6 +711,7 @@ export class DugiteGit implements Git {
     }
 
     private async getCurrentBranch(repositoryPath: string, localBranch?: string): Promise<Branch | string> {
+        await this.ready.promise;
         if (localBranch !== undefined) {
             return localBranch;
         }
