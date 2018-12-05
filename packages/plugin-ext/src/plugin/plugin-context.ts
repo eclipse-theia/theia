@@ -173,6 +173,7 @@ export function createAPIFactory(
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
                 if (optionsArg) {
+                    // tslint:disable-next-line:no-any
                     const optionsAny: any = optionsArg;
                     if (optionsAny.preserveFocus || optionsAny.preview || optionsAny.selection || optionsAny.viewColumn) {
                         documentOptions = optionsArg as theia.TextDocumentShowOptions;

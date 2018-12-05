@@ -22,6 +22,7 @@ import { AbstractMessageReader, DataCallback } from 'vscode-jsonrpc/lib/messageR
 export class PluginMessageReader extends AbstractMessageReader {
     protected state: 'initial' | 'listening' | 'closed' = 'initial';
     protected callback: DataCallback | undefined;
+    // tslint:disable-next-line:no-any
     protected readonly events: { message?: any, error?: any }[] = [];
 
     constructor() {
@@ -54,6 +55,7 @@ export class PluginMessageReader extends AbstractMessageReader {
         }
     }
 
+    // tslint:disable-next-line:no-any
     fireError(error: any): void {
         if (this.state === 'initial') {
             this.events.splice(0, 0, { error });
