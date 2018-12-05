@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.3.17",
     "@theia/languages": "^0.3.17",
+    "@theia/process": "^0.3.17",
     "@theia/monaco": "^0.3.17"
   },
   "publishConfig": {
