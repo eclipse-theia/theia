@@ -264,6 +264,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderReplaceFieldToggle(): React.ReactNode {
         const toggle = <span className={`fa fa-caret-${this.showReplaceField ? 'down' : 'right'}`}></span>;
         return <div
+            title='Toggle Replace'
             className='replace-toggle'
             tabIndex={0}
             onClick={e => {
@@ -320,6 +321,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderSearchField(): React.ReactNode {
         const input = <input
             id='search-input-field'
+            title='Search'
             type='text'
             size={1}
             placeholder='Search'
@@ -354,6 +356,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
             <input
                 id='replace-input-field'
+                title='Replace'
                 type='text'
                 size={1}
                 placeholder='Replace'
@@ -367,6 +370,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderReplaceAllButtonContainer(): React.ReactNode {
         return <div className='replace-all-button-container'>
             <span
+                title='Replace All'
                 className={`replace-all-button${this.searchTerm === '' ? ' disabled' : ''}`}
                 onClick={async () => {
                     if (await this.confirmReplaceAll()) {
@@ -432,6 +436,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderExpandGlobFieldsButton(): React.ReactNode {
         return <div className='button-container'>
             <span
+                title='Toggle Search Details'
                 className='fa fa-ellipsis-h btn'
                 onClick={() => {
                     this.showSearchDetails = !this.showSearchDetails;
