@@ -3834,6 +3834,20 @@ declare module '@theia/plugin' {
          * @return A workspace folder or `undefined`
          */
         export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | Uri | undefined;
+
+        /**
+         * Returns a path that is relative to the workspace folder or folders.
+         *
+         * When there are no [workspace folders](#workspace.workspaceFolders) or when the path
+         * is not contained in them, the input is returned.
+         *
+         * @param pathOrUri A path or uri. When a uri is given its [fsPath](#Uri.fsPath) is used.
+         * @param includeWorkspaceFolder When `true` and when the given path is contained inside a
+         * workspace folder the name of the workspace is prepended. Defaults to `true` when there are
+         * multiple workspace folders and `false` otherwise.
+         * @return A path relative to the root or the input.
+         */
+        export function asRelativePath(pathOrUri: string | Uri, includeWorkspaceFolder?: boolean): string | undefined;
     }
 
     export namespace env {
