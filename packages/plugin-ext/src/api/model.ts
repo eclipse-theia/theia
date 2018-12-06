@@ -16,6 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import { UriComponents } from '../common/uri-components';
+import { FileStat } from '@theia/filesystem/lib/common';
 
 // Should contains internal Plugin API types
 
@@ -382,9 +383,8 @@ export interface DocumentSymbol {
     children?: DocumentSymbol[];
 }
 
-export interface WorkspaceFoldersChangeEvent {
-    added: WorkspaceFolder[];
-    removed: WorkspaceFolder[];
+export interface WorkspaceRootsChangeEvent {
+    roots: FileStat[];
 }
 
 export interface WorkspaceFolder {
