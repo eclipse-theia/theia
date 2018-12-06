@@ -188,6 +188,15 @@ if (isMaster) {
         // https://github.com/theia-ide/theia/issues/3297#issuecomment-439172274
         process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
 
+        // Set the electron version for both the dev and the production mode. (https://github.com/theia-ide/theia/issues/3254)
+        // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
+        const { versions } = process;
+        // @ts-ignore
+        if (versions && typeof versions.electron !== 'undefined') {
+            // @ts-ignore
+            process.env.THEIA_ELECTRON_VERSION = versions.electron;
+        }
+
         const mainPath = join(__dirname, '..', 'backend', 'main');
         // We need to distinguish between bundled application and development mode when starting the clusters.
         // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
@@ -199,12 +208,6 @@ if (isMaster) {
                 app.exit(1);
             });
         } else {
-            const { versions } = process;
-            // @ts-ignore
-            if (versions && typeof versions.electron !== 'undefined') {
-                // @ts-ignore
-                process.env.THEIA_ELECTRON_VERSION = versions.electron;
-            }
             const cp = fork(mainPath, [], { env: Object.assign({}, process.env) });
             cp.on('message', (message) => {
                 loadMainWindow(message);
