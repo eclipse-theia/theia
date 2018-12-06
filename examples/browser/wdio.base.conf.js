@@ -2,8 +2,7 @@
 const http = require('http');
 const path = require('path');
 const temp = require('temp');
-
-const wdioRunnerScript = require.resolve('webdriverio/build/lib/runner.js');
+const cp = require('child_process');
 
 // Remove .track() if you'd like to keep the workspace and other temporary
 // files after running the tests.
@@ -195,18 +194,39 @@ function makeConfig(headless) {
             // master process) starts with a temporary directory as the
             // workspace.
             const rootDir = temptrack.mkdirSync();
-            const argv = [process.argv[0], 'src-gen/backend/server.js', '--root-dir=' + rootDir];
-            return require('./src-gen/backend/server')(port, host, argv).then(created => {
-                this.execArgv = [wdioRunnerScript, cliPortKey, created.address().port,
-                    '--theia-root-dir', rootDir];
-                this.server = created;
+            const argv = ['--no-cluster', '--root-dir=' + rootDir, '--port', port.toString()];
+
+            return new Promise((resolve, reject) => {
+                const process = cp.fork('./src-gen/backend/main.js', argv);
+
+                process.once('message', port => {
+                    resolve({
+                        process,
+                        port,
+                    });
+                });
+
+                process.once('error', error => {
+                    console.error(`An error happened within the Theia server process: ${error}`);
+                    reject(error);
+                });
+
+            }).then(server => {
+                process.argv.push(cliPortKey, server.port,
+                    '--theia-root-dir', rootDir
+                );
+                this.server = server.process;
             });
         },
         // Gets executed after all workers got shut down and the process is about to exit. It is not
         // possible to defer the end of the process using a promise.
         onComplete: function (exitCode) {
             if (this.server) {
-                this.server.close();
+                try {
+                    this.server.kill();
+                } catch (error) {
+                    console.error(`Error when trying to kill the server process: ${error}`);
+                }
             }
         },
         //
@@ -254,15 +274,23 @@ function makeConfig(headless) {
         afterSuite: function (suite) {
             require("webdriverio");
             var fs = require("fs");
-            let result = browser.execute("return window.__coverage__;")
+            let result;
             try {
-                if (!fs.existsSync('coverage')) {
-                    fs.mkdirSync('coverage');
-                }
-                fs.writeFileSync('coverage/coverage.json', JSON.stringify(result.value));
+                result = browser.execute('return window.__coverage__;');
             } catch (err) {
-                console.log(`Error writing coverage ${err}`);
-            };
+                console.error(`Coverage report extraction failed: ${err}`);
+                return;
+            }
+            try {
+                if (result.value) {
+                    if (!fs.existsSync('coverage')) {
+                        fs.mkdirSync('coverage');
+                    }
+                    fs.writeFileSync('coverage/coverage.json', JSON.stringify(result.value));
+                }
+            } catch (err) {
+                console.error(`Error writing coverage: ${err}`);
+            }
         },
         //
         // Gets executed after all tests are done. You still have access to all global variables from
