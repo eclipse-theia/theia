@@ -173,7 +173,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     protected createChannel(id: number, socket: ws): WebSocketChannel {
         return new WebSocketChannel(id, content => {
-            if (socket.readyState < ws.CLOSING) {
+            if (socket.readyState === ws.OPEN) {
                 socket.send(content, err => {
                     if (err) {
                         throw err;
