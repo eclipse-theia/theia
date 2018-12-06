@@ -22,7 +22,6 @@ import { EditorPreviewWidget } from './editor-preview-widget';
 import { EditorPreviewWidgetFactory, EditorPreviewWidgetOptions } from './editor-preview-factory';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
 import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { MaybePromise } from '@theia/core/src/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 /**
@@ -66,7 +65,7 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
     protected async handlePreviewWidgetCreated(widget: EditorPreviewWidget): Promise<void> {
         // Enforces only one preview widget exists at a given time.
         const editorPreview = await this.currentEditorPreview;
-        if (editorPreview) {
+        if (editorPreview && editorPreview !== widget) {
             editorPreview.pinEditorWidget();
         }
 
@@ -93,13 +92,11 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
         return !!currentUri && currentUri.isEqualOrParent(uri);
     }
 
-    canHandle(uri: URI, options?: PreviewEditorOpenerOptions): MaybePromise<number> {
-        return this.isCurrentPreviewUri(uri).then(isCurrentPreviewUri => {
-            if (this.preferences['editor.enablePreview'] && (options && options.preview || isCurrentPreviewUri)) {
-                return 200;
-            }
-            return 0;
-        });
+    async canHandle(uri: URI, options?: PreviewEditorOpenerOptions): Promise<number> {
+        if (this.preferences['editor.enablePreview'] && (options && options.preview || await this.isCurrentPreviewUri(uri))) {
+            return 200;
+        }
+        return 0;
     }
 
     async open(uri: URI, options?: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget | EditorWidget> {
