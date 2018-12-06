@@ -470,20 +470,6 @@ export function fromDocumentSymbol(info: theia.DocumentSymbol): model.DocumentSy
     return result;
 }
 
-export function toDocumentSymbol(info: model.DocumentSymbol): theia.DocumentSymbol {
-    const result = new types.DocumentSymbol(
-        info.name,
-        info.detail,
-        SymbolKind.toSymbolKind(info.kind),
-        toRange(info.range),
-        toRange(info.selectionRange),
-    );
-    if (info.children) {
-        result.children = info.children.map(toDocumentSymbol) as any;
-    }
-    return result;
-}
-
 export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.WorkspaceFolder {
     return {
         uri: URI.revive(folder.uri),
