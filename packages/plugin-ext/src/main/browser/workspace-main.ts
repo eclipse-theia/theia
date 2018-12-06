@@ -21,7 +21,6 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import Uri from 'vscode-uri';
 import { UriComponents } from '../../common/uri-components';
-import { Path } from '@theia/core/lib/common/path';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { FileStat } from '@theia/filesystem/lib/common';
@@ -56,33 +55,29 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
 
         workspaceService.roots.then(roots => {
-            this.roots = roots;
-            this.notifyWorkspaceFoldersChanged();
+            this.notifyWorkspaceFoldersChanged(roots);
+        });
+
+        workspaceService.onWorkspaceChanged(roots => {
+            this.notifyWorkspaceFoldersChanged(roots);
         });
     }
 
-    notifyWorkspaceFoldersChanged(): void {
-        if (this.roots && this.roots.length) {
-            const folders = this.roots.map((root: FileStat, index: number) => {
-                const uri = Uri.parse(root.uri);
-                const path = new Path(uri.path);
-                return {
-                    uri: uri,
-                    name: path.base,
-                    index: index
-                };
-            });
-
-            this.proxy.$onWorkspaceFoldersChanged({
-                added: folders,
-                removed: []
-            });
-        } else {
-            this.proxy.$onWorkspaceFoldersChanged({
-                added: [],
-                removed: []
-            });
+    notifyWorkspaceFoldersChanged(roots: FileStat[]): void {
+        if (this.isAnyRootChanged(roots) === false) {
+            return;
         }
+
+        this.roots = roots;
+        this.proxy.$onWorkspaceFoldersChanged({ roots });
+    }
+
+    private isAnyRootChanged(roots: FileStat[]): boolean {
+        if (!this.roots || this.roots.length !== roots.length) {
+            return true;
+        }
+
+        return this.roots.some((root, index) => root.uri !== roots[index].uri);
     }
 
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined> {

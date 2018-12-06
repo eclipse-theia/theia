@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as paths from 'path';
 import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -25,19 +26,21 @@ import {
 } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { WorkspaceFoldersChangeEvent, FileChangeEvent } from '../api/model';
+import { WorkspaceRootsChangeEvent, FileChangeEvent } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { toWorkspaceFolder } from './type-converters';
 import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
 import URI from 'vscode-uri';
+import { FileStat } from '@theia/filesystem/lib/common';
+import { normalize } from '../common/paths';
+import { relative } from '../common/paths-util';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
     private proxy: WorkspaceMain;
     private fileSystemWatcherManager: InPluginFileSystemWatcherProxy;
 
-    private workspaceFoldersChangedEmitter = new Emitter<WorkspaceFoldersChangeEvent>();
-    public readonly onDidChangeWorkspaceFolders: Event<WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
+    private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
+    public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
 
     private folders: theia.WorkspaceFolder[] | undefined;
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
@@ -59,15 +62,36 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
-    $onWorkspaceFoldersChanged(event: WorkspaceFoldersChangeEvent): void {
-        // TODO add support for multiroot workspace
-        this.folders = [];
+    $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
+        const newRoots = event.roots || [];
+        const newFolders = newRoots.map((root, index) => this.toWorkspaceFolder(root, index));
+        const added = this.foldersDiff(newFolders, this.folders);
+        const removed = this.foldersDiff(this.folders, newFolders);
 
-        const added: theia.WorkspaceFolder[] = [];
-        event.added.map(folder => added.push(toWorkspaceFolder(folder)));
-        event.added = added;
-        this.folders = added;
-        this.workspaceFoldersChangedEmitter.fire(event);
+        this.folders = newFolders;
+
+        this.workspaceFoldersChangedEmitter.fire({
+            added: added,
+            removed: removed
+        });
+    }
+
+    private foldersDiff(folder1: theia.WorkspaceFolder[] = [], folder2: theia.WorkspaceFolder[] = []): theia.WorkspaceFolder[] {
+        const map = new Map();
+        folder1.forEach(folder => map.set(folder.uri.toString(), folder));
+        folder2.forEach(folder => map.delete(folder.uri.toString()));
+
+        return folder1.filter(folder => map.has(folder.uri.toString()));
+    }
+
+    private toWorkspaceFolder(root: FileStat, index: number): theia.WorkspaceFolder {
+        const uri = URI.parse(root.uri);
+        const path = new Path(uri.path);
+        return {
+            uri: uri,
+            name: path.base,
+            index: index
+        };
     }
 
     pickWorkspaceFolder(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
@@ -169,9 +193,22 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
-    getWorkspaceFolder(uri: URI): theia.WorkspaceFolder | URI | undefined {
+    getWorkspaceFolder(uri: theia.Uri, resolveParent?: boolean): theia.WorkspaceFolder | URI | undefined {
         if (!this.folders || !this.folders.length) {
             return undefined;
+        }
+
+        function dirname(resource: URI): URI {
+            if (resource.scheme === 'file') {
+                return URI.file(paths.dirname(resource.fsPath));
+            }
+            return resource.with({
+                path: paths.dirname(resource.path)
+            });
+        }
+
+        if (resolveParent && this.hasFolder(uri)) {
+            uri = dirname(uri);
         }
 
         const resourcePath = uri.toString();
@@ -186,18 +223,52 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 return uri;
             }
 
-            if (this.matchPaths(resourcePath, folderPath) && (!workspaceFolder || folderPath.length > workspaceFolder.uri.toString().length)) {
+            if (resourcePath.startsWith(folderPath)
+                && resourcePath[folderPath.length] === '/'
+                && (!workspaceFolder || folderPath.length > workspaceFolder.uri.toString().length)) {
                 workspaceFolder = folder;
             }
         }
         return workspaceFolder;
     }
 
-    private matchPaths(resourcePath: string, folderPath: string): boolean {
-        const resourcePathCrumbs = resourcePath.split('/');
-        const folderPathCrumbs = folderPath.split('/');
+    private hasFolder(uri: URI): boolean {
+        if (!this.folders) {
+            return false;
+        }
+        return this.folders.some(folder => folder.uri.toString() === uri.toString());
+    }
 
-        return folderPathCrumbs.every((crumb, index) => crumb === resourcePathCrumbs[index]);
+    getRelativePath(pathOrUri: string | theia.Uri, includeWorkspace?: boolean): string | undefined {
+        let path: string | undefined;
+        if (typeof pathOrUri === 'string') {
+            path = pathOrUri;
+        } else if (typeof pathOrUri !== 'undefined') {
+            path = pathOrUri.fsPath;
+        }
+
+        if (!path) {
+            return path;
+        }
+
+        const folder = this.getWorkspaceFolder(
+            typeof pathOrUri === 'string' ? URI.file(pathOrUri) : pathOrUri,
+            true
+        ) as theia.WorkspaceFolder;
+
+        if (!folder) {
+            return path;
+        }
+
+        if (typeof includeWorkspace === 'undefined') {
+            includeWorkspace = this.folders!.length > 1;
+        }
+
+        let result = relative(folder.uri.fsPath, path);
+        if (includeWorkspace) {
+            result = `${folder.name}/${result}`;
+        }
+        return normalize(result, true);
     }
 
 }

@@ -48,7 +48,8 @@ import {
     Location,
     FileWatcherSubscriberOptions,
     FileChangeEvent,
-    TextDocumentShowOptions
+    TextDocumentShowOptions,
+    WorkspaceRootsChangeEvent
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
@@ -347,7 +348,7 @@ export interface WorkspaceMain {
 }
 
 export interface WorkspaceExt {
-    $onWorkspaceFoldersChanged(event: theia.WorkspaceFoldersChangeEvent): void;
+    $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $fileChanged(event: FileChangeEvent): void;
 }
