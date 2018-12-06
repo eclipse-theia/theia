@@ -77,7 +77,6 @@ addons:
     - libsecret-1-dev
     chrome: stable
 before_script:
-  - export DISPLAY=:99.0; sh -e /etc/init.d/xvfb start ;
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost \&  ;
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.7.0
