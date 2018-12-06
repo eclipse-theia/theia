@@ -324,7 +324,7 @@ declare module '@theia/plugin' {
     }
 
     /**
-     * Pair if two positions.
+     * Pair of two positions.
      */
     export class Range {
         /**
