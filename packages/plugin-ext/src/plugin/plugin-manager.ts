@@ -23,6 +23,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
+import { LogServiceExtImpl } from './log-service-ext';
 
 export interface PluginHost {
 
@@ -53,7 +54,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     constructor(private readonly host: PluginHost,
         private readonly envExt: EnvExtImpl,
-        private readonly preferencesManager: PreferenceRegistryExtImpl) {
+        private readonly preferencesManager: PreferenceRegistryExtImpl,
+        private readonly logServiceExt: LogServiceExtImpl) { // todo maybe interfaces should be here instead of impls
     }
 
     $stopPlugin(contextPath: string): PromiseLike<void> {
@@ -95,7 +97,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             const pluginMain = this.host.loadPlugin(plugin);
             // able to load the plug-in ?
             if (pluginMain !== undefined) {
-                this.startPlugin(plugin, pluginMain);
+                console.log('Plugin name ' + plugin.model.name + ' extension id ' + plugin.model.id);
+                this.logServiceExt.providePluginLogDirs(plugin.model.id).then(url => {
+                    this.startPlugin(plugin, pluginMain, url);
+                    // TODO error handlering
+                }).catch(err => console.log('Unable to create log directory for plugin ', plugin.model.displayName));
             } else {
                 return Promise.reject(new Error('Unable to load the given plugin'));
             }
@@ -105,7 +111,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     // tslint:disable-next-line:no-any
-    private startPlugin(plugin: Plugin, pluginMain: any): void {
+    private startPlugin(plugin: Plugin, pluginMain: any, logFolderPath?: string): void {
 
         // Create pluginContext object for this plugin.
         const subscriptions: theia.Disposable[] = [];
@@ -113,7 +119,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             subscriptions: subscriptions,
-            asAbsolutePath: asAbsolutePath
+            asAbsolutePath: asAbsolutePath,
+            logPath: logFolderPath || 'fail', // what should be if log folder creation fail?
         };
 
         let stopFn = undefined;

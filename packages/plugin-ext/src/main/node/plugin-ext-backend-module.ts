@@ -29,6 +29,7 @@ import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-h
 import { GithubPluginDeployerResolver } from './plugin-github-resolver';
 import { HttpPluginDeployerResolver } from './plugin-http-resolver';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
+import { LogService, LogServiceImpl, logServicePath } from './logs/logs-service';
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -46,6 +47,13 @@ export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginDeployerDirectoryHandler).to(PluginTheiaDirectoryHandler).inSingletonScope();
 
     bind(PluginServer).to(PluginDeployerImpl).inSingletonScope();
+
+    bind(LogService).to(LogServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(logServicePath, () =>
+            ctx.container.get(LogService)
+        )
+    ).inSingletonScope();
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(pluginServerJsonRpcPath, () =>

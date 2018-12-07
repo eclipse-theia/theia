@@ -694,6 +694,15 @@ export interface PreferenceRegistryExt {
     $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void;
 }
 
+export interface LogServiceMain {
+    $providePluginLogDirs(pluginId: string): Promise<string | undefined>
+}
+
+// delete it.
+export interface LogServiceExt {
+
+}
+
 export interface OutputChannelRegistryMain {
     $append(channelName: string, value: string): PromiseLike<void>;
     $clear(channelName: string): PromiseLike<void>;
@@ -837,6 +846,7 @@ export const PLUGIN_RPC_CONTEXT = {
     OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain'),
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
+    LOG_MAIN: createProxyIdentifier<LogServiceMain>('LogServiceMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
