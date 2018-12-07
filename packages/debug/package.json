@@ -46,6 +46,7 @@
     "download-debug-adapters": "./bin/download-adapters.js"
   },
   "files": [
+    "bin",
     "lib",
     "src"
   ],
