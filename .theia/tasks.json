@@ -1,0 +1,64 @@
+{
+    "tasks": [
+        {
+            "label": "[Task] short running test task (~3s)",
+            "type": "shell",
+            "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
+            "command": "./task",
+            "args": [
+                "1",
+                "2",
+                "3"
+            ],
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "task.bat",
+                    "abc"
+                ]
+            }
+        },
+        {
+            "label": "[Task] long running test task (~300s)",
+            "type": "shell",
+            "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
+            "command": "./task-long-running",
+            "args": [],
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "task-long-running.bat"
+                ]
+            }
+        },
+        {
+            "label": "[Task] recursively list files from workspace root",
+            "type": "shell",
+            "cwd": "${workspaceFolder}",
+            "command": "ls",
+            "args": [
+                "-alR"
+            ],
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "dir",
+                    "/s"
+                ]
+            }
+        },
+        {
+            "label": "[Task] Echo a string",
+            "type": "shell",
+            "cwd": "${workspaceFolder}",
+            "command": "bash",
+            "args": [
+                "-c",
+                "sleep 5 && echo 1 2 3"
+            ]
+        }
+    ]
+}

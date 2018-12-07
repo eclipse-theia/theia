@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PluginManagerExt, PluginInitData, PluginManager, Plugin, PluginAPI } from '../api/plugin-api';
+import { PluginManagerExt, PluginInitData, PluginManager, Plugin, PluginAPI, ConfigStorage } from '../api/plugin-api';
 import { PluginMetadata } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { join } from 'path';
@@ -23,7 +23,6 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
-import { LogServiceExtImpl } from './log-service-ext';
 
 export interface PluginHost {
 
@@ -52,10 +51,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     private activatedPlugins = new Map<string, ActivatedPlugin>();
     private pluginActivationPromises = new Map<string, Deferred<void>>();
 
-    constructor(private readonly host: PluginHost,
+    constructor(
+        private readonly host: PluginHost,
         private readonly envExt: EnvExtImpl,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
-        private readonly logServiceExt: LogServiceExtImpl) { // todo maybe interfaces should be here instead of impls
+        ) {
     }
 
     $stopPlugin(contextPath: string): PromiseLike<void> {
@@ -73,7 +73,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         return Promise.resolve();
     }
 
-    $init(pluginInit: PluginInitData): PromiseLike<void> {
+    $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void> {
         // init query parameters
         this.envExt.setQueryParameters(pluginInit.env.queryParams);
 
@@ -96,12 +96,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         for (const plugin of plugins) {
             const pluginMain = this.host.loadPlugin(plugin);
             // able to load the plug-in ?
+            console.log('START!!!!! ');
             if (pluginMain !== undefined) {
-                console.log('Plugin name ' + plugin.model.name + ' extension id ' + plugin.model.id);
-                this.logServiceExt.providePluginLogDirs(plugin.model.id).then(url => {
-                    this.startPlugin(plugin, pluginMain, url);
-                    // TODO error handlering
-                }).catch(err => console.log('Unable to create log directory for plugin ', plugin.model.displayName));
+                this.startPlugin(plugin, configStorage, pluginMain);
             } else {
                 return Promise.reject(new Error('Unable to load the given plugin'));
             }
@@ -111,16 +108,15 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     // tslint:disable-next-line:no-any
-    private startPlugin(plugin: Plugin, pluginMain: any, logFolderPath?: string): void {
-
-        // Create pluginContext object for this plugin.
+    private startPlugin(plugin: Plugin, configStorage: ConfigStorage, pluginMain: any): void {
         const subscriptions: theia.Disposable[] = [];
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
+        const logPath = join(configStorage.hostLogPath, plugin.model.id); // todo check format
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             subscriptions: subscriptions,
             asAbsolutePath: asAbsolutePath,
-            logPath: logFolderPath || 'fail', // what should be if log folder creation fail?
+            logPath: logPath,
         };
 
         let stopFn = undefined;

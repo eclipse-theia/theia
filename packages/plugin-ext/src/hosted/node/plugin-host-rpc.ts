@@ -21,7 +21,6 @@ import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi } from '../../common/plugin-ext-api-contribution';
-import { LogServiceExtImpl } from '../../plugin/log-service-ext';
 
 /**
  * Handle the RPC calls.
@@ -37,10 +36,11 @@ export class PluginHostRPC {
     }
 
     initialize() {
+        console.log('Log folder should be created!!!!');
         const envExt = new EnvExtImpl(this.rpc);
-        const logServiceExt = new LogServiceExtImpl(this.rpc);
+        //
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, logServiceExt, this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
         PluginHostRPC.apiFactory = createAPIFactory(this.rpc, this.pluginManager, envExt, preferenceRegistryExt);
@@ -58,7 +58,7 @@ export class PluginHostRPC {
     }
 
     // tslint:disable-next-line:no-any
-    createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, logsServiceExt: LogServiceExtImpl, rpc: any): PluginManagerExtImpl {
+    createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
         const pluginManager = new PluginManagerExtImpl({
             loadPlugin(plugin: Plugin): void {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
@@ -118,7 +118,7 @@ export class PluginHostRPC {
                     }
                 }
             }
-        }, envExt, preferencesManager, logsServiceExt);
+        }, envExt, preferencesManager);
         return pluginManager;
     }
 }

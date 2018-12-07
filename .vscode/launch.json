@@ -55,7 +55,7 @@
             "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
                 "--log-level=debug",
-                "--port=3000",
+                "--port=3030",
                 "--no-cluster",
                 "--app-project-path=${workspaceRoot}/examples/browser",
                 "--no-app-auto-install"

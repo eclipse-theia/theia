@@ -25,7 +25,7 @@ export class LogServiceExtImpl implements LogServiceExt {
         this.mainLogServiceProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LOG_MAIN);
     }
 
-    async providePluginLogDirs(pluginId: string): Promise<string | undefined> {
-        return this.mainLogServiceProxy.$providePluginLogDirs(pluginId);
+    async provideNewHostLogDir(): Promise<string> {
+        return this.mainLogServiceProxy.$providePluginLogDirs();
     }
 }

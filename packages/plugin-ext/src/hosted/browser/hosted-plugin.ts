@@ -20,7 +20,7 @@ import { injectable, inject, interfaces, named } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { MAIN_RPC_CONTEXT, ConfigStorage } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
@@ -28,6 +28,7 @@ import { PreferenceServiceImpl } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
+import { LogService } from '../../main/node/logs/logs-service';
 
 @injectable()
 export class HostedPluginSupport {
@@ -52,7 +53,8 @@ export class HostedPluginSupport {
     private theiaReadyPromise: Promise<any>;
 
     constructor(
-        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl
+        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
+        @inject(LogService) private readonly logService: LogService,
     ) {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
     }
@@ -75,50 +77,55 @@ export class HostedPluginSupport {
     loadPlugins(pluginsMetadata: PluginMetadata[], container: interfaces.Container, extApi: ExtPluginApi[]): void {
         const [frontend, backend] = this.initContributions(pluginsMetadata);
         this.theiaReadyPromise.then(() => {
-            if (frontend) {
-                const worker = new PluginWorker();
-                const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                hostedExtManager.$init({
-                    plugins: pluginsMetadata,
-                    preferences: this.preferenceServiceImpl.getPreferences(),
-                    env: { queryParams: getQueryParameters() },
-                    extApi: extApi
-                });
-                setUpPluginApi(worker.rpc, container);
-                this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
-            }
+            this.logService.provideHostLogDir().then(logHostPath => {
+                const confStorage: ConfigStorage = {hostLogPath: logHostPath};
+                console.log('Storage ', confStorage);
+                if (frontend) {
+                    const worker = new PluginWorker();
+                    const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
 
-            if (backend) {
-                // sort plugins per host
-                const pluginsPerHost = pluginsMetadata.reduce((map: any, pluginMetadata) => {
-                    const host = pluginMetadata.host;
-                    if (!map[host]) {
-                        map[host] = [pluginMetadata];
-                    } else {
-                        map[host].push(pluginMetadata);
-                    }
-                    return map;
-                }, {});
-
-                // create one RPC per host and init.
-                Object.keys(pluginsPerHost).forEach(hostKey => {
-                    const plugins: PluginMetadata[] = pluginsPerHost[hostKey];
-                    let pluginID = hostKey;
-                    if (plugins.length === 1) {
-                        pluginID = getPluginId(plugins[0].model);
-                    }
-                    const rpc = this.createServerRpc(pluginID, hostKey);
-                    const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                     hostedExtManager.$init({
-                        plugins: plugins,
+                        plugins: pluginsMetadata,
                         preferences: this.preferenceServiceImpl.getPreferences(),
                         env: { queryParams: getQueryParameters() },
                         extApi: extApi
+                    }, confStorage);
+                    setUpPluginApi(worker.rpc, container);
+                    this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
+                }
+
+                if (backend) {
+                    // sort plugins per host
+                    const pluginsPerHost = pluginsMetadata.reduce((map: any, pluginMetadata) => {
+                        const host = pluginMetadata.host;
+                        if (!map[host]) {
+                            map[host] = [pluginMetadata];
+                        } else {
+                            map[host].push(pluginMetadata);
+                        }
+                        return map;
+                    }, {});
+
+                    // create one RPC per host and init.
+                    Object.keys(pluginsPerHost).forEach(hostKey => {
+                        const plugins: PluginMetadata[] = pluginsPerHost[hostKey];
+                        let pluginID = hostKey;
+                        if (plugins.length === 1) {
+                            pluginID = getPluginId(plugins[0].model);
+                        }
+                        const rpc = this.createServerRpc(pluginID, hostKey);
+                        const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
+                        hostedExtManager.$init({
+                            plugins: plugins,
+                            preferences: this.preferenceServiceImpl.getPreferences(),
+                            env: { queryParams: getQueryParameters() },
+                            extApi: extApi
+                        }, confStorage);
+                        setUpPluginApi(rpc, container);
+                        this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
                     });
-                    setUpPluginApi(rpc, container);
-                    this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
-                });
-            }
+                }
+            });
         });
     }
 

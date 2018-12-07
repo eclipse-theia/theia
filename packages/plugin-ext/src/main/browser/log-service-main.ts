@@ -26,7 +26,7 @@ export class LogServiceMainImpl implements LogServiceMain {
         this.logsServiceProxy = container.get(LogService);
     }
 
-    $providePluginLogDirs(pluginId: string): Promise<string | undefined> {
-        return this.logsServiceProxy.providePluginLogDir(pluginId);
+    $providePluginLogDirs(): Promise<string> {
+        return this.logsServiceProxy.provideHostLogDir();
     }
 }
