@@ -43,7 +43,7 @@ export class DebugVariablesSource extends TreeSource {
     async getElements(): Promise<IterableIterator<DebugScope>> {
         const { currentSession } = this.model;
         const scopes = currentSession ? await currentSession.getScopes() : [];
-        return scopes.values();
+        return scopes[Symbol.iterator]();
     }
 
 }

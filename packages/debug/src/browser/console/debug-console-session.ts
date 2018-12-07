@@ -79,7 +79,7 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     getElements(): IterableIterator<ConsoleItem> {
-        return this.items.values();
+        return this.items[Symbol.iterator]();
     }
 
     protected async completions({ textDocument: { uri }, position }: CompletionParams): Promise<CompletionItem[]> {
