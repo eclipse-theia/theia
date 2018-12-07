@@ -50,12 +50,12 @@ export class ExpressionContainer implements CompositeConsoleItem {
     protected elements: Promise<ExpressionContainer[]> | undefined;
     async getElements(): Promise<IterableIterator<ExpressionContainer>> {
         if (!this.hasElements || !this.session) {
-            return [].values();
+            return [][Symbol.iterator]();
         }
         if (!this.elements) {
             this.elements = this.doResolve();
         }
-        return (await this.elements).values();
+        return (await this.elements)[Symbol.iterator]();
     }
     protected async doResolve(): Promise<ExpressionContainer[]> {
         const result: ExpressionContainer[] = [];

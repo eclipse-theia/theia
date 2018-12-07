@@ -37,7 +37,7 @@ export class DebugBreakpointsSource extends TreeSource {
     }
 
     getElements(): IterableIterator<TreeElement> {
-        return this.model.breakpoints.values();
+        return this.model.breakpoints[Symbol.iterator]();
     }
 
 }
