@@ -33,7 +33,7 @@ export class DebugHoverSource extends TreeSource {
 
     protected elements: TreeElement[] = [];
     getElements(): IterableIterator<TreeElement> {
-        return this.elements.values();
+        return this.elements[Symbol.iterator]();
     }
 
     protected renderTitle(element: ExpressionItem | DebugVariable): React.ReactNode {
