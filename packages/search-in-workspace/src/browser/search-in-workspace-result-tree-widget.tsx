@@ -31,7 +31,7 @@ import {
     DiffUris,
     FOLDER_ICON
 } from '@theia/core/lib/browser';
-import { Path, CancellationTokenSource, Emitter, Event } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
@@ -345,18 +345,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return nodes;
     }
 
-    protected getFileNodesByLineNode(lineNode: SearchInWorkspaceResultLineNode): SearchInWorkspaceFileNode[] {
-        const nodes: SearchInWorkspaceFileNode[] = [];
-
-        return nodes;
-    }
-
-    protected filenameAndPath(rootUri: string, uriStr: string): { name: string, path: string } {
-        const fileUri: URI = new URI(uriStr);
-        const name = fileUri.displayName;
-        const rootPath = new URI(rootUri).path.toString();
-        const path = new Path(fileUri.path.toString().substr(rootPath.length + 1)).dir.toString();
-        return { name, path };
+    protected filenameAndPath(rootUriStr: string, uriStr: string): { name: string, path: string } {
+        const uri: URI = new URI(uriStr);
+        const relativePath = new URI(rootUriStr).relative(uri.parent);
+        return {
+            name: uri.displayName,
+            path: relativePath ? relativePath.toString() : ''
+        };
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
