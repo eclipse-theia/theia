@@ -208,7 +208,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         const elementToReveal = this.previewHandler.findElementForFragment(this.node, uri.fragment);
         if (elementToReveal) {
             this.preventScrollNotification = true;
-            elementToReveal.scrollIntoView({ behavior: 'instant' });
+            elementToReveal.scrollIntoView();
             window.setTimeout(() => {
                 this.preventScrollNotification = false;
             }, 50);
@@ -225,7 +225,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         const elementToReveal = this.previewHandler.findElementForSourceLine(this.node, sourceLine);
         if (elementToReveal) {
             this.preventScrollNotification = true;
-            elementToReveal.scrollIntoView({ behavior: 'instant' });
+            elementToReveal.scrollIntoView();
             window.setTimeout(() => {
                 this.preventScrollNotification = false;
             }, 50);
