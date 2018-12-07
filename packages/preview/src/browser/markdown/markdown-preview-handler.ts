@@ -106,7 +106,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
         if (!elementToReveal) {
             return;
         }
-        elementToReveal.scrollIntoView({ behavior: 'instant' });
+        elementToReveal.scrollIntoView();
     }
 
     findElementForFragment(content: HTMLElement, link: string): HTMLElement | undefined {
