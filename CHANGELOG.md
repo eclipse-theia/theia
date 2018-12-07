@@ -6,12 +6,12 @@
 - [plugin] added `CodeActionKind` `intersects` Plug-in API
 - [task] added support to configure tasks
 - [workspace] allow creation of files and folders using recursive paths
+- [electron] upgraded version of electron used to version 3.
 
 Breaking changes:
 
+- [node] moved to using Node.js version 10, dropping support for Node.js version 8.
 - [dialog] `validate` and `accept` methods are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
-
-Breaking changes:
 - [editor] turn off autoSave by default to align with VS Code [#4777](https://github.com/theia-ide/theia/pull/4777)
   - default settings can be overriden in application package.json:
   ```json

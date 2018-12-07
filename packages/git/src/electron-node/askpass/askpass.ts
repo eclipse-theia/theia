@@ -14,6 +14,7 @@ import { MaybePromise } from '@theia/core/lib/common/types';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { GitPrompt } from '../../common/git-prompt';
 import { DugiteGitPromptServer } from '../../node/dugite-git-prompt';
+import { AddressInfo } from 'net';
 
 /**
  * Environment for the Git askpass helper.
@@ -89,7 +90,7 @@ export class Askpass implements Disposable {
             return new Promise<Address>(resolve => {
                 this.server.on('error', err => this.logger.error(err));
                 this.server.listen(0, this.hostname(), () => {
-                    resolve(this.server.address());
+                    resolve(this.server.address() as AddressInfo);
                 });
             });
         } catch (err) {
