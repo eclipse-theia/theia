@@ -45,6 +45,7 @@ beforeEach(() => {
     container = new Container();
     container.bind(ApplicationShell).toConstantValue({
         currentChanged: new Signal({})
+    // tslint:disable-next-line:no-any
     } as any);
     const workspaceService = new WorkspaceService();
     workspaceService.tryGetRoots = () => roots;
