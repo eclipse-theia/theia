@@ -29,6 +29,7 @@ describe('TypescriptVersionServiceImpl', function () {
 
     beforeEach(() => {
         impl = new TypescriptVersionServiceImpl();
+        // tslint:disable-next-line:no-any
         (impl as any).applicationPackage = {
             projectPath: FileUri.fsPath(projectUri)
         };
