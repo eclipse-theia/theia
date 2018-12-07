@@ -119,9 +119,9 @@ export class RawProcess extends Process {
                 );
             });
 
-            this.output = this.process.stdout;
-            this.input = this.process.stdin;
-            this.errorOutput = this.process.stderr;
+            this.output = this.process.stdout || new DevNullStream();
+            this.input = this.process.stdin || new DevNullStream();
+            this.errorOutput = this.process.stderr || new DevNullStream();
 
             if (this.process.pid !== undefined) {
                 process.nextTick(() => {

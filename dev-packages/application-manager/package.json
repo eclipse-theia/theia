@@ -35,7 +35,7 @@
     "circular-dependency-plugin": "^5.0.0",
     "copy-webpack-plugin": "^4.5.0",
     "css-loader": "^0.28.1",
-    "electron": "^2.0.14",
+    "electron": "^3.1.7",
     "electron-rebuild": "^1.5.11",
     "file-loader": "^1.1.11",
     "font-awesome-webpack": "0.0.5-beta.2",
