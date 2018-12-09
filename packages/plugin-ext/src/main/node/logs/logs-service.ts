@@ -18,21 +18,22 @@ import { injectable, inject } from  'inversify';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { join } from 'path';
 import { PluginConf } from '../config/const';
+import URI from '@theia/core/lib/common/uri';
+import { isWindows } from '@theia/core';
 
 export const logServicePath = '/services/logs';
 
 export const LogService = Symbol('LogService');
 export interface LogService {
     // Return hosted log dir. Create this folder if it is not exist on the file system.
-    // Return undefined if it not possible to do.
     provideHostLogDir(): Promise<string>
-    // Return parent log directory path, or undefined if it is not possible.
-    // getParentLogDirPath(): Promise<string | undefined>
 }
 
 @injectable()
 export class LogServiceImpl implements LogService {
     private logDirName: string = 'logs';
+    private windowsConfFolders = [PluginConf.APP_DATA_WINDOWS_FOLDER, PluginConf.ROAMING_WINDOWS_FOLDER];
+    private linuxConfFolders = [PluginConf.LINUX_CONF_FOLDER];
 
     constructor(@inject(FileSystem) readonly fs: FileSystem) {
     }
@@ -51,10 +52,10 @@ export class LogServiceImpl implements LogService {
         const pluginDirPath = join(parentLogDir, this.gererateTimeFolderName(), 'host');
         console.log('resolved plugin path is ' + pluginDirPath + ' this path exists ' + (await this.fs.exists(pluginDirPath)));
         if (! await this.fs.exists(pluginDirPath)) {
-            this.fs.createFolder(pluginDirPath); // Todo handle possible errors
+            this.fs.createFolder(pluginDirPath);
         }
 
-        return pluginDirPath;
+        return new URI(pluginDirPath).path.toString();
     }
 
     /** Generate time folder name in format: YYYYMMDDTHHMMSS, for example: 20181205T093828 */
@@ -68,7 +69,7 @@ export class LogServiceImpl implements LogService {
         if (userHomeDir) {
             parentLogDirPath = join(
                 userHomeDir.uri,
-                PluginConf.LINUX_CONF_FOLDER,
+                ...(isWindows ? this.windowsConfFolders : this.linuxConfFolders),
                 PluginConf.APPLICATION_CONF_FOLDER,
                 this.logDirName
             );

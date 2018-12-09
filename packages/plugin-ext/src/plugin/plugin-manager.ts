@@ -51,11 +51,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     private activatedPlugins = new Map<string, ActivatedPlugin>();
     private pluginActivationPromises = new Map<string, Deferred<void>>();
 
-    constructor(
-        private readonly host: PluginHost,
+    constructor(private readonly host: PluginHost,
         private readonly envExt: EnvExtImpl,
-        private readonly preferencesManager: PreferenceRegistryExtImpl,
-        ) {
+        private readonly preferencesManager: PreferenceRegistryExtImpl) {
     }
 
     $stopPlugin(contextPath: string): PromiseLike<void> {
@@ -96,7 +94,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         for (const plugin of plugins) {
             const pluginMain = this.host.loadPlugin(plugin);
             // able to load the plug-in ?
-            console.log('START!!!!! ');
             if (pluginMain !== undefined) {
                 this.startPlugin(plugin, configStorage, pluginMain);
             } else {

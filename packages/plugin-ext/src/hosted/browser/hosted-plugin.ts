@@ -79,7 +79,6 @@ export class HostedPluginSupport {
         this.theiaReadyPromise.then(() => {
             this.logService.provideHostLogDir().then(logHostPath => {
                 const confStorage: ConfigStorage = {hostLogPath: logHostPath};
-                console.log('Storage ', confStorage);
                 if (frontend) {
                     const worker = new PluginWorker();
                     const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
