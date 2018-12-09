@@ -36,9 +36,7 @@ export class PluginHostRPC {
     }
 
     initialize() {
-        console.log('Log folder should be created!!!!');
         const envExt = new EnvExtImpl(this.rpc);
-        //
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc);
         this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);

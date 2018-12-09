@@ -32,7 +32,6 @@ import { DialogsMainImpl } from './dialogs-main';
 import { TreeViewsMainImpl } from './view/tree-views-main';
 import { NotificationMainImpl } from './notification-main';
 import { ConnectionMainImpl } from './connection-main';
-import { LogServiceMainImpl } from './log-service-main';
 import { WebviewsMainImpl } from './webviews-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
@@ -53,9 +52,6 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const preferenceRegistryMain = new PreferenceRegistryMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
-
-    const logServiceMain = new LogServiceMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.LOG_MAIN, logServiceMain);
 
     /* tslint:disable */
     new WindowStateMain(rpc);
