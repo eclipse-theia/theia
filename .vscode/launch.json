@@ -81,7 +81,6 @@
             "name": "Launch Backend (eclipse.jdt.ls)",
             "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
-                "--log-level=debug",
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
                 "--port=3000",
                 "--no-cluster",
