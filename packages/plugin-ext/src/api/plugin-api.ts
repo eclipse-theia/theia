@@ -785,6 +785,7 @@ export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined>;
     $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion>;
     $releaseCompletionItems(handle: number, id: number): void;
+    $provideImplementation(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined>;
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined>;
     $provideDefinition(handle: number, resource: UriComponents, position: Position): Promise<Definition | DefinitionLink[] | undefined>;
     $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext): Promise<Location[] | undefined>;
@@ -817,6 +818,7 @@ export interface LanguagesMain {
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
     $unregister(handle: number): void;
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
+    $registerImplementationProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerTypeDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registeReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void;
@@ -832,6 +834,48 @@ export interface LanguagesMain {
     $registerCodeLensSupport(handle: number, selector: SerializedDocumentFilter[], eventHandle?: number): void;
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
     $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void;
+}
+
+export interface WebviewPanelViewState {
+    readonly active: boolean;
+    readonly visible: boolean;
+    readonly position: number;
+}
+
+export interface WebviewPanelShowOptions {
+    readonly viewColumn?: number;
+    readonly preserveFocus?: boolean;
+}
+
+export interface WebviewsExt {
+    $onMessage(handle: string, message: any): void;
+    $onDidChangeWebviewPanelViewState(handle: string, newState: WebviewPanelViewState): void;
+    $onDidDisposeWebviewPanel(handle: string): PromiseLike<void>;
+    $deserializeWebviewPanel(newWebviewHandle: string,
+        viewType: string,
+        title: string,
+        state: any,
+        position: number,
+        options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void>;
+}
+
+export interface WebviewsMain {
+    $createWebviewPanel(handle: string,
+        viewType: string,
+        title: string,
+        showOptions: WebviewPanelShowOptions,
+        options: theia.WebviewPanelOptions & theia.WebviewOptions | undefined,
+        pluginLocation: UriComponents): void;
+    $disposeWebview(handle: string): void;
+    $reveal(handle: string, showOptions: WebviewPanelShowOptions): void;
+    $setTitle(handle: string, value: string): void;
+    $setIconPath(handle: string, value: { light: string, dark: string } | string | undefined): void;
+    $setHtml(handle: string, value: string): void;
+    $setOptions(handle: string, options: theia.WebviewOptions): void;
+    $postMessage(handle: string, value: any): Thenable<boolean>;
+
+    $registerSerializer(viewType: string): void;
+    $unregisterSerializer(viewType: string): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {
@@ -852,6 +896,7 @@ export const PLUGIN_RPC_CONTEXT = {
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     LOG_MAIN: createProxyIdentifier<LogServiceMain>('LogServiceMain'),
+    WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -869,4 +914,5 @@ export const MAIN_RPC_CONTEXT = {
     PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
+    WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
 };

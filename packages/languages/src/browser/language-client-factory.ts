@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { MessageConnection } from 'vscode-jsonrpc';
-import { CommandRegistry, Disposable } from '@theia/core/lib/common';
+import { CommandRegistry, Disposable, MaybePromise } from '@theia/core/lib/common';
 import { ErrorAction, RevealOutputChannelOn, CloseAction } from 'monaco-languageclient';
 import {
     Workspace, Languages, Window, Services,
@@ -50,7 +50,8 @@ export class LanguageClientFactory {
         return this.registry.registerCommand({ id }, { execute });
     }
 
-    get(contribution: LanguageContribution, clientOptions: LanguageClientOptions, connection: MessageConnection): ILanguageClient {
+    get(contribution: LanguageContribution, clientOptions: LanguageClientOptions,
+        connectionProvider: MessageConnection | (() => MaybePromise<MessageConnection>)): ILanguageClient {
         if (clientOptions.revealOutputChannelOn === undefined) {
             clientOptions.revealOutputChannelOn = RevealOutputChannelOn.Never;
         }
@@ -61,15 +62,17 @@ export class LanguageClientFactory {
                 closed: () => CloseAction.DoNotRestart
             };
         }
-        let initializationFailedHandler = clientOptions.initializationFailedHandler;
+        const initializationFailedHandler = clientOptions.initializationFailedHandler;
         clientOptions.initializationFailedHandler = e => !!initializationFailedHandler && initializationFailedHandler(e);
-        connection.onDispose(() => initializationFailedHandler = () => false);
         return new MonacoLanguageClient({
             id: contribution.id,
             name: contribution.name,
             clientOptions,
             connectionProvider: {
-                get: async (errorHandler, closeHandler) => createConnection(connection, errorHandler, closeHandler)
+                get: async (errorHandler, closeHandler) => {
+                    const connection = typeof connectionProvider === 'function' ? await connectionProvider() : connectionProvider;
+                    return createConnection(connection, errorHandler, closeHandler);
+                }
             }
         });
     }

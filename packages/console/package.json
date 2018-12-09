@@ -3,6 +3,7 @@
   "version": "0.3.17",
   "description": "Theia - Console Extension",
   "dependencies": {
+    "@theia/core": "^0.3.17",
     "@theia/monaco": "^0.3.17",
     "anser": "^1.4.7"
   },

@@ -118,27 +118,14 @@ export class WorkspaceVariableContribution implements VariableContribution {
     }
 
     protected getWorkspaceRootUri(uri: URI | undefined = this.getResourceUri()): URI | undefined {
-        if (!uri) {
-            const root = this.workspaceService.tryGetRoots()[0];
-            if (root) {
-                return new URI(root.uri);
-            }
-            return undefined;
-        }
-        for (const root of this.workspaceService.tryGetRoots()) {
-            const rootUri = new URI(root.uri);
-            if (rootUri && rootUri.isEqualOrParent(uri)) {
-                return rootUri;
-            }
-        }
-        return undefined;
+        return this.workspaceService.getWorkspaceRootUri(uri);
     }
 
     protected getResourceUri(): URI | undefined {
         return this.currentWidget && this.currentWidget.getResourceUri();
     }
 
-    protected getWorkspaceRelativePath(uri: URI): string | undefined {
+    getWorkspaceRelativePath(uri: URI): string | undefined {
         const workspaceRootUri = this.getWorkspaceRootUri(uri);
         const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
         return path && path.toString();

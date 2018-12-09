@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,18 +15,14 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler, MessageClient, DispatchingMessageClient, messageServicePath } from '@theia/core/lib/common';
+import { JavaExtensionContribution } from '@theia/java/lib/node';
+import { DebugAdapterContribution } from '@theia/debug/lib/node/debug-model';
+import { JavaDebugAdapterContribution, JavaDebugExtensionContribution } from './java-debug-adapter-contribution';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-
-    bind(DispatchingMessageClient).toSelf().inSingletonScope();
-    rebind(MessageClient).toService(DispatchingMessageClient);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<MessageClient>(messageServicePath, client => {
-            const dispatching = ctx.container.get<DispatchingMessageClient>(DispatchingMessageClient);
-            dispatching.clients.add(client);
-            client.onDidCloseConnection(() => dispatching.clients.delete(client));
-            return dispatching;
-        })
-    ).inSingletonScope();
+export default new ContainerModule(bind => {
+    /* explcit inTransientScope because it is very important, that
+       each web socket connection gets its own instance,
+       since it is using frontend services via this connection */
+    bind(DebugAdapterContribution).to(JavaDebugAdapterContribution).inTransientScope();
+    bind(JavaExtensionContribution).to(JavaDebugExtensionContribution).inSingletonScope();
 });

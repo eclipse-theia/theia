@@ -31,11 +31,6 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
 
-export const IWorkspaceService = Symbol('IWorkspaceService');
-export interface IWorkspaceService {
-    roots: Promise<FileStat[]>;
-}
-
 /**
  * The workspace service.
  */
@@ -65,10 +60,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;
 
-    protected applicationName = FrontendApplicationConfigProvider.get().applicationName;
+    protected applicationName: string;
 
     @postConstruct()
     protected async init(): Promise<void> {
+        this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
         const wpUriString = await this.getDefaultWorkspacePath();
         const wpStat = await this.toFileStat(wpUriString);
         await this.setWorkspace(wpStat);
@@ -481,6 +477,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
             watcher.then(disposable => disposable.dispose());
             this.rootWatchers.delete(uriStr);
         }));
+    }
+
+    getWorkspaceRootUri(uri: URI | undefined): URI | undefined {
+        if (!uri) {
+            const root = this.tryGetRoots()[0];
+            if (root) {
+                return new URI(root.uri);
+            }
+            return undefined;
+        }
+        for (const root of this.tryGetRoots()) {
+            const rootUri = new URI(root.uri);
+            if (rootUri && rootUri.isEqualOrParent(uri)) {
+                return rootUri;
+            }
+        }
+        return undefined;
     }
 
 }

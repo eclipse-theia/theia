@@ -94,6 +94,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
 import { ConnectionExtImpl } from './connection-ext';
+import { WebviewsExtImpl } from './webviews';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -117,6 +118,7 @@ export function createAPIFactory(
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
+    const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -165,12 +167,13 @@ export function createAPIFactory(
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
             async showTextDocument(documentArg: theia.TextDocument | Uri,
-                                   optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
-                                   preserveFocus?: boolean
+                optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
+                preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
                 if (optionsArg) {
+                    // tslint:disable-next-line:no-any
                     const optionsAny: any = optionsArg;
                     if (optionsAny.preserveFocus || optionsAny.preview || optionsAny.selection || optionsAny.viewColumn) {
                         documentOptions = optionsArg as theia.TextDocumentShowOptions;
@@ -247,7 +250,15 @@ export function createAPIFactory(
             createOutputChannel(name: string): theia.OutputChannel {
                 return outputChannelRegistryExt.createOutputChannel(name);
             },
-
+            createWebviewPanel(viewType: string,
+                title: string,
+                showOptions: theia.ViewColumn | { viewColumn: theia.ViewColumn, preserveFocus?: boolean },
+                options: theia.WebviewPanelOptions & theia.WebviewOptions): theia.WebviewPanel {
+                return webviewExt.createWebview(viewType, title, showOptions, options, Uri.file(plugin.pluginPath));
+            },
+            registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
+                return webviewExt.registerWebviewPanelSerializer(viewType, serializer);
+            },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();
             },
@@ -352,6 +363,9 @@ export function createAPIFactory(
             registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
                 // FIXME: to implement
                 return new Disposable(() => { });
+            },
+            getWorkspaceFolder(uri: Uri): theia.WorkspaceFolder | Uri | undefined {
+                return workspaceExt.getWorkspaceFolder(uri);
             }
         };
 
@@ -398,6 +412,9 @@ export function createAPIFactory(
             },
             registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider): theia.Disposable {
                 return languagesExt.registerTypeDefinitionProvider(selector, provider);
+            },
+            registerImplementationProvider(selector: theia.DocumentSelector, provider: theia.ImplementationProvider): theia.Disposable {
+                return languagesExt.registerImplementationProvider(selector, provider);
             },
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider);

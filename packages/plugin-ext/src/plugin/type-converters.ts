@@ -22,6 +22,9 @@ import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
 import { isMarkdownString } from './markdown-string';
 import URI from 'vscode-uri';
 
+const SIDE_GROUP = -2;
+const ACTIVE_GROUP = -1;
+
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
         return undefined;
@@ -36,6 +39,18 @@ export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined 
     }
 
     return undefined;
+}
+
+export function fromViewColumn(column?: theia.ViewColumn): number {
+    if (typeof column === 'number' && column >= types.ViewColumn.One) {
+        return column - 1;
+    }
+
+    if (column! === <number>types.ViewColumn.Beside) {
+        return SIDE_GROUP;
+    }
+
+    return ACTIVE_GROUP;
 }
 
 export function toSelection(selection: Selection): types.Selection {
@@ -451,20 +466,6 @@ export function fromDocumentSymbol(info: theia.DocumentSymbol): model.DocumentSy
     };
     if (info.children) {
         result.children = info.children.map(fromDocumentSymbol);
-    }
-    return result;
-}
-
-export function toDocumentSymbol(info: model.DocumentSymbol): theia.DocumentSymbol {
-    const result = new types.DocumentSymbol(
-        info.name,
-        info.detail,
-        SymbolKind.toSymbolKind(info.kind),
-        toRange(info.range),
-        toRange(info.selectionRange),
-    );
-    if (info.children) {
-        result.children = info.children.map(toDocumentSymbol) as any;
     }
     return result;
 }

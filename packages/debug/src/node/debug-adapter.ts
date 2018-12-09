@@ -64,7 +64,8 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     }
 
     private childProcess(executable: DebugAdapterExecutable): RawProcess {
-        const isForkOptions = (forkOptions: RawForkOptions | any): forkOptions is RawForkOptions =>
+        // tslint:disable-next-line:no-any
+        const isForkOptions = (forkOptions: any): forkOptions is RawForkOptions =>
             !!forkOptions && !!forkOptions.modulePath;
 
         const processOptions: RawProcessOptions | RawForkOptions = { ...executable };

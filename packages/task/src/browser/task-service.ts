@@ -94,33 +94,21 @@ export class TaskService implements TaskConfigurationClient {
 
         // notify user that task has finished
         this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
-            const signal = event.signal;
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
 
-            if (event.code === 0) {  // normal process exit
-                let success = '';
-
-                // this finer breakdown will not work on Windows.
-                if (signal && signal !== '0') {
-                    if (signal === '1') {
-                        success = 'Terminal Hangup received - ';
-                    } else if (signal === '2') {
-                        success = 'User Interrupt received - ';
-                    } else if (signal === '15' || signal === 'SIGTERM') {
-                        success = 'Termination Interrupt received - ';
-                    } else {
-                        success = 'Interrupt received - ';
-                    }
+            if (event.code !== undefined) {
+                const message = `Task ${event.taskId} has exited with code ${event.code}.`;
+                if (event.code === 0) {
+                    this.messageService.info(message);
                 } else {
-                    success = 'Success - ';
+                    this.messageService.error(message);
                 }
-
-                success += `Task ${event.taskId} has finished. exit code: ${event.code}, signal: ${event.signal}`;
-                this.messageService.info(success);
-            } else {  // abnormal process exit
-                this.messageService.error(`Error: Task ${event.taskId} failed. Exit code: ${event.code}, signal: ${event.signal}`);
+            } else if (event.signal !== undefined) {
+                this.messageService.info(`Task ${event.taskId} was terminated by signal ${event.signal}.`);
+            } else {
+                console.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
             }
         });
     }

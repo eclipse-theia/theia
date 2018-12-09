@@ -32,29 +32,29 @@ export class MessageService {
         @inject(MessageClient) protected readonly client: MessageClient
     ) { }
 
-    log(message: string, ...actions: string[]): Promise<string | undefined>;
-    log(message: string, options?: MessageOptions, ...actions: string[]): Promise<string | undefined>;
+    log<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
+    log<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
     // tslint:disable-next-line:no-any
     log(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Log, message, args);
     }
 
-    info(message: string, ...actions: string[]): Promise<string | undefined>;
-    info(message: string, options?: MessageOptions, ...actions: string[]): Promise<string | undefined>;
+    info<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
+    info<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
     // tslint:disable-next-line:no-any
     info(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Info, message, args);
     }
 
-    warn(message: string, ...actions: string[]): Promise<string | undefined>;
-    warn(message: string, options?: MessageOptions, ...actions: string[]): Promise<string | undefined>;
+    warn<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
+    warn<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
     // tslint:disable-next-line:no-any
     warn(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Warning, message, args);
     }
 
-    error(message: string, ...actions: string[]): Promise<string | undefined>;
-    error(message: string, options?: MessageOptions, ...actions: string[]): Promise<string | undefined>;
+    error<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
+    error<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
     // tslint:disable-next-line:no-any
     error(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Error, message, args);

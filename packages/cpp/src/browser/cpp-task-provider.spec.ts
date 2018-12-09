@@ -17,7 +17,7 @@
 import { Container, injectable } from 'inversify';
 import { CppTaskProvider } from './cpp-task-provider';
 import { TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
-import { CppBuildConfigurationManager, CppBuildConfiguration } from '@theia/cpp/src/browser/cpp-build-configurations';
+import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
 import { Event } from '@theia/core';
 import { expect } from 'chai';
 import { TaskConfiguration } from '@theia/task/src/common';
@@ -63,7 +63,7 @@ class MockCppBuildConfigurationManager implements CppBuildConfigurationManager {
     ready: Promise<void> = Promise.resolve();
 }
 
-beforeEach(function() {
+beforeEach(function () {
     const container: Container = new Container();
     container.bind(CppTaskProvider).toSelf().inSingletonScope();
     container.bind(TaskResolverRegistry).toSelf().inSingletonScope();
@@ -73,15 +73,15 @@ beforeEach(function() {
     // Register a task resolver of type 'shell', on which the cpp build tasks
     // depend.  Just return the task as-is, since we only need to verify what
     // CppTaskProvider passed to the shell task resolver.
-    container.get(TaskResolverRegistry).register('shell',  {
+    container.get(TaskResolverRegistry).register('shell', {
         async resolveTask(task: TaskConfiguration): Promise<TaskConfiguration> {
             return task;
         }
     });
 });
 
-describe('CppTaskProvider', function() {
-    it('provide a task for each build config with a build command', async function() {
+describe('CppTaskProvider', function () {
+    it('provide a task for each build config with a build command', async function () {
         const tasks = await taskProvider.provideTasks();
         expect(tasks).length(1);
         expect(tasks[0].config.name === 'Build 1');

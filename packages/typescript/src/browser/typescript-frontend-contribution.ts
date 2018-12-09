@@ -17,15 +17,19 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import * as tsp from 'typescript/lib/protocol';
 import { Commands } from 'typescript-language-server/lib/commands';
-import { QuickPickService, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
+import {
+    QuickPickService, KeybindingRegistry, KeybindingContribution, QuickPickItem, StorageService, LabelProvider, FrontendApplicationContribution, StatusBar, StatusBarAlignment
+} from '@theia/core/lib/browser';
 import { ExecuteCommandRequest } from '@theia/languages/lib/browser';
-import { EditorManager, EditorWidget, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
-import { CommandContribution, CommandRegistry, Command, MenuModelRegistry, MenuContribution } from '@theia/core/lib/common';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { TYPESCRIPT_LANGUAGE_ID } from '../common';
-import { TypeScriptClientContribution } from './typescript-client-contribution';
-import { TypeScriptKeybindingContexts } from './typescript-keybinding-contexts';
 import { FileSystemWatcher, FileMoveEvent } from '@theia/filesystem/lib/browser';
+import { EditorManager, EditorWidget, EDITOR_CONTEXT_MENU, TextEditor } from '@theia/editor/lib/browser';
+import { CommandContribution, CommandRegistry, Command, MenuModelRegistry, MenuContribution, DisposableCollection } from '@theia/core/lib/common';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { TYPESCRIPT_LANGUAGE_ID, TS_JS_LANGUAGES } from '../common';
+import { TypeScriptClientContribution, TypescriptContributionData } from './typescript-client-contribution';
+import { TypeScriptKeybindingContexts } from './typescript-keybinding-contexts';
+import { TypescriptVersion } from '../common/typescript-version-service';
+import URI from '@theia/core/lib/common/uri';
 
 export namespace TypeScriptCommands {
     export const applyCompletionCodeAction: Command = {
@@ -33,17 +37,27 @@ export namespace TypeScriptCommands {
     };
     // TODO: get rid of me when https://github.com/TypeFox/monaco-languageclient/issues/104 is resolved
     export const organizeImports: Command = {
-        label: 'TypeScript: Organize Imports',
+        category: 'TypeScript',
+        label: 'Organize Imports',
         id: 'typescript.edit.organizeImports'
     };
     export const openServerLog: Command = {
-        label: 'TypeScript: Open Server Log',
+        category: 'TypeScript',
+        label: 'Open Server Log',
         id: 'typescript.server.openLog'
+    };
+    export const selectVersion: Command = {
+        category: 'TypeScript',
+        label: 'Select Version',
+        id: 'typescript.selectVersion'
     };
 }
 
 @injectable()
-export class TypeScriptFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution {
+export class TypeScriptFrontendContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
+
+    @inject(StatusBar)
+    protected readonly statusBar: StatusBar;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -57,9 +71,26 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
     @inject(FileSystemWatcher)
     protected readonly fileSystemWatcher: FileSystemWatcher;
 
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(StorageService)
+    protected readonly storage: StorageService;
+
     @postConstruct()
     protected init(): void {
         this.fileSystemWatcher.onDidMove(event => this.renameFile(event));
+    }
+
+    onStart(): void {
+        this.restore();
+        this.updateStatusBar();
+        this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
+        this.clientContribution.onDidChangeVersion(() => this.updateStatusBar());
+    }
+
+    onStop(): void {
+        this.store();
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -78,6 +109,9 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
             execute: () => this.openServerLog(),
             isEnabled: () => !!this.clientContribution.logFileUri,
             isVisible: () => !!this.clientContribution.logFileUri
+        });
+        commands.registerCommand(TypeScriptCommands.selectVersion, {
+            execute: () => this.selectVersion()
         });
     }
 
@@ -148,6 +182,74 @@ export class TypeScriptFrontendContribution implements CommandContribution, Menu
                 sourceUri: sourceUri.toString(),
                 targetUri: targetUri.toString()
             }]
+        });
+    }
+
+    protected async selectVersion(): Promise<void> {
+        const items: QuickPickItem<TypescriptVersion>[] = [];
+        const currentVersion = this.clientContribution.version;
+        let currentItem: QuickPickItem<TypescriptVersion> | undefined;
+        for (const version of await this.clientContribution.getVersions()) {
+            const item: QuickPickItem<TypescriptVersion> = {
+                label: `Use ${version.qualifier} Version`,
+                description: version.version,
+                detail: this.labelProvider.getLongName(new URI(version.uri)),
+                value: version
+            };
+            if (!currentItem && TypescriptVersion.equals(version, currentVersion)) {
+                currentItem = item;
+            }
+            items.push(item);
+        }
+        if (!currentItem) {
+            currentItem = items[0];
+        }
+        if (currentItem) {
+            currentItem.label = '• ' + currentItem.label;
+        }
+        const selectedVersion = await this.quickPickService.show(items, {
+            placeholder: 'Select the TypeScript version used for JavaScript and TypeScript language features'
+        });
+        if (selectedVersion) {
+            this.clientContribution.setVersion(selectedVersion);
+        }
+    }
+
+    protected storageKey = 'typescript.contribution';
+    protected async restore(): Promise<void> {
+        const data = await this.storage.getData<TypescriptContributionData>(this.storageKey);
+        await this.clientContribution.restore(data);
+    }
+    protected async store(): Promise<void> {
+        const data = this.clientContribution.store();
+        await this.storage.setData(this.storageKey, data);
+    }
+
+    protected readonly toDisposeOnCurrentEditorChanged = new DisposableCollection();
+    protected updateStatusBar(): void {
+        this.toDisposeOnCurrentEditorChanged.dispose();
+
+        const widget = this.editorManager.currentEditor;
+        const editor = widget && widget.editor;
+        this.updateVersionStatus(editor);
+        if (editor) {
+            this.toDisposeOnCurrentEditorChanged.push(
+                editor.onLanguageChanged(() => this.updateVersionStatus(editor))
+            );
+        }
+    }
+    protected updateVersionStatus(editor: TextEditor | undefined): void {
+        const version = this.clientContribution.version;
+        const languageId = editor && editor.document.languageId;
+        if (!languageId || !TS_JS_LANGUAGES.has(languageId) || !version) {
+            this.statusBar.removeElement('editor-ts-version');
+            return;
+        }
+        this.statusBar.setElement('editor-ts-version', {
+            text: version.version,
+            alignment: StatusBarAlignment.RIGHT,
+            priority: 0.9,
+            command: TypeScriptCommands.selectVersion.id
         });
     }
 

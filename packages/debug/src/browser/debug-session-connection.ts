@@ -19,7 +19,7 @@
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Emitter, Event, DisposableCollection, Disposable } from '@theia/core';
+import { Event, Emitter, DisposableCollection, Disposable } from '@theia/core';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { DebugAdapterPath } from '../common/debug-service';
 import { OutputChannel } from '@theia/output/lib/common/output-channel';
@@ -82,6 +82,20 @@ export interface DebugEventTypes {
     'terminated': DebugProtocol.TerminatedEvent
     'thread': DebugProtocol.ThreadEvent
 }
+const standardDebugEvents = new Set<string>([
+    'breakpoint',
+    'capabilities',
+    'continued',
+    'exited',
+    'initialized',
+    'loadedSource',
+    'module',
+    'output',
+    'process',
+    'stopped',
+    'terminated',
+    'thread'
+]);
 
 export class DebugSessionConnection implements Disposable {
 
@@ -90,13 +104,13 @@ export class DebugSessionConnection implements Disposable {
     protected readonly pendingRequests = new Map<number, (response: DebugProtocol.Response) => void>();
     protected readonly connection: Promise<WebSocketChannel>;
 
-    protected readonly onDidEventEmitter = new Emitter<DebugProtocol.Event | DebugExitEvent>();
-    readonly onDidEvent: Event<DebugProtocol.Event | DebugExitEvent> = this.onDidEventEmitter.event;
-
     protected readonly requestHandlers = new Map<string, DebugRequestHandler>();
 
+    protected readonly onDidCustomEventEmitter = new Emitter<DebugProtocol.Event>();
+    readonly onDidCustomEvent: Event<DebugProtocol.Event> = this.onDidCustomEventEmitter.event;
+
     protected readonly toDispose = new DisposableCollection(
-        this.onDidEventEmitter,
+        this.onDidCustomEventEmitter,
         Disposable.create(() => this.pendingRequests.clear()),
         Disposable.create(() => this.emitters.clear())
     );
@@ -131,7 +145,7 @@ export class DebugSessionConnection implements Disposable {
                     const closeChannel = this.toDispose.push(Disposable.create(() => channel.close()));
                     channel.onClose((code, reason) => {
                         closeChannel.dispose();
-                        this.onDidEventEmitter.fire({ code, reason });
+                        this.fire('exited', { code, reason });
                     });
                     channel.onMessage(data => this.handleMessage(data));
                     resolve(channel);
@@ -159,8 +173,11 @@ export class DebugSessionConnection implements Disposable {
         }
         return result;
     }
-    protected async doSendRequest<K extends keyof DebugRequestTypes>(command: K, args: DebugRequestTypes[K][0]): Promise<DebugRequestTypes[K][1]> {
-        const result = new Deferred<DebugRequestTypes[K][1]>();
+    sendCustomRequest<T extends DebugProtocol.Response>(command: string, args?: any): Promise<T> {
+        return this.doSendRequest<T>(command, args);
+    }
+    protected async doSendRequest<K extends DebugProtocol.Response>(command: string, args?: any): Promise<K> {
+        const result = new Deferred<K>();
 
         const request: DebugProtocol.Request = {
             seq: this.sequence++,
@@ -169,7 +186,7 @@ export class DebugSessionConnection implements Disposable {
             arguments: args
         };
 
-        this.pendingRequests.set(request.seq, (response: DebugRequestTypes[K][1]) => {
+        this.pendingRequests.set(request.seq, (response: K) => {
             if (!response.success) {
                 result.reject(response);
             } else {
@@ -243,7 +260,11 @@ export class DebugSessionConnection implements Disposable {
             if (event.event === 'continued') {
                 this.allThreadsContinued = (<DebugProtocol.ContinuedEvent>event).body.allThreadsContinued === false ? false : true;
             }
-            this.fireCustom(event.event, event);
+            if (standardDebugEvents.has(event.event)) {
+                this.doFire(event.event, event);
+            } else {
+                this.onDidCustomEventEmitter.fire(event);
+            }
         } else {
             this.fire('exited', event);
         }
@@ -251,17 +272,13 @@ export class DebugSessionConnection implements Disposable {
 
     protected readonly emitters = new Map<string, Emitter<DebugProtocol.Event | DebugExitEvent>>();
     on<K extends keyof DebugEventTypes>(kind: K, listener: (e: DebugEventTypes[K]) => any): Disposable {
-        return this.onCustom(kind, listener);
-    }
-    onCustom<E extends DebugProtocol.Event>(kind: string, listener: (e: E) => any): Disposable {
         return this.getEmitter(kind).event(listener);
     }
     protected fire<K extends keyof DebugEventTypes>(kind: K, e: DebugEventTypes[K]): void {
-        this.fireCustom(kind, e);
+        this.doFire(kind, e);
     }
-    protected fireCustom<K extends keyof DebugEventTypes>(kind: string, e: DebugEventTypes[K]): void {
+    protected doFire(kind: string, e: DebugProtocol.Event | DebugExitEvent): void {
         this.getEmitter(kind).fire(e);
-        this.onDidEventEmitter.fire(e);
     }
     protected getEmitter(kind: string): Emitter<DebugProtocol.Event | DebugExitEvent> {
         const emitter = this.emitters.get(kind) || this.newEmitter();

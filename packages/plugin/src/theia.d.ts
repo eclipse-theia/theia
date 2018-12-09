@@ -612,6 +612,24 @@ declare module '@theia/plugin' {
         provideDefinition(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<Definition | DefinitionLink[]>;
     }
 
+	/**
+	 * The implementation provider interface defines the contract between extensions and
+	 * the go to implementation feature.
+	 */
+	export interface ImplementationProvider {
+
+		/**
+		 * Provide the implementations of the symbol at the given position and document.
+		 *
+		 * @param document The document in which the command was invoked.
+		 * @param position The position at which the command was invoked.
+		 * @param token A cancellation token.
+		 * @return A definition or a thenable that resolves to such. The lack of a result can be
+		 * signaled by returning `undefined` or `null`.
+		 */
+		provideImplementation(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Definition | DefinitionLink[]>;
+    }
+
     /**
      * The type definition provider defines the contract between extensions and
      * the go to type definition feature.
@@ -1800,33 +1818,33 @@ declare module '@theia/plugin' {
         dispose(): void;
     }
 
-	/**
-	 * A text document content provider allows to add readonly documents
-	 * to the editor, such as source from a dll or generated html from md.
-	 *
-	 * Content providers are [registered](#workspace.registerTextDocumentContentProvider)
-	 * for a [uri-scheme](#Uri.scheme). When a uri with that scheme is to
-	 * be [loaded](#workspace.openTextDocument) the content provider is
-	 * asked.
-	 */
+    /**
+     * A text document content provider allows to add readonly documents
+     * to the editor, such as source from a dll or generated html from md.
+     *
+     * Content providers are [registered](#workspace.registerTextDocumentContentProvider)
+     * for a [uri-scheme](#Uri.scheme). When a uri with that scheme is to
+     * be [loaded](#workspace.openTextDocument) the content provider is
+     * asked.
+     */
     export interface TextDocumentContentProvider {
 
-		/**
-		 * An event to signal a resource has changed.
-		 */
+        /**
+         * An event to signal a resource has changed.
+         */
         onDidChange?: Event<Uri>;
 
-		/**
-		 * Provide textual content for a given uri.
-		 *
-		 * The editor will use the returned string-content to create a readonly
-		 * [document](#TextDocument). Resources allocated should be released when
-		 * the corresponding document has been [closed](#workspace.onDidCloseTextDocument).
-		 *
-		 * @param uri An uri which scheme matches the scheme this provider was [registered](#workspace.registerTextDocumentContentProvider) for.
-		 * @param token A cancellation token.
-		 * @return A string or a thenable that resolves to such.
-		 */
+        /**
+         * Provide textual content for a given uri.
+         *
+         * The editor will use the returned string-content to create a readonly
+         * [document](#TextDocument). Resources allocated should be released when
+         * the corresponding document has been [closed](#workspace.onDidCloseTextDocument).
+         *
+         * @param uri An uri which scheme matches the scheme this provider was [registered](#workspace.registerTextDocumentContentProvider) for.
+         * @param token A cancellation token.
+         * @return A string or a thenable that resolves to such.
+         */
         provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string>;
     }
 
@@ -2384,6 +2402,232 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Content settings for a webview.
+     */
+    export interface WebviewOptions {
+        /**
+         * Controls whether scripts are enabled in the webview content or not.
+         *
+         * Defaults to false (scripts-disabled).
+         */
+        readonly enableScripts?: boolean;
+
+        /**
+         * Controls whether command uris are enabled in webview content or not.
+         *
+         * Defaults to false.
+         */
+        readonly enableCommandUris?: boolean;
+
+        /**
+         * Root paths from which the webview can load local (filesystem) resources using the `theia-resource:` scheme.
+         *
+         * Default to the root folders of the current workspace plus the extension's install directory.
+         *
+         * Pass in an empty array to disallow access to any local resources.
+         */
+        readonly localResourceRoots?: ReadonlyArray<Uri>;
+    }
+
+    /**
+     * A webview displays html content, like an iframe.
+     */
+    export interface Webview {
+        /**
+         * Content settings for the webview.
+         */
+        options: WebviewOptions;
+
+        /**
+         * Contents of the webview.
+         *
+         * Should be a complete html document.
+         */
+        html: string;
+
+        /**
+         * Fired when the webview content posts a message.
+         */
+        readonly onDidReceiveMessage: Event<any>;
+
+        /**
+         * Post a message to the webview content.
+         *
+         * Messages are only delivered if the webview is visible.
+         *
+         * @param message Body of the message.
+         */
+        postMessage(message: any): PromiseLike<boolean>;
+    }
+
+    /**
+     * Content settings for a webview panel.
+     */
+    export interface WebviewPanelOptions {
+        /**
+         * Controls if the find widget is enabled in the panel.
+         *
+         * Defaults to false.
+         */
+        readonly enableFindWidget?: boolean;
+
+        /**
+         * Controls if the webview panel's content (iframe) is kept around even when the panel
+         * is no longer visible.
+         *
+         * Normally the webview panel's html context is created when the panel becomes visible
+         * and destroyed when it is is hidden. Extensions that have complex state
+         * or UI can set the `retainContextWhenHidden` to make Theia keep the webview
+         * context around, even when the webview moves to a background tab. When a webview using
+         * `retainContextWhenHidden` becomes hidden, its scripts and other dynamic content are suspended.
+         * When the panel becomes visible again, the context is automatically restored
+         * in the exact same state it was in originally. You cannot send messages to a
+         * hidden webview, even with `retainContextWhenHidden` enabled.
+         *
+         * `retainContextWhenHidden` has a high memory overhead and should only be used if
+         * your panel's context cannot be quickly saved and restored.
+         */
+        readonly retainContextWhenHidden?: boolean;
+    }
+
+    /**
+     * A panel that contains a webview.
+     */
+    interface WebviewPanel {
+        /**
+         * Identifies the type of the webview panel, such as `'markdown.preview'`.
+         */
+        readonly viewType: string;
+
+        /**
+         * Title of the panel shown in UI.
+         */
+        title: string;
+
+        /**
+         * Icon for the panel shown in UI.
+         */
+        iconPath?: Uri | { light: Uri; dark: Uri };
+
+        /**
+         * Webview belonging to the panel.
+         */
+        readonly webview: Webview;
+
+        /**
+         * Content settings for the webview panel.
+         */
+        readonly options: WebviewPanelOptions;
+
+        /**
+         * Editor position of the panel. This property is only set if the webview is in
+         * one of the editor view columns.
+         */
+        readonly viewColumn?: ViewColumn;
+
+        /**
+         * Whether the panel is active (focused by the user).
+         */
+        readonly active: boolean;
+
+        /**
+         * Whether the panel is visible.
+         */
+        readonly visible: boolean;
+
+        /**
+         * Fired when the panel's view state changes.
+         */
+        readonly onDidChangeViewState: Event<WebviewPanelOnDidChangeViewStateEvent>;
+
+        /**
+         * Fired when the panel is disposed.
+         *
+         * This may be because the user closed the panel or because `.dispose()` was
+         * called on it.
+         *
+         * Trying to use the panel after it has been disposed throws an exception.
+         */
+        readonly onDidDispose: Event<void>;
+
+        /**
+         * Show the webview panel in a given column.
+         *
+         * A webview panel may only show in a single column at a time. If it is already showing, this
+         * method moves it to a new column.
+         *
+         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         * @param preserveFocus When `true`, the webview will not take focus.
+         */
+        reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
+
+        /**
+         * Dispose of the webview panel.
+         *
+         * This closes the panel if it showing and disposes of the resources owned by the webview.
+         * Webview panels are also disposed when the user closes the webview panel. Both cases
+         * fire the `onDispose` event.
+         */
+        dispose(): void;
+    }
+
+    /**
+     * Event fired when a webview panel's view state changes.
+     */
+    export interface WebviewPanelOnDidChangeViewStateEvent {
+        /**
+         * Webview panel whose view state changed.
+         */
+        readonly webviewPanel: WebviewPanel;
+    }
+
+    /**
+     * Restore webview panels that have been persisted when vscode shuts down.
+     *
+     * There are two types of webview persistence:
+     *
+     * - Persistence within a session.
+     * - Persistence across sessions (across restarts of Theia).
+     *
+     * A `WebviewPanelSerializer` is only required for the second case: persisting a webview across sessions.
+     *
+     * Persistence within a session allows a webview to save its state when it becomes hidden
+     * and restore its content from this state when it becomes visible again. It is powered entirely
+     * by the webview content itself. To save off a persisted state, call `acquireVsCodeApi().setState()` with
+     * any json serializable object. To restore the state again, call `getState()`
+     *
+     * ```js
+     * // Within the webview
+     * const vscode = acquireVsCodeApi();
+     *
+     * // Get existing state
+     * const oldState = vscode.getState() || { value: 0 };
+     *
+     * // Update state
+     * setState({ value: oldState.value + 1 })
+     * ```
+     *
+     * A `WebviewPanelSerializer` extends this persistence across restarts of Theia. When the editor is shutdown,
+     * Theia will save off the state from `setState` of all webviews that have a serializer. When the
+     * webview first becomes visible after the restart, this state is passed to `deserializeWebviewPanel`.
+     * The extension can then restore the old `WebviewPanel` from this state.
+     */
+    interface WebviewPanelSerializer {
+        /**
+         * Restore a webview panel from its seriailzed `state`.
+         *
+         * Called when a serialized webview first becomes visible.
+         *
+         * @param webviewPanel Webview panel to restore. The serializer should take ownership of this panel. The
+         * serializer must restore the webview's `.html` and hook up all webview events.
+         * @param state Persisted state from the webview content.
+         *
+         * @return PromiseLike indicating that the webview has been fully restored.
+         */
+        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: any): PromiseLike<void>;
+    }
+
+    /**
      * Common namespace for dealing with window and editor, showing messages and user input.
      */
     export namespace window {
@@ -2653,6 +2897,31 @@ declare module '@theia/plugin' {
          * @returns A promise that resolves to the selected resource or `undefined`.
          */
         export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
+
+        /**
+         * Create and show a new webview panel.
+         *
+         * @param viewType Identifies the type of the webview panel.
+         * @param title Title of the panel.
+         * @param showOptions Where to show the webview in the editor. If preserveFocus is set, the new webview will not take focus.
+         * @param options Settings for the new panel.
+         *
+         * @return New webview panel.
+         */
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | { viewColumn: ViewColumn, preserveFocus?: boolean }, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
+
+        /**
+         * Registers a webview panel serializer.
+         *
+         * Plugins that support reviving should have an `"onWebviewPanel:viewType"` activation event and
+         * make sure that [registerWebviewPanelSerializer](#registerWebviewPanelSerializer) is called during activation.
+         *
+         * Only a single serializer may be registered at a time for a given `viewType`.
+         *
+         * @param viewType Type of the webview panel that can be serialized.
+         * @param serializer Webview serializer.
+         */
+        export function registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
 
         /**
          * Represents the current window's state.
@@ -2957,31 +3226,31 @@ declare module '@theia/plugin' {
          * For example, a tree item is given a context value as `folder`. When contributing actions to `view/item/context`
          * using `menus` extension point, you can specify context value for key `viewItem` in `when` expression like `viewItem == folder`.
          * ```
-         *	"contributes": {
-         *		"menus": {
-         *			"view/item/context": [
-         *				{
-         *					"command": "extension.deleteFolder",
-            *					"when": "viewItem == folder"
-            *				}
-            *			]
-            *		}
-            *	}
-            * ```
-            * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
-            */
+         *    "contributes": {
+         *        "menus": {
+         *            "view/item/context": [
+         *                {
+         *                    "command": "extension.deleteFolder",
+         *                    "when": "viewItem == folder"
+         *                }
+         *            ]
+         *        }
+         *    }
+         * ```
+         * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
+         */
         contextValue?: string;
 
-		/**
-		 * @param label A human-readable string describing this item
-		 * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
-		 */
+        /**
+         * @param label A human-readable string describing this item
+         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         */
         constructor(label: string, collapsibleState?: TreeItemCollapsibleState);
 
-		/**
-		 * @param resourceUri The [uri](#Uri) of the resource representing this item.
-		 * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
-		 */
+        /**
+         * @param resourceUri The [uri](#Uri) of the resource representing this item.
+         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         */
         // constructor(resourceUri: Uri, collapsibleState?: TreeItemCollapsibleState);
     }
 
@@ -3188,215 +3457,215 @@ declare module '@theia/plugin' {
         readonly index: number;
     }
 
-	/**
-	 * Enumeration of file types. The types `File` and `Directory` can also be
-	 * a symbolic links, in that use `FileType.File | FileType.SymbolicLink` and
-	 * `FileType.Directory | FileType.SymbolicLink`.
-	 */
-	export enum FileType {
-		/**
-		 * The file type is unknown.
-		 */
-		Unknown = 0,
-		/**
-		 * A regular file.
-		 */
-		File = 1,
-		/**
-		 * A directory.
-		 */
-		Directory = 2,
-		/**
-		 * A symbolic link to a file.
-		 */
-		SymbolicLink = 64
-	}
+    /**
+     * Enumeration of file types. The types `File` and `Directory` can also be
+     * a symbolic links, in that use `FileType.File | FileType.SymbolicLink` and
+     * `FileType.Directory | FileType.SymbolicLink`.
+     */
+    export enum FileType {
+        /**
+         * The file type is unknown.
+         */
+        Unknown = 0,
+        /**
+         * A regular file.
+         */
+        File = 1,
+        /**
+         * A directory.
+         */
+        Directory = 2,
+        /**
+         * A symbolic link to a file.
+         */
+        SymbolicLink = 64
+    }
 
-	/**
-	 * The `FileStat`-type represents metadata about a file
-	 */
-	export interface FileStat {
-		/**
-		 * The type of the file, e.g. is a regular file, a directory, or symbolic link
-		 * to a file.
-		 */
-		type: FileType;
-		/**
-		 * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-		 */
-		ctime: number;
-		/**
-		 * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-		 */
-		mtime: number;
-		/**
-		 * The size in bytes.
-		 */
-		size: number;
-	}
+    /**
+     * The `FileStat`-type represents metadata about a file
+     */
+    export interface FileStat {
+        /**
+         * The type of the file, e.g. is a regular file, a directory, or symbolic link
+         * to a file.
+         */
+        type: FileType;
+        /**
+         * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+         */
+        ctime: number;
+        /**
+         * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+         */
+        mtime: number;
+        /**
+         * The size in bytes.
+         */
+        size: number;
+    }
 
-	/**
-	 * Enumeration of file change types.
-	 */
-	export enum FileChangeType {
+    /**
+     * Enumeration of file change types.
+     */
+    export enum FileChangeType {
 
-		/**
-		 * The contents or metadata of a file have changed.
-		 */
-		Changed = 1,
+        /**
+         * The contents or metadata of a file have changed.
+         */
+        Changed = 1,
 
-		/**
-		 * A file has been created.
-		 */
-		Created = 2,
+        /**
+         * A file has been created.
+         */
+        Created = 2,
 
-		/**
-		 * A file has been deleted.
-		 */
-		Deleted = 3,
-	}
+        /**
+         * A file has been deleted.
+         */
+        Deleted = 3,
+    }
 
-	/**
-	 * The event filesystem providers must use to signal a file change.
-	 */
-	export interface FileChangeEvent {
+    /**
+     * The event filesystem providers must use to signal a file change.
+     */
+    export interface FileChangeEvent {
 
-		/**
-		 * The type of change.
-		 */
-		type: FileChangeType;
+        /**
+         * The type of change.
+         */
+        type: FileChangeType;
 
-		/**
-		 * The uri of the file that has changed.
-		 */
-		uri: Uri;
-	}
+        /**
+         * The uri of the file that has changed.
+         */
+        uri: Uri;
+    }
 
-	/**
-	 * The filesystem provider defines what the editor needs to read, write, discover,
-	 * and to manage files and folders. It allows extensions to serve files from remote places,
-	 * like ftp-servers, and to seamlessly integrate those into the editor.
-	 *
-	 * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
-	 * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
-	 * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
-	 * or folder is being accessed.
-	 * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
-	 * folders, symbolic links, and regular files.
-	 */
-	export interface FileSystemProvider {
+    /**
+     * The filesystem provider defines what the editor needs to read, write, discover,
+     * and to manage files and folders. It allows extensions to serve files from remote places,
+     * like ftp-servers, and to seamlessly integrate those into the editor.
+     *
+     * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
+     * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
+     * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
+     * or folder is being accessed.
+     * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
+     * folders, symbolic links, and regular files.
+     */
+    export interface FileSystemProvider {
 
-		/**
-		 * An event to signal that a resource has been created, changed, or deleted. This
-		 * event should fire for resources that are being [watched](#FileSystemProvider.watch)
-		 * by clients of this provider.
-		 */
-		readonly onDidChangeFile: Event<FileChangeEvent[]>;
+        /**
+         * An event to signal that a resource has been created, changed, or deleted. This
+         * event should fire for resources that are being [watched](#FileSystemProvider.watch)
+         * by clients of this provider.
+         */
+        readonly onDidChangeFile: Event<FileChangeEvent[]>;
 
-		/**
-		 * Subscribe to events in the file or folder denoted by `uri`.
-		 *
-		 * The editor will call this function for files and folders. In the latter case, the
-		 * options differ from defaults, e.g. what files/folders to exclude from watching
-		 * and if subfolders, sub-subfolder, etc. should be watched (`recursive`).
-		 *
-		 * @param uri The uri of the file to be watched.
-		 * @param options Configures the watch.
-		 * @returns A disposable that tells the provider to stop watching the `uri`.
-		 */
-		watch(uri: Uri, options: { recursive: boolean; excludes: string[] }): Disposable;
+        /**
+         * Subscribe to events in the file or folder denoted by `uri`.
+         *
+         * The editor will call this function for files and folders. In the latter case, the
+         * options differ from defaults, e.g. what files/folders to exclude from watching
+         * and if subfolders, sub-subfolder, etc. should be watched (`recursive`).
+         *
+         * @param uri The uri of the file to be watched.
+         * @param options Configures the watch.
+         * @returns A disposable that tells the provider to stop watching the `uri`.
+         */
+        watch(uri: Uri, options: { recursive: boolean; excludes: string[] }): Disposable;
 
-		/**
-		 * Retrieve metadata about a file.
-		 *
-		 * Note that the metadata for symbolic links should be the metadata of the file they refer to.
-		 * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
-		 * `FileType.SymbolicLink | FileType.Directory`.
-		 *
-		 * @param uri The uri of the file to retrieve metadata about.
-		 * @return The file metadata about the file.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 */
-		stat(uri: Uri): FileStat | PromiseLike<FileStat>;
+        /**
+         * Retrieve metadata about a file.
+         *
+         * Note that the metadata for symbolic links should be the metadata of the file they refer to.
+         * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
+         * `FileType.SymbolicLink | FileType.Directory`.
+         *
+         * @param uri The uri of the file to retrieve metadata about.
+         * @return The file metadata about the file.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         */
+        stat(uri: Uri): FileStat | PromiseLike<FileStat>;
 
-		/**
-		 * Retrieve all entries of a [directory](#FileType.Directory).
-		 *
-		 * @param uri The uri of the folder.
-		 * @return An array of name/type-tuples or a thenable that resolves to such.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 */
-		readDirectory(uri: Uri): [string, FileType][] | PromiseLike<[string, FileType][]>;
+        /**
+         * Retrieve all entries of a [directory](#FileType.Directory).
+         *
+         * @param uri The uri of the folder.
+         * @return An array of name/type-tuples or a thenable that resolves to such.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         */
+        readDirectory(uri: Uri): [string, FileType][] | PromiseLike<[string, FileType][]>;
 
-		/**
-		 * Create a new directory (Note, that new files are created via `write`-calls).
-		 *
-		 * @param uri The uri of the new folder.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
-		createDirectory(uri: Uri): void | PromiseLike<void>;
+        /**
+         * Create a new directory (Note, that new files are created via `write`-calls).
+         *
+         * @param uri The uri of the new folder.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
+        createDirectory(uri: Uri): void | PromiseLike<void>;
 
-		/**
-		 * Read the entire contents of a file.
-		 *
-		 * @param uri The uri of the file.
-		 * @return An array of bytes or a thenable that resolves to such.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 */
-		readFile(uri: Uri): Uint8Array | PromiseLike<Uint8Array>;
+        /**
+         * Read the entire contents of a file.
+         *
+         * @param uri The uri of the file.
+         * @return An array of bytes or a thenable that resolves to such.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         */
+        readFile(uri: Uri): Uint8Array | PromiseLike<Uint8Array>;
 
-		/**
-		 * Write data to a file, replacing its entire contents.
-		 *
-		 * @param uri The uri of the file.
-		 * @param content The new content of the file.
-		 * @param options Defines if missing files should or must be created.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist and `create` is not set.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist and `create` is set, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
-		writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | PromiseLike<void>;
+        /**
+         * Write data to a file, replacing its entire contents.
+         *
+         * @param uri The uri of the file.
+         * @param content The new content of the file.
+         * @param options Defines if missing files should or must be created.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist and `create` is not set.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist and `create` is set, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
+        writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | PromiseLike<void>;
 
-		/**
-		 * Delete a file.
-		 *
-		 * @param uri The resource that is to be deleted.
-		 * @param options Defines if deletion of folders is recursive.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
-		delete(uri: Uri, options: { recursive: boolean }): void | PromiseLike<void>;
+        /**
+         * Delete a file.
+         *
+         * @param uri The resource that is to be deleted.
+         * @param options Defines if deletion of folders is recursive.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
+        delete(uri: Uri, options: { recursive: boolean }): void | PromiseLike<void>;
 
-		/**
-		 * Rename a file or folder.
-		 *
-		 * @param oldUri The existing file.
-		 * @param newUri The new location.
-		 * @param options Defines if existing files should be overwritten.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `oldUri` doesn't exist.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `newUri` doesn't exist, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
-		rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
+        /**
+         * Rename a file or folder.
+         *
+         * @param oldUri The existing file.
+         * @param newUri The new location.
+         * @param options Defines if existing files should be overwritten.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `oldUri` doesn't exist.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `newUri` doesn't exist, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
+        rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
 
-		/**
-		 * Copy files or folders. Implementing this function is optional but it will speedup
-		 * the copy operation.
-		 *
-		 * @param source The existing file.
-		 * @param destination The destination location.
-		 * @param options Defines if existing files should be overwriten.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `source` doesn't exist.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `destination` doesn't exist, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
-		copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
-	}
+        /**
+         * Copy files or folders. Implementing this function is optional but it will speedup
+         * the copy operation.
+         *
+         * @param source The existing file.
+         * @param destination The destination location.
+         * @param options Defines if existing files should be overwriten.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `source` doesn't exist.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `destination` doesn't exist, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
+        copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
+    }
 
     /**
      * Namespace for dealing with the current workspace. A workspace is the representation
@@ -3436,15 +3705,15 @@ declare module '@theia/plugin' {
          */
         export let textDocuments: TextDocument[];
 
-		/**
-		 * Register a text document content provider.
-		 *
-		 * Only one provider can be registered per scheme.
-		 *
-		 * @param scheme The uri-scheme to register for.
-		 * @param provider A content provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-		 */
+        /**
+         * Register a text document content provider.
+         *
+         * Only one provider can be registered per scheme.
+         *
+         * @param scheme The uri-scheme to register for.
+         * @param provider A content provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
 
         /**
@@ -3589,18 +3858,28 @@ declare module '@theia/plugin' {
          */
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
-		/**
-		 * Register a filesystem provider for a given scheme, e.g. `ftp`.
-		 *
-		 * There can only be one provider per scheme and an error is being thrown when a scheme
-		 * has been claimed by another provider or when it is reserved.
-		 *
-		 * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
-		 * @param provider The filesystem provider.
-		 * @param options Immutable metadata about the provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-		 */
-		export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): Disposable;
+        /**
+         * Register a filesystem provider for a given scheme, e.g. `ftp`.
+         *
+         * There can only be one provider per scheme and an error is being thrown when a scheme
+         * has been claimed by another provider or when it is reserved.
+         *
+         * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
+         * @param provider The filesystem provider.
+         * @param options Immutable metadata about the provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): Disposable;
+
+        /**
+         * Returns the [workspace folder](#WorkspaceFolder) that contains a given uri.
+         * * returns `undefined` when the given uri doesn't match any workspace folder
+         * * returns the *input* when the given uri is a workspace folder itself
+         *
+         * @param uri An uri.
+         * @return A workspace folder or `undefined`
+         */
+        export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | Uri | undefined;
     }
 
     export namespace env {
@@ -3997,7 +4276,6 @@ declare module '@theia/plugin' {
      */
     export type ProviderResult<T> = T | undefined | PromiseLike<T | undefined>;
 
-
     /**
      * A symbol kind.
      */
@@ -4081,10 +4359,10 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * Represents programming constructs like variables, classes, interfaces etc. that appear in a document. Document
-    * symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to
-    * its most interesting range, e.g. the range of an identifier.
-    */
+     * Represents programming constructs like variables, classes, interfaces etc. that appear in a document. Document
+     * symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to
+     * its most interesting range, e.g. the range of an identifier.
+     */
     export class DocumentSymbol {
 
         /**
@@ -4822,33 +5100,33 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * A code lens provider adds [commands](#Command) to source text. The commands will be shown
-	 * as dedicated horizontal lines in between the source text.
-	 */
+     * A code lens provider adds [commands](#Command) to source text. The commands will be shown
+     * as dedicated horizontal lines in between the source text.
+     */
     export interface CodeLensProvider {
         /**
-        * An optional event to signal that the code lenses from this provider have changed.
-        */
+         * An optional event to signal that the code lenses from this provider have changed.
+         */
         onDidChangeCodeLenses?: Event<void>;
         /**
-        * Compute a list of [lenses](#CodeLens). This call should return as fast as possible and if
-        * computing the commands is expensive implementors should only return code lens objects with the
-        * range set and implement [resolve](#CodeLensProvider.resolveCodeLens).
-        *
-        * @param document The document in which the command was invoked.
-        * @param token A cancellation token.
-        * @return An array of code lenses or a thenable that resolves to such. The lack of a result can be
-        * signaled by returning `undefined`, `null`, or an empty array.
-        */
+         * Compute a list of [lenses](#CodeLens). This call should return as fast as possible and if
+         * computing the commands is expensive implementors should only return code lens objects with the
+         * range set and implement [resolve](#CodeLensProvider.resolveCodeLens).
+         *
+         * @param document The document in which the command was invoked.
+         * @param token A cancellation token.
+         * @return An array of code lenses or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
         provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]>;
         /**
-        * This function will be called for each visible code lens, usually when scrolling and after
-        * calls to [compute](#CodeLensProvider.provideCodeLenses)-lenses.
-        *
-        * @param codeLens code lens that must be resolved.
-        * @param token A cancellation token.
-        * @return The given, resolved code lens or thenable that resolves to such.
-        */
+         * This function will be called for each visible code lens, usually when scrolling and after
+         * calls to [compute](#CodeLensProvider.provideCodeLenses)-lenses.
+         *
+         * @param codeLens code lens that must be resolved.
+         * @param token A cancellation token.
+         * @return The given, resolved code lens or thenable that resolves to such.
+         */
         resolveCodeLens?(codeLens: CodeLens, token: CancellationToken): ProviderResult<CodeLens>;
     }
 
@@ -5367,6 +5645,19 @@ declare module '@theia/plugin' {
          */
         export function registerTypeDefinitionProvider(selector: DocumentSelector, provider: TypeDefinitionProvider): Disposable;
 
+		/**
+		 * Register an implementation provider.
+		 *
+		 * Multiple providers can be registered for a language. In that case providers are asked in
+		 * parallel and the results are merged. A failing provider (rejected promise or exception) will
+		 * not cause a failure of the whole operation.
+		 *
+		 * @param selector A selector that defines the documents this provider is applicable to.
+		 * @param provider An implementation provider.
+		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 */
+		export function registerImplementationProvider(selector: DocumentSelector, provider: ImplementationProvider): Disposable;
+
         /**
          * Register a hover provider.
          *
@@ -5545,109 +5836,109 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * Configuration for a debug session.
-	 */
-	export interface DebugConfiguration {
-		/**
-		 * The type of the debug session.
-		 */
-		type: string;
- 		/**
-		 * The name of the debug session.
-		 */
-		name: string;
- 		/**
-		 * The request type of the debug session.
-		 */
-		request: string;
- 		/**
-		 * Additional debug type specific properties.
-		 */
-		[key: string]: any;
+     * Configuration for a debug session.
+     */
+    export interface DebugConfiguration {
+        /**
+         * The type of the debug session.
+         */
+        type: string;
+        /**
+         * The name of the debug session.
+         */
+        name: string;
+        /**
+         * The request type of the debug session.
+         */
+        request: string;
+        /**
+         * Additional debug type specific properties.
+         */
+        [key: string]: any;
     }
 
-	/**
-	 * A debug session.
-	 */
-	export interface DebugSession {
+    /**
+     * A debug session.
+     */
+    export interface DebugSession {
 
-		/**
-		 * The unique ID of this debug session.
-		 */
-		readonly id: string;
+        /**
+         * The unique ID of this debug session.
+         */
+        readonly id: string;
 
-		/**
-		 * The debug session's type from the [debug configuration](#DebugConfiguration).
-		 */
-		readonly type: string;
+        /**
+         * The debug session's type from the [debug configuration](#DebugConfiguration).
+         */
+        readonly type: string;
 
-		/**
-		 * The debug session's name from the [debug configuration](#DebugConfiguration).
-		 */
-		readonly name: string;
+        /**
+         * The debug session's name from the [debug configuration](#DebugConfiguration).
+         */
+        readonly name: string;
 
-		/**
-		 * Send a custom request to the debug adapter.
-		 */
-		customRequest(command: string, args?: any): PromiseLike<any>;
-	}
-
- 	/**
-	 * A debug configuration provider allows to add the initial debug configurations to a newly created launch.json
-	 * and to resolve a launch configuration before it is used to start a new debug session.
-	 * A debug configuration provider is registered via #debug.registerDebugConfigurationProvider.
-	 */
-	export interface DebugConfigurationProvider {
-		/**
-		 * Provides initial [debug configuration](#DebugConfiguration). If more than one debug configuration provider is
-		 * registered for the same type, debug configurations are concatenated in arbitrary order.
-		 *
-		 * @param folder The workspace folder for which the configurations are used or undefined for a folderless setup.
-		 * @param token A cancellation token.
-		 * @return An array of [debug configurations](#DebugConfiguration).
-		 */
-		provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
- 		/**
-		 * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
-		 * If more than one debug configuration provider is registered for the same type, the resolveDebugConfiguration calls are chained
-		 * in arbitrary order and the initial debug configuration is piped through the chain.
-		 * Returning the value 'undefined' prevents the debug session from starting.
-		 * Returning the value 'null' prevents the debug session from starting and opens the underlying debug configuration instead.
-		 *
-		 * @param folder The workspace folder from which the configuration originates from or undefined for a folderless setup.
-		 * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
-		 * @param token A cancellation token.
-		 * @return The resolved debug configuration or undefined or null.
-		 */
-		resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
+        /**
+         * Send a custom request to the debug adapter.
+         */
+        customRequest(command: string, args?: any): PromiseLike<any>;
     }
 
-	/**
-	 * Namespace for debug functionality.
-	 */
-	export namespace debug {
+    /**
+     * A debug configuration provider allows to add the initial debug configurations to a newly created launch.json
+     * and to resolve a launch configuration before it is used to start a new debug session.
+     * A debug configuration provider is registered via #debug.registerDebugConfigurationProvider.
+     */
+    export interface DebugConfigurationProvider {
+        /**
+         * Provides initial [debug configuration](#DebugConfiguration). If more than one debug configuration provider is
+         * registered for the same type, debug configurations are concatenated in arbitrary order.
+         *
+         * @param folder The workspace folder for which the configurations are used or undefined for a folderless setup.
+         * @param token A cancellation token.
+         * @return An array of [debug configurations](#DebugConfiguration).
+         */
+        provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
+        /**
+         * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
+         * If more than one debug configuration provider is registered for the same type, the resolveDebugConfiguration calls are chained
+         * in arbitrary order and the initial debug configuration is piped through the chain.
+         * Returning the value 'undefined' prevents the debug session from starting.
+         * Returning the value 'null' prevents the debug session from starting and opens the underlying debug configuration instead.
+         *
+         * @param folder The workspace folder from which the configuration originates from or undefined for a folderless setup.
+         * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+         * @param token A cancellation token.
+         * @return The resolved debug configuration or undefined or null.
+         */
+        resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
+    }
 
-		/**
-		 * An [event](#Event) which fires when the [active debug session](#debug.activeDebugSession)
-		 * has changed. *Note* that the event also fires when the active debug session changes
-		 * to `undefined`.
-		 */
-		export const onDidChangeActiveDebugSession: Event<DebugSession | undefined>;
+    /**
+     * Namespace for debug functionality.
+     */
+    export namespace debug {
 
-		/**
-		 * An [event](#Event) which fires when a [debug session](#DebugSession) has terminated.
-		 */
+        /**
+         * An [event](#Event) which fires when the [active debug session](#debug.activeDebugSession)
+         * has changed. *Note* that the event also fires when the active debug session changes
+         * to `undefined`.
+         */
+        export const onDidChangeActiveDebugSession: Event<DebugSession | undefined>;
+
+        /**
+         * An [event](#Event) which fires when a [debug session](#DebugSession) has terminated.
+         */
         export const onDidTerminateDebugSession: Event<DebugSession>;
 
- 		/**
-		 * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
-		 * More than one provider can be registered for the same type.
-		 *
-		 * @param type The debug type for which the provider is registered.
-		 * @param provider The [debug configuration provider](#DebugConfigurationProvider) to register.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-		 */
-		export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): Disposable;
+        /**
+         * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
+         * More than one provider can be registered for the same type.
+         *
+         * @param type The debug type for which the provider is registered.
+         * @param provider The [debug configuration provider](#DebugConfigurationProvider) to register.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): Disposable;
     }
 
     /**

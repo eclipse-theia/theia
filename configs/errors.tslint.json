@@ -1,18 +1,14 @@
 {
   "defaultSeverity": "error",
   "rules": {
-    "arrow-parens": {
-      "options": [
-        true,
-        "ban-single-arg-parens"
-      ]
-    },
-    "arrow-return-shorthand": {
-      "options": [
-        true,
-        "multiline"
-      ]
-    },
+    "arrow-parens": [
+      true,
+      "ban-single-arg-parens"
+    ],
+    "arrow-return-shorthand": [
+      true,
+      "multiline"
+    ],
     "class-name": true,
     "comment-format": [
       true,
@@ -25,13 +21,11 @@
       "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
     ],
     "forin": true,
-    "indent": {
-      "options": [
-        true,
-        "spaces",
-        4
-      ]
-    },
+    "indent": [
+      true,
+      "spaces",
+      4
+    ],
     "interface-over-type-literal": true,
     "jsdoc-format": [
       true,
@@ -41,6 +35,7 @@
       true,
       180
     ],
+    "no-any": true,
     "no-consecutive-blank-lines": true,
     "no-construct": true,
     "no-magic-numbers": false,
@@ -58,28 +53,30 @@
       "check-whitespace"
     ],
     "one-variable-per-declaration": true,
-    "prefer-const": {
-      "options": [
-        true,
-        {
-          "destructuring": "all"
-        }
-      ]
-    },
-    "quotemark": {
-      "options": [
-        true,
-        "single",
-        "jsx-single",
-        "avoid-escape",
-        "avoid-template"
-      ]
-    },
+    "prefer-const": [
+      true,
+      {
+        "destructuring": "all"
+      }
+    ],
+    "quotemark": [
+      true,
+      "single",
+      "jsx-single",
+      "avoid-escape",
+      "avoid-template"
+    ],
     "radix": false,
     "semicolon": [
       true,
       "always",
       "ignore-interfaces"
+    ],
+    "space-before-function-paren": [
+      true,
+      {
+        "anonymous": "always"
+      }
     ],
     "trailing-comma": false,
     "triple-equals": [

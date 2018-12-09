@@ -69,7 +69,7 @@ export namespace MonacoConfigurations {
         const tree = {};
         for (const section of Object.keys(raw)) {
             const value = raw[section];
-            if (value) {
+            if (value !== undefined) {
                 assign(tree, section, <JSONValue>value);
             }
         }

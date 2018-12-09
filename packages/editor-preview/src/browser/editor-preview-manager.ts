@@ -22,7 +22,7 @@ import { EditorPreviewWidget } from './editor-preview-widget';
 import { EditorPreviewWidgetFactory, EditorPreviewWidgetOptions } from './editor-preview-factory';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
 import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { MaybePromise } from '@theia/core/src/common';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 /**
  * Opener options containing an optional preview flag.
@@ -41,7 +41,7 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
 
     readonly label = 'Code Editor Preview';
 
-    protected currentEditorPreview: EditorPreviewWidget | undefined;
+    protected currentEditorPreview: Promise<EditorPreviewWidget | undefined>;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -57,19 +57,20 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
         super.init();
         this.onCreated(widget => {
             if (widget instanceof EditorPreviewWidget) {
-                this.handlePreviewWidgetCreated(widget);
+                return this.handlePreviewWidgetCreated(widget);
             }
         });
     }
 
-    protected handlePreviewWidgetCreated(widget: EditorPreviewWidget): void {
+    protected async handlePreviewWidgetCreated(widget: EditorPreviewWidget): Promise<void> {
         // Enforces only one preview widget exists at a given time.
-        if (this.currentEditorPreview) {
-            this.currentEditorPreview.pinEditorWidget();
+        const editorPreview = await this.currentEditorPreview;
+        if (editorPreview && editorPreview !== widget) {
+            editorPreview.pinEditorWidget();
         }
 
-        this.currentEditorPreview = widget;
-        widget.disposed.connect(() => this.currentEditorPreview = undefined);
+        this.currentEditorPreview = Promise.resolve(widget);
+        widget.disposed.connect(() => this.currentEditorPreview = Promise.resolve(undefined));
 
         widget.onPinned(({preview, editorWidget}) => {
             // TODO(caseyflynn): I don't believe there is ever a case where
@@ -79,19 +80,20 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
             } else {
                 this.shell.addWidget(editorWidget, {area: 'main'});
             }
-            preview.close();
+            preview.dispose();
             this.shell.activateWidget(editorWidget.id);
-            this.currentEditorPreview = undefined;
+            this.currentEditorPreview = Promise.resolve(undefined);
         });
     }
 
-    protected isCurrentPreviewUri(uri: URI): boolean {
-        const currentUri = this.currentEditorPreview && this.currentEditorPreview.getResourceUri();
+    protected async isCurrentPreviewUri(uri: URI): Promise<boolean> {
+        const editorPreview = await this.currentEditorPreview;
+        const currentUri = editorPreview && editorPreview.getResourceUri();
         return !!currentUri && currentUri.isEqualOrParent(uri);
     }
 
-    canHandle(uri: URI, options?: PreviewEditorOpenerOptions): MaybePromise<number> {
-        if (this.preferences['editor.enablePreview'] && (options && options.preview || this.isCurrentPreviewUri(uri))) {
+    async canHandle(uri: URI, options?: PreviewEditorOpenerOptions): Promise<number> {
+        if (this.preferences['editor.enablePreview'] && (options && options.preview || await this.isCurrentPreviewUri(uri))) {
             return 200;
         }
         return 0;
@@ -99,6 +101,10 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
 
     async open(uri: URI, options?: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget | EditorWidget> {
         options = {...options, mode: 'open'};
+
+        const deferred = new Deferred<EditorPreviewWidget | undefined>();
+        const previousPreview = await this.currentEditorPreview;
+        this.currentEditorPreview = deferred.promise;
 
         if (await this.editorManager.getByUri(uri)) {
             let widget: EditorWidget | EditorPreviewWidget = await this.editorManager.open(uri, options);
@@ -109,19 +115,22 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget|
                 widget = widget.parent;
             }
             this.shell.revealWidget(widget.id);
+            deferred.resolve(previousPreview);
             return widget;
         }
 
-        if (!this.currentEditorPreview) {
-            this.currentEditorPreview = await super.open(uri, options) as EditorPreviewWidget;
+        if (!previousPreview) {
+            this.currentEditorPreview = super.open(uri, options) as Promise<EditorPreviewWidget>;
         } else {
             const childWidget = await this.editorManager.getOrCreateByUri(uri);
-            this.currentEditorPreview.replaceEditorWidget(childWidget);
+            previousPreview.replaceEditorWidget(childWidget);
+            this.currentEditorPreview = Promise.resolve(previousPreview);
         }
 
+        const preview = await this.currentEditorPreview as EditorPreviewWidget;
         this.editorManager.open(uri, options);
-        this.shell.revealWidget(this.currentEditorPreview!.id);
-        return this.currentEditorPreview;
+        this.shell.revealWidget(preview.id);
+        return preview;
     }
 
     protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): EditorPreviewWidgetOptions {

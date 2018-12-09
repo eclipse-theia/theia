@@ -83,16 +83,16 @@ describe('editor-preview-manager', () => {
         onPinnedListeners = [];
     });
 
-    it('should handle preview requests if editor.enablePreview enabled', () => {
+    it('should handle preview requests if editor.enablePreview enabled', async () => {
         (mockPreference.get as sinon.SinonStub).returns(true);
-        expect(previewManager.canHandle(new URI(), {preview: true})).to.be.greaterThan(0);
+        expect(await previewManager.canHandle(new URI(), {preview: true})).to.be.greaterThan(0);
     });
-    it('should not handle preview requests if editor.enablePreview disabled', () => {
+    it('should not handle preview requests if editor.enablePreview disabled', async () => {
         (mockPreference.get as sinon.SinonStub).returns(false);
-        expect(previewManager.canHandle(new URI(), {preview: true})).to.equal(0);
+        expect(await previewManager.canHandle(new URI(), {preview: true})).to.equal(0);
     });
-    it('should not handle requests that are not preview or currently being previewed', () => {
-        expect(previewManager.canHandle(new URI())).to.equal(0);
+    it('should not handle requests that are not preview or currently being previewed', async () => {
+        expect(await previewManager.canHandle(new URI())).to.equal(0);
     });
     it('should create a preview editor and replace where required.', async () => {
         const w = await previewManager.open(new URI(), {preview: true});
@@ -122,13 +122,13 @@ describe('editor-preview-manager', () => {
         expect(await previewManager.open(new URI(), {})).to.equal(mockPreviewWidget);
         expect((mockPreviewWidget.pinEditorWidget as sinon.SinonStub).calledOnce).to.be.true;
     });
-    it('should should transition the editor to perminent on pin events.', () => {
+    it('should should transition the editor to perminent on pin events.', async () => {
         // Fake creation call.
-        onCreateListners.pop()!({factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget});
+        await onCreateListners.pop()!({factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget});
         // Fake pinned call
         onPinnedListeners.pop()!({preview: mockPreviewWidget, editorWidget: mockEditorWidget});
 
-        expect(mockPreviewWidget.close.calledOnce).to.be.true;
+        expect(mockPreviewWidget.dispose.calledOnce).to.be.true;
         expect(mockEditorWidget.close.calledOnce).to.be.false;
         expect(mockEditorWidget.dispose.calledOnce).to.be.false;
     });

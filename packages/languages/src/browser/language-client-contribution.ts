@@ -17,9 +17,9 @@
 // tslint:disable:no-any
 
 import { injectable, inject } from 'inversify';
-import { MessageService, CommandRegistry } from '@theia/core';
+import { MaybePromise, MessageService, CommandRegistry } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
-import { FrontendApplication, WebSocketConnectionProvider, WebSocketOptions } from '@theia/core/lib/browser';
+import { FrontendApplication, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import {
     LanguageContribution, ILanguageClient, LanguageClientOptions,
     DocumentSelector, TextDocument, FileSystemWatcher,
@@ -29,6 +29,7 @@ import { MessageConnection, ResponseError } from 'vscode-jsonrpc';
 import { LanguageClientFactory } from './language-client-factory';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { InitializeParams } from 'monaco-languageclient';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution extends LanguageContribution {
@@ -54,6 +55,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(CommandRegistry) protected readonly registry: CommandRegistry;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(LanguageContribution.Service) protected readonly languageContributionService: LanguageContribution.Service;
     @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider;
 
     constructor(
@@ -96,38 +98,78 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this.workspace.ready;
     }
 
+    protected deferredConnection = new Deferred<MessageConnection>();
+
     protected readonly toDeactivate = new DisposableCollection();
     activate(): Disposable {
         if (this.toDeactivate.disposed) {
-            this.doActivate(this.toDeactivate);
+            if (!this._languageClient) {
+                this._languageClient = this.createLanguageClient(() => this.deferredConnection.promise);
+                this._languageClient.onDidChangeState(({ newState }) => {
+                    this.state = newState;
+                });
+            }
+            const toStop = new DisposableCollection(Disposable.create(() => { })); // mark as not disposed
+            this.toDeactivate.push(toStop);
+            this.doActivate(toStop);
         }
         return this.toDeactivate;
     }
     deactivate(): void {
         this.toDeactivate.dispose();
     }
-    protected doActivate(toDeactivate: DisposableCollection): void {
-        const options: WebSocketOptions = {};
-        toDeactivate.push(Disposable.create(() => options.reconnecting = false));
-        this.connectionProvider.listen({
-            path: LanguageContribution.getPath(this),
-            onConnection: messageConnection => {
-                if (toDeactivate.disposed) {
-                    messageConnection.dispose();
-                    return;
-                }
-                const languageClient = this.createLanguageClient(messageConnection);
-                this.onWillStart(languageClient);
-                toDeactivate.pushAll([
-                    messageConnection,
-                    this.toRestart.push(Disposable.create(async () => {
-                        await languageClient.onReady();
-                        languageClient.stop();
-                    })),
-                    languageClient.start()
-                ]);
+
+    protected stop = Promise.resolve();
+    protected async doActivate(toStop: DisposableCollection): Promise<void> {
+        try {
+            // make sure that the previous client is stopped to avoid duplicate commands and language services
+            await this.stop;
+            if (toStop.disposed) {
+                return;
             }
-        }, options);
+            const startParameters = await this.getStartParameters();
+            if (toStop.disposed) {
+                return;
+            }
+            const sessionId = await this.languageContributionService.create(this.id, startParameters);
+            if (toStop.disposed) {
+                this.languageContributionService.destroy(sessionId);
+                return;
+            }
+            toStop.push(Disposable.create(() => this.languageContributionService.destroy(sessionId)));
+            this.connectionProvider.listen({
+                path: LanguageContribution.getPath(this, sessionId),
+                onConnection: messageConnection => {
+                    this.deferredConnection.resolve(messageConnection);
+                    messageConnection.onDispose(() => this.deferredConnection = new Deferred<MessageConnection>());
+                    if (toStop.disposed) {
+                        messageConnection.dispose();
+                        return;
+                    }
+                    toStop.push(Disposable.create(() => this.stop = (async () => {
+                        try {
+                            // avoid calling stop if start failed
+                            await this._languageClient!.onReady();
+                            // remove all listerens
+                            await this._languageClient!.stop();
+                        } catch {
+                            try {
+                                // if start or stop failed make sure the the connection is closed
+                                messageConnection.dispose();
+                            } catch { /* no-op */ }
+                        }
+                    })()));
+                    toStop.push(messageConnection.onClose(() => this.restart()));
+                    this.onWillStart(this._languageClient!);
+                    this._languageClient!.start();
+                }
+            }, { reconnecting: false });
+        } catch (e) {
+            console.error(e);
+            if (!toStop.disposed) {
+                this.restart();
+            }
+        }
     }
 
     protected state: State | undefined;
@@ -135,15 +177,12 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return !this.toDeactivate.disposed && this.state === State.Running;
     }
 
-    protected readonly toRestart = new DisposableCollection();
     restart(): void {
-        this.toRestart.dispose();
+        this.deactivate();
+        this.activate();
     }
 
     protected onWillStart(languageClient: ILanguageClient): void {
-        languageClient.onDidChangeState(({ newState }) => {
-            this.state = newState;
-        });
         languageClient.onReady().then(() => this.onReady(languageClient));
     }
 
@@ -159,7 +198,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         );
     }
 
-    protected createLanguageClient(connection: MessageConnection): ILanguageClient {
+    protected createLanguageClient(connection: MessageConnection | (() => MaybePromise<MessageConnection>)): ILanguageClient {
         const clientOptions = this.createOptions();
         return this.languageClientFactory.get(this, clientOptions, connection);
     }
@@ -183,6 +222,10 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
             }
         });
         return false;
+    }
+
+    protected getStartParameters(): MaybePromise<any> {
+        return undefined;
     }
 
     // tslint:disable-next-line:no-any

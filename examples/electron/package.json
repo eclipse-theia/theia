@@ -10,13 +10,15 @@
       }
     }
   },
+  "//": [
+    "`@theia/plugin-ext` and `@theia/plugin-ext-vscode` are missing due to https://github.com/theia-ide/theia/issues/3723",
+    "`@theia/debug`, `@theia/debug-nodejs` and `@theia/java-debug` are removed due to https://github.com/theia-ide/theia/issues/3716"
+  ],
   "dependencies": {
     "@theia/callhierarchy": "^0.3.17",
     "@theia/console": "^0.3.17",
     "@theia/core": "^0.3.17",
     "@theia/cpp": "^0.3.17",
-    "@theia/debug": "^0.3.17",
-    "@theia/debug-nodejs": "^0.3.17",
     "@theia/editor": "^0.3.17",
     "@theia/editor-preview": "^0.3.17",
     "@theia/editorconfig": "^0.3.17",
@@ -38,8 +40,6 @@
     "@theia/navigator": "^0.3.17",
     "@theia/outline-view": "^0.3.17",
     "@theia/output": "^0.3.17",
-    "@theia/plugin-ext": "^0.3.17",
-    "@theia/plugin-ext-vscode": "^0.3.17",
     "@theia/preferences": "^0.3.17",
     "@theia/preview": "^0.3.17",
     "@theia/process": "^0.3.17",

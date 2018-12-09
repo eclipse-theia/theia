@@ -38,12 +38,17 @@ export const typescriptPreferenceSchema: PreferenceSchema = {
             'default': 'off',
             // tslint:disable:max-line-length
             'description': 'Enables logging of the TS server to a file. This log can be used to diagnose TS Server issues. The log may contain file paths, source code, and other potentially sensitive information from your project.'
+        },
+        'typescript.tsdk': {
+            'type': 'string',
+            'description': 'Specifies the folder path containing the tsserver and lib*.d.ts files to use.'
         }
     }
 };
 
 export interface TypescriptConfiguration {
     'typescript.server.log': 'off' | 'terse' | 'normal' | 'verbose'
+    'typescript.tsdk'?: string
 }
 export type TypescriptPreferenceChange = PreferenceChangeEvent<TypescriptConfiguration>;
 

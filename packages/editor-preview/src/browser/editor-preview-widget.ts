@@ -118,6 +118,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
         if (Saveable.isSource(w)) {
             Saveable.apply(this);
             const dirtyListener = w.saveable.onDirtyChanged(() => {
+                dirtyListener.dispose();
                 this.pinEditorWidget();
             });
             this.toDispose.push(dirtyListener);

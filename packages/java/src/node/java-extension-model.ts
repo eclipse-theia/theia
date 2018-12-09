@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { MaybePromise } from '@theia/core/lib/common/types';
+
 /**
  * JavaExtensionContribution symbol for DI.
  */
@@ -27,5 +29,5 @@ export interface JavaExtensionContribution {
      * Returns an array of paths to the bundle jar files.
      * The paths should be absolute.
      */
-    getExtensionBundles(): string[];
+    getExtensionBundles(): MaybePromise<string[]>;
 }

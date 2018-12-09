@@ -16,11 +16,16 @@
 
 import { injectable, postConstruct, inject } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
-import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
-import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME } from '../common';
+import { BaseLanguageServerContribution, IConnection, LanguageServerStartOptions } from '@theia/languages/lib/node';
+import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TypescriptStartParams } from '../common';
 import { TypeScriptPlugin, TypeScriptInitializeParams, TypeScriptInitializationOptions } from 'typescript-language-server/lib/ts-protocol';
 import { isRequestMessage, Message } from 'vscode-ws-jsonrpc';
 import { InitializeRequest } from 'vscode-languageserver-protocol';
+import { TypescriptVersionURI } from './typescript-version-service-impl';
+
+export interface TypeScriptStartOptions extends LanguageServerStartOptions {
+    parameters?: TypescriptStartParams
+}
 
 @injectable()
 export class TypeScriptContribution extends BaseLanguageServerContribution {
@@ -48,12 +53,16 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         }
     }
 
-    start(clientConnection: IConnection): void {
+    start(clientConnection: IConnection, { parameters }: TypeScriptStartOptions): void {
         const command = 'node';
         const args: string[] = [
             __dirname + '/startserver.js',
             '--stdio'
         ];
+        const tsServerPath = TypescriptVersionURI.getTsServerPath(parameters && parameters.version);
+        if (tsServerPath) {
+            args.push(`--tsserver-path=${tsServerPath}`);
+        }
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }

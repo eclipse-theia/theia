@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
+ * Copyright (C) 2018 Redhat, Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,18 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
-import { IWorkspaceService } from '../../browser/workspace-service';
-import { FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { inject, injectable, named } from 'inversify';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { TreeDecorator, AbstractTreeDecoratorService } from '@theia/core/lib/browser/tree/tree-decorator';
 
+/**
+ * Symbol for all decorators that would like to contribute into the outline.
+ */
+export const OutlineTreeDecorator = Symbol('OutlineTreeDecorator');
+
+/**
+ * Decorator service for the outline.
+ */
 @injectable()
-export class MockWorkspaceService implements IWorkspaceService {
-    get roots(): Promise<FileStat[]> {
-        const stat: FileStat = {
-            uri: 'file:///workspace',
-            lastModification: 0,
-            isDirectory: true
-        };
-        return Promise.resolve([stat]);
+export class OutlineDecoratorService extends AbstractTreeDecoratorService {
+
+    constructor(@inject(ContributionProvider) @named(OutlineTreeDecorator) protected readonly contributions: ContributionProvider<TreeDecorator>) {
+        super(contributions.getContributions());
     }
+
 }

@@ -50,6 +50,8 @@ decorate(injectable(), ProtocolToMonacoConverter);
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
+import { MonacoOutlineDecorator } from './monaco-outline-decorator';
+import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-decorator-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).to(MonacoFrontendApplicationContribution).inSingletonScope();
@@ -98,4 +100,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoSemanticHighlightingService).toSelf().inSingletonScope();
     rebind(SemanticHighlightingService).to(MonacoSemanticHighlightingService).inSingletonScope();
+
+    bind(MonacoOutlineDecorator).toSelf().inSingletonScope();
+    bind(OutlineTreeDecorator).toService(MonacoOutlineDecorator);
 });

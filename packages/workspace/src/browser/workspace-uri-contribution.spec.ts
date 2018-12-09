@@ -14,25 +14,52 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+const disableJSDOM = enableJSDOM();
+
+import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { Container } from 'inversify';
+import { Signal } from '@phosphor/signaling';
+import { ApplicationShell } from '@theia/core/lib/browser';
 import { FileStat, FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { MockFilesystem } from '@theia/filesystem/lib/common/test';
 import { FOLDER_ICON, FILE_ICON, DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
-import { IWorkspaceService } from './workspace-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
-import { MockWorkspaceService } from '../common/test/mock-workspace-service';
 import URI from '@theia/core/lib/common/uri';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
+import { WorkspaceVariableContribution } from './workspace-variable-contribution';
+import { WorkspaceService } from './workspace-service';
+
+after(() => disableJSDOM());
 
 let container: Container;
 let labelProvider: WorkspaceUriLabelProviderContribution;
-before(() => {
+let roots: FileStat[];
+beforeEach(() => {
+    roots = [{
+        uri: 'file:///workspace',
+        lastModification: 0,
+        isDirectory: true
+    }];
+
     container = new Container();
+    container.bind(ApplicationShell).toConstantValue({
+        currentChanged: new Signal({})
+    // tslint:disable-next-line:no-any
+    } as any);
+    const workspaceService = new WorkspaceService();
+    workspaceService.tryGetRoots = () => roots;
+    container.bind(WorkspaceService).toConstantValue(workspaceService);
+    container.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     container.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
-    container.bind(IWorkspaceService).to(MockWorkspaceService).inSingletonScope();
     container.bind(FileSystem).to(MockFilesystem).inSingletonScope();
     labelProvider = container.get(WorkspaceUriLabelProviderContribution);
+});
+
+afterEach(() => {
+    roots = undefined!;
+    labelProvider = undefined!;
+    container = undefined!;
 });
 
 describe('WorkspaceUriLabelProviderContribution class', () => {
@@ -178,7 +205,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return the path of a file if WorkspaceService returns no roots', () => {
-            stubs.push(sinon.stub(labelProvider, 'wsRoot').value(undefined));
+            roots = [];
             const file = new URI('file:///tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
             expect(longName).eq('/tmp/prout.txt');

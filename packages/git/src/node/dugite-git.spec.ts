@@ -558,7 +558,7 @@ describe('git', async function () {
 
             await init(git, repository);
 
-            const expectDiff: (expected: ChangeDelta[]) => void = async expected => {
+            const expectDiff: (expected: ChangeDelta[]) => Promise<void> = async expected => {
                 const actual = (await git.diff(repository)).map(change => ChangeDelta.map(repository, change)).sort(ChangeDelta.compare);
                 expect(actual).to.be.deep.equal(expected);
             };
@@ -587,7 +587,7 @@ describe('git', async function () {
 
             await init(git, repository);
 
-            const expectDiff: (expected: ChangeDelta[]) => void = async expected => {
+            const expectDiff: (expected: ChangeDelta[]) => Promise<void> = async expected => {
                 const actual = (await git.diff(repository)).map(change => ChangeDelta.map(repository, change)).sort(ChangeDelta.compare);
                 expect(actual).to.be.deep.equal(expected);
             };
@@ -626,7 +626,7 @@ describe('git', async function () {
 
             await init(git, repository);
 
-            const expectDiff: (fromRevision: string, toRevision: string, expected: ChangeDelta[], filePath?: string) => void = async (fromRevision, toRevision, expected, filePath) => {
+            const expectDiff: (fromRevision: string, toRevision: string, expected: ChangeDelta[], filePath?: string) => Promise<void> = async (fromRevision, toRevision, expected, filePath) => {
                 const range = { fromRevision, toRevision };
                 let uri: string | undefined;
                 if (filePath) {

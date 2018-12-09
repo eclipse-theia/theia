@@ -229,7 +229,7 @@ describe('WorkspaceService', () => {
             expect((<sinon.SinonStub>mockILogger.error).called).to.be.true;
         });
 
-        it('should use the workspace path in the URL fragment, if available', async function() {
+        it('should use the workspace path in the URL fragment, if available', async function () {
             const workspacePath = '/home/somewhere';
             window.location.hash = '#' + workspacePath;
             const stat = <FileStat>{

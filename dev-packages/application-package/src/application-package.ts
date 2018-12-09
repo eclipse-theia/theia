@@ -109,7 +109,7 @@ export class ApplicationPackage {
     }
 
     async findExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
-        return this.getExtensionPackage(extension) || await this.resolveExtensionPackage(extension);
+        return this.getExtensionPackage(extension) || this.resolveExtensionPackage(extension);
     }
 
     async resolveExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {

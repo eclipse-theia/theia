@@ -14,13 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-const request = require('request');
-const unzip = require('unzip-stream');
-const path = require('path');
-
-const pck = require('../package.json');
-for (const name in pck.adapters) {
-    const url = pck.adapters[name];
-    const targetPath = path.join(__dirname, '../download', name);
-    request(url).pipe(unzip.Extract({ path: targetPath }));
+ declare module 'command-exists' {
+    function sync(command: string): boolean;
 }

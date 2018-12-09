@@ -19,7 +19,8 @@ import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
 
 export interface IProcessExitEvent {
-    readonly code: number,
+    // Exactly one of code and signal will be set.
+    readonly code?: number,
     readonly signal?: string
 }
 
@@ -88,8 +89,12 @@ export abstract class Process {
         return this.errorEmitter.event;
     }
 
-    protected emitOnExit(code: number, signal?: string) {
-        const exitEvent = { code, signal };
+    /**
+     * Emit the onExit event for this process.  Only one of code and signal
+     * should be defined.
+     */
+    protected emitOnExit(code?: number, signal?: string) {
+        const exitEvent: IProcessExitEvent = { code, signal };
         this.handleOnExit(exitEvent);
         this.exitEmitter.fire(exitEvent);
     }
@@ -113,7 +118,8 @@ export abstract class Process {
         this.logger.error(error);
     }
 
-    protected isForkOptions(options: ForkOptions | any): options is ForkOptions {
+    // tslint:disable-next-line:no-any
+    protected isForkOptions(options: any): options is ForkOptions {
         return !!options && !!options.modulePath;
     }
 }
