@@ -20,10 +20,8 @@ import { FileUri } from '@theia/core/lib/node';
 import {
     TerminalProcess,
     RawProcess,
-    TerminalProcessOptions,
     RawProcessOptions,
-    RawProcessFactory,
-    TerminalProcessFactory
+    RawProcessFactory
 } from '@theia/process/lib/node';
 import URI from '@theia/core/lib/common/uri';
 import { TaskFactory } from './process-task';
@@ -32,6 +30,7 @@ import { Task } from '../task';
 import { TaskConfiguration } from '../../common/task-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ShellProcessFactory, ShellProcessOptions } from '@theia/terminal/lib/node/shell-process';
 
 /**
  * Task runner that runs a task as a process or a command inside a shell.
@@ -45,8 +44,8 @@ export class ProcessTaskRunner implements TaskRunner {
     @inject(RawProcessFactory)
     protected readonly rawProcessFactory: RawProcessFactory;
 
-    @inject(TerminalProcessFactory)
-    protected readonly terminalProcessFactory: TerminalProcessFactory;
+    @inject(ShellProcessFactory)
+    protected readonly shellProcessFactory: ShellProcessFactory;
 
     @inject(TaskFactory)
     protected readonly taskFactory: TaskFactory;
@@ -109,12 +108,13 @@ export class ProcessTaskRunner implements TaskRunner {
                 });
             } else {
                 // all Task types without specific TaskRunner will be run as a shell process e.g.: npm, gulp, etc.
-                this.logger.debug('Task: creating underlying terminal process');
-                proc = this.terminalProcessFactory(<TerminalProcessOptions>{
-                    command: command,
-                    args: args,
-                    options: options
+                this.logger.debug('Task: creating underlying shell process');
+                proc = this.shellProcessFactory(<ShellProcessOptions>{
+                    rootURI: options.cwd,
+                    env: options.env
                 });
+                const commandLine = [command, ...args].join(' ') + '\r';
+                proc.write(commandLine);
             }
             return this.taskFactory({
                 label: taskConfig.label,

@@ -15,10 +15,8 @@ Each task configuration looks like this:
         "-alR"
     ],
     "windows": {
-        "command": "cmd.exe",
+        "command": "dir",
         "args": [
-            "/c",
-            "dir",
             "/s"
         ]
     }
@@ -35,7 +33,7 @@ Each task configuration looks like this:
 
 *args*: a list of strings, each one being one argument to pass to the command.
 
-*windows*: by default, *command* and *ars* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *ars*, when a task is executed on a Windows backend.
+*windows*: by default, *command* and *ars* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *args*, when a task is executed on a Windows backend.
 
 Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`:
 ``` json
@@ -53,10 +51,8 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
                 "3"
             ],
             "windows": {
-                "command": "cmd.exe",
+                "command": "task.bat",
                 "args": [
-                    "/c",
-                    "task.bat",
                     "abc"
                 ]
             }
@@ -68,11 +64,8 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
             "command": "./task-long-running",
             "args": [],
             "windows": {
-                "command": "cmd.exe",
-                "args": [
-                    "/c",
-                    "task-long-running.bat"
-                ]
+                "command": "task-long-running.bat",
+                "args": []
             }
         },
         {
@@ -84,10 +77,8 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
                 "-alR"
             ],
             "windows": {
-                "command": "cmd.exe",
+                "command": "dir",
                 "args": [
-                    "/c",
-                    "dir",
                     "/s"
                 ]
             }
