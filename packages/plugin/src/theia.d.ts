@@ -1766,36 +1766,6 @@ declare module '@theia/plugin' {
     }
 
     /**
-     * A text document content provider allows to add readonly documents
-     * to the editor, such as source from a dll or generated html from md.
-     *
-     * Content providers are [registered](#workspace.registerTextDocumentContentProvider)
-     * for a [uri-scheme](#Uri.scheme). When a uri with that scheme is to
-     * be [loaded](#workspace.openTextDocument) the content provider is
-     * asked.
-     */
-    export interface TextDocumentContentProvider {
-
-        /**
-         * An event to signal a resource has changed.
-         */
-        onDidChange?: Event<Uri>;
-
-        /**
-         * Provide textual content for a given uri.
-         *
-         * The editor will use the returned string-content to create a readonly
-         * [document](#TextDocument). Resources allocated should be released when
-         * the corresponding document has been [closed](#workspace.onDidCloseTextDocument).
-         *
-         * @param uri An uri which scheme matches the scheme this provider was [registered](#workspace.registerTextDocumentContentProvider) for.
-         * @param token A cancellation token.
-         * @return A string or a thenable that resolves to such.
-         */
-        provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string>;
-    }
-
-    /**
      * A cancellation token used to request cancellation on long running
      * or asynchronous task.
      */
@@ -3782,17 +3752,6 @@ declare module '@theia/plugin' {
          * @return A promise that resolves to a [document](#TextDocument).
          */
         export function openTextDocument(options?: { language?: string; content?: string; }): Promise<TextDocument | undefined>;
-
-        /**
-         * Register a text document content provider.
-         *
-         * Only one provider can be registered per scheme.
-         *
-         * @param scheme The uri-scheme to register for.
-         * @param provider A content provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-         */
-        export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
 
         /**
          * Get a workspace configuration object.
