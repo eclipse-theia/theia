@@ -18,6 +18,8 @@ import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { HostedPluginManagerClient, HostedPluginCommands } from '../../hosted/browser/hosted-plugin-manager-client';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
+import { OpenUriCommandHandler } from './commands';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution {
@@ -27,6 +29,9 @@ export class PluginApiFrontendContribution implements CommandContribution {
 
     @inject(PluginExtDeployCommandService)
     protected readonly pluginExtDeployCommandService: PluginExtDeployCommandService;
+
+    @inject(OpenUriCommandHandler)
+    protected readonly openUriCommandHandler: OpenUriCommandHandler;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(HostedPluginCommands.START, {
@@ -52,6 +57,11 @@ export class PluginApiFrontendContribution implements CommandContribution {
         // this command only for compatibility reason
         commands.registerCommand({ id: 'workbench.action.closeActiveEditor' }, {
             execute: () => commands.executeCommand('core.close.tab')
+        });
+
+        commands.registerCommand(OpenUriCommandHandler.COMMAND_METADATA, {
+            execute: (arg: URI) => this.openUriCommandHandler.execute(arg),
+            isVisible: () => false
         });
     }
 
