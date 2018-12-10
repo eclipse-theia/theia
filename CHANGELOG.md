@@ -35,6 +35,7 @@
 - [plug-in] added `window.showTextDocument` Plug-in API
 - [plug-in] added ability to provide custom namespaces for the Plug-in API
 - [plug-in] registered a type definition provider
+- [plug-in] added `tasks.registerTaskProvider` Plug-in API
 - [preview-editor] added the ability to open editors in preview mode
 - [process] added the ability to create new node processes through forking
 - [search-in-workspace] prompt users when performing `Replace All...` to limit accidental triggering

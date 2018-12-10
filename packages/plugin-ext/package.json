@@ -13,6 +13,7 @@
     "@theia/navigator": "^0.3.17",
     "@theia/plugin": "^0.3.17",
     "@theia/workspace": "^0.3.17",
+    "@theia/task": "^0.3.17",
     "decompress": "^4.2.0",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
