@@ -61,6 +61,13 @@ export class EditorconfigDocumentManager {
     protected addOnSaveHandler(editorWidget: EditorWidget) {
         const monacoEditor = MonacoEditor.get(editorWidget);
         if (monacoEditor) {
+            monacoEditor.document.onWillChangeModelOnSave(event => {
+                event.waitModelChange(async () => {
+                    if (MonacoEditor.get(this.editorManager.activeEditor) === monacoEditor) {
+                        return this.doTrimTrailingWhitespaces(monacoEditor, event.reason);
+                    }
+                });
+            });
             monacoEditor.document.onWillSaveModel(event => {
                 event.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(resolve => {
                     const uri = monacoEditor.uri.toString();
@@ -212,6 +219,15 @@ export class EditorconfigDocumentManager {
         }
     }
 
+    private async doTrimTrailingWhitespaces(editor: MonacoEditor, saveReason?: TextDocumentSaveReason): Promise<void> {
+        const trimReason = (saveReason !== TextDocumentSaveReason.Manual) ? 'auto-save' : undefined;
+        return new Promise<void>((resolve, reject) =>
+            editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
+                reason: trimReason
+            }).then(() => resolve(), reject)
+        );
+    }
+
     /**
      * Returns array of edits trimming trailing whitespaces for the whole document.
      *
@@ -220,14 +236,6 @@ export class EditorconfigDocumentManager {
      */
     private getEditsTrimmingTrailingWhitespaces(editor: MonacoEditor, properties: KnownProps, saveReason?: TextDocumentSaveReason): monaco.editor.IIdentifiedSingleEditOperation[] {
         const edits = [];
-
-        if (MonacoEditor.get(this.editorManager.activeEditor) === editor) {
-            const trimReason = (saveReason !== TextDocumentSaveReason.Manual) ? 'auto-save' : undefined;
-            editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
-                reason: trimReason
-            });
-            return [];
-        }
 
         if (this.isSet(properties.trim_trailing_whitespace)) {
             const lines = editor.document.lineCount;
