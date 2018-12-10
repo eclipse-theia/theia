@@ -196,14 +196,45 @@
 .monaco-editor .theia-debug-breakpoint-hint {
 	background: url('breakpoint-hint.svg') center center no-repeat;
 }
-.monaco-editor .theia-debug-breakpoint {
+
+.theia-debug-breakpoint-icon {
+    width: 19px;
+    height: 19px;
+    min-width: 19px;
+    margin-left: 0px !important;
+}
+
+.theia-debug-breakpoint {
 	background: url('breakpoint.svg') center center no-repeat;
 }
-.monaco-editor .theia-debug-breakpoint-disabled {
+.theia-debug-breakpoint-disabled {
     background: url('breakpoint-disabled.svg') center center no-repeat;
 }
-.monaco-editor .theia-debug-breakpoint-unverified {
+.theia-debug-breakpoint-unverified {
     background: url('breakpoint-unverified.svg') center center no-repeat;
+}
+.theia-debug-breakpoint-unsupported {
+    background: url('breakpoint-unsupported.svg') center center no-repeat;
+}
+
+.theia-debug-conditional-breakpoint {
+    background: url('breakpoint-conditional.svg') center center no-repeat;
+}
+.theia-debug-conditional-breakpoint-disabled {
+    background: url('breakpoint-conditional-disabled.svg') center center no-repeat;
+}
+.theia-debug-conditional-breakpoint-unverified {
+    background: url('breakpoint-conditional-unverified.svg') center center no-repeat;
+}
+
+.theia-debug-logpoint {
+	background: url('breakpoint-log.svg') center center no-repeat;
+}
+.theia-debug-logpoint-disabled {
+    background: url('breakpoint-log-disabled.svg') center center no-repeat;
+}
+.theia-debug-logpoint-unverified {
+    background: url('breakpoint-log-unverified.svg') center center no-repeat;
 }
 
 .monaco-editor .theia-debug-top-stack-frame {
@@ -306,4 +337,23 @@
 
 .theia-debug-widget-container .theia-header {
     margin-top: 5px;
+}
+
+/** Breakpoint Widget */
+.theia-debug-breakpoint-widget {
+    display: flex;
+}
+
+.theia-debug-breakpoint-select {
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+	padding: 0 10px;
+	flex-shrink: 0;
+}
+
+.theia-debug-breakpoint-input {
+	flex: 1;
+	margin-top: var(--theia-ui-padding);
+	margin-bottom: var(--theia-ui-padding);
 }

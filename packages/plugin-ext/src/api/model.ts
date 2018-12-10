@@ -410,6 +410,7 @@ export interface WorkspaceFolder {
 }
 
 export interface Breakpoint {
+    readonly id: string;
     readonly enabled: boolean;
     readonly condition?: string;
     readonly hitCondition?: string;

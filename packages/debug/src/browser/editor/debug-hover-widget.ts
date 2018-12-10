@@ -40,7 +40,7 @@ export interface HideDebugHoverOptions {
     immediate?: boolean
 }
 
-export function createDebugHoverWidgetContainer(parent: interfaces.Container, editor: monaco.editor.IStandaloneCodeEditor): Container {
+export function createDebugHoverWidgetContainer(parent: interfaces.Container, editor: DebugEditor): Container {
     const child = SourceTreeWidget.createContainer(parent, {
         virtualized: false
     });
@@ -58,7 +58,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     protected readonly toDispose = new DisposableCollection();
 
     @inject(DebugEditor)
-    protected readonly editor: monaco.editor.IStandaloneCodeEditor;
+    protected readonly editor: DebugEditor;
 
     @inject(DebugSessionManager)
     protected readonly sessions: DebugSessionManager;
@@ -92,11 +92,11 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         this.contentNode.className = 'theia-debug-hover-content';
         this.domNode.appendChild(this.contentNode);
 
-        this.editor.addContentWidget(this);
+        this.editor.getControl().addContentWidget(this);
         this.source = this.hoverSource;
         this.toDispose.pushAll([
             this.hoverSource,
-            Disposable.create(() => this.editor.removeContentWidget(this)),
+            Disposable.create(() => this.editor.getControl().removeContentWidget(this)),
             Disposable.create(() => this.hide()),
             this.sessions.onDidChange(() => {
                 if (!this.isEditorFrame()) {
@@ -132,7 +132,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             return;
         }
         if (this.domNode.contains(document.activeElement)) {
-            this.editor.focus();
+            this.editor.getControl().focus();
         }
         if (this.isAttached) {
             Widget.detach(this);
@@ -140,7 +140,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         this.hoverSource.reset();
         super.hide();
         this.options = undefined;
-        this.editor.layoutContentWidget(this);
+        this.editor.getControl().layoutContentWidget(this);
     }
     protected async doShow(options: ShowDebugHoverOptions | undefined = this.options): Promise<void> {
         if (!this.isEditorFrame()) {
@@ -159,7 +159,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         }
         super.show();
         this.options = options;
-        const expression = this.expressionProvider.get(this.editor.getModel(), options.selection);
+        const expression = this.expressionProvider.get(this.editor.getControl().getModel(), options.selection);
         if (!expression) {
             this.hide();
             return;
@@ -176,12 +176,12 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             this.hide();
             return;
         }
-        this.editor.layoutContentWidget(this);
+        this.editor.getControl().layoutContentWidget(this);
     }
     protected isEditorFrame(): boolean {
         const { currentFrame } = this.sessions;
         return !!currentFrame && !!currentFrame.source &&
-            this.editor.getModel().uri.toString() === currentFrame.source.uri.toString();
+            this.editor.getControl().getModel().uri.toString() === currentFrame.source.uri.toString();
     }
 
     getPosition(): monaco.editor.IContentWidgetPosition {
@@ -189,7 +189,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             return undefined!;
         }
         const position = this.options && this.options.selection.getStartPosition();
-        const word = position && this.editor.getModel().getWordAtPosition(position);
+        const word = position && this.editor.getControl().getModel().getWordAtPosition(position);
         return position && word ? {
             position: new monaco.Position(position.lineNumber, word.startColumn),
             preference: [

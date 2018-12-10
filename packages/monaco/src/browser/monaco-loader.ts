@@ -62,7 +62,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/theme/common/styler',
                 'vs/base/common/platform',
                 'vs/editor/common/modes',
-                'vs/base/common/cancellation',
+                'vs/editor/contrib/suggest/suggest',
                 'vs/editor/contrib/suggest/suggestController',
                 'vs/editor/contrib/find/findController',
                 'vs/editor/contrib/rename/rename',
@@ -70,7 +70,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/browser/services/codeEditorServiceImpl'
             ], (css: any, html: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
-                filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any, snippetParser: any,
+                filters: any, styler: any, platform: any, modes: any, suggest: any, suggestController: any, findController: any, rename: any, snippetParser: any,
                 codeEditorServiceImpl: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
@@ -83,7 +83,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.platform = platform;
                     global.monaco.editorExtensions = editorExtensions;
                     global.monaco.modes = modes;
-                    global.monaco.cancellation = cancellation;
+                    global.monaco.suggest = suggest;
                     global.monaco.suggestController = suggestController;
                     global.monaco.findController = findController;
                     global.monaco.rename = rename;
