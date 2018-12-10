@@ -27,14 +27,14 @@
 /* information message */
 .theia-info-alert {
     background-color: var(--theia-brand-color0);
-    color: var(--theia-ui-font-color0);
+    color: #ffffff;
     padding: 10px;
 }
 
 /* success message */
 .theia-success-alert {
     background-color: var(--theia-success-color0);
-    color: var(--theia-ui-font-color0);
+    color: #ffffff;
     padding: 10px;
 }
 
@@ -48,6 +48,6 @@
 /* error message */
 .theia-error-alert {
     background-color: var(--theia-error-color0);
-    color: var(--theia-ui-font-color0);
+    color: #ffffff;
     padding: 10px;
 }
