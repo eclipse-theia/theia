@@ -767,6 +767,23 @@ export interface WorkspaceEditDto {
     rejectReason?: string;
 }
 
+export interface CommandProperties {
+    command: string;
+    args?: string[];
+    options?: object;
+}
+export interface TaskDto {
+    type: string;
+    label: string;
+    // tslint:disable-next-line:no-any
+    [key: string]: any;
+}
+
+export interface ProcessTaskDto extends TaskDto, CommandProperties {
+    windows?: CommandProperties;
+    cwd?: string;
+}
+
 export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined>;
     $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion): Promise<Completion>;
@@ -882,6 +899,7 @@ export const PLUGIN_RPC_CONTEXT = {
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
+    TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -900,4 +918,15 @@ export const MAIN_RPC_CONTEXT = {
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
+    TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
 };
+
+export interface TasksExt {
+    $provideTasks(handle: number): Promise<TaskDto[] | undefined>;
+    $resolveTask(handle: number, task: TaskDto): Promise<TaskDto | undefined>;
+}
+
+export interface TasksMain {
+    $registerTaskProvider(handle: number, type: string): void;
+    $unregister(handle: number): void;
+}

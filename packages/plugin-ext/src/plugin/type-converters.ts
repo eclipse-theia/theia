@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorPosition, Selection, Position, DecorationOptions, WorkspaceEditDto, ResourceTextEditDto, ResourceFileEditDto } from '../api/plugin-api';
+import { EditorPosition, Selection, Position, DecorationOptions, WorkspaceEditDto, ResourceTextEditDto, ResourceFileEditDto, TaskDto, ProcessTaskDto } from '../api/plugin-api';
 import * as model from '../api/model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
@@ -476,4 +476,104 @@ export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.Workspac
         name: folder.name,
         index: folder.index
     };
+}
+
+export function fromTask(task: theia.Task): TaskDto | undefined {
+    if (!task) {
+        return undefined;
+    }
+
+    const taskDto = {} as TaskDto;
+    taskDto.label = task.name;
+
+    const taskDefinition = task.definition;
+    if (!taskDefinition) {
+        return taskDto;
+    }
+
+    taskDto.type = taskDefinition.type;
+    for (const key in taskDefinition) {
+        if (taskDefinition.hasOwnProperty(key)) {
+            taskDto[key] = taskDefinition[key];
+        }
+    }
+
+    const execution = task.execution;
+    if (!execution) {
+        return taskDto;
+    }
+
+    const processTaskDto = taskDto as ProcessTaskDto;
+    if (taskDefinition.type === 'shell') {
+        return fromShellExecution(execution, processTaskDto);
+    }
+
+    if (taskDefinition.type === 'process') {
+        return fromProcessExecution(<theia.ProcessExecution> execution, processTaskDto);
+    }
+
+    return processTaskDto;
+}
+
+export function fromProcessExecution(execution: theia.ProcessExecution, processTaskDto: ProcessTaskDto): ProcessTaskDto {
+    processTaskDto.command = execution.process;
+    processTaskDto.args = execution.args;
+
+    const options = execution.options;
+    if (options) {
+        processTaskDto.cwd = options.cwd;
+        processTaskDto.options = options;
+    }
+    return processTaskDto;
+}
+
+export function fromShellExecution(execution: theia.ShellExecution, processTaskDto: ProcessTaskDto): ProcessTaskDto {
+    const options = execution.options;
+    if (options) {
+        processTaskDto.cwd = options.cwd;
+        processTaskDto.args = options.shellArgs;
+        processTaskDto.options = options;
+    }
+
+    const commandLine = execution.commandLine;
+    if (commandLine) {
+        const args = commandLine.split(' ');
+        const taskCommand = args.shift();
+
+        if (taskCommand) {
+            processTaskDto.command = taskCommand;
+        }
+
+        processTaskDto.args = args;
+        return processTaskDto;
+    }
+
+    const command = execution.command;
+    if (typeof command === 'string') {
+        processTaskDto.command = command;
+        processTaskDto.args = getShellArgs(execution.args);
+        return processTaskDto;
+    } else {
+        throw new Error('Converting ShellQuotedString command is not implemented');
+    }
+}
+
+export function getShellArgs(args: undefined | (string | theia.ShellQuotedString)[]): string[] {
+    if (!args || args.length === 0) {
+        return [];
+    }
+
+    const element = args[0];
+    if (typeof element === 'string') {
+        return args as string[];
+    }
+
+    const result: string[] = [];
+    const shellQuotedArgs = args as theia.ShellQuotedString[];
+
+    shellQuotedArgs.forEach(arg => {
+        result.push(arg.value);
+    });
+
+    return result;
 }
