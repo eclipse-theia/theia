@@ -142,31 +142,10 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         });
     }
 
-    $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes?: string | false,
+    async $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes?: string | false,
         maxResults?: number, token?: theia.CancellationToken): Promise<UriComponents[]> {
-        const uris: UriComponents[] = new Array();
-        let j = 0;
-        // tslint:disable-next-line:no-any
-        const promises: Promise<any>[] = new Array();
-        for (const root of this.roots) {
-            promises[j++] = this.fileSearchService.find(includePattern, { rootUri: root.uri }).then(value => {
-                const paths: string[] = new Array();
-                let i = 0;
-                value.forEach(item => {
-                    let path: string;
-                    path = root.uri.endsWith('/') ? root.uri + item : root.uri + '/' + item;
-                    paths[i++] = path;
-                });
-                return Promise.resolve(paths);
-            });
-        }
-        return Promise.all(promises).then(value => {
-            let i = 0;
-            value.forEach(path => {
-                uris[i++] = Uri.parse(path);
-            });
-            return Promise.resolve(uris);
-        });
+        const uriStrs = await this.fileSearchService.find(includePattern, { rootUris: this.roots.map(r => r.uri) });
+        return uriStrs.map(uriStr => Uri.parse(uriStr));
     }
 
     $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string> {

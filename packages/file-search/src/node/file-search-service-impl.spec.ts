@@ -37,10 +37,15 @@ describe('search-service', function () {
 
     this.timeout(10000);
 
+    let service: FileSearchServiceImpl;
+
+    beforeEach(() => {
+        service = testContainer.get(FileSearchServiceImpl);
+    });
+
     it('shall fuzzy search this spec file', async () => {
-        const service = testContainer.get(FileSearchServiceImpl);
         const rootUri = FileUri.create(path.resolve(__dirname, '..')).toString();
-        const matches = await service.find('spc', { rootUri });
+        const matches = await service.find('spc', { rootUris: [rootUri] });
         const expectedFile = FileUri.create(__filename).displayName;
         const testFile = matches.find(e => e.endsWith(expectedFile));
         expect(testFile).to.be.not.undefined;
@@ -48,7 +53,7 @@ describe('search-service', function () {
 
     it('shall respect nested .gitignore');
     //     const service = testContainer.get(FileSearchServiceImpl);
-    //     const rootUri = FileUri.create(path.resolve(__dirname, "../../test-resources")).toString();
+    //     const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
     //     const matches = await service.find('foo', { rootUri, fuzzyMatch: false });
 
     //     expect(matches.find(match => match.endsWith('subdir1/sub-bar/foo.txt'))).to.be.undefined;
@@ -57,12 +62,20 @@ describe('search-service', function () {
     // });
 
     it('shall cancel searches', async () => {
-        const service = testContainer.get(FileSearchServiceImpl);
         const rootUri = FileUri.create(path.resolve(__dirname, '../../../../..')).toString();
         const cancelTokenSource = new CancellationTokenSource();
         cancelTokenSource.cancel();
-        const matches = await service.find('foo', { rootUri, fuzzyMatch: false }, cancelTokenSource.token);
+        const matches = await service.find('foo', { rootUris: [rootUri], fuzzyMatch: false }, cancelTokenSource.token);
 
         expect(matches).to.be.empty;
+    });
+
+    it('should perform file search across all folders in the workspace', async () => {
+        const dirA = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub-bar')).toString();
+        const dirB = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+
+        const matches = await service.find('foo', { rootUris: [dirA, dirB] });
+        expect(matches).to.be.not.undefined;
+        expect(matches.length).to.eq(2);
     });
 });
