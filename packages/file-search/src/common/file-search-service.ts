@@ -34,7 +34,7 @@ export interface FileSearchService {
 export const FileSearchService = Symbol('FileSearchService');
 export namespace FileSearchService {
     export interface Options {
-        rootUri: string,
+        rootUris: string[]
         fuzzyMatch?: boolean
         limit?: number
         useGitIgnore?: boolean

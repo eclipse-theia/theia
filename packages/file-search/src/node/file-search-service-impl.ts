@@ -21,8 +21,8 @@ import { FileSearchService } from '../common/file-search-service';
 import { RawProcessFactory } from '@theia/process/lib/node';
 import { rgPath } from 'vscode-ripgrep';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { CancellationToken, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { CancellationToken, ILogger } from '@theia/core';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -50,10 +50,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         }
         const process = this.rawProcessFactory({
             command: rgPath,
-            args,
-            options: {
-                cwd: FileUri.fsPath(opts.rootUri)
-            }
+            args: [...args, ...opts.rootUris.map(r => FileUri.fsPath(r))]
         });
         const result: string[] = [];
         const fuzzyMatches: string[] = [];
@@ -78,10 +75,11 @@ export class FileSearchServiceImpl implements FileSearchService {
             if (result.length >= opts.limit) {
                 process.kill();
             } else {
+                const fileUriStr = FileUri.create(line).toString();
                 if (line.toLocaleLowerCase().indexOf(searchPattern.toLocaleLowerCase()) !== -1) {
-                    result.push(line);
+                    result.push(fileUriStr);
                 } else if (opts.fuzzyMatch && fuzzy.test(searchPattern, line)) {
-                    fuzzyMatches.push(line);
+                    fuzzyMatches.push(fileUriStr);
                 }
             }
         });
