@@ -133,6 +133,16 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Toggle Breakpoint',
     };
+    export const ADD_CONDITIONAL_BREAKPOINT: Command = {
+        id: 'debug.breakpoint.add.conditional',
+        category: DEBUG_CATEGORY,
+        label: 'Add Conditional Breakpoint...',
+    };
+    export const ADD_LOGPOINT: Command = {
+        id: 'debug.breakpoint.add.logpoint',
+        category: DEBUG_CATEGORY,
+        label: 'Add Logpoint...',
+    };
     export const ENABLE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.enableAll',
         category: DEBUG_CATEGORY,
@@ -143,10 +153,25 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Disable All Breakpoints',
     };
+    export const EDIT_BREAKPOINT: Command = {
+        id: 'debug.breakpoint.edit',
+        category: DEBUG_CATEGORY,
+        label: 'Edit Breakpoint...',
+    };
+    export const EDIT_LOGPOINT: Command = {
+        id: 'debug.logpoint.edit',
+        category: DEBUG_CATEGORY,
+        label: 'Edit Logpoint...',
+    };
     export const REMOVE_BREAKPOINT: Command = {
         id: 'debug.breakpoint.remove',
         category: DEBUG_CATEGORY,
         label: 'Remove Breakpoint',
+    };
+    export const REMOVE_LOGPOINT: Command = {
+        id: 'debug.logpoint.remove',
+        category: DEBUG_CATEGORY,
+        label: 'Remove Logpoint',
     };
     export const REMOVE_ALL_BREAKPOINTS: Command = {
         id: 'debug.breakpoint.removeAll',
@@ -235,14 +260,43 @@ export namespace DebugEditorContextCommands {
     export const ADD_BREAKPOINT = {
         id: 'debug.editor.context.addBreakpoint'
     };
+    export const ADD_CONDITIONAL_BREAKPOINT = {
+        id: 'debug.editor.context.addBreakpoint.conditional'
+    };
+    export const ADD_LOGPOINT = {
+        id: 'debug.editor.context.add.logpoint'
+    };
     export const REMOVE_BREAKPOINT = {
         id: 'debug.editor.context.removeBreakpoint'
+    };
+    export const EDIT_BREAKPOINT = {
+        id: 'debug.editor.context.edit.breakpoint'
     };
     export const ENABLE_BREAKPOINT = {
         id: 'debug.editor.context.enableBreakpoint'
     };
     export const DISABLE_BREAKPOINT = {
         id: 'debug.editor.context.disableBreakpoint'
+    };
+    export const REMOVE_LOGPOINT = {
+        id: 'debug.editor.context.logpoint.remove'
+    };
+    export const EDIT_LOGPOINT = {
+        id: 'debug.editor.context.logpoint.edit'
+    };
+    export const ENABLE_LOGPOINT = {
+        id: 'debug.editor.context.logpoint.enable'
+    };
+    export const DISABLE_LOGPOINT = {
+        id: 'debug.editor.context.logpoint.disable'
+    };
+}
+export namespace DebugBreakpointWidgetCommands {
+    export const ACCEPT = {
+        id: 'debug.breakpointWidget.accept'
+    };
+    export const CLOSE = {
+        id: 'debug.breakpointWidget.close'
     };
 }
 
@@ -421,8 +475,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.COPY_VAIRABLE_AS_EXPRESSION
         );
 
+        registerMenuActions(DebugBreakpointsWidget.EDIT_MENU,
+            DebugCommands.EDIT_BREAKPOINT,
+            DebugCommands.EDIT_LOGPOINT
+        );
         registerMenuActions(DebugBreakpointsWidget.REMOVE_MENU,
             DebugCommands.REMOVE_BREAKPOINT,
+            DebugCommands.REMOVE_LOGPOINT,
             DebugCommands.REMOVE_ALL_BREAKPOINTS
         );
         registerMenuActions(DebugBreakpointsWidget.ENABLE_MENU,
@@ -432,9 +491,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registerMenuActions(DebugEditorModel.CONTEXT_MENU,
             { ...DebugEditorContextCommands.ADD_BREAKPOINT, label: 'Add Breakpoint' },
-            { ...DebugEditorContextCommands.REMOVE_BREAKPOINT, label: 'Remove Breakpoint' },
+            { ...DebugEditorContextCommands.ADD_CONDITIONAL_BREAKPOINT, label: DebugCommands.ADD_CONDITIONAL_BREAKPOINT.label },
+            { ...DebugEditorContextCommands.ADD_LOGPOINT, label: DebugCommands.ADD_LOGPOINT.label },
+            { ...DebugEditorContextCommands.REMOVE_BREAKPOINT, label: DebugCommands.REMOVE_BREAKPOINT.label },
+            { ...DebugEditorContextCommands.EDIT_BREAKPOINT, label: DebugCommands.EDIT_BREAKPOINT.label },
             { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: 'Enable Breakpoint' },
-            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: 'Disable Breakpoint' }
+            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: 'Disable Breakpoint' },
+            { ...DebugEditorContextCommands.REMOVE_LOGPOINT, label: DebugCommands.REMOVE_LOGPOINT.label },
+            { ...DebugEditorContextCommands.EDIT_LOGPOINT, label: DebugCommands.EDIT_LOGPOINT.label },
+            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: 'Enable Logpoint' },
+            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: 'Disable Logpoint' }
         );
     }
 
@@ -573,6 +639,14 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.editors.toggleBreakpoint(),
             isEnabled: () => !!this.editors.model
         });
+        registry.registerCommand(DebugCommands.ADD_CONDITIONAL_BREAKPOINT, {
+            execute: () => this.editors.addBreakpoint('condition'),
+            isEnabled: () => !!this.editors.model && !this.editors.anyBreakpoint
+        });
+        registry.registerCommand(DebugCommands.ADD_LOGPOINT, {
+            execute: () => this.editors.addBreakpoint('logMessage'),
+            isEnabled: () => !!this.editors.model && !this.editors.anyBreakpoint
+        });
         registry.registerCommand(DebugCommands.ENABLE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.enableAllBreakpoints(true),
             isEnabled: () => !!this.breakpointManager.getUris().next().value
@@ -581,6 +655,26 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.breakpointManager.enableAllBreakpoints(false),
             isEnabled: () => !!this.breakpointManager.getUris().next().value
         });
+        registry.registerCommand(DebugCommands.EDIT_BREAKPOINT, {
+            execute: async () => {
+                const { selectedBreakpoint } = this;
+                if (selectedBreakpoint) {
+                    await this.editors.editBreakpoint(selectedBreakpoint);
+                }
+            },
+            isEnabled: () => !!this.selectedBreakpoint,
+            isVisible: () => !!this.selectedBreakpoint
+        });
+        registry.registerCommand(DebugCommands.EDIT_LOGPOINT, {
+            execute: async () => {
+                const { selectedLogpoint } = this;
+                if (selectedLogpoint) {
+                    await this.editors.editBreakpoint(selectedLogpoint);
+                }
+            },
+            isEnabled: () => !!this.selectedLogpoint,
+            isVisible: () => !!this.selectedLogpoint
+        });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
                 const { selectedBreakpoint } = this;
@@ -588,7 +682,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     selectedBreakpoint.remove();
                 }
             },
-            isEnabled: () => !!this.selectedBreakpoint
+            isEnabled: () => !!this.selectedBreakpoint,
+            isVisible: () => !!this.selectedBreakpoint
+        });
+        registry.registerCommand(DebugCommands.REMOVE_LOGPOINT, {
+            execute: () => {
+                const { selectedLogpoint } = this;
+                if (selectedLogpoint) {
+                    selectedLogpoint.remove();
+                }
+            },
+            isEnabled: () => !!this.selectedLogpoint,
+            isVisible: () => !!this.selectedLogpoint
         });
         registry.registerCommand(DebugCommands.REMOVE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.cleanAllMarkers(),
@@ -634,11 +739,26 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registry.registerCommand(DebugEditorContextCommands.ADD_BREAKPOINT, {
             execute: () => this.editors.toggleBreakpoint(),
-            isEnabled: () => !this.editors.breakpoint,
-            isVisible: () => !this.editors.breakpoint
+            isEnabled: () => !this.editors.anyBreakpoint,
+            isVisible: () => !this.editors.anyBreakpoint
+        });
+        registry.registerCommand(DebugEditorContextCommands.ADD_CONDITIONAL_BREAKPOINT, {
+            execute: () => this.editors.addBreakpoint('condition'),
+            isEnabled: () => !this.editors.anyBreakpoint,
+            isVisible: () => !this.editors.anyBreakpoint
+        });
+        registry.registerCommand(DebugEditorContextCommands.ADD_LOGPOINT, {
+            execute: () => this.editors.addBreakpoint('logMessage'),
+            isEnabled: () => !this.editors.anyBreakpoint,
+            isVisible: () => !this.editors.anyBreakpoint
         });
         registry.registerCommand(DebugEditorContextCommands.REMOVE_BREAKPOINT, {
             execute: () => this.editors.toggleBreakpoint(),
+            isEnabled: () => !!this.editors.breakpoint,
+            isVisible: () => !!this.editors.breakpoint
+        });
+        registry.registerCommand(DebugEditorContextCommands.EDIT_BREAKPOINT, {
+            execute: () => this.editors.editBreakpoint(),
             isEnabled: () => !!this.editors.breakpoint,
             isVisible: () => !!this.editors.breakpoint
         });
@@ -651,6 +771,33 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.editors.setBreakpointEnabled(false),
             isEnabled: () => !!this.editors.breakpointEnabled,
             isVisible: () => !!this.editors.breakpointEnabled
+        });
+        registry.registerCommand(DebugEditorContextCommands.REMOVE_LOGPOINT, {
+            execute: () => this.editors.toggleBreakpoint(),
+            isEnabled: () => !!this.editors.logpoint,
+            isVisible: () => !!this.editors.logpoint
+        });
+        registry.registerCommand(DebugEditorContextCommands.EDIT_LOGPOINT, {
+            execute: () => this.editors.editBreakpoint(),
+            isEnabled: () => !!this.editors.logpoint,
+            isVisible: () => !!this.editors.logpoint
+        });
+        registry.registerCommand(DebugEditorContextCommands.ENABLE_LOGPOINT, {
+            execute: () => this.editors.setBreakpointEnabled(true),
+            isEnabled: () => this.editors.logpointEnabled === false,
+            isVisible: () => this.editors.logpointEnabled === false
+        });
+        registry.registerCommand(DebugEditorContextCommands.DISABLE_LOGPOINT, {
+            execute: () => this.editors.setBreakpointEnabled(false),
+            isEnabled: () => !!this.editors.logpointEnabled,
+            isVisible: () => !!this.editors.logpointEnabled
+        });
+
+        registry.registerCommand(DebugBreakpointWidgetCommands.ACCEPT, {
+            execute: () => this.editors.acceptBreakpoint()
+        });
+        registry.registerCommand(DebugBreakpointWidgetCommands.CLOSE, {
+            execute: () => this.editors.closeBreakpoint()
         });
     }
 
@@ -705,6 +852,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             command: DebugCommands.TOGGLE_BREAKPOINT.id,
             keybinding: 'f9',
             context: EditorKeybindingContexts.editorTextFocus
+        });
+
+        keybindings.registerKeybinding({
+            command: DebugBreakpointWidgetCommands.ACCEPT.id,
+            keybinding: 'enter',
+            context: DebugKeybindingContexts.breakpointWidgetInputFocus
+        });
+        keybindings.registerKeybinding({
+            command: DebugBreakpointWidgetCommands.CLOSE.id,
+            keybinding: 'esc',
+            context: DebugKeybindingContexts.breakpointWidgetInputStrictFocus
         });
     }
 
@@ -793,9 +951,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const { currentWidget } = this.shell;
         return currentWidget instanceof DebugBreakpointsWidget && currentWidget || undefined;
     }
-    get selectedBreakpoint(): DebugBreakpoint | undefined {
+    get selectedAnyBreakpoint(): DebugBreakpoint | undefined {
         const { breakpoints } = this;
         return breakpoints && breakpoints.selectedElement instanceof DebugBreakpoint && breakpoints.selectedElement || undefined;
+    }
+    get selectedBreakpoint(): DebugBreakpoint | undefined {
+        const breakpoint = this.selectedAnyBreakpoint;
+        return breakpoint && !breakpoint.logMessage ? breakpoint : undefined;
+    }
+    get selectedLogpoint(): DebugBreakpoint | undefined {
+        const breakpoint = this.selectedAnyBreakpoint;
+        return breakpoint && !!breakpoint.logMessage ? breakpoint : undefined;
     }
 
     get variables(): DebugVariablesWidget | undefined {

@@ -34,6 +34,7 @@ import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration } from '../common/debug-common';
+import { SourceBreakpoint } from './breakpoint/breakpoint-marker';
 
 export enum DebugState {
     Inactive,
@@ -452,15 +453,20 @@ export class DebugSession implements CompositeTreeElement {
         try {
             const raw = body.breakpoint;
             if (body.reason === 'new') {
-                const breakpoint = this.toBreakpoint(raw);
-                if (breakpoint) {
-                    const breakpoints = this.getBreakpoints(breakpoint.uri);
-                    breakpoints.push(breakpoint);
-                    this.setBreakpoints(breakpoint.uri, breakpoints);
+                if (raw.source && typeof raw.line === 'number') {
+                    const uri = DebugSource.toUri(raw.source);
+                    const origin = SourceBreakpoint.create(uri, { line: raw.line, column: 1 });
+                    if (this.breakpoints.addBreakpoint(origin)) {
+                        const breakpoints = this.getBreakpoints(uri);
+                        const breakpoint = new DebugBreakpoint(origin, this.labelProvider, this.breakpoints, this.editorManager, this);
+                        breakpoint.update({ raw });
+                        breakpoints.push(breakpoint);
+                        this.setBreakpoints(uri, breakpoints);
+                    }
                 }
             }
             if (body.reason === 'removed' && raw.id) {
-                const toRemove = this.findBreakpoint(b => b.id === raw.id);
+                const toRemove = this.findBreakpoint(b => b.idFromAdapter === raw.id);
                 if (toRemove) {
                     toRemove.remove();
                     const breakpoints = this.getBreakpoints(toRemove.uri);
@@ -472,7 +478,7 @@ export class DebugSession implements CompositeTreeElement {
                 }
             }
             if (body.reason === 'changed' && raw.id) {
-                const toUpdate = this.findBreakpoint(b => b.id === raw.id);
+                const toUpdate = this.findBreakpoint(b => b.idFromAdapter === raw.id);
                 if (toUpdate) {
                     toUpdate.update({ raw });
                     this.fireDidChangeBreakpoints(toUpdate.uri);
@@ -491,21 +497,6 @@ export class DebugSession implements CompositeTreeElement {
             }
         }
         return undefined;
-    }
-    protected toBreakpoint(raw: DebugProtocol.Breakpoint): DebugBreakpoint | undefined {
-        if (!raw.source || !raw.line) {
-            return undefined;
-        }
-        const breakpoint = new DebugBreakpoint({
-            uri: DebugSource.toUri(raw.source).toString(),
-            enabled: true,
-            raw: {
-                line: raw.line,
-                column: raw.column
-            }
-        }, this.labelProvider, this.breakpoints, this.editorManager, this);
-        breakpoint.update({ raw });
-        return breakpoint;
     }
     protected async updateBreakpoints(options: {
         uri?: URI,

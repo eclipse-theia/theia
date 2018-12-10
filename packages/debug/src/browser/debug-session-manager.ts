@@ -322,17 +322,4 @@ export class DebugSessionManager {
         return origin && new DebugBreakpoint(origin, this.labelProvider, this.breakpoints, this.editorManager);
     }
 
-    addBreakpoints(breakpoints: DebugBreakpoint[]): void {
-        breakpoints.forEach(breakpoint => {
-            this.breakpoints.addBreakpoint(breakpoint.uri, breakpoint.line, breakpoint.column);
-            this.fireDidChangeBreakpoints({ uri: breakpoint.uri });
-        });
-    }
-
-    deleteBreakpoints(breakpoints: DebugBreakpoint[]): void {
-        breakpoints.forEach(breakpoint => {
-            this.breakpoints.deleteBreakpoint(breakpoint.uri, breakpoint.line, breakpoint.column);
-            this.fireDidChangeBreakpoints({ uri: breakpoint.uri });
-        });
-    }
 }

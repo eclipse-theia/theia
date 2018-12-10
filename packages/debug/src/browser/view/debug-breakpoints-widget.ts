@@ -27,8 +27,9 @@ import { DebugViewModel } from './debug-view-model';
 export class DebugBreakpointsWidget extends SourceTreeWidget implements ViewContainerPartWidget {
 
     static CONTEXT_MENU: MenuPath = ['debug-breakpoints-context-menu'];
-    static REMOVE_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'a_remove'];
-    static ENABLE_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'b_enable'];
+    static EDIT_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'a_edit'];
+    static REMOVE_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'b_remove'];
+    static ENABLE_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'c_enable'];
     static createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugBreakpointsWidget.CONTEXT_MENU,

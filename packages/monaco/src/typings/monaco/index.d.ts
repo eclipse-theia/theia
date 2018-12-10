@@ -213,6 +213,7 @@ declare module monaco.editor {
         fontWeight?: string;
         textDecoration?: string;
         color?: string | ThemeColor;
+        opacity?: string;
         backgroundColor?: string | ThemeColor;
 
         margin?: string;
@@ -885,17 +886,22 @@ declare module monaco.modes {
     export const SuggestRegistry: LanguageFeatureRegistry<ISuggestSupport>;
 }
 
-declare module monaco.cancellation {
-    export interface CancellationToken {
-        readonly isCancellationRequested: boolean;
-        readonly onCancellationRequested: monaco.IEvent<any>;
+declare module monaco.suggest {
+
+    export type SnippetConfig = 'top' | 'bottom' | 'inline' | 'none';
+
+    export interface ISuggestionItem {
+        suggestion: monaco.modes.ISuggestion;
     }
 
-    export class CancellationTokenSource {
-        token: CancellationToken;
-        cancel(): void;
-        dispose(): void;
-    }
+    export function provideSuggestionItems(
+        model: monaco.editor.ITextModel,
+        position: Position,
+        snippetConfig?: SnippetConfig,
+        onlyFrom?: monaco.modes.ISuggestSupport[],
+        context?: monaco.modes.SuggestContext,
+        token?: monaco.CancellationToken
+    ): Promise<ISuggestionItem[]>;
 
 }
 
