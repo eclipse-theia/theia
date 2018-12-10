@@ -15,10 +15,19 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { Emitter, Event } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
+import { Marker } from '@theia/markers/lib/common/marker';
 import { MarkerManager } from '@theia/markers/lib/browser/marker-manager';
 import URI from '@theia/core/lib/common/uri';
 import { SourceBreakpoint, BREAKPOINT_KIND } from './breakpoint-marker';
+
+export interface BreakpointsChangeEvent {
+    uri: URI
+    added: SourceBreakpoint[]
+    removed: SourceBreakpoint[]
+    changed: SourceBreakpoint[]
+}
 
 @injectable()
 export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
@@ -30,6 +39,33 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
 
     getKind(): string {
         return BREAKPOINT_KIND;
+    }
+
+    protected readonly onDidChangeBreakpointsEmitter = new Emitter<BreakpointsChangeEvent>();
+    readonly onDidChangeBreakpoints: Event<BreakpointsChangeEvent> = this.onDidChangeBreakpointsEmitter.event;
+
+    setMarkers(uri: URI, owner: string, newMarkers: SourceBreakpoint[]): Marker<SourceBreakpoint>[] {
+        const result = super.setMarkers(uri, owner, newMarkers);
+        const added: SourceBreakpoint[] = [];
+        const removed: SourceBreakpoint[] = [];
+        const changed: SourceBreakpoint[] = [];
+        const oldMarkers = new Map(result.map(({ data }) => [data.id, data] as [string, SourceBreakpoint]));
+        const ids = new Set<string>();
+        for (const newMarker of newMarkers) {
+            ids.add(newMarker.id);
+            if (oldMarkers.has(newMarker.id)) {
+                changed.push(newMarker);
+            } else {
+                added.push(newMarker);
+            }
+        }
+        for (const [id, data] of oldMarkers.entries()) {
+            if (!ids.has(id)) {
+                removed.push(data);
+            }
+        }
+        this.onDidChangeBreakpointsEmitter.fire({ uri, added, removed, changed });
+        return result;
     }
 
     getBreakpoint(uri: URI, line: number): SourceBreakpoint | undefined {
@@ -48,26 +84,16 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         this.setMarkers(uri, this.owner, breakpoints.sort((a, b) => a.raw.line - b.raw.line));
     }
 
-    addBreakpoint(uri: URI, line: number, column?: number): void {
+    addBreakpoint(breakpoint: SourceBreakpoint): boolean {
+        const uri = new URI(breakpoint.uri);
         const breakpoints = this.getBreakpoints(uri);
-        const newBreakpoints = breakpoints.filter(({ raw }) => raw.line !== line);
+        const newBreakpoints = breakpoints.filter(({ raw }) => raw.line !== breakpoint.raw.line);
         if (breakpoints.length === newBreakpoints.length) {
-            newBreakpoints.push({
-                uri: uri.toString(),
-                enabled: true,
-                raw: {
-                    line,
-                    column
-                }
-            });
+            newBreakpoints.push(breakpoint);
             this.setBreakpoints(uri, newBreakpoints);
+            return true;
         }
-    }
-
-    deleteBreakpoint(uri: URI, line: number, column?: number): void {
-        const breakpoints = this.getBreakpoints(uri);
-        const newBreakpoints = breakpoints.filter(({ raw }) => raw.line !== line);
-        this.setBreakpoints(uri, newBreakpoints);
+        return false;
     }
 
     enableAllBreakpoints(enabled: boolean): void {

@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
 import * as crypto from 'crypto';
@@ -1681,6 +1682,18 @@ export class Breakpoint {
         this.hitCondition = hitCondition;
         this.logMessage = logMessage;
     }
+
+    private _id: string | undefined;
+    /**
+     * The unique ID of the breakpoint.
+     */
+    get id(): string {
+        if (!this._id) {
+            this._id = UUID.uuid4();
+        }
+        return this._id;
+    }
+
 }
 
 /**

@@ -29,7 +29,7 @@ import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { DebugBreakpoint } from '@theia/debug/lib/browser/model/debug-breakpoint';
-import URI from 'vscode-uri';
+import Uri from 'vscode-uri';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
 import { SourceBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
@@ -84,11 +84,15 @@ export class DebugMainImpl implements DebugMain {
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
         this.debugSchemaUpdater = container.get(DebugSchemaUpdater);
 
-        // TODO: distinguish added/deleted breakpoints
-        this.breakpointsManager.onDidChangeMarkers(uri => {
+        this.breakpointsManager.onDidChangeBreakpoints(({ added, removed, changed }) => {
+            // TODO can we get rid of all to reduce amount of data set each time, should not it be possible to recover on another side from deltas?
             const all = this.breakpointsManager.getBreakpoints();
-            const affected = this.breakpointsManager.getBreakpoints(uri);
-            this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(all), [], [], this.toTheiaPluginApiBreakpoints(affected));
+            this.debugExt.$breakpointsDidChange(
+                this.toTheiaPluginApiBreakpoints(all),
+                this.toTheiaPluginApiBreakpoints(added),
+                this.toTheiaPluginApiBreakpoints(removed),
+                this.toTheiaPluginApiBreakpoints(changed)
+            );
         });
 
         this.sessionManager.onDidCreateDebugSession(debugSession => this.debugExt.$sessionDidCreate(debugSession.id));
@@ -146,11 +150,43 @@ export class DebugMainImpl implements DebugMain {
     }
 
     async $addBreakpoints(breakpoints: Breakpoint[]): Promise<void> {
-        this.sessionManager.addBreakpoints(this.toInternalBreakpoints(breakpoints));
+        const newBreakpoints = new Map<string, Breakpoint>();
+        breakpoints.forEach(b => newBreakpoints.set(b.id, b));
+        this.breakpointsManager.findMarkers({
+            dataFilter: data => {
+                // install only new breakpoints
+                if (newBreakpoints.has(data.id)) {
+                    newBreakpoints.delete(data.id);
+                }
+                return false;
+            }
+        });
+        for (const breakpoint of newBreakpoints.values()) {
+            if (breakpoint.location) {
+                const location = breakpoint.location;
+                this.breakpointsManager.addBreakpoint({
+                    id: breakpoint.id,
+                    uri: Uri.revive(location.uri).toString(),
+                    enabled: true,
+                    raw: {
+                        line: breakpoint.location.range.startLineNumber + 1,
+                        column: 1,
+                        condition: breakpoint.condition,
+                        hitCondition: breakpoint.hitCondition,
+                        logMessage: breakpoint.logMessage
+                    }
+                });
+            }
+        }
     }
 
     async $removeBreakpoints(breakpoints: Breakpoint[]): Promise<void> {
-        this.sessionManager.deleteBreakpoints(this.toInternalBreakpoints(breakpoints));
+        const ids = new Set<string>();
+        breakpoints.forEach(b => ids.add(b.id));
+        for (const origin of this.breakpointsManager.findMarkers({ dataFilter: data => ids.has(data.id) })) {
+            const breakpoint = new DebugBreakpoint(origin.data, this.labelProvider, this.breakpointsManager, this.editorManager, this.sessionManager.currentSession);
+            breakpoint.remove();
+        }
     }
 
     async $customRequest(sessionId: string, command: string, args?: any): Promise<DebugProtocol.Response> {
@@ -182,59 +218,28 @@ export class DebugMainImpl implements DebugMain {
 
         const session = await this.sessionManager.start({
             configuration,
-            workspaceFolderUri: folder && URI.revive(folder.uri).toString()
+            workspaceFolderUri: folder && Uri.revive(folder.uri).toString()
         });
 
         return !!session;
     }
 
-    private toInternalBreakpoints(breakpoints: Breakpoint[]): DebugBreakpoint[] {
-        return breakpoints
-            .filter(breakpoint => !!breakpoint.location)
-            .map(breakpoint => {
-                const location = breakpoint.location!;
-                const uri = URI.revive(location.uri);
-                const uriString = uri.toString();
-
-                const origin = {
-                    uri: uriString,
-                    enabled: true,
-                    raw: {
-                        line: location.range.startLineNumber,
-                        column: location.range.startColumn,
-                        condition: breakpoint.condition,
-                        hitCondition: breakpoint.hitCondition,
-                        logMessage: breakpoint.logMessage
-                    }
-                };
-
-                return new DebugBreakpoint(origin,
-                    this.labelProvider,
-                    this.breakpointsManager,
-                    this.editorManager,
-                    this.sessionManager.currentSession);
-            });
-    }
-
     private toTheiaPluginApiBreakpoints(sourceBreakpoints: SourceBreakpoint[]): Breakpoint[] {
-        return sourceBreakpoints.map(b => {
-            const breakpoint = {
-                enabled: b.enabled,
-                condition: b.raw.condition,
-                hitCondition: b.raw.hitCondition,
-                logMessage: b.raw.logMessage,
-                location: {
-                    uri: URI.parse(b.uri),
-                    range: {
-                        startLineNumber: b.raw.line,
-                        startColumn: b.raw.column || 0,
-                        endLineNumber: b.raw.line,
-                        endColumn: b.raw.column || 0
-                    }
+        return sourceBreakpoints.map(b => ({
+            id: b.id,
+            enabled: b.enabled,
+            condition: b.raw.condition,
+            hitCondition: b.raw.hitCondition,
+            logMessage: b.raw.logMessage,
+            location: {
+                uri: Uri.parse(b.uri),
+                range: {
+                    startLineNumber: b.raw.line - 1,
+                    startColumn: (b.raw.column || 1) - 1,
+                    endLineNumber: b.raw.line - 1,
+                    endColumn: (b.raw.column || 1) - 1
                 }
-            };
-
-            return breakpoint;
-        });
+            }
+        }));
     }
 }
