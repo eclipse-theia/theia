@@ -24,9 +24,14 @@ export {
     TextDocumentSaveReason
 };
 
-export interface WillSaveMonacoModelEvent {
+export interface BaseWillSaveMonacoModelEvent {
     readonly model: MonacoEditorModel;
     readonly reason: TextDocumentSaveReason;
+}
+export interface WillChangeMonacoModelOnSaveEvent extends BaseWillSaveMonacoModelEvent {
+    waitModelChange(changeModel: () => Thenable<void>): void;
+}
+export interface WillSaveMonacoModelEvent extends BaseWillSaveMonacoModelEvent {
     waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
 }
 
@@ -52,7 +57,20 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
     readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
 
+    protected readonly onWillChangeModelOnSaveEmitter = new Emitter<WillChangeMonacoModelOnSaveEvent>();
+    /**
+     * Fired before onWillSaveModel, you can directly make edits by hooking into `waitModelChange`.
+     * Each edit is made sequentially, in an undetermined order.
+     * Useful when triggering a command not providing any edits.
+     */
+    readonly onWillChangeModelOnSave = this.onWillChangeModelOnSaveEmitter.event;
+
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveMonacoModelEvent>();
+    /**
+     * Document model is about to get saved.
+     * You can provide a promise of edits to make to the document before saving, without making the edits yourself.
+     * Because the model won't change, edits can be computed concurrently before being applied.
+     */
     readonly onWillSaveModel = this.onWillSaveModelEmitter.event;
 
     constructor(
@@ -312,6 +330,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
+        await this.fireWillChangeModelOnSave(reason, token);
+        if (token.isCancellationRequested) {
+            return;
+        }
+
         await this.fireWillSaveModel(reason, token);
         if (token.isCancellationRequested) {
             return;
@@ -330,6 +353,26 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
         this.setDirty(false);
         this.fireDidSaveModel();
+    }
+
+    protected async fireWillChangeModelOnSave(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
+        const modelChanges: (() => Thenable<void>)[] = [];
+
+        // The firing is synchronous.
+        // Every listener will register something for us to call and wait after.
+        this.onWillChangeModelOnSaveEmitter.fire({
+            model: this, reason,
+            waitModelChange: doChangeModel => {
+                modelChanges.push(doChangeModel);
+            }
+        });
+
+        for (const doChangeModel of modelChanges) {
+            if (token.isCancellationRequested) {
+                return;
+            }
+            await doChangeModel();
+        }
     }
 
     protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
