@@ -32,6 +32,8 @@ const track = temp.track();
 // The root dirs we'll use to test searching.
 let rootDirA: string;
 let rootDirB: string;
+let rootDirAUri: string;
+let rootDirBUri: string;
 
 // Remember the content of the test files we create, to validate that the
 // reported line text is right.
@@ -89,6 +91,8 @@ const getRootPathFromName = (name: string) => {
 before(() => {
     rootDirA = track.mkdirSync();
     rootDirB = track.mkdirSync();
+    rootDirAUri = FileUri.create(rootDirA).toString();
+    rootDirBUri = FileUri.create(rootDirB).toString();
 
     createTestFile('carrots', `\
 This is a carrot.
@@ -196,8 +200,7 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
         if (lines) {
             const line = lines[e.line - 1];
             e.lineText = line;
-            e.fileUri = FileUri.create(FileUri.fsPath(path.join(getRootPathFromName(e.fileUri), e.fileUri))).toString();
-            e.root = FileUri.create(e.root).toString();
+            e.fileUri = FileUri.create(path.join(getRootPathFromName(e.fileUri), e.fileUri)).toString();
 
             const a = actual.find(l => l.fileUri === e.fileUri && l.line === e.line && l.character === e.character);
             expect(a).deep.eq(e);
@@ -217,20 +220,19 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+                { root: rootDirAUri, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
             ];
-
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     it('should return 5 results when searching for "carrot" case sensitive', done => {
@@ -238,18 +240,18 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+                { root: rootDirAUri, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], {
+        ripgrepServer.search(pattern, [rootDirAUri], {
             matchCase: true
         });
     });
@@ -259,17 +261,17 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' }
+                { root: rootDirAUri, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], {
+        ripgrepServer.search(pattern, [rootDirAUri], {
             matchWholeWord: true
         });
     });
@@ -279,15 +281,15 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' }
+                { root: rootDirAUri, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], {
+        ripgrepServer.search(pattern, [rootDirAUri], {
             matchWholeWord: true,
             matchCase: true
         });
@@ -296,14 +298,14 @@ describe('ripgrep-search-in-workspace-server', function () {
     it('should return 1 result when searching for "Carrot"', done => {
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'carrots', line: 4, character: 1, length: 6, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 4, character: 1, length: 6, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search('Carrot', [rootDirA], { matchCase: true });
+        ripgrepServer.search('Carrot', [rootDirAUri], { matchCase: true });
     });
 
     it('should return 0 result when searching for "CarroT"', done => {
@@ -314,7 +316,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { matchCase: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { matchCase: true });
     });
 
     // Try something that we know isn't there.
@@ -326,7 +328,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     // Try a pattern with a space.
@@ -335,14 +337,14 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     // Try with an output size that exceeds the default node buffer size
@@ -357,7 +359,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
             for (let i = 1; i <= 100; i++) {
                 expected.push({
-                    root: rootDirA,
+                    root: rootDirAUri,
                     fileUri: 'lots-of-matches',
                     line: i,
                     character: 1,
@@ -371,7 +373,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
 
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     // Try limiting the number of returned results.
@@ -383,7 +385,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
             for (let i = 1; i <= 100; i++) {
                 expected.push({
-                    root: rootDirA,
+                    root: rootDirAUri,
                     fileUri: 'lots-of-matches',
                     line: i,
                     character: 1,
@@ -397,7 +399,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
 
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], {
+        ripgrepServer.search(pattern, [rootDirAUri], {
             maxResults: 1000,
         });
     });
@@ -408,18 +410,18 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'regexes', line: 1, character: 5, length: 5, lineText: '' },
-                { root: rootDirA, fileUri: 'regexes', line: 1, character: 14, length: 4, lineText: '' },
-                { root: rootDirA, fileUri: 'regexes', line: 1, character: 21, length: 5, lineText: '' },
-                { root: rootDirA, fileUri: 'regexes', line: 1, character: 26, length: 6, lineText: '' },
-                { root: rootDirA, fileUri: 'regexes', line: 2, character: 1, length: 5, lineText: '' },
+                { root: rootDirAUri, fileUri: 'regexes', line: 1, character: 5, length: 5, lineText: '' },
+                { root: rootDirAUri, fileUri: 'regexes', line: 1, character: 14, length: 4, lineText: '' },
+                { root: rootDirAUri, fileUri: 'regexes', line: 1, character: 21, length: 5, lineText: '' },
+                { root: rootDirAUri, fileUri: 'regexes', line: 1, character: 26, length: 6, lineText: '' },
+                { root: rootDirAUri, fileUri: 'regexes', line: 2, character: 1, length: 5, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], {
+        ripgrepServer.search(pattern, [rootDirAUri], {
             useRegExp: true
         });
     });
@@ -430,14 +432,14 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'regexes', line: 1, character: 5, length: 6, lineText: '' }
+                { root: rootDirAUri, fileUri: 'regexes', line: 1, character: 5, length: 6, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], {
+        ripgrepServer.search(pattern, [rootDirAUri], {
             useRegExp: false
         });
     });
@@ -448,12 +450,12 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'file with spaces', line: 1, character: 28, length: 7, lineText: '' },
+                { root: rootDirAUri, fileUri: 'file with spaces', line: 1, character: 28, length: 7, lineText: '' },
             ];
 
             if (!isWindows) {
                 expected.push(
-                    { root: rootDirA, fileUri: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' }
+                    { root: rootDirAUri, fileUri: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' }
                 );
             }
 
@@ -461,7 +463,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { useRegExp: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { useRegExp: true });
     });
 
     // Try with a pattern starting with --, and in filenames containing colons and spaces.
@@ -470,12 +472,12 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'file with spaces', line: 1, character: 27, length: 8, lineText: '' },
+                { root: rootDirAUri, fileUri: 'file with spaces', line: 1, character: 27, length: 8, lineText: '' },
             ];
 
             if (!isWindows) {
                 expected.push(
-                    { root: rootDirA, fileUri: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' }
+                    { root: rootDirAUri, fileUri: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' }
                 );
             }
 
@@ -483,7 +485,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { useRegExp: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { useRegExp: true });
     });
 
     it('should search a pattern starting with a dash w/o regex', done => {
@@ -491,12 +493,12 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'file with spaces', line: 1, character: 28, length: 7, lineText: '' },
+                { root: rootDirAUri, fileUri: 'file with spaces', line: 1, character: 28, length: 7, lineText: '' },
             ];
 
             if (!isWindows) {
                 expected.push(
-                    { root: rootDirA, fileUri: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' }
+                    { root: rootDirAUri, fileUri: 'file:with:some:colons', line: 1, character: 28, length: 7, lineText: '' }
                 );
             }
 
@@ -504,7 +506,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     it('should search a pattern starting with two dashes w/o regex', done => {
@@ -512,12 +514,12 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'file with spaces', line: 1, character: 27, length: 8, lineText: '' },
+                { root: rootDirAUri, fileUri: 'file with spaces', line: 1, character: 27, length: 8, lineText: '' },
             ];
 
             if (!isWindows) {
                 expected.push(
-                    { root: rootDirA, fileUri: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' }
+                    { root: rootDirAUri, fileUri: 'file:with:some:colons', line: 1, character: 27, length: 8, lineText: '' }
                 );
             }
 
@@ -525,7 +527,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     it('should search a whole pattern starting with - w/o regex', done => {
@@ -533,15 +535,15 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'glob', line: 1, character: 7, length: 5, lineText: '' },
-                { root: rootDirA, fileUri: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
+                { root: rootDirAUri, fileUri: 'glob', line: 1, character: 7, length: 5, lineText: '' },
+                { root: rootDirAUri, fileUri: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { matchWholeWord: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { matchWholeWord: true });
     });
 
     it('should search a whole pattern starting with -- w/o regex', done => {
@@ -549,14 +551,14 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'glob', line: 1, character: 6, length: 6, lineText: '' }
+                { root: rootDirAUri, fileUri: 'glob', line: 1, character: 6, length: 6, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { matchWholeWord: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { matchWholeWord: true });
     });
 
     it('should search a pattern in .txt file', done => {
@@ -564,14 +566,14 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
+                { root: rootDirAUri, fileUri: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { include: ['*.txt'] });
+        ripgrepServer.search(pattern, [rootDirAUri], { include: ['*.txt'] });
     });
 
     it('should search a whole pattern in .txt file', done => {
@@ -579,14 +581,14 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
+                { root: rootDirAUri, fileUri: 'glob.txt', line: 1, character: 6, length: 5, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { include: ['*.txt'], matchWholeWord: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { include: ['*.txt'], matchWholeWord: true });
     });
 
     // Try searching in an UTF-8 file.
@@ -595,15 +597,15 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'utf8-file', line: 1, character: 7, length: 4, lineText: '' },
-                { root: rootDirA, fileUri: 'utf8-file', line: 1, character: 23, length: 4, lineText: '' },
+                { root: rootDirAUri, fileUri: 'utf8-file', line: 1, character: 7, length: 4, lineText: '' },
+                { root: rootDirAUri, fileUri: 'utf8-file', line: 1, character: 23, length: 4, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA]);
+        ripgrepServer.search(pattern, [rootDirAUri]);
     });
 
     // Try searching a pattern that contains unicode characters.
@@ -612,16 +614,16 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'utf8-file', line: 1, character: 4, length: 3, lineText: '' },
-                { root: rootDirA, fileUri: 'utf8-file', line: 1, character: 20, length: 3, lineText: '' },
-                { root: rootDirA, fileUri: 'utf8-file', line: 1, character: 27, length: 4, lineText: '' },
+                { root: rootDirAUri, fileUri: 'utf8-file', line: 1, character: 4, length: 3, lineText: '' },
+                { root: rootDirAUri, fileUri: 'utf8-file', line: 1, character: 20, length: 3, lineText: '' },
+                { root: rootDirAUri, fileUri: 'utf8-file', line: 1, character: 27, length: 4, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { useRegExp: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { useRegExp: true });
     });
 
     // A regex that may match an empty string should not return zero-length
@@ -638,7 +640,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA + '/small']);
+        ripgrepServer.search(pattern, [rootDirAUri + '/small']);
     });
 
     it('should search a pattern with special characters ', done => {
@@ -646,14 +648,14 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirA, fileUri: 'special shell characters', line: 1, character: 14, length: 32, lineText: '' },
+                { root: rootDirAUri, fileUri: 'special shell characters', line: 1, character: 14, length: 32, lineText: '' },
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA], { useRegExp: true });
+        ripgrepServer.search(pattern, [rootDirAUri], { useRegExp: true });
     });
 
     it('should find patterns across all directories', done => {
@@ -661,20 +663,20 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
-                { root: rootDirB, fileUri: 'orange', line: 1, character: 51, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
-                { root: rootDirA, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+                { root: rootDirBUri, fileUri: 'orange', line: 1, character: 51, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, [rootDirA, rootDirB]);
+        ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri]);
     });
 });
