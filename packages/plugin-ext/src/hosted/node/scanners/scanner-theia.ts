@@ -30,6 +30,8 @@ import {
     AutoClosingPairConditional,
     AutoClosingPair,
     ViewContainer,
+    Keybinding,
+    PluginPackageKeybinding,
     PluginPackageViewContainer,
     View,
     PluginPackageView,
@@ -141,6 +143,9 @@ export class TheiaPluginScanner implements PluginScanner {
             });
         }
 
+        if (rawPlugin.contributes && rawPlugin.contributes.keybindings) {
+            contributions.keybindings = rawPlugin.contributes.keybindings.map(rawKeybinding => this.readKeybinding(rawKeybinding));
+        }
         return contributions;
     }
 
@@ -150,6 +155,14 @@ export class TheiaPluginScanner implements PluginScanner {
             type: rawConfiguration.type,
             title: rawConfiguration.title,
             properties: rawConfiguration.properties
+        };
+    }
+
+    private readKeybinding(rawKeybinding: PluginPackageKeybinding): Keybinding {
+        return {
+            keybinding: rawKeybinding.key,
+            command: rawKeybinding.command,
+            context: rawKeybinding.when
         };
     }
 

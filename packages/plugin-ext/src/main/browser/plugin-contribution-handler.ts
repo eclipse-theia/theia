@@ -22,6 +22,7 @@ import { ViewRegistry } from './view/view-registry';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
+import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 
 @injectable()
 export class PluginContributionHandler {
@@ -42,6 +43,9 @@ export class PluginContributionHandler {
 
     @inject(MonacoTextmateService)
     private readonly monacoTextmateService: MonacoTextmateService;
+
+    @inject(KeybindingsContributionPointHandler)
+    private readonly keybindingsContributionHandler: KeybindingsContributionPointHandler;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {
@@ -126,6 +130,7 @@ export class PluginContributionHandler {
         }
 
         this.menusContributionHandler.handle(contributions);
+        this.keybindingsContributionHandler.handle(contributions);
     }
 
     private updateConfigurationSchema(schema: PreferenceSchema): void {
