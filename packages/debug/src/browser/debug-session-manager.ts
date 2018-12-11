@@ -114,8 +114,12 @@ export class DebugSessionManager {
             return this.doStart(sessionId, resolved);
         } catch (e) {
             if (DebugError.NotFound.is(e)) {
+                this.messageService.error(`The debug session type "${e.data.type}" is not supported.`);
                 return undefined;
             }
+
+            this.messageService.error('There was an error starting the debug session, check the logs for more details.');
+            console.error('Error starting the debug session', e);
             throw e;
         }
     }
