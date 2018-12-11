@@ -59,6 +59,7 @@ export interface PluginPackageContribution {
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
     views?: { [location: string]: PluginPackageView[] };
     menus?: { [location: string]: PluginPackageMenu[] };
+    keybindings?: PluginPackageKeybinding[];
 }
 
 export interface PluginPackageViewContainer {
@@ -75,6 +76,12 @@ export interface PluginPackageView {
 export interface PluginPackageMenu {
     command: string;
     group?: string;
+}
+
+export interface PluginPackageKeybinding {
+    key: string;
+    command: string;
+    when?: string;
 }
 
 export interface PluginPackageGrammarsContribution {
@@ -302,6 +309,7 @@ export interface PluginContribution {
     viewsContainers?: { [location: string]: ViewContainer[] };
     views?: { [location: string]: View[] };
     menus?: { [location: string]: Menu[] };
+    keybindings?: Keybinding[];
 }
 
 export interface GrammarsContribution {
@@ -386,6 +394,15 @@ export interface View {
 export interface Menu {
     command: string;
     group?: string;
+}
+
+/**
+ * Keybinding contribution
+ */
+export interface Keybinding {
+    keybinding: string;
+    command: string;
+    context?: string;
 }
 
 /**
