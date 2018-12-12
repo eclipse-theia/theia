@@ -2068,7 +2068,7 @@ declare module '@theia/plugin' {
 
         /**
          * The text to show for the entry. To set a text with icon use the following pattern in text string:
-         * $(fontawesomeClasssName)
+         * $(fontawesomeClassName)
          */
         text: string;
 
