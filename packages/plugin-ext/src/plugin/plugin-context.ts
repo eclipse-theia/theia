@@ -70,7 +70,6 @@ import {
     CodeAction,
     TreeItem,
     TreeItemCollapsibleState,
-    SymbolKind,
     DocumentSymbol,
     WorkspaceEdit,
     SymbolInformation,
@@ -85,6 +84,7 @@ import {
     TaskGroup,
     Task
 } from './types-impl';
+import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
 import { DocumentsExtImpl } from './documents';

@@ -415,32 +415,32 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
 export namespace SymbolKind {
     // tslint:disable-next-line:no-null-keyword
     const fromMapping: { [kind: number]: model.SymbolKind } = Object.create(null);
-    fromMapping[types.SymbolKind.File] = model.SymbolKind.File;
-    fromMapping[types.SymbolKind.Module] = model.SymbolKind.Module;
-    fromMapping[types.SymbolKind.Namespace] = model.SymbolKind.Namespace;
-    fromMapping[types.SymbolKind.Package] = model.SymbolKind.Package;
-    fromMapping[types.SymbolKind.Class] = model.SymbolKind.Class;
-    fromMapping[types.SymbolKind.Method] = model.SymbolKind.Method;
-    fromMapping[types.SymbolKind.Property] = model.SymbolKind.Property;
-    fromMapping[types.SymbolKind.Field] = model.SymbolKind.Field;
-    fromMapping[types.SymbolKind.Constructor] = model.SymbolKind.Constructor;
-    fromMapping[types.SymbolKind.Enum] = model.SymbolKind.Enum;
-    fromMapping[types.SymbolKind.Interface] = model.SymbolKind.Interface;
-    fromMapping[types.SymbolKind.Function] = model.SymbolKind.Function;
-    fromMapping[types.SymbolKind.Variable] = model.SymbolKind.Variable;
-    fromMapping[types.SymbolKind.Constant] = model.SymbolKind.Constant;
-    fromMapping[types.SymbolKind.String] = model.SymbolKind.String;
-    fromMapping[types.SymbolKind.Number] = model.SymbolKind.Number;
-    fromMapping[types.SymbolKind.Boolean] = model.SymbolKind.Boolean;
-    fromMapping[types.SymbolKind.Array] = model.SymbolKind.Array;
-    fromMapping[types.SymbolKind.Object] = model.SymbolKind.Object;
-    fromMapping[types.SymbolKind.Key] = model.SymbolKind.Key;
-    fromMapping[types.SymbolKind.Null] = model.SymbolKind.Null;
-    fromMapping[types.SymbolKind.EnumMember] = model.SymbolKind.EnumMember;
-    fromMapping[types.SymbolKind.Struct] = model.SymbolKind.Struct;
-    fromMapping[types.SymbolKind.Event] = model.SymbolKind.Event;
-    fromMapping[types.SymbolKind.Operator] = model.SymbolKind.Operator;
-    fromMapping[types.SymbolKind.TypeParameter] = model.SymbolKind.TypeParameter;
+    fromMapping[model.SymbolKind.File] = model.SymbolKind.File;
+    fromMapping[model.SymbolKind.Module] = model.SymbolKind.Module;
+    fromMapping[model.SymbolKind.Namespace] = model.SymbolKind.Namespace;
+    fromMapping[model.SymbolKind.Package] = model.SymbolKind.Package;
+    fromMapping[model.SymbolKind.Class] = model.SymbolKind.Class;
+    fromMapping[model.SymbolKind.Method] = model.SymbolKind.Method;
+    fromMapping[model.SymbolKind.Property] = model.SymbolKind.Property;
+    fromMapping[model.SymbolKind.Field] = model.SymbolKind.Field;
+    fromMapping[model.SymbolKind.Constructor] = model.SymbolKind.Constructor;
+    fromMapping[model.SymbolKind.Enum] = model.SymbolKind.Enum;
+    fromMapping[model.SymbolKind.Interface] = model.SymbolKind.Interface;
+    fromMapping[model.SymbolKind.Function] = model.SymbolKind.Function;
+    fromMapping[model.SymbolKind.Variable] = model.SymbolKind.Variable;
+    fromMapping[model.SymbolKind.Constant] = model.SymbolKind.Constant;
+    fromMapping[model.SymbolKind.String] = model.SymbolKind.String;
+    fromMapping[model.SymbolKind.Number] = model.SymbolKind.Number;
+    fromMapping[model.SymbolKind.Boolean] = model.SymbolKind.Boolean;
+    fromMapping[model.SymbolKind.Array] = model.SymbolKind.Array;
+    fromMapping[model.SymbolKind.Object] = model.SymbolKind.Object;
+    fromMapping[model.SymbolKind.Key] = model.SymbolKind.Key;
+    fromMapping[model.SymbolKind.Null] = model.SymbolKind.Null;
+    fromMapping[model.SymbolKind.EnumMember] = model.SymbolKind.EnumMember;
+    fromMapping[model.SymbolKind.Struct] = model.SymbolKind.Struct;
+    fromMapping[model.SymbolKind.Event] = model.SymbolKind.Event;
+    fromMapping[model.SymbolKind.Operator] = model.SymbolKind.Operator;
+    fromMapping[model.SymbolKind.TypeParameter] = model.SymbolKind.TypeParameter;
 
     export function fromSymbolKind(kind: theia.SymbolKind): model.SymbolKind {
         return fromMapping[kind] || model.SymbolKind.Property;
@@ -452,7 +452,7 @@ export namespace SymbolKind {
                 return Number(k);
             }
         }
-        return types.SymbolKind.Property;
+        return model.SymbolKind.Property;
     }
 }
 
