@@ -390,9 +390,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     replaceAll(): void {
-        this.resultTree.forEach(async resultNode => {
-            await this.replaceResult(resultNode);
-        });
+        this.resultTree.forEach(folderNode =>
+            folderNode.children.forEach(fileNode => this.replaceResult(fileNode))
+        );
         this.resultTree.clear();
         this.refreshModelChildren();
     }
