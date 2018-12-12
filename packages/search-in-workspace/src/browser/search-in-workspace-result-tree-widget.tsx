@@ -17,8 +17,9 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import {
     TreeWidget,
-    ContextMenuRenderer,
     CompositeTreeNode,
+    ConfirmDialog,
+    ContextMenuRenderer,
     ExpandableTreeNode,
     SelectableTreeNode,
     TreeModel,
@@ -56,11 +57,12 @@ export interface SearchInWorkspaceRootFolderNode extends ExpandableTreeNode, Sel
     children: SearchInWorkspaceFileNode[];
     parent: SearchInWorkspaceRoot;
     path: string;
+    folderUri: string;
 }
 export namespace SearchInWorkspaceRootFolderNode {
     // tslint:disable-next-line:no-any
     export function is(node: any): node is SearchInWorkspaceRootFolderNode {
-        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && !('fileUri' in node);
+        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'folderUri' in node && !('fileUri' in node);
     }
 }
 
@@ -73,7 +75,7 @@ export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, Selectabl
 export namespace SearchInWorkspaceFileNode {
     // tslint:disable-next-line:no-any
     export function is(node: any): node is SearchInWorkspaceFileNode {
-        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'fileUri' in node;
+        return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'fileUri' in node && !('folderUri' in node);
     }
 }
 
@@ -296,6 +298,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             selected: false,
             name: uri.displayName,
             path: uri.path.toString(),
+            folderUri: rootUri,
             children: [],
             expanded: true,
             id: rootUri,
@@ -366,35 +369,70 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (!SearchInWorkspaceRootFolderNode.is(node)) {
-            return <div className='result-node-buttons'>
-                {this._showReplaceButtons && this.renderReplaceButton(node)}
-                {this.renderRemoveButton(node)}
-            </div>;
-        }
-        return '';
+        return <div className='result-node-buttons'>
+            {this._showReplaceButtons && this.renderReplaceButton(node)}
+            {this.renderRemoveButton(node)}
+        </div>;
     }
 
-    protected readonly replace = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doReplace(node, e);
-    protected async doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>) {
-        this.replaceResult(node);
-        this.removeNode(node);
+    protected doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>) {
+        this.replace(node);
         e.stopPropagation();
     }
 
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
-        const isFileNode = SearchInWorkspaceFileNode.is(node);
-        return <span className={isFileNode ? 'replace-all-result' : 'replace-result'}
-            onClick={e => this.replace(node, e)}
-            title={isFileNode ? 'Replace All' : 'Replace'}></span>;
+        const isResultLineNode = SearchInWorkspaceResultLineNode.is(node);
+        return <span className={isResultLineNode ? 'replace-result' : 'replace-all-result'}
+            onClick={e => this.doReplace(node, e)}
+            title={isResultLineNode ? 'Replace' : 'Replace All'}></span>;
     }
 
-    replaceAll(): void {
-        this.resultTree.forEach(folderNode =>
-            folderNode.children.forEach(fileNode => this.replaceResult(fileNode))
-        );
-        this.resultTree.clear();
-        this.refreshModelChildren();
+    protected getFileCount(node: TreeNode): number {
+        if (SearchInWorkspaceRoot.is(node)) {
+            return node.children.reduce((acc, current) => acc + this.getFileCount(current), 0);
+        } else if (SearchInWorkspaceRootFolderNode.is(node)) {
+            return node.children.length;
+        } else if (SearchInWorkspaceFileNode.is(node)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    protected getResultCount(node: TreeNode): number {
+        if (SearchInWorkspaceRoot.is(node)) {
+            return node.children.reduce((acc, current) => acc + this.getResultCount(current), 0);
+        } else if (SearchInWorkspaceRootFolderNode.is(node)) {
+            return node.children.reduce((acc, current) => acc + this.getResultCount(current), 0);
+        } else if (SearchInWorkspaceFileNode.is(node)) {
+            return node.children.length;
+        } else if (SearchInWorkspaceResultLineNode.is(node)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Replace results under the node passed into the function. If node is undefined, replace all results.
+     * @param node Node in the tree widget where the "replace all" operation is performed
+     */
+    async replace(node: TreeNode | undefined): Promise<void> {
+        const replaceForNode = node || this.model.root!;
+        const needConfirm = !SearchInWorkspaceFileNode.is(node) && !SearchInWorkspaceResultLineNode.is(node);
+        if (!needConfirm || await this.confirmReplaceAll(this.getResultCount(replaceForNode), this.getFileCount(replaceForNode))) {
+            (node ? [node] : Array.from(this.resultTree.values())).forEach(n => {
+                this.replaceResult(n);
+                this.removeNode(n);
+            });
+        }
+    }
+
+    protected confirmReplaceAll(resultNumber: number, fileNumber: number): Promise<boolean | undefined> {
+        const go = fileNumber > 1;
+        return new ConfirmDialog({
+            title: 'Replace all',
+            msg: `Do you really want to replace ${resultNumber} match${resultNumber > 1 ? 'es' : ''} ${go ? 'across' : 'in'} `
+                + `${fileNumber} file${go ? 's' : ''} with "${this._replaceTerm}"?`
+        }).open();
     }
 
     protected updateRightResults(node: SearchInWorkspaceResultLineNode) {
@@ -406,7 +444,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected async replaceResult(node: TreeNode) {
         const toReplace: SearchInWorkspaceResultLineNode[] = [];
-        if (SearchInWorkspaceFileNode.is(node)) {
+        if (SearchInWorkspaceRootFolderNode.is(node)) {
+            node.children.forEach(fileNode => this.replaceResult(fileNode));
+        } else if (SearchInWorkspaceFileNode.is(node)) {
             toReplace.push(...node.children);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
             toReplace.push(node);
@@ -447,19 +487,23 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected removeNode(node: TreeNode): void {
-        if (SearchInWorkspaceFileNode.is(node)) {
+        if (SearchInWorkspaceRootFolderNode.is(node)) {
+            this.removeRootFolderNode(node);
+        } else if (SearchInWorkspaceFileNode.is(node)) {
             this.removeFileNode(node);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
-            const fileNode = node.parent;
-            const index = fileNode.children.findIndex(n => n.fileUri === node.fileUri && n.line === node.line && n.character === node.character);
-            if (index > -1) {
-                fileNode.children.splice(index, 1);
-                if (fileNode.children.length === 0) {
-                    this.removeFileNode(fileNode);
-                }
-            }
+            this.removeResultLineNode(node);
         }
         this.refreshModelChildren();
+    }
+
+    private removeRootFolderNode(node: SearchInWorkspaceRootFolderNode): void {
+        for (const rootUri of this.resultTree.keys()) {
+            if (rootUri === node.folderUri) {
+                this.resultTree.delete(rootUri);
+                break;
+            }
+        }
     }
 
     private removeFileNode(node: SearchInWorkspaceFileNode): void {
@@ -467,6 +511,20 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const index = rootFolderNode.children.findIndex(fileNode => fileNode.id === node.id);
         if (index > -1) {
             rootFolderNode.children.splice(index, 1);
+        }
+        if (this.getFileCount(rootFolderNode) === 0) {
+            this.removeRootFolderNode(rootFolderNode);
+        }
+    }
+
+    private removeResultLineNode(node: SearchInWorkspaceResultLineNode): void {
+        const fileNode = node.parent;
+        const index = fileNode.children.findIndex(n => n.fileUri === node.fileUri && n.line === node.line && n.character === node.character);
+        if (index > -1) {
+            fileNode.children.splice(index, 1);
+            if (this.getResultCount(fileNode) === 0) {
+                this.removeFileNode(fileNode);
+            }
         }
     }
 
@@ -485,7 +543,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 </div>
                 <span className='notification-count-container highlighted-count-container'>
                     <span className='notification-count'>
-                        {node.children.length}
+                        {this.getFileCount(node)}
                     </span>
                 </span>
             </div>
@@ -507,7 +565,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 </div>
                 <span className='notification-count-container'>
                     <span className='notification-count'>
-                        {node.children.length}
+                        {this.getResultCount(node)}
                     </span>
                 </span>
             </div>

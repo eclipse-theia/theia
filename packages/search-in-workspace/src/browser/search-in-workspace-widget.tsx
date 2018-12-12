@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, ConfirmDialog } from '@theia/core/lib/browser';
+import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from 'inversify';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
@@ -374,23 +374,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             <span
                 title='Replace All'
                 className={`replace-all-button${this.searchTerm === '' ? ' disabled' : ''}`}
-                onClick={async () => {
-                    if (await this.confirmReplaceAll()) {
-                        this.resultTreeWidget.replaceAll();
-                    }
-                }}>
+                onClick={() => this.resultTreeWidget.replace(undefined)}>
             </span>
         </div>;
-    }
-
-    protected confirmReplaceAll(): Promise<boolean | undefined> {
-        const r = this.resultNumber;
-        const n = this.resultTreeWidget.fileNumber;
-        const go = n > 1;
-        return new ConfirmDialog({
-            title: 'Replace all',
-            msg: `Do you really want to replace ${r} match${r > 1 ? 'es' : ''} ${go ? 'across' : 'in'} ${n} file${go ? 's' : ''} with "${this.replaceTerm}"?`
-        }).open();
     }
 
     protected renderOptionContainer(): React.ReactNode {
