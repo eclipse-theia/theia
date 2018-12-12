@@ -17,6 +17,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
+import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -28,6 +29,9 @@ import { NoopNavigationLocationUpdater } from './test/mock-navigation-location-u
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
 import { CursorLocation, Position, NavigationLocation } from './navigation-location';
 import { NavigationLocationService } from './navigation-location-service';
+import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
+import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
+import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 
 disableJSDOM();
 
@@ -137,6 +141,8 @@ describe('navigation-location-service', () => {
     }
 
     function init(): NavigationLocationService {
+        const mockFilesystem = sinon.createStubInstance(FileSystemNode);
+        const mockFileSystemWatcher = sinon.createStubInstance(FileSystemWatcher);
         const container = new Container({ defaultScope: 'Singleton' });
         container.bind(NavigationLocationService).toSelf();
         container.bind(NavigationLocationSimilarity).toSelf();
@@ -146,6 +152,8 @@ describe('navigation-location-service', () => {
         container.bind(NoopNavigationLocationUpdater).toSelf();
         container.bind(NavigationLocationUpdater).toService(NoopNavigationLocationUpdater);
         container.bind(OpenerService).toService(MockOpenerService);
+        container.bind(FileSystem).toConstantValue(mockFilesystem);
+        container.bind(FileSystemWatcher).toConstantValue(mockFileSystemWatcher);
         return container.get(NavigationLocationService);
     }
 

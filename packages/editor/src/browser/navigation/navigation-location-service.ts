@@ -14,13 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { OpenerService, OpenerOptions, open } from '@theia/core/lib/browser/opener-service';
 import { EditorOpenerOptions } from '../editor-manager';
 import { NavigationLocationUpdater } from './navigation-location-updater';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
 import { NavigationLocation, Range, ContentChangeLocation } from './navigation-location';
+import { FileSystem } from '@theia/filesystem/lib/common';
+import { FileSystemWatcher, FileMoveEvent } from '@theia/filesystem/lib/browser';
+import URI from '@theia/core/lib/common/uri';
 
 /**
  * The navigation location service. Also, stores and manages navigation locations.
@@ -42,10 +45,26 @@ export class NavigationLocationService {
     @inject(NavigationLocationSimilarity)
     protected readonly similarity: NavigationLocationSimilarity;
 
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @inject(FileSystemWatcher)
+    protected readonly watcher: FileSystemWatcher;
+
     protected pointer = -1;
     protected stack: NavigationLocation[] = [];
     protected canRegister = true;
     protected _lastEditLocation: ContentChangeLocation | undefined;
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        this.watcher.onFilesChanged(async () => {
+            await this.syncDeletedLocations();
+        });
+        this.watcher.onDidMove(async event => {
+            await this.syncMovedLocation(event);
+        });
+    }
 
     /**
      * Registers the give locations into the service.
@@ -162,6 +181,26 @@ export class NavigationLocationService {
      */
     lastEditLocation(): NavigationLocation | undefined {
         return this._lastEditLocation;
+    }
+
+    /**
+     * Updates the locations removing any stale locations which may have
+     * been deleted or removed.
+     */
+    protected async syncDeletedLocations(): Promise<void> {
+        const items = await Promise.all(this.stack.map(e => this.fileSystem.exists(e.uri.toString())));
+        this.stack = this.stack.filter((_element, index) => !!items[index]);
+    }
+
+    /**
+     * Updates the uri of the given location based on
+     * the `FileMoveEvent`.
+     *
+     * @param event `FileMoveEvent`
+     */
+    protected async syncMovedLocation(event: FileMoveEvent): Promise<void> {
+        const index = this.stack.findIndex((a => a.uri.path.toString() === event.sourceUri.path.toString()));
+        this.stack[index] = { ...this.stack[index], uri: new URI(event.targetUri.path.toString()) };
     }
 
     /**
