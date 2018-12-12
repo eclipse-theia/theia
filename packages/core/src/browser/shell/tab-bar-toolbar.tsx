@@ -134,7 +134,7 @@ export interface TabBarToolbarItem {
      * More details about the available `fontawesome` icons and CSS class names can be hound [here](http://fontawesome.io/icons/).
      * To set a text with icon use the following pattern in text string:
      * ```typescript
-     * $(fontawesomeClasssName)
+     * $(fontawesomeClassName)
      * ```
      *
      * To use animated icons use the following pattern:
