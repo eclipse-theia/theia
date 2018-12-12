@@ -394,6 +394,7 @@
 
 .highlighted-count-container {
     background-color: var(--theia-brand-color0);
+    color: #ffffff;
 }
 
 .t-siw-search-container .searchHeader .search-info {
