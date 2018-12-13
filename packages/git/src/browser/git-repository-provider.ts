@@ -18,9 +18,12 @@ import { Git, Repository } from '../common';
 import { injectable, inject } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { Event, Emitter } from '@theia/core';
+import { DisposableCollection, Event, Emitter } from '@theia/core';
 import { LocalStorageService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
+
+import debounce = require('lodash.debounce');
 
 export interface GitRefreshOptions {
     readonly maxCount: number
@@ -38,16 +41,35 @@ export class GitRepositoryProvider {
     constructor(
         @inject(Git) protected readonly git: Git,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(LocalStorageService) protected readonly storageService: LocalStorageService
     ) {
         this.initialize();
     }
 
+    protected readonly toDisposeOnWorkspaceChange = new DisposableCollection();
     protected async initialize(): Promise<void> {
-        this.workspaceService.onWorkspaceChanged(event => {
+        /*
+         * Listen for changes to the list of workspaces.  This will not be fired when changes
+         * are made inside a workspace.
+         */
+        this.workspaceService.onWorkspaceChanged(async roots => {
             this.refresh();
+
+            this.toDisposeOnWorkspaceChange.dispose();
+            for (const root of roots) {
+                const uri = new URI(root.uri);
+                this.toDisposeOnWorkspaceChange.push(await this.watcher.watchFileChanges(uri));
+            }
         });
+        /*
+         * Listen for changes within the workspaces.
+         */
+        this.watcher.onFilesChanged(_changedFiles => {
+            this.lazyRefresh();
+        });
+
         this._selectedRepository = await this.storageService.getData<Repository | undefined>(this.selectedRepoStorageKey);
         this._allRepositories = await this.storageService.getData<Repository[]>(this.allRepoStorageKey);
         if (!this._allRepositories) {
@@ -55,6 +77,8 @@ export class GitRepositoryProvider {
         }
         await this.refresh();
     }
+
+    protected lazyRefresh: () => Promise<void> = debounce(() => this.refresh(), 1000);
 
     /**
      * Returns with the previously selected repository, or if no repository has been selected yet,
