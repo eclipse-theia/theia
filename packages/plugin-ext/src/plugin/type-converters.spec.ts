@@ -171,6 +171,7 @@ describe('Type converters:', () => {
     describe('convert tasks:', () => {
         const type = 'shell';
         const label = 'yarn build';
+        const source = 'source';
         const command = 'yarn';
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
@@ -178,6 +179,7 @@ describe('Type converters:', () => {
         const shellTaskDto: ProcessTaskDto = {
             type: type,
             label: label,
+            source,
             command: command,
             args: args,
             cwd: cwd,
@@ -187,6 +189,7 @@ describe('Type converters:', () => {
 
         const shellPluginTask: theia.Task = {
             name: label,
+            source,
             definition: {
                 type: type
             },
@@ -202,6 +205,7 @@ describe('Type converters:', () => {
         const taskDtoWithCommandLine: ProcessTaskDto = {
             type: type,
             label: label,
+            source,
             command: command,
             args: args,
             cwd: cwd,
@@ -211,6 +215,7 @@ describe('Type converters:', () => {
 
         const pluginTaskWithCommandLine: theia.Task = {
             name: label,
+            source,
             definition: {
                 type: type
             },

@@ -19,6 +19,7 @@ import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskResolver } from '../task-contribution';
 import { TaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class ProcessTaskResolver implements TaskResolver {
@@ -36,19 +37,22 @@ export class ProcessTaskResolver implements TaskResolver {
         if (taskConfig.type !== 'process' && taskConfig.type !== 'shell') {
             throw new Error('Unsupported task configuration type.');
         }
+
+        const options = { context: new URI(taskConfig.source).withScheme('file') };
         const processTaskConfig = taskConfig as ProcessTaskConfiguration;
         const result: ProcessTaskConfiguration = {
             type: processTaskConfig.type,
+            source: processTaskConfig.source,
             label: processTaskConfig.label,
-            command: await this.variableResolverService.resolve(processTaskConfig.command),
-            args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args) : undefined,
+            command: await this.variableResolverService.resolve(processTaskConfig.command, options),
+            args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, options) : undefined,
             options: processTaskConfig.options,
             windows: processTaskConfig.windows ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.windows.command),
-                args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args) : undefined,
+                command: await this.variableResolverService.resolve(processTaskConfig.windows.command, options),
+                args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args, options) : undefined,
                 options: processTaskConfig.windows.options
             } : undefined,
-            cwd: await this.variableResolverService.resolve(processTaskConfig.cwd ? processTaskConfig.cwd : '${workspaceFolder}')
+            cwd: await this.variableResolverService.resolve(processTaskConfig.cwd || '${workspaceFolder}', options)
         };
         return result;
     }

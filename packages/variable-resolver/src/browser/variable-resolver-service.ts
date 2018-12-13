@@ -18,6 +18,11 @@
 
 import { injectable, inject } from 'inversify';
 import { VariableRegistry } from './variable';
+import URI from '@theia/core/lib/common/uri';
+
+export interface VariableResolveOptions {
+    context?: URI;
+}
 
 /**
  * The variable resolver service should be used to resolve variables in strings.
@@ -31,20 +36,24 @@ export class VariableResolverService {
 
     /**
      * Resolve the variables in the given string array.
+     * @param value The array of data to resolve
+     * @param options options of the variable resolution
      * @returns promise resolved to the provided string array with already resolved variables.
      * Never reject.
      */
-    resolveArray(value: string[]): Promise<string[]> {
-        return this.resolve(value);
+    resolveArray(value: string[], options: VariableResolveOptions = {}): Promise<string[]> {
+        return this.resolve(value, options);
     }
 
     /**
      * Resolve the variables in the given string.
+     * @param value Data to resolve
+     * @param options options of the variable resolution
      * @returns promise resolved to the provided string with already resolved variables.
      * Never reject.
      */
-    async resolve<T>(value: T): Promise<T> {
-        const context = new VariableResolverService.Context(this.variableRegistry);
+    async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T> {
+        const context = new VariableResolverService.Context(this.variableRegistry, options);
         const resolved = await this.doResolve(value, context);
         return resolved as any;
     }
@@ -109,7 +118,8 @@ export namespace VariableResolverService {
         protected readonly resolved = new Map<string, string | undefined>();
 
         constructor(
-            protected readonly variableRegistry: VariableRegistry
+            protected readonly variableRegistry: VariableRegistry,
+            protected readonly options: VariableResolveOptions
         ) { }
 
         get(name: string): string | undefined {
@@ -122,7 +132,7 @@ export namespace VariableResolverService {
             }
             try {
                 const variable = this.variableRegistry.getVariable(name);
-                const value = variable && await variable.resolve();
+                const value = variable && await variable.resolve(this.options.context);
                 this.resolved.set(name, value);
             } catch (e) {
                 console.error(`Failed to resolved '${name}' variable`, e);

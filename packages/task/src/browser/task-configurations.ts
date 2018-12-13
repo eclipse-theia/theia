@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { TaskConfiguration } from '../common/task-protocol';
-import { ILogger, Disposable, DisposableCollection } from '@theia/core/lib/common/';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcherServer, FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -38,8 +38,13 @@ export interface TaskConfigurationClient {
 export class TaskConfigurations implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
-    protected tasksMap = new Map<string, TaskConfiguration>();
-    protected watchedConfigFileUri: string;
+    /**
+     * Map of source (path of root folder that the task config comes from) and task config map.
+     * For the inner map (i.e., task config map), the key is task label and value TaskConfiguration
+     */
+    protected tasksMap = new Map<string, Map<string, TaskConfiguration>>();
+    protected watchedConfigFileUris: string[] = [];
+    protected watchersMap = new Map<string, Disposable>(); // map of watchers for task config files, where the key is folder uri
 
     /** last directory element under which we look for task config */
     protected readonly TASKFILEPATH = '.theia';
@@ -49,7 +54,6 @@ export class TaskConfigurations implements Disposable {
     protected client: TaskConfigurationClient | undefined = undefined;
 
     constructor(
-        @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
@@ -58,15 +62,15 @@ export class TaskConfigurations implements Disposable {
         watcherServer.setClient({
             onDidFilesChanged: async event => {
                 try {
-                    const watchedConfigFileChange = event.changes.find(change => change.uri === this.watchedConfigFileUri);
-                    if (watchedConfigFileChange) {
-                        await this.onDidTaskFileChange(watchedConfigFileChange);
+                    const watchedConfigFileChanges = event.changes.filter(change => this.watchedConfigFileUris.some(fileUri => fileUri === change.uri));
+                    if (watchedConfigFileChanges.length >= 0) {
+                        await this.onDidTaskFileChange(watchedConfigFileChanges);
                         if (this.client) {
                             this.client.taskConfigurationChanged(this.getTaskLabels());
                         }
                     }
                 } catch (err) {
-                    this.logger.error(err);
+                    console.error(err);
                 }
             }
         });
@@ -85,41 +89,74 @@ export class TaskConfigurations implements Disposable {
         this.toDispose.dispose();
     }
 
+    get configFileUris(): string[] {
+        return this.watchedConfigFileUris;
+    }
+
     /**
      * Triggers the watching of a potential task configuration file, under the given root URI.
      * Returns whether a configuration file was found.
      */
     async watchConfigurationFile(rootUri: string): Promise<boolean> {
-        const configFile = this.getConfigFileUri(rootUri);
-        if (this.watchedConfigFileUri !== configFile) {
-            this.watchedConfigFileUri = configFile;
-            const watchId = await this.watcherServer.watchFileChanges(configFile);
-            this.toDispose.push(Disposable.create(() =>
-                this.watcherServer.unwatchFileChanges(watchId))
-            );
-            this.refreshTasks();
+        const configFileUri = this.getConfigFileUri(rootUri);
+        if (!this.watchedConfigFileUris.some(uri => uri === configFileUri)) {
+            this.watchedConfigFileUris.push(configFileUri);
+            const watchId = await this.watcherServer.watchFileChanges(configFileUri);
+            const disposable = Disposable.create(() => {
+                this.watcherServer.unwatchFileChanges(watchId);
+                this.watchersMap.delete(configFileUri);
+                const ind = this.watchedConfigFileUris.findIndex(uri => uri === configFileUri);
+                if (ind >= 0) {
+                    this.watchedConfigFileUris.splice(ind, 1);
+                }
+            });
+            this.watchersMap.set(configFileUri, disposable);
+            this.toDispose.push(disposable);
+            this.refreshTasks(configFileUri);
         }
-        if (await this.fileSystem.exists(configFile)) {
+
+        if (await this.fileSystem.exists(configFileUri)) {
             return true;
         } else {
-            this.logger.info(`Config file ${this.TASKFILE} does not exist under ${rootUri}`);
+            console.info(`Config file ${this.TASKFILE} does not exist under ${rootUri}`);
             return false;
         }
     }
 
+    /**
+     * Stops watchers added to a potential task configuration file.
+     * Returns whether a configuration file was being watched before this function gets called.
+     */
+    unwatchConfigurationFile(configFileUri: string): boolean {
+        if (!this.watchersMap.has(configFileUri)) {
+            return false;
+        }
+        this.watchersMap.get(configFileUri)!.dispose();
+        return true;
+    }
+
     /** returns the list of known task labels */
     getTaskLabels(): string[] {
-        return [...this.tasksMap.keys()];
+        return Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.keys())), [] as string[]);
     }
 
     /** returns the list of known tasks */
     getTasks(): TaskConfiguration[] {
-        return [...this.tasksMap.values()];
+        return Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
     }
 
     /** returns the task configuration for a given label or undefined if none */
-    getTask(taskLabel: string): TaskConfiguration | undefined {
-        return this.tasksMap.get(taskLabel);
+    getTask(source: string, taskLabel: string): TaskConfiguration | undefined {
+        const labelConfigMap = this.tasksMap.get(source);
+        if (labelConfigMap) {
+            return labelConfigMap.get(taskLabel);
+        }
+    }
+
+    /** removes tasks configured in the given task config file */
+    removeTasks(configFileUri: string) {
+        const source = this.getSourceFolderFromConfigUri(configFileUri);
+        this.tasksMap.delete(source);
     }
 
     /** returns the string uri of where the config file would be, if it existed under a given root directory */
@@ -131,30 +168,37 @@ export class TaskConfigurations implements Disposable {
      * Called when a change, to a config file we watch, is detected.
      * Triggers a reparse, if appropriate.
      */
-    protected async onDidTaskFileChange(fileChange: FileChange): Promise<void> {
-        if (fileChange.type === FileChangeType.DELETED) {
-            this.tasksMap.clear();
-        } else {
-            // re-parse the config file
-            this.refreshTasks();
+    protected async onDidTaskFileChange(fileChanges: FileChange[]): Promise<void> {
+        for (const change of fileChanges) {
+            if (change.type === FileChangeType.DELETED) {
+                this.removeTasks(change.uri);
+            } else {
+                // re-parse the config file
+                await this.refreshTasks(change.uri);
+            }
         }
     }
 
     /**
-     * Tries to read the tasks from a config file and if it success then updates the list of available tasks.
-     * If reading a config file wasn't success then does nothing.
+     * Tries to read the tasks from a config file and if it successes then updates the list of available tasks.
+     * If reading a config file wasn't successful then does nothing.
      */
-    protected async refreshTasks() {
-        const tasksConfigsArray = await this.readTasks(this.watchedConfigFileUri);
+    protected async refreshTasks(configFileUri: string) {
+        const tasksConfigsArray = await this.readTasks(configFileUri);
         if (tasksConfigsArray) {
             // only clear tasks map when successful at parsing the config file
             // this way we avoid clearing and re-filling it multiple times if the
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
-            this.tasksMap.clear();
+            this.removeTasks(configFileUri);
 
-            for (const task of tasksConfigsArray) {
-                this.tasksMap.set(task.label, task);
+            if (tasksConfigsArray.length > 0) {
+                const newTaskMap = new Map<string, TaskConfiguration>();
+                for (const task of tasksConfigsArray) {
+                    newTaskMap.set(task.label, task);
+                }
+                const source = this.getSourceFolderFromConfigUri(configFileUri);
+                this.tasksMap.set(source, newTaskMap);
             }
         }
     }
@@ -173,13 +217,13 @@ export class TaskConfigurations implements Disposable {
 
                 if (errors.length) {
                     for (const e of errors) {
-                        this.logger.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
+                        console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
                     }
                 } else {
-                    return this.filterDuplicates(tasks['tasks']);
+                    return this.filterDuplicates(tasks['tasks']).map(t => Object.assign(t, { source: this.getSourceFolderFromConfigUri(uri) }));
                 }
             } catch (err) {
-                this.logger.error(`Error(s) reading config file: ${uri}`);
+                console.error(`Error(s) reading config file: ${uri}`);
             }
         }
     }
@@ -189,11 +233,15 @@ export class TaskConfigurations implements Disposable {
         for (const task of tasks) {
             if (filteredTasks.some(t => t.label === task.label)) {
                 // TODO: create a problem marker so that this issue will be visible in the editor?
-                this.logger.error(`Error parsing ${this.TASKFILE}: found duplicate entry for label: ${task.label}`);
+                console.error(`Error parsing ${this.TASKFILE}: found duplicate entry for label: ${task.label}`);
             } else {
                 filteredTasks.push(task);
             }
         }
         return filteredTasks;
+    }
+
+    private getSourceFolderFromConfigUri(configFileUri: string): string {
+        return new URI(configFileUri).parent.parent.path.toString();
     }
 }

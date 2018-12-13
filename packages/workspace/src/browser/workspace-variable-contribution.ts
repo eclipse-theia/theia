@@ -46,24 +46,24 @@ export class WorkspaceVariableContribution implements VariableContribution {
         variables.registerVariable({
             name: 'workspaceRoot',
             description: 'The path of the workspace root folder',
-            resolve: () => {
-                const uri = this.getWorkspaceRootUri();
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
                 return uri && uri.path.toString();
             }
         });
         variables.registerVariable({
             name: 'workspaceFolder',
             description: 'The path of the workspace root folder',
-            resolve: () => {
-                const uri = this.getWorkspaceRootUri();
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
                 return uri && uri.path.toString();
             }
         });
         variables.registerVariable({
             name: 'workspaceFolderBasename',
             description: 'The name of the workspace root folder',
-            resolve: () => {
-                const uri = this.getWorkspaceRootUri();
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
                 return uri && uri.displayName;
             }
         });

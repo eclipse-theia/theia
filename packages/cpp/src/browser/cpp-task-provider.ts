@@ -29,6 +29,7 @@ interface CppBuildTaskConfiguration extends TaskConfiguration {
 }
 
 const CPP_BUILD_TASK_TYPE_KEY: string = 'cpp.build';
+const CPP_BUILD_TASK_SOURCE: string = 'cpp';
 
 @injectable()
 export class CppTaskProvider implements TaskContribution, TaskProvider, TaskResolver {
@@ -37,7 +38,7 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
     @inject(CppBuildConfigurationManager) protected readonly cppBuildConfigurationManager: CppBuildConfigurationManager;
 
     registerProviders(registry: TaskProviderRegistry) {
-        registry.register(CPP_BUILD_TASK_TYPE_KEY, this);
+        registry.register(CPP_BUILD_TASK_SOURCE, this);
     }
 
     registerResolvers(registry: TaskResolverRegistry) {
@@ -82,8 +83,9 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         if (config.commands && config.commands.build) {
             return {
                 type: CPP_BUILD_TASK_TYPE_KEY,
+                source: CPP_BUILD_TASK_SOURCE,
                 label: `C/C++ Build - ${config.name}`,
-                config: config,
+                config
             };
         }
 
