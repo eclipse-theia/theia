@@ -145,4 +145,12 @@ describe('uri', () => {
             expect(uri.withPath('hubba-bubba').toString(true)).equals('file:///hubba-bubba?x=12#baz');
         });
     });
+
+    describe('#relative()', () => {
+        it('drive letters should be in lowercase', () => {
+            const uri = new URI('file:///C:/projects/theia');
+            const path = uri.relative(new URI(uri.resolve('node_modules/typescript/lib').toString()));
+            expect(String(path)).equals('node_modules/typescript/lib');
+        });
+    });
 });
