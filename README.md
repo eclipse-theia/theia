@@ -10,7 +10,7 @@
 
   [![Gitpod - Code Now](https://img.shields.io/badge/Gitpod-code%20now-blue.svg?longCache=true)](https://gitpod.io#https://github.com/theia-ide/theia)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/theia-ide/theia/labels/help%20wanted)
-  [![Gitter](https://img.shields.io/badge/Chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
+  [![Spectrum](https://img.shields.io/badge/Chat-on%20Spectrum-blue.svg)](https://spectrum.chat/theia)
   [![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
   [![Build status](https://ci.appveyor.com/api/projects/status/02s4d40orokl3njl/branch/master?svg=true)](https://ci.appveyor.com/project/kittaakos/theia/branch/master)
   [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/theia-ide/theia/labels/question)
