@@ -32,10 +32,31 @@
  * └──────┴───────────────┴──────┴─────┘
  */
 export class Path {
-    public static separator: '/' = '/';
+    static separator: '/' = '/';
 
-    public static isDrive(segment: string): boolean {
+    static isDrive(segment: string): boolean {
         return segment.endsWith(':');
+    }
+
+    /**
+     * vscode-uri always normalizes drive letters to lower case:
+     * https://github.com/Microsoft/vscode-uri/blob/b1d3221579f97f28a839b6f996d76fc45e9964d8/src/index.ts#L1025
+     * Theia path should be adjusted to this.
+     */
+    static normalizeDrive(path: string): string {
+        // lower-case windows drive letters in /C:/fff or C:/fff
+        if (path.length >= 3 && path.charCodeAt(0) === 47 /* '/' */ && path.charCodeAt(2) === 58 /* ':' */) {
+            const code = path.charCodeAt(1);
+            if (code >= 65 /* A */ && code <= 90 /* Z */) {
+                path = `/${String.fromCharCode(code + 32)}:${path.substr(3)}`; // "/c:".length === 3
+            }
+        } else if (path.length >= 2 && path.charCodeAt(1) === 58 /* ':' */) {
+            const code = path.charCodeAt(0);
+            if (code >= 65 /* A */ && code <= 90 /* Z */) {
+                path = `${String.fromCharCode(code + 32)}:${path.substr(2)}`; // "/c:".length === 3
+            }
+        }
+        return path;
     }
 
     readonly isAbsolute: boolean;
@@ -46,13 +67,15 @@ export class Path {
     readonly ext: string;
 
     private _dir: Path;
+    private readonly raw: string;
 
     /**
      * The raw should be normalized, meaning that only '/' is allowed as a path separator.
      */
     constructor(
-        private raw: string
+        raw: string
     ) {
+        this.raw = Path.normalizeDrive(raw);
         const firstIndex = raw.indexOf(Path.separator);
         const lastIndex = raw.lastIndexOf(Path.separator);
         this.isAbsolute = firstIndex === 0;
