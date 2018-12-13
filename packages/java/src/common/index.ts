@@ -17,3 +17,7 @@
 export const JAVA_SCHEME = 'jdt';
 export const JAVA_LANGUAGE_ID = 'java';
 export const JAVA_LANGUAGE_NAME = 'Java';
+
+export interface JavaStartParams {
+    workspace?: string
+}
