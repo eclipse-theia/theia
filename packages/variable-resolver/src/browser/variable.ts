@@ -14,8 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { ILogger, Disposable, DisposableCollection, MaybePromise } from '@theia/core';
+import { injectable } from 'inversify';
+import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
 
 /**
  * Variable can be used inside of strings using ${variableName} syntax.
@@ -37,7 +38,7 @@ export interface Variable {
      * `undefined` if variable cannot be resolved.
      * Never reject.
      */
-    resolve(): MaybePromise<string | undefined>;
+    resolve(context?: URI): MaybePromise<string | undefined>;
 }
 
 export const VariableContribution = Symbol('VariableContribution');
@@ -57,10 +58,6 @@ export class VariableRegistry implements Disposable {
     protected readonly variables: Map<string, Variable> = new Map();
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(
-        @inject(ILogger) protected readonly logger: ILogger
-    ) { }
-
     dispose(): void {
         this.toDispose.dispose();
     }
@@ -71,7 +68,7 @@ export class VariableRegistry implements Disposable {
      */
     registerVariable(variable: Variable): Disposable {
         if (this.variables.has(variable.name)) {
-            this.logger.warn(`A variables with name ${variable.name} is already registered.`);
+            console.warn(`A variables with name ${variable.name} is already registered.`);
             return Disposable.NULL;
         }
         this.variables.set(variable.name, variable);
@@ -94,5 +91,13 @@ export class VariableRegistry implements Disposable {
      */
     getVariable(name: string): Variable | undefined {
         return this.variables.get(name);
+    }
+
+    /**
+     * Register an array of variables.
+     * Do nothing if a variable is already registered for the given variable name.
+     */
+    registerVariables(variables: Variable[]): Disposable[] {
+        return variables.map(v => this.registerVariable(v));
     }
 }

@@ -22,9 +22,14 @@ export const TaskServer = Symbol('TaskServer');
 export const TaskClient = Symbol('TaskClient');
 
 export interface TaskConfiguration {
-    readonly type: string;
-    /** A label that uniquely identifies a task configuration */
+    /**
+     * Source of the task configuration.
+     * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
+     */
+    readonly source: string;
+    /** A label that uniquely identifies a task configuration per source */
     readonly label: string;
+    readonly type: string;
     /** Additional task type specific properties. */
     // tslint:disable-next-line:no-any
     readonly [key: string]: any;

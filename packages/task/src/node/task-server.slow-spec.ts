@@ -337,6 +337,7 @@ function createTaskConfig(taskType: string, command: string, args: string[]): Ta
     const options: TaskConfiguration = {
         label: 'test task',
         type: taskType,
+        source: '/source/folder',
         command: command,
         args: args,
         windows: {
@@ -357,6 +358,7 @@ function createProcessTaskConfig(processType: ProcessType, command: string, args
     const options: ProcessTaskConfiguration = {
         label: 'test task',
         type: processType,
+        source: '/source/folder',
         command: command,
         args: args,
         windows: {
@@ -387,6 +389,7 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
     return <ProcessTaskConfiguration>{
         label: '[Task] long running test task (~300s)',
         type: processType,
+        source: '/source/folder',
         cwd: wsRoot,
         command: commandLongRunning,
         args: [],

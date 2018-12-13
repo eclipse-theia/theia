@@ -39,7 +39,7 @@ export class TaskServerImpl implements TaskServer {
         // do nothing
     }
 
-    async getTasks(context?: string | undefined): Promise<TaskInfo[]> {
+    async getTasks(context?: string): Promise<TaskInfo[]> {
         const taskInfo: TaskInfo[] = [];
 
         const tasks = this.taskManager.getTasks(context);

@@ -809,6 +809,7 @@ export interface CommandProperties {
 export interface TaskDto {
     type: string;
     label: string;
+    source?: string;
     // tslint:disable-next-line:no-any
     properties?: { [key: string]: any };
 }

@@ -27,11 +27,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskWatcher } from '../common/task-watcher';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class TaskService implements TaskConfigurationClient {
-
-    protected workspaceRootUri: string | undefined = undefined;
     /**
      * Reflects whether a valid task configuration file was found
      * in the current workspace, and is being watched for changes.
@@ -76,12 +75,15 @@ export class TaskService implements TaskConfigurationClient {
 
     @postConstruct()
     protected init(): void {
-        // wait for the workspace root to be set
-        this.workspaceService.roots.then(async roots => {
-            const root = roots[0];
-            if (root) {
-                this.configurationFileFound = await this.taskConfigurations.watchConfigurationFile(root.uri);
-                this.workspaceRootUri = root.uri;
+        this.workspaceService.onWorkspaceChanged(async roots => {
+            this.configurationFileFound = (await Promise.all(roots.map(r => this.taskConfigurations.watchConfigurationFile(r.uri)))).some(result => !!result);
+            const rootUris = roots.map(r => new URI(r.uri));
+            const taskConfigFileUris = this.taskConfigurations.configFileUris.map(strUri => new URI(strUri));
+            for (const taskConfigUri of taskConfigFileUris) {
+                if (!rootUris.some(rootUri => !!rootUri.relative(taskConfigUri))) {
+                    this.taskConfigurations.unwatchConfigurationFile(taskConfigUri.toString());
+                    this.taskConfigurations.removeTasks(taskConfigUri.toString());
+                }
             }
         });
 
@@ -131,11 +133,11 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Returns a task configuration provided by an extension by task type and label.
+     * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
-    async getProvidedTask(type: string, label: string): Promise<TaskConfiguration | undefined> {
-        const provider = this.taskProviderRegistry.getProvider(type);
+    async getProvidedTask(source: string, label: string): Promise<TaskConfiguration | undefined> {
+        const provider = this.taskProviderRegistry.getProvider(source);
         if (provider) {
             const tasks = await provider.provideTasks();
             return tasks.find(t => t.label === label);
@@ -152,23 +154,23 @@ export class TaskService implements TaskConfigurationClient {
      * Runs a task, by task configuration label.
      * Note, it looks for a task configured in tasks.json only.
      */
-    async runConfiguredTask(taskLabel: string): Promise<void> {
-        const task = this.taskConfigurations.getTask(taskLabel);
+    async runConfiguredTask(source: string, taskLabel: string): Promise<void> {
+        const task = this.taskConfigurations.getTask(source, taskLabel);
         if (!task) {
             this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
             return;
         }
-        this.run(task.type, task.label);
+        this.run(task.source, task.label);
     }
 
     /**
-     * Runs a task, by task type and task configuration label.
+     * Runs a task, by the source and label of the task configuration.
      * It looks for configured and provided tasks.
      */
-    async run(type: string, taskLabel: string): Promise<void> {
-        let task = await this.getProvidedTask(type, taskLabel);
+    async run(source: string, taskLabel: string): Promise<void> {
+        let task = await this.getProvidedTask(source, taskLabel);
         if (!task) {
-            task = this.taskConfigurations.getTask(taskLabel);
+            task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;
@@ -231,7 +233,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected getContext(): string | undefined {
-        return this.workspaceRootUri;
+        return this.workspaceService.workspace && this.workspaceService.workspace.uri;
     }
 
     /** Kill task for a given id if task is found */

@@ -502,6 +502,7 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
 
     const taskDto = {} as TaskDto;
     taskDto.label = task.name;
+    taskDto.source = task.source;
 
     const taskDefinition = task.definition;
     if (!taskDefinition) {
@@ -540,6 +541,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
 
     const result = {} as theia.Task;
     result.name = taskDto.label;
+    result.source = taskDto.source;
 
     const taskType = taskDto.type;
     const taskDefinition: theia.TaskDefinition = {
@@ -763,6 +765,6 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
     return {
         label: colorPresentation.label,
         textEdit: colorPresentation.textEdit ? fromTextEdit(colorPresentation.textEdit) : undefined,
-        additionalTextEdits: colorPresentation.additionalTextEdits ? colorPresentation.additionalTextEdits.map(value  => fromTextEdit(value)) : undefined
+        additionalTextEdits: colorPresentation.additionalTextEdits ? colorPresentation.additionalTextEdits.map(value => fromTextEdit(value)) : undefined
     };
 }
