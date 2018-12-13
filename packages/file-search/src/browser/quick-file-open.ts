@@ -28,6 +28,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Command } from '@theia/core/lib/common';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import * as fuzzy from 'fuzzy';
+import { MessageService } from '@theia/core/lib/common/message-service';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
@@ -54,6 +55,8 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     protected readonly labelProvider: LabelProvider;
     @inject(NavigationLocationService)
     protected readonly navigationLocationService: NavigationLocationService;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     /**
      * Whether to hide .gitignored (and other ignored) files.
@@ -188,8 +191,10 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         };
     }
 
-    openFile(uri: URI) {
-        this.openerService.getOpener(uri).then(opener => opener.open(uri));
+    openFile(uri: URI): void {
+        this.openerService.getOpener(uri)
+            .then(opener => opener.open(uri))
+            .catch(error => this.messageService.error(error));
     }
 
     private async toItem(uriOrString: URI | string, group?: string) {
