@@ -290,27 +290,39 @@ export class KeybindingRegistry {
     protected getKeySequenceCollisions(bindings: Keybinding[], keySequence: KeyCode[]): KeybindingRegistry.KeybindingsResult {
         const result = new KeybindingRegistry.KeybindingsResult();
 
+        /**
+         * compare the given KeySequence with a particular binding
+         */
+        function compareBinding(candidate: KeyCode[], binding: Keybinding) {
+            const bindingKeySequence = KeySequence.parse(binding.keybinding);
+            const compareResult = KeySequence.compare(candidate, bindingKeySequence);
+            switch (compareResult) {
+                case KeySequence.CompareResult.FULL: {
+                    result.full.push(binding);
+                    break;
+                }
+                case KeySequence.CompareResult.PARTIAL: {
+                    result.partial.push(binding);
+                    break;
+                }
+                case KeySequence.CompareResult.SHADOW: {
+                    result.shadow.push(binding);
+                    break;
+                }
+                default: {
+                    // no match. Let's try with a US keborad normalized version if there is one.
+                    const normalizedUs = candidate.map(k => k.normalizeToUsLayout());
+                    if (normalizedUs.indexOf(undefined) === -1) {
+                        compareBinding(normalizedUs as KeyCode[], binding);
+                    }
+                    break;
+                }
+            }
+        }
+
         for (const registeredBinding of bindings) {
             try {
-                const bindingKeySequence = KeySequence.parse(registeredBinding.keybinding);
-                const compareResult = KeySequence.compare(keySequence, bindingKeySequence);
-                switch (compareResult) {
-                    case KeySequence.CompareResult.FULL: {
-                        result.full.push(registeredBinding);
-                        break;
-                    }
-                    case KeySequence.CompareResult.PARTIAL: {
-                        result.partial.push(registeredBinding);
-                        break;
-                    }
-                    case KeySequence.CompareResult.SHADOW: {
-                        result.shadow.push(registeredBinding);
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
-                }
+                compareBinding(keySequence, registeredBinding);
             } catch (error) {
                 this.logger.warn(error);
             }
