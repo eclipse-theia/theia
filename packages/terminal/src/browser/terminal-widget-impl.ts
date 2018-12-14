@@ -97,6 +97,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const cssProps = this.getCSSPropertiesFromPage();
 
         this.term = new Xterm.Terminal({
+            experimentalCharAtlas: 'dynamic',
             cursorBlink: false,
             fontFamily: cssProps.fontFamily,
             fontSize: cssProps.fontSize,
