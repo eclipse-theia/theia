@@ -194,6 +194,37 @@ export class KeyCode {
         }
     }
 
+    /**
+     * Returns a normalized version of this keycode, if
+     * - shift or alt was pressed
+     * - meta or ctrl was pressed
+     * - a character exists
+     * - the character corresponds to a key on the US keyboard layout
+     *
+     * The resulting KeyCode will remove the shift/alt keys and use the character as the key.
+     * For instance on a german kb layout the sequence `ctrlCmd+shift+7` would be translated to `ctrlCmd+/`.
+     * @returns a normalized keycode or undefined
+     */
+    public normalizeToUsLayout(): KeyCode | undefined {
+        if ((this.shift || this.alt) && (this.meta || this.ctrl) && this.character && EASY_TO_KEY[this.character]) {
+            const modifiers: KeyModifier[] = [];
+            if (isOSX) {
+                if (this.meta) {
+                    modifiers.push(KeyModifier.CtrlCmd);
+                }
+                if (this.ctrl) {
+                    modifiers.push(KeyModifier.MacCtrl);
+                }
+            } else {
+                if (this.ctrl) {
+                    modifiers.push(KeyModifier.CtrlCmd);
+                }
+            }
+            return KeyCode.createKeyCode(<Keystroke>{ first: EASY_TO_KEY[this.character], modifiers });
+        }
+        return undefined;
+    }
+
     /* Return true of string is a modifier M1 to M4 */
     public static isModifierString(key: string) {
         if (key === KeyModifier.CtrlCmd
