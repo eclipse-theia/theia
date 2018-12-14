@@ -497,17 +497,22 @@ describe('keys api', () => {
     });
 
     it('it should be a modifier only', () => {
-
         const keyCode = KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd] });
         expect(keyCode).to.be.deep.equal(KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd] }));
         expect(keyCode.isModifierOnly()).to.be.true;
     });
 
     it('it should be multiple modifiers only', () => {
-
         const keyCode = KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd, KeyModifier.Alt] });
         expect(keyCode).to.be.deep.equal(KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd, KeyModifier.Alt] }));
         expect(keyCode.isModifierOnly()).to.be.true;
+    });
+
+    it('it should translate non US layout chords properly', () => {
+        // mimic a german layout, i.e. the '/' is on the 'Shift+7'.
+        const keyCode = new KeyCode(KeyCode.parse('ctrlcmd+shift+7').keystroke, '/');
+        const normalized = keyCode.normalizeToUsLayout();
+        expect(normalized).to.be.deep.equal(KeyCode.parse('ctrlcmd+/'));
     });
 });
 
