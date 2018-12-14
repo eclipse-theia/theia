@@ -21,6 +21,7 @@ import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
+import { isOSX } from '@theia/core';
 
 function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
     for (let i = 0; i < KEY_CODE_MAP.length; i++) {
@@ -80,7 +81,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             modifiers: []
         };
         if (keybinding.ctrlKey) {
-            sequence.modifiers!.push(KeyModifier.CtrlCmd);
+            if (isOSX) {
+                sequence.modifiers!.push(KeyModifier.MacCtrl);
+            } else {
+                sequence.modifiers!.push(KeyModifier.CtrlCmd);
+            }
         }
         if (keybinding.shiftKey) {
             sequence.modifiers!.push(KeyModifier.Shift);
@@ -88,8 +93,8 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (keybinding.altKey) {
             sequence.modifiers!.push(KeyModifier.Alt);
         }
-        if (keybinding.metaKey) {
-            sequence.modifiers!.push(KeyModifier.MacCtrl);
+        if (keybinding.metaKey && sequence.modifiers!.indexOf(KeyModifier.CtrlCmd) === -1) {
+            sequence.modifiers!.push(KeyModifier.CtrlCmd);
         }
         return KeyCode.createKeyCode(sequence);
     }
