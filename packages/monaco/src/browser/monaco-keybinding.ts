@@ -46,16 +46,19 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 if (raw.type === monaco.keybindings.KeybindingType.Simple) {
                     let keybinding = raw as monaco.keybindings.SimpleKeybinding;
                     // TODO: remove this temporary workaround after updating to monaco including the fix for https://github.com/Microsoft/vscode/issues/49225
-                    if (command === 'monaco.editor.action.refactor') {
-                        if (monaco.platform.OS !== monaco.platform.OperatingSystem.Macintosh) {
-                            keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
-                        }
+                    if (command === 'monaco.editor.action.refactor' && !isOSX) {
+                        keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
+                    }
+                    // TODO: remove this temporary workaround with a holistic solution.
+                    if (command === 'monaco.editor.action.commentLine' && isOSX) {
+                        keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
                     }
                     const isInDiffEditor = item.when && /(^|[^!])\bisInDiffEditor\b/gm.test(item.when.serialize());
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
-                        context: isInDiffEditor ? EditorKeybindingContexts.diffEditorTextFocus : EditorKeybindingContexts.editorTextFocus
+                        context: isInDiffEditor ? EditorKeybindingContexts.diffEditorTextFocus : EditorKeybindingContexts.strictEditorTextFocus
+
                     });
                 } else {
                     // FIXME support chord keybindings properly, KeyCode does not allow it right now
