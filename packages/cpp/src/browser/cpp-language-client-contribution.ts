@@ -84,7 +84,9 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         // Restart clangd.  The new config will be picked up when
         // createOptions will be called to send the initialize request
         // to the new instance of clangd.
-        this.restart();
+        if (this.running) {
+          this.restart();
+        }
     }
 
     protected get documentSelector() {
