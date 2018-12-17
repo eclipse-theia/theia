@@ -147,7 +147,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
         });
         this.repositoryTracker.onGitEvent(event => {
             const { status } = event;
-            const branch = status.branch ? status.branch : 'NO-HEAD';
+            const branch = status.branch ? status.branch : status.currentHead ? status.currentHead.substring(0, 8) : 'NO-HEAD';
             let dirty = '';
             if (status.changes.length > 0) {
                 const conflicts = this.hasConflicts(status.changes);
