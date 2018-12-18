@@ -16,11 +16,27 @@
 import { Disposable } from './disposable-util';
 import { PluginMessageReader } from './plugin-message-reader';
 import { PluginMessageWriter } from './plugin-message-writer';
+import { MessageReader, MessageWriter, Message } from 'vscode-jsonrpc';
+
+/**
+ * The interface for describing the connection between plugins and main side.
+ */
+export interface Connection extends Disposable {
+    readonly reader: MessageReader;
+    readonly writer: MessageWriter;
+    /**
+     * Allows to forward messages to another connection.
+     *
+     * @param to the connection to forward messages
+     * @param map the function in which the message can be changed before forwarding
+     */
+    forward(to: Connection, map?: (message: Message) => Message): void;
+}
 
 /**
  * The container for message reader and writer which can be used to create connection between plugins and main side.
  */
-export class PluginConnection implements Disposable {
+export class PluginConnection implements Connection {
     reader: PluginMessageReader;
     writer: PluginMessageWriter;
     clearConnection: () => void;
@@ -31,6 +47,13 @@ export class PluginConnection implements Disposable {
         this.reader = pluginMessageReader;
         this.writer = pluginMessageWriter;
         this.clearConnection = dispose;
+    }
+
+    forward(to: Connection, map: (message: Message) => Message = message => message): void {
+        this.reader.listen(input => {
+            const output = map(input);
+            to.writer.write(output);
+        });
     }
 
     /**

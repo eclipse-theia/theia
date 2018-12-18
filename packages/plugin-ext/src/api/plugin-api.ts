@@ -155,6 +155,8 @@ export interface TerminalServiceExt {
 
 export interface ConnectionMain {
     $sendMessage(id: string, message: string): void;
+    $createConnection(id: string): Promise<void>;
+    $deleteConnection(id: string): Promise<void>;
 }
 
 export interface ConnectionExt {
@@ -774,6 +776,15 @@ export interface WorkspaceEditDto {
     rejectReason?: string;
 }
 
+export interface LanguagesContributionExt {
+    $start(languageServerInfo: theia.LanguageServerInfo): void;
+}
+
+export interface LanguagesContributionMain {
+    $registerLanguageServerProvider(languageServerInfo: theia.LanguageServerInfo): void
+    $stop(id: string): void
+}
+
 export interface CommandProperties {
     command: string;
     args?: string[];
@@ -909,6 +920,7 @@ export const PLUGIN_RPC_CONTEXT = {
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
+    LANGUAGES_CONTRIBUTION_MAIN: createProxyIdentifier<LanguagesContributionMain>('LanguagesContributionMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -928,6 +940,7 @@ export const MAIN_RPC_CONTEXT = {
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
+    LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
 };
 
 export interface TasksExt {

@@ -37,33 +37,59 @@ export class ConnectionMainImpl implements ConnectionMain {
      * @param id connection's id
      * @param message incoming message
      */
-    $sendMessage(id: string, message: string): void {
+    async $sendMessage(id: string, message: string): Promise<void> {
         if (this.connections.has(id)) {
             this.connections.get(id)!.reader.readMessage(message);
+        } else {
+            console.warn('It is not possible to read message. Connection missed.');
         }
     }
 
     /**
-     * Creates instances of message reader and writer and
-     * asks to create a connection between the plugin. throws an error if the connection with this id has already registered.
-     *
-     * @param id id to register new connection
+     * Instantiates a new connection by the given id.
+     * @param id the connection id
      */
-    async createConnection(id: string): Promise<PluginConnection> {
-        if (this.connections.has(id)) {
-            throw new Error(`Connection ${id} already exists`);
-        }
+    async $createConnection(id: string): Promise<void> {
+        await this.doEnsureConnection(id);
+    }
 
+    /**
+     * Deletes a connection.
+     * @param id the connection id
+     */
+    async $deleteConnection(id: string): Promise<void> {
+        this.connections.delete(id);
+    }
+
+    /**
+     * Returns existed connection or creates a new one.
+     * @param id the connection id
+     */
+    async ensureConnection(id: string): Promise<PluginConnection> {
+        const connection = await this.doEnsureConnection(id);
+        await this.proxy.$createConnection(id);
+        return connection;
+    }
+
+    /**
+     * Returns existed connection or creates a new one.
+     * @param id the connection id
+     */
+    async doEnsureConnection(id: string): Promise<PluginConnection> {
+        const connection = this.connections.get(id) || await this.doCreateConnection(id);
+        this.connections.set(id, connection);
+        return connection;
+    }
+
+    protected async doCreateConnection(id: string): Promise<PluginConnection> {
         const reader = new PluginMessageReader();
         const writer = new PluginMessageWriter(id, this.proxy);
-        const connection = new PluginConnection(reader, writer, () => {
-            this.connections.delete(id);
-            this.proxy.$deleteConnection(id);
-        });
-
-        this.connections.set(id, connection);
-        await this.proxy.$createConnection(id);
-
-        return Promise.resolve(connection);
+        return new PluginConnection(
+            reader,
+            writer,
+            () => {
+                this.connections.delete(id);
+                this.proxy.$deleteConnection(id);
+            });
     }
 }
