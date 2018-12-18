@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PluginManagerExt, PluginInitData, PluginManager, Plugin, PluginAPI } from '../api/plugin-api';
+import { PluginManagerExt, PluginInitData, PluginManager, Plugin, PluginAPI, ConfigStorage } from '../api/plugin-api';
 import { PluginMetadata } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { join } from 'path';
@@ -71,7 +71,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         return Promise.resolve();
     }
 
-    $init(pluginInit: PluginInitData): PromiseLike<void> {
+    $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void> {
         // init query parameters
         this.envExt.setQueryParameters(pluginInit.env.queryParams);
 
@@ -95,7 +95,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             const pluginMain = this.host.loadPlugin(plugin);
             // able to load the plug-in ?
             if (pluginMain !== undefined) {
-                this.startPlugin(plugin, pluginMain);
+                this.startPlugin(plugin, configStorage, pluginMain);
             } else {
                 return Promise.reject(new Error('Unable to load the given plugin'));
             }
@@ -105,15 +105,15 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     // tslint:disable-next-line:no-any
-    private startPlugin(plugin: Plugin, pluginMain: any): void {
-
-        // Create pluginContext object for this plugin.
+    private startPlugin(plugin: Plugin, configStorage: ConfigStorage, pluginMain: any): void {
         const subscriptions: theia.Disposable[] = [];
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
+        const logPath = join(configStorage.hostLogPath, plugin.model.id); // todo check format
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             subscriptions: subscriptions,
-            asAbsolutePath: asAbsolutePath
+            asAbsolutePath: asAbsolutePath,
+            logPath: logPath,
         };
 
         let stopFn = undefined;

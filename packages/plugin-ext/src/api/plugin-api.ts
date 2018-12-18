@@ -69,6 +69,11 @@ export interface Plugin {
     lifecycle: PluginLifecycle;
 }
 
+export interface ConfigStorage {
+    hostLogPath: string;
+    // storagePath: string,
+}
+
 export interface EnvInit {
     queryParams: QueryParameters;
 }
@@ -128,7 +133,7 @@ export const emptyPlugin: Plugin = {
 export interface PluginManagerExt {
     $stopPlugin(contextPath: string): PromiseLike<void>;
 
-    $init(pluginInit: PluginInitData): PromiseLike<void>;
+    $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
 }
 
 export interface CommandRegistryMain {
