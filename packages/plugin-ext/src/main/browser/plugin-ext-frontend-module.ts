@@ -45,6 +45,7 @@ import { PluginContributionHandler } from './plugin-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
 import { TextContentResourceResolver } from './workspace-main';
 import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
+import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 
 export default new ContainerModule(bind => {
@@ -79,6 +80,11 @@ export default new ContainerModule(bind => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         const hostedWatcher = ctx.container.get(HostedPluginWatcher);
         return connection.createProxy<HostedPluginServer>(hostedServicePath, hostedWatcher.getHostedPluginClient());
+    }).inSingletonScope();
+
+    bind(PluginPathsService).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        return connection.createProxy<PluginPathsService>(pluginPathsServicePath);
     }).inSingletonScope();
 
     bindViewContribution(bind, PluginFrontendViewContribution);
