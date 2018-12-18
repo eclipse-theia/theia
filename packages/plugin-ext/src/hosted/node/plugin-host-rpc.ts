@@ -21,6 +21,7 @@ import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi } from '../../common/plugin-ext-api-contribution';
+import { ConnectionExtImpl } from '../../plugin/connection-ext';
 
 /**
  * Handle the RPC calls.
@@ -37,11 +38,16 @@ export class PluginHostRPC {
 
     initialize() {
         const envExt = new EnvExtImpl(this.rpc);
+        const connectionExt = new ConnectionExtImpl(this.rpc);
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc);
         this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
-        PluginHostRPC.apiFactory = createAPIFactory(this.rpc, this.pluginManager, envExt, preferenceRegistryExt);
+        PluginHostRPC.apiFactory = createAPIFactory(this.rpc,
+            this.pluginManager,
+            envExt,
+            connectionExt,
+            preferenceRegistryExt);
     }
 
     // tslint:disable-next-line:no-any
