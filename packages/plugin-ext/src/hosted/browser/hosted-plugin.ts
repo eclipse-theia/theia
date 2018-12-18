@@ -20,7 +20,7 @@ import { injectable, inject, interfaces, named } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { MAIN_RPC_CONTEXT, ConfigStorage } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
@@ -28,6 +28,7 @@ import { PreferenceServiceImpl } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 
 @injectable()
 export class HostedPluginSupport {
@@ -52,7 +53,8 @@ export class HostedPluginSupport {
     private theiaReadyPromise: Promise<any>;
 
     constructor(
-        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl
+        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
+        @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
     ) {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
     }
@@ -63,16 +65,21 @@ export class HostedPluginSupport {
     }
 
     public initPlugins(): void {
-        Promise.all([this.server.getDeployedMetadata(), this.server.getHostedPlugin(), this.server.getExtPluginAPI()]).then(metadata => {
+        Promise.all([this.server.getDeployedMetadata(),
+                     this.server.getHostedPlugin(),
+                     this.pluginPathsService.provideHostLogPath(),
+                     this.server.getExtPluginAPI(),
+                     ]).then(metadata => {
             const plugins = [...metadata['0']];
             if (metadata['1']) {
                 plugins.push(metadata['1']!);
             }
-            this.loadPlugins(plugins, this.container, metadata['2']);
+            const confStorage: ConfigStorage = {hostLogPath: metadata['2']};
+            this.loadPlugins(plugins,  this.container, metadata['3'], confStorage);
         });
 
     }
-    loadPlugins(pluginsMetadata: PluginMetadata[], container: interfaces.Container, extApi: ExtPluginApi[]): void {
+    loadPlugins(pluginsMetadata: PluginMetadata[], container: interfaces.Container, extApi: ExtPluginApi[], confStorage: ConfigStorage): void {
         const [frontend, backend] = this.initContributions(pluginsMetadata);
         this.theiaReadyPromise.then(() => {
             if (frontend) {
@@ -83,7 +90,7 @@ export class HostedPluginSupport {
                     preferences: this.preferenceServiceImpl.getPreferences(),
                     env: { queryParams: getQueryParameters() },
                     extApi: extApi
-                });
+                }, confStorage);
                 setUpPluginApi(worker.rpc, container);
                 this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
             }
@@ -114,7 +121,7 @@ export class HostedPluginSupport {
                         preferences: this.preferenceServiceImpl.getPreferences(),
                         env: { queryParams: getQueryParameters() },
                         extApi: extApi
-                    });
+                    }, confStorage);
                     setUpPluginApi(rpc, container);
                     this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
                 });

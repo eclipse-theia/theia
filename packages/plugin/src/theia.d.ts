@@ -2364,6 +2364,11 @@ declare module '@theia/plugin' {
          * @return The absolute path of the resource.
          */
         asAbsolutePath(relativePath: string): string;
+
+        /**
+         * Return log path for current of the extension.
+         */
+        logPath: string;
     }
 
     /**
