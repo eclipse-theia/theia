@@ -34,6 +34,7 @@ import { NotificationMainImpl } from './notification-main';
 import { ConnectionMainImpl } from './connection-main';
 import { WebviewsMainImpl } from './webviews-main';
 import { TasksMainImpl } from './tasks-main';
+import { LanguagesContributionMainImpl } from './languages-contribution-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -88,4 +89,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const tasksMain = new TasksMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TASKS_MAIN, tasksMain);
+
+    const languagesContribution = new LanguagesContributionMainImpl(rpc, container, pluginConnection);
+    rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_MAIN, languagesContribution);
 }

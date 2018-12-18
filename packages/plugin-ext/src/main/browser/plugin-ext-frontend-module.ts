@@ -47,8 +47,12 @@ import { TextContentResourceResolver } from './workspace-main';
 import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
+import { LanguageClientProvider } from '@theia/languages/lib/browser/language-client-provider';
+import { LanguageClientProviderImpl } from './language-provider/plugin-language-client-provider';
+import { LanguageClientContributionProviderImpl } from './language-provider/language-client-contribution-provider-impl';
+import { LanguageClientContributionProvider } from './language-provider/language-client-contribution-provider';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
 
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -111,4 +115,9 @@ export default new ContainerModule(bind => {
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
     bindContributionProvider(bind, MainPluginApiProvider);
+
+    bind(LanguageClientContributionProviderImpl).toSelf().inSingletonScope();
+    bind(LanguageClientContributionProvider).toService(LanguageClientContributionProviderImpl);
+    bind(LanguageClientProviderImpl).toSelf().inSingletonScope();
+    rebind(LanguageClientProvider).toService(LanguageClientProviderImpl);
 });

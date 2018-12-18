@@ -103,6 +103,7 @@ import { StatusBarExtImpl } from './statusBar';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
+import { LanguagesContributionExtImpl } from './languages-contribution-ext';
 import { ConnectionExtImpl } from './connection-ext';
 import { WebviewsExtImpl } from './webviews';
 import { TasksExtImpl } from './tasks/tasks';
@@ -111,6 +112,7 @@ export function createAPIFactory(
     rpc: RPCProtocol,
     pluginManager: PluginManager,
     envExt: EnvExtImpl,
+    connectionExt: ConnectionExtImpl,
     preferenceRegistryExt: PreferenceRegistryExtImpl): PluginAPIFactory {
 
     const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -132,6 +134,8 @@ export function createAPIFactory(
     const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
+    rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, connectionExt);
+    const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
 
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
@@ -396,6 +400,15 @@ export function createAPIFactory(
             }
         };
 
+        const languageServer: typeof theia.languageServer = {
+            registerLanguageServerProvider(languageServerInfo: theia.LanguageServerInfo): Disposable {
+                return languagesContributionExt.registerLanguageServerProvider(languageServerInfo);
+            },
+            stop(id: string): void {
+                languagesContributionExt.stop(id);
+            }
+        };
+
         const languages: typeof theia.languages = {
             getLanguages(): PromiseLike<string[]> {
                 return languagesExt.getLanguages();
@@ -510,6 +523,7 @@ export function createAPIFactory(
             window,
             workspace,
             env,
+            languageServer,
             languages,
             plugins,
             debug,

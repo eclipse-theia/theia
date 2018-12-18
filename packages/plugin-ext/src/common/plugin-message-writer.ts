@@ -16,6 +16,7 @@
 
 import { AbstractMessageWriter } from 'vscode-jsonrpc/lib/messageWriter';
 import { ConnectionMain, ConnectionExt } from '../api/plugin-api';
+import { Message } from 'vscode-jsonrpc';
 
 /**
  * Support for writing string message through RPC protocol.
@@ -25,7 +26,7 @@ export class PluginMessageWriter extends AbstractMessageWriter {
         super();
     }
 
-    write(message: string): void {
+    write(message: Message): void {
         const content = JSON.stringify(message);
         this.proxy.$sendMessage(this.id, content);
     }
