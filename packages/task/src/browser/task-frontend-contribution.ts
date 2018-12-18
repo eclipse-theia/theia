@@ -82,7 +82,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             {
                 isEnabled: () => true,
                 // tslint:disable-next-line:no-any
-                execute: (args: any[]) => {
+                execute: (...args: any[]) => {
                     if (args) {
                         const [type, label] = args;
                         return this.taskService.run(type, label);
