@@ -20,7 +20,7 @@ import { injectable, inject, interfaces, named } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, ConfigStorage } from '../../api/plugin-api';
+import { MAIN_RPC_CONTEXT, ConfigStorage, PluginManagerExt } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
@@ -29,6 +29,7 @@ import { PluginContributionHandler } from '../../main/browser/plugin-contributio
 import { getQueryParameters } from '../../main/browser/env-main';
 import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
+import { StoragePathService } from '../../main/browser/storage-path-service';
 
 @injectable()
 export class HostedPluginSupport {
@@ -51,12 +52,19 @@ export class HostedPluginSupport {
     protected readonly mainPluginApiProviders: ContributionProvider<MainPluginApiProvider>;
 
     private theiaReadyPromise: Promise<any>;
+    private frontendExtManagerProxy: PluginManagerExt;
+    private backendExtManagerProxy: PluginManagerExt;
 
     constructor(
         @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
         @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
+        @inject(StoragePathService) private readonly storagePathService: StoragePathService,
     ) {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
+
+        this.storagePathService.onStoragePathChanged(path => {
+            this.updateStoragePath(path);
+        });
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -65,17 +73,22 @@ export class HostedPluginSupport {
     }
 
     public initPlugins(): void {
-        Promise.all([this.server.getDeployedMetadata(),
-                     this.server.getHostedPlugin(),
-                     this.pluginPathsService.provideHostLogPath(),
-                     this.server.getExtPluginAPI(),
-                     ]).then(metadata => {
+        Promise.all([
+            this.server.getDeployedMetadata(),
+            this.server.getHostedPlugin(),
+            this.pluginPathsService.provideHostLogPath(),
+            this.storagePathService.provideHostStoragePath(),
+            this.server.getExtPluginAPI(),
+        ]).then(metadata => {
             const plugins = [...metadata['0']];
             if (metadata['1']) {
                 plugins.push(metadata['1']!);
             }
-            const confStorage: ConfigStorage = {hostLogPath: metadata['2']};
-            this.loadPlugins(plugins,  this.container, metadata['3'], confStorage);
+            const confStorage: ConfigStorage = {
+                hostLogPath: metadata['2'],
+                hostStoragePath: metadata['3'] || ''
+            };
+            this.loadPlugins(plugins, this.container, metadata['4'], confStorage);
         });
 
     }
@@ -93,6 +106,7 @@ export class HostedPluginSupport {
                 }, confStorage);
                 setUpPluginApi(worker.rpc, container);
                 this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
+                this.frontendExtManagerProxy = hostedExtManager;
             }
 
             if (backend) {
@@ -124,6 +138,7 @@ export class HostedPluginSupport {
                     }, confStorage);
                     setUpPluginApi(rpc, container);
                     this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
+                    this.backendExtManagerProxy = hostedExtManager;
                 });
             }
         });
@@ -159,4 +174,14 @@ export class HostedPluginSupport {
             }
         }, hostID);
     }
+
+    private updateStoragePath(path: string): void {
+        if (this.frontendExtManagerProxy) {
+            this.frontendExtManagerProxy.$updateStoragePath(path);
+        }
+        if (this.backendExtManagerProxy) {
+            this.backendExtManagerProxy.$updateStoragePath(path);
+        }
+    }
+
 }

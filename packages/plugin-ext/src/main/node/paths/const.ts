@@ -15,9 +15,11 @@
  ********************************************************************************/
 
 export namespace PluginPaths {
-    export const LINUX_CONF_FOLDER = '.config';
-    export const APPLICATION_CONF_FOLDER = 'eclipse-theia';
-    export const APP_DATA_WINDOWS_FOLDER = 'AppData';
-    export const ROAMING_WINDOWS_FOLDER = 'Roaming';
-    export const LOG_PARENT_FOLDER_NAME = 'logs';
+    export const WINDOWS_APP_DATA_DIR = 'AppData';
+    export const WINDOWS_ROAMING_DIR = 'Roaming';
+
+    export const THEIA_DIR = '.theia';
+    export const PLUGINS_LOGS_DIR = 'logs';
+    export const PLUGINS_GLOBAL_STORAGE_DIR = 'plugin-storage';
+    export const PLUGINS_WORKSPACE_STORAGE_DIR = 'workspace-storage';
 }

@@ -2369,6 +2369,16 @@ declare module '@theia/plugin' {
          * Return log path for current of the extension.
          */
         logPath: string;
+
+        /**
+        * An absolute file path of a workspace specific directory in which the extension
+        * can store private state. The directory might not exist on disk and creation is
+        * up to the extension. However, the parent directory is guaranteed to be existent.
+        *
+        * Use [`workspaceState`](#ExtensionContext.workspaceState) or
+        * [`globalState`](#ExtensionContext.globalState) to store key value data.
+        */
+        storagePath: string | undefined;
     }
 
     /**
