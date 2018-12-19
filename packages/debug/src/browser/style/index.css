@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 .theia-debug-container,
-.theia-session-container {
+.theia-session-container,
+.theia-debug-widget-container {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -301,4 +302,8 @@
 .theia-debug-hover-content {
     display: flex;
     flex: 1;
+}
+
+.theia-debug-widget-container .theia-header {
+    margin-top: 5px;
 }

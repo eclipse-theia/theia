@@ -15,14 +15,14 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct, interfaces, Container } from 'inversify';
-import { BaseWidget, PanelLayout, Message, ApplicationShell, Widget } from '@theia/core/lib/browser';
-import { ViewContainer } from '@theia/core/lib/browser/view-container';
+import { Message, ApplicationShell, Widget, SplitPanel, BaseWidget, PanelLayout } from '@theia/core/lib/browser';
 import { DebugThreadsWidget } from './debug-threads-widget';
 import { DebugStackFramesWidget } from './debug-stack-frames-widget';
 import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
 import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel, DebugViewOptions } from './debug-view-model';
+import { ViewContainer } from '@theia/core/lib/browser/view-container';
 
 export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
@@ -46,6 +46,8 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
     static createWidget(parent: interfaces.Container, options: DebugViewOptions): DebugSessionWidget {
         return DebugSessionWidget.createContainer(parent, options).get(DebugSessionWidget);
     }
+
+    protected readonly container = new SplitPanel();
 
     @inject(DebugViewModel)
     readonly model: DebugViewModel;
@@ -77,31 +79,30 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
             this.threads,
             this.frames,
             this.variables,
-            this.breakpoints
+            this.breakpoints,
+            this.container
         ]);
 
-        const container = new ViewContainer();
-
-        this.threads.scrollArea = container.node;
-        container.addWidget(this.threads);
-
-        this.frames.scrollArea = container.node;
-        container.addWidget(this.frames);
-
-        this.variables.scrollArea = container.node;
-        container.addWidget(this.variables);
-
-        this.breakpoints.scrollArea = container.node;
-        container.addWidget(this.breakpoints);
+        this.container.addClass('theia-debug-widget-container');
+        this.container.addWidget(this.createViewContainer(this.threads));
+        this.container.addWidget(this.createViewContainer(this.frames));
+        this.container.addWidget(this.createViewContainer(this.variables));
+        this.container.addWidget(this.createViewContainer(this.breakpoints));
 
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.toolbar);
-        layout.addWidget(container);
+        layout.addWidget(this.container);
     }
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.toolbar.focus();
+    }
+
+    protected createViewContainer(widget: Widget): Widget {
+        const viewContainer = new ViewContainer();
+        viewContainer.addWidget(widget);
+        return viewContainer;
     }
 
     getTrackableWidgets(): Widget[] {
@@ -113,4 +114,12 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
         ];
     }
 
+    onAfterAttach(msg: Message): void {
+        const parentId = this.node.parentElement!.parentElement!.getAttribute('id');
+        this.container.orientation =
+            parentId === 'theia-bottom-content-panel' || parentId === 'theia-main-content-panel'
+                ? 'horizontal'
+                : 'vertical';
+        super.onAfterAttach(msg);
+    }
 }
