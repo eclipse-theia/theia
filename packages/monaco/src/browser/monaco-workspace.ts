@@ -170,13 +170,24 @@ export class MonacoWorkspace implements lang.Workspace {
         const timeout = new Promise<TextEdit[]>(resolve =>
             setTimeout(() => resolve([]), 1000)
         );
-        const resolveEdits = new Promise<TextEdit[]>(resolve =>
+        const resolveEdits = new Promise<TextEdit[]>(async resolve => {
+            const thenables: Thenable<TextEdit[]>[] = [];
+            const allEdits: TextEdit[] = [];
+
             this.onWillSaveTextDocumentEmitter.fire({
                 textDocument: event.model,
                 reason,
-                waitUntil: thenable => thenable.then(resolve)
-            })
-        );
+                waitUntil: thenable => {
+                    thenables.push(thenable);
+                }
+            });
+
+            for (const listenerEdits of await Promise.all(thenables)) {
+                allEdits.push(...listenerEdits);
+            }
+
+            resolve(allEdits);
+        });
         event.waitUntil(
             Promise.race([resolveEdits, timeout]).then(edits =>
                 this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation)
