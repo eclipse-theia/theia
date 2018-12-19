@@ -18,7 +18,6 @@ import * as theia from '@theia/plugin';
 import { interfaces, injectable } from 'inversify';
 import { WorkspaceExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import Uri from 'vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
@@ -30,6 +29,7 @@ import { Resource } from '@theia/core/lib/common/resource';
 import { Emitter, Event, Disposable, ResourceResolver } from '@theia/core';
 import { FileWatcherSubscriberOptions } from '../../api/model';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
+import { StoragePathService } from './storage-path-service';
 
 export class WorkspaceMainImpl implements WorkspaceMain {
 
@@ -48,17 +48,15 @@ export class WorkspaceMainImpl implements WorkspaceMain {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
         this.quickOpenService = container.get(MonacoQuickOpenService);
-        const workspaceService = container.get(WorkspaceService);
         this.fileSearchService = container.get(FileSearchService);
         this.resourceResolver = container.get(TextContentResourceResolver);
+        const storagePathService = container.get(StoragePathService);
 
         this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
 
-        workspaceService.roots.then(roots => {
-            this.notifyWorkspaceFoldersChanged(roots);
-        });
-
-        workspaceService.onWorkspaceChanged(roots => {
+        // Plugin Context `storagePath` should be already updated when API event `onDidChangeWorkspaceFolders` fires.
+        // This is why `StoragePathService.onWorkspaceChanged` is used instead of `WorkspaceService.onWorkspaceChanged`.
+        storagePathService.onWorkspaceChanged(roots => {
             this.notifyWorkspaceFoldersChanged(roots);
         });
     }

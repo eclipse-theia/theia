@@ -14,59 +14,118 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from  'inversify';
-import { FileSystem } from '@theia/filesystem/lib/common';
-import { join } from 'path';
+import { injectable, inject } from 'inversify';
+import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import * as path from 'path';
+import * as crypto from 'crypto';
 import URI from '@theia/core/lib/common/uri';
 import { isWindows } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
+import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/browser/workspace-service';
 
 // Service to provide configuration paths for plugin api.
 @injectable()
 export class PluginPathsServiceImpl implements PluginPathsService {
 
-    private windowsConfFolders = [PluginPaths.APP_DATA_WINDOWS_FOLDER, PluginPaths.ROAMING_WINDOWS_FOLDER];
-    private linuxConfFolders = [PluginPaths.LINUX_CONF_FOLDER];
+    private windowsDataFolders = [PluginPaths.WINDOWS_APP_DATA_DIR, PluginPaths.WINDOWS_ROAMING_DIR];
 
-    constructor(@inject(FileSystem) readonly fs: FileSystem) {
-    }
+    constructor(
+        @inject(FileSystem) readonly fileSystem: FileSystem,
+    ) { }
 
     async provideHostLogPath(): Promise<string> {
-        const parentLogDir = await this.getParentLogDirPath();
+        const parentLogsDir = await this.getLogsDirPath();
 
-        if (!parentLogDir) {
+        if (!parentLogsDir) {
             return Promise.reject(new Error('Unable to get parent log directory'));
         }
 
-        if (parentLogDir && !await this.fs.exists(parentLogDir)) {
-            await this.fs.createFolder(parentLogDir);
+        if (parentLogsDir && !await this.fileSystem.exists(parentLogsDir)) {
+            await this.fileSystem.createFolder(parentLogsDir);
         }
 
-        const pluginDirPath = join(parentLogDir, this.gererateTimeFolderName(), 'host');
-        if (!await this.fs.exists(pluginDirPath)) {
-            await this.fs.createFolder(pluginDirPath);
+        const pluginDirPath = path.join(parentLogsDir, this.gererateTimeFolderName(), 'host');
+        if (!await this.fileSystem.exists(pluginDirPath)) {
+            await this.fileSystem.createFolder(pluginDirPath);
         }
 
         return new URI(pluginDirPath).path.toString();
     }
 
-    /** Generate time folder name in format: YYYYMMDDTHHMMSS, for example: 20181205T093828 */
-    gererateTimeFolderName(): string {
+    async provideHostStoragePath(workspace: FileStat, roots: FileStat[]): Promise<string> {
+        const parentStorageDir = await this.getWorkspaceStorageDirPath();
+
+        if (!parentStorageDir) {
+            return Promise.reject(new Error('Unable to get parent storage directory'));
+        }
+
+        if (await !this.fileSystem.exists(parentStorageDir)) {
+            await this.fileSystem.createFolder(parentStorageDir);
+        }
+
+        const storageDirName = await this.buildWorkspaceId(workspace, roots);
+        const storageDirPath = path.join(parentStorageDir, storageDirName);
+        if (!await this.fileSystem.exists(storageDirPath)) {
+            await this.fileSystem.createFolder(storageDirPath);
+        }
+
+        return new URI(storageDirPath).path.toString();
+    }
+
+    async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
+        const homeDir = await this.getUserHomeDir();
+        const untitledWorkspace = getTemporaryWorkspaceFileUri(new URI(homeDir));
+
+        if (untitledWorkspace.toString() === workspace.uri) {
+            // if workspace is temporary
+            // then let create a storage path for each set of workspace roots
+            const rootsStr = roots.map(root => root.uri).sort().join(',');
+            return crypto.createHash('md5').update(rootsStr).digest('hex');
+        } else {
+            const uri = new URI(workspace.uri);
+            let displayName = uri.displayName;
+
+            if ((!workspace || !workspace.isDirectory) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
+                displayName = displayName.slice(0, displayName.lastIndexOf('.'));
+            }
+
+            return crypto.createHash('md5').update(uri.toString()).digest('hex');
+        }
+    }
+
+    /**
+     * Generate time folder name in format: YYYYMMDDTHHMMSS, for example: 20181205T093828
+     */
+    private gererateTimeFolderName(): string {
         return new Date().toISOString().replace(/[-:]|(\..*)/g, '');
     }
 
-    async getParentLogDirPath(): Promise<string | undefined> {
-        const userHomeDir = await this.fs.getCurrentUserHome();
-        let parentLogDirPath;
-        if (userHomeDir) {
-            parentLogDirPath = join(
-                userHomeDir.uri,
-                ...(isWindows ? this.windowsConfFolders : this.linuxConfFolders),
-                PluginPaths.APPLICATION_CONF_FOLDER,
-                PluginPaths.LOG_PARENT_FOLDER_NAME
-            );
-        }
-        return parentLogDirPath;
+    private async getLogsDirPath(): Promise<string> {
+        const theiaDir = await this.getTheiaDirPath();
+        return path.join(theiaDir, PluginPaths.PLUGINS_LOGS_DIR);
     }
+
+    private async getWorkspaceStorageDirPath(): Promise<string> {
+        const theiaDir = await this.getTheiaDirPath();
+        return path.join(theiaDir, PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
+    }
+
+    private async getTheiaDirPath(): Promise<string> {
+        const homeDir = await this.getUserHomeDir();
+        return path.join(
+            homeDir,
+            ...(isWindows ? this.windowsDataFolders : ['']),
+            PluginPaths.THEIA_DIR
+        );
+    }
+
+    private async getUserHomeDir(): Promise<string> {
+        const homeDirStat = await this.fileSystem.getCurrentUserHome();
+        if (!homeDirStat) {
+            return Promise.reject(new Error('Unable to get user home directory'));
+        }
+        return homeDirStat.uri;
+    }
+
 }
