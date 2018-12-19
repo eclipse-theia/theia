@@ -72,7 +72,7 @@ export interface Plugin {
 
 export interface ConfigStorage {
     hostLogPath: string;
-    // storagePath: string,
+    hostStoragePath: string,
 }
 
 export interface EnvInit {
@@ -135,6 +135,8 @@ export interface PluginManagerExt {
     $stopPlugin(contextPath: string): PromiseLike<void>;
 
     $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
+
+    $updateStoragePath(path: string): PromiseLike<void>;
 }
 
 export interface CommandRegistryMain {

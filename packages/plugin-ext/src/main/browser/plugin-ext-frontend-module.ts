@@ -51,6 +51,7 @@ import { LanguageClientProvider } from '@theia/languages/lib/browser/language-cl
 import { LanguageClientProviderImpl } from './language-provider/plugin-language-client-provider';
 import { LanguageClientContributionProviderImpl } from './language-provider/language-client-contribution-provider-impl';
 import { LanguageClientContributionProvider } from './language-provider/language-client-contribution-provider';
+import { StoragePathService } from './storage-path-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -90,6 +91,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<PluginPathsService>(pluginPathsServicePath);
     }).inSingletonScope();
+    bind(StoragePathService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, PluginFrontendViewContribution);
 
