@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.3.19
+- [cpp] added new `cpp.clangdExecutable` and `cpp.clangdArgs` to customize language server start command.
+
 ## v0.3.18
 - [core] added a preference to define how to handle application exit
 - [core] added a way to prevent application exit from extensions
