@@ -45,6 +45,19 @@ export namespace Event {
         get maxListeners(): number { return 0; },
         set maxListeners(maxListeners: number) { }
     });
+
+    /**
+     * Given an event and a `map` function, returns another event which maps each element
+     * through the mapping function.
+     */
+    export function map<I, O>(event: Event<I>, mapFunc: (i: I) => O): Event<O> {
+        return Object.assign((listener: (e: O) => any, thisArgs?: any, disposables?: Disposable[]) =>
+            event(i => listener.call(thisArgs, mapFunc(i)), undefined, disposables)
+            , {
+                maxListeners: 0
+            }
+        );
+    }
 }
 
 class CallbackList {
