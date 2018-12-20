@@ -1,11 +1,42 @@
 # Change Log
 
 ## v0.3.18
-- [core] Fix `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
-- [core] Add a preference to define how to handle application exit.
-- [core] Add a way to prevent application exit from extensions.
-- [core] Prevent application exit if some editors are dirty.
+- [core] added a preference to define how to handle application exit
+- [core] added a way to prevent application exit from extensions
+- [core] added functionality to prevent application exit if some editors are dirty
+- [core] allowed the ability to scope bindings per connection
+- [core] fixed `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
+- [cpp] fixed clangd being prematurely started when a build config is active
+- [electron] implemented HTTP-based authentication for Git
+- [electron] updated Electron to `0.2.14`
+- [electron] updated Git for Electron to fall back to embedded Git if no Git is found on the `PATH`
+- [file-search] added ability to search files from multiple-root workspaces
+- [file-search] improved handling when attempting to open non-existent files from the `quick-open-file`
+- [filesystem] added the ability to convert URIs to platform specific paths
+- [git] updated Git view to display short hash when on detached state
+- [java-debug] added major enhancements to `java-debug`
+- [keybinding] normalized key sequences to US layout
 - [languages] Add a preference for every language contribution to be able to trace the communication client <-> server
+- [languages] allowed the ability to provide Language Server start options
+- [languages] fixed leaking language clients
+- [languages][java] reuse `jdt.ls` workspace
+- [monaco] fixed keybindings on OSX
+- [plug-in] added Plug-in API for language server contributions
+- [plug-in] added `storagePath` Plug-in API
+- [plug-in] added `tasks.registerTaskProvider` Plug-in API
+- [plug-in] added `window.withProgress` Plug-in API
+- [plug-in] added ability to register keybindings from a Plug-in's `package.json`
+- [plug-in] added open link command
+- [plug-in] added support for context menus in contributed views
+- [plug-in] implemented API to get workspace folder by a given file URI
+- [plug-in][languages] added ability to register a document highlight provider
+- [search-in-workspace] added ability to perform 'Find in Folder...' with multiple folders simultaneously
+- [search-in-workspace] added match and file count to search-in-workspace
+- [search-in-workspace] added support for multiple-root workspaces
+- [search-in-workspace] fixed path issues by instead using URIs
+- [terminal] added ability to choose terminal root location when a workspace contains multiple roots
+- [workspace] fixed long label computations for multiple-root workspaces
+- [xterm] updated Xterm to `3.9.1`
 
 
 ## v0.3.17
