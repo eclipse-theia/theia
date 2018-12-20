@@ -1,10 +1,10 @@
 {
   "name": "@theia/java-debug",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia - Java Debug Extension",
   "dependencies": {
-    "@theia/debug": "^0.3.17",
-    "@theia/java": "^0.3.17",
+    "@theia/debug": "^0.3.18",
+    "@theia/java": "^0.3.18",
     "lodash": "^4.17.10"
   },
   "publishConfig": {
@@ -17,7 +17,9 @@
     }
   ],
   "keywords": [
-    "theia-extension", "debug", "java"
+    "theia-extension",
+    "debug",
+    "java"
   ],
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
@@ -43,7 +45,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17"
+    "@theia/ext-scripts": "^0.3.18"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

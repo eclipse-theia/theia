@@ -1,9 +1,9 @@
 {
   "name": "@theia/debug-nodejs",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia - NodeJS Debug Extension",
   "dependencies": {
-    "@theia/debug": "^0.3.17",
+    "@theia/debug": "^0.3.18",
     "ps-list": "5.0.1",
     "vscode-debugprotocol": "^1.32.0"
   },
@@ -16,7 +16,9 @@
     }
   ],
   "keywords": [
-    "theia-extension", "debug", "nodejs"
+    "theia-extension",
+    "debug",
+    "nodejs"
   ],
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
@@ -42,7 +44,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17"
+    "@theia/ext-scripts": "^0.3.18"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

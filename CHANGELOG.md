@@ -8,7 +8,7 @@
 - [core] fixed `@theia/core/lib/node/debug#DEBUG_MODE` flag to correctly detect when the runtime is inspected/debugged
 - [cpp] fixed clangd being prematurely started when a build config is active
 - [electron] implemented HTTP-based authentication for Git
-- [electron] updated Electron to `0.2.14`
+- [electron] updated Electron to `^2.0.14`
 - [electron] updated Git for Electron to fall back to embedded Git if no Git is found on the `PATH`
 - [file-search] added ability to search files from multiple-root workspaces
 - [file-search] improved handling when attempting to open non-existent files from the `quick-open-file`

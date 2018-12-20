@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-manager",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia application manager API.",
   "publishConfig": {
     "access": "public"
@@ -29,13 +29,12 @@
     "docs": "theiaext docs"
   },
   "dependencies": {
-    "@theia/application-package": "^0.3.17",
+    "@theia/application-package": "^0.3.18",
     "@types/fs-extra": "^4.0.2",
     "bunyan": "^1.8.10",
     "circular-dependency-plugin": "^5.0.0",
     "copy-webpack-plugin": "^4.5.0",
     "css-loader": "^0.28.1",
-    "style-loader": "^0.23.1",
     "electron": "^2.0.14",
     "electron-rebuild": "^1.5.11",
     "file-loader": "^1.1.11",
@@ -45,6 +44,7 @@
     "less": "^2.7.2",
     "source-map-loader": "^0.2.1",
     "source-map-support": "^0.4.18",
+    "style-loader": "^0.23.1",
     "umd-compat-loader": "^2.1.1",
     "url-loader": "^1.1.2",
     "webpack": "^4.0.0",
@@ -52,7 +52,7 @@
     "worker-loader": "^1.1.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17"
+    "@theia/ext-scripts": "^0.3.18"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
