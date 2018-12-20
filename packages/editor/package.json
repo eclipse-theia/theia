@@ -1,11 +1,11 @@
 {
   "name": "@theia/editor",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia - Editor Extension",
   "dependencies": {
-    "@theia/core": "^0.3.17",
-    "@theia/languages": "^0.3.17",
-    "@theia/variable-resolver": "^0.3.17",
+    "@theia/core": "^0.3.18",
+    "@theia/languages": "^0.3.18",
+    "@theia/variable-resolver": "^0.3.18",
     "@types/base64-arraybuffer": "0.1.0",
     "base64-arraybuffer": "^0.1.5"
   },
@@ -42,7 +42,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17"
+    "@theia/ext-scripts": "^0.3.18"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

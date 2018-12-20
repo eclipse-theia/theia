@@ -1,12 +1,12 @@
 {
   "name": "@theia/extension-manager",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia - Extension Manager",
   "dependencies": {
-    "@theia/application-manager": "^0.3.17",
-    "@theia/core": "^0.3.17",
-    "@theia/application-package": "^0.3.17",
-    "@theia/filesystem": "^0.3.17",
+    "@theia/application-manager": "^0.3.18",
+    "@theia/application-package": "^0.3.18",
+    "@theia/core": "^0.3.18",
+    "@theia/filesystem": "^0.3.18",
     "@types/fs-extra": "^4.0.2",
     "@types/sanitize-html": "^1.13.31",
     "@types/showdown": "^1.7.1",
@@ -48,7 +48,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17"
+    "@theia/ext-scripts": "^0.3.18"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

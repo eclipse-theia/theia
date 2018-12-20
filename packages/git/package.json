@@ -1,14 +1,14 @@
 {
   "name": "@theia/git",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia - Git Integration",
   "dependencies": {
-    "@theia/core": "^0.3.17",
-    "@theia/editor": "^0.3.17",
-    "@theia/filesystem": "^0.3.17",
-    "@theia/languages": "^0.3.17",
-    "@theia/navigator": "^0.3.17",
-    "@theia/workspace": "^0.3.17",
+    "@theia/core": "^0.3.18",
+    "@theia/editor": "^0.3.18",
+    "@theia/filesystem": "^0.3.18",
+    "@theia/languages": "^0.3.18",
+    "@theia/navigator": "^0.3.18",
+    "@theia/workspace": "^0.3.18",
     "@types/diff": "^3.2.2",
     "@types/fs-extra": "^4.0.2",
     "@types/p-queue": "^2.3.1",
@@ -69,7 +69,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17",
+    "@theia/ext-scripts": "^0.3.18",
     "upath": "^1.0.2"
   },
   "nyc": {

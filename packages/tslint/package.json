@@ -1,6 +1,6 @@
 {
   "name": "@theia/tslint",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Theia - TSLint Extension",
   "publishConfig": {
     "access": "public"
@@ -34,7 +34,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.17"
+    "@theia/ext-scripts": "^0.3.18"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
