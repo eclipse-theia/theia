@@ -16,7 +16,7 @@
 
 // tslint:disable:no-any
 
-import { TreeDataProvider, TreeView, TreeViewExpansionEvent } from '@theia/plugin';
+import { TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem } from '@theia/plugin';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable } from '../types-impl';
 import { PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
@@ -157,9 +157,9 @@ class TreeViewExtImpl<T> extends Disposable {
         }
     }
 
-    generateId(): string {
-        this.idCounter++;
-        return 'item-' + this.idCounter;
+    /** Note, the generated ID must include the item's `contextValue`. */
+    generateId(item: TreeItem): string {
+        return `item-${this.idCounter++}/${item.contextValue || ''}`;
     }
 
     async getChildren(treeItemId: string): Promise<TreeViewItem[] | undefined> {
@@ -173,16 +173,16 @@ class TreeViewExtImpl<T> extends Disposable {
             const treeItems: TreeViewItem[] = [];
             const promises = result.map(async value => {
 
-                // Generate the ID
-                // ID is used for caching the element
-                const id = this.generateId();
-
-                // Add element to the cache
-                this.cache.set(id, value);
-
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
                 const treeItem = await this.treeDataProvider.getTreeItem(value);
+
+                // Generate the ID
+                // ID is used for caching the element
+                const id = this.generateId(treeItem);
+
+                // Add element to the cache
+                this.cache.set(id, value);
 
                 // Convert theia.TreeItem to the TreeViewItem
 
