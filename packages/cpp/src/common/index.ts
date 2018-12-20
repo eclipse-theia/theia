@@ -21,3 +21,10 @@ export const CPP_LANGUAGE_NAME = 'C/C++';
 export const HEADER_FILE_EXTENSIONS = ['h', 'hxx', 'hh', 'hpp', 'inc'];
 export const SOURCE_FILE_EXTENSIONS = ['c', 'cxx', 'C', 'c++', 'cc', 'cpp'];
 export const HEADER_AND_SOURCE_FILE_EXTENSIONS = SOURCE_FILE_EXTENSIONS.concat(HEADER_FILE_EXTENSIONS);
+
+export const CLANGD_EXECUTABLE_DEFAULT = 'clangd';
+
+export interface CppStartParameters {
+    clangdExecutable: string;
+    clangdArgs: string;
+}

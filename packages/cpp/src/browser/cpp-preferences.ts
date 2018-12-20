@@ -17,6 +17,7 @@
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
 import { CppBuildConfiguration } from './cpp-build-configurations';
+import { CLANGD_EXECUTABLE_DEFAULT } from '../common';
 
 export const cppPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -56,12 +57,24 @@ export const cppPreferencesSchema: PreferenceSchema = {
             default: false,
             type: 'boolean'
         },
+        'cpp.clangdExecutable': {
+            description: 'Specify the executable name/path to run in order to start clangd.',
+            default: CLANGD_EXECUTABLE_DEFAULT,
+            type: 'string'
+        },
+        'cpp.clangdArgs': {
+            description: 'Specify the arguments to pass to clangd when starting the language server.',
+            default: '',
+            type: 'string'
+        }
     }
 };
 
 export class CppConfiguration {
     'cpp.buildConfigurations': CppBuildConfiguration[];
     'cpp.experimentalCommands': boolean;
+    'cpp.clangdExecutable': string;
+    'cpp.clangdArgs': string;
 }
 
 export const CppPreferences = Symbol('CppPreferences');

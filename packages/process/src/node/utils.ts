@@ -22,8 +22,11 @@ const stringArgv = require('string-argv');
  * Parses the given line into an array of args respecting escapes and string literals.
  * @param line the given line to parse
  */
-export function parseArgs(line: string): string[] {
-    return stringArgv(line);
+export function parseArgs(line: string | undefined): string[] {
+    if (line) {
+        return stringArgv(line);
+    }
+    return [];
 }
 
 // Polyfill for Object.entries, until we upgrade to ES2017.
