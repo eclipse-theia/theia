@@ -55,7 +55,7 @@ export abstract class FileDownloadHandler {
         }
         response.setHeader('Content-Disposition', `attachment; filename=${name}`);
         try {
-            await fs.access(filePath, fs.constants.W_OK);
+            await fs.access(filePath, fs.constants.R_OK);
             fs.readFile(filePath, (error, data) => {
                 if (error) {
                     this.handleError(response, error, INTERNAL_SERVER_ERROR);
