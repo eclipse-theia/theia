@@ -403,7 +403,7 @@ export class PreferencesTreeWidget extends TreeWidget {
             const propertyNodes: SelectableTreeNode[] = [];
             const properties: string[] = [];
             for (const property in this.properties) {
-                if (property.startsWith(group)) {
+                if (property.split('.', 1)[0] === group) {
                     properties.push(property);
                 }
             }
