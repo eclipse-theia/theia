@@ -19,13 +19,15 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 
 import { Container, ContainerModule } from 'inversify';
-import { ILogger, MessageClient, MessageService, MenuPath, MenuAction } from '@theia/core';
+import { ILogger, MessageClient, MessageService, MenuPath, MenuAction, CommandRegistry, bindContributionProvider, CommandContribution } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MockMenuModelRegistry } from '@theia/core/lib/common/test/mock-menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { MenusContributionPointHandler } from './menus-contribution-handler';
+import { ContextKeyService } from '../context-key/context-key';
+import { MockContextKeyService } from '../context-key/mock-context-key-service';
 import 'mocha';
 import * as sinon from 'sinon';
 
@@ -36,6 +38,7 @@ let handler: MenusContributionPointHandler;
 
 let notificationWarnSpy: sinon.SinonSpy;
 let registerMenuSpy: sinon.SinonSpy;
+let registerCmdHandlerSpy: sinon.SinonSpy;
 let loggerWarnSpy: sinon.SinonSpy;
 
 const testCommandId = 'core.about';
@@ -48,6 +51,9 @@ before(() => {
         bind(MessageClient).toSelf().inSingletonScope();
         bind(MessageService).toSelf().inSingletonScope();
         bind(MenuModelRegistry).toConstantValue(new MockMenuModelRegistry());
+        bindContributionProvider(bind, CommandContribution);
+        bind(CommandRegistry).toSelf().inSingletonScope();
+        bind(ContextKeyService).toConstantValue(new MockContextKeyService());
         bind(MenusContributionPointHandler).toSelf();
     });
 
@@ -65,11 +71,15 @@ beforeEach(() => {
 
     const menuRegistry = testContainer.get(MenuModelRegistry);
     registerMenuSpy = sinon.spy(menuRegistry, 'registerMenuAction');
+
+    const commandRegistry = testContainer.get(CommandRegistry);
+    registerCmdHandlerSpy = sinon.spy(commandRegistry, 'registerHandler');
 });
 
 afterEach(function () {
     notificationWarnSpy.restore();
     registerMenuSpy.restore();
+    registerCmdHandlerSpy.restore();
     loggerWarnSpy.restore();
 });
 
@@ -132,6 +142,7 @@ describe.skip('MenusContributionHandler', () => {
 
         sinon.assert.notCalled(notificationWarnSpy);
         sinon.assert.notCalled(registerMenuSpy);
+        sinon.assert.notCalled(registerCmdHandlerSpy);
     });
 
     it('should warn when invalid menu identifier', () => {

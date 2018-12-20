@@ -76,6 +76,7 @@ export interface PluginPackageView {
 export interface PluginPackageMenu {
     command: string;
     group?: string;
+    when?: string;
 }
 
 export interface PluginPackageKeybinding {
@@ -394,6 +395,7 @@ export interface View {
 export interface Menu {
     command: string;
     group?: string;
+    when?: string;
 }
 
 /**
