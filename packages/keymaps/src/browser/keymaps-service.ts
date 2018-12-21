@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ResourceProvider, Resource, MessageService } from '@theia/core/lib/common';
+import { ResourceProvider, Resource } from '@theia/core/lib/common';
 import { Keybinding, KeybindingRegistry, KeybindingScope, OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
@@ -37,9 +37,6 @@ export class KeymapsService {
 
     @inject(KeybindingRegistry)
     protected readonly keyBindingRegistry: KeybindingRegistry;
-
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
 
     @inject(OpenerService)
     protected readonly opener: OpenerService;
