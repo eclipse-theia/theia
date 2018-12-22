@@ -1652,3 +1652,68 @@ export class Task {
         }
     }
 }
+
+/**
+ * The base class of all breakpoint types.
+ */
+export class Breakpoint {
+    /**
+     * Is breakpoint enabled.
+     */
+    enabled: boolean;
+    /**
+     * An optional expression for conditional breakpoints.
+     */
+    condition?: string;
+    /**
+     * An optional expression that controls how many hits of the breakpoint are ignored.
+     */
+    hitCondition?: string;
+    /**
+     * An optional message that gets logged when this breakpoint is hit. Embedded expressions within {} are interpolated by the debug adapter.
+     */
+    logMessage?: string;
+
+    protected constructor(enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
+        this.enabled = enabled || false;
+        this.condition = condition;
+        this.hitCondition = hitCondition;
+        this.logMessage = logMessage;
+    }
+}
+
+/**
+ * A breakpoint specified by a source location.
+ */
+export class SourceBreakpoint extends Breakpoint {
+    /**
+     * The source and line position of this breakpoint.
+     */
+    location: Location;
+
+    /**
+     * Create a new breakpoint for a source location.
+     */
+    constructor(location: Location, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
+        super(enabled, condition, hitCondition, logMessage);
+        this.location = location;
+    }
+}
+
+/**
+ * A breakpoint specified by a function name.
+ */
+export class FunctionBreakpoint extends Breakpoint {
+    /**
+     * The name of the function to which this breakpoint is attached.
+     */
+    functionName: string;
+
+    /**
+     * Create a new function breakpoint.
+     */
+    constructor(functionName: string, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
+        super(enabled, condition, hitCondition, logMessage);
+        this.functionName = functionName;
+    }
+}

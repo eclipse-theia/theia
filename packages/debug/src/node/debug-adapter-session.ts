@@ -21,74 +21,13 @@
 
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
-import * as net from 'net';
-import { injectable, inject } from 'inversify';
-import { Disposable, DisposableCollection } from '@theia/core';
 import {
-    RawProcessFactory,
-    ProcessManager,
-    RawProcess,
-    RawProcessOptions,
-    RawForkOptions
-} from '@theia/process/lib/node';
-import {
-    DebugAdapterExecutable,
     CommunicationProvider,
     DebugAdapterSession,
-    DebugAdapterSessionFactory,
-    DebugAdapterFactory
-} from './debug-model';
+} from '../common/debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
-
-/**
- * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
- * launching the debug adapter as separate process.
- */
-@injectable()
-export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
-    @inject(RawProcessFactory)
-    protected readonly processFactory: RawProcessFactory;
-    @inject(ProcessManager)
-    protected readonly processManager: ProcessManager;
-
-    start(executable: DebugAdapterExecutable): CommunicationProvider {
-        const process = this.childProcess(executable);
-
-        // FIXME: propagate onError + onExit
-        return {
-            input: process.input,
-            output: process.output,
-            dispose: () => process.kill()
-        };
-    }
-
-    private childProcess(executable: DebugAdapterExecutable): RawProcess {
-        // tslint:disable-next-line:no-any
-        const isForkOptions = (forkOptions: any): forkOptions is RawForkOptions =>
-            !!forkOptions && !!forkOptions.modulePath;
-
-        const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
-        const options = { stdio: ['pipe', 'pipe', 2] };
-
-        if (isForkOptions(processOptions)) {
-            options.stdio.push('ipc');
-        }
-
-        processOptions.options = options;
-        return this.processFactory(processOptions);
-    }
-
-    connect(debugServerPort: number): CommunicationProvider {
-        const socket = net.createConnection(debugServerPort);
-        // FIXME: propagate socket.on('error', ...) + socket.on('close', ...)
-        return {
-            input: socket,
-            output: socket,
-            dispose: () => socket.end()
-        };
-    }
-}
+import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
+import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 
 /**
  * [DebugAdapterSession](#DebugAdapterSession) implementation.
@@ -96,9 +35,10 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     private static TWO_CRLF = '\r\n\r\n';
+    private static CONTENT_LENGTH = 'Content-Length';
 
     private readonly toDispose = new DisposableCollection();
-    private channel: WebSocketChannel | undefined;
+    private channel: IWebSocket | undefined;
     private contentLength: number;
     private buffer: Buffer;
 
@@ -115,7 +55,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         ]);
     }
 
-    async start(channel: WebSocketChannel): Promise<void> {
+    async start(channel: IWebSocket): Promise<void> {
         if (this.channel) {
             throw new Error('The session has already been started, id: ' + this.id);
         }
@@ -167,13 +107,22 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
                     continue;	// there may be more complete messages to process
                 }
             } else {
-                const idx = this.buffer.indexOf(DebugAdapterSessionImpl.TWO_CRLF);
+                let idx = this.buffer.indexOf(DebugAdapterSessionImpl.CONTENT_LENGTH);
+                if (idx > 0) {
+                    // log unrecognized output
+                    const output = this.buffer.slice(0, idx);
+                    console.log(output.toString('utf-8'));
+
+                    this.buffer = this.buffer.slice(idx);
+                }
+
+                idx = this.buffer.indexOf(DebugAdapterSessionImpl.TWO_CRLF);
                 if (idx !== -1) {
                     const header = this.buffer.toString('utf8', 0, idx);
                     const lines = header.split('\r\n');
                     for (let i = 0; i < lines.length; i++) {
                         const pair = lines[i].split(/: +/);
-                        if (pair[0] === 'Content-Length') {
+                        if (pair[0] === DebugAdapterSessionImpl.CONTENT_LENGTH) {
                             this.contentLength = +pair[1];
                         }
                     }
@@ -197,19 +146,5 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     async stop(): Promise<void> {
         this.toDispose.dispose();
-    }
-}
-
-/**
- * [DebugAdapterSessionFactory](#DebugAdapterSessionFactory) implementation.
- */
-@injectable()
-export class DebugAdapterSessionFactoryImpl implements DebugAdapterSessionFactory {
-
-    get(sessionId: string, communicationProvider: CommunicationProvider): DebugAdapterSession {
-        return new DebugAdapterSessionImpl(
-            sessionId,
-            communicationProvider
-        );
     }
 }

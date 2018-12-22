@@ -23,10 +23,11 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
 import * as stream from 'stream';
-import { Disposable, MaybePromise } from '@theia/core';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
-import { DebugConfiguration } from '../common/debug-configuration';
+import { DebugConfiguration } from './debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { MaybePromise } from '@theia/core/lib/common/types';
 
 // FXIME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
@@ -151,7 +152,7 @@ export interface DebugAdapterContribution {
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
-    provideDebugAdapterExecutable?(config: DebugConfiguration): MaybePromise<DebugAdapterExecutable | undefined>;
+    provideDebugAdapterExecutable?(config: DebugConfiguration): MaybePromise<DebugAdapterExecutable | undefined>;
 
     /**
      * Provides initial [debug configuration](#DebugConfiguration).

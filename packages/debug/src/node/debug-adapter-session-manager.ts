@@ -20,7 +20,7 @@ import { MessagingService } from '@theia/core/lib/node/messaging/messaging-servi
 
 import { DebugAdapterPath } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
-import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
+import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from '../common/debug-model';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
 
 /**
