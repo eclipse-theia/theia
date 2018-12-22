@@ -27,7 +27,6 @@ export const LEGACY_PORT_DEFAULT = 5858;
 
 @injectable()
 export class NodeDebugAdapterContribution extends AbstractVSCodeDebugAdapterContribution {
-
     constructor() {
         super(
             'node',
@@ -94,12 +93,10 @@ export class NodeDebugAdapterContribution extends AbstractVSCodeDebugAdapterCont
 
 @injectable()
 export class Node2DebugAdapterContribution extends AbstractVSCodeDebugAdapterContribution {
-
     constructor() {
         super(
             'node2',
             path.join(__dirname, '../../download/node-debug2/extension')
         );
     }
-
 }

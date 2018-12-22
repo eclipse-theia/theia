@@ -23,14 +23,14 @@ import {
 import {
     LaunchBasedDebugAdapterFactory,
     DebugAdapterSessionFactoryImpl
-} from './debug-adapter';
+} from './debug-adapter-factory';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
     DebugAdapterContribution,
     DebugAdapterSessionFactory,
     DebugAdapterFactory
-} from './debug-model';
+} from '../common/debug-model';
 import { DebugServiceImpl } from './debug-service-impl';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';

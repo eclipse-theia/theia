@@ -20,6 +20,7 @@ import { LogPart } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plugin-api';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -60,6 +61,7 @@ export interface PluginPackageContribution {
     views?: { [location: string]: PluginPackageView[] };
     menus?: { [location: string]: PluginPackageMenu[] };
     keybindings?: PluginPackageKeybinding[];
+    debuggers?: PluginPackageDebuggersContribution[];
 }
 
 export interface PluginPackageViewContainer {
@@ -96,6 +98,32 @@ export interface PluginPackageGrammarsContribution {
 
 export interface ScopeMap {
     [scopeName: string]: string;
+}
+
+export interface PlatformSpecificAdapterContribution {
+    program?: string;
+    args?: string[];
+    runtime?: string;
+    runtimeArgs?: string[];
+}
+
+/**
+ * This interface describes a package.json debuggers contribution section object.
+ */
+export interface PluginPackageDebuggersContribution extends PlatformSpecificAdapterContribution {
+    type: string;
+    label?: string;
+    languages?: string[];
+    enableBreakpointsFor?: { languageIds: string[] };
+    configurationAttributes: { [request: string]: IJSONSchema };
+    configurationSnippets: IJSONSchemaSnippet[];
+    variables?: ScopeMap;
+    adapterExecutableCommand?: string;
+    win?: PlatformSpecificAdapterContribution;
+    winx86?: PlatformSpecificAdapterContribution;
+    windows?: PlatformSpecificAdapterContribution;
+    osx?: PlatformSpecificAdapterContribution;
+    linux?: PlatformSpecificAdapterContribution;
 }
 
 /**
@@ -311,6 +339,7 @@ export interface PluginContribution {
     views?: { [location: string]: View[] };
     menus?: { [location: string]: Menu[] };
     keybindings?: Keybinding[];
+    debuggers?: DebuggerContribution[];
 }
 
 export interface GrammarsContribution {
@@ -345,6 +374,27 @@ export interface LanguageConfiguration {
     comments?: CommentRule;
     folding?: FoldingRules;
     wordPattern?: string;
+}
+
+/**
+ * This interface describes a package.json debuggers contribution section object.
+ */
+export interface DebuggerContribution extends PlatformSpecificAdapterContribution {
+    type: string,
+    label?: string,
+    languages?: string[],
+    enableBreakpointsFor?: {
+        languageIds: string[]
+    },
+    configurationAttributes?: IJSONSchema[],
+    configurationSnippets?: IJSONSchemaSnippet[],
+    variables?: ScopeMap,
+    adapterExecutableCommand?: string
+    win?: PlatformSpecificAdapterContribution;
+    winx86?: PlatformSpecificAdapterContribution;
+    windows?: PlatformSpecificAdapterContribution;
+    osx?: PlatformSpecificAdapterContribution;
+    linux?: PlatformSpecificAdapterContribution;
 }
 
 export interface IndentationRules {

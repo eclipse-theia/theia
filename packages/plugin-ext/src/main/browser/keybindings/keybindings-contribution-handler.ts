@@ -36,10 +36,13 @@ export class KeybindingsContributionPointHandler {
 
         const keybindings = contributions.keybindings;
         keybindings.forEach(keybinding => {
-            const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(KeySequence.parse(keybinding.keybinding));
-
-            this.handleShadingKeybindings(keybinding, keybindingResult.shadow);
-            this.handlePartialKeybindings(keybinding, keybindingResult.partial);
+            try {
+                const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(KeySequence.parse(keybinding.keybinding));
+                this.handleShadingKeybindings(keybinding, keybindingResult.shadow);
+                this.handlePartialKeybindings(keybinding, keybindingResult.partial);
+            } catch (e) {
+                this.logger.error(e.message || e);
+            }
         });
 
         this.keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);

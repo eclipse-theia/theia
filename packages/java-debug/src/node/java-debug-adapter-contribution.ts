@@ -76,7 +76,6 @@ export class JavaDebugExtensionContribution extends AbstractVSCodeDebugAdapterCo
             path.resolve(this.extensionPath, javaExtPath)
         );
     }
-
 }
 
 @injectable()

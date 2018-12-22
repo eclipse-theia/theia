@@ -28,10 +28,10 @@ import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { QuickPickService, StorageService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { DebugService } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugConfigurationModel } from './debug-configuration-model';
 import { DebugSessionOptions } from './debug-session-options';
+import { DebugService } from '../common/debug-service';
 
 @injectable()
 export class DebugConfigurationManager {

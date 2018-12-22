@@ -14,11 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { NodeDebugAdapterContribution, Node2DebugAdapterContribution } from './node-debug-adapter-contribution';
-import { DebugAdapterContribution } from '@theia/debug/lib/common/debug-model';
+import { DebugExtImpl } from '../../../plugin/node/debug/debug';
 
-export default new ContainerModule(bind => {
-    bind(DebugAdapterContribution).to(NodeDebugAdapterContribution).inSingletonScope();
-    bind(DebugAdapterContribution).to(Node2DebugAdapterContribution).inSingletonScope();
-});
+export function createDebugExtStub(): DebugExtImpl {
+    const err = new Error('Debug API works only in plugin container');
+
+    return new Proxy({}, {
+        get: function (obj, prop) {
+            throw err;
+        },
+
+        set(obj, prop, value) {
+            throw err;
+        },
+
+        apply: function (target, that, args) {
+            throw err;
+        }
+    }) as DebugExtImpl;
+}

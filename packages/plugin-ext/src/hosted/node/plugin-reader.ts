@@ -75,7 +75,10 @@ export class HostedPluginReader implements BackendApplicationContribution {
             return undefined;
         }
 
-        const plugin: PluginPackage = require(packageJsonPath);
+        let rawData = fs.readFileSync(packageJsonPath).toString();
+        rawData = this.localize(rawData, path);
+
+        const plugin: PluginPackage = JSON.parse(rawData);
         plugin.packagePath = path;
         const pluginMetadata = this.scanner.getPluginMetadata(plugin);
         if (pluginMetadata.model.entryPoint.backend) {
@@ -93,6 +96,21 @@ export class HostedPluginReader implements BackendApplicationContribution {
         }
 
         return pluginMetadata;
+    }
+
+    private localize(rawData: string, pluginPath: string): string {
+        const nlsPath = pluginPath + 'package.nls.json';
+        if (fs.existsSync(nlsPath)) {
+            const nlsMap: {
+                [key: string]: string
+            } = require(nlsPath);
+            for (const key of Object.keys(nlsMap)) {
+                const value = nlsMap[key].replace(/\"/g, '\\"');
+                rawData = rawData.split('%' + key + '%').join(value);
+            }
+        }
+
+        return rawData;
     }
 
     getPlugin(): PluginMetadata | undefined {

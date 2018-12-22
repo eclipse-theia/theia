@@ -407,3 +407,12 @@ export interface WorkspaceFolder {
     name: string;
     index: number;
 }
+
+export interface Breakpoint {
+    readonly enabled: boolean;
+    readonly condition?: string;
+    readonly hitCondition?: string;
+    readonly logMessage?: string;
+    readonly location?: Location;
+    readonly functionName?: string;
+}

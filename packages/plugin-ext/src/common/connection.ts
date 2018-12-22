@@ -17,6 +17,7 @@ import { Disposable } from './disposable-util';
 import { PluginMessageReader } from './plugin-message-reader';
 import { PluginMessageWriter } from './plugin-message-writer';
 import { MessageReader, MessageWriter, Message } from 'vscode-jsonrpc';
+import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 
 /**
  * The interface for describing the connection between plugins and main side.
@@ -37,16 +38,10 @@ export interface Connection extends Disposable {
  * The container for message reader and writer which can be used to create connection between plugins and main side.
  */
 export class PluginConnection implements Connection {
-    reader: PluginMessageReader;
-    writer: PluginMessageWriter;
-    clearConnection: () => void;
-
-    constructor(protected readonly pluginMessageReader: PluginMessageReader,
-        protected readonly pluginMessageWriter: PluginMessageWriter,
-        dispose: () => void) {
-        this.reader = pluginMessageReader;
-        this.writer = pluginMessageWriter;
-        this.clearConnection = dispose;
+    constructor(
+        readonly reader: PluginMessageReader,
+        readonly writer: PluginMessageWriter,
+        readonly dispose: () => void) {
     }
 
     forward(to: Connection, map: (message: Message) => Message = message => message): void {
@@ -55,11 +50,33 @@ export class PluginConnection implements Connection {
             to.writer.write(output);
         });
     }
+}
 
-    /**
-     * Has to be called when the connection was closed.
-     */
+/**
+ * [IWebSocket](#IWebSocket) implementation over RPC.
+ */
+export class PluginWebSocketChannel implements IWebSocket {
+    constructor(protected readonly connection: PluginConnection) { }
+
+    send(content: string): void {
+        this.connection.writer.write(content);
+    }
+
+    // tslint:disable-next-line:no-any
+    onMessage(cb: (data: any) => void): void {
+        this.connection.reader.listen(cb);
+    }
+
+    // tslint:disable-next-line:no-any
+    onError(cb: (reason: any) => void): void {
+        this.connection.reader.onError(e => cb(e));
+    }
+
+    onClose(cb: (code: number, reason: string) => void): void {
+        this.connection.reader.onClose(() => cb(-1, 'closed'));
+    }
+
     dispose(): void {
-        this.clearConnection();
+        this.connection.dispose();
     }
 }

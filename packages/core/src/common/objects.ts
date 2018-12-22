@@ -14,6 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+export function deepClone<T>(obj: T): T {
+    if (!obj || typeof obj !== 'object') {
+        return obj;
+    }
+    if (obj instanceof RegExp) {
+        return obj;
+    }
+    // tslint:disable-next-line:no-any
+    const result: any = Array.isArray(obj) ? [] : {};
+    Object.keys(obj).forEach((key: string) => {
+        // tslint:disable-next-line:no-any
+        const prop = (<any>obj)[key];
+        if (prop && typeof prop === 'object') {
+            result[key] = deepClone(prop);
+        } else {
+            result[key] = prop;
+        }
+    });
+    return result;
+}
+
 export function deepFreeze<T>(obj: T): T {
     if (!obj || typeof obj !== 'object') {
         return obj;

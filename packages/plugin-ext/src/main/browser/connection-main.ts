@@ -25,6 +25,7 @@ import { PluginMessageWriter } from '../../common/plugin-message-writer';
  * Creates holds the connections to the plugins. Allows to send a message to the plugin by getting already created connection via id.
  */
 export class ConnectionMainImpl implements ConnectionMain {
+
     private proxy: ConnectionExt;
     private connections = new Map<string, PluginConnection>();
     constructor(rpc: RPCProtocol) {

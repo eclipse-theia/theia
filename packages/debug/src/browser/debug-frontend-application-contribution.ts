@@ -16,14 +16,10 @@
 
 import { AbstractViewContribution, ApplicationShell, KeybindingRegistry } from '@theia/core/lib/browser';
 import { injectable, inject } from 'inversify';
-import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { InMemoryResources, MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command } from '@theia/core/lib/common';
-import { DebugService } from '../common/debug-service';
+import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command } from '@theia/core/lib/common';
 import { DebugViewLocation } from '../common/debug-configuration';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
-import URI from '@theia/core/lib/common/uri';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
@@ -42,6 +38,8 @@ import { DebugKeybindingContexts } from './debug-keybinding-contexts';
 import { DebugEditorModel } from './editor/debug-editor-model';
 import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
+import { DebugService } from '../common/debug-service';
+import { DebugSchemaUpdater } from './debug-schema-updater';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -267,9 +265,8 @@ ThemeService.get().onThemeChange(() => updateTheme());
 @injectable()
 export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> {
 
-    @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore;
-    @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
-    @inject(DebugService) protected readonly debugService: DebugService;
+    @inject(DebugService)
+    protected readonly debug: DebugService;
 
     @inject(DebugSessionManager)
     protected readonly manager: DebugSessionManager;
@@ -291,6 +288,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(DebugConsoleContribution)
     protected readonly console: DebugConsoleContribution;
+
+    @inject(DebugSchemaUpdater)
+    protected readonly schemaUpdater: DebugSchemaUpdater;
 
     constructor() {
         super({
@@ -336,43 +336,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 this.openSession(session);
             }
         });
-        this.debugService.debugTypes().then(async types => {
-            const launchSchemaUrl = new URI('vscode://debug/launch.json');
-            const attributePromises = types.map(type => this.debugService.getSchemaAttributes(type));
-            const schema: IJSONSchema = {
-                ...launchSchema
-            };
-            const items = (<IJSONSchema>launchSchema!.properties!['configurations'].items);
-            for (const attributes of await Promise.all(attributePromises)) {
-                for (const attribute of attributes) {
-                    attribute.properties = {
-                        'debugViewLocation': {
-                            enum: ['default', 'left', 'right', 'bottom'],
-                            default: 'default',
-                            description: 'Controls the location of the debug view.'
-                        },
-                        'openDebug': {
-                            enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
-                            default: 'openOnSessionStart',
-                            description: 'Controls when the debug view should open.'
-                        },
-                        'internalConsoleOptions': {
-                            enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
-                            default: 'openOnFirstSessionStart',
-                            description: 'Controls when the internal debug console should open.'
-                        },
-                        ...attribute.properties
-                    };
-                    items.oneOf!.push(attribute);
-                }
-            }
-            items.defaultSnippets!.push(...await this.debugService.getConfigurationSnippets());
-            this.inmemoryResources.add(launchSchemaUrl, JSON.stringify(schema));
-            this.jsonSchemaStore.registerSchema({
-                fileMatch: ['launch.json'],
-                url: launchSchemaUrl.toString()
-            });
-        });
+
+        this.schemaUpdater.update();
         this.configurations.load();
         await this.breakpointManager.load();
     }
@@ -843,73 +808,3 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
 }
-
-// debug general schema
-const defaultCompound = { name: 'Compound', configurations: [] };
-
-const launchSchemaId = 'vscode://schemas/launch';
-const launchSchema: IJSONSchema = {
-    id: launchSchemaId,
-    type: 'object',
-    title: 'Launch',
-    required: [],
-    default: { version: '0.2.0', configurations: [], compounds: [] },
-    properties: {
-        version: {
-            type: 'string',
-            description: 'Version of this file format.',
-            default: '0.2.0'
-        },
-        configurations: {
-            type: 'array',
-            description: 'List of configurations. Add new configurations or edit existing ones by using IntelliSense.',
-            items: {
-                defaultSnippets: [],
-                'type': 'object',
-                oneOf: []
-            }
-        },
-        compounds: {
-            type: 'array',
-            description: 'List of compounds. Each compound references multiple configurations which will get launched together.',
-            items: {
-                type: 'object',
-                required: ['name', 'configurations'],
-                properties: {
-                    name: {
-                        type: 'string',
-                        description: 'Name of compound. Appears in the launch configuration drop down menu.'
-                    },
-                    configurations: {
-                        type: 'array',
-                        default: [],
-                        items: {
-                            oneOf: [{
-                                enum: [],
-                                description: 'Please use unique configuration names.'
-                            }, {
-                                type: 'object',
-                                required: ['name'],
-                                properties: {
-                                    name: {
-                                        enum: [],
-                                        description: 'Name of compound. Appears in the launch configuration drop down menu.'
-                                    },
-                                    folder: {
-                                        enum: [],
-                                        description: 'Name of folder in which the compound is located.'
-                                    }
-                                }
-                            }]
-                        },
-                        description: 'Names of configurations that will be started as part of this compound.'
-                    }
-                },
-                default: defaultCompound
-            },
-            default: [
-                defaultCompound
-            ]
-        }
-    }
-};
