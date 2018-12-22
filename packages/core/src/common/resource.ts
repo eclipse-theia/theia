@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import URI from '../common/uri';
 import { ContributionProvider } from './contribution-provider';
-import { Event } from './event';
+import { Event, Emitter } from './event';
 import { Disposable } from './disposable';
 import { MaybePromise } from './types';
 import { CancellationToken } from './cancellation';
@@ -117,26 +117,52 @@ export class DefaultResourceProvider {
 
 }
 
+export class MutableResource implements Resource {
+    private contents: string;
+
+    constructor(readonly uri: URI, contents: string, readonly dispose: () => void) {
+        this.contents = contents;
+    }
+
+    async readContents(): Promise<string> {
+        return this.contents;
+    }
+
+    async saveContents(contents: string): Promise<void> {
+        this.contents = contents;
+        this.fireDidChangeContents();
+    }
+
+    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    onDidChangeContents = this.onDidChangeContentsEmitter.event;
+    protected fireDidChangeContents(): void {
+        this.onDidChangeContentsEmitter.fire(undefined);
+    }
+}
+
 @injectable()
 export class InMemoryResources implements ResourceResolver {
 
-    private resources = new Map<string, Resource>();
+    private resources = new Map<string, MutableResource>();
 
     add(uri: URI, contents: string): Resource {
-        const stringUri = uri.toString();
-        if (this.resources.has(stringUri)) {
-            throw new Error(`Cannot add already existing in-memory resource '${stringUri}'`);
+        const resourceUri = uri.toString();
+        if (this.resources.has(resourceUri)) {
+            throw new Error(`Cannot add already existing in-memory resource '${resourceUri}'`);
         }
-        const resource: Resource = {
-            uri,
-            async readContents(): Promise<string> {
-                return contents;
-            },
-            dispose: () => {
-                this.resources.delete(stringUri);
-            }
-        };
-        this.resources.set(stringUri, resource);
+
+        const resource = new MutableResource(uri, contents, () => this.resources.delete(resourceUri));
+        this.resources.set(resourceUri, resource);
+        return resource;
+    }
+
+    update(uri: URI, contents: string): Resource {
+        const resourceUri = uri.toString();
+        const resource = this.resources.get(resourceUri);
+        if (!resource) {
+            throw new Error(`Cannot update non-existed in-memory resource '${resourceUri}'`);
+        }
+        resource.saveContents(contents);
         return resource;
     }
 
@@ -146,5 +172,4 @@ export class InMemoryResources implements ResourceResolver {
         }
         return this.resources.get(uri.toString())!;
     }
-
 }

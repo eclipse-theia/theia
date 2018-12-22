@@ -54,6 +54,10 @@ import { LanguageClientProviderImpl } from './language-provider/plugin-language-
 import { LanguageClientContributionProviderImpl } from './language-provider/language-client-contribution-provider-impl';
 import { LanguageClientContributionProvider } from './language-provider/language-client-contribution-provider';
 import { StoragePathService } from './storage-path-service';
+import { DebugSessionContributionRegistry } from '@theia/debug/lib/browser/debug-session-contribution';
+import { PluginDebugSessionContributionRegistry } from './debug/plugin-debug-session-contribution-registry';
+import { PluginDebugService } from './debug/plugin-debug-service';
+import { DebugService } from '@theia/debug/lib/common/debug-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -125,4 +129,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(LanguageClientProviderImpl).toSelf().inSingletonScope();
     rebind(LanguageClientProvider).toService(LanguageClientProviderImpl);
     bind(ContextKeyService).to(ContextKeyServiceImpl).inSingletonScope();
+
+    bind(PluginDebugService).toSelf().inSingletonScope();
+    rebind(DebugService).toService(PluginDebugService);
+
+    bind(PluginDebugSessionContributionRegistry).toSelf().inSingletonScope();
+    rebind(DebugSessionContributionRegistry).toService(PluginDebugSessionContributionRegistry);
 });

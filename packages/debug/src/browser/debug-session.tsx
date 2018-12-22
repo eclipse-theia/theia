@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import * as React from 'react';
-import { WebSocketConnectionProvider, LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable } from '@theia/core/lib/common';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -34,7 +34,6 @@ import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration } from '../common/debug-common';
-import { OutputChannel } from '@theia/output/lib/common/output-channel';
 
 export enum DebugState {
     Inactive,
@@ -45,8 +44,6 @@ export enum DebugState {
 
 // FIXME: make injectable to allow easily inject services
 export class DebugSession implements CompositeTreeElement {
-
-    protected readonly connection: DebugSessionConnection;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -65,15 +62,12 @@ export class DebugSession implements CompositeTreeElement {
     constructor(
         readonly id: string,
         readonly options: DebugSessionOptions,
-        connectionProvider: WebSocketConnectionProvider,
+        protected readonly connection: DebugSessionConnection,
         protected readonly terminalServer: TerminalService,
         protected readonly editorManager: EditorManager,
         protected readonly breakpoints: BreakpointManager,
         protected readonly labelProvider: LabelProvider,
-        protected readonly messages: MessageClient,
-        protected readonly traceOutputChannel: OutputChannel | undefined,
-    ) {
-        this.connection = new DebugSessionConnection(id, connectionProvider, traceOutputChannel);
+        protected readonly messages: MessageClient) {
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
         this.toDispose.pushAll([
             this.onDidChangeEmitter,

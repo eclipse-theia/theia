@@ -31,9 +31,15 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
     private readonly converter: CommandsConverter;
 
+    // tslint:disable-next-line:no-any
+    private static EMPTY_HANDLER(...args: any[]): Promise<any> { return Promise.resolve(undefined); }
+
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
         this.converter = new CommandsConverter(this);
+
+        // register internal VS Code commands
+        this.registerHandler('vscode.previewHtml', CommandRegistryImpl.EMPTY_HANDLER);
     }
 
     getConverter(): CommandsConverter {
@@ -50,6 +56,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         this.proxy.$registerCommand(command);
 
         return Disposable.create(() => {
+            this.commands.delete(command.id);
             this.proxy.$unregisterCommand(command.id);
         });
 
@@ -61,6 +68,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
         this.commands.set(commandId, handler);
         return Disposable.create(() => {
+            this.commands.delete(commandId);
             this.proxy.$unregisterCommand(commandId);
         });
     }

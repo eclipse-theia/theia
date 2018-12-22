@@ -35,7 +35,7 @@ export class DebugServiceImpl implements DebugService {
     protected readonly registry: DebugAdapterContributionRegistry;
 
     dispose(): void {
-        this.stop();
+        this.terminateDebugSession();
     }
 
     async debugTypes(): Promise<string[]> {
@@ -62,13 +62,13 @@ export class DebugServiceImpl implements DebugService {
     }
 
     protected readonly sessions = new Set<string>();
-    async create(config: DebugConfiguration): Promise<string> {
+    async createDebugSession(config: DebugConfiguration): Promise<string> {
         const session = await this.sessionManager.create(config, this.registry);
         this.sessions.add(session.id);
         return session.id;
     }
 
-    async stop(sessionId?: string): Promise<void> {
+    async terminateDebugSession(sessionId?: string): Promise<void> {
         if (sessionId) {
             await this.doStop(sessionId);
         } else {

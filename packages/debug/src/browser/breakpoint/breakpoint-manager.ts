@@ -40,7 +40,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         return marker && marker.data;
     }
 
-    getBreakpoints(uri: URI): SourceBreakpoint[] {
+    getBreakpoints(uri?: URI): SourceBreakpoint[] {
         return this.findMarkers({ uri }).map(marker => marker.data);
     }
 
@@ -62,6 +62,12 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
             });
             this.setBreakpoints(uri, newBreakpoints);
         }
+    }
+
+    deleteBreakpoint(uri: URI, line: number, column?: number): void {
+        const breakpoints = this.getBreakpoints(uri);
+        const newBreakpoints = breakpoints.filter(({ raw }) => raw.line !== line);
+        this.setBreakpoints(uri, newBreakpoints);
     }
 
     enableAllBreakpoints(enabled: boolean): void {

@@ -46,14 +46,18 @@ import {
     TextEdit,
     DocumentSymbol,
     ReferenceContext,
-    Location,
     FileWatcherSubscriberOptions,
     FileChangeEvent,
     TextDocumentShowOptions,
-    WorkspaceRootsChangeEvent
+    WorkspaceRootsChangeEvent,
+    Location,
+    Breakpoint
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
@@ -156,15 +160,17 @@ export interface TerminalServiceExt {
 }
 
 export interface ConnectionMain {
+    $createConnection(id: string): Promise<void>;
+    $deleteConnection(id: string): Promise<void>;
     $sendMessage(id: string, message: string): void;
     $createConnection(id: string): Promise<void>;
     $deleteConnection(id: string): Promise<void>;
 }
 
 export interface ConnectionExt {
-    $sendMessage(id: string, message: string): void;
     $createConnection(id: string): Promise<void>;
     $deleteConnection(id: string): Promise<void>
+    $sendMessage(id: string, message: string): void;
 }
 
 export interface TerminalServiceMain {
@@ -903,6 +909,32 @@ export interface WebviewsMain {
     $unregisterSerializer(viewType: string): void;
 }
 
+export interface DebugExt {
+    $onSessionCustomEvent(sessionId: string, event: string, body?: any): void;
+    $breakpointsDidChange(all: Breakpoint[], added: Breakpoint[], removed: Breakpoint[], changed: Breakpoint[]): void;
+    $sessionDidCreate(sessionId: string): void;
+    $sessionDidDestroy(sessionId: string): void;
+    $sessionDidChange(sessionId: string | undefined): void;
+    $provideDebugConfigurations(contributionId: string, folder: string | undefined): Promise<theia.DebugConfiguration[]>;
+    $resolveDebugConfigurations(contributionId: string, debugConfiguration: theia.DebugConfiguration, folder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
+    $getSupportedLanguages(contributionId: string): Promise<string[]>;
+    $getSchemaAttributes(contributionId: string): Promise<IJSONSchema[]>;
+    $getConfigurationSnippets(contributionId: string): Promise<IJSONSchemaSnippet[]>;
+    $createDebugSession(contributionId: string, debugConfiguration: theia.DebugConfiguration): Promise<string>;
+    $terminateDebugSession(sessionId: string): Promise<void>;
+}
+
+export interface DebugMain {
+    $appendToDebugConsole(value: string): Promise<void>;
+    $appendLineToDebugConsole(value: string): Promise<void>;
+    $registerDebugConfigurationProvider(contributorId: string, description: DebuggerDescription): Promise<void>;
+    $unregisterDebugConfigurationProvider(contributorId: string): Promise<void>;
+    $addBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
+    $removeBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
+    $startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): Promise<boolean>;
+    $customRequest(command: string, args?: any): Promise<DebugProtocol.Response>;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -923,6 +955,7 @@ export const PLUGIN_RPC_CONTEXT = {
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     LANGUAGES_CONTRIBUTION_MAIN: createProxyIdentifier<LanguagesContributionMain>('LanguagesContributionMain'),
+    DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -943,6 +976,7 @@ export const MAIN_RPC_CONTEXT = {
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
+    DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt')
 };
 
 export interface TasksExt {
