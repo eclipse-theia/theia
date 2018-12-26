@@ -1,7 +1,7 @@
 # Change Log
 
 ## v0.3.19
-- [cpp] added new `cpp.clangdExecutable` and `cpp.clangdArgs` to customize language server start command.
+- [cpp] Add new `cpp.clangdExecutable` and `cpp.clangdArgs` to customize language server start command.
 - [monaco] Fix document-saving that was taking too long.
 
 ## v0.3.18
