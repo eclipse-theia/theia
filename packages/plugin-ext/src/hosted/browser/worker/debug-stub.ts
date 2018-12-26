@@ -15,21 +15,13 @@
  ********************************************************************************/
 
 import { DebugExtImpl } from '../../../plugin/node/debug/debug';
+import { RPCProtocol } from '../../../api/rpc-protocol';
 
-export function createDebugExtStub(): DebugExtImpl {
-    const err = new Error('Debug API works only in plugin container');
-
-    return new Proxy({}, {
-        get: function (obj, prop) {
-            throw err;
-        },
-
-        set(obj, prop, value) {
-            throw err;
-        },
-
+// tslint:disable:no-any
+export function createDebugExtStub(rpc: RPCProtocol): DebugExtImpl {
+    return new Proxy(new DebugExtImpl(rpc), {
         apply: function (target, that, args) {
-            throw err;
+            console.error('Debug API works only in plugin container');
         }
-    }) as DebugExtImpl;
+    });
 }
