@@ -25,7 +25,10 @@ import {
     ApplyEditsOptions,
     UndoStopOptions,
     DecorationRenderOptions,
-    DecorationOptions
+    DecorationOptions,
+    ResourceTextEditDto,
+    ResourceFileEditDto,
+    WorkspaceEditDto
 } from '../../api/plugin-api';
 import { Range } from '../../api/model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
@@ -33,13 +36,18 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
 import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
+import URI from 'vscode-uri';
+import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 
 export class TextEditorsMainImpl implements TextEditorsMain {
 
     private toDispose = new DisposableCollection();
     private proxy: TextEditorsExt;
     private editorsToDispose = new Map<string, DisposableCollection>();
-    constructor(private readonly editorsAndDocuments: EditorsAndDocumentsMain, rpc: RPCProtocol) {
+
+    constructor(private readonly editorsAndDocuments: EditorsAndDocumentsMain,
+                rpc: RPCProtocol,
+                private readonly bulkEditService:  MonacoBulkEditService) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
         this.toDispose.push(editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
         this.toDispose.push(editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
@@ -101,6 +109,13 @@ export class TextEditorsMainImpl implements TextEditorsMain {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.applyEdits(modelVersionId, edits, opts));
     }
 
+    $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
+        const edits  = this.reviveWorkspaceEditDto(dto);
+        return new Promise(resolve => {
+            this.bulkEditService.apply( edits).then(() => resolve(true), err => resolve(false));
+        });
+    }
+
     $tryInsertSnippet(id: string, template: string, ranges: Range[], opts: UndoStopOptions): Promise<boolean> {
         if (!this.editorsAndDocuments.getEditor(id)) {
             return Promise.reject(disposed(`TextEditor(${id})`));
@@ -130,5 +145,19 @@ export class TextEditorsMainImpl implements TextEditorsMain {
         }
         this.editorsAndDocuments.getEditor(id)!.setDecorationsFast(key, ranges);
         return Promise.resolve();
+    }
+
+    reviveWorkspaceEditDto(data: WorkspaceEditDto): monaco.languages.WorkspaceEdit {
+        if (data && data.edits) {
+            for (const edit of data.edits) {
+                if (typeof (<ResourceTextEditDto>edit).resource === 'object') {
+                    (<ResourceTextEditDto>edit).resource = URI.revive((<ResourceTextEditDto>edit).resource);
+                } else {
+                    (<ResourceFileEditDto>edit).newUri = URI.revive((<ResourceFileEditDto>edit).newUri);
+                    (<ResourceFileEditDto>edit).oldUri = URI.revive((<ResourceFileEditDto>edit).oldUri);
+                }
+            }
+        }
+        return <monaco.languages.WorkspaceEdit>data;
     }
 }
