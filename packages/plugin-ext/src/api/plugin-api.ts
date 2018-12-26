@@ -612,7 +612,7 @@ export interface TextEditorsMain {
     $tryRevealRange(id: string, range: Range, revealType: TextEditorRevealType): Promise<void>;
     $trySetSelections(id: string, selections: Selection[]): Promise<void>;
     $tryApplyEdits(id: string, modelVersionId: number, edits: SingleEditOperation[], opts: ApplyEditsOptions): Promise<boolean>;
-    // $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto): Promise<boolean>;
+    $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto): Promise<boolean>;
     $tryInsertSnippet(id: string, template: string, selections: Range[], opts: UndoStopOptions): Promise<boolean>;
     // $getDiffInformation(id: string): Promise<editorCommon.ILineChange[]>;
 }

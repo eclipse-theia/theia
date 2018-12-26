@@ -3813,6 +3813,25 @@ declare module '@theia/plugin' {
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
         /**
+		 * Make changes to one or many resources or create, delete, and rename resources as defined by the given
+		 * [workspace edit](#WorkspaceEdit).
+		 *
+		 * All changes of a workspace edit are applied in the same order in which they have been added. If
+		 * multiple textual inserts are made at the same position, these strings appear in the resulting text
+		 * in the order the 'inserts' were made. Invalid sequences like 'delete file a' -> 'insert text in file a'
+		 * cause failure of the operation.
+		 *
+		 * When applying a workspace edit that consists only of text edits an 'all-or-nothing'-strategy is used.
+		 * A workspace edit with resource creations or deletions aborts the operation, e.g. consective edits will
+		 * not be attempted, when a single edit fails.
+		 *
+		 * @param edit A workspace edit.
+		 * @return A thenable that resolves when the edit could be applied.
+		 */
+		export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
+        
+        
+        /**
          * Register a filesystem provider for a given scheme, e.g. `ftp`.
          *
          * There can only be one provider per scheme and an error is being thrown when a scheme
@@ -4490,6 +4509,7 @@ declare module '@theia/plugin' {
          */
         constructor(range: Range, newText: string);
     }
+
 
     /**
      * Completion item kinds.
