@@ -48,7 +48,7 @@ function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
 }
 const envExt = new EnvExtImpl(rpc);
 const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc);
-const debugExt = createDebugExtStub();
+const debugExt = createDebugExtStub(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
     // tslint:disable-next-line:no-any
