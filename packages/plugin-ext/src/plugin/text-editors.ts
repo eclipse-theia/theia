@@ -119,6 +119,11 @@ export class TextEditorsExtImpl implements TextEditorsExt {
         return new TextEditorDecorationType(this.proxy, options);
     }
 
+    applyWorkspaceEdit(edit: theia.WorkspaceEdit): Promise<boolean> {
+        const dto = Converters.fromWorkspaceEdit(edit, this.editorsAndDocuments);
+        return this.proxy.$tryApplyWorkspaceEdit(dto);
+    }
+
 }
 
 export class TextEditorDecorationType implements theia.TextEditorDecorationType {
