@@ -131,8 +131,8 @@ export class ProblemWidget extends TreeWidget {
     protected decorateMarkerFileNode(node: MarkerInfoNode): React.ReactNode {
         return <div className='markerFileNode'>
             <div className={(node.icon || '') + ' file-icon'}></div>
-            <div>{node.name}</div>
-            <div className='path'>{node.description || ''}</div>
+            <div title={node.name} className='name'>{node.name}</div>
+            <div title={node.description || ''} className='path'>{node.description || ''}</div>
             <div className='notification-count-container'>
                 <span className='notification-count'>{node.numberOfMarkers.toString()}</span>
             </div>

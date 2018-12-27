@@ -33,13 +33,21 @@
     align-items: center;
 }
 
-.theia-marker-container .markerNode {
+.theia-marker-container .markerNode,
+.theia-marker-container .markerFileNode {
     width: calc(100% - 32px);
 }
 
 .theia-marker-container .markerNode div,
 .theia-marker-container .markerFileNode div {
     margin-right: 5px;
+}
+
+.theia-marker-container .markerFileNode .name,
+.theia-marker-container .markerFileNode .path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .theia-marker-container .markerFileNode .path {
