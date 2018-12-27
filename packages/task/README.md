@@ -35,7 +35,7 @@ Each task configuration looks like this:
 
 *args*: a list of strings, each one being one argument to pass to the command.
 
-*windows*: by default, *command* and *ars* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *ars*, when a task is executed on a Windows backend.
+*windows*: by default, *command* and *args* above are used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *args*, when a task is executed on a Windows backend.
 
 Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`:
 ``` json
