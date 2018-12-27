@@ -20,6 +20,7 @@ import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import * as model from '../api/model';
 import { MarkdownString, isMarkdownString } from './markdown-string';
+import { ProcessTaskDto, TaskDto } from '../api/plugin-api';
 
 describe('Type converters:', () => {
 
@@ -167,4 +168,85 @@ describe('Type converters:', () => {
 
     });
 
+    describe('convert tasks:', () => {
+        const type = 'shell';
+        const label = 'yarn build';
+        const command = 'yarn';
+        const args = ['run', 'build'];
+        const cwd = '/projects/theia';
+
+        const shellTaskDto: ProcessTaskDto = {
+            type: type,
+            label: label,
+            command: command,
+            args: args,
+            cwd: cwd,
+            options: {},
+            properties: {}
+        };
+
+        const shellPluginTask: theia.Task = {
+            name: label,
+            definition: {
+                type: type
+            },
+            execution: {
+                command: command,
+                args: args,
+                options: {
+                    cwd: cwd
+                }
+            }
+        };
+
+        const taskDtoWithCommandLine: ProcessTaskDto = {
+            type: type,
+            label: label,
+            command: command,
+            args: args,
+            cwd: cwd,
+            options: {},
+            properties: {}
+        };
+
+        const pluginTaskWithCommandLine: theia.Task = {
+            name: label,
+            definition: {
+                type: type
+            },
+            execution: {
+                commandLine: 'yarn run build',
+                options: {
+                    cwd: cwd
+                }
+            }
+        };
+
+        it('should convert to task dto', () => {
+            // when
+            const result: TaskDto | undefined = Converter.fromTask(shellPluginTask);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, shellTaskDto);
+        });
+
+        it('should convert from task dto', () => {
+            // when
+            const result: theia.Task = Converter.toTask(shellTaskDto);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, shellPluginTask);
+        });
+
+        it('should convert to task dto from task with commandline', () => {
+            // when
+            const result: TaskDto | undefined = Converter.fromTask(pluginTaskWithCommandLine);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, taskDtoWithCommandLine);
+        });
+    });
 });
