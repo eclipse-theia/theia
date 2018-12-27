@@ -469,7 +469,13 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         } else if (this.resultNumber === 0) {
             message = 'No results found.';
         } else {
-            message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
+            if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
+                message = `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
+            } else if (this.resultTreeWidget.fileNumber === 1) {
+                message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
+            } else {
+                message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
+            }
         }
         return this.searchTerm !== '' ? <div className='search-info'>{message}</div> : '';
     }
