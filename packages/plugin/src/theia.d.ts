@@ -6724,6 +6724,36 @@ declare module '@theia/plugin' {
         resolveTask(task: Task, token?: CancellationToken): ProviderResult<Task>;
     }
 
+    /**
+     * An object representing an executed Task. It can be used
+     * to terminate a task.
+     *
+     * This interface is not intended to be implemented.
+     */
+    export interface TaskExecution {
+        /**
+         * The task that got started.
+         */
+        task: Task;
+
+        /**
+         * Terminates the task execution.
+         */
+        terminate(): void;
+    }
+
+    /**
+     * An event signaling the start of a task execution.
+     *
+     * This interface is not intended to be implemented.
+     */
+    interface TaskStartEvent {
+        /**
+         * The task item representing the task that got started.
+         */
+        execution: TaskExecution;
+    }
+
     export namespace tasks {
 
         /**
@@ -6734,6 +6764,9 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
+
+        /** Fires when a task starts. */
+        export const onDidStartTask: Event<TaskStartEvent>;
     }
 
     /**
