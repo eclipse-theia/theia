@@ -558,6 +558,10 @@ export function createAPIFactory(
         const tasks: typeof theia.tasks = {
             registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
                 return tasksExt.registerTaskProvider(type, provider);
+            },
+
+            onDidStartTask(listener, thisArg?, disposables?) {
+                return tasksExt.onDidStartTask(listener, thisArg, disposables);
             }
         };
 

@@ -509,9 +509,10 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     }
 
     taskDto.type = taskDefinition.type;
+    taskDto.properties = {};
     for (const key in taskDefinition) {
-        if (taskDefinition.hasOwnProperty(key)) {
-            taskDto[key] = taskDefinition[key];
+        if (key !== 'type' && taskDefinition.hasOwnProperty(key)) {
+            taskDto.properties[key] = taskDefinition[key];
         }
     }
 
@@ -532,6 +533,43 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     return processTaskDto;
 }
 
+export function toTask(taskDto: TaskDto): theia.Task {
+    if (!taskDto) {
+        throw new Error('Task should be provided for converting');
+    }
+
+    const result = {} as theia.Task;
+    result.name = taskDto.label;
+
+    const taskType = taskDto.type;
+    const taskDefinition: theia.TaskDefinition = {
+        type: taskType
+    };
+
+    result.definition = taskDefinition;
+
+    if (taskType === 'process') {
+        result.execution = getProcessExecution(taskDto as ProcessTaskDto);
+    }
+
+    if (taskType === 'shell') {
+        result.execution = getShellExecution(taskDto as ProcessTaskDto);
+    }
+
+    const properties = taskDto.properties;
+    if (!properties) {
+        return result;
+    }
+
+    for (const key in properties) {
+        if (properties.hasOwnProperty(key)) {
+            taskDefinition[key] = properties[key];
+        }
+    }
+
+    return result;
+}
+
 export function fromProcessExecution(execution: theia.ProcessExecution, processTaskDto: ProcessTaskDto): ProcessTaskDto {
     processTaskDto.command = execution.process;
     processTaskDto.args = execution.args;
@@ -548,8 +586,7 @@ export function fromShellExecution(execution: theia.ShellExecution, processTaskD
     const options = execution.options;
     if (options) {
         processTaskDto.cwd = options.cwd;
-        processTaskDto.args = options.shellArgs;
-        processTaskDto.options = options;
+        processTaskDto.options = getShellExecutionOptions(options);
     }
 
     const commandLine = execution.commandLine;
@@ -575,6 +612,34 @@ export function fromShellExecution(execution: theia.ShellExecution, processTaskD
     }
 }
 
+export function getProcessExecution(processTaskDto: ProcessTaskDto): theia.ProcessExecution {
+    const execution = {} as theia.ProcessExecution;
+
+    execution.process = processTaskDto.command;
+
+    const processArgs = processTaskDto.args;
+    execution.args = processArgs ? processArgs : [];
+
+    const options = processTaskDto.options;
+    execution.options = options ? options : {};
+    execution.options.cwd = processTaskDto.cwd;
+
+    return execution;
+}
+
+export function getShellExecution(processTaskDto: ProcessTaskDto): theia.ShellExecution {
+    const execution = {} as theia.ShellExecution;
+
+    const options = processTaskDto.options;
+    execution.options = options ? options : {};
+    execution.options.cwd = processTaskDto.cwd;
+    execution.args = processTaskDto.args;
+
+    execution.command = processTaskDto.command;
+
+    return execution;
+}
+
 export function getShellArgs(args: undefined | (string | theia.ShellQuotedString)[]): string[] {
     if (!args || args.length === 0) {
         return [];
@@ -591,6 +656,34 @@ export function getShellArgs(args: undefined | (string | theia.ShellQuotedString
     shellQuotedArgs.forEach(arg => {
         result.push(arg.value);
     });
+
+    return result;
+}
+
+// tslint:disable-next-line:no-any
+export function getShellExecutionOptions(options: theia.ShellExecutionOptions): { [key: string]: any } {
+    // tslint:disable-next-line:no-any
+    const result = {} as { [key: string]: any };
+
+    const env = options.env;
+    if (env) {
+        result['env'] = env;
+    }
+
+    const executable = options.executable;
+    if (executable) {
+        result['executable'] = executable;
+    }
+
+    const shellQuoting = options.shellQuoting;
+    if (shellQuoting) {
+        result['shellQuoting'] = shellQuoting;
+    }
+
+    const shellArgs = options.shellArgs;
+    if (shellArgs) {
+        result['shellArgs'] = shellArgs;
+    }
 
     return result;
 }

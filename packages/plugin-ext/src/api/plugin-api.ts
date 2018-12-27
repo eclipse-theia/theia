@@ -798,13 +798,19 @@ export interface LanguagesContributionMain {
 export interface CommandProperties {
     command: string;
     args?: string[];
-    options?: object;
+    options?: { [key: string]: any };
 }
+
 export interface TaskDto {
     type: string;
     label: string;
     // tslint:disable-next-line:no-any
-    [key: string]: any;
+    properties?: { [key: string]: any };
+}
+
+export interface TaskExecutionDto {
+    id: number;
+    task: TaskDto;
 }
 
 export interface ProcessTaskDto extends TaskDto, CommandProperties {
@@ -987,9 +993,11 @@ export const MAIN_RPC_CONTEXT = {
 export interface TasksExt {
     $provideTasks(handle: number): Promise<TaskDto[] | undefined>;
     $resolveTask(handle: number, task: TaskDto): Promise<TaskDto | undefined>;
+    $onDidStartTask(execution: TaskExecutionDto): void;
 }
 
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
     $unregister(handle: number): void;
+    $terminateTask(id: number): void;
 }

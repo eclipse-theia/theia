@@ -18,21 +18,37 @@ import {
     PLUGIN_RPC_CONTEXT,
     TasksExt,
     TasksMain,
-    TaskDto
+    TaskDto,
+    TaskExecutionDto
 } from '../../api/plugin-api';
 import * as theia from '@theia/plugin';
+import * as converter from '../type-converters';
 import { Disposable } from '../types-impl';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { TaskProviderAdapter } from './task-provider';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export class TasksExtImpl implements TasksExt {
     private proxy: TasksMain;
 
     private callId = 0;
     private adaptersMap = new Map<number, TaskProviderAdapter>();
+    private taskExecutions = new Map<number, theia.TaskExecution>();
+
+    private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
+    }
+
+    get onDidStartTask(): Event<theia.TaskStartEvent> {
+        return this.onDidExecuteTask.event;
+    }
+
+    $onDidStartTask(execution: TaskExecutionDto): void {
+        this.onDidExecuteTask.fire({
+            execution: this.getTaskExecution(execution)
+        });
     }
 
     registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
@@ -74,5 +90,22 @@ export class TasksExtImpl implements TasksExt {
             this.adaptersMap.delete(callId);
             this.proxy.$unregister(callId);
         });
+    }
+
+    private getTaskExecution(execution: TaskExecutionDto): theia.TaskExecution {
+        const executionId = execution.id;
+        let result: theia.TaskExecution | undefined = this.taskExecutions.get(executionId);
+        if (result) {
+            return result;
+        }
+
+        result = {
+            task: converter.toTask(execution.task),
+            terminate: () => {
+                this.proxy.$terminateTask(executionId);
+            }
+        };
+        this.taskExecutions.set(executionId, result);
+        return result;
     }
 }

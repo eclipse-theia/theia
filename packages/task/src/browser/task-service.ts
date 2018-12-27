@@ -233,4 +233,16 @@ export class TaskService implements TaskConfigurationClient {
     protected getContext(): string | undefined {
         return this.workspaceRootUri;
     }
+
+    /** Kill task for a given id if task is found */
+    async kill(id: number): Promise<void> {
+        try {
+            await this.taskServer.kill(id);
+        } catch (error) {
+            this.logger.error(`Error killing task '${id}': ${error}`);
+            this.messageService.error(`Error killing task '${id}': ${error}`);
+            return;
+        }
+        this.logger.debug(`Task killed. Task id: ${id}`);
+    }
 }
