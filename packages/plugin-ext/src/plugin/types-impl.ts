@@ -876,8 +876,9 @@ export class DocumentHighlight {
     public kind?: DocumentHighlightKind;
 
     constructor(
-       range: Range,
-       kind?: DocumentHighlightKind ) {
+        range: Range,
+        kind?: DocumentHighlightKind
+    ) {
         this.range = range;
         this.kind = kind;
     }
@@ -1716,4 +1717,22 @@ export class FunctionBreakpoint extends Breakpoint {
         super(enabled, condition, hitCondition, logMessage);
         this.functionName = functionName;
     }
+}
+
+export class FoldingRange {
+    start: number;
+    end: number;
+    kind?: FoldingRangeKind;
+
+    constructor(start: number, end: number, kind?: FoldingRangeKind) {
+        this.start = start;
+        this.end = end;
+        this.kind = kind;
+    }
+}
+
+export enum FoldingRangeKind {
+    Comment = 1,
+    Imports = 2,
+    Region = 3
 }

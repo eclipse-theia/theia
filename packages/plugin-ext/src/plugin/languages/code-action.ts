@@ -36,7 +36,7 @@ export class CodeActionAdapter {
     provideCodeAction(resource: URI, rangeOrSelection: Range | Selection, context: monaco.languages.CodeActionContext): Promise<monaco.languages.CodeAction[]> {
         const document = this.document.getDocumentData(resource);
         if (!document) {
-            return Promise.reject(new Error(`There are no document form ${resource}`));
+            return Promise.reject(new Error(`There are no document for ${resource}`));
         }
 
         const doc = document.document;

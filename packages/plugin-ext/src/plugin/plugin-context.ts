@@ -87,7 +87,9 @@ import {
     Task,
     Breakpoint,
     SourceBreakpoint,
-    FunctionBreakpoint
+    FunctionBreakpoint,
+    FoldingRange,
+    FoldingRangeKind,
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -488,7 +490,10 @@ export function createAPIFactory(
             },
             registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
                 return languagesExt.registerDocumentSymbolProvider(selector, provider);
-            }
+            },
+            registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
+                return languagesExt.registerFoldingRangeProvider(selector, provider);
+            },
         };
 
         const plugins: typeof theia.plugins = {
@@ -639,7 +644,9 @@ export function createAPIFactory(
             Task,
             Breakpoint,
             SourceBreakpoint,
-            FunctionBreakpoint
+            FunctionBreakpoint,
+            FoldingRange,
+            FoldingRangeKind,
         };
     };
 }
