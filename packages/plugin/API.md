@@ -662,8 +662,8 @@ function provideSymbols(document: theia.TextDocument): theia.ProviderResult<thei
 
 A workspace symbol provider allows you register symbols for the symbol search feature.
 
-resolveWorkspaceSymbol is not needed if all SymbolInformation's returned from 
-provideWorkspaceSymbols have a location. Otherwise resolveWorkspaceSymbol is needed 
+resolveWorkspaceSymbol is not needed if all SymbolInformation's returned from
+provideWorkspaceSymbols have a location. Otherwise resolveWorkspaceSymbol is needed
 in order to resolve the location of the SymbolInformation.
 
 Example of workspace symbol provider registration:
@@ -693,3 +693,22 @@ theia.languages.registerWorkspaceSymbolProvider({
 
 resolveWorkspaceSymbol is needed here because we have not provided the location for every
 symbol return from provideWorkspaceSymbol
+
+#### Folding
+
+A folding range provider allows you to add logic to fold and unfold custom regions of source code.
+
+Example of folding range provider registration:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const provider = { provideFoldingRanges: provideRanges };
+
+const disposable = theia.languages.registerFoldingRangeProvider(documentsSelector, provider);
+
+...
+
+function provideRanges(document: theia.TextDocument): theia.ProviderResult<theia.FoldingRange[]> {
+    // code here
+}
+```

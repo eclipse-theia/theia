@@ -71,6 +71,7 @@ import { OutlineAdapter } from './languages/outline';
 import { ReferenceAdapter } from './languages/reference';
 import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
 import { SymbolInformation } from 'vscode-languageserver-types';
+import { FoldingProviderAdapter } from './languages/folding';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -88,7 +89,8 @@ type Adapter = CompletionAdapter |
     OutlineAdapter |
     LinkProviderAdapter |
     ReferenceAdapter |
-    WorkspaceSymbolAdapter;
+    WorkspaceSymbolAdapter |
+    FoldingProviderAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -437,6 +439,21 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### Document Symbol Provider end
 
+    // ### Folding Range Provider begin
+    registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new FoldingProviderAdapter(provider, this.documents));
+        this.proxy.$registerFoldingRangeProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideFoldingRange(
+        callId: number,
+        resource: UriComponents,
+        context: theia.FoldingContext
+    ): Promise<monaco.languages.FoldingRange[] | undefined> {
+        return this.withAdapter(callId, FoldingProviderAdapter, adapter => adapter.provideFoldingRanges(URI.revive(resource), context));
+    }
+    // ### Folging Range Provider end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {
