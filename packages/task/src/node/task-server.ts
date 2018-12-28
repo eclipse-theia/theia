@@ -39,13 +39,13 @@ export class TaskServerImpl implements TaskServer {
         // do nothing
     }
 
-    getTasks(context?: string | undefined): Promise<TaskInfo[]> {
+    async getTasks(context?: string | undefined): Promise<TaskInfo[]> {
         const taskInfo: TaskInfo[] = [];
 
         const tasks = this.taskManager.getTasks(context);
         if (tasks !== undefined) {
             for (const task of tasks) {
-                taskInfo.push(task.getRuntimeInfo());
+                taskInfo.push(await task.getRuntimeInfo());
             }
         }
         this.logger.debug(`getTasks(): about to return task information for ${taskInfo.length} tasks`);
@@ -62,7 +62,7 @@ export class TaskServerImpl implements TaskServer {
             this.fireTaskExitedEvent(event);
         });
 
-        const taskInfo = task.getRuntimeInfo();
+        const taskInfo = await task.getRuntimeInfo();
         this.fireTaskCreatedEvent(taskInfo);
         return taskInfo;
     }
