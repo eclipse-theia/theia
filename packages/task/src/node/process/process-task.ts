@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { ILogger, } from '@theia/core/lib/common/';
+import { ILogger } from '@theia/core/lib/common/';
 import { Process } from '@theia/process/lib/node';
 import { Task, TaskOptions } from '../task';
 import { TaskManager } from '../task-manager';
