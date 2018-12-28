@@ -182,6 +182,10 @@ is not optimized for dense, information rich UIs.
   --theia-icon-replace-all: url(../icons/replace-all.svg);
   --theia-icon-open-file: url(../icons/open-file-bright.svg);
 
+  /* Logos */
+  --theia-brand-logo-rgba: url(../icons/theia-logo-bright-rgba.svg);
+  --theia-brand-logo-rgba-size: 40%;
+
   /* Scrollbars */
   --theia-scrollbar-width: 6px;
   --theia-scrollbar-rail-width: 10px;

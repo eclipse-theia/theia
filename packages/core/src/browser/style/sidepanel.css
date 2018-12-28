@@ -34,7 +34,7 @@
   color: var(--theia-ui-font-color1);
   background: var(--theia-layout-color2);
   font-size: var(--theia-ui-font-size1);
-  min-width: var(--theia-private-sidebar-tab-width); 
+  min-width: var(--theia-private-sidebar-tab-width);
   max-width: var(--theia-private-sidebar-tab-width);
 }
 
@@ -142,6 +142,16 @@
   right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
 }
 
+/*-----------------------------------------------------------------------------
+| Main content panel
+|----------------------------------------------------------------------------*/
+
+#theia-main-content-panel {
+  background-image: var(--theia-brand-logo-rgba);
+  background-size: var(--theia-brand-logo-rgba-size);
+  background-repeat: no-repeat;
+  background-position: center center;
+}
 
 /*-----------------------------------------------------------------------------
 | Bottom content panel
@@ -150,7 +160,6 @@
 #theia-bottom-content-panel {
   border-top: var(--theia-panel-border-width) solid var(--theia-border-color1);
 }
-
 
 /*-----------------------------------------------------------------------------
 | Hidden tab bars used for rendering vertical side bars
