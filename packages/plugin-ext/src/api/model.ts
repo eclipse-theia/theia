@@ -426,3 +426,19 @@ export interface WorkspaceSymbolProvider {
 export interface WorkspaceSymbolParams {
     query: string
 }
+
+export interface FoldingContext {
+}
+
+export interface FoldingRange {
+    start: number;
+    end: number;
+    kind?: FoldingRangeKind;
+}
+
+export class FoldingRangeKind {
+    static readonly Comment = new FoldingRangeKind('comment');
+    static readonly Imports = new FoldingRangeKind('imports');
+    static readonly Region = new FoldingRangeKind('region');
+    public constructor(public value: string) { }
+}

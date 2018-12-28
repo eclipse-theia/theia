@@ -632,3 +632,28 @@ export function toSymbolInformation(symbolInformation: SymbolInformation): theia
         }
     };
 }
+
+export function fromFoldingRange(foldingRange: theia.FoldingRange): model.FoldingRange {
+    const range: model.FoldingRange = {
+        start: foldingRange.start + 1,
+        end: foldingRange.end + 1
+    };
+    if (foldingRange.kind) {
+        range.kind = fromFoldingRangeKind(foldingRange.kind);
+    }
+    return range;
+}
+
+export function fromFoldingRangeKind(kind: theia.FoldingRangeKind | undefined): model.FoldingRangeKind | undefined {
+    if (kind) {
+        switch (kind) {
+            case types.FoldingRangeKind.Comment:
+                return model.FoldingRangeKind.Comment;
+            case types.FoldingRangeKind.Imports:
+                return model.FoldingRangeKind.Imports;
+            case types.FoldingRangeKind.Region:
+                return model.FoldingRangeKind.Region;
+        }
+    }
+    return undefined;
+}

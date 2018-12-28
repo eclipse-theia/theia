@@ -845,6 +845,11 @@ export interface LanguagesExt {
     $provideDocumentSymbols(handle: number, resource: UriComponents): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string): PromiseLike<SymbolInformation[]>;
     $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation): PromiseLike<SymbolInformation>;
+    $provideFoldingRange(
+        handle: number,
+        resource: UriComponents,
+        context: monaco.languages.FoldingContext
+    ): PromiseLike<monaco.languages.FoldingRange[] | undefined>;
 }
 
 export interface LanguagesMain {
@@ -870,6 +875,7 @@ export interface LanguagesMain {
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
     $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerWorkspaceSymbolProvider(handle: number): void;
+    $registerFoldingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export interface WebviewPanelViewState {

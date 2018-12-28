@@ -4421,6 +4421,85 @@ declare module '@theia/plugin' {
     }
 
     /**
+    * A line based folding range. To be valid, start and end line must a zero or larger and smaller than the number of lines in the document.
+    * Invalid ranges will be ignored.
+    */
+    export class FoldingRange {
+
+        /**
+        * The zero-based start line of the range to fold. The folded area starts after the line's last character.
+        * To be valid, the end must be zero or larger and smaller than the number of lines in the document.
+        */
+        start: number;
+
+        /**
+        * The zero-based end line of the range to fold. The folded area ends with the line's last character.
+        * To be valid, the end must be zero or larger and smaller than the number of lines in the document.
+        */
+        end: number;
+
+        /**
+        * Describes the [Kind](#FoldingRangeKind) of the folding range such as [Comment](#FoldingRangeKind.Comment) or
+        * [Region](#FoldingRangeKind.Region). The kind is used to categorize folding ranges and used by commands
+        * like 'Fold all comments'. See
+        * [FoldingRangeKind](#FoldingRangeKind) for an enumeration of all kinds.
+        * If not set, the range is originated from a syntax element.
+        */
+        kind?: FoldingRangeKind;
+
+        /**
+        * Creates a new folding range.
+        *
+        * @param start The start line of the folded range.
+        * @param end The end line of the folded range.
+        * @param kind The kind of the folding range.
+        */
+        constructor(start: number, end: number, kind?: FoldingRangeKind);
+    }
+
+    /**
+    * An enumeration of specific folding range kinds. The kind is an optional field of a [FoldingRange](#FoldingRange)
+    * and is used to distinguish specific folding ranges such as ranges originated from comments. The kind is used by commands like
+    * `Fold all comments` or `Fold all regions`.
+    * If the kind is not set on the range, the range originated from a syntax element other than comments, imports or region markers.
+    */
+    export enum FoldingRangeKind {
+        /**
+        * Kind for folding range representing a comment.
+        */
+        Comment = 1,
+        /**
+        * Kind for folding range representing a import.
+        */
+        Imports = 2,
+        /**
+        * Kind for folding range representing regions originating from folding markers like `#region` and `#endregion`.
+        */
+        Region = 3
+    }
+
+    /**
+    * Folding context (for future use)
+    */
+    export interface FoldingContext {
+    }
+
+    /**
+    * The folding range provider interface defines the contract between extensions and
+    * [Folding](https://code.visualstudio.com/docs/editor/codebasics#_folding) in the editor.
+    */
+    export interface FoldingRangeProvider {
+        /**
+        * Returns a list of folding ranges or null and undefined if the provider
+        * does not want to participate or was cancelled.
+        * @param document The document in which the command was invoked.
+        * @param context Additional context information (for future use)
+        * @param token A cancellation token.
+        */
+        provideFoldingRanges(document: TextDocument, context: FoldingContext, token: CancellationToken): ProviderResult<FoldingRange[]>;
+    }
+
+    /**
      * Value-object that contains additional information when
      * requesting references.
      */
@@ -5806,6 +5885,23 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider): Disposable;
+
+        /**
+        * Register a folding range provider.
+        *
+        * Multiple providers can be registered for a language. In that case providers are asked in
+        * parallel and the results are merged.
+        * If multiple folding ranges start at the same position, only the range of the first registered provider is used.
+        * If a folding range overlaps with an other range that has a smaller position, it is also ignored.
+        *
+        * A failing provider (rejected promise or exception) will
+        * not cause a failure of the whole operation.
+        *
+        * @param selector A selector that defines the documents this provider is applicable to.
+        * @param provider A folding range provider.
+        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+        */
+        export function registerFoldingRangeProvider(selector: DocumentSelector, provider: FoldingRangeProvider): Disposable;
     }
 
     /**
