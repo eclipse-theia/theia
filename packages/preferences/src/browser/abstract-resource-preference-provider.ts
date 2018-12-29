@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import * as jsoncparser from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger, Resource, ResourceProvider, MaybePromise, MessageService } from '@theia/core';
+import { Resource, ResourceProvider, MaybePromise, MessageService } from '@theia/core';
 import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
 
 @injectable()
@@ -25,8 +25,6 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     // tslint:disable-next-line:no-any
     protected preferences: { [key: string]: any } = {};
-
-    @inject(ILogger) protected readonly logger: ILogger;
 
     @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
 
@@ -79,9 +77,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
                 await resource.saveContents(result);
             } catch (e) {
-                const message = `Failed to update the value of ${key}.`;
-                this.messageService.error(`${message} Please check if ${resource.uri.toString()} is corrupted.`);
-                this.logger.error(`${message} ${e.toString()}`);
+                const message = `Failed to update the value of ${key}. Please check if ${resource.uri.toString()} is corrupted`;
+                this.messageService.error(message);
+                console.error(message, e.toString());
                 return;
             }
             this.preferences[key] = value;
@@ -92,7 +90,14 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async readPreferences(): Promise<void> {
         const newContent = await this.readContents();
         const strippedContent = jsoncparser.stripComments(newContent);
-        this.preferences = jsoncparser.parse(strippedContent) || {};
+        const jsonErrors: jsoncparser.ParseError[] = [];
+        this.preferences = jsoncparser.parse(strippedContent, jsonErrors) || {};
+        if (jsonErrors.length > 0) {
+            const resourceUri = (await this.resource).uri.toString();
+            const message = `Please check if ${resourceUri} is corrupted. Parsing json errors out.`;
+            this.messageService.error(message);
+            console.error(message, ...jsonErrors);
+        }
         this.onDidPreferencesChangedEmitter.fire(undefined);
     }
 
