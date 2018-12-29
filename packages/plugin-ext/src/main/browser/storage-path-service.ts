@@ -24,48 +24,40 @@ import { Emitter, Event } from '@theia/core';
 @injectable()
 export class StoragePathService {
 
-    private path: string;
-    private deferred = new Deferred<string>();
+    private path: string | undefined;
+    private pathDeferred = new Deferred<string | undefined>();
 
     constructor(
         @inject(WorkspaceService) private readonly workspaceService: WorkspaceService,
         @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
     ) {
-        this.workspaceService.onWorkspaceChanged((roots: FileStat[]) => {
-            this.updateStoragePath(roots);
-        });
+        this.path = undefined;
+        this.workspaceService.roots.then(roots => this.updateStoragePath(roots));
     }
 
     async provideHostStoragePath(): Promise<string | undefined> {
-        return this.deferred.promise;
+        return this.pathDeferred.promise;
     }
 
-    protected readonly onStoragePathChangeEmitter = new Emitter<string>();
-    get onStoragePathChanged(): Event<string> {
+    protected readonly onStoragePathChangeEmitter = new Emitter<string | undefined>();
+    get onStoragePathChanged(): Event<string | undefined> {
         return this.onStoragePathChangeEmitter.event;
-    }
-
-    protected readonly onWorkspaceChangeEmitter = new Emitter<FileStat[]>();
-    get onWorkspaceChanged(): Event<FileStat[]> {
-        return this.onWorkspaceChangeEmitter.event;
     }
 
     async updateStoragePath(roots: FileStat[]): Promise<void> {
         const workspace = this.workspaceService.workspace;
-        if (!workspace) {
-            return;
-        }
+         if (!workspace) {
+             this.path = undefined;
+         }
 
-        const path = await this.pluginPathsService.provideHostStoragePath(workspace, roots);
-        if (this.path !== path) {
-            this.path = path;
-            this.deferred.resolve(this.path);
-            this.deferred = new Deferred<string>();
-            this.deferred.resolve(this.path);
-            this.onStoragePathChangeEmitter.fire(this.path);
-        }
-
-        this.onWorkspaceChangeEmitter.fire(roots);
+         const newPath = await this.pluginPathsService.provideHostStoragePath(workspace, roots);
+         if (this.path !== newPath) {
+             this.path = newPath;
+             this.pathDeferred.resolve(this.path);
+             this.pathDeferred = new Deferred<string>();
+             this.pathDeferred.resolve(this.path);
+             this.onStoragePathChangeEmitter.fire(this.path);
+         }
     }
 
 }

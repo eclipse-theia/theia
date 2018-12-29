@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from 'inversify';
-import { WorkspaceExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../api/plugin-api';
+import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import Uri from 'vscode-uri';
 import { UriComponents } from '../../common/uri-components';
@@ -25,15 +25,19 @@ import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-o
 import { FileStat } from '@theia/filesystem/lib/common';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import URI from '@theia/core/lib/common/uri';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Emitter, Event, Disposable, ResourceResolver } from '@theia/core';
 import { FileWatcherSubscriberOptions } from '../../api/model';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
 import { StoragePathService } from './storage-path-service';
+import { PluginServer } from '../../common/plugin-protocol';
 
 export class WorkspaceMainImpl implements WorkspaceMain {
 
     private proxy: WorkspaceExt;
+
+    private storageProxy: StorageExt;
 
     private quickOpenService: MonacoQuickOpenService;
 
@@ -45,28 +49,40 @@ export class WorkspaceMainImpl implements WorkspaceMain {
 
     private resourceResolver: TextContentResourceResolver;
 
+    private pluginServer: PluginServer;
+
+    private workspaceService: WorkspaceService;
+
+    private storagePathService: StoragePathService;
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
+        this.storageProxy = rpc.getProxy(MAIN_RPC_CONTEXT.STORAGE_EXT);
         this.quickOpenService = container.get(MonacoQuickOpenService);
         this.fileSearchService = container.get(FileSearchService);
         this.resourceResolver = container.get(TextContentResourceResolver);
-        const storagePathService = container.get(StoragePathService);
+        this.pluginServer = container.get(PluginServer);
+        this.workspaceService = container.get(WorkspaceService);
+        this.storagePathService = container.get(StoragePathService);
 
         this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
 
-        // Plugin Context `storagePath` should be already updated when API event `onDidChangeWorkspaceFolders` fires.
-        // This is why `StoragePathService.onWorkspaceChanged` is used instead of `WorkspaceService.onWorkspaceChanged`.
-        storagePathService.onWorkspaceChanged(roots => {
-            this.notifyWorkspaceFoldersChanged(roots);
+        this.workspaceService.onWorkspaceChanged(roots => {
+            this.processWorkspaceFoldersChanged(roots);
         });
     }
 
-    notifyWorkspaceFoldersChanged(roots: FileStat[]): void {
+    async processWorkspaceFoldersChanged(roots: FileStat[]): Promise<void> {
         if (this.isAnyRootChanged(roots) === false) {
             return;
         }
-
         this.roots = roots;
+
+        await this.storagePathService.updateStoragePath(roots);
+
+        const keyValueStorageWorkspacesData = await this.pluginServer.keyValueStorageGetAll(false);
+        this.storageProxy.$updatePluginsWorkspaceData(keyValueStorageWorkspacesData);
+
         this.proxy.$onWorkspaceFoldersChanged({ roots });
     }
 

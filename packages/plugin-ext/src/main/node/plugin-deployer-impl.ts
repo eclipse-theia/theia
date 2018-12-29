@@ -20,7 +20,7 @@ import { injectable, optional, multiInject, inject } from 'inversify';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
-    PluginDeployerDirectoryHandlerContext, HostedPluginServer, PluginDeployerEntryType, PluginServer,
+    PluginDeployerDirectoryHandlerContext, HostedPluginServer, PluginDeployerEntryType,
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import { PluginDeployerResolverContextImpl, PluginDeployerResolverInitImpl } from './plugin-deployer-resolver-context-impl';
@@ -30,7 +30,7 @@ import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-dir
 import { ILogger } from '@theia/core';
 
 @injectable()
-export class PluginDeployerImpl implements PluginDeployer, PluginServer {
+export class PluginDeployerImpl implements PluginDeployer {
 
     @inject(ILogger)
     protected readonly logger: ILogger;

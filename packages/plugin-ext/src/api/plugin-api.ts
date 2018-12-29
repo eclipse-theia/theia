@@ -54,6 +54,7 @@ import {
     Breakpoint
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
@@ -64,6 +65,8 @@ import { SymbolInformation } from 'vscode-languageserver-types';
 export interface PluginInitData {
     plugins: PluginMetadata[];
     preferences: { [key: string]: any };
+    globalState: KeysToKeysToAnyValue;
+    workspaceState: KeysToKeysToAnyValue;
     env: EnvInit;
     extApi?: ExtPluginApi[];
 }
@@ -142,7 +145,7 @@ export interface PluginManagerExt {
 
     $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
 
-    $updateStoragePath(path: string): PromiseLike<void>;
+    $updateStoragePath(path: string | undefined): PromiseLike<void>;
 }
 
 export interface CommandRegistryMain {
@@ -914,6 +917,16 @@ export interface WebviewsMain {
     $unregisterSerializer(viewType: string): void;
 }
 
+export interface StorageMain {
+    $set(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean>;
+    $get(key: string, isGlobal: boolean): Promise<KeysToAnyValues>;
+    $getAll(isGlobal: boolean): Promise<KeysToKeysToAnyValue>;
+}
+
+export interface StorageExt {
+    $updatePluginsWorkspaceData(data: KeysToKeysToAnyValue): void;
+}
+
 export interface DebugExt {
     $onSessionCustomEvent(sessionId: string, event: string, body?: any): void;
     $breakpointsDidChange(all: Breakpoint[], added: Breakpoint[], removed: Breakpoint[], changed: Breakpoint[]): void;
@@ -958,6 +971,7 @@ export const PLUGIN_RPC_CONTEXT = {
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
+    STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     LANGUAGES_CONTRIBUTION_MAIN: createProxyIdentifier<LanguagesContributionMain>('LanguagesContributionMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain')
@@ -979,6 +993,7 @@ export const MAIN_RPC_CONTEXT = {
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
+    STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt')
