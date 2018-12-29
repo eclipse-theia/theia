@@ -117,7 +117,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, preferenceRegistryExt);
+}, envExt, preferenceRegistryExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,

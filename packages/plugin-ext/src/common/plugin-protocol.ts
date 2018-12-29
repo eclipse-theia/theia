@@ -16,7 +16,7 @@
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { LogPart } from './types';
+import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plugin-api';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
@@ -565,7 +565,11 @@ export interface PluginServer {
     /**
      * Deploy a plugin
      */
-    deploy(pluginEntry: string): Promise<void>
+    deploy(pluginEntry: string): Promise<void>;
+
+    keyValueStorageSet(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean>;
+    keyValueStorageGet(key: string, isGlobal: boolean): Promise<KeysToAnyValues>;
+    keyValueStorageGetAll(isGlobal: boolean): Promise<KeysToKeysToAnyValue>;
 }
 
 export const ServerPluginRunner = Symbol('ServerPluginRunner');

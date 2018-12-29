@@ -59,3 +59,7 @@ export interface LogPart {
     data: string;
     type: LogType;
 }
+
+// tslint:disable-next-line:no-any
+export interface KeysToAnyValues { [key: string]: any }
+export interface KeysToKeysToAnyValue { [key: string]: KeysToAnyValues }

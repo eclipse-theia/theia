@@ -25,11 +25,14 @@ import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
 import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 import { StoragePathService } from '../../main/browser/storage-path-service';
+import { PluginServer } from '../../common/plugin-protocol';
+import { KeysToKeysToAnyValue } from '../../common/types';
 
 @injectable()
 export class HostedPluginSupport {
@@ -50,6 +53,12 @@ export class HostedPluginSupport {
     @inject(ContributionProvider)
     @named(MainPluginApiProvider)
     protected readonly mainPluginApiProviders: ContributionProvider<MainPluginApiProvider>;
+
+    @inject(PluginServer)
+    protected readonly pluginServer: PluginServer;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     private theiaReadyPromise: Promise<any>;
     private frontendExtManagerProxy: PluginManagerExt;
@@ -79,30 +88,42 @@ export class HostedPluginSupport {
             this.pluginPathsService.provideHostLogPath(),
             this.storagePathService.provideHostStoragePath(),
             this.server.getExtPluginAPI(),
+            this.pluginServer.keyValueStorageGetAll(true),
+            this.pluginServer.keyValueStorageGetAll(false),
         ]).then(metadata => {
-            const plugins = [...metadata['0']];
-            if (metadata['1']) {
-                plugins.push(metadata['1']!);
-            }
-            const confStorage: ConfigStorage = {
-                hostLogPath: metadata['2'],
-                hostStoragePath: metadata['3'] || ''
+            const pluginsInitData: PluginsInitializationData = {
+                plugins: metadata['0'],
+                hostedPlugin: metadata['1'],
+                logPath: metadata['2'],
+                storagePath: metadata['3'],
+                pluginAPIs: metadata['4'],
+                globalStates: metadata['5'],
+                workspaceStates: metadata['6']
             };
-            this.loadPlugins(plugins, this.container, metadata['4'], confStorage);
-        });
-
+            this.loadPlugins(pluginsInitData, this.container);
+        }).catch(e => console.error(e));
     }
-    loadPlugins(pluginsMetadata: PluginMetadata[], container: interfaces.Container, extApi: ExtPluginApi[], confStorage: ConfigStorage): void {
-        const [frontend, backend] = this.initContributions(pluginsMetadata);
+
+    loadPlugins(initData: PluginsInitializationData, container: interfaces.Container): void {
+        if (initData.hostedPlugin) {
+            initData.plugins.push(initData.hostedPlugin);
+        }
+        const confStorage: ConfigStorage = {
+            hostLogPath: initData.logPath,
+            hostStoragePath: initData.storagePath || ''
+        };
+        const [frontend, backend] = this.initContributions(initData.plugins);
         this.theiaReadyPromise.then(() => {
             if (frontend) {
                 const worker = new PluginWorker();
                 const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                 hostedExtManager.$init({
-                    plugins: pluginsMetadata,
+                    plugins: initData.plugins,
                     preferences: this.preferenceServiceImpl.getPreferences(),
+                    globalState: initData.globalStates,
+                    workspaceState: initData.workspaceStates,
                     env: { queryParams: getQueryParameters() },
-                    extApi: extApi
+                    extApi: initData.pluginAPIs
                 }, confStorage);
                 setUpPluginApi(worker.rpc, container);
                 this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
@@ -111,7 +132,7 @@ export class HostedPluginSupport {
 
             if (backend) {
                 // sort plugins per host
-                const pluginsPerHost = pluginsMetadata.reduce((map: any, pluginMetadata) => {
+                const pluginsPerHost = initData.plugins.reduce((map: any, pluginMetadata) => {
                     const host = pluginMetadata.host;
                     if (!map[host]) {
                         map[host] = [pluginMetadata];
@@ -133,8 +154,10 @@ export class HostedPluginSupport {
                     hostedExtManager.$init({
                         plugins: plugins,
                         preferences: this.preferenceServiceImpl.getPreferences(),
+                        globalState: initData.globalStates,
+                        workspaceState: initData.workspaceStates,
                         env: { queryParams: getQueryParameters() },
-                        extApi: extApi
+                        extApi: initData.pluginAPIs
                     }, confStorage);
                     setUpPluginApi(rpc, container);
                     this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
@@ -175,7 +198,7 @@ export class HostedPluginSupport {
         }, hostID);
     }
 
-    private updateStoragePath(path: string): void {
+    private updateStoragePath(path: string | undefined): void {
         if (this.frontendExtManagerProxy) {
             this.frontendExtManagerProxy.$updateStoragePath(path);
         }
@@ -184,4 +207,14 @@ export class HostedPluginSupport {
         }
     }
 
+}
+
+interface PluginsInitializationData {
+    plugins: PluginMetadata[],
+    hostedPlugin: PluginMetadata | undefined,
+    logPath: string,
+    storagePath: string | undefined,
+    pluginAPIs: ExtPluginApi[],
+    globalStates: KeysToKeysToAnyValue,
+    workspaceStates: KeysToKeysToAnyValue
 }
