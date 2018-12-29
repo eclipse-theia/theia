@@ -21,7 +21,12 @@ export const pluginPathsServicePath = '/services/plugin-paths';
 // Service to create plugin configuration folders for different purpose.
 export const PluginPathsService = Symbol('PluginPathsService');
 export interface PluginPathsService {
-    // Return hosted log path. Create directory by this path if it is not exist on the file system.
+    // Builds hosted log path. Create directory by this path if it is not exist on the file system.
     provideHostLogPath(): Promise<string>;
-    provideHostStoragePath(workspace: FileStat, roots: FileStat[]): Promise<string>;
+    // Builds storage path for given workspace
+    provideHostStoragePath(workspace: FileStat | undefined, roots: FileStat[]): Promise<string | undefined>;
+    // Returns last resolved storage path
+    getLastStoragePath(): Promise<string | undefined>;
+    // Returns Theia data directory (one for all Theia workspaces, so doesn't change)
+    getTheiaDirPath(): Promise<string>;
 }
