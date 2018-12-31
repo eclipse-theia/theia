@@ -30,7 +30,8 @@ import {
     TreeExpansionService,
     ApplicationShell,
     DiffUris,
-    FOLDER_ICON
+    FOLDER_ICON,
+    FILE_ICON
 } from '@theia/core/lib/browser';
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
@@ -71,6 +72,7 @@ export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, Selectabl
     parent: SearchInWorkspaceRootFolderNode;
     path: string;
     fileUri: string;
+    icon?: string;
 }
 export namespace SearchInWorkspaceFileNode {
     // tslint:disable-next-line:no-any
@@ -199,7 +201,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             return;
         }
         const searchId = await this.searchService.search(searchTerm, {
-            onResult: async (aSearchId: number, result: SearchInWorkspaceResult) => {
+            onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
@@ -216,7 +218,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             fileNode.expanded = false;
                         }
                     } else {
-                        const newFileNode = await this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                        const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
                         const line = this.createResultLineNode(result, newFileNode);
                         newFileNode.children.push(line);
                         rootFolderNode.children.push(newFileNode);
@@ -226,7 +228,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     const newRootFolderNode = this.createRootFolderNode(result.root);
                     tree.set(result.root, newRootFolderNode);
 
-                    const newFileNode = await this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
+                    const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
                     newFileNode.children.push(this.createResultLineNode(result, newFileNode));
                     newRootFolderNode.children.push(newFileNode);
                 }
@@ -263,8 +265,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
     }
 
-    protected refreshModelChildren() {
+    protected async refreshModelChildren(): Promise<void> {
         if (SearchInWorkspaceRoot.is(this.model.root)) {
+            await this.updateFileIcons();
             this.model.root.children = Array.from(this.resultTree.values());
             this.model.refresh();
             this.updateCurrentEditorDecorations();
@@ -308,7 +311,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         };
     }
 
-    protected async createFileNode(rootUri: string, name: string, path: string, fileUri: string, parent: SearchInWorkspaceRootFolderNode): Promise<SearchInWorkspaceFileNode> {
+    protected createFileNode(rootUri: string, name: string, path: string, fileUri: string, parent: SearchInWorkspaceRootFolderNode): SearchInWorkspaceFileNode {
         return {
             selected: false,
             name,
@@ -317,9 +320,17 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             expanded: true,
             id: `${rootUri}::${fileUri}`,
             parent,
-            icon: await this.labelProvider.getIcon(new URI(fileUri).withScheme('file')),
+            icon: FILE_ICON, // placeholder. updateFileIcons() will replace the placeholders with icons used in the tree rendering
             fileUri
         };
+    }
+
+    protected async updateFileIcons(): Promise<void> {
+        for (const folderNode of this.resultTree.values()) {
+            for (const fileNode of folderNode.children) {
+                fileNode.icon = await this.labelProvider.getIcon(new URI(fileNode.fileUri).withScheme('file'));
+            }
+        }
     }
 
     protected createResultLineNode(result: SearchInWorkspaceResult, fileNode: SearchInWorkspaceFileNode): SearchInWorkspaceResultLineNode {
