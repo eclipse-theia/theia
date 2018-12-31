@@ -213,7 +213,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
                     if (fileNode) {
                         const line = this.createResultLineNode(result, fileNode);
-                        fileNode.children.push(line);
+                        if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
+                            fileNode.children.push(line);
+                        }
                         if (fileNode.children.length >= 20 && fileNode.expanded) {
                             fileNode.expanded = false;
                         }
