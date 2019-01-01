@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, multiInject, postConstruct } from 'inversify';
+import { injectable, inject, named, postConstruct } from 'inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { Repository } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
+import { ContributionProvider } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
 import { GitErrorHandler } from './git-error-handler';
 import { SingletonLayout } from '@phosphor/widgets/lib/singletonlayout';
@@ -36,20 +37,27 @@ export class ScmContainerWidget extends BaseWidget {
 
     protected singletonLayout: SingletonLayout;
 
-    constructor(
-        @multiInject(ScmWidgetFactory) public readonly scmWidgetFactories: ScmWidgetFactory[],
-        @inject(WidgetManager) protected widgetManager: WidgetManager,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-    ) {
+    @inject(ContributionProvider)
+    @named(ScmWidgetFactory)
+    protected readonly scmWidgetFactories: ContributionProvider<ScmWidgetFactory>;
 
+    @inject(WidgetManager)
+    protected widgetManager: WidgetManager;
+
+    @inject(GitRepositoryProvider)
+    protected readonly repositoryProvider: GitRepositoryProvider;
+
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    constructor() {
         super();
         this.id = 'theia-gitContainer';
         this.addClass('theia-git');
         this.node.tabIndex = 0;
         this.singletonLayout = new SingletonLayout();
-        if (scmWidgetFactories.length === 1) {
-            const theOnlyWidgetId = scmWidgetFactories[0].widgetId;
+        if (this.scmWidgetFactories.getContributions().length === 1) {
+            const theOnlyWidgetId = this.scmWidgetFactories.getContributions()[0].widgetId;
             this.widgetManager.getOrCreateWidget(theOnlyWidgetId).then(widget => {
                 this.title.label = widget.title.label;
                 this.title.caption = widget.title.caption;
@@ -80,7 +88,7 @@ export class ScmContainerWidget extends BaseWidget {
 
     protected async getWidgetIdForRepository(repository: Repository | undefined): Promise<string> {
         if (repository) {
-            for (const factory of this.scmWidgetFactories) {
+            for (const factory of this.scmWidgetFactories.getContributions()) {
                 const fileStat = await this.fileSystem.getFileStat(repository.localUri);
                 if (fileStat) {
                     if (factory.isUnderSourceControl(fileStat)) {

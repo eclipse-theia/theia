@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, multiInject, postConstruct } from 'inversify';
+import { injectable, inject, named, postConstruct } from 'inversify';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { ScmWidgetFactory } from './index';
+import { ContributionProvider } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 
@@ -26,9 +27,11 @@ export abstract class NoScmWidget extends ReactWidget {
     @inject(GitRepositoryProvider)
     protected readonly repositoryProvider: GitRepositoryProvider;
 
-    constructor(
-        @multiInject(ScmWidgetFactory) public readonly scmWidgetFactories: ScmWidgetFactory[],
-    ) {
+    @inject(ContributionProvider)
+    @named(ScmWidgetFactory)
+    protected readonly scmWidgetFactories: ContributionProvider<ScmWidgetFactory>;
+
+    constructor() {
         super();
         this.node.tabIndex = 0;
     }
@@ -42,15 +45,16 @@ export abstract class NoScmWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        const factories = this.scmWidgetFactories.getContributions();
         const repository = this.repositoryProvider.selectedRepository;
         if (repository) {
             return <div className={NoScmWidget.Styles.MAIN_CONTAINER}>
                 The repository at {repository.localUri} is not under control of a supported Source Control Manager.
             {
-                    this.scmWidgetFactories.length === 0
+                    factories.length === 0
                         ? <div>No Source Control Managers are supported by this product</div>
-                        : this.scmWidgetFactories.length === 1
-                            ? <div>Only {this.scmWidgetFactories[0].widgetId} is supported.</div>
+                        : factories.length === 1
+                            ? <div>Only {factories[0].widgetId} is supported.</div>
                             : <div>The supported Source Control Managers are {this.renderList()}.</div>
                 }
             </div>;
@@ -62,10 +66,11 @@ export abstract class NoScmWidget extends ReactWidget {
     }
 
     protected renderList(): React.ReactNode {
-        let text = this.scmWidgetFactories[0].widgetId + ', and ' + this.scmWidgetFactories[1].widgetId;
-        const theRest = this.scmWidgetFactories.slice(2);
+        const factories = this.scmWidgetFactories.getContributions();
+        let text = factories[0].widgetId + ', and ' + factories[1].widgetId;
+        const theRest = factories.slice(2);
         for (const factory of theRest) {
-            text = factory.widgetId + ', '  + text;
+            text = factory.widgetId + ', ' + text;
         }
         return <div>
             {text}

@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { Repository } from '../common';
-import { injectable, inject, multiInject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { DisposableCollection, Event, Emitter } from '@theia/core';
+import { DisposableCollection, Event, Emitter, ContributionProvider } from '@theia/core';
 import { LocalStorageService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -40,7 +40,8 @@ export class GitRepositoryProvider {
     protected readonly allRepoStorageKey = 'theia-git-all-repositories';
 
     constructor(
-        @multiInject(ScmWidgetFactory) public readonly scmWidgetFactories: ScmWidgetFactory[],
+        @inject(ContributionProvider) @named(ScmWidgetFactory)
+        protected readonly scmWidgetFactories: ContributionProvider<ScmWidgetFactory>,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -137,10 +138,6 @@ export class GitRepositoryProvider {
     }
 
     async refresh(options?: GitRefreshOptions): Promise<void> {
-        this.scmWidgetFactories.forEach(scm =>
-            console.info(scm.widgetId)
-        );
-
         const roots: FileStat[] = [];
         await this.workspaceService.roots;
         for (const root of this.workspaceService.tryGetRoots()) {
@@ -150,7 +147,7 @@ export class GitRepositoryProvider {
         }
         const repoUris = new Map<string, Repository>();
         const reposOfRoots = await Promise.all(
-            this.scmWidgetFactories.map(f =>
+            this.scmWidgetFactories.getContributions().map(f =>
                 Promise.all(
                     roots.map(r => f.repositories(r.uri, { ...options }))
                 )

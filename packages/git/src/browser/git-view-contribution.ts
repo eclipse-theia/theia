@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject, multiInject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry, CommandContribution, MenuContribution, Command } from '@theia/core';
 import {
@@ -21,6 +21,7 @@ import {
     FrontendApplicationContribution, FrontendApplication, Widget
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { ContributionProvider } from '@theia/core';
 import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus } from '../common';
 import { ScmWidgetFactory } from './index';
@@ -128,10 +129,13 @@ export class GitViewContribution extends AbstractViewContribution<ScmContainerWi
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(GitPrompt) protected readonly prompt: GitPrompt;
 
-    constructor(@multiInject(ScmWidgetFactory) scmWidgetFactories: ScmWidgetFactory[]) {
+    constructor(
+        @inject(ContributionProvider) @named(ScmWidgetFactory)
+        protected readonly scmWidgetFactories: ContributionProvider<ScmWidgetFactory>
+    ) {
         super({
             widgetId: SCM_WIDGET_FACTORY_ID,
-            widgetName: scmWidgetFactories.length === 1 ? scmWidgetFactories[0].label : 'Source Control',
+            widgetName: scmWidgetFactories.getContributions().length === 1 ? scmWidgetFactories.getContributions()[0].label : 'Source Control',
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 200

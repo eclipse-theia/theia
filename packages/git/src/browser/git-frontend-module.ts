@@ -40,6 +40,7 @@ import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
 import { NoScmWidget } from './no-scm-widget';
+import { bindContributionProvider } from '@theia/core/lib/common';
 
 import '../../src/browser/style/index.css';
 
@@ -71,9 +72,12 @@ export default new ContainerModule(bind => {
         id: GIT_WIDGET_FACTORY_ID,
         createWidget: () => context.container.get<GitWidget>(GitWidget)
     })).inSingletonScope();
-    bind(ScmWidgetFactory).toDynamicValue(
-        context => context.container.get<GitWidgetFactory>(GitWidgetFactory)
-    ).inSingletonScope();
+    // bind(ScmWidgetFactory).toDynamicValue(
+    //     context => context.container.get<GitWidgetFactory>(GitWidgetFactory)
+    // ).inSingletonScope();
+    bindContributionProvider(bind, ScmWidgetFactory);
+    bind(GitWidgetFactory).to(GitWidgetFactory).inSingletonScope();
+    bind(ScmWidgetFactory).to(GitWidgetFactory);
 
     bind(NoScmWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({

@@ -26,9 +26,9 @@ export class GitWidgetFactory implements ScmWidgetFactory {
     public label = 'Git';
     public widgetId = GIT_WIDGET_FACTORY_ID;
 
-    constructor(
-        @inject(Git) protected readonly git: Git,
-        ) {
+    @inject(Git) protected readonly git: Git;
+
+    constructor() {
     }
 
     isUnderSourceControl(directoryFileStat: FileStat): boolean {
