@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Emitter, Event, DisposableCollection } from '@theia/core';
+import { Emitter, Event, DisposableCollection, MessageService } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { DebugError, DebugService } from '../common/debug-service';
@@ -101,6 +101,9 @@ export class DebugSessionManager {
 
     @inject(DebugSessionContributionRegistry)
     protected readonly sessionContributionRegistry: DebugSessionContributionRegistry;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @postConstruct()
     protected init(): void {
