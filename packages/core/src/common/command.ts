@@ -17,6 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+import {MaybePromise} from './types';
 
 /**
  * A command is a unique identifier of a function
@@ -73,12 +74,12 @@ export interface CommandHandler {
      * Execute this handler.
      */
     // tslint:disable-next-line:no-any
-    execute(...args: any[]): any;
+    execute(...args: any[]): MaybePromise<any>;
     /**
      * Test whether this handler is enabled (active).
      */
     // tslint:disable-next-line:no-any
-    isEnabled?(...args: any[]): boolean;
+    isEnabled?(...args: any[]): MaybePromise<boolean>;
     /**
      * Test whether menu items for this handler should be visible.
      */
@@ -236,7 +237,7 @@ export class CommandRegistry implements CommandService {
      */
     // tslint:disable-next-line:no-any
     async executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
-        const handler = this.getActiveHandler(command, ...args);
+        const handler = await this.getActiveHandler(command, ...args);
         if (handler) {
             const result = await handler.execute(...args);
             return result;
@@ -265,11 +266,11 @@ export class CommandRegistry implements CommandService {
      * Get an active handler for the given command or `undefined`.
      */
     // tslint:disable-next-line:no-any
-    getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
+    async getActiveHandler(commandId: string, ...args: any[]): Promise<CommandHandler | undefined> {
         const handlers = this._handlers[commandId];
         if (handlers) {
             for (const handler of handlers) {
-                if (!handler.isEnabled || handler.isEnabled(...args)) {
+                if (!handler.isEnabled || await handler.isEnabled(...args)) {
                     return handler;
                 }
             }

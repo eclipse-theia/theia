@@ -51,12 +51,12 @@ export class MonacoCommandService implements ICommandService {
     }
 
     // tslint:disable-next-line:no-any
-    executeCommand(commandId: any, ...args: any[]): monaco.Promise<any> {
-        const handler = this.commandRegistry.getActiveHandler(commandId, ...args);
+    async executeCommand(commandId: any, ...args: any[]): monaco.Promise<any> {
+        const handler = await this.commandRegistry.getActiveHandler(commandId, ...args);
         if (handler) {
             try {
-                this._onWillExecuteCommand.fire({ commandId });
-                return monaco.Promise.wrap(handler.execute(...args));
+                this._onWillExecuteCommand.fire({commandId});
+                return monaco.Promise.wrap(await handler.execute(...args));
             } catch (err) {
                 return monaco.Promise.wrapError(err);
             }

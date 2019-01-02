@@ -451,7 +451,7 @@ export class KeybindingRegistry {
      * @param event keyboard event.
      * @return true if the corresponding command was executed false otherwise.
      */
-    protected tryKeybindingExecution(bindings: Keybinding[], event: KeyboardEvent) {
+    protected async tryKeybindingExecution(bindings: Keybinding[], event: KeyboardEvent): Promise<boolean> {
 
         if (bindings.length === 0) {
             return false;
@@ -470,16 +470,17 @@ export class KeybindingRegistry {
                 } else {
                     const command = this.commandRegistry.getCommand(binding.command);
                     if (command) {
-                        const commandHandler = this.commandRegistry.getActiveHandler(command.id);
+                        /* - Note that if a keybinding is in context but the command is not active we still
+                             stop the processing here.
+                           - Note that preventDefault must be called before the first await in async function*/
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const commandHandler = await this.commandRegistry.getActiveHandler(command.id);
 
                         if (commandHandler) {
                             commandHandler.execute();
                         }
 
-                        /* Note that if a keybinding is in context but the command is
-                           not active we still stop the processing here.  */
-                        event.preventDefault();
-                        event.stopPropagation();
                         return true;
                     }
                 }
@@ -492,7 +493,7 @@ export class KeybindingRegistry {
     /**
      * Run the command matching to the given keyboard event.
      */
-    run(event: KeyboardEvent): void {
+    async run(event: KeyboardEvent): Promise<void> {
         if (event.defaultPrevented) {
             return;
         }
@@ -507,7 +508,7 @@ export class KeybindingRegistry {
         this.keySequence.push(keyCode);
         const bindings = this.getKeybindingsForKeySequence(this.keySequence);
 
-        if (this.tryKeybindingExecution(bindings.full, event)) {
+        if (await this.tryKeybindingExecution(bindings.full, event)) {
 
             this.keySequence = [];
             this.statusBar.removeElement('keybinding-status');
