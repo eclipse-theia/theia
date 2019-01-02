@@ -424,6 +424,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderExpandGlobFieldsButton(): React.ReactNode {
         return <div className='button-container'>
             <span
+                id='search-details-btn'
                 title='Toggle Search Details'
                 className='fa fa-ellipsis-h btn'
                 onClick={() => {
@@ -474,6 +475,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
             }
         }
-        return this.searchTerm !== '' ? <div className='search-info'>{message}</div> : '';
+        return this.searchTerm !== '' ? <div id='search-info'>{message}</div> : '';
     }
 }

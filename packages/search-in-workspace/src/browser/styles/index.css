@@ -397,7 +397,7 @@
     color: #ffffff;
 }
 
-.t-siw-search-container .searchHeader .search-info {
+.t-siw-search-container .searchHeader #search-info {
     color: var(--theia-ui-font-color2);
     margin-left: 17px;
 }
