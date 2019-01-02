@@ -333,28 +333,77 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
-        const waitables: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>[] = [];
+        type EditContributor = Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>;
 
-        // The firing is synchronous.
-        // Every listener will register something for us to wait after.
-        this.onWillSaveModelEmitter.fire({
-            model: this, reason,
-            waitUntil: thenable => {
-                waitables.push(thenable);
-            }
-        });
+        let didTimeout = false;
+        let timeoutHandle: number = -1;
 
-        // Wait for all listeners to resolve the edits.
-        return Promise.all(waitables).then(allOperations => {
-            if (token.isCancellationRequested) {
-                return;
+        const shouldStop: () => boolean = () => token.isCancellationRequested || didTimeout;
+
+        // tslint:disable-next-line:no-any
+        const timeoutPromise = new Promise((resolve, reject) => timeoutHandle = <any>setTimeout(() => {
+            didTimeout = true;
+            reject(new Error('onWillSave listener loop timeout'));
+        }, 1000));
+
+        const firing = this.onWillSaveModelEmitter.sequence(async listener => {
+            if (shouldStop()) {
+                return false;
             }
-            for (const operations of allOperations) {
-                this.applyEdits(operations, {
+            const waitables: EditContributor[] = [];
+            const { version } = this;
+
+            const event = {
+                model: this, reason,
+                waitUntil: (thenable: EditContributor) => {
+                    if (Object.isFrozen(waitables)) {
+                        throw new Error('waitUntil cannot be called asynchronously.');
+                    }
+                    waitables.push(thenable);
+                }
+            };
+
+            // Fire.
+            try {
+                listener(event);
+            } catch (err) {
+                console.error(err);
+                return true;
+            }
+
+            // Asynchronous calls to `waitUntil` should fail.
+            Object.freeze(waitables);
+
+            // Wait for all promises.
+            const edits = await Promise.all(waitables).then(allOperations =>
+                ([] as monaco.editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
+            );
+            if (shouldStop()) {
+                return false;
+            }
+
+            // In a perfect world, we should only apply edits if document is clean.
+            if (version !== this.version) {
+                console.error('onWillSave listeners should provide edits, not directly alter the document.');
+            }
+
+            // Finally apply edits provided by this listener before firing the next.
+            if (edits && edits.length > 0) {
+                this.applyEdits(edits, {
                     ignoreDirty: true,
                 });
             }
+
+            return true;
         });
+
+        try {
+            await Promise.race([timeoutPromise, firing]);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            clearTimeout(timeoutHandle);
+        }
     }
 
     protected fireDidSaveModel(): void {
