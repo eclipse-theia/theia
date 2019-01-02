@@ -79,7 +79,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             return Promise.resolve(undefined);
         }
 
-        if (await !this.fileSystem.exists(parentStorageDir)) {
+        if (!await this.fileSystem.exists(parentStorageDir)) {
             await this.fileSystem.createFolder(parentStorageDir);
         }
 
