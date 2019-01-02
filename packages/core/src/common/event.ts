@@ -17,6 +17,7 @@
 // tslint:disable:no-any
 
 import { Disposable } from './disposable';
+import { MaybePromise } from './types';
 
 /**
  * Represents a typed event.
@@ -60,7 +61,8 @@ export namespace Event {
     }
 }
 
-class CallbackList {
+type Callback = (...args: any[]) => any;
+class CallbackList implements Iterable<Callback> {
 
     private _callbacks: Function[] | undefined;
     private _contexts: any[] | undefined;
@@ -106,18 +108,23 @@ class CallbackList {
         }
     }
 
-    public invoke(...args: any[]): any[] {
+    public [Symbol.iterator]() {
         if (!this._callbacks) {
-            return [];
+            return [][Symbol.iterator]();
         }
-
-        const ret: any[] = [];
         const callbacks = this._callbacks.slice(0);
         const contexts = this._contexts!.slice(0);
 
-        for (let i = 0; i < callbacks.length; i++) {
+        return callbacks.map((callback, i) =>
+            (...args: any[]) => callback.apply(contexts[i], args)
+        )[Symbol.iterator]();
+    }
+
+    public invoke(...args: any[]): any[] {
+        const ret: any[] = [];
+        for (const callback of this) {
             try {
-                ret.push(callbacks[i].apply(contexts[i], args));
+                ret.push(callback(...args));
             } catch (e) {
                 console.error(e);
             }
@@ -148,8 +155,9 @@ export class Emitter<T> {
     private _callbacks: CallbackList | undefined;
     private _disposed = false;
 
-    constructor(private _options?: EmitterOptions) {
-    }
+    constructor(
+        private _options?: EmitterOptions
+    ) { }
 
     /**
      * For the public to allow to subscribe
@@ -209,7 +217,21 @@ export class Emitter<T> {
      */
     fire(event: T): any {
         if (this._callbacks) {
-            this._callbacks.invoke.call(this._callbacks, event);
+            this._callbacks.invoke(event);
+        }
+    }
+
+    /**
+     * Process each listener one by one.
+     * Return `false` to stop iterating over the listeners, `true` to continue.
+     */
+    async sequence(processor: (listener: (e: T) => any) => MaybePromise<boolean>): Promise<void> {
+        if (this._callbacks) {
+            for (const listener of this._callbacks) {
+                if (!await processor(listener)) {
+                    break;
+                }
+            }
         }
     }
 
