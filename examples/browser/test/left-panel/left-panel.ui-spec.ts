@@ -41,12 +41,12 @@ describe('theia left panel', () => {
     describe('files tab', () => {
         it('should open/close the files tab', () => {
             leftPanel.openCloseTab('Files');
-            expect(leftPanel.isFileTreeVisible()).to.be.true;
-            expect(leftPanel.isTabActive('Files')).to.be.true;
-
-            leftPanel.openCloseTab('Files');
             expect(leftPanel.isFileTreeVisible()).to.be.false;
             expect(leftPanel.isTabActive('Files')).to.be.false;
+
+            leftPanel.openCloseTab('Files');
+            expect(leftPanel.isFileTreeVisible()).to.be.true;
+            expect(leftPanel.isTabActive('Files')).to.be.true;
         });
     });
 

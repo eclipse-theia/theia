@@ -130,8 +130,8 @@ describe('theia top panel (menubar)', () => {
     });
 
     describe('files view UI', () => {
-        it('should start with files view not visible', () => {
-            expect(leftPanel.isFileTreeVisible()).to.be.false;
+        it('should start with files view visible', () => {
+            expect(leftPanel.isFileTreeVisible()).to.be.true;
         });
         it('files view should toggle-on then toggle-off', () => {
             if (!leftPanel.isFileTreeVisible()) {
