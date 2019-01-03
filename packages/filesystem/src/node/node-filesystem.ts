@@ -33,7 +33,7 @@ export class FileSystemNodeOptions {
     encoding: string;
     recursive: boolean;
     overwrite: boolean;
-    moveToTrash: true;
+    moveToTrash: boolean;
 
     public static DEFAULT: FileSystemNodeOptions = {
         encoding: 'utf8',
