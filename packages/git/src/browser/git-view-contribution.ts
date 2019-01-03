@@ -87,6 +87,15 @@ export namespace GIT_COMMANDS {
         id: 'git.publish',
         label: 'Git: Publish Branch'
     };
+    export const STAGE_ALL = {
+        id: 'git.stage.all'
+    };
+    export const UNSTAGE_ALL = {
+        id: 'git.unstage.all'
+    };
+    export const DISCARD_ALL = {
+        id: 'git.discard.all'
+    };
 }
 
 @injectable()
@@ -189,6 +198,18 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             commandId: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
             label: 'Commit (Signed Off)'
         });
+        menus.registerMenuAction(GitWidget.ContextMenu.BATCH, {
+            commandId: GIT_COMMANDS.STAGE_ALL.id,
+            label: 'Stage All Changes'
+        });
+        menus.registerMenuAction(GitWidget.ContextMenu.BATCH, {
+            commandId: GIT_COMMANDS.UNSTAGE_ALL.id,
+            label: 'Unstage All Changes'
+        });
+        menus.registerMenuAction(GitWidget.ContextMenu.BATCH, {
+            commandId: GIT_COMMANDS.DISCARD_ALL.id,
+            label: 'Discard All Changes'
+        });
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: GIT_COMMANDS.OPEN_FILE.id
         });
@@ -239,6 +260,33 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
                 }
             },
             isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository
+        });
+        registry.registerCommand(GIT_COMMANDS.STAGE_ALL, {
+            execute: async () => {
+                const widget = this.tryGetWidget();
+                if (!!widget) {
+                    widget.stageAll();
+                }
+            },
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
+        });
+        registry.registerCommand(GIT_COMMANDS.UNSTAGE_ALL, {
+            execute: async () => {
+                const widget = this.tryGetWidget();
+                if (!!widget) {
+                    widget.unstageAll();
+                }
+            },
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
+        });
+        registry.registerCommand(GIT_COMMANDS.DISCARD_ALL, {
+            execute: async () => {
+                const widget = this.tryGetWidget();
+                if (!!widget) {
+                    widget.discardAll();
+                }
+            },
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.CHANGE_REPOSITORY, {
             execute: () => this.quickOpenService.changeRepository(),
