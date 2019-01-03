@@ -240,7 +240,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
     /**
      * Returns the root folder uri that a file belongs to.
-     * In case that a file belongs to more than one root folders, returns the root folder that has the shortest absolute path.
+     * In case that a file belongs to more than one root folders, returns the root folder that is closest to the file.
      * If the file is not from the current workspace, returns empty string.
      * @param filePath string path of the file
      * @param rootUris string URIs of the root folders in the current workspace
@@ -248,7 +248,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private getRoot(filePath: string, rootUris: string[]): URI {
         const roots = rootUris.filter(root => new URI(root).withScheme('file').isEqualOrParent(FileUri.create(filePath).withScheme('file')));
         if (roots.length > 0) {
-            return FileUri.create(FileUri.fsPath(roots.sort((r1, r2) => r1.length - r2.length)[0]));
+            return FileUri.create(FileUri.fsPath(roots.sort((r1, r2) => r2.length - r1.length)[0]));
         }
         return new URI();
     }
