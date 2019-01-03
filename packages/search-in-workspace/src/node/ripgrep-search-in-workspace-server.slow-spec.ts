@@ -33,8 +33,10 @@ const track = temp.track();
 // The root dirs we'll use to test searching.
 let rootDirA: string;
 let rootDirB: string;
+let rootSubdirA: string;
 let rootDirAUri: string;
 let rootDirBUri: string;
+let rootSubdirAUri: string;
 
 // Remember the content of the test files we create, to validate that the
 // reported line text is right.
@@ -84,7 +86,8 @@ const getRootPathFromName = (name: string) => {
         'glob.txt': rootDirA,
         glob: rootDirA,
         'lots-of-matches': rootDirA,
-        orange: rootDirB
+        orange: rootDirB,
+        folderSubfolder: rootSubdirA
     };
     return names[name];
 };
@@ -92,8 +95,10 @@ const getRootPathFromName = (name: string) => {
 before(() => {
     rootDirA = track.mkdirSync();
     rootDirB = track.mkdirSync();
+    rootSubdirA = track.mkdirSync({ dir: rootDirA });
     rootDirAUri = FileUri.create(rootDirA).toString();
     rootDirBUri = FileUri.create(rootDirB).toString();
+    rootSubdirAUri = FileUri.create(rootSubdirA).toString();
 
     createTestFile('carrots', `\
 This is a carrot.
@@ -149,6 +154,8 @@ test --glob patterns
     createTestFile('orange', `\
 the oranges' orange looks slightly different from carrots' orange.
 `);
+
+    createTestFile('folderSubfolder', 'a file in the subfolder of a folder.');
 });
 
 // Create an instance of RipgrepSearchInWorkspaceServer which uses rgPath as
@@ -688,6 +695,24 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri]);
+    });
+
+    it('should only find patterns from the folder closest to the file', done => {
+        const pattern = 'folder';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { root: rootSubdirAUri, fileUri: 'folderSubfolder', line: 1, character: 18, length: pattern.length, lineText: '' },
+                { root: rootSubdirAUri, fileUri: 'folderSubfolder', line: 1, character: 30, length: pattern.length, lineText: '' },
+                { root: rootSubdirAUri, fileUri: 'folderSubfolder', line: 1, character: 18, length: pattern.length, lineText: '' },
+                { root: rootSubdirAUri, fileUri: 'folderSubfolder', line: 1, character: 30, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirAUri, rootSubdirAUri]);
     });
 
     it('fails gracefully when rg isn\'t found', async function () {
