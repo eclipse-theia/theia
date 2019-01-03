@@ -1719,6 +1719,55 @@ export class FunctionBreakpoint extends Breakpoint {
     }
 }
 
+export class Color {
+    readonly red: number;
+    readonly green: number;
+    readonly blue: number;
+    readonly alpha: number;
+
+    constructor(red: number, green: number, blue: number, alpha: number) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.alpha = alpha;
+    }
+}
+
+export class ColorInformation {
+    range: Range;
+    color: Color;
+
+    constructor(range: Range, color: Color) {
+        if (color && !(color instanceof Color)) {
+            throw illegalArgument('color');
+        }
+        if (!Range.isRange(range)) {
+            throw illegalArgument('range');
+        }
+        this.range = range;
+        this.color = color;
+    }
+}
+
+export class ColorPresentation {
+    label: string;
+    textEdit?: TextEdit;
+    additionalTextEdits?: TextEdit[];
+
+    constructor(label: string) {
+        if (!label || typeof label !== 'string') {
+            throw illegalArgument('label');
+        }
+        this.label = label;
+    }
+}
+
+export enum ColorFormat {
+    RGB = 0,
+    HEX = 1,
+    HSL = 2
+}
+
 export class FoldingRange {
     start: number;
     end: number;

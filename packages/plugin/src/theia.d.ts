@@ -4454,6 +4454,132 @@ declare module '@theia/plugin' {
     }
 
     /**
+    * Represents a color in RGBA space.
+    */
+    export class Color {
+
+        /**
+        * The red component of this color in the range [0-1].
+        */
+        readonly red: number;
+
+        /**
+        * The green component of this color in the range [0-1].
+        */
+        readonly green: number;
+
+        /**
+        * The blue component of this color in the range [0-1].
+        */
+        readonly blue: number;
+
+        /**
+        * The alpha component of this color in the range [0-1].
+        */
+        readonly alpha: number;
+
+        /**
+        * Creates a new color instance.
+        *
+        * @param red The red component.
+        * @param green The green component.
+        * @param blue The blue component.
+        * @param alpha The alpha component.
+        */
+        constructor(red: number, green: number, blue: number, alpha: number);
+    }
+
+    /**
+    * Represents a color range from a document.
+    */
+    export class ColorInformation {
+
+        /**
+        * The range in the document where this color appears.
+        */
+        range: Range;
+
+        /**
+        * The actual color value for this color range.
+        */
+        color: Color;
+
+        /**
+        * Creates a new color range.
+        *
+        * @param range The range the color appears in. Must not be empty.
+        * @param color The value of the color.
+        */
+        constructor(range: Range, color: Color);
+    }
+
+    /**
+    * A color presentation object describes how a [`color`](#Color) should be represented as text and what
+    * edits are required to refer to it from source code.
+    *
+    * For some languages one color can have multiple presentations, e.g. css can represent the color red with
+    * the constant `Red`, the hex-value `#ff0000`, or in rgba and hsla forms. In csharp other representations
+    * apply, e.g `System.Drawing.Color.Red`.
+    */
+    export class ColorPresentation {
+
+        /**
+        * The label of this color presentation. It will be shown on the color
+        * picker header. By default this is also the text that is inserted when selecting
+        * this color presentation.
+        */
+        label: string;
+
+        /**
+        * An [edit](#TextEdit) which is applied to a document when selecting
+        * this presentation for the color.  When `falsy` the [label](#ColorPresentation.label)
+        * is used.
+        */
+        textEdit?: TextEdit;
+
+        /**
+        * An optional array of additional [text edits](#TextEdit) that are applied when
+        * selecting this color presentation. Edits must not overlap with the main [edit](#ColorPresentation.textEdit) nor with themselves.
+        */
+        additionalTextEdits?: TextEdit[];
+
+        /**
+        * Creates a new color presentation.
+        *
+        * @param label The label of this color presentation.
+        */
+        constructor(label: string);
+    }
+
+    /**
+    * The document color provider defines the contract between extensions and feature of
+    * picking and modifying colors in the editor.
+    */
+    export interface DocumentColorProvider {
+
+        /**
+        * Provide colors for the given document.
+        *
+        * @param document The document in which the command was invoked.
+        * @param token A cancellation token.
+        * @return An array of [color information](#ColorInformation) or a thenable that resolves to such. The lack of a result
+        * can be signaled by returning `undefined`, `null`, or an empty array.
+        */
+        provideDocumentColors(document: TextDocument, token: CancellationToken): ProviderResult<ColorInformation[]>;
+
+        /**
+        * Provide [representations](#ColorPresentation) for a color.
+        *
+        * @param color The color to show and insert.
+        * @param context A context object with additional information
+        * @param token A cancellation token.
+        * @return An array of color presentations or a thenable that resolves to such. The lack of a result
+        * can be signaled by returning `undefined`, `null`, or an empty array.
+        */
+        provideColorPresentations(color: Color, context: { document: TextDocument, range: Range }, token: CancellationToken): ProviderResult<ColorPresentation[]>;
+    }
+
+    /**
     * A line based folding range. To be valid, start and end line must a zero or larger and smaller than the number of lines in the document.
     * Invalid ranges will be ignored.
     */
@@ -5918,6 +6044,19 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider): Disposable;
+
+        /**
+        * Register a color provider.
+        *
+        * Multiple providers can be registered for a language. In that case providers are asked in
+        * parallel and the results are merged. A failing provider (rejected promise or exception) will
+        * not cause a failure of the whole operation.
+        *
+        * @param selector A selector that defines the documents this provider is applicable to.
+        * @param provider A color provider.
+        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+        */
+        export function registerColorProvider(selector: DocumentSelector, provider: DocumentColorProvider): Disposable;
 
         /**
         * Register a folding range provider.
