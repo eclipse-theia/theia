@@ -67,6 +67,10 @@ export class WorkspaceMainImpl implements WorkspaceMain {
 
         this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
 
+        this.workspaceService.roots.then(roots => {
+            this.processWorkspaceFoldersChanged(roots);
+        });
+
         this.workspaceService.onWorkspaceChanged(roots => {
             this.processWorkspaceFoldersChanged(roots);
         });
