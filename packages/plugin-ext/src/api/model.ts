@@ -264,7 +264,7 @@ export interface FormattingOptions {
 
 export interface TextEdit {
     range: Range;
-    text?: string;
+    text: string;
     eol?: monaco.editor.EndOfLineSequence;
 }
 
@@ -441,4 +441,27 @@ export class FoldingRangeKind {
     static readonly Imports = new FoldingRangeKind('imports');
     static readonly Region = new FoldingRangeKind('region');
     public constructor(public value: string) { }
+}
+
+export interface Color {
+    readonly red: number;
+    readonly green: number;
+    readonly blue: number;
+    readonly alpha: number;
+}
+
+export interface ColorPresentation {
+    label: string;
+    textEdit?: TextEdit;
+    additionalTextEdits?: TextEdit[];
+}
+
+export interface ColorInformation {
+    range: Range;
+    color: Color;
+}
+
+export interface DocumentColorProvider {
+    provideDocumentColors(model: monaco.editor.ITextModel): PromiseLike<ColorInformation[]>;
+    provideColorPresentations(model: monaco.editor.ITextModel, colorInfo: ColorInformation): PromiseLike<ColorPresentation[]>;
 }

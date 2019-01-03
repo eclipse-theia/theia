@@ -750,3 +750,19 @@ export function fromFoldingRangeKind(kind: theia.FoldingRangeKind | undefined): 
     }
     return undefined;
 }
+
+export function fromColor(color: types.Color): [number, number, number, number] {
+    return [color.red, color.green, color.blue, color.alpha];
+}
+
+export function toColor(color: [number, number, number, number]): types.Color {
+    return new types.Color(color[0], color[1], color[2], color[3]);
+}
+
+export function fromColorPresentation(colorPresentation: theia.ColorPresentation): model.ColorPresentation {
+    return {
+        label: colorPresentation.label,
+        textEdit: colorPresentation.textEdit ? fromTextEdit(colorPresentation.textEdit) : undefined,
+        additionalTextEdits: colorPresentation.additionalTextEdits ? colorPresentation.additionalTextEdits.map(value  => fromTextEdit(value)) : undefined
+    };
+}

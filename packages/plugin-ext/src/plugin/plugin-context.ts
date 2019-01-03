@@ -90,6 +90,9 @@ import {
     FunctionBreakpoint,
     FoldingRange,
     FoldingRangeKind,
+    Color,
+    ColorInformation,
+    ColorPresentation,
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -491,6 +494,9 @@ export function createAPIFactory(
             registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
                 return languagesExt.registerDocumentSymbolProvider(selector, provider);
             },
+            registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider): theia.Disposable {
+                return languagesExt.registerColorProvider(selector, provider);
+            },
             registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
                 return languagesExt.registerFoldingRangeProvider(selector, provider);
             },
@@ -649,6 +655,9 @@ export function createAPIFactory(
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,
+            Color,
+            ColorInformation,
+            ColorPresentation,
             FoldingRange,
             FoldingRangeKind,
         };

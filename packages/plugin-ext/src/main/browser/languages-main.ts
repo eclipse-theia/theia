@@ -559,6 +559,54 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
     }
 
+    $registerDocumentColorProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const colorProvider = this.createColorProvider(handle, languageSelector);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                disposable.push(monaco.languages.registerColorProvider(language, colorProvider));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    createColorProvider(handle: number, selector: LanguageSelector | undefined): monaco.languages.DocumentColorProvider {
+        return {
+            provideDocumentColors: (model, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                return this.proxy.$provideDocumentColors(handle, model.uri).then(documentColors =>
+                    documentColors.map(documentColor => {
+                        const [red, green, blue, alpha] = documentColor.color;
+                        const color = {
+                            red: red,
+                            green: green,
+                            blue: blue,
+                            alpha: alpha
+                        };
+
+                        return {
+                            color,
+                            range: documentColor.range
+                        };
+                    })
+                );
+            },
+            provideColorPresentations: (model, colorInfo, token) =>
+                this.proxy.$provideColorPresentations(handle, model.uri, {
+                    color: [
+                        colorInfo.color.red,
+                        colorInfo.color.green,
+                        colorInfo.color.blue,
+                        colorInfo.color.alpha
+                    ],
+                    range: colorInfo.range
+                })
+        };
+    }
+
     $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const quickFixProvider = this.createQuickFixProvider(handle, languageSelector, codeActionKinds);
