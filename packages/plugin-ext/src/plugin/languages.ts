@@ -23,7 +23,8 @@ import {
     SerializedOnEnterRule,
     SerializedIndentationRule,
     Position,
-    Selection
+    Selection,
+    RawColorInfo,
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from '@theia/plugin';
@@ -50,7 +51,8 @@ import {
     CodeLensSymbol,
     DocumentSymbol,
     ReferenceContext,
-    Location
+    Location,
+    ColorPresentation,
 } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -72,6 +74,7 @@ import { ReferenceAdapter } from './languages/reference';
 import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
 import { SymbolInformation } from 'vscode-languageserver-types';
 import { FoldingProviderAdapter } from './languages/folding';
+import { ColorProviderAdapter } from './languages/color';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -90,7 +93,8 @@ type Adapter = CompletionAdapter |
     LinkProviderAdapter |
     ReferenceAdapter |
     WorkspaceSymbolAdapter |
-    FoldingProviderAdapter;
+    FoldingProviderAdapter |
+    ColorProviderAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -438,6 +442,22 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, OutlineAdapter, adapter => adapter.provideDocumentSymbols(URI.revive(resource)));
     }
     // ### Document Symbol Provider end
+
+    // ### Color Provider begin
+    registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new ColorProviderAdapter(this.documents, provider));
+        this.proxy.$registerDocumentColorProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideDocumentColors(handle: number, resource: UriComponents): Promise<RawColorInfo[]> {
+        return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColors(URI.revive(resource)));
+    }
+
+    $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo): Promise<ColorPresentation[]> {
+        return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColorPresentations(URI.revive(resource), colorInfo));
+    }
+    // ### Color Provider end
 
     // ### Folding Range Provider begin
     registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {

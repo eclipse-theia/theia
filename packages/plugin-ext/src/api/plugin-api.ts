@@ -51,7 +51,8 @@ import {
     TextDocumentShowOptions,
     WorkspaceRootsChangeEvent,
     Location,
-    Breakpoint
+    Breakpoint,
+    ColorPresentation,
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
@@ -859,6 +860,8 @@ export interface LanguagesExt {
         resource: UriComponents,
         context: monaco.languages.FoldingContext
     ): PromiseLike<monaco.languages.FoldingRange[] | undefined>;
+    $provideDocumentColors(handle: number, resource: UriComponents): PromiseLike<RawColorInfo[]>;
+    $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo): PromiseLike<ColorPresentation[]>;
 }
 
 export interface LanguagesMain {
@@ -885,6 +888,7 @@ export interface LanguagesMain {
     $registerOutlineSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerWorkspaceSymbolProvider(handle: number): void;
     $registerFoldingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerDocumentColorProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export interface WebviewPanelViewState {
@@ -1021,4 +1025,9 @@ export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
+}
+
+export interface RawColorInfo {
+    color: [number, number, number, number];
+    range: Range;
 }
