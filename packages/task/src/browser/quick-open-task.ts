@@ -43,6 +43,12 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         this.items = [];
 
         const configuredTasks = await this.taskConfigurations.getTasks();
+        if (!configuredTasks.length) {
+            this.items.push(new QuickOpenItem({
+                label: 'No tasks found',
+                run: (mode: QuickOpenMode): boolean => false
+            }));
+        }
         for (const task of configuredTasks) {
             this.items.push(new TaskRunQuickOpenItem(task, this.taskService, false));
         }
