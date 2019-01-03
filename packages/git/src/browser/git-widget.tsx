@@ -31,6 +31,7 @@ import { GitErrorHandler } from './git-error-handler';
 import { GitDiffWidget } from './diff/git-diff-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { GitFileChangeNode } from './git-file-change-node';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class GitWidget extends GitDiffWidget implements StatefulWidget {
@@ -57,6 +58,9 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     @inject(GitErrorHandler)
     protected readonly gitErrorHandler: GitErrorHandler;
+
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -390,8 +394,11 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 openFile={this.openFile}
                 selectChange={this.selectChange}
                 discard={this.discard}
+                discardAll={this.discardAll}
                 unstage={this.unstage}
+                unstageAll={this.unstageAll}
                 stage={this.stage}
+                stageAll={this.stageAll}
                 mergeChanges={this.mergeChanges}
                 stagedChanges={this.stagedChanges}
                 unstagedChanges={this.unstagedChanges}
@@ -532,15 +539,47 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         return [username, email];
     }
 
-    protected readonly unstage = (repository: Repository, change: GitFileChange) => this.doUnstage(repository, change);
-    protected async doUnstage(repository: Repository, change: GitFileChange) {
+    readonly unstageAll = () => this.doUnstageAll();
+    protected async doUnstageAll() {
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            this.unstage(repository, this.stagedChanges);
+            this.update();
+        }
+    }
+    protected readonly unstage = (repository: Repository, change: GitFileChange | GitFileChange[]) => this.doUnstage(repository, change);
+    protected async doUnstage(repository: Repository, change: GitFileChange | GitFileChange[]) {
         try {
-            await this.git.unstage(repository, change.uri);
+            if (Array.isArray(change)) {
+                const uris = change.map(c => c.uri);
+                await this.git.unstage(repository, uris);
+            } else {
+                await this.git.unstage(repository, change.uri);
+            }
         } catch (error) {
             this.gitErrorHandler.handleError(error);
         }
     }
 
+    readonly discardAll = () => this.doDiscardAll();
+    protected async doDiscardAll() {
+        if (await this.confirmAll()) {
+            try {
+                const repository = this.repositoryProvider.selectedRepository;
+                if (repository) {
+                    // discard new files
+                    const newUris = this.unstagedChanges.filter(c => c.status === GitFileStatus.New).map(c => c.uri);
+                    this.deleteAll(newUris);
+                    // unstage changes
+                    const uris = this.unstagedChanges.map(c => c.uri);
+                    await this.git.unstage(repository, uris, { treeish: 'HEAD', reset: 'working-tree' });
+                    this.update();
+                }
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
+            }
+        }
+    }
     protected readonly discard = (repository: Repository, change: GitFileChange) => this.doDiscard(repository, change);
     protected async doDiscard(repository: Repository, change: GitFileChange) {
         // Allow deletion, only iff the same file is not yet in the Git index.
@@ -564,14 +603,34 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         const uri = new URI(path);
         return new ConfirmDialog({
             title: 'Discard changes',
-            msg: `Do you really want to discard changes in ${uri.displayName}`
+            msg: `Do you really want to discard changes in ${uri.displayName}?`
         }).open();
     }
 
-    protected readonly stage = (repository: Repository, change: GitFileChange) => this.doStage(repository, change);
-    protected async doStage(repository: Repository, change: GitFileChange) {
+    protected confirmAll(): Promise<boolean | undefined> {
+        return new ConfirmDialog({
+            title: 'Discard All Changes',
+            msg: 'Do you really want to discard all changes?'
+        }).open();
+    }
+
+    readonly stageAll = () => this.doStageAll();
+    protected async doStageAll() {
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            this.stage(repository, this.unstagedChanges);
+            this.update();
+        }
+    }
+    protected readonly stage = (repository: Repository, change: GitFileChange | GitFileChange[]) => this.doStage(repository, change);
+    protected async doStage(repository: Repository, change: GitFileChange | GitFileChange[]) {
         try {
-            await this.git.add(repository, change.uri);
+            if (Array.isArray(change)) {
+                const uris = change.map(c => c.uri);
+                await this.git.add(repository, uris);
+            } else {
+                await this.git.add(repository, change.uri);
+            }
         } catch (error) {
             this.gitErrorHandler.handleError(error);
         }
@@ -633,6 +692,19 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         messageInput.value = '';
         this.resize(messageInput);
     }
+
+    protected async delete(uri: URI): Promise<void> {
+        try {
+            return this.fileSystem.delete(uri.toString());
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    protected async deleteAll(uris: string[]): Promise<void> {
+        await Promise.all(uris.map(uri => this.delete(new URI(uri))));
+        this.update();
+    }
 }
 
 export namespace GitWidget {
@@ -641,6 +713,7 @@ export namespace GitWidget {
         export const PATH: MenuPath = ['git-widget-context-menu'];
         export const OTHER_GROUP: MenuPath = [...PATH, '1_other'];
         export const COMMIT_GROUP: MenuPath = [...PATH, '2_commit'];
+        export const BATCH: MenuPath = [...PATH, '3_batch'];
     }
 
     export namespace Styles {
@@ -731,8 +804,11 @@ export namespace GitChangesListContainer {
         openChange: (change: GitFileChange, options?: EditorOpenerOptions) => Promise<EditorWidget | undefined>
         selectChange: (change: GitFileChange) => void
         unstage: (repository: Repository, change: GitFileChange) => void
+        unstageAll: (repository: Repository, change: GitFileChange[]) => void
         stage: (repository: Repository, change: GitFileChange) => void
+        stageAll: (repository: Repository, change: GitFileChange[]) => void
         discard: (repository: Repository, change: GitFileChange) => void
+        discardAll: () => void
         openFile: (uri: URI) => void
         mergeChanges: GitFileChangeNode[]
         stagedChanges: GitFileChangeNode[]
@@ -744,6 +820,10 @@ export namespace GitChangesListContainer {
 
 export class GitChangesListContainer extends React.Component<GitChangesListContainer.Props> {
     protected listContainer: HTMLDivElement | undefined;
+
+    protected readonly doStageAll = () => this.props.stageAll(this.props.repository!, this.props.unstagedChanges);
+    protected readonly doUnstageAll = () => this.props.unstageAll(this.props.repository!, this.props.stagedChanges);
+    protected readonly doDiscardAll = () => this.props.discardAll();
 
     render() {
         return (
@@ -793,9 +873,10 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     protected renderMergeChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.props.mergeChanges.length > 0) {
             return <div id='mergeChanges' className='changesContainer'>
-                <div className='theia-header'>
-                    Merge Changes
+                <div className='theia-header git-theia-header'>
+                    Merged Changes
                     {this.renderChangeCount(this.props.mergeChanges.length)}
+                    {this.renderChangeListButtons([GitBatchAction.STAGE_ALL])}
                 </div>
                 {this.props.mergeChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
@@ -807,9 +888,10 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     protected renderStagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.props.stagedChanges.length > 0) {
             return <div id='stagedChanges' className='changesContainer'>
-                <div className='theia-header'>
+                <div className='theia-header git-theia-header'>
                     Staged Changes
                     {this.renderChangeCount(this.props.stagedChanges.length)}
+                    {this.renderChangeListButtons([GitBatchAction.UNSTAGE_ALL])}
                 </div>
                 {this.props.stagedChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
@@ -821,9 +903,10 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     protected renderUnstagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.props.unstagedChanges.length > 0) {
             return <div id='unstagedChanges' className='changesContainer'>
-                <div className='theia-header'>
+                <div className='theia-header git-theia-header'>
                     Changes
                     {this.renderChangeCount(this.props.unstagedChanges.length)}
+                    {this.renderChangeListButtons([GitBatchAction.STAGE_ALL, GitBatchAction.DISCARD_ALL])}
                 </div>
                 {this.props.unstagedChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
@@ -836,4 +919,23 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
             <span className='notification-count'>{changes}</span>
         </div>;
     }
+
+    protected renderChangeListButtons(actions: GitBatchAction[]): React.ReactNode {
+        const stageAll = (actions.some(a => a === GitBatchAction.STAGE_ALL))
+            ? <a className='toolbar-button' title='Stage All Changes' onClick={this.doStageAll}><i className='fa fa-plus' /></a> : '';
+        const unstageAll = (actions.some(a => a === GitBatchAction.UNSTAGE_ALL))
+            ? <a className='toolbar-button' title='Unstage All Changes' onClick={this.doUnstageAll}><i className='fa fa-minus' /></a> : '';
+        const discardAll = (actions.some(a => a === GitBatchAction.DISCARD_ALL))
+            ? <a className='toolbar-button' title='Discard All Changes' onClick={this.doDiscardAll}><i className='fa fa-undo' /></a> : '';
+        return <div className='git-change-list-buttons-container'>{discardAll}{unstageAll}{stageAll}</div>;
+    }
+}
+
+export enum GitBatchAction {
+    /** Stage All Changes Command */
+    STAGE_ALL,
+    /** Unstage All Changes Command */
+    UNSTAGE_ALL,
+    /** Discard All Changes Command */
+    DISCARD_ALL
 }
