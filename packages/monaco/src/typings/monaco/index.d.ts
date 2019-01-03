@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
 /// <reference types='@typefox/monaco-editor-core/monaco'/>
 
 declare module monaco.instantiation {
@@ -43,6 +44,8 @@ declare module monaco.editor {
     }
 
     export interface IStandaloneCodeEditor extends CommonCodeEditor {
+        setDecorations(decorationTypeKey: string, ranges: IDecorationOptions[]): void;
+        setDecorationsFast(decorationTypeKey: string, ranges: IRange[]): void;
     }
 
     export interface CommonCodeEditor {
@@ -103,6 +106,9 @@ declare module monaco.editor {
     export interface ICodeEditorService {
         getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
         openCodeEditor(input: monaco.editor.IResourceInput, source?: monaco.editor.ICodeEditor, sideBySide?: boolean): monaco.Promise<monaco.editor.CommonCodeEditor | undefined>;
+        registerDecorationType(key: string, options: IDecorationRenderOptions, parentTypeKey?: string): void;
+        removeDecorationType(key: string): void;
+        resolveDecorationOptions(typeKey: string, writable: boolean): IModelDecorationOptions;
     }
 
     export interface IReference<T> extends monaco.IDisposable {
@@ -179,6 +185,80 @@ declare module monaco.editor {
          * Shows the native Monaco context menu in the editor.
          */
         showContextMenu(delegate: IContextMenuDelegate): void;
+    }
+
+    export interface IDecorationOptions {
+        range: IRange;
+        hoverMessage?: IMarkdownString | IMarkdownString[];
+        renderOptions?: IDecorationInstanceRenderOptions;
+    }
+
+    export interface IThemeDecorationInstanceRenderOptions {
+        before?: IContentDecorationRenderOptions;
+        after?: IContentDecorationRenderOptions;
+    }
+
+    export interface IDecorationInstanceRenderOptions extends IThemeDecorationInstanceRenderOptions {
+        light?: IThemeDecorationInstanceRenderOptions;
+        dark?: IThemeDecorationInstanceRenderOptions;
+    }
+
+    export interface IContentDecorationRenderOptions {
+        contentText?: string;
+        contentIconPath?: string | UriComponents;
+
+        border?: string;
+        borderColor?: string | ThemeColor;
+        fontStyle?: string;
+        fontWeight?: string;
+        textDecoration?: string;
+        color?: string | ThemeColor;
+        backgroundColor?: string | ThemeColor;
+
+        margin?: string;
+        width?: string;
+        height?: string;
+    }
+
+    export interface IDecorationRenderOptions extends IThemeDecorationRenderOptions {
+        isWholeLine?: boolean;
+        rangeBehavior?: TrackedRangeStickiness;
+        overviewRulerLane?: OverviewRulerLane;
+
+        light?: IThemeDecorationRenderOptions;
+        dark?: IThemeDecorationRenderOptions;
+    }
+
+    export interface IThemeDecorationRenderOptions {
+        backgroundColor?: string | ThemeColor;
+
+        outline?: string;
+        outlineColor?: string | ThemeColor;
+        outlineStyle?: string;
+        outlineWidth?: string;
+
+        border?: string;
+        borderColor?: string | ThemeColor;
+        borderRadius?: string;
+        borderSpacing?: string;
+        borderStyle?: string;
+        borderWidth?: string;
+
+        fontStyle?: string;
+        fontWeight?: string;
+        textDecoration?: string;
+        cursor?: string;
+        color?: string | ThemeColor;
+        opacity?: number;
+        letterSpacing?: string;
+
+        gutterIconPath?: string | UriComponents;
+        gutterIconSize?: string;
+
+        overviewRulerColor?: string | ThemeColor;
+
+        before?: IContentDecorationRenderOptions;
+        after?: IContentDecorationRenderOptions;
     }
 
 }
@@ -345,6 +425,9 @@ declare module monaco.services {
         abstract getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
         abstract openCodeEditor(input: monaco.editor.IResourceInput, source?: monaco.editor.ICodeEditor,
             sideBySide?: boolean): monaco.Promise<monaco.editor.CommonCodeEditor | undefined>;
+        registerDecorationType: monaco.editor.ICodeEditorService['registerDecorationType'];
+        removeDecorationType: monaco.editor.ICodeEditorService['removeDecorationType'];
+        resolveDecorationOptions: monaco.editor.ICodeEditorService['resolveDecorationOptions'];
     }
 
     export class StandaloneCommandService implements monaco.commands.ICommandService {
@@ -415,6 +498,7 @@ declare module monaco.services {
     export module StaticServices {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
         export const modeService: LazyStaticService<IModeService>;
+        export const codeEditorService: LazyStaticService<monaco.editor.ICodeEditorService>;
     }
 }
 
@@ -697,13 +781,108 @@ declare module monaco.modes {
         public static getInlineStyleFromMetadata(metadata: number, colorMap: string[]): string;
     }
 
+    export type SuggestionType = 'method'
+        | 'function'
+        | 'constructor'
+        | 'field'
+        | 'variable'
+        | 'class'
+        | 'struct'
+        | 'interface'
+        | 'module'
+        | 'property'
+        | 'event'
+        | 'operator'
+        | 'unit'
+        | 'value'
+        | 'constant'
+        | 'enum'
+        | 'enum-member'
+        | 'keyword'
+        | 'snippet'
+        | 'text'
+        | 'color'
+        | 'file'
+        | 'reference'
+        | 'customcolor'
+        | 'folder'
+        | 'type-parameter';
+
+    export type SnippetType = 'internal' | 'textmate';
+
+    export interface ISuggestion {
+        label: string;
+        insertText: string;
+        type: SuggestionType;
+        detail?: string;
+        documentation?: string | IMarkdownString;
+        filterText?: string;
+        sortText?: string;
+        preselect?: boolean;
+        noAutoAccept?: boolean;
+        commitCharacters?: string[];
+        overwriteBefore?: number;
+        overwriteAfter?: number;
+        additionalTextEdits?: editor.ISingleEditOperation[];
+        command?: monaco.languages.Command;
+        snippetType?: SnippetType;
+    }
+
+    export interface ISuggestResult {
+        suggestions: ISuggestion[];
+        incomplete?: boolean;
+        dispose?(): void;
+    }
+
+    export enum CompletionTriggerKind {
+        Invoke = 0,
+        TriggerCharacter = 1,
+        TriggerForIncompleteCompletions = 2,
+    }
+
+    export interface SuggestContext {
+        triggerKind: CompletionTriggerKind;
+        triggerCharacter?: string;
+    }
+
+    export interface ISuggestSupport {
+
+        triggerCharacters?: string[];
+
+        // tslint:disable-next-line:max-line-length
+        provideCompletionItems(model: monaco.editor.ITextModel, position: Position, context: SuggestContext, token: CancellationToken): ISuggestResult | Thenable<ISuggestResult | undefined> | undefined;
+
+        resolveCompletionItem?(model: monaco.editor.ITextModel, position: Position, item: ISuggestion, token: CancellationToken): ISuggestion | Thenable<ISuggestion>;
+    }
+
+    export interface IRelativePattern {
+        base: string;
+        pattern: string;
+    }
+
+    export interface LanguageFilter {
+        language?: string;
+        scheme?: string;
+        pattern?: string | IRelativePattern;
+        /**
+         * This provider is implemented in the UI thread.
+         */
+        hasAccessToAllModels?: boolean;
+        exclusive?: boolean;
+    }
+
+    export type LanguageSelector = string | LanguageFilter | (string | LanguageFilter)[];
+
     export interface LanguageFeatureRegistry<T> {
         has(model: monaco.editor.IReadOnlyModel): boolean;
         all(model: monaco.editor.IReadOnlyModel): T[];
+        register(selector: LanguageSelector, provider: T): IDisposable;
         readonly onDidChange: monaco.IEvent<number>;
     }
 
     export const DocumentSymbolProviderRegistry: LanguageFeatureRegistry<monaco.languages.DocumentSymbolProvider>;
+
+    export const SuggestRegistry: LanguageFeatureRegistry<ISuggestSupport>;
 }
 
 declare module monaco.cancellation {
