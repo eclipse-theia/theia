@@ -16,7 +16,8 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
-import { WorkspaceService, getTemporaryWorkspaceFileUri } from './workspace-service';
+import { WorkspaceService } from './workspace-service';
+import { getTemporaryWorkspaceFileUri } from '../common';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';

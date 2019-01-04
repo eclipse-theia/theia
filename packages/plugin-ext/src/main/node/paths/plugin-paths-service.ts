@@ -23,7 +23,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { isWindows } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
-import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/browser/workspace-service';
+import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
 
 // Service to provide configuration paths for plugin api.
 @injectable()
