@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
-import { WorkspaceServer } from '../common';
+import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -27,9 +27,6 @@ import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from 'ajv';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-
-export const THEIA_EXT = 'theia-workspace';
-export const VSCODE_EXT = 'code-workspace';
 
 /**
  * The workspace service.
@@ -496,10 +493,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return undefined;
     }
 
-}
-
-export function getTemporaryWorkspaceFileUri(home: URI): URI {
-    return home.resolve('.theia').resolve(`Untitled.${THEIA_EXT}`).withScheme('file');
 }
 
 export interface WorkspaceInput {
