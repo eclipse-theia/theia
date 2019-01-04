@@ -60,7 +60,6 @@ import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
-
 import { SymbolInformation } from 'vscode-languageserver-types';
 
 export interface PluginInitData {
@@ -949,20 +948,20 @@ export interface DebugExt {
     $sessionDidCreate(sessionId: string): void;
     $sessionDidDestroy(sessionId: string): void;
     $sessionDidChange(sessionId: string | undefined): void;
-    $provideDebugConfigurations(contributionId: string, folder: string | undefined): Promise<theia.DebugConfiguration[]>;
-    $resolveDebugConfigurations(contributionId: string, debugConfiguration: theia.DebugConfiguration, folder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
-    $getSupportedLanguages(contributionId: string): Promise<string[]>;
-    $getSchemaAttributes(contributionId: string): Promise<IJSONSchema[]>;
-    $getConfigurationSnippets(contributionId: string): Promise<IJSONSchemaSnippet[]>;
-    $createDebugSession(contributionId: string, debugConfiguration: theia.DebugConfiguration): Promise<string>;
+    $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
+    $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
+    $getSupportedLanguages(debugType: string): Promise<string[]>;
+    $getSchemaAttributes(debugType: string): Promise<IJSONSchema[]>;
+    $getConfigurationSnippets(debugType: string): Promise<IJSONSchemaSnippet[]>;
+    $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;
 }
 
 export interface DebugMain {
     $appendToDebugConsole(value: string): Promise<void>;
     $appendLineToDebugConsole(value: string): Promise<void>;
-    $registerDebugConfigurationProvider(contributorId: string, description: DebuggerDescription): Promise<void>;
-    $unregisterDebugConfigurationProvider(contributorId: string): Promise<void>;
+    $registerDebuggerContribution(description: DebuggerDescription): Promise<void>;
+    $unregisterDebuggerConfiguration(debugType: string): Promise<void>;
     $addBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
     $removeBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
     $startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): Promise<boolean>;
