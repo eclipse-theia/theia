@@ -21,6 +21,7 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
 import { injectable, inject, postConstruct } from 'inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
  * Debug adapter contribution registrator.
@@ -47,23 +48,27 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
     protected readonly toDispose = new DisposableCollection();
 
-    // maps session and contribution identifiers.
+    // maps session and contribution
     protected readonly sessionId2contrib = new Map<string, PluginDebugAdapterContribution>();
     protected delegated: DebugService;
 
     @inject(WebSocketConnectionProvider)
     protected readonly connectionProvider: WebSocketConnectionProvider;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
     protected init(): void {
         this.delegated = this.connectionProvider.createProxy<DebugService>(DebugPath);
-        this.toDispose.push(Disposable.create(() => this.delegated.dispose()));
-        this.toDispose.push(Disposable.create(() => {
-            for (const sessionId of this.sessionId2contrib.keys()) {
-                const contrib = this.sessionId2contrib.get(sessionId)!;
-                contrib.terminateDebugSession(sessionId);
-            }
-        }));
+        this.toDispose.pushAll([
+            Disposable.create(() => this.delegated.dispose()),
+            Disposable.create(() => {
+                for (const sessionId of this.sessionId2contrib.keys()) {
+                    const contrib = this.sessionId2contrib.get(sessionId)!;
+                    contrib.terminateDebugSession(sessionId);
+                }
+                this.sessionId2contrib.clear();
+            })]);
     }
 
     registerDebugAdapterContribution(contrib: PluginDebugAdapterContribution): Disposable {
@@ -99,14 +104,9 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
         let resolved = config;
 
-        for (const contributor of this.contributors.values()) {
-            if (contributor.resolveDebugConfiguration) {
-                try {
-                    resolved = await contributor.resolveDebugConfiguration(config, workspaceFolderUri) || resolved;
-                } catch (e) {
-                    console.error(e);
-                }
-            }
+        const contributor = this.contributors.get(config.type);
+        if (contributor && contributor.resolveDebugConfiguration) {
+            resolved = await contributor.resolveDebugConfiguration(resolved, workspaceFolderUri) || resolved;
         }
 
         return this.delegated.resolveDebugConfiguration(resolved, workspaceFolderUri);

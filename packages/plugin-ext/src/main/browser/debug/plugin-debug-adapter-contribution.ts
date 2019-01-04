@@ -18,41 +18,49 @@ import { DebugExt, } from '../../../api/plugin-api';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { IJSONSchemaSnippet, IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { DebugAdapterContribution } from '@theia/debug/lib/common/debug-model';
+import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 
 /**
- * Plugin [DebugAdapterContribution](#DebugAdapterContribution) with functionality
- * to create / terminated debug adapter session.
+ * Plugin [DebugAdapterContribution](#DebugAdapterContribution).
  */
-export class PluginDebugAdapterContribution implements DebugAdapterContribution {
+export class PluginDebugAdapterContribution {
     constructor(
-        readonly type: string,
-        readonly label: MaybePromise<string | undefined>,
-        readonly languages: MaybePromise<string[] | undefined>,
-        protected readonly contributorId: string,
+        protected readonly description: DebuggerDescription,
         protected readonly debugExt: DebugExt) { }
 
-    async provideDebugConfigurations(workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
-        return this.debugExt.$provideDebugConfigurations(this.contributorId, workspaceFolderUri);
+    get type(): string {
+        return this.description.type;
     }
 
-    async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {
-        return this.debugExt.$resolveDebugConfigurations(this.contributorId, config, workspaceFolderUri);
+    get label(): MaybePromise<string | undefined> {
+        return this.description.label;
+    }
+
+    get languages(): MaybePromise<string[] | undefined> {
+        return this.debugExt.$getSupportedLanguages(this.type);
     }
 
     async getSchemaAttributes(): Promise<IJSONSchema[]> {
-        return this.debugExt.$getSchemaAttributes(this.contributorId);
+        return this.debugExt.$getSchemaAttributes(this.type);
     }
 
     async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
-        return this.debugExt.$getConfigurationSnippets(this.contributorId);
+        return this.debugExt.$getConfigurationSnippets(this.type);
     }
 
-    async createDebugSession(debugConfiguration: DebugConfiguration): Promise<string> {
-        return this.debugExt.$createDebugSession(this.contributorId, debugConfiguration);
+    async provideDebugConfigurations(workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
+        return this.debugExt.$provideDebugConfigurations(this.type, workspaceFolderUri);
+    }
+
+    async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {
+        return this.debugExt.$resolveDebugConfigurations(config, workspaceFolderUri);
+    }
+
+    async createDebugSession(config: DebugConfiguration): Promise<string> {
+        return this.debugExt.$createDebugSession(config);
     }
 
     async terminateDebugSession(sessionId: string): Promise<void> {
-        return this.debugExt.$terminateDebugSession(sessionId);
+        this.debugExt.$terminateDebugSession(sessionId);
     }
 }

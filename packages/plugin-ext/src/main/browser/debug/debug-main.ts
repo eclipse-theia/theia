@@ -66,7 +66,6 @@ export class DebugMainImpl implements DebugMain {
     private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
     private readonly debugSchemaUpdater: DebugSchemaUpdater;
 
-    // registered plugins per contributorId
     private readonly toDispose = new Map<string, DisposableCollection>();
 
     constructor(rpc: RPCProtocol, readonly connectionMain: ConnectionMainImpl, container: interfaces.Container) {
@@ -106,16 +105,9 @@ export class DebugMainImpl implements DebugMain {
         this.debugConsoleSession.appendLine(value);
     }
 
-    async $registerDebugConfigurationProvider(contributorId: string, description: DebuggerDescription): Promise<void> {
+    async $registerDebuggerContribution(description: DebuggerDescription): Promise<void> {
         const disposable = new DisposableCollection();
-        this.toDispose.set(contributorId, disposable);
-
-        const debugAdapterContributor = new PluginDebugAdapterContribution(
-            description.type,
-            description.label,
-            this.debugExt.$getSupportedLanguages(contributorId),
-            contributorId,
-            this.debugExt);
+        this.toDispose.set(description.type, disposable);
 
         const debugSessionFactory = new PluginDebugSessionFactory(
             this.terminalService,
@@ -131,23 +123,24 @@ export class DebugMainImpl implements DebugMain {
             }
         );
 
-        disposable.push(this.adapterContributionRegistrator.registerDebugAdapterContribution(debugAdapterContributor));
-        disposable.push(
-            this.sessionContributionRegistrator.registerDebugSessionContribution(
-                {
-                    debugType: description.type,
-                    debugSessionFactory: () => debugSessionFactory
-                })
-        );
+        disposable.pushAll([
+            this.adapterContributionRegistrator.registerDebugAdapterContribution(
+                new PluginDebugAdapterContribution(description, this.debugExt)
+            ),
+            this.sessionContributionRegistrator.registerDebugSessionContribution({
+                debugType: description.type,
+                debugSessionFactory: () => debugSessionFactory
+            })
+        ]);
 
         this.debugSchemaUpdater.update();
     }
 
-    async $unregisterDebugConfigurationProvider(contributorId: string): Promise<void> {
-        const disposable = this.toDispose.get(contributorId);
+    async $unregisterDebuggerConfiguration(debugType: string): Promise<void> {
+        const disposable = this.toDispose.get(debugType);
         if (disposable) {
             disposable.dispose();
-            this.toDispose.delete(contributorId);
+            this.toDispose.delete(debugType);
             this.debugSchemaUpdater.update();
         }
     }

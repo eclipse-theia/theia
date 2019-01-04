@@ -24,34 +24,37 @@ import {
 } from '../../../api/plugin-api';
 import * as theia from '@theia/plugin';
 import uuid = require('uuid');
-import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { DebuggerContribution } from '../../../common';
-import { DebugAdapterSessionImpl } from '@theia/debug/lib/node/debug-adapter-session';
-import { ChildProcess, spawn, fork } from 'child_process';
 import { ConnectionExtImpl } from '../../connection-ext';
 import { CommandRegistryImpl } from '../../command-registry';
+import { DebuggerContribution } from '../../../common';
 import { PluginWebSocketChannel } from '../../../common/connection';
-import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
-import { CommunicationProvider, DebugAdapterExecutable } from '@theia/debug/lib/common/debug-model';
+import { DebugAdapterExecutable } from '@theia/debug/lib/common/debug-model';
+import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
+import { startDebugAdapter } from './plugin-debug-adapter-starter';
+import { resolveDebugAdapterExecutable } from './plugin-debug-adapter-executable-resolver';
+import URI from 'vscode-uri';
+import { Path } from '@theia/core/lib/common/path';
 
 // tslint:disable:no-any
 
 /**
- * It is supposed to work at node.
+ * It is supposed to work at node only.
  */
 export class DebugExtImpl implements DebugExt {
     // debug sessions by sessionId
-    private debugSessions = new Map<string, PluginDebugAdapterSession>();
+    private sessions = new Map<string, PluginDebugAdapterSession>();
 
-    // contributions by contributorId
-    private contributions = new Map<string, PluginDebugAdapterContribution>();
+    // providers by type
+    private configurationProviders = new Map<string, Set<theia.DebugConfigurationProvider>>();
+    private debuggersContributions = new Map<string, DebuggerContribution>();
 
     private connectionExt: ConnectionExtImpl;
     private commandRegistryExt: CommandRegistryImpl;
 
     private proxy: DebugMain;
+    private pluginFolder: string;
+
     private readonly onDidChangeBreakpointsEmitter = new Emitter<theia.BreakpointsChangeEvent>();
     private readonly onDidChangeActiveDebugSessionEmitter = new Emitter<theia.DebugSession | undefined>();
     private readonly onDidTerminateDebugSessionEmitter = new Emitter<theia.DebugSession>();
@@ -70,9 +73,29 @@ export class DebugExtImpl implements DebugExt {
         };
     }
 
-    inject(connectionExt: ConnectionExtImpl, commandRegistryExt: CommandRegistryImpl) {
+    /**
+     * Sets dependencies.
+     */
+    assistedInject(connectionExt: ConnectionExtImpl, commandRegistryExt: CommandRegistryImpl) {
         this.connectionExt = connectionExt;
         this.commandRegistryExt = commandRegistryExt;
+    }
+
+    /**
+     * Registers contributions.
+     * @param pluginFolder plugin folder path
+     * @param contributions available debuggers contributions
+     */
+    registerDebuggersContributions(pluginFolder: string, contributions: DebuggerContribution[]): void {
+        this.pluginFolder = pluginFolder;
+        contributions.forEach((contribution: DebuggerContribution) => {
+            this.debuggersContributions.set(contribution.type, contribution);
+            this.proxy.$registerDebuggerContribution({
+                type: contribution.type,
+                label: contribution.label || contribution.type
+            });
+            console.log(`Debugger contribution has been registered: ${contribution.type}`);
+        });
     }
 
     get onDidReceiveDebugSessionCustomEvent(): theia.Event<theia.DebugSessionCustomEvent> {
@@ -107,181 +130,159 @@ export class DebugExtImpl implements DebugExt {
         return this.proxy.$startDebugging(folder, nameOrConfiguration);
     }
 
-    registerDebugConfigurationProvider(
-        debugType: string,
-        provider: theia.DebugConfigurationProvider,
-        debuggerContribution: DebuggerContribution,
-        pluginPath: string): Disposable {
-
-        const contributionId = uuid.v4();
-        const adapterContribution = new PluginDebugAdapterContribution(
-            debugType,
-            provider,
-            debuggerContribution,
-            this.commandRegistryExt,
-            pluginPath);
-        this.contributions.set(contributionId, adapterContribution);
-
-        const description: DebuggerDescription = { type: debugType, label: debuggerContribution.label || debugType };
-        this.proxy.$registerDebugConfigurationProvider(contributionId, description);
+    registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
+        console.log(`Debug configuration provider has been registered: ${debugType}`);
+        const providers = this.configurationProviders.get(debugType) || new Set<theia.DebugConfigurationProvider>();
+        this.configurationProviders.set(debugType, providers);
+        providers.add(provider);
 
         return Disposable.create(() => {
-            this.contributions.delete(contributionId);
-            this.proxy.$unregisterDebugConfigurationProvider(contributionId);
+            // tslint:disable-next-line:no-shadowed-variable
+            const providers = this.configurationProviders.get(debugType);
+            if (providers) {
+                providers.delete(provider);
+                if (providers.size === 0) {
+                    this.configurationProviders.delete(debugType);
+                }
+            }
         });
     }
 
-    // tslint:disable-next-line:no-any
-    $onSessionCustomEvent(sessionId: string, event: string, body?: any): void {
-        const session = this.debugSessions.get(sessionId);
+    async $onSessionCustomEvent(sessionId: string, event: string, body?: any): Promise<void> {
+        const session = this.sessions.get(sessionId);
         if (session) {
             this.onDidReceiveDebugSessionCustomEmitter.fire({ event, body, session });
         }
     }
 
-    $sessionDidCreate(sessionId: string): void {
-        const session = this.debugSessions.get(sessionId);
+    async $sessionDidCreate(sessionId: string): Promise<void> {
+        const session = this.sessions.get(sessionId);
         if (session) {
             this.onDidStartDebugSessionEmitter.fire(session);
         }
     }
 
-    $sessionDidDestroy(sessionId: string): void {
-        const session = this.debugSessions.get(sessionId);
+    async $sessionDidDestroy(sessionId: string): Promise<void> {
+        const session = this.sessions.get(sessionId);
         if (session) {
             this.onDidTerminateDebugSessionEmitter.fire(session);
         }
     }
 
-    $sessionDidChange(sessionId: string | undefined): void {
-        const activeDebugSession = sessionId ? this.debugSessions.get(sessionId) : undefined;
+    async $sessionDidChange(sessionId: string | undefined): Promise<void> {
+        const activeDebugSession = sessionId ? this.sessions.get(sessionId) : undefined;
         this.onDidChangeActiveDebugSessionEmitter.fire(activeDebugSession);
     }
 
-    $breakpointsDidChange(all: Breakpoint[], added: Breakpoint[], removed: Breakpoint[], changed: Breakpoint[]): void {
+    async $breakpointsDidChange(all: Breakpoint[], added: Breakpoint[], removed: Breakpoint[], changed: Breakpoint[]): Promise<void> {
         this.breakpoints = all;
         this.onDidChangeBreakpointsEmitter.fire({ added, removed, changed });
     }
 
-    async $createDebugSession(contributionId: string, debugConfiguration: theia.DebugConfiguration): Promise<string> {
-        const adapterContribution = this.contributions.get(contributionId);
-        if (!adapterContribution) {
-            throw new Error(`Debug adapter contribution '${contributionId}' not found.`);
-        }
-
-        const executable = await adapterContribution.provideDebugAdapterExecutable(debugConfiguration);
+    async $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string> {
+        const executable = await this.getExecutable(debugConfiguration);
         const communicationProvider = startDebugAdapter(executable);
-
         const sessionId = uuid.v4();
-        const session = new PluginDebugAdapterSession(
+
+        const debugAdapterSession = new PluginDebugAdapterSession(
             sessionId,
             debugConfiguration,
             communicationProvider,
             (command: string, args?: any) => this.proxy.$customRequest(command, args));
-        this.debugSessions.set(sessionId, session);
+        this.sessions.set(sessionId, debugAdapterSession);
 
         const connection = await this.connectionExt!.ensureConnection(sessionId);
-        session.start(new PluginWebSocketChannel(connection));
+        debugAdapterSession.start(new PluginWebSocketChannel(connection));
 
         return sessionId;
     }
 
     async $terminateDebugSession(sessionId: string): Promise<void> {
-        const debugAdapterSession = this.debugSessions.get(sessionId);
+        const debugAdapterSession = this.sessions.get(sessionId);
         if (debugAdapterSession) {
-            this.debugSessions.delete(sessionId);
-            return debugAdapterSession.stop();
+            await debugAdapterSession.stop();
+            this.sessions.delete(sessionId);
         }
     }
 
-    async $getSupportedLanguages(contributionId: string): Promise<string[]> {
-        const contribution = this.contributions.get(contributionId);
-        if (!contribution) {
-            throw new Error(`Debug adapter contribution '${contributionId}' not found.`);
+    async $getSupportedLanguages(debugType: string): Promise<string[]> {
+        const contribution = this.debuggersContributions.get(debugType);
+        return contribution && contribution.languages || [];
+    }
+
+    async $getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
+        const contribution = this.debuggersContributions.get(debugType);
+        return contribution && contribution.configurationAttributes || [];
+    }
+
+    async $getConfigurationSnippets(debugType: string): Promise<IJSONSchemaSnippet[]> {
+        const contribution = this.debuggersContributions.get(debugType);
+        return contribution && contribution.configurationSnippets || [];
+    }
+
+    async $provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration[]> {
+        let result: theia.DebugConfiguration[] = [];
+
+        const providers = this.configurationProviders.get(debugType);
+        if (providers) {
+            for (const provider of providers) {
+                if (provider.provideDebugConfigurations) {
+                    result = result.concat(await provider.provideDebugConfigurations(this.toWorkspaceFolder(workspaceFolderUri)) || []);
+                }
+            }
         }
 
-        return contribution.getSupportedLanguages();
+        return result;
     }
 
-    async $getSchemaAttributes(contributionId: string): Promise<IJSONSchema[]> {
-        const contribution = this.contributions.get(contributionId);
-        if (!contribution) {
-            throw new Error(`Debug adapter contribution '${contributionId}' not found.`);
+    async $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration | undefined> {
+        let current = debugConfiguration;
+
+        const providers = this.configurationProviders.get(debugConfiguration.type);
+        if (providers) {
+            for (const provider of providers) {
+                if (provider.resolveDebugConfiguration) {
+                    try {
+                        const next = await provider.resolveDebugConfiguration(this.toWorkspaceFolder(workspaceFolderUri), current);
+                        if (next) {
+                            current = next;
+                        } else {
+                            return current;
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            }
         }
 
-        return contribution.getSchemaAttributes();
+        return current;
     }
 
-    async $getConfigurationSnippets(contributionId: string): Promise<IJSONSchemaSnippet[]> {
-        const contribution = this.contributions.get(contributionId);
-        if (!contribution) {
-            throw new Error(`Debug adapter contribution '${contributionId}' not found.`);
+    private async getExecutable(debugConfiguration: theia.DebugConfiguration): Promise<DebugAdapterExecutable> {
+        const contribution = this.debuggersContributions.get(debugConfiguration.type);
+        if (contribution) {
+            if (contribution.adapterExecutableCommand) {
+                return await this.commandRegistryExt.executeCommand(contribution.adapterExecutableCommand, []) as DebugAdapterExecutable;
+            } else {
+                return resolveDebugAdapterExecutable(this.pluginFolder, contribution);
+            }
         }
 
-        return contribution.getConfigurationSnippets();
+        throw new Error(`It is not possible to provide debug adapter executable for '${debugConfiguration.type}'.`);
     }
 
-    async $provideDebugConfigurations(contributionId: string, folder: string | undefined): Promise<theia.DebugConfiguration[]> {
-        const contribution = this.contributions.get(contributionId);
-        if (!contribution) {
-            throw new Error(`Debug adapter contribution '${contributionId}' not found.`);
+    private toWorkspaceFolder(folder: string | undefined): theia.WorkspaceFolder | undefined {
+        if (!folder) {
+            return undefined;
         }
 
-        return contribution.provideDebugConfigurations(undefined);
+        const uri = URI.parse(folder);
+        const path = new Path(uri.path);
+        return {
+            uri: uri,
+            name: path.base,
+            index: 0
+        };
     }
-
-    async $resolveDebugConfigurations(
-        contributionId: string,
-        debugConfiguration: theia.DebugConfiguration,
-        folder: string | undefined): Promise<theia.DebugConfiguration | undefined> {
-
-        const contribution = this.contributions.get(contributionId);
-        if (!contribution) {
-            throw new Error(`Debug adapter contribution '${contributionId}' not found.`);
-        }
-
-        return contribution.resolveDebugConfiguration(debugConfiguration, folder);
-    }
-}
-
-/**
- * Server debug session for plugin contribution.
- */
-class PluginDebugAdapterSession extends DebugAdapterSessionImpl implements theia.DebugSession {
-    readonly type: string;
-    readonly name: string;
-
-    constructor(
-        readonly id: string,
-        readonly configuration: theia.DebugConfiguration,
-        readonly communicationProvider: CommunicationProvider,
-        readonly customRequest: (command: string, args?: any) => Promise<DebugProtocol.Response>) {
-
-        super(id, communicationProvider);
-
-        this.type = configuration.type;
-        this.name = configuration.name;
-    }
-}
-
-/**
- * Starts debug adapter process.
- */
-function startDebugAdapter(executable: DebugAdapterExecutable): CommunicationProvider {
-    let childProcess: ChildProcess;
-    if ('command' in executable) {
-        const { command, args } = executable;
-        childProcess = spawn(command, args, { stdio: ['pipe', 'pipe', 2] }) as ChildProcess;
-    } else if ('modulePath' in executable) {
-        const { modulePath, args } = executable;
-        childProcess = fork(modulePath, args, { stdio: ['pipe', 'pipe', 2, 'ipc'] });
-    } else {
-        throw new Error(`It is not possible to launch debug adapter with the command: ${JSON.stringify(executable)}`);
-    }
-
-    return {
-        input: childProcess.stdin,
-        output: childProcess.stdout,
-        dispose: () => childProcess.kill()
-    };
 }
