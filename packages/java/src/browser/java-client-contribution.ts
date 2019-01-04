@@ -33,6 +33,7 @@ import {
     ActionableMessage,
     StatusReport,
     StatusNotification,
+    ExecuteClientCommand
 } from './java-protocol';
 import { MaybePromise } from '@theia/core';
 
@@ -71,6 +72,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
     protected onReady(languageClient: ILanguageClient): void {
         languageClient.onNotification(ActionableNotification.type, this.showActionableMessage.bind(this));
         languageClient.onNotification(StatusNotification.type, this.showStatusMessage.bind(this));
+        languageClient.onRequest(ExecuteClientCommand.type, params => this.commandService.executeCommand(params.command, ...params.arguments));
         super.onReady(languageClient);
     }
 
