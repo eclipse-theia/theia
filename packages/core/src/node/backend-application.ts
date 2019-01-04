@@ -56,7 +56,7 @@ export class BackendApplicationCliContribution implements CliContribution {
 
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
-        conf.option('hostname', { description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
+        conf.option('hostname', { alias: 'h', description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
