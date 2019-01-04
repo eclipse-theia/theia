@@ -113,7 +113,6 @@ import { ConnectionExtImpl } from './connection-ext';
 import { WebviewsExtImpl } from './webviews';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
-import { DebuggerContribution } from '../common';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -142,8 +141,6 @@ export function createAPIFactory(
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
     const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
-
-    debugExt.inject(connectionExt, commandRegistry);
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -511,6 +508,9 @@ export function createAPIFactory(
             }
         };
 
+        const debuggersContributions = plugin.model.contributes && plugin.model.contributes.debuggers || [];
+        debugExt.assistedInject(connectionExt, commandRegistry);
+        debugExt.registerDebuggersContributions(plugin.pluginFolder, debuggersContributions);
         const debug: typeof theia.debug = {
             get activeDebugSession(): theia.DebugSession | undefined {
                 return debugExt.activeDebugSession;
@@ -537,17 +537,7 @@ export function createAPIFactory(
                 return debugExt.onDidChangeBreakpoints;
             },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
-                const debuggersContribution = plugin.model.contributes && plugin.model.contributes.debuggers;
-                if (debuggersContribution) {
-                    const contribution = debuggersContribution.filter((value: DebuggerContribution) => value.type === debugType)[0];
-                    if (contribution) {
-                        console.info(`Registered debug contribution provider: '${debugType}'`);
-                        return debugExt.registerDebugConfigurationProvider(debugType, provider, contribution, plugin.pluginFolder);
-                    }
-                }
-
-                console.warn(`There is no package contribution with type ${debugType}`);
-                return Disposable.create(() => { });
+                return debugExt.registerDebugConfigurationProvider(debugType, provider);
             },
             startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): Thenable<boolean> {
                 return debugExt.startDebugging(folder, nameOrConfiguration);

@@ -6,7 +6,6 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.3.18",
-    "@theia/debug-nodejs": "^0.3.18",
     "@theia/editor": "^0.3.18",
     "@theia/filesystem": "^0.3.18",
     "@theia/monaco": "^0.3.18",
