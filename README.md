@@ -92,6 +92,7 @@ Read below how to engage with Theia community:
    Integration with testing frameworks, based on a Test Adapter Protocol.
 
  - __Robustness and Improved UX__
+ 
    We will further work on simplifying Theia and its UI / UX, improve the performance and keep working on bug reports that are rolling in.
 
  - __More__
