@@ -6,21 +6,24 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.3.18",
+    "@theia/debug": "^0.3.18",
     "@theia/editor": "^0.3.18",
+    "@theia/file-search": "^0.3.18",
     "@theia/filesystem": "^0.3.18",
+    "@theia/messages": "^0.3.18",
     "@theia/monaco": "^0.3.18",
     "@theia/navigator": "^0.3.18",
     "@theia/plugin": "^0.3.18",
+    "@theia/preferences": "^0.3.18",
     "@theia/task": "^0.3.18",
     "@theia/workspace": "^0.3.18",
-    "@theia/debug": "^0.3.18",
     "decompress": "^4.2.0",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
     "ps-tree": "1.1.0",
-    "vscode-uri": "^1.0.1",
     "uuid": "^3.2.1",
-    "vscode-debugprotocol": "^1.32.0"
+    "vscode-debugprotocol": "^1.32.0",
+    "vscode-uri": "^1.0.1"
   },
   "publishConfig": {
     "access": "public"
