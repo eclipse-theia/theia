@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { RequestType, NotificationType } from 'vscode-jsonrpc';
-import { VersionedTextDocumentIdentifier, TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
+import { VersionedTextDocumentIdentifier, TextDocumentIdentifier, Command, MessageType, ExecuteCommandParams } from '@theia/languages/lib/browser';
 
 export interface StatusReport {
     message: string;
@@ -42,6 +42,10 @@ export interface SemanticHighlightingParams {
 export interface SemanticHighlightingInformation {
     readonly line: number;
     readonly tokens: string | undefined;
+}
+
+export namespace ExecuteClientCommandRequest {
+    export const type = new RequestType<ExecuteCommandParams, any, void, void>('workspace/executeClientCommand');
 }
 
 export namespace ClassFileContentsRequest {

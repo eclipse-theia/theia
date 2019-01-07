@@ -25,7 +25,8 @@ import {
     BaseLanguageClientContribution,
     Workspace, Languages,
     LanguageClientFactory,
-    LanguageClientOptions
+    LanguageClientOptions,
+    ExecuteCommandParams
 } from '@theia/languages/lib/browser';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME, JavaStartParams } from '../common';
 import {
@@ -33,6 +34,7 @@ import {
     ActionableMessage,
     StatusReport,
     StatusNotification,
+    ExecuteClientCommandRequest,
 } from './java-protocol';
 import { MaybePromise } from '@theia/core';
 
@@ -69,6 +71,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
     }
 
     protected onReady(languageClient: ILanguageClient): void {
+        languageClient.onRequest(ExecuteClientCommandRequest.type, this.executeClientCommand.bind(this));
         languageClient.onNotification(ActionableNotification.type, this.showActionableMessage.bind(this));
         languageClient.onNotification(StatusNotification.type, this.showStatusMessage.bind(this));
         super.onReady(languageClient);
@@ -78,6 +81,10 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         const client: ILanguageClient & Readonly<{ languageId: string }> = Object.assign(super.createLanguageClient(connection), { languageId: this.id });
         client.registerFeature(SemanticHighlightingService.createNewFeature(this.semanticHighlightingService, client));
         return client;
+    }
+
+    protected executeClientCommand(params: ExecuteCommandParams) {
+        return this.commandService.executeCommand(params.command, ...params.arguments);
     }
 
     protected showStatusMessage(message: StatusReport) {
