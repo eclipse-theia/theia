@@ -680,6 +680,29 @@ describe('WorkspaceService', () => {
         });
     });
 
+    describe('getWorkspaceRootUri() function', () => {
+        it('should return undefined if no uri is passed into the function', () => {
+            expect(wsService.getWorkspaceRootUri(undefined)).to.be.undefined;
+        });
+
+        it('should return the root folder uri that the file belongs to', () => {
+            wsService['_roots'] = [folderA, folderB];
+            const root = wsService.getWorkspaceRootUri(new URI(folderB.uri + '/testfile'));
+            expect(root!.toString()).to.equal(folderB.uri);
+        });
+
+        it('should return the closest root folder uri that the file belongs to', () => {
+            const home = Object.freeze(<FileStat>{
+                uri: 'file:///home',
+                lastModification: 0,
+                isDirectory: true
+            });
+            wsService['_roots'] = [folderA, folderB, home];
+            const root = wsService.getWorkspaceRootUri(new URI(folderB.uri + '/testfile'));
+            expect(root!.toString()).to.equal(folderB.uri);
+        });
+    });
+
     it('should emit roots in the current workspace when initialized', done => {
         const rootA = 'file:///folderA';
         const rootB = 'file:///folderB';
