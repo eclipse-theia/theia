@@ -476,6 +476,12 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }));
     }
 
+    /**
+     * Returns the workspace root uri that the given file belongs to.
+     * In case that the file is found in more than one workspace roots, returns the root that is closest to the file.
+     * If the file is not from the current workspace, returns `undefined`.
+     * @param uri URI of the file
+     */
     getWorkspaceRootUri(uri: URI | undefined): URI | undefined {
         if (!uri) {
             const root = this.tryGetRoots()[0];
@@ -484,13 +490,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
             }
             return undefined;
         }
+        const rootUris: URI[] = [];
         for (const root of this.tryGetRoots()) {
             const rootUri = new URI(root.uri);
             if (rootUri && rootUri.isEqualOrParent(uri)) {
-                return rootUri;
+                rootUris.push(rootUri);
             }
         }
-        return undefined;
+        return rootUris.sort((r1, r2) => r2.toString().length - r1.toString().length)[0];
     }
 
 }
