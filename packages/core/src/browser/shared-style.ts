@@ -15,13 +15,20 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ThemeService, Theme } from '@theia/core/lib/browser/theming';
+import { Theme, ThemeService } from './theming';
+import { Disposable, DisposableCollection } from '../common/disposable';
 
 @injectable()
-export class PluginSharedStyle {
+export class SharedStyle {
 
+    /**
+     * The branding style element.
+     */
     protected style: HTMLStyleElement;
+
+    /**
+     * The branding style rules.
+     */
     protected readonly rules: {
         selector: string;
         body: (theme: Theme) => string
@@ -33,6 +40,10 @@ export class PluginSharedStyle {
     }
 
     protected readonly toUpdate = new DisposableCollection();
+
+    /**
+     * Update the StyleSheet.
+     */
     protected update(): void {
         this.toUpdate.dispose();
 
@@ -49,6 +60,12 @@ export class PluginSharedStyle {
         }
     }
 
+    /**
+     * Insert rule into StyleSheet.
+     *
+     * @param selector the selector for the rule.
+     * @param body the body selector.
+     */
     insertRule(selector: string, body: (theme: Theme) => string): Disposable {
         const rule = { selector, body };
         this.rules.push(rule);
@@ -61,6 +78,10 @@ export class PluginSharedStyle {
             }
         });
     }
+
+    /**
+     * Actually perform inserting rule into StyleSheet.
+     */
     protected doInsertRule({ selector, body }: {
         selector: string;
         body: (theme: Theme) => string
@@ -70,6 +91,11 @@ export class PluginSharedStyle {
         sheet.insertRule(selector + ' { ' + cssBody + ' }', 0);
     }
 
+    /**
+     * Delete rule from StyleSheet.
+     *
+     * @param selector the selector for the rule.
+     */
     deleteRule(selector: string): void {
         const sheet = (<CSSStyleSheet>this.style.sheet);
         const rules = sheet.rules || sheet.cssRules || [];

@@ -56,7 +56,6 @@ import { DebugSessionContributionRegistry } from '@theia/debug/lib/browser/debug
 import { PluginDebugSessionContributionRegistry } from './debug/plugin-debug-session-contribution-registry';
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugService } from '@theia/debug/lib/common/debug-service';
-import { PluginSharedStyle } from './plugin-shared-style';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -112,7 +111,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
     }).inSingletonScope();
 
-    bind(PluginSharedStyle).toSelf().inSingletonScope();
     bind(ViewRegistry).toSelf().inSingletonScope();
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
 

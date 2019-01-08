@@ -68,6 +68,7 @@ import { bindCorePreferences } from './core-preferences';
 import { QuickPickServiceImpl } from './quick-open/quick-pick-service-impl';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { ContextKeyService } from './context-key-service';
+import { SharedStyle } from './shared-style';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -241,6 +242,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(ThemingCommandContribution),
     );
+
+    bind(SharedStyle).toSelf().inSingletonScope();
 
     bindCorePreferences(bind);
 });

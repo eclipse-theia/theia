@@ -38,3 +38,4 @@ export * from './widget-open-handler';
 export * from './navigatable';
 export * from './diff-uris';
 export * from './core-preferences';
+export * from './shared-style';

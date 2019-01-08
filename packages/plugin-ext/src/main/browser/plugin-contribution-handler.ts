@@ -20,11 +20,10 @@ import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService } from '@
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { ViewRegistry } from './view/view-registry';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { PreferenceSchemaProvider, SharedStyle } from '@theia/core/lib/browser';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
-import { PluginSharedStyle } from './plugin-shared-style';
 import { CommandRegistry } from '@theia/core';
 import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 
@@ -57,8 +56,8 @@ export class PluginContributionHandler {
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
-    @inject(PluginSharedStyle)
-    protected readonly style: PluginSharedStyle;
+    @inject(SharedStyle)
+    protected readonly style: SharedStyle;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {

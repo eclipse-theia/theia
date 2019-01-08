@@ -106,6 +106,7 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected renderHeader(): React.ReactNode {
         return <div className='gs-header'>
+            <div id='getting-started-logo'></div>
             <h1>{this.applicationName}<span className='gs-sub-header'> Getting Started</span></h1>
         </div>;
     }
