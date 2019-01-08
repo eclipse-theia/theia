@@ -18,6 +18,7 @@
     "find-git-exec": "^0.0.1-alpha.2",
     "find-git-repositories": "^0.1.0",
     "fs-extra": "^4.0.2",
+    "lodash.debounce": "^4.0.8",
     "moment": "^2.21.0",
     "octicons": "^7.1.0",
     "p-queue": "^2.4.2",
