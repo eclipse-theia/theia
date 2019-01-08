@@ -6,5 +6,8 @@
   },
   "include": [
     "src"
+  ],
+  "types": [
+    "ignore"
   ]
 }

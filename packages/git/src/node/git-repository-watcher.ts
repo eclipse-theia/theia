@@ -15,10 +15,14 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import * as ignore from 'ignore';
 import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Git, Repository, WorkingDirectoryStatus, GitUtils } from '../common';
 import { GitStatusChangeEvent } from '../common/git-watcher';
-
+import { FileSystemWatcherServer, DidFilesChangedParams, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
+import { FileSystem } from '@theia/filesystem/lib/common';
+import { FileUri } from '@theia/core/lib/node/file-uri';
+import debounce = require('lodash.debounce');
 export const GitRepositoryWatcherFactory = Symbol('GitRepositoryWatcherFactory');
 export type GitRepositoryWatcherFactory = (options: GitRepositoryWatcherOptions) => GitRepositoryWatcher;
 
@@ -42,55 +46,83 @@ export class GitRepositoryWatcher implements Disposable {
     @inject(GitRepositoryWatcherOptions)
     protected readonly options: GitRepositoryWatcherOptions;
 
-    protected readonly toDispose = new DisposableCollection();
-    watch(): void {
-        if (this.toDispose.disposed) {
-            this.logger.info('Started watching the git repository:', this.options.repository.localUri);
-            this.toDispose.push(Disposable.create(() => {
-                this.logger.info('Stopped watching the git repository:', this.options.repository.localUri);
-                this.clear();
-            }));
-        }
-        this.schedule(true);
-    }
+    @inject(FileSystem)
+    protected readonly filesystem: FileSystem;
+
+    @inject(FileSystemWatcherServer)
+    protected readonly fileSystemWatcher: FileSystemWatcherServer;
+
+    // tslint:disable-next-line:no-any
+    protected gitIgnoreTester: any | undefined;
 
     sync(): void {
-        this.clear();
-        this.schedule(false, 0);
+        this.syncStatus(false);
+    }
+
+    protected onDidFilesChanged(changes: DidFilesChangedParams): void {
+        for (const change of changes.changes) {
+            const uri = change.uri.toString();
+            const repositoryUri = this.options.repository.localUri;
+            if (uri.startsWith(repositoryUri + '/')) {
+                const repoPath = FileUri.fsPath(repositoryUri);
+                const filePath = FileUri.fsPath(uri);
+                const relativePath = filePath.substring(repoPath.length + 1);
+
+                if (relativePath === '.gitignore') {
+                    // The .gitignore file itself is changing so we must re-parse it.
+                    this.gitIgnoreTester = undefined;
+                    if (change.type !== FileChangeType.DELETED) {
+                        this.parseGitIgnoreFile(repositoryUri);
+                    }
+                }
+
+                if (this.gitIgnoreTester === undefined || !this.gitIgnoreTester.ignores(relativePath)) {
+                    this.lazyRefresh();
+                }
+            }
+        }
+    }
+
+    protected lazyRefresh: () => Promise<void> = debounce(() => this.syncStatus(false), 500);
+
+    private async parseGitIgnoreFile(repositoryUri: string) {
+        const response = await this.filesystem.resolveContent(repositoryUri + '/.gitignore', { encoding: 'utf8' });
+        const patterns = response.content.split(/\r\n|\r|\n/);
+        this.gitIgnoreTester = ignore.default().add(patterns);
+    }
+
+    protected readonly toDispose = new DisposableCollection();
+    async watch(): Promise<void> {
+        const notCurrentlyWatching = this.toDispose.disposed;
+        if (notCurrentlyWatching) {
+            const repositoryUri = this.options.repository.localUri;
+
+            this.fileSystemWatcher.watchFileChanges(repositoryUri).then(watcher =>
+                this.toDispose.push(Disposable.create(() =>
+                    this.fileSystemWatcher.unwatchFileChanges(watcher)
+                ))
+            );
+
+            const gitIgnoreExists = await this.filesystem.exists(`${repositoryUri}/.gitignore`);
+            if (gitIgnoreExists) {
+                this.parseGitIgnoreFile(repositoryUri);
+            }
+
+            this.toDispose.push(this.fileSystemWatcher);
+            this.fileSystemWatcher.setClient({
+                onDidFilesChanged: changes => this.onDidFilesChanged(changes)
+            });
+        }
+
+        this.syncStatus(true);
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    protected initial: boolean = true;
-    protected watchTimer: NodeJS.Timer | undefined;
-    protected schedule(initial: boolean = false, delay = initial ? 0 : 5000): void {
-        if (initial && !this.initial) {
-            this.initial = true;
-            this.clear();
-        }
-        if (this.watchTimer) {
-            return;
-        }
-        this.watchTimer = setTimeout(async () => {
-            this.watchTimer = undefined;
-            const syncInitial = this.initial;
-            this.initial = false;
-            if (await this.syncStatus(syncInitial)) {
-                this.schedule();
-            }
-        }, delay);
-    }
-    protected clear(): void {
-        if (this.watchTimer) {
-            clearTimeout(this.watchTimer);
-            this.watchTimer = undefined;
-        }
-    }
-
     protected status: WorkingDirectoryStatus | undefined;
-    protected async syncStatus(initial: boolean = false): Promise<boolean> {
+    protected async syncStatus(initial: boolean = false): Promise<void> {
         try {
             const source = this.options.repository;
             const newStatus = await this.git.status(source);
@@ -101,12 +133,12 @@ export class GitRepositoryWatcher implements Disposable {
             }
         } catch (error) {
             if (GitUtils.isRepositoryDoesNotExistError(error)) {
-                return false;
+                this.dispose();
+            } else {
+                const { localUri } = this.options.repository;
+                this.logger.error('Error occurred while synchronizing the status of the repository.', localUri, error);
             }
-            const { localUri } = this.options.repository;
-            this.logger.error('Error occurred while synchronizing the status of the repository.', localUri, error);
         }
-        return true;
     }
 
 }
