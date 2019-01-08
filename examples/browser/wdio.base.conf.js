@@ -198,7 +198,8 @@ function makeConfig(headless) {
             const argv = [process.argv[0], 'src-gen/backend/server.js', '--root-dir=' + rootDir];
             return require('./src-gen/backend/server')(port, host, argv).then(created => {
                 this.execArgv = [wdioRunnerScript, cliPortKey, created.address().port,
-                    '--theia-root-dir', rootDir];
+                    '--theia-root-dir', rootDir
+                ];
                 this.server = created;
             });
         },
@@ -254,14 +255,20 @@ function makeConfig(headless) {
         afterSuite: function (suite) {
             require("webdriverio");
             var fs = require("fs");
-            let result = browser.execute("return window.__coverage__;")
+            let result;
+            try {
+                result = browser.execute("return window.__coverage__;");
+            } catch (error) {
+                console.error(`Error retreiving the coverage: ${error}`);
+                return;
+            }
             try {
                 if (!fs.existsSync('coverage')) {
                     fs.mkdirSync('coverage');
                 }
                 fs.writeFileSync('coverage/coverage.json', JSON.stringify(result.value));
             } catch (err) {
-                console.log(`Error writing coverage ${err}`);
+                console.error(`Error writing coverage ${err}`);
             };
         },
         //
