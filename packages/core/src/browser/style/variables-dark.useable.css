@@ -53,6 +53,8 @@ is not optimized for dense, information rich UIs.
   --theia-ui-icon-font-color: #d4d4d4;
   --theia-ui-bar-font-color0: #eeeeee;
   --theia-ui-bar-font-color1: #d4d4d4;
+  --theia-ui-white-font-color: #ffffff;
+  --theia-ui-black-font-color: #000000;
 
   /* Use the inverse UI colors against the brand/accent/warn/error colors. */
 
@@ -93,6 +95,10 @@ is not optimized for dense, information rich UIs.
   --theia-brand-color1: var(--md-blue-500);
   --theia-brand-color2: var(--md-blue-300);
   --theia-brand-color3: var(--md-blue-100);
+
+/* Brand colors - Darker */
+--theia-brand-dark-color0: var(--md-blue-800);
+--theia-brand-dark-color1: var(--md-blue-900);
 
   /* Secondary Brand colors */
 

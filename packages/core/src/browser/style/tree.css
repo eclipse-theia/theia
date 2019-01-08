@@ -40,7 +40,7 @@
 }
 
 .theia-TreeNode:hover {
-    background: var(--theia-accent-color4);
+    background: var(--theia-layout-color1);
     cursor: pointer;
 }
 
@@ -73,11 +73,12 @@
 
 .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
-    background: var(--theia-accent-color3);
+    background: var(--theia-brand-dark-color0);
+    color: var(--theia-ui-white-font-color) !important;
 }
 
 .theia-Tree .theia-TreeNode.theia-mod-selected {
-    background: var(--theia-accent-color4);
+    background: var(--theia-layout-color2);
 }
 
 .theia-TreeNode.theia-mod-not-selectable {

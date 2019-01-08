@@ -364,3 +364,7 @@
 .git-change-list-buttons-container .toolbar-button:hover {
     background: var(--theia-content-font-color3);
 }
+
+.theia-git .gitItem.theia-mod-selected .status {
+    color: var(--theia-ui-font-color0) !important;
+}

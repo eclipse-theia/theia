@@ -48,3 +48,14 @@
 .navigator-tab-icon::before {
     content: "\f0c5"
 }
+
+#files .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected
+.theia-TreeNodeSegment {
+    color: var(--theia-ui-white-font-color) !important;
+}
+
+#files .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail {
+    color: var(--theia-ui-white-font-color) !important;
+}
