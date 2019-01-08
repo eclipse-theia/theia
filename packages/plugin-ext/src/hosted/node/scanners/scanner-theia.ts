@@ -38,7 +38,9 @@ import {
     Menu,
     PluginPackageMenu,
     PluginPackageDebuggersContribution,
-    DebuggerContribution
+    DebuggerContribution,
+    JsonSerializedSnippets,
+    JsonSerializedSnippet
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -48,6 +50,7 @@ import { CharacterPair } from '../../../api/plugin-api';
 import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
+import { Snippet } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 
 namespace nls {
     export function localize(key: string, _default: string) {
@@ -168,7 +171,77 @@ export class TheiaPluginScanner implements PluginScanner {
             contributions.debuggers = debuggers;
         }
 
+        contributions.snippets = this.readSnippets(rawPlugin);
         return contributions;
+    }
+
+    protected readSnippets(pck: PluginPackage): Snippet[] | undefined {
+        if (!pck.contributes || !pck.contributes.snippets) {
+            return undefined;
+        }
+        const result: Snippet[] = [];
+        for (const contribution of pck.contributes.snippets) {
+            if (contribution.path) {
+                // TODO: load files lazy on snippet suggest
+                const snippets = this.readJson<JsonSerializedSnippets>(path.join(pck.packagePath, contribution.path));
+                this.parseSnippets(snippets, (name, snippet) => {
+                    let { prefix, body, description } = snippet;
+                    if (Array.isArray(body)) {
+                        body = body.join('\n');
+                    }
+                    if (typeof prefix !== 'string' || typeof body !== 'string') {
+                        return;
+                    }
+                    const scopes: string[] = [];
+                    if (contribution.language) {
+                        scopes.push(contribution.language);
+                    } else if (typeof snippet.scope === 'string') {
+                        for (const rawScope of snippet.scope.split(',')) {
+                            const scope = rawScope.trim();
+                            if (scope) {
+                                scopes.push(scope);
+                            }
+                        }
+                    }
+                    const source = pck.displayName || pck.name;
+                    result.push({
+                        scopes,
+                        name,
+                        prefix,
+                        description,
+                        body,
+                        source
+                    });
+                });
+            }
+        }
+        return result;
+    }
+    protected parseSnippets(snippets: JsonSerializedSnippets | undefined, accept: (name: string, snippet: JsonSerializedSnippet) => void): void {
+        if (typeof snippets === 'object') {
+            // tslint:disable-next-line:forin
+            for (const name in snippets) {
+                const scopeOrTemplate = snippets[name];
+                if (JsonSerializedSnippet.is(scopeOrTemplate)) {
+                    accept(name, scopeOrTemplate);
+                } else {
+                    this.parseSnippets(scopeOrTemplate, accept);
+                }
+            }
+        }
+    }
+
+    protected readJson<T>(filePath: string): T | undefined {
+        const content = this.readFileSync(filePath);
+        return content ? jsoncparser.parse(content, undefined, { disallowComments: false }) : undefined;
+    }
+    protected readFileSync(filePath: string): string {
+        try {
+            return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+        } catch (e) {
+            console.error(e);
+            return '';
+        }
     }
 
     // tslint:disable-next-line:no-any
@@ -244,11 +317,8 @@ export class TheiaPluginScanner implements PluginScanner {
             mimetypes: rawLang.mimetypes
         };
         if (rawLang.configuration) {
-            const conf = fs.readFileSync(path.resolve(pluginPath, rawLang.configuration), 'utf8');
-            if (conf) {
-                const strippedContent = jsoncparser.stripComments(conf);
-                const rawConfiguration: PluginPackageLanguageContributionConfiguration = jsoncparser.parse(strippedContent);
-
+            const rawConfiguration = this.readJson<PluginPackageLanguageContributionConfiguration>(path.resolve(pluginPath, rawLang.configuration));
+            if (rawConfiguration) {
                 const configuration: LanguageConfiguration = {
                     brackets: rawConfiguration.brackets,
                     comments: rawConfiguration.comments,

@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/style/index.css';
+import '../../src/browser/style/symbol-sprite.svg';
+import '../../src/browser/style/symbol-icons.css';
+
 import { ContainerModule, decorate, injectable } from 'inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
@@ -43,17 +47,15 @@ import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bind
 import { MonacoSemanticHighlightingService } from './monaco-semantic-highlighting-service';
 import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
+import { MonacoOutlineDecorator } from './monaco-outline-decorator';
+import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-decorator-service';
+import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
 
-import '../../src/browser/style/index.css';
-import '../../src/browser/style/symbol-sprite.svg';
-import '../../src/browser/style/symbol-icons.css';
-import { MonacoOutlineDecorator } from './monaco-outline-decorator';
-import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-decorator-service';
-
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(MonacoSnippetSuggestProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).to(MonacoFrontendApplicationContribution).inSingletonScope();
 
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();

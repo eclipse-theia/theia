@@ -61,7 +61,8 @@
                 "--no-app-auto-install"
             ],
             "env": {
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                "THEIA_DEFAULT_PLUGINS": "local-dir:plugins"
             },
             "sourceMaps": true,
             "outFiles": [
