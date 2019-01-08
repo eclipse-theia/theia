@@ -28,7 +28,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
 
-        console.log('PluginTheiaDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
+        console.log('PluginVsCodeDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
 
         // handle only directories
         if (resolvedPlugin.isFile()) {
@@ -76,10 +76,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     // tslint:disable-next-line:no-any
     handle(context: PluginDeployerDirectoryHandlerContext): Promise<any> {
-        const packageJson: PluginPackage = context.pluginEntry().getValue('package.json');
-        if (packageJson.main) {
-            context.pluginEntry().accept(PluginDeployerEntryType.BACKEND);
-        }
+        context.pluginEntry().accept(PluginDeployerEntryType.BACKEND);
 
         const extensionPath = path.resolve(context.pluginEntry().path(), 'extension');
         context.pluginEntry().updatePath(extensionPath);
