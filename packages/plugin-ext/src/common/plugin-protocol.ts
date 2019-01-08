@@ -157,10 +157,33 @@ export const PluginDeployer = Symbol('PluginDeployer');
  * A plugin resolver is handling how to resolve a plugin link into a local resource.
  */
 export const PluginDeployerResolver = Symbol('PluginDeployerResolver');
+/**
+ * A resolver handle a set of resource
+ */
+export interface PluginDeployerResolver {
+
+    init?(pluginDeployerResolverInit: PluginDeployerResolverInit): void;
+
+    accept(pluginSourceId: string): boolean;
+
+    resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void>;
+
+}
 
 export const PluginDeployerDirectoryHandler = Symbol('PluginDeployerDirectoryHandler');
+export interface PluginDeployerDirectoryHandler {
+    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
+
+    handle(context: PluginDeployerDirectoryHandlerContext): Promise<void>;
+}
 
 export const PluginDeployerFileHandler = Symbol('PluginDeployerFileHandler');
+export interface PluginDeployerFileHandler {
+
+    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
+
+    handle(context: PluginDeployerFileHandlerContext): Promise<void>;
+}
 
 /**
  * This scanner process package.json object and returns plugin metadata objects.
@@ -202,19 +225,6 @@ export interface PluginDeployerResolverContext {
 export interface PluginDeployer {
 
     start(): void;
-
-}
-
-/**
- * A resolver handle a set of resource
- */
-export interface PluginDeployerResolver {
-
-    init?(pluginDeployerResolverInit: PluginDeployerResolverInit): void;
-
-    accept(pluginSourceId: string): boolean;
-
-    resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void>;
 
 }
 
@@ -292,19 +302,6 @@ export interface PluginDeployerDirectoryHandlerContext {
 
     pluginEntry(): PluginDeployerEntry;
 
-}
-
-export interface PluginDeployerFileHandler {
-
-    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
-
-    handle(context: PluginDeployerFileHandlerContext): Promise<void>;
-}
-
-export interface PluginDeployerDirectoryHandler {
-    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
-
-    handle(context: PluginDeployerDirectoryHandlerContext): Promise<void>;
 }
 
 /**
