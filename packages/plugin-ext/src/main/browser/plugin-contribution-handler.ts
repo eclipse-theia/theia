@@ -23,6 +23,7 @@ import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '..
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
+import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 
 @injectable()
 export class PluginContributionHandler {
@@ -46,6 +47,9 @@ export class PluginContributionHandler {
 
     @inject(KeybindingsContributionPointHandler)
     private readonly keybindingsContributionHandler: KeybindingsContributionPointHandler;
+
+    @inject(MonacoSnippetSuggestProvider)
+    protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {
@@ -131,6 +135,9 @@ export class PluginContributionHandler {
 
         this.menusContributionHandler.handle(contributions);
         this.keybindingsContributionHandler.handle(contributions);
+        if (contributions.snippets) {
+            this.snippetSuggestProvider.push(...contributions.snippets);
+        }
     }
 
     private updateConfigurationSchema(schema: PreferenceSchema): void {

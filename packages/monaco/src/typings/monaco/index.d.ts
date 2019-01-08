@@ -903,6 +903,8 @@ declare module monaco.suggest {
         token?: monaco.CancellationToken
     ): Promise<ISuggestionItem[]>;
 
+    export function setSnippetSuggestSupport(support: monaco.modes.ISuggestSupport): monaco.modes.ISuggestSupport;
+
 }
 
 declare module monaco.suggestController {

@@ -35,7 +35,10 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
             return;
         }
         // remove prefix
-        const dirPath = localDirSetting.substring('local-dir'.length + 1);
+        let dirPath = localDirSetting.substring('local-dir'.length + 1);
+        if (!path.isAbsolute(dirPath)) {
+            dirPath = path.resolve(process.cwd(), dirPath);
+        }
 
         // check directory exists
         if (!fs.existsSync(dirPath)) {
