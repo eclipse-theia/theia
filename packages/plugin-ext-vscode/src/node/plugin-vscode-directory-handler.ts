@@ -14,73 +14,66 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {
-    PluginDeployerDirectoryHandler,
-    PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
-    PluginDeployerEntryType
-} from '@theia/plugin-ext';
-import { injectable } from 'inversify';
 import * as fs from 'fs';
 import * as path from 'path';
+import { injectable } from 'inversify';
+import { RecursivePartial } from '@theia/core';
+import {
+    PluginDeployerDirectoryHandler,
+    PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
+    PluginDeployerEntryType, PluginPackage
+} from '@theia/plugin-ext';
 
 @injectable()
 export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHandler {
 
-    accept(resolvedPlugin: PluginDeployerEntry): boolean {
-
-        console.log('PluginVsCodeDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
-
-        // handle only directories
-        if (resolvedPlugin.isFile()) {
-            return false;
-        }
-
-        // is there a extension.vsixmanifest and extension folder
-        const extensionVsixManifestPath = path.resolve(resolvedPlugin.path(), 'extension.vsixmanifest');
-        const existsExtensionVsixManifest: boolean = fs.existsSync(extensionVsixManifestPath);
-        if (!existsExtensionVsixManifest) {
-            return false;
-        }
-
-        const extensionPath = path.resolve(resolvedPlugin.path(), 'extension');
-        const existsExtension: boolean = fs.existsSync(extensionPath);
-        if (!existsExtension) {
-            return false;
-        }
-
-        // is there a package.json ?
-        const packageJsonPath = path.resolve(extensionPath, 'package.json');
-        const existsPackageJson: boolean = fs.existsSync(packageJsonPath);
-        if (!existsPackageJson) {
-            return false;
-        }
-
-        let packageJson: PluginPackage = resolvedPlugin.getValue('package.json');
-        if (!packageJson) {
-            packageJson = require(packageJsonPath);
-            resolvedPlugin.storeValue('package.json', packageJson);
-        }
-
-        if (!packageJson.engines) {
-            return false;
-        }
-
-        if (packageJson.engines && packageJson.engines.vscode) {
-            console.log('accepting packagejson with engines', packageJson.engines);
-            return true;
-        }
-
-        return false;
-
+    accept(plugin: PluginDeployerEntry): boolean {
+        console.debug(`Resolving "${plugin.id()}" as a VS Code extension...`);
+        return this.resolvePackage(plugin) || this.resolveFromSources(plugin) || this.resolveFromVSIX(plugin);
     }
 
-    // tslint:disable-next-line:no-any
-    handle(context: PluginDeployerDirectoryHandlerContext): Promise<any> {
+    async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
         context.pluginEntry().accept(PluginDeployerEntryType.BACKEND);
-
-        const extensionPath = path.resolve(context.pluginEntry().path(), 'extension');
-        context.pluginEntry().updatePath(extensionPath);
-
-        return Promise.resolve(true);
     }
+
+    protected resolveFromSources(plugin: PluginDeployerEntry): boolean {
+        const pluginPath = plugin.path();
+        return this.resolvePackage(plugin, { pluginPath, pck: this.requirePackage(pluginPath) });
+    }
+
+    protected resolveFromVSIX(plugin: PluginDeployerEntry): boolean {
+        if (!fs.existsSync(path.join(plugin.path(), 'extension.vsixmanifest'))) {
+            return false;
+        }
+        const pluginPath = path.join(plugin.path(), 'extension');
+        return this.resolvePackage(plugin, { pluginPath, pck: this.requirePackage(pluginPath) });
+    }
+
+    protected resolvePackage(plugin: PluginDeployerEntry, options?: {
+        pluginPath: string
+        pck?: RecursivePartial<PluginPackage>
+    }): boolean {
+        const { pluginPath, pck } = options || {
+            pluginPath: plugin.path(),
+            pck: plugin.getValue('package.json')
+        };
+        if (!pck || !pck.name || !pck.version || !pck.engines || !pck.engines.vscode) {
+            return false;
+        }
+        if (options) {
+            plugin.storeValue('package.json', pck);
+            plugin.updatePath(pluginPath);
+        }
+        console.log(`Resolved "${plugin.id()}" to a VS Code extension "${pck.name}@${pck.version}" with engines:`, pck.engines);
+        return true;
+    }
+
+    protected requirePackage(pluginPath: string): PluginPackage | undefined {
+        try {
+            return require(path.join(pluginPath, 'package.json'));
+        } catch {
+            return undefined;
+        }
+    }
+
 }
