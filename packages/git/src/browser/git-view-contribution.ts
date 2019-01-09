@@ -25,7 +25,7 @@ import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, ED
 import { GitFileChange, GitFileStatus } from '../common';
 import { GitWidget } from './git-widget';
 import { GitRepositoryTracker } from './git-repository-tracker';
-import { GitQuickOpenService } from './git-quick-open-service';
+import { GitQuickOpenService, GitAction } from './git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { GitPrompt } from '../common/git-prompt';
@@ -43,13 +43,21 @@ export namespace GIT_COMMANDS {
         id: 'git.fetch',
         label: 'Git: Fetch...'
     };
+    export const PULL_DEFAULT = {
+        id: 'git.pull.default',
+        label: 'Git: Pull'
+    };
     export const PULL = {
         id: 'git.pull',
-        label: 'Git: Pull...'
+        label: 'Git: Pull from...'
+    };
+    export const PUSH_DEFAULT = {
+        id: 'git.push.default',
+        label: 'Git: Push'
     };
     export const PUSH = {
         id: 'git.push',
-        label: 'Git: Push...'
+        label: 'Git: Push to...'
     };
     export const MERGE = {
         id: 'git.merge',
@@ -184,7 +192,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
 
     registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
-        [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE].forEach(command =>
+        [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL_DEFAULT, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH_DEFAULT, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE].forEach(command =>
             menus.registerMenuAction(GitWidget.ContextMenu.OTHER_GROUP, {
                 commandId: command.id,
                 label: command.label.slice('Git: '.length)
@@ -224,8 +232,16 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             execute: () => this.quickOpenService.fetch(),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
+        registry.registerCommand(GIT_COMMANDS.PULL_DEFAULT, {
+            execute: () => this.quickOpenService.performDefaultGitAction(GitAction.PULL),
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
+        });
         registry.registerCommand(GIT_COMMANDS.PULL, {
             execute: () => this.quickOpenService.pull(),
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
+        });
+        registry.registerCommand(GIT_COMMANDS.PUSH_DEFAULT, {
+            execute: () => this.quickOpenService.performDefaultGitAction(GitAction.PUSH),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.PUSH, {
