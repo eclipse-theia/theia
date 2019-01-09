@@ -26,6 +26,11 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitErrorHandler } from './git-error-handler';
 
+export enum GitAction {
+    PULL,
+    PUSH
+}
+
 /**
  * Service delegating into the `Quick Open Service`, so that the Git commands can be further refined.
  * For instance, the `remote` can be specified for `pull`, `push`, and `fetch`. And the branch can be
@@ -113,6 +118,25 @@ export class GitQuickOpenService {
             };
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
             this.open(items, 'Pick a remote to fetch from:');
+        }
+    }
+
+    async performDefaultGitAction(action: GitAction): Promise<void> {
+        const repository = this.getRepository();
+        const remote = await this.getRemotes();
+        const defaultRemote = remote[0];
+        if (repository) {
+            try {
+                if (action === GitAction.PULL) {
+                    await this.git.pull(repository, { remote: defaultRemote });
+                    console.log(`Git Pull: sucessfully completed from ${defaultRemote}.`);
+                } else if (action === GitAction.PUSH) {
+                    await this.git.push(repository, { remote: defaultRemote });
+                    console.log(`Git Push: sucessfully completed to ${defaultRemote}.`);
+                }
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
+            }
         }
     }
 
