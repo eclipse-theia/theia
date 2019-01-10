@@ -68,7 +68,7 @@ Read below to learn how to take part in improving Theia:
 ## Feedback
 
 Read below how to engage with Theia community:
-- Join the discussion on [Gitter](https://gitter.im/theia-ide/theia).
+- Join the discussion on [Spectrum](https://spectrum.chat/theia).
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/theia-ide/theia/issues/new).
 - Star the repository to show your support.
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
