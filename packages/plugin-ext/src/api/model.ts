@@ -466,3 +466,17 @@ export interface DocumentColorProvider {
     provideDocumentColors(model: monaco.editor.ITextModel): PromiseLike<ColorInformation[]>;
     provideColorPresentations(model: monaco.editor.ITextModel, colorInfo: ColorInformation): PromiseLike<ColorPresentation[]>;
 }
+
+export interface Rejection {
+    rejectReason?: string;
+}
+
+export interface RenameLocation {
+    range: Range;
+    text: string;
+}
+
+export interface RenameProvider {
+    provideRenameEdits(model: monaco.editor.ITextModel, position: Position, newName: string): PromiseLike<WorkspaceEdit & Rejection>;
+    resolveRenameLocation?(model: monaco.editor.ITextModel, position: Position): PromiseLike<RenameLocation & Rejection>;
+}
