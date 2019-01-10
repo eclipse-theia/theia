@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import * as ignore from 'ignore';
 import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Git, Repository, WorkingDirectoryStatus, GitUtils } from '../common';
 import { GitStatusChangeEvent } from '../common/git-watcher';
@@ -52,8 +51,7 @@ export class GitRepositoryWatcher implements Disposable {
     @inject(FileSystemWatcherServer)
     protected readonly fileSystemWatcher: FileSystemWatcherServer;
 
-    // tslint:disable-next-line:no-any
-    protected gitIgnoreTester: any | undefined;
+    protected gitIgnoreTester: string[] | undefined;
 
     sync(): void {
         this.syncStatus(false);
@@ -76,7 +74,7 @@ export class GitRepositoryWatcher implements Disposable {
                     }
                 }
 
-                if (this.gitIgnoreTester === undefined || !this.gitIgnoreTester.ignores(relativePath)) {
+                if (this.gitIgnoreTester === undefined || !this.gitIgnoreTester.some(simplePattern => this.testAgainstSimplePattern(simplePattern, relativePath))) {
                     this.lazyRefresh();
                 }
             }
@@ -88,7 +86,34 @@ export class GitRepositoryWatcher implements Disposable {
     private async parseGitIgnoreFile(repositoryUri: string) {
         const response = await this.filesystem.resolveContent(repositoryUri + '/.gitignore', { encoding: 'utf8' });
         const patterns = response.content.split(/\r\n|\r|\n/);
-        this.gitIgnoreTester = ignore.default().add(patterns);
+        this.gitIgnoreTester = this.extractSafeIgnores(patterns);
+    }
+
+    /**
+     * Returns a list of patterns that are just a single folder or file name at the root.
+     *
+     * Testing against a .gitignore file is hard.  However we don't have to do a perfect job.
+     * If we just ignore files in the build directories then this will substantially improve
+     * performance.  It does not matter if we let some files through that should be ignored
+     * because the Git status call will ignore them.  We do have to be sure not to ignore
+     * anything that should not be ignored.
+     *
+     * @param patterns the raw patterns from the .gitignore file
+     * @return a list of simple root file names that can safely be ignored
+     */
+    private extractSafeIgnores(patterns: string[]): string[] {
+        // If any lines begin with !, just keep it simple and ignore nothing
+        if (patterns.some(pattern => pattern.startsWith('!'))) {
+            return [];
+        }
+
+        return patterns.filter(pattern => pattern.match(/^[\w-.]+$/));
+    }
+
+    private testAgainstSimplePattern(simplePattern: string, relativePath: string) {
+        return relativePath === simplePattern
+            || relativePath.startsWith(simplePattern + '/')
+            || relativePath.startsWith(simplePattern + '\\');
     }
 
     protected readonly toDispose = new DisposableCollection();
