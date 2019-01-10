@@ -14,6 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/**
+ * @deprecated use MonacoSnippetSuggestProvider instead
+ */
 export class TextmateSnippetCompletionProvider implements monaco.languages.CompletionItemProvider {
 
     private items: monaco.languages.CompletionItem[];
@@ -42,17 +45,23 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
     }
 
     provideCompletionItems(document: monaco.editor.ITextModel,
-            position: monaco.Position,
-            token: monaco.CancellationToken,
-            context: monaco.languages.CompletionContext): monaco.languages.CompletionItem[] {
+        position: monaco.Position,
+        token: monaco.CancellationToken,
+        context: monaco.languages.CompletionContext): monaco.languages.CompletionItem[] {
         return this.items;
     }
 }
 
+/**
+ * @deprecated use JsonSerializedSnippets & MonacoSnippetSuggestProvider instead
+ */
 export interface TextmateSnippets {
     [name: string]: TextmateSnippet;
 }
 
+/**
+ * @deprecated use JsonSerializedSnippet & MonacoSnippetSuggestProvider instead
+ */
 export interface TextmateSnippet {
     readonly prefix: string,
     readonly body: string[],
