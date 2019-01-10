@@ -500,6 +500,9 @@ export function createAPIFactory(
             registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
                 return languagesExt.registerFoldingRangeProvider(selector, provider);
             },
+            registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider): theia.Disposable {
+                return languagesExt.registerRenameProvider(selector, provider);
+            },
         };
 
         const plugins: typeof theia.plugins = {

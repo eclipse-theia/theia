@@ -53,6 +53,7 @@ import {
     Location,
     Breakpoint,
     ColorPresentation,
+    RenameLocation,
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
@@ -861,6 +862,8 @@ export interface LanguagesExt {
     ): PromiseLike<monaco.languages.FoldingRange[] | undefined>;
     $provideDocumentColors(handle: number, resource: UriComponents): PromiseLike<RawColorInfo[]>;
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo): PromiseLike<ColorPresentation[]>;
+    $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string): PromiseLike<WorkspaceEditDto | undefined>;
+    $resolveRenameLocation(handle: number, resource: UriComponents, position: Position): PromiseLike<RenameLocation | undefined>;
 }
 
 export interface LanguagesMain {
@@ -888,6 +891,7 @@ export interface LanguagesMain {
     $registerWorkspaceSymbolProvider(handle: number): void;
     $registerFoldingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerRenameProvider(handle: number, selector: SerializedDocumentFilter[], supportsResoveInitialValues: boolean): void;
 }
 
 export interface WebviewPanelViewState {
