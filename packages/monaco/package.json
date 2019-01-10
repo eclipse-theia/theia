@@ -10,6 +10,7 @@
     "@theia/markers": "^0.3.18",
     "@theia/outline-view": "^0.3.18",
     "@theia/workspace": "^0.3.18",
+    "jsonc-parser": "^2.0.2",
     "monaco-css": "^2.0.1",
     "monaco-html": "^2.0.2",
     "onigasm": "^2.1.0",

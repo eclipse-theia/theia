@@ -39,8 +39,7 @@ import {
     PluginPackageMenu,
     PluginPackageDebuggersContribution,
     DebuggerContribution,
-    JsonSerializedSnippets,
-    JsonSerializedSnippet
+    SnippetContribution
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -50,7 +49,7 @@ import { CharacterPair } from '../../../api/plugin-api';
 import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
-import { Snippet } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 namespace nls {
     export function localize(key: string, _default: string) {
@@ -175,60 +174,21 @@ export class TheiaPluginScanner implements PluginScanner {
         return contributions;
     }
 
-    protected readSnippets(pck: PluginPackage): Snippet[] | undefined {
+    protected readSnippets(pck: PluginPackage): SnippetContribution[] | undefined {
         if (!pck.contributes || !pck.contributes.snippets) {
             return undefined;
         }
-        const result: Snippet[] = [];
+        const result: SnippetContribution[] = [];
         for (const contribution of pck.contributes.snippets) {
             if (contribution.path) {
-                // TODO: load files lazy on snippet suggest
-                const snippets = this.readJson<JsonSerializedSnippets>(path.join(pck.packagePath, contribution.path));
-                this.parseSnippets(snippets, (name, snippet) => {
-                    let { prefix, body, description } = snippet;
-                    if (Array.isArray(body)) {
-                        body = body.join('\n');
-                    }
-                    if (typeof prefix !== 'string' || typeof body !== 'string') {
-                        return;
-                    }
-                    const scopes: string[] = [];
-                    if (contribution.language) {
-                        scopes.push(contribution.language);
-                    } else if (typeof snippet.scope === 'string') {
-                        for (const rawScope of snippet.scope.split(',')) {
-                            const scope = rawScope.trim();
-                            if (scope) {
-                                scopes.push(scope);
-                            }
-                        }
-                    }
-                    const source = pck.displayName || pck.name;
-                    result.push({
-                        scopes,
-                        name,
-                        prefix,
-                        description,
-                        body,
-                        source
-                    });
+                result.push({
+                    language: contribution.language,
+                    source: pck.displayName || pck.name,
+                    uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString()
                 });
             }
         }
         return result;
-    }
-    protected parseSnippets(snippets: JsonSerializedSnippets | undefined, accept: (name: string, snippet: JsonSerializedSnippet) => void): void {
-        if (typeof snippets === 'object') {
-            // tslint:disable-next-line:forin
-            for (const name in snippets) {
-                const scopeOrTemplate = snippets[name];
-                if (JsonSerializedSnippet.is(scopeOrTemplate)) {
-                    accept(name, scopeOrTemplate);
-                } else {
-                    this.parseSnippets(scopeOrTemplate, accept);
-                }
-            }
-        }
     }
 
     protected readJson<T>(filePath: string): T | undefined {

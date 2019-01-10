@@ -21,7 +21,6 @@ import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plu
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { Snippet } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -105,21 +104,6 @@ export interface ScopeMap {
 export interface PluginPackageSnippetsContribution {
     language?: string;
     path?: string;
-}
-
-export interface JsonSerializedSnippets {
-    [name: string]: JsonSerializedSnippet | { [name: string]: JsonSerializedSnippet };
-}
-export interface JsonSerializedSnippet {
-    body: string | string[];
-    scope: string;
-    prefix: string;
-    description: string;
-}
-export namespace JsonSerializedSnippet {
-    export function is(obj: Object | undefined): obj is JsonSerializedSnippet {
-        return typeof obj === 'object' && 'body' in obj && 'prefix' in obj;
-    }
 }
 
 export interface PlatformSpecificAdapterContribution {
@@ -359,7 +343,13 @@ export interface PluginContribution {
     menus?: { [location: string]: Menu[] };
     keybindings?: Keybinding[];
     debuggers?: DebuggerContribution[];
-    snippets?: Snippet[];
+    snippets?: SnippetContribution[];
+}
+
+export interface SnippetContribution {
+    uri: string
+    source: string
+    language?: string
 }
 
 export interface GrammarsContribution {
