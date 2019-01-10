@@ -26,8 +26,6 @@ import {
     UndoStopOptions,
     DecorationRenderOptions,
     DecorationOptions,
-    ResourceTextEditDto,
-    ResourceFileEditDto,
     WorkspaceEditDto
 } from '../../api/plugin-api';
 import { Range } from '../../api/model';
@@ -36,7 +34,7 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
 import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
-import URI from 'vscode-uri';
+import { reviveWorkspaceEditDto } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 
 export class TextEditorsMainImpl implements TextEditorsMain {
@@ -110,7 +108,7 @@ export class TextEditorsMainImpl implements TextEditorsMain {
     }
 
     $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
-        const edits  = this.reviveWorkspaceEditDto(dto);
+        const edits  = reviveWorkspaceEditDto(dto);
         return new Promise(resolve => {
             this.bulkEditService.apply( edits).then(() => resolve(true), err => resolve(false));
         });
@@ -147,17 +145,4 @@ export class TextEditorsMainImpl implements TextEditorsMain {
         return Promise.resolve();
     }
 
-    reviveWorkspaceEditDto(data: WorkspaceEditDto): monaco.languages.WorkspaceEdit {
-        if (data && data.edits) {
-            for (const edit of data.edits) {
-                if (typeof (<ResourceTextEditDto>edit).resource === 'object') {
-                    (<ResourceTextEditDto>edit).resource = URI.revive((<ResourceTextEditDto>edit).resource);
-                } else {
-                    (<ResourceFileEditDto>edit).newUri = URI.revive((<ResourceFileEditDto>edit).newUri);
-                    (<ResourceFileEditDto>edit).oldUri = URI.revive((<ResourceFileEditDto>edit).oldUri);
-                }
-            }
-        }
-        return <monaco.languages.WorkspaceEdit>data;
-    }
 }
