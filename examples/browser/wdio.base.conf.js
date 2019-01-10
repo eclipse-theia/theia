@@ -107,7 +107,7 @@ function makeConfig(headless) {
         baseUrl: `http://${host}:${port}`,
         //
         // Default timeout for all waitFor* commands.
-        waitforTimeout: 30000,
+        waitforTimeout: 120000,
         //
         // Default timeout in milliseconds for request
         // if Selenium Grid doesn't send response
