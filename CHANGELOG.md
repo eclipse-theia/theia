@@ -4,6 +4,7 @@
 - [cpp] added new `cpp.clangdExecutable` and `cpp.clangdArgs` to customize language server start command.
 - [monaco] Fix document-saving that was taking too long.
 - [plug-in] added `tasks.onDidStartTask` Plug-in API
+- Enabled INI syntax highlighting for `.properties` and `.toml` files
 
 ## v0.3.18
 - [core] added a preference to define how to handle application exit

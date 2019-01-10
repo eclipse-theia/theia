@@ -26,8 +26,9 @@ export class IniContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: ['.ini'],
-            aliases: ['Ini', 'ini']
+            extensions: ['.ini', '.properties', '.toml'],
+            aliases: ['INI', 'ini', 'properties', 'toml'],
+            mimetypes: ['text/x-ini', 'text/x-properties', 'text/x-toml'],
         });
         monaco.languages.setLanguageConfiguration(this.id, {
             comments: {
