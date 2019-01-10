@@ -74,7 +74,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     $stopPlugin(contextPath: string): PromiseLike<void> {
         this.activatedPlugins.forEach(plugin => {
             if (plugin.stopFn) {
-                plugin.stopFn();
+                try {
+                    plugin.stopFn();
+                } catch (e) {
+                    console.error(e);
+                }
             }
 
             // dispose any objects
@@ -83,6 +87,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                 dispose(pluginContext.subscriptions);
             }
         });
+
         return Promise.resolve();
     }
 
@@ -90,8 +95,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.storageProxy = this.rpc.set(
             MAIN_RPC_CONTEXT.STORAGE_EXT,
             new KeyValueStorageProxy(this.rpc.getProxy(PLUGIN_RPC_CONTEXT.STORAGE_MAIN),
-                                     pluginInit.globalState,
-                                     pluginInit.workspaceState)
+                pluginInit.globalState,
+                pluginInit.workspaceState)
         );
 
         // init query parameters

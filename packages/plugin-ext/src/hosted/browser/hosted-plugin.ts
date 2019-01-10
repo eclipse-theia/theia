@@ -151,6 +151,7 @@ export class HostedPluginSupport {
                     }
                     const rpc = this.createServerRpc(pluginID, hostKey);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
+                    hostedExtManager.$stopPlugin('');
                     hostedExtManager.$init({
                         plugins: plugins,
                         preferences: this.preferenceServiceImpl.getPreferences(),
