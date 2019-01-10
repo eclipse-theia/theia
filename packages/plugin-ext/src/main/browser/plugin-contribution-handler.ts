@@ -135,8 +135,13 @@ export class PluginContributionHandler {
 
         this.menusContributionHandler.handle(contributions);
         this.keybindingsContributionHandler.handle(contributions);
-        if (contributions.snippets) {
-            this.snippetSuggestProvider.push(...contributions.snippets);
+        if (contributions.snippets) {
+            for (const snippet of contributions.snippets) {
+                this.snippetSuggestProvider.fromURI(snippet.uri, {
+                    language: snippet.language,
+                    source: snippet.source
+                });
+            }
         }
     }
 
