@@ -24,7 +24,7 @@ build_script:
   - yarn
 
 test_script:
-  - yarn run test
+  - yarn run test:browser
 
 notifications:
   - provider: Webhook
