@@ -72,7 +72,7 @@ export class WebviewWidget extends BaseWidget {
     }
 
     setHTML(html: string) {
-        html = html.replace('theia-resource:/', '/webview/');
+        html = html.replace(/theia-resource:/g, '/webview/');
         const newDocument = new DOMParser().parseFromString(html, 'text/html');
         if (!newDocument || !newDocument.body) {
             return;
