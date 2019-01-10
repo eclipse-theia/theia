@@ -21,7 +21,7 @@ import { PrefixQuickOpenService, QuickOpenHandlerRegistry } from './prefix-quick
 import { CommonMenus } from '../common-frontend-contribution';
 
 export const quickCommand: Command = {
-    id: 'quickCommand'
+    id: 'workbench.action.showCommands'
 };
 
 @injectable()
