@@ -77,9 +77,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
                 await resource.saveContents(result);
             } catch (e) {
-                const message = `Failed to update the value of ${key}. Please check if ${resource.uri.toString()} is corrupted`;
-                this.messageService.error(message);
-                console.error(message, e.toString());
+                const message = `Failed to update the value of ${key}.`;
+                this.messageService.error(`${message} Please check if ${resource.uri.toString()} is corrupted.`);
+                console.error(`${message} ${e.toString()}`);
                 return;
             }
             this.preferences[key] = value;
@@ -90,14 +90,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async readPreferences(): Promise<void> {
         const newContent = await this.readContents();
         const strippedContent = jsoncparser.stripComments(newContent);
-        const jsonErrors: jsoncparser.ParseError[] = [];
-        this.preferences = jsoncparser.parse(strippedContent, jsonErrors) || {};
-        if (jsonErrors.length > 0) {
-            const resourceUri = (await this.resource).uri.toString();
-            const message = `Please check if ${resourceUri} is corrupted. Parsing json errors out.`;
-            this.messageService.error(message);
-            console.error(message, ...jsonErrors);
-        }
+        this.preferences = jsoncparser.parse(strippedContent) || {};
         this.onDidPreferencesChangedEmitter.fire(undefined);
     }
 
