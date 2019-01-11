@@ -19,6 +19,9 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 
+/** Set up en as a default locale for VS Code extensions using vscode-nls */
+process.env['VSCODE_NLS_CONFIG'] = JSON.stringify({ locale: 'en', availableLanguages: {} });
+
 const pluginsApiImpl = new Map<string, typeof theia>();
 const plugins = new Array<Plugin>();
 let defaultApi: typeof theia;
