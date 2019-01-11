@@ -29,7 +29,7 @@ export class MetadataScanner {
         });
     }
 
-    public getPluginMetadata(plugin: PluginPackage): PluginMetadata {
+    getPluginMetadata(plugin: PluginPackage): PluginMetadata {
         const scanner = this.getScanner(plugin);
         return {
             host: 'main',
@@ -45,7 +45,7 @@ export class MetadataScanner {
      * @param {PluginPackage} plugin
      * @returns {PluginScanner}
      */
-    private getScanner(plugin: PluginPackage): PluginScanner {
+    getScanner(plugin: PluginPackage): PluginScanner {
         let scanner;
         if (plugin && plugin.engines) {
             const scanners = Object.keys(plugin.engines)

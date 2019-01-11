@@ -157,6 +157,31 @@ export interface PluginPackageLanguageContributionConfiguration {
 }
 
 export const PluginScanner = Symbol('PluginScanner');
+/**
+ * This scanner process package.json object and returns plugin metadata objects.
+ */
+export interface PluginScanner {
+    /**
+     * The type of plugin's API (engine name)
+     */
+    apiType: PluginEngine;
+
+    /**
+     * Creates plugin's model.
+     *
+     * @param {PluginPackage} plugin
+     * @returns {PluginModel}
+     */
+    getModel(plugin: PluginPackage): PluginModel;
+
+    /**
+     * Creates plugin's lifecycle.
+     *
+     * @returns {PluginLifecycle}
+     */
+    getLifecycle(plugin: PluginPackage): PluginLifecycle;
+}
+
 export const PluginDeployer = Symbol('PluginDeployer');
 
 /**
@@ -189,31 +214,6 @@ export interface PluginDeployerFileHandler {
     accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
 
     handle(context: PluginDeployerFileHandlerContext): Promise<void>;
-}
-
-/**
- * This scanner process package.json object and returns plugin metadata objects.
- */
-export interface PluginScanner {
-    /**
-     * The type of plugin's API (engine name)
-     */
-    apiType: PluginEngine;
-
-    /**
-     * Creates plugin's model.
-     *
-     * @param {PluginPackage} plugin
-     * @returns {PluginModel}
-     */
-    getModel(plugin: PluginPackage): PluginModel;
-
-    /**
-     * Creates plugin's lifecycle.
-     *
-     * @returns {PluginLifecycle}
-     */
-    getLifecycle(plugin: PluginPackage): PluginLifecycle;
 }
 
 export interface PluginDeployerResolverInit {
