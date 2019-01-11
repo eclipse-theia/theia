@@ -23,7 +23,8 @@ import { JavaCliContribution } from './java-cli-contribution';
 import { JavaExtensionContribution } from './java-extension-model';
 
 export default new ContainerModule(bind => {
-    bind(LanguageServerContribution).to(JavaContribution).inSingletonScope();
+    bind(JavaContribution).toSelf().inSingletonScope();
+    bind(LanguageServerContribution).toService(JavaContribution);
     bind(JavaCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(JavaCliContribution);
 
