@@ -594,12 +594,25 @@ describe('NodeFileSystem', function () {
 
     describe('08 #createFolder', () => {
 
-        it('Should be rejected with an error if a directory already exist under the desired URI.', async () => {
+        it('Should be rejected with an error if a FILE already exist under the desired URI.', async () => {
             const uri = root.resolve('foo');
-            fs.mkdirSync(FileUri.fsPath(uri));
-            expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
+            fs.writeFileSync(FileUri.fsPath(uri), 'some content');
+            expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.false;
 
             await expectThrowsAsync(fileSystem.createFolder(uri.toString()), Error);
+        });
+
+        it('Should NOT be rejected with an error if a DIRECTORY already exist under the desired URI.', async () => {
+            const uri = root.resolve('foo');
+            fs.mkdirSync(FileUri.fsPath(uri));
+            expect(fs.existsSync(FileUri.fsPath(uri))).to.be.true;
+
+            const stat = await fileSystem.createFolder(uri.toString());
+            expect(stat).to.be.an('object');
+            expect(stat).to.have.property('uri')
+                .that.equals(uri.toString());
+            expect(stat).to.have.property('children')
+                .that.is.empty;
         });
 
         it('Should create a directory and return with the stat object on successful directory creation.', async () => {
@@ -614,8 +627,8 @@ describe('NodeFileSystem', function () {
                 .that.is.empty;
         });
 
-        it('Should create a directory and return with the stat object on successful directory creation.', async () => {
-            const uri = root.resolve('foo/bar');
+        it('Should create all the missing directories and return with the stat object on successful creation.', async () => {
+            const uri = root.resolve('foo/bar/foobar/barfoo');
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
             const stat = await fileSystem.createFolder(uri.toString());
