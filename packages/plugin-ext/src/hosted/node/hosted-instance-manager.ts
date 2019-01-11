@@ -18,6 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as net from 'net';
+import * as path from 'path';
 import * as request from 'request';
 
 import URI from '@theia/core/lib/common/uri';
@@ -27,6 +28,8 @@ import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } 
 import { HostedPluginSupport } from './hosted-plugin';
 import { DebugConfiguration } from '../../common';
 import { environment } from '@theia/core';
+import { MetadataScanner } from './metadata-scanner';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 const processTree = require('ps-tree');
 
 export const HostedInstanceManager = Symbol('HostedInstanceManager');
@@ -101,6 +104,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     @inject(HostedPluginSupport)
     protected readonly hostedPluginSupport: HostedPluginSupport;
+
+    @inject(MetadataScanner)
+    protected readonly metadata: MetadataScanner;
 
     isRunning(): boolean {
         return this.isPluginRunnig;
@@ -223,13 +229,10 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     isPluginValid(uri: URI): boolean {
-        const packageJsonPath = uri.path.toString() + '/package.json';
-        if (fs.existsSync(packageJsonPath)) {
-            const packageJson = require(packageJsonPath);
-            const plugin = packageJson['theiaPlugin'];
-            if (plugin && (plugin['frontend'] || plugin['backend'])) {
-                return true;
-            }
+        const pckPath = path.join(FileUri.fsPath(uri), 'package.json');
+        if (fs.existsSync(pckPath)) {
+            const pck = require(pckPath);
+            return !!this.metadata.getScanner(pck);
         }
         return false;
     }

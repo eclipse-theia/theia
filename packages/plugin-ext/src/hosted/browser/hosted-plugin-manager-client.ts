@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as path from 'path';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
@@ -26,6 +27,7 @@ import { HostedPluginServer } from '../../common/plugin-protocol';
 import { DebugConfiguration as HostedDebugConfig } from '../../common';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -171,12 +173,16 @@ export class HostedPluginManagerClient {
         this.isDebug = true;
 
         await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
+        const outFiles = this.pluginLocation && [path.join(FileUri.fsPath(this.pluginLocation), '**', '*.js')];
         await this.debugSessionManager.start({
             configuration: {
                 type: 'node',
                 request: 'attach',
                 timeout: 30000,
-                name: 'Hosted Plugin'
+                name: 'Hosted Plugin',
+                smartStep: true,
+                sourceMaps: !!outFiles,
+                outFiles
             }
         });
     }
