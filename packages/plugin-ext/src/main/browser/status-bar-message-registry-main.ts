@@ -29,7 +29,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         this.delegate = container.get(StatusBar);
     }
 
-    $setMessage(text: string,
+    $setMessage(text: string | undefined,
                 priority: number,
                 alignment: number,
                 color: string | undefined,
@@ -37,7 +37,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
                 command: string | undefined): PromiseLike<string> {
         const id = this.uniqueId;
         const entry = {
-            text,
+            text: text || '',
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color,
