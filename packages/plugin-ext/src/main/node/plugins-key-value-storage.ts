@@ -28,46 +28,30 @@ export class PluginsKeyValueStorage {
     private theiaDirPath: string | undefined;
     private globalDataPath: string | undefined;
 
-    private deferredTheiaDirPath: Deferred<string>;
+    private deferredTheiaDirPath = new Deferred<string>();
 
     constructor(
         @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
-        this.deferredTheiaDirPath = new Deferred<string>();
-
-        this.pluginPathsService.getTheiaDirPath().then((theiaDirPathUri: string) =>
-            this.fileSystem.getFsPath(theiaDirPathUri)
-        ).then((theiaDirPath: string | undefined) => {
-            this.theiaDirPath = theiaDirPath!;
-            this.globalDataPath = path.join(this.theiaDirPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
-
-            if (!fs.existsSync(path.dirname(this.globalDataPath))) {
-                this.createDirectories(path.dirname(this.globalDataPath));
-            }
-
-            this.deferredTheiaDirPath.resolve(this.theiaDirPath);
-        });
+        this.setupDirectories();
     }
 
-    private createDirectories(pathString: string): void {
-        const toCreate: string[] = [];
+    private async setupDirectories() {
+        const theiaDirPath = await this.pluginPathsService.getTheiaDirPath();
+        await this.fileSystem.createFolder(theiaDirPath);
+        this.theiaDirPath = theiaDirPath;
 
-        while (!fs.existsSync(pathString)) {
-            toCreate.push(path.basename(pathString));
-            pathString = path.dirname(pathString);
-        }
+        this.globalDataPath = path.join(this.theiaDirPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
+        await this.fileSystem.createFolder(path.dirname(this.globalDataPath));
 
-        while (toCreate.length > 0) {
-            pathString = path.join(pathString, toCreate.pop()!);
-            fs.mkdirSync(pathString);
-        }
+        this.deferredTheiaDirPath.resolve(this.theiaDirPath);
     }
 
     async set(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean> {
         const dataPath = await this.getDataPath(isGlobal);
         if (!dataPath) {
-            return Promise.reject('Cannot save data: no opened workspace');
+            throw new Error('Cannot save data: no opened workspace');
         }
 
         const data = this.readFromFile(dataPath);
@@ -79,27 +63,27 @@ export class PluginsKeyValueStorage {
         }
 
         this.writeToFile(dataPath, data);
-        return Promise.resolve(true);
+        return true;
     }
 
     async get(key: string, isGlobal: boolean): Promise<KeysToAnyValues> {
         const dataPath = await this.getDataPath(isGlobal);
         if (!dataPath) {
-            return Promise.resolve({});
+            return {};
         }
 
         const data = this.readFromFile(dataPath);
-        return Promise.resolve(data[key]);
+        return data[key];
     }
 
     async getAll(isGlobal: boolean): Promise<KeysToKeysToAnyValue> {
         const dataPath = await this.getDataPath(isGlobal);
         if (!dataPath) {
-            return Promise.resolve({});
+            return {};
         }
 
         const data = this.readFromFile(dataPath);
-        return Promise.resolve(data);
+        return data;
     }
 
     private async getDataPath(isGlobal: boolean): Promise<string | undefined> {
