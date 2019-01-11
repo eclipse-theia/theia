@@ -344,6 +344,10 @@ export function createAPIFactory(
             onDidOpenTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidAddDocument(listener, thisArg, disposables);
             },
+            onWillSaveTextDocument(listener, thisArg?, disposables?) {
+                // TODO to implement
+                return { dispose: () => {}};
+            },
             onDidSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidSaveTextDocument(listener, thisArg, disposables);
             },
