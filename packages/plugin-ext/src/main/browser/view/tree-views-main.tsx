@@ -126,9 +126,10 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
         treeViewWidget.model.onSelectionChanged(event => {
             if (event.length === 1) {
-                const [id, contextValue = ''] = event[0].id.split('/');
+                const treeItemId = event[0].id;
+                const [, contextValue = ''] = treeItemId.split('/');
 
-                this.proxy.$setSelection(treeViewId, id);
+                this.proxy.$setSelection(treeViewId, treeItemId);
                 this.viewItemCtxKey.set(contextValue);
             } else {
                 this.viewItemCtxKey.set('');
