@@ -28,7 +28,9 @@ export class HostedPluginReader implements BackendApplicationContribution {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(MetadataScanner) private readonly scanner: MetadataScanner;
+    @inject(MetadataScanner)
+    private readonly scanner: MetadataScanner;
+
     private plugin: PluginMetadata | undefined;
 
     @optional()
@@ -66,7 +68,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         });
     }
 
-    public getPluginMetadata(path: string): PluginMetadata | undefined {
+    getPluginMetadata(path: string): PluginMetadata | undefined {
         if (!path.endsWith('/')) {
             path += '/';
         }
@@ -81,6 +83,10 @@ export class HostedPluginReader implements BackendApplicationContribution {
         const plugin: PluginPackage = JSON.parse(rawData);
         plugin.packagePath = path;
         const pluginMetadata = this.scanner.getPluginMetadata(plugin);
+        if (this.plugin && this.plugin.model && this.plugin.model.name === pluginMetadata.model.name) {
+            // prefer hosted plugin
+            return undefined;
+        }
         if (pluginMetadata.model.entryPoint.backend) {
             pluginMetadata.model.entryPoint.backend = resolve(path, pluginMetadata.model.entryPoint.backend);
         }
