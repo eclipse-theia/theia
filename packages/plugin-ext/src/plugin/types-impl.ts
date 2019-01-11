@@ -1798,3 +1798,12 @@ export enum FoldingRangeKind {
     Imports = 2,
     Region = 3
 }
+
+/**
+ * Enumeration of the supported operating systems.
+ */
+export enum OSType {
+    Windows = 'Windows',
+    Linux = 'Linux',
+    OSX = 'OSX'
+}

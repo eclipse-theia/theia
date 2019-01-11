@@ -64,4 +64,23 @@ declare module '@theia/plugin' {
          */
         workspaceContains?: string[];
     }
+
+    /**
+     * Enumeration of the supported operating systems.
+     */
+    export enum OSType {
+        Windows = 'Windows',
+        Linux = 'Linux',
+        OSX = 'OSX'
+    }
+
+    export namespace env {
+
+        /**
+         * Returns with the type of the operating system. If it is neither [Windows](isWindows) nor [OS X](isOSX), then
+         * it always return with the `Linux` OS type.
+         */
+        export function getOsType(): PromiseLike<OSType>;
+
+    }
 }
