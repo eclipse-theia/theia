@@ -2658,6 +2658,12 @@ declare module '@theia/plugin' {
     export namespace window {
 
         /**
+         * The currently active terminal or undefined. The active terminal is the one
+         * that currently has focus or most recently had focus.
+         */
+        export let activeTerminal: Terminal | undefined;
+
+        /**
          * The currently active editor or `undefined`. The active editor is the one
          * that currently has focus or, when none has focus, the one that has changed
          * input most recently.
@@ -2665,9 +2671,20 @@ declare module '@theia/plugin' {
         export let activeTextEditor: TextEditor | undefined;
 
         /**
+         * The currently opened terminals or an empty array.
+         */
+        export let terminals: ReadonlyArray<Terminal>;
+
+        /**
          * The currently visible editors or an empty array.
          */
         export let visibleTextEditors: TextEditor[];
+
+        /**
+         * An [event](#Event) which fires when the [active terminal](#window.activeTerminal) has changed.
+         * *Note* that the event also fires when the active terminal changes to `undefined`.
+         */
+        export const onDidChangeActiveTerminal: Event<Terminal | undefined>;
 
         /**
          * An [event](#Event) which fires when the [active editor](#window.activeTextEditor)
@@ -3023,6 +3040,12 @@ declare module '@theia/plugin' {
          * Event which fires when terminal did closed. Event value contains closed terminal definition.
          */
         export const onDidCloseTerminal: Event<Terminal>;
+
+        /**
+         * An [event](#Event) which fires when a terminal has been created,
+         * either through the createTerminal API or commands.
+         */
+        export const onDidOpenTerminal: Event<Terminal>;
 
         /**
          * Create new terminal with predefined options.
@@ -3904,8 +3927,8 @@ declare module '@theia/plugin' {
 		 * @return A thenable that resolves when the edit could be applied.
 		 */
 		export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
-        
-        
+
+
         /**
          * Register a filesystem provider for a given scheme, e.g. `ftp`.
          *

@@ -13,6 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+import { Event } from '@theia/core/lib/common/event';
+import { WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
 
 /**
@@ -20,6 +22,7 @@ import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
  */
 export const TerminalService = Symbol('TerminalService');
 export interface TerminalService {
+
     /**
      * Create new terminal with predefined options.
      * @param options - terminal options.
@@ -28,7 +31,20 @@ export interface TerminalService {
 
     /**
      * Display new terminal widget.
-     * @param termWidget - widget to attach.
+     * @param terminal - widget to attach.
+     * @deprecated use #open
      */
-    activateTerminal(termWidget: TerminalWidget): void;
+    activateTerminal(terminal: TerminalWidget): void;
+
+    open(terminal: TerminalWidget, options?: WidgetOpenerOptions): void;
+
+    readonly all: TerminalWidget[];
+
+    getById(id: string): TerminalWidget | undefined;
+
+    readonly onDidCreateTerminal: Event<TerminalWidget>;
+
+    readonly currentTerminal: TerminalWidget | undefined;
+
+    readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined>;
 }

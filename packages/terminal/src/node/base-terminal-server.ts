@@ -50,6 +50,14 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         }
     }
 
+    async getProcessId(id: number): Promise<number> {
+        const terminal = this.processManager.get(id);
+        if (!(terminal instanceof TerminalProcess)) {
+            throw new Error(`terminal "${id}" does not exist`);
+        }
+        return terminal.pid;
+    }
+
     async close(id: number): Promise<void> {
         const term = this.processManager.get(id);
 
