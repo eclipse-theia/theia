@@ -28,7 +28,7 @@ import { DebugThread, StoppedDetails, DebugThreadData } from './model/debug-thre
 import { DebugScope } from './console/debug-console-items';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugSource } from './model/debug-source';
-import { DebugBreakpoint } from './model/debug-breakpoint';
+import { DebugBreakpoint, DebugBreakpointData } from './model/debug-breakpoint';
 import debounce = require('p-debounce');
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
@@ -512,13 +512,28 @@ export class DebugSession implements CompositeTreeElement {
                 new DebugBreakpoint(data, this.labelProvider, this.breakpoints, this.editorManager, this)
             );
             const enabled = all.filter(b => b.enabled);
-            const response = await this.sendRequest('setBreakpoints', {
-                source: source.raw,
-                sourceModified,
-                breakpoints: enabled.map(({ origin }) => origin.raw)
-            });
-            response.body.breakpoints.map((raw, index) => enabled[index].update({ raw }));
-            this.setBreakpoints(affectedUri, all);
+
+            try {
+                const response = await this.sendRequest('setBreakpoints', {
+                    source: source.raw,
+                    sourceModified,
+                    breakpoints: enabled.map(({ origin }) => origin.raw)
+                });
+                response.body.breakpoints.map((raw, index) => enabled[index].update({ raw }));
+            } catch (error) {
+                // handle adapters that send unsuccessful messages with error body for invalid breakpoints
+                enabled.forEach((brkPoint: DebugBreakpoint) => {
+                    const debugBreakpointData: Partial<DebugBreakpointData> = {
+                        raw: {
+                            verified: false,
+                            message: 'Breakpoint not valid for current debug session'
+                        }
+                    };
+                    brkPoint.update(debugBreakpointData);
+                });
+            } finally {
+                this.setBreakpoints(affectedUri, all);
+            }
         }
     }
     protected setBreakpoints(uri: URI, breakpoints: DebugBreakpoint[]): void {
