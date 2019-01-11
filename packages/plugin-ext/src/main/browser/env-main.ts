@@ -19,6 +19,8 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { EnvMain } from '../../api/plugin-api';
 import { QueryParameters } from '../../common/env';
+import { isWindows, isOSX } from '@theia/core';
+import { OSType } from '../../plugin/types-impl';
 
 export class EnvMainImpl implements EnvMain {
     private envVariableServer: EnvVariablesServer;
@@ -31,6 +33,15 @@ export class EnvMainImpl implements EnvMain {
         return this.envVariableServer.getValue(envVarName).then(result => result ? result.value : undefined);
     }
 
+    async $getOsType(): Promise<OSType> {
+        if (isWindows) {
+            return OSType.Windows;
+        }
+        if (isOSX) {
+            return OSType.OSX;
+        }
+        return OSType.Linux;
+    }
 }
 
 /**

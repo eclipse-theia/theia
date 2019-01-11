@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { EnvMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
 import { QueryParameters } from '../common/env';
@@ -45,5 +46,9 @@ export class EnvExtImpl {
 
     setQueryParameters(queryParams: QueryParameters): void {
         this.queryParameters = queryParams;
+    }
+
+    getOsType(): Promise<theia.OSType> {
+        return this.proxy.$getOsType();
     }
 }

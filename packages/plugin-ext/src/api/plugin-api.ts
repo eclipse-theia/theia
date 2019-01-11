@@ -697,6 +697,7 @@ export interface DocumentsMain {
 
 export interface EnvMain {
     $getEnvVariable(envVarName: string): Promise<string | undefined>;
+    $getOsType(): Promise<theia.OSType>;
 }
 
 export interface PreferenceRegistryMain {
