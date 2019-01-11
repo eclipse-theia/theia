@@ -251,7 +251,7 @@ export interface MessageRegistryMain {
 }
 
 export interface StatusBarMessageRegistryMain {
-    $setMessage(text: string,
+    $setMessage(text: string | undefined,
         priority: number,
         alignment: theia.StatusBarAlignment,
         color: string | undefined,
