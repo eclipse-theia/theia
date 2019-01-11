@@ -13,10 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { Terminal, TerminalOptions } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
 
 /**
@@ -26,11 +28,24 @@ import * as theia from '@theia/plugin';
 export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private readonly proxy: TerminalServiceMain;
-    private readonly terminals: Map<number, Terminal> = new Map();
+
+    private readonly _terminals = new Map<string, TerminalExtImpl>();
+
     private readonly onDidCloseTerminalEmitter = new Emitter<Terminal>();
+    readonly onDidCloseTerminal: theia.Event<Terminal> = this.onDidCloseTerminalEmitter.event;
+
+    private readonly onDidOpenTerminalEmitter = new Emitter<Terminal>();
+    readonly onDidOpenTerminal: theia.Event<Terminal> = this.onDidOpenTerminalEmitter.event;
+
+    private readonly onDidChangeActiveTerminalEmitter = new Emitter<Terminal | undefined>();
+    readonly onDidChangeActiveTerminal: theia.Event<Terminal | undefined> = this.onDidChangeActiveTerminalEmitter.event;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN);
+    }
+
+    get terminals(): TerminalExtImpl[] {
+        return [...this._terminals.values()];
     }
 
     createTerminal(nameOrOptions: TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
@@ -44,58 +59,91 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
                 shellArgs: shellArgs
             };
         }
+        const id = `plugin-terminal-${UUID.uuid4()}`;
+        this.proxy.$createTerminal(id, options);
+        return this.obtainTerminal(id, options.name || 'Terminal');
+    }
 
-        const terminal = new TerminalExtImpl(this.proxy, options.name || 'Terminal');
-        terminal.create(options, shellPath, shellArgs);
-        terminal.processId.then(id => {
-            this.terminals.set(id, terminal);
-        });
+    protected obtainTerminal(id: string, name: string): TerminalExtImpl {
+        let terminal = this._terminals.get(id);
+        if (!terminal) {
+            terminal = new TerminalExtImpl(this.proxy);
+            this._terminals.set(id, terminal);
+        }
+        terminal.name = name;
         return terminal;
     }
 
-    $terminalClosed(id: number): void {
-        const terminal = this.terminals.get(id);
+    $terminalCreated(id: string, name: string): void {
+        const terminal = this.obtainTerminal(id, name);
+        terminal.id.resolve(id);
+        this.onDidOpenTerminalEmitter.fire(terminal);
+    }
+
+    $terminalNameChanged(id: string, name: string): void {
+        const terminal = this._terminals.get(id);
         if (terminal) {
-            this.onDidCloseTerminalEmitter.fire(terminal);
+            terminal.name = name;
         }
     }
 
-    public set onDidCloseTerminal(event: theia.Event<Terminal>) {
-        this.onDidCloseTerminalEmitter.event.apply(event);
+    $terminalOpened(id: string, processId: number): void {
+        const terminal = this._terminals.get(id);
+        if (terminal) {
+            // resolve for existing clients
+            terminal.deferredProcessId.resolve(processId);
+            // install new if terminal is reconnected
+            terminal.deferredProcessId = new Deferred<number>();
+            terminal.deferredProcessId.resolve(processId);
+        }
     }
 
-    public get onDidCloseTerminal(): theia.Event<Terminal> {
-        return this.onDidCloseTerminalEmitter.event;
+    $terminalClosed(id: string): void {
+        const terminal = this._terminals.get(id);
+        if (terminal) {
+            this.onDidCloseTerminalEmitter.fire(terminal);
+            this._terminals.delete(id);
+        }
     }
+
+    private activeTerminalId: string | undefined;
+    get activeTerminal(): TerminalExtImpl | undefined {
+        return this.activeTerminalId && this._terminals.get(this.activeTerminalId) || undefined;
+    }
+    $currentTerminalChanged(id: string | undefined): void {
+        this.activeTerminalId = id;
+        this.onDidChangeActiveTerminalEmitter.fire(this.activeTerminal);
+    }
+
 }
 
 export class TerminalExtImpl implements Terminal {
 
-    termProcessId: PromiseLike<number>;
+    name: string;
 
-    constructor(private readonly proxy: TerminalServiceMain, readonly name: string) { }
+    readonly id = new Deferred<string>();
 
-    create(nameOrOptions: TerminalOptions, shellPath?: string, shellArgs?: string[]): void {
-        this.termProcessId = this.proxy.$createTerminal(nameOrOptions);
+    deferredProcessId = new Deferred<number>();
+    get processId(): Thenable<number> {
+        return this.deferredProcessId.promise;
     }
 
+    constructor(private readonly proxy: TerminalServiceMain) { }
+
     sendText(text: string, addNewLine: boolean = true): void {
-        this.termProcessId.then(id => this.proxy.$sendText(id, text, addNewLine));
+        this.id.promise.then(id => this.proxy.$sendText(id, text, addNewLine));
     }
 
     show(preserveFocus?: boolean): void {
-        this.termProcessId.then(id => this.proxy.$show(id));
+        this.id.promise.then(id => this.proxy.$show(id, preserveFocus));
     }
 
     hide(): void {
-        this.termProcessId.then(id => this.proxy.$hide(id));
+        this.id.promise.then(id => this.proxy.$hide(id));
     }
 
     dispose(): void {
-        this.termProcessId.then(id => this.proxy.$dispose(id));
+        this.id.promise.then(id => this.proxy.$dispose(id));
     }
 
-    public get processId(): Thenable<number> {
-        return this.termProcessId;
-    }
 }

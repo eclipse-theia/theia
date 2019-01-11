@@ -167,13 +167,21 @@ export function createAPIFactory(
             }
         };
 
+        const { onDidChangeActiveTerminal, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
         const window: typeof theia.window = {
+            get activeTerminal() {
+                return terminalExt.activeTerminal;
+            },
             get activeTextEditor() {
                 return editors.getActiveEditor();
             },
             get visibleTextEditors() {
                 return editors.getVisibleTextEditors();
             },
+            get terminals() {
+                return terminalExt.terminals;
+            },
+            onDidChangeActiveTerminal,
             onDidChangeActiveTextEditor(listener, thisArg?, disposables?) {
                 return editors.onDidChangeActiveTextEditor(listener, thisArg, disposables);
             },
@@ -294,12 +302,8 @@ export function createAPIFactory(
             createTerminal(nameOrOptions: theia.TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): theia.Terminal {
                 return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
             },
-            get onDidCloseTerminal(): theia.Event<theia.Terminal> {
-                return terminalExt.onDidCloseTerminal;
-            },
-            set onDidCloseTerminal(event: theia.Event<theia.Terminal>) {
-                terminalExt.onDidCloseTerminal = event;
-            },
+            onDidCloseTerminal,
+            onDidOpenTerminal,
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
                 return editors.createTextEditorDecorationType(options);
             },

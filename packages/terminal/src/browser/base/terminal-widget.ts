@@ -22,27 +22,31 @@ import { BaseWidget } from '@theia/core/lib/browser';
  */
 export abstract class TerminalWidget extends BaseWidget {
 
+    abstract processId: Promise<number>;
+
     /**
      * Start terminal and return terminal id.
      * @param id - terminal id.
      */
-   abstract start(id?: number): Promise<number>;
+    abstract start(id?: number): Promise<number>;
 
-   /**
-    * Send text to the terminal server.
-    * @param text - text content.
-    */
-   abstract sendText(text: string): void;
+    /**
+     * Send text to the terminal server.
+     * @param text - text content.
+     */
+    abstract sendText(text: string): void;
 
-   /**
-    * Event which fires when terminal did closed. Event value contains closed terminal widget definition.
-    */
-   abstract onTerminalDidClose: Event<TerminalWidget>;
+    abstract onDidOpen: Event<void>;
 
-   /**
-    * Cleat terminal output.
-    */
-   abstract clearOutput(): void;
+    /**
+     * Event which fires when terminal did closed. Event value contains closed terminal widget definition.
+     */
+    abstract onTerminalDidClose: Event<TerminalWidget>;
+
+    /**
+     * Cleat terminal output.
+     */
+    abstract clearOutput(): void;
 }
 
 /**
