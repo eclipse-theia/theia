@@ -48,17 +48,11 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         const parentLogsDir = await this.getLogsDirPath();
 
         if (!parentLogsDir) {
-            return Promise.reject(new Error('Unable to get parent log directory'));
-        }
-
-        if (parentLogsDir && !await this.fileSystem.exists(parentLogsDir)) {
-            await this.fileSystem.createFolder(parentLogsDir);
+            throw new Error('Unable to get parent log directory');
         }
 
         const pluginDirPath = path.join(parentLogsDir, this.gererateTimeFolderName(), 'host');
-        if (!await this.fileSystem.exists(pluginDirPath)) {
-            await this.fileSystem.createFolder(pluginDirPath);
-        }
+        await this.fileSystem.createFolder(pluginDirPath);
 
         return new URI(pluginDirPath).path.toString();
     }
@@ -67,7 +61,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         const parentStorageDir = await this.getWorkspaceStorageDirPath();
 
         if (!parentStorageDir) {
-            return Promise.reject(new Error('Unable to get parent storage directory'));
+            throw new Error('Unable to get parent storage directory');
         }
 
         if (!workspace) {
@@ -75,8 +69,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
                 this.deferredStoragePath.resolve(undefined);
                 this.storagePathInitialized = true;
             }
-            this.cachedStoragePath = undefined;
-            return Promise.resolve(undefined);
+            return this.cachedStoragePath = undefined;
         }
 
         if (!await this.fileSystem.exists(parentStorageDir)) {
@@ -94,14 +87,13 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             this.deferredStoragePath.resolve(storagePathString);
             this.storagePathInitialized = true;
         }
-        this.cachedStoragePath = storagePathString;
 
-        return this.cachedStoragePath;
+        return this.cachedStoragePath = storagePathString;
     }
 
     async getLastStoragePath(): Promise<string | undefined> {
         if (this.storagePathInitialized) {
-            return Promise.resolve(this.cachedStoragePath);
+            return this.cachedStoragePath;
         } else {
             return this.deferredStoragePath.promise;
         }
@@ -157,9 +149,10 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     private async getUserHomeDir(): Promise<string> {
         const homeDirStat = await this.fileSystem.getCurrentUserHome();
         if (!homeDirStat) {
-            return Promise.reject(new Error('Unable to get user home directory'));
+            throw new Error('Unable to get user home directory');
         }
-        return homeDirStat.uri;
+        const homeDirPath = await this.fileSystem.getFsPath(homeDirStat.uri);
+        return homeDirPath!;
     }
 
 }
