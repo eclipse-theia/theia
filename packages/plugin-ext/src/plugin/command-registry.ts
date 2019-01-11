@@ -87,19 +87,19 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     // tslint:disable-next-line:no-any
-    executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined> {
+    executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.commands.has(id)) {
-            return this.executeLocalCommand(id, args);
+            return this.executeLocalCommand(id, ...args);
         } else {
-            return this.proxy.$executeCommand(id, args);
+            return this.proxy.$executeCommand(id, ...args);
         }
     }
 
     // tslint:disable-next-line:no-any
-    private executeLocalCommand<T>(id: string, args: any[]): PromiseLike<T> {
+    private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         const handler = this.commands.get(id);
         if (handler) {
-            return Promise.resolve(handler(args));
+            return Promise.resolve(handler(...args));
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
         }
@@ -168,7 +168,7 @@ export class CommandsConverter {
         if (!actualCmd) {
             return Promise.resolve(undefined);
         }
-        return this.commands.executeCommand(actualCmd.id, actualCmd.arguments || []);
+        return this.commands.executeCommand(actualCmd.id, ...(actualCmd.arguments || []));
     }
 
     /**

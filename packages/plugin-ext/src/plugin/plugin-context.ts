@@ -155,7 +155,7 @@ export function createAPIFactory(
             },
             // tslint:disable-next-line:no-any
             executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined> {
-                return commandRegistry.executeCommand<T>(commandId, args);
+                return commandRegistry.executeCommand<T>(commandId, ...args);
             },
             // tslint:disable-next-line:no-any
             registerTextEditorCommand(command: theia.Command, callback: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void): Disposable {

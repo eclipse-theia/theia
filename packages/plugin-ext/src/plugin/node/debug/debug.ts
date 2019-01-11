@@ -266,7 +266,10 @@ export class DebugExtImpl implements DebugExt {
         const contribution = this.debuggersContributions.get(type);
         if (contribution) {
             if (contribution.adapterExecutableCommand) {
-                return await this.commandRegistryExt.executeCommand(contribution.adapterExecutableCommand, []) as DebugAdapterExecutable;
+                const executable = await this.commandRegistryExt.executeCommand<DebugAdapterExecutable>(contribution.adapterExecutableCommand);
+                if (executable) {
+                    return executable;
+                }
             } else {
                 const contributionPath = this.contributionPaths.get(type);
                 if (contributionPath) {
