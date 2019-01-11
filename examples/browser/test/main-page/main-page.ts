@@ -33,7 +33,7 @@ export class MainPage {
     }
 
     waitForStartup(): void {
-        this.driver.waitUntil(() => !this.driver.isExisting('.theia-preload'));
+        this.driver.waitUntil(() => this.driver.isExisting('.theia-preload'));
     }
 
     mainContentPanelExists(): boolean {

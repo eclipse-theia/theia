@@ -189,34 +189,37 @@ function makeConfig(headless) {
         // resolved to continue.
         //
         // Gets executed once before all workers get launched.
-        onPrepare: function (config, capabilities) {
-            // Modify process.argv so that the server (which is in the
-            // master process) starts with a temporary directory as the
-            // workspace.
+        onPrepare: async function (config, capabilities) {
             const rootDir = temptrack.mkdirSync();
-            const argv = ['--no-cluster', '--root-dir=' + rootDir, '--port', port.toString()];
+            const argv = ['--no-cluster', '--root-dir=' + rootDir, '--port=' + port.toString()];
 
-            return new Promise((resolve, reject) => {
-                const process = cp.fork('./src-gen/backend/main.js', argv);
+            let server;
+            try {
+                server = await new Promise((resolve, reject) => {
+                    const process = cp.fork('./src-gen/backend/main.js', argv);
 
-                process.once('message', port => {
-                    resolve({
-                        process,
-                        port,
+                    process.once('message', port => {
+                        resolve({
+                            process,
+                            port,
+                        });
+                    });
+
+                    process.once('error', error => {
+                        console.error(`An error happened within the Theia server process: ${error}`);
+                        reject(error);
                     });
                 });
-
-                process.once('error', error => {
-                    console.error(`An error happened within the Theia server process: ${error}`);
-                    reject(error);
-                });
-
-            }).then(server => {
+            } catch (error) {
+                console.error('onPrepare ERROR:', error);
+                return undefined;
+            }
+            if (server) {
                 process.argv.push(cliPortKey, server.port,
                     '--theia-root-dir', rootDir
                 );
                 this.server = server.process;
-            });
+            }
         },
         // Gets executed after all workers got shut down and the process is about to exit. It is not
         // possible to defer the end of the process using a promise.
