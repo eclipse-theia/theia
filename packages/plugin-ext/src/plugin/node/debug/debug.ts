@@ -38,6 +38,8 @@ import { Path } from '@theia/core/lib/common/path';
 
 // tslint:disable:no-any
 
+// TODO: rename file to `debug-ext.ts`
+
 /**
  * It is supposed to work at node only.
  */
@@ -48,12 +50,12 @@ export class DebugExtImpl implements DebugExt {
     // providers by type
     private configurationProviders = new Map<string, Set<theia.DebugConfigurationProvider>>();
     private debuggersContributions = new Map<string, DebuggerContribution>();
+    private contributionPaths = new Map<string, string>();
 
     private connectionExt: ConnectionExtImpl;
     private commandRegistryExt: CommandRegistryImpl;
 
     private proxy: DebugMain;
-    private pluginFolder: string;
 
     private readonly onDidChangeBreakpointsEmitter = new Emitter<theia.BreakpointsChangeEvent>();
     private readonly onDidChangeActiveDebugSessionEmitter = new Emitter<theia.DebugSession | undefined>();
@@ -87,8 +89,8 @@ export class DebugExtImpl implements DebugExt {
      * @param contributions available debuggers contributions
      */
     registerDebuggersContributions(pluginFolder: string, contributions: DebuggerContribution[]): void {
-        this.pluginFolder = pluginFolder;
         contributions.forEach((contribution: DebuggerContribution) => {
+            this.contributionPaths.set(contribution.type, pluginFolder);
             this.debuggersContributions.set(contribution.type, contribution);
             this.proxy.$registerDebuggerContribution({
                 type: contribution.type,
@@ -260,12 +262,16 @@ export class DebugExtImpl implements DebugExt {
     }
 
     private async getExecutable(debugConfiguration: theia.DebugConfiguration): Promise<DebugAdapterExecutable> {
-        const contribution = this.debuggersContributions.get(debugConfiguration.type);
+        const { type } = debugConfiguration;
+        const contribution = this.debuggersContributions.get(type);
         if (contribution) {
             if (contribution.adapterExecutableCommand) {
                 return await this.commandRegistryExt.executeCommand(contribution.adapterExecutableCommand, []) as DebugAdapterExecutable;
             } else {
-                return resolveDebugAdapterExecutable(this.pluginFolder, contribution);
+                const contributionPath = this.contributionPaths.get(type);
+                if (contributionPath) {
+                    return resolveDebugAdapterExecutable(contributionPath, contribution);
+                }
             }
         }
 
