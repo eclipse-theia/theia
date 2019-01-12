@@ -3,7 +3,7 @@
 <div id="theia-logo" align="center">
     <br />
     <img src="./logo/theia-logo.svg" alt="Theia Logo" width="300"/>
-    <h3>Cloud & Desktop IDE Plaform</h3>
+    <h3>Cloud & Desktop IDE Platform</h3>
 </div>
 
 <div id="badges" align="center">
