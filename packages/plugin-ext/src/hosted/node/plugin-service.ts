@@ -26,7 +26,6 @@ import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
-
     @inject(ILogger)
     protected readonly logger: ILogger;
     @inject(HostedPluginsManager)
@@ -58,8 +57,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     setClient(client: HostedPluginClient): void {
         this.hostedPlugin.setClient(client);
     }
-    getHostedPlugin(): Promise<PluginMetadata | undefined> {
-        const pluginMetadata = this.reader.getPlugin();
+    async getHostedPlugin(): Promise<PluginMetadata | undefined> {
+        const pluginMetadata = await this.reader.getPlugin();
         if (pluginMetadata) {
             this.hostedPlugin.runPlugin(pluginMetadata.model);
         }
@@ -78,16 +77,14 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     // need to run a new node instance with plugin-host for all plugins
-    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
-        // get metadata
-        frontendPlugins.forEach(frontendPluginDeployerEntry => {
-            const pluginMetadata = this.reader.getPluginMetadata(frontendPluginDeployerEntry.path());
-            if (pluginMetadata) {
-                this.currentFrontendPluginsMetadata.push(pluginMetadata);
-                this.logger.info('HostedPluginServerImpl/ asking to deploy the frontend Plugin', frontendPluginDeployerEntry.path(), 'and model is', pluginMetadata.model);
+    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
+        for (const plugin of frontendPlugins) {
+            const metadata = await this.reader.getPluginMetadata(plugin.path());
+            if (metadata) {
+                this.currentFrontendPluginsMetadata.push(metadata);
+                this.logger.info(`Deploying frontend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.frontend || plugin.path()}"`);
             }
-        });
-        return Promise.resolve();
+        }
     }
 
     getDeployedBackendMetadata(): Promise<PluginMetadata[]> {
@@ -95,20 +92,17 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     // need to run a new node instance with plugin-host for all plugins
-    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
         if (backendPlugins.length > 0) {
             this.hostedPlugin.runPluginServer();
         }
-
-        // get metadata
-        backendPlugins.forEach(backendPluginDeployerEntry => {
-            const pluginMetadata = this.reader.getPluginMetadata(backendPluginDeployerEntry.path());
-            if (pluginMetadata) {
-                this.currentBackendPluginsMetadata.push(pluginMetadata);
-                this.logger.info('HostedPluginServerImpl/ asking to deploy the backend Plugin', backendPluginDeployerEntry.path(), 'and model is', pluginMetadata.model);
+        for (const plugin of backendPlugins) {
+            const metadata = await this.reader.getPluginMetadata(plugin.path());
+            if (metadata) {
+                this.currentBackendPluginsMetadata.push(metadata);
+                this.logger.info(`Deploying backend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.backend || plugin.path()}"`);
             }
-        });
-        return Promise.resolve();
+        }
     }
 
     onMessage(message: string): Promise<void> {

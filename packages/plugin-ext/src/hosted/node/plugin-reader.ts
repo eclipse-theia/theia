@@ -13,14 +13,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { inject, injectable, optional, multiInject } from 'inversify';
+
+ // tslint:disable:no-any
+
+import * as path from 'path';
+import * as fs from 'fs-extra';
 import * as express from 'express';
-import * as fs from 'fs';
-import { resolve } from 'path';
-import { MetadataScanner } from './metadata-scanner';
-import { PluginMetadata, PluginPackage, getPluginId, MetadataProcessor } from '../../common/plugin-protocol';
 import { ILogger } from '@theia/core';
+import { inject, injectable, optional, multiInject } from 'inversify';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { PluginMetadata, getPluginId, MetadataProcessor } from '../../common/plugin-protocol';
+import { MetadataScanner } from './metadata-scanner';
 
 @injectable()
 export class HostedPluginReader implements BackendApplicationContribution {
@@ -31,7 +35,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     @inject(MetadataScanner)
     private readonly scanner: MetadataScanner;
 
-    private plugin: PluginMetadata | undefined;
+    private readonly hostedPlugin = new Deferred<PluginMetadata | undefined>();
 
     @optional()
     @multiInject(MetadataProcessor) private readonly metadataProcessors: MetadataProcessor[];
@@ -42,15 +46,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
     private pluginsIdsFiles: Map<string, string> = new Map();
 
     initialize(): void {
-        if (process.env.HOSTED_PLUGIN) {
-            let pluginPath = process.env.HOSTED_PLUGIN;
-            if (pluginPath) {
-                if (!pluginPath.endsWith('/')) {
-                    pluginPath += '/';
-                }
-                this.plugin = this.getPluginMetadata(pluginPath);
-            }
-        }
+        this.doGetPluginMetadata(process.env.HOSTED_PLUGIN)
+            .then(this.hostedPlugin.resolve.bind(this.hostedPlugin));
     }
 
     configure(app: express.Application): void {
@@ -68,29 +65,46 @@ export class HostedPluginReader implements BackendApplicationContribution {
         });
     }
 
-    getPluginMetadata(path: string): PluginMetadata | undefined {
-        if (!path.endsWith('/')) {
-            path += '/';
+    async getPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
+        const plugin = await this.doGetPluginMetadata(pluginPath);
+        if (plugin) {
+            const hostedPlugin = await this.getPlugin();
+            if (hostedPlugin && hostedPlugin.model.name === plugin.model.name) {
+                // prefer hosted plugin
+                return undefined;
+            }
         }
-        const packageJsonPath = path + 'package.json';
-        if (!fs.existsSync(packageJsonPath)) {
+        return plugin;
+    }
+
+    /**
+     * MUST never throw to isolate plugin deployment
+     */
+    protected async doGetPluginMetadata(pluginPath: string | undefined) {
+        try {
+            if (!pluginPath) {
+                return undefined;
+            }
+            if (!pluginPath.endsWith('/')) {
+                pluginPath += '/';
+            }
+            return await this.loadPluginMetadata(pluginPath);
+        } catch (e) {
+            this.logger.error(`Failed to load plugin metadata from "${pluginPath}"`, e);
             return undefined;
         }
+    }
 
-        let rawData = fs.readFileSync(packageJsonPath).toString();
-        rawData = this.localize(rawData, path);
-
-        const plugin: PluginPackage = JSON.parse(rawData);
-        plugin.packagePath = path;
-        const pluginMetadata = this.scanner.getPluginMetadata(plugin);
-        if (this.plugin && this.plugin.model && this.plugin.model.name === pluginMetadata.model.name) {
-            // prefer hosted plugin
+    protected async loadPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
+        const manifest = await this.loadManifest(pluginPath);
+        if (!manifest) {
             return undefined;
         }
+        manifest.packagePath = pluginPath;
+        const pluginMetadata = this.scanner.getPluginMetadata(manifest);
         if (pluginMetadata.model.entryPoint.backend) {
-            pluginMetadata.model.entryPoint.backend = resolve(path, pluginMetadata.model.entryPoint.backend);
+            pluginMetadata.model.entryPoint.backend = path.resolve(pluginPath, pluginMetadata.model.entryPoint.backend);
         }
-
         if (pluginMetadata) {
             // Add post processor
             if (this.metadataProcessors) {
@@ -98,29 +112,61 @@ export class HostedPluginReader implements BackendApplicationContribution {
                     metadataProcessor.process(pluginMetadata);
                 });
             }
-            this.pluginsIdsFiles.set(getPluginId(pluginMetadata.model), path);
+            this.pluginsIdsFiles.set(getPluginId(pluginMetadata.model), pluginPath);
         }
-
         return pluginMetadata;
     }
 
-    private localize(rawData: string, pluginPath: string): string {
-        const nlsPath = pluginPath + 'package.nls.json';
-        if (fs.existsSync(nlsPath)) {
-            const nlsMap: {
-                [key: string]: string
-            } = require(nlsPath);
-            for (const key of Object.keys(nlsMap)) {
-                const value = nlsMap[key].replace(/\"/g, '\\"');
-                rawData = rawData.split('%' + key + '%').join(value);
+    async getPlugin(): Promise<PluginMetadata | undefined> {
+        return this.hostedPlugin.promise;
+    }
+
+    protected async loadManifest(pluginPath: string): Promise<any> {
+        const [manifest, translations] = await Promise.all([
+            fs.readJson(path.join(pluginPath, 'package.json')),
+            this.loadTranslations(pluginPath)
+        ]);
+        return manifest && translations && Object.keys(translations).length ?
+            this.localize(manifest, translations) :
+            manifest;
+    }
+
+    protected async loadTranslations(pluginPath: string): Promise<any> {
+        try {
+            return await fs.readJson(path.join(pluginPath, 'package.nls.json'));
+        } catch (e) {
+            if (e.code !== 'ENOENT') {
+                throw e;
             }
+            return {};
         }
-
-        return rawData;
     }
 
-    getPlugin(): PluginMetadata | undefined {
-        return this.plugin;
+    protected localize(value: any, translations: {
+        [key: string]: string
+    }): any {
+        if (typeof value === 'string') {
+            const match = HostedPluginReader.NLS_REGEX.exec(value);
+            return match && translations[match[1]] || value;
+        }
+        if (Array.isArray(value)) {
+            const result = [];
+            for (const item of value) {
+                result.push(this.localize(item, translations));
+            }
+            return result;
+        }
+        if (typeof value === 'object') {
+            const result: { [key: string]: any } = {};
+            // tslint:disable-next-line:forin
+            for (const propertyName in value) {
+                result[propertyName] = this.localize(value[propertyName], translations);
+            }
+            return result;
+        }
+        return value;
     }
+
+    static NLS_REGEX = /^%([\w\d.-]+)%$/i;
 
 }
