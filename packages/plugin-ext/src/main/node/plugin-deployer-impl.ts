@@ -130,7 +130,7 @@ export class PluginDeployerImpl implements PluginDeployer {
     /**
      * deploy all plugins that have been accepted
      */
-    public async deployPlugins(): Promise<any> {
+    async deployPlugins(): Promise<any> {
         const acceptedPlugins = this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted());
         const acceptedFrontendPlugins = this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.FRONTEND));
         const acceptedBackendPlugins = this.pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.BACKEND));
@@ -147,11 +147,11 @@ export class PluginDeployerImpl implements PluginDeployer {
         const pluginPaths = acceptedBackendPlugins.map(pluginEntry => pluginEntry.path());
         this.logger.debug('local path to deploy on remote instance', pluginPaths);
 
-        // start the backend plugins
-        this.hostedPluginServer.deployBackendPlugins(acceptedBackendPlugins);
-        this.hostedPluginServer.deployFrontendPlugins(acceptedFrontendPlugins);
-        return Promise.resolve();
-
+        await Promise.all([
+            // start the backend plugins
+            this.hostedPluginServer.deployBackendPlugins(acceptedBackendPlugins),
+            this.hostedPluginServer.deployFrontendPlugins(acceptedFrontendPlugins)
+        ]);
     }
 
     /**
