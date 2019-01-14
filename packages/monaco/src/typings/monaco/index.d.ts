@@ -421,6 +421,8 @@ declare module monaco.keybindings {
 
 declare module monaco.services {
 
+    export const ICodeEditorService: any;
+
     export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
         constructor(themeService: IStandaloneThemeService);
         abstract getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
@@ -496,7 +498,12 @@ declare module monaco.services {
 
     }
 
+    export interface ServiceCollection {
+        set<T>(id: any, instanceOrDescriptor: T): T;
+    }
+
     export module StaticServices {
+        export function init(overrides: monaco.editor.IEditorOverrideServices): [ServiceCollection, monaco.instantiation.IInstantiationService];
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
         export const modeService: LazyStaticService<IModeService>;
         export const codeEditorService: LazyStaticService<monaco.editor.ICodeEditorService>;
