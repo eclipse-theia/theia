@@ -26,10 +26,9 @@ import { MockMenuModelRegistry } from '@theia/core/lib/common/test/mock-menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { MenusContributionPointHandler } from './menus-contribution-handler';
-import { ContextKeyService } from '../context-key/context-key';
-import { MockContextKeyService } from '../context-key/mock-context-key-service';
 import 'mocha';
 import * as sinon from 'sinon';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 disableJSDOM();
 
@@ -53,7 +52,7 @@ before(() => {
         bind(MenuModelRegistry).toConstantValue(new MockMenuModelRegistry());
         bindContributionProvider(bind, CommandContribution);
         bind(CommandRegistry).toSelf().inSingletonScope();
-        bind(ContextKeyService).toConstantValue(new MockContextKeyService());
+        bind(ContextKeyService).toSelf().inSingletonScope();
         bind(MenusContributionPointHandler).toSelf();
     });
 

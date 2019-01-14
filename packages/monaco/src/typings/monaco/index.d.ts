@@ -68,6 +68,7 @@ declare module monaco.editor {
         contextMenuService?: IContextMenuService;
         commandService?: monaco.commands.ICommandService;
         IWorkspaceEditService?: IBulkEditService;
+        contextKeyService?: monaco.contextKeyService.IContextKeyService;
     }
 
     export interface IResourceInput {
@@ -325,6 +326,10 @@ declare module monaco.platform {
 
 declare module monaco.keybindings {
 
+    export class KeybindingResolver {
+        static contextMatchesRules(context: monaco.contextKeyService.IContext, rules: monaco.contextkey.ContextKeyExpr): boolean;
+    }
+
     export const enum KeybindingType {
         Simple = 1,
         Chord = 2
@@ -424,6 +429,8 @@ declare module monaco.services {
     export const ICodeEditorService: any;
     export const IConfigurationService: any;
 
+    export interface IConfigurationService { }
+
     export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
         constructor(themeService: IStandaloneThemeService);
         abstract getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
@@ -508,6 +515,7 @@ declare module monaco.services {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
         export const modeService: LazyStaticService<IModeService>;
         export const codeEditorService: LazyStaticService<monaco.editor.ICodeEditorService>;
+        export const configurationService: LazyStaticService<IConfigurationService>;
     }
 }
 
@@ -978,5 +986,33 @@ declare module monaco.snippetParser {
         parse(value: string): TextmateSnippet;
     }
     export class TextmateSnippet {
+    }
+}
+
+declare module monaco.contextKeyService {
+
+    export interface IContextKey<T> {
+        set(value: T | undefined): void;
+        reset(): void;
+        get(): T | undefined;
+    }
+
+    export interface IContextKeyService { }
+
+    export interface IContext { }
+
+    export class ContextKeyService implements IContextKeyService {
+        constructor(configurationService: monaco.services.IConfigurationService);
+        createScoped(target?: HTMLElement): IContextKeyService;
+        getContext(target?: HTMLElement): IContext;
+        createKey<T>(key: string, defaultValue: T | undefined): IContextKey<T>;
+        contextMatchesRules(rules: monaco.contextkey.ContextKeyExpr | undefined): boolean;
+    }
+
+}
+
+declare module monaco.contextkey {
+    export class ContextKeyExpr {
+        static deserialize(when: string): ContextKeyExpr;
     }
 }

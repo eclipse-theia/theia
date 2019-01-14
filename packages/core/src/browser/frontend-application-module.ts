@@ -67,6 +67,7 @@ import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory,
 import { bindCorePreferences } from './core-preferences';
 import { QuickPickServiceImpl } from './quick-open/quick-pick-service-impl';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
+import { ContextKeyService } from './context-key-service';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -134,6 +135,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
     bind(QuickOpenContribution).to(CommandQuickOpenContribution);
+
+    bind(ContextKeyService).toSelf().inSingletonScope();
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);

@@ -50,11 +50,17 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import { MonacoOutlineDecorator } from './monaco-outline-decorator';
 import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-decorator-service';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { MonacoContextKeyService } from './monaco-context-key-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
+decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(MonacoContextKeyService).toSelf().inSingletonScope();
+    rebind(ContextKeyService).toService(MonacoContextKeyService);
+
     bind(MonacoSnippetSuggestProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).to(MonacoFrontendApplicationContribution).inSingletonScope();
 
@@ -68,6 +74,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoWorkspace).toSelf().inSingletonScope();
     bind(Workspace).toService(MonacoWorkspace);
 
+    // TODO: https://github.com/theia-ide/theia/issues/4073
+    const configurationService = monaco.services.StaticServices.configurationService.get();
+    const contextKeyService = new monaco.contextKeyService.ContextKeyService(configurationService);
+    bind(monaco.contextKeyService.ContextKeyService).toConstantValue(contextKeyService);
     bind(MonacoBulkEditService).toSelf().inSingletonScope();
     bind(MonacoEditorService).toSelf().inSingletonScope();
     bind(MonacoTextModelService).toSelf().inSingletonScope();

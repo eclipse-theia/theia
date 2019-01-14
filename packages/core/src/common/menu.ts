@@ -24,6 +24,7 @@ export interface MenuAction {
     label?: string
     icon?: string
     order?: string
+    when?: string
 }
 
 export namespace MenuAction {

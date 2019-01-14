@@ -44,9 +44,8 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
                 },
                 // Always enabled - a command can be executed programmatically or via the commands palette.
                 isEnabled() { return true; },
-                // By default, a command isn't be visible in all menus but in the commands palette only.
                 // Visibility rules are defined via the `menus` contribution point.
-                isVisible() { return false; }
+                isVisible() { return true; }
             }));
     }
     $unregisterCommand(id: string): void {

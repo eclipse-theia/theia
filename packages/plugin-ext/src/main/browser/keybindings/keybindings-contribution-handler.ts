@@ -45,7 +45,7 @@ export class KeybindingsContributionPointHandler {
             }
         });
 
-        this.keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
+        this.keybindingRegistry.setKeymap(KeybindingScope.USER, contributions.keybindings);
     }
 
     private handlePartialKeybindings(keybinding: Keybinding, partialKeybindings: Keybinding[]) {

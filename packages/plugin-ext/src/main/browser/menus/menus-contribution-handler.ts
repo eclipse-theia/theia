@@ -21,8 +21,6 @@ import { MenuModelRegistry } from '@theia/core/lib/common';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
 import { PluginContribution, Menu } from '../../../common';
-import { ContextKeyService, ContextKeyExpr } from '../context-key/context-key';
-import { CommandHandler } from '@theia/core';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -35,9 +33,6 @@ export class MenusContributionPointHandler {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
 
     // menu location to command IDs
     protected readonly registeredMenus: Map<string, Set<string>> = new Map();
@@ -66,7 +61,6 @@ export class MenusContributionPointHandler {
                         this.registerMenuAction(menuPath, location, menu);
                     }
                 });
-                menus.filter(menu => menu.when).forEach(menu => this.registerCommandHandler(menu));
             }
         }
     }
@@ -93,7 +87,8 @@ export class MenusContributionPointHandler {
         setTimeout(() => {
             this.menuRegistry.registerMenuAction([...menuPath, group], {
                 commandId: menu.command,
-                order
+                order,
+                when: menu.when
             });
         }, 2000);
 
@@ -103,22 +98,5 @@ export class MenusContributionPointHandler {
         }
         commands.add(menu.command);
         this.registeredMenus.set(location, commands);
-    }
-
-    /** Register a handler for the command that should be called by the specified menu item. */
-    protected registerCommandHandler(menu: Menu): void {
-        this.commands.registerHandler(menu.command, this.newHandler(menu));
-    }
-
-    /**
-     * Creates a command handler that executes nothing but allows
-     * a related menu item be visible depending on the provided rules.
-     */
-    protected newHandler(menu: Menu): CommandHandler {
-        return {
-            execute: () => undefined,
-            isEnabled: () => false,
-            isVisible: () => this.contextKeyService.contextMatchesRules(ContextKeyExpr.deserialize(menu.when))
-        };
     }
 }

@@ -23,12 +23,16 @@ import {
 } from '../../common';
 import { KeybindingRegistry, Keybinding } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
+import { ContextKeyService } from '../context-key-service';
 
 @injectable()
 export class BrowserMainMenuFactory {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -86,12 +90,13 @@ export class BrowserMainMenuFactory {
             this.logger.warn(`Command with ID ${command.id} is already registered`);
             return;
         }
+        const { when } = menu.action;
         commands.addCommand(command.id, {
             execute: () => this.commandRegistry.executeCommand(command.id),
             label: menu.label,
             icon: menu.icon,
             isEnabled: () => this.commandRegistry.isEnabled(command.id),
-            isVisible: () => this.commandRegistry.isVisible(command.id),
+            isVisible: () => this.commandRegistry.isVisible(command.id) && (!when || this.contextKeyService.match(when)),
             isToggled: () => this.commandRegistry.isToggled(command.id)
         });
 
