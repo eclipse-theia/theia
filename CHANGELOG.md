@@ -5,6 +5,7 @@
 - [monaco] Fix document-saving that was taking too long.
 - [plug-in] added `tasks.onDidStartTask` Plug-in API
 - Enabled INI syntax highlighting for `.properties` and `.toml` files
+- [security] update xterm.js to 3.9.2
 
 ## v0.3.18
 - [core] added a preference to define how to handle application exit
