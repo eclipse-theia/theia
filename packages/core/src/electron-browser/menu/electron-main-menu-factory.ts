@@ -21,12 +21,16 @@ import {
     MAIN_MENU_BAR, MenuModelRegistry, MenuPath
 } from '../../common';
 import { PreferenceService, KeybindingRegistry, Keybinding, KeyCode, Key } from '../../browser';
+import { ContextKeyService } from '../../browser/context-key-service';
 
 @injectable()
 export class ElectronMainMenuFactory {
 
     protected _menu: Electron.Menu;
     protected _toggledCommands: Set<string> = new Set();
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -106,7 +110,8 @@ export class ElectronMainMenuFactory {
                     throw new Error(`Unknown command with ID: ${commandId}.`);
                 }
 
-                if (!this.commandRegistry.isVisible(commandId)) {
+                if (!this.commandRegistry.isVisible(commandId)
+                    || (!!menu.action.when && !this.contextKeyService.match(menu.action.when))) {
                     continue;
                 }
 

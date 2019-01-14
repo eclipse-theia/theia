@@ -30,6 +30,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { ContextKeyService } from './context-key-service';
 
 disableJSDOM();
 
@@ -72,6 +73,7 @@ before(async () => {
         bind(StatusBar).toService(StatusBarImpl);
         bind(CommandService).toService(CommandRegistry);
         bind(LabelParser).toSelf().inSingletonScope();
+        bind(ContextKeyService).toSelf().inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     });
 

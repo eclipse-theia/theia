@@ -57,7 +57,8 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
-        @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer
+        @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
+        @inject(monaco.contextKeyService.ContextKeyService) protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService
     ) {
         const init = monaco.services.StaticServices.init.bind(monaco.services.StaticServices);
         this.applicationServer.getBackendOS().then(os => {
@@ -108,6 +109,7 @@ export class MonacoEditorProvider {
 
     protected async doCreateEditor(factory: (override: IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>): Promise<MonacoEditor> {
         const commandService = this.commandServiceFactory();
+        const contextKeyService = this.contextKeyService.createScoped();
         const { codeEditorService, textModelService, contextMenuService } = this;
         const IWorkspaceEditService = this.bulkEditService;
         const toDispose = new DisposableCollection();
@@ -116,7 +118,8 @@ export class MonacoEditorProvider {
             textModelService,
             contextMenuService,
             commandService,
-            IWorkspaceEditService
+            IWorkspaceEditService,
+            contextKeyService
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 

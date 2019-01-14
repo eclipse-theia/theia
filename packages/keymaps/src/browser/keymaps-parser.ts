@@ -32,10 +32,13 @@ export const keymapsSchema = {
             },
             context: {
                 type: 'string'
+            },
+            when: {
+                type: 'string'
             }
         },
         required: ['command', 'keybinding'],
-        optional: ['context'],
+        optional: ['context', 'when'],
         additionalProperties: false
     }
 };

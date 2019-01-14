@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,39 +15,31 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Event } from '@theia/core/lib/common';
-import { ContextKeyService, ContextKey, ContextKeyChangeEvent, ContextKeyExpr, ContextKeyServiceTarget, Context } from './context-key';
+
+export interface ContextKey<T> {
+    set(value: T | undefined): void;
+    reset(): void;
+    get(): T | undefined;
+}
+export namespace ContextKey {
+    // tslint:disable-next-line:no-any
+    export const None: ContextKey<any> = Object.freeze({
+        set: () => { },
+        reset: () => { },
+        get: () => undefined
+    });
+}
 
 @injectable()
-export class MockContextKeyService implements ContextKeyService {
-
-    dispose(): void { }
-
-    onDidChangeContext: Event<ContextKeyChangeEvent>;
-
+export class ContextKeyService {
     createKey<T>(key: string, defaultValue: T | undefined): ContextKey<T> {
-        return {
-            get: () => undefined,
-            set(v: T) { },
-            reset() { }
-        };
+        return ContextKey.None;
     }
-
-    contextMatchesRules(rules: ContextKeyExpr | undefined): boolean {
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    match(expression: string, context?: HTMLElement): boolean {
         return true;
     }
 
-    getContextKeyValue<T>(key: string): T | undefined {
-        return undefined;
-    }
-
-    createScoped(target?: ContextKeyServiceTarget): ContextKeyService {
-        return this;
-    }
-
-    getContext(target: ContextKeyServiceTarget | null): Context {
-        return {
-            getValue: () => undefined
-        };
-    }
 }

@@ -464,7 +464,7 @@ export interface Menu {
 export interface Keybinding {
     keybinding: string;
     command: string;
-    context?: string;
+    when?: string;
 }
 
 /**
