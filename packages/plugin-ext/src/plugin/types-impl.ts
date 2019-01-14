@@ -1807,3 +1807,30 @@ export enum OperatingSystem {
     Linux = 'Linux',
     OSX = 'OSX'
 }
+
+export class CallHierarchyDefinition {
+    location: Location;
+    symbolName: string;
+    symbolKind: theia.SymbolKind;
+    containerName: string;
+    callers: CallHierarchyCaller[] | undefined;
+
+    protected constructor(location: Location, symbolName: string, symbolKind: theia.SymbolKind, containerName: string,
+            callers: CallHierarchyCaller[]) {
+        this.location = location;
+        this.symbolName = symbolName;
+        this.symbolKind = symbolKind;
+        this.containerName = containerName;
+        this.callers = callers;
+    }
+}
+
+export class CallHierarchyCaller {
+    callerDefinition: CallHierarchyDefinition;
+    references: Location[];
+
+    protected constructor(callerDefinition: CallHierarchyDefinition, references: Location[]) {
+        this.callerDefinition = callerDefinition;
+        this.references = references;
+    }
+}

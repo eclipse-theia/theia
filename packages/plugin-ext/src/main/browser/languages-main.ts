@@ -26,7 +26,7 @@ import {
     ResourceTextEditDto,
     ResourceFileEditDto,
 } from '../../api/plugin-api';
-import { interfaces } from 'inversify';
+import { inject, interfaces } from 'inversify';
 import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
@@ -37,9 +37,16 @@ import { DisposableCollection, Emitter } from '@theia/core';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import URI from 'vscode-uri/lib/umd';
 
+import { CallHierarchyService, Caller } from '@theia/callhierarchy/lib/browser';
+import { fromDefinition, toDefinition, toCaller, toUriComponents, fromLocation } from './callhierarchy/callhierarchy-type-converters';
+import { PluginCallHierarchyServiceProvider } from '../browser/callhierarchy/plugin-callhierarchy-service-provider';
+
 export class LanguagesMainImpl implements LanguagesMain {
 
     private ml: MonacoLanguages;
+
+    @inject(PluginCallHierarchyServiceProvider)
+    private readonly callHierarchyServiceContributionRegistry: PluginCallHierarchyServiceProvider;
 
     private readonly proxy: LanguagesExt;
     private readonly disposables = new Map<number, monaco.IDisposable>();
@@ -663,6 +670,45 @@ export class LanguagesMainImpl implements LanguagesMain {
                     return this.proxy.$resolveRenameLocation(handle, model.uri, position).then(v => v!);
                 }
                 : undefined
+        };
+    }
+
+    $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const disposable = new DisposableCollection();
+        for (const language of getLanguages()) {
+            if (this.matchLanguage(languageSelector, language)) {
+                const callHierarchyService = this.createCallHierarchyService(handle, language);
+                disposable.push(
+                    this.callHierarchyServiceContributionRegistry
+                        .registerCallHierarchyServiceContribution(callHierarchyService));
+            }
+        }
+        this.disposables.set(handle, disposable);
+    }
+
+    protected createCallHierarchyService(handle: number, language: string): CallHierarchyService {
+        return {
+            languageId: language,
+            getRootDefinition: location =>
+                this.proxy.$provideRootDefinition(handle, toUriComponents(location.uri), fromLocation(location))
+                    .then(def => toDefinition(def)),
+            getCallers: definition => this.proxy.$provideCallers(handle, fromDefinition(definition))
+                .then(result => {
+                     if (!result) {
+                        return undefined!;
+                    }
+
+                    if (Array.isArray(result)) {
+                        const callers: Caller[] = [];
+                        for (const item of result) {
+                            callers.push(toCaller(item));
+                        }
+                        return callers;
+                    }
+
+                    return undefined!;
+                })
         };
     }
 

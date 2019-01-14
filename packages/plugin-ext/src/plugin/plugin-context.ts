@@ -94,6 +94,8 @@ import {
     ColorInformation,
     ColorPresentation,
     OperatingSystem,
+    CallHierarchyDefinition,
+    CallHierarchyCaller
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -529,6 +531,9 @@ export function createAPIFactory(
             registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider): theia.Disposable {
                 return languagesExt.registerRenameProvider(selector, provider);
             },
+            registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
+                return languagesExt.registerCallHierarchyProvider(selector, provider);
+            }
         };
 
         const plugins: typeof theia.plugins = {
@@ -686,7 +691,9 @@ export function createAPIFactory(
             ColorPresentation,
             FoldingRange,
             FoldingRangeKind,
-            OperatingSystem
+            OperatingSystem,
+            CallHierarchyDefinition,
+            CallHierarchyCaller
         };
     };
 }

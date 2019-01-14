@@ -55,6 +55,8 @@ import {
     Location,
     ColorPresentation,
     RenameLocation,
+    CallHierarchyDefinition,
+    CallHierarchyCaller
 } from '../api/model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -78,6 +80,7 @@ import { SymbolInformation } from 'vscode-languageserver-types';
 import { FoldingProviderAdapter } from './languages/folding';
 import { ColorProviderAdapter } from './languages/color';
 import { RenameAdapter } from './languages/rename';
+import { CallHierarchyAdapter } from './languages/call-hierarchy';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -98,7 +101,8 @@ type Adapter = CompletionAdapter |
     WorkspaceSymbolAdapter |
     FoldingProviderAdapter |
     ColorProviderAdapter |
-    RenameAdapter;
+    RenameAdapter |
+    CallHierarchyAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -494,6 +498,22 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, RenameAdapter, adapter => adapter.resolveRenameLocation(URI.revive(resource), position));
     }
     // ### Rename Provider end
+
+    // ### Call Hierarchy Provider begin
+    registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new CallHierarchyAdapter(provider, this.documents));
+        this.proxy.$registerCallHierarchyProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideRootDefinition(handle: number, resource: UriComponents, location: Location): Promise<CallHierarchyDefinition | undefined> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location));
+    }
+
+    $provideCallers(handle: number, definition: CallHierarchyDefinition): Promise<CallHierarchyCaller[] | undefined> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition));
+    }
+    // ### Call Hierarchy Provider end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {

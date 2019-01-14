@@ -54,6 +54,8 @@ import {
     Breakpoint,
     ColorPresentation,
     RenameLocation,
+    CallHierarchyDefinition,
+    CallHierarchyCaller
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
@@ -872,6 +874,8 @@ export interface LanguagesExt {
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo): PromiseLike<ColorPresentation[]>;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string): PromiseLike<WorkspaceEditDto | undefined>;
     $resolveRenameLocation(handle: number, resource: UriComponents, position: Position): PromiseLike<RenameLocation | undefined>;
+    $provideRootDefinition(handle: number, resource: UriComponents, location: Location): Promise<CallHierarchyDefinition | undefined>;
+    $provideCallers(handle: number, definition: CallHierarchyDefinition): Promise<CallHierarchyCaller[] | undefined>;
 }
 
 export interface LanguagesMain {
@@ -900,6 +904,7 @@ export interface LanguagesMain {
     $registerFoldingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerRenameProvider(handle: number, selector: SerializedDocumentFilter[], supportsResoveInitialValues: boolean): void;
+    $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export interface WebviewPanelViewState {

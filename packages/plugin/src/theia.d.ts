@@ -6209,6 +6209,19 @@ declare module '@theia/plugin' {
         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
         */
         export function registerRenameProvider(selector: DocumentSelector, provider: RenameProvider): Disposable;
+
+        /**
+         * Register a call hierarchy provider.
+         *
+         * Multiple provider can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param service A call hierarchy provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerCallHierarchyProvider(selector: DocumentSelector, provider: CallHierarchyProvider): Disposable;
     }
 
     /**
@@ -7133,5 +7146,42 @@ declare module '@theia/plugin' {
          * the given `symbol` is used.
          */
         resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken | undefined): ProviderResult<SymbolInformation>;
+    }
+
+    export interface CallHierarchyDefinition {
+        location: Location;
+        symbolName: string;
+        symbolKind: SymbolKind;
+        containerName: string;
+        callers: CallHierarchyCaller[] | undefined;
+    }
+
+    export interface CallHierarchyCaller {
+        callerDefinition: CallHierarchyDefinition;
+        references: Location[];
+    }
+
+    export interface CallHierarchyProvider {
+
+        /**
+         * Provide the root definition of the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param location The location at which the command was invoked.
+         * @param token A cancellation token.
+         * @return A definition or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideRootDefinition(document: TextDocument, location: Location, token: CancellationToken | undefined): ProviderResult<CallHierarchyDefinition | undefined>;
+
+        /**
+         * Provide the root definition of the symbol at the given position and document.
+         *
+         * @param definition A call hyerarcy definition
+         * @param token A cancellation token.
+         * @return A definition or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+         provideCallers(definition: CallHierarchyDefinition, token?: CancellationToken): ProviderResult<CallHierarchyCaller[] | undefined>;
     }
 }

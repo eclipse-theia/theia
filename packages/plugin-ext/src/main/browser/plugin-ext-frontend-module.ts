@@ -56,6 +56,8 @@ import { DebugSessionContributionRegistry } from '@theia/debug/lib/browser/debug
 import { PluginDebugSessionContributionRegistry } from './debug/plugin-debug-session-contribution-registry';
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugService } from '@theia/debug/lib/common/debug-service';
+import { CallHierarchyServiceProvider } from '@theia/callhierarchy/lib/browser';
+import { PluginCallHierarchyServiceProvider } from './callhierarchy/plugin-callhierarchy-service-provider';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -131,4 +133,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(DebugService).toService(PluginDebugService);
     bind(PluginDebugSessionContributionRegistry).toSelf().inSingletonScope();
     rebind(DebugSessionContributionRegistry).toService(PluginDebugSessionContributionRegistry);
+
+    bind(PluginCallHierarchyServiceProvider).toSelf().inSingletonScope();
+    rebind(CallHierarchyServiceProvider).toService(PluginCallHierarchyServiceProvider);
 });
