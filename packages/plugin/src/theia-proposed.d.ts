@@ -65,6 +65,31 @@ declare module '@theia/plugin' {
         workspaceContains?: string[];
     }
 
+
+    export namespace commands {
+
+        /**
+        * Get the keybindings associated to commandId.
+        * @param commandId The ID of the command for which we are looking for keybindings.
+        */
+        export function getKeyBinding(commandId: string): PromiseLike<CommandKeyBinding[] | undefined>;
+
+    }
+
+    /**
+     * Key Binding of a command
+     */
+    export interface CommandKeyBinding {
+        /**
+         * Identifier of the command.
+         */
+        id: string;
+        /**
+         * Value of the keyBinding
+         */
+        value: string;
+    }
+
     /**
      * Enumeration of the supported operating systems.
      */

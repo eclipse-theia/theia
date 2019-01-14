@@ -95,6 +95,10 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
+    getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
+        return this.proxy.$getKeyBinding(commandId);
+    }
+
     // tslint:disable-next-line:no-any
     private executeLocalCommand<T>(id: string, args: any[]): PromiseLike<T> {
         const handler = this.commands.get(id);

@@ -154,6 +154,7 @@ export interface CommandRegistryMain {
     $unregisterCommand(id: string): void;
     $executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined>;
     $getCommands(): PromiseLike<string[]>;
+    $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined>;
 }
 
 export interface CommandRegistryExt {
