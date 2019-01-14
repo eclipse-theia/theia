@@ -20,14 +20,18 @@ import * as theia from '@theia/plugin';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
+import { KeybindingRegistry } from '@theia/core/lib/browser';
 
 export class CommandRegistryMainImpl implements CommandRegistryMain {
     private proxy: CommandRegistryExt;
     private disposables = new Map<string, Disposable>();
     private delegate: CommandRegistry;
+    private keyBinding: KeybindingRegistry;
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT);
         this.delegate = container.get(CommandRegistry);
+        this.keyBinding = container.get(KeybindingRegistry);
     }
 
     $registerCommand(command: theia.Command): void {
@@ -60,6 +64,22 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
             return Promise.reject(e);
         }
     }
+
+    $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
+        try {
+            const keyBindings = this.keyBinding.getKeybindingsForCommand(commandId);
+            if (keyBindings) {
+                // transform inner type to CommandKeyBinding
+                return Promise.resolve(keyBindings.map(keyBinding => ({ id: commandId, value: keyBinding.keybinding })));
+            } else {
+                return Promise.resolve(undefined);
+            }
+
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
     $getCommands(): PromiseLike<string[]> {
         throw new Error('Method not implemented.');
     }
