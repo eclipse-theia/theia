@@ -52,7 +52,14 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory
-    ) { }
+    ) {
+        const init = monaco.services.StaticServices.init.bind(monaco.services.StaticServices);
+        monaco.services.StaticServices.init = o => {
+            const result = init(o);
+            result[0].set(monaco.services.ICodeEditorService, codeEditorService);
+            return result;
+        };
+    }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
         const reference = await this.textModelService.createModelReference(uri);
