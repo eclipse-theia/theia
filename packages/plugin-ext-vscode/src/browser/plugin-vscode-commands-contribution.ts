@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core';
 import { CommandService } from '@theia/core/lib/common/command';
-import theiaURI from '@theia/core/lib/common/uri';
+import TheiaURI from '@theia/core/lib/common/uri';
 import URI from 'vscode-uri';
 
 export namespace VscodeCommands {
@@ -36,7 +36,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
             execute: (resource: URI) => {
-                this.commandService.executeCommand('theia.open', new theiaURI(resource));
+                this.commandService.executeCommand('theia.open', new TheiaURI(resource));
             }
         });
     }

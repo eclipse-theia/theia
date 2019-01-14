@@ -24,6 +24,8 @@
 
 import { Event } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import VSCodeURI from 'vscode-uri';
+import URI from '@theia/core/lib/common/uri';
 
 export interface MessageConnection {
     send(msg: {}): void;
@@ -122,7 +124,7 @@ export class RPCProtocolImpl implements RPCProtocol {
             return;
         }
 
-        const msg = <RPCMessage>JSON.parse(rawmsg);
+        const msg = <RPCMessage>JSON.parse(rawmsg, ObjectsTransferrer.reviver);
 
         // handle message that sets the Host ID
         if ((<any>msg).setHostID) {
@@ -275,7 +277,7 @@ class MessageFactory {
         if (messageToSendHostId) {
             prefix = `"hostID":"${messageToSendHostId}",`;
         }
-        return `{${prefix}"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args)}}`;
+        return `{${prefix}"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args, ObjectsTransferrer.replacer)}}`;
     }
 
     public static replyOK(req: string, res: any, messageToSendHostId?: string): string {
@@ -299,6 +301,68 @@ class MessageFactory {
         }
         return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
     }
+}
+
+/**
+ * These functions are responsible for correct transferring objects via rpc channel.
+ *
+ * To reach that some specific kind of objects is converteed to json in some custom way
+ * and then, after receiving, revived to objects again,
+ * so there is feeling that object was transferred via rpc channel.
+ *
+ * To distinguish between regular and altered objects, field $type is added to altered ones.
+ * Also value of that field specifies kind of the object.
+ */
+namespace ObjectsTransferrer {
+
+    // tslint:disable-next-line:no-any
+    export function replacer(key: string | undefined, value: any): any {
+        if (value instanceof URI) {
+            return {
+                $type: SerializedObjectType.THEIA_URI,
+                data: value.toString()
+            } as SerializedObject;
+        } else if (value && value['$mid'] === 1) {
+            // Given value is VSCode URI
+            // We cannot use instanceof here because VSCode URI has toJSON method which is invoked before this replacer.
+            const uri = VSCodeURI.revive(value);
+            return {
+                $type: SerializedObjectType.VSCODE_URI,
+                data: uri.toString()
+            } as SerializedObject;
+        }
+
+        return value;
+    }
+
+    // tslint:disable-next-line:no-any
+    export function reviver(key: string | undefined, value: any): any {
+        if (isSerializedObject(value)) {
+            switch (value.$type) {
+                case SerializedObjectType.THEIA_URI:
+                    return new URI(value.data);
+                case SerializedObjectType.VSCODE_URI:
+                    return VSCodeURI.parse(value.data);
+            }
+        }
+
+        return value;
+    }
+
+}
+
+interface SerializedObject {
+    $type: SerializedObjectType;
+    data: string;
+}
+
+enum SerializedObjectType {
+    THEIA_URI,
+    VSCODE_URI
+}
+
+function isSerializedObject(obj: any): obj is SerializedObject {
+    return obj && obj.$type !== undefined && obj.data !== undefined;
 }
 
 const enum MessageType {
