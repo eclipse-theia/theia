@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
+import { parse, ParsedPattern, IRelativePattern } from '@theia/languages/lib/common/language-selector';
 import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange, FileMoveEvent, FileWillMoveEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceExt } from '../../common/plugin-api-rpc';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
-import { parse, ParsedPattern, IRelativePattern } from '../../common/glob';
 import { RelativePattern } from '../../plugin/types-impl';
 import { theiaUritoUriComponents } from '../../common/uri-components';
 

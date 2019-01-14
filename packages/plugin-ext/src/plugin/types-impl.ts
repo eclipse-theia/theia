@@ -27,7 +27,7 @@ import * as theia from '@theia/plugin';
 import * as crypto from 'crypto';
 import URI from 'vscode-uri';
 import { relative } from '../common/paths-util';
-import { startsWithIgnoreCase } from '../common/strings';
+import { startsWithIgnoreCase } from '@theia/languages/lib/common/language-selector/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 
@@ -2010,4 +2010,42 @@ export enum WebviewPanelTargetArea {
     Left = 'left',
     Right = 'right',
     Bottom = 'bottom'
+}
+export class CallHierarchyItem {
+    kind: SymbolKind;
+    name: string;
+    detail?: string;
+    uri: URI;
+    range: Range;
+    selectionRange: Range;
+
+    constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
+        this.kind = kind;
+        this.name = name;
+        this.detail = detail;
+        this.uri = uri;
+        this.range = range;
+        this.selectionRange = selectionRange;
+    }
+}
+
+export class CallHierarchyIncomingCall {
+
+    from: theia.CallHierarchyItem;
+    fromRanges: theia.Range[];
+
+    constructor(item: theia.CallHierarchyItem, fromRanges: theia.Range[]) {
+        this.fromRanges = fromRanges;
+        this.from = item;
+    }
+}
+export class CallHierarchyOutgoingCall {
+
+    to: theia.CallHierarchyItem;
+    fromRanges: theia.Range[];
+
+    constructor(item: theia.CallHierarchyItem, fromRanges: theia.Range[]) {
+        this.fromRanges = fromRanges;
+        this.to = item;
+    }
 }

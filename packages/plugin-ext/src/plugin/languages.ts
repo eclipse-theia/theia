@@ -34,7 +34,6 @@ import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
 import { Disposable } from './types-impl';
 import URI from 'vscode-uri/lib/umd';
-import { match as matchGlobPattern } from '../common/glob';
 import { UriComponents } from '../common/uri-components';
 import {
     CompletionContext,
@@ -60,6 +59,8 @@ import {
     CodeActionContext,
     CodeAction,
     FoldingRange,
+    CallHierarchyDefinition,
+    CallHierarchyReference
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -85,6 +86,7 @@ import { RenameAdapter } from './languages/rename';
 import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
 import { DeclarationAdapter } from './languages/declaration';
+import { CallHierarchyAdapter } from './languages/call-hierarchy';
 
 /* eslint-disable @typescript-eslint/indent */
 type Adapter = CompletionAdapter |
@@ -107,7 +109,8 @@ type Adapter = CompletionAdapter |
     WorkspaceSymbolAdapter |
     FoldingProviderAdapter |
     ColorProviderAdapter |
-    RenameAdapter;
+    RenameAdapter |
+    CallHierarchyAdapter;
 /* eslint-enable @typescript-eslint/indent */
 
 export class LanguagesExtImpl implements LanguagesExt {
@@ -546,6 +549,22 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, RenameAdapter, adapter => adapter.resolveRenameLocation(URI.revive(resource), position, token));
     }
     // ### Rename Provider end
+
+    // ### Call Hierarchy Provider begin
+    registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new CallHierarchyAdapter(provider, this.documents));
+        this.proxy.$registerCallHierarchyProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken): Promise<CallHierarchyDefinition | undefined> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location, token));
+    }
+
+    $provideCallers(handle: number, definition: CallHierarchyDefinition, token: theia.CancellationToken): Promise<CallHierarchyReference[] | undefined> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition, token));
+    }
+    // ### Call Hierarchy Provider end
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {
@@ -583,90 +602,4 @@ function serializeIndentation(indentationRules?: theia.IndentationRule): Seriali
         indentNextLinePattern: serializeRegExp(indentationRules.indentNextLinePattern),
         unIndentedLinePattern: serializeRegExp(indentationRules.unIndentedLinePattern)
     };
-}
-
-export interface RelativePattern {
-    base: string;
-    pattern: string;
-    pathToRelative(from: string, to: string): string;
-}
-export interface LanguageFilter {
-    language?: string;
-    scheme?: string;
-    pattern?: string | RelativePattern;
-    hasAccessToAllModels?: boolean;
-}
-export type LanguageSelector = string | LanguageFilter | (string | LanguageFilter)[];
-
-export function score(selector: LanguageSelector | undefined, candidateUri: URI, candidateLanguage: string, candidateIsSynchronized: boolean): number {
-
-    if (Array.isArray(selector)) {
-        let ret = 0;
-        for (const filter of selector) {
-            const value = score(filter, candidateUri, candidateLanguage, candidateIsSynchronized);
-            if (value === 10) {
-                return value;
-            }
-            if (value > ret) {
-                ret = value;
-            }
-        }
-        return ret;
-
-    } else if (typeof selector === 'string') {
-
-        if (!candidateIsSynchronized) {
-            return 0;
-        }
-
-        if (selector === '*') {
-            return 5;
-        } else if (selector === candidateLanguage) {
-            return 10;
-        } else {
-            return 0;
-        }
-
-    } else if (selector) {
-        const { language, pattern, scheme, hasAccessToAllModels } = selector;
-
-        if (!candidateIsSynchronized && !hasAccessToAllModels) {
-            return 0;
-        }
-
-        let result = 0;
-
-        if (scheme) {
-            if (scheme === candidateUri.scheme) {
-                result = 10;
-            } else if (scheme === '*') {
-                result = 5;
-            } else {
-                return 0;
-            }
-        }
-
-        if (language) {
-            if (language === candidateLanguage) {
-                result = 10;
-            } else if (language === '*') {
-                result = Math.max(result, 5);
-            } else {
-                return 0;
-            }
-        }
-
-        if (pattern) {
-            if (pattern === candidateUri.fsPath || matchGlobPattern(pattern, candidateUri.fsPath)) {
-                result = 10;
-            } else {
-                return 0;
-            }
-        }
-
-        return result;
-
-    } else {
-        return 0;
-    }
 }

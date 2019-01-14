@@ -15,9 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { LanguageSelector } from '@theia/languages/lib/common/language-selector';
 import { LanguageClientProvider } from '@theia/languages/lib/browser/language-client-provider';
 import {
-    SymbolInformation, Location, Position, Range, SymbolKind, DocumentSymbol
+    SymbolInformation, Location, Position, Range, SymbolKind, DocumentSymbol, DocumentUri
 } from 'monaco-languageclient/lib/services';
 import * as utils from './utils';
 import { Definition, Caller } from './callhierarchy';
@@ -30,19 +31,22 @@ export type ExtendedDocumentSymbol = DocumentSymbol & Location & { containerName
 
 @injectable()
 export abstract class AbstractDefaultCallHierarchyService implements CallHierarchyService {
-
     @inject(LanguageClientProvider) readonly languageClientProvider: LanguageClientProvider;
     @inject(ILogger) readonly logger: ILogger;
     @inject(MonacoTextModelService) readonly textModelService: MonacoTextModelService;
 
     abstract get languageId(): string;
 
+    get selector(): LanguageSelector {
+        return this.languageId;
+    }
+
     /**
      * Returns root definition of caller hierarchy.
      */
-    public async getRootDefinition(location: Location): Promise<Definition | undefined> {
+    public async getRootDefinition(uri: DocumentUri, position: Position): Promise<Definition | undefined> {
         return this.withContext(async services => {
-            const definitionLocation = await services.getDefinitionLocation(location);
+            const definitionLocation = await services.getDefinitionLocation(uri, position);
             if (!definitionLocation) {
                 return undefined;
             }
@@ -119,8 +123,8 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
         return result;
     }
 
-    protected toCaller(callerDefinition: Definition, references: Location[]): Caller {
-        return <Caller>{ callerDefinition, references };
+    protected toCaller(def: Definition, references: Location[]): Caller {
+        return <Caller>{ callerDefinition: def, references: references.map(ref => ref.range) };
     }
 
     protected async toDefinition(symbol: ExtendedDocumentSymbol | SymbolInformation, context: CallHierarchyContext): Promise<Definition | undefined> {
@@ -131,9 +135,9 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
         const symbolName = symbol.name;
         const symbolKind = symbol.kind;
         const containerName = symbol.containerName;
-        return <Definition>{ location, symbolName, symbolKind, containerName };
+        const selectionRange = location.range;
+        return { location, selectionRange, symbolName, symbolKind, containerName };
     }
-
     /**
      * Override this to configure the callables of your language.
      */
