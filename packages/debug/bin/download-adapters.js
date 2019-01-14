@@ -19,10 +19,31 @@ const request = require('request');
 const unzip = require('unzip-stream');
 const path = require('path');
 const process = require('process');
+const zlib = require('zlib');
+const mkdirp = require('mkdirp');
+const tar = require('tar');
 
 const pck = require(path.resolve(process.cwd(), 'package.json'));
+const adapterDir = pck.adapterDir || 'download';
+let requestOptions = pck.requestOptions || {};
+
 for (const name in pck.adapters) {
-    const url = pck.adapters[name];
-    const targetPath = path.join(process.cwd(), '/download', name);
-    request(url).pipe(unzip.Extract({ path: targetPath }));
+    const targetPath = path.join(process.cwd(), adapterDir, name);
+    requestOptions.url = pck.adapters[name];
+
+    if (requestOptions.url.endsWith('gz')) {
+        // Support tar gz
+        mkdirp(targetPath);
+        const gunzip = zlib.createGunzip({
+            finishFlush: zlib.Z_SYNC_FLUSH,
+            flush: zlib.Z_SYNC_FLUSH
+        });
+        const untar = tar.x({
+            cwd: targetPath
+        });
+        request(requestOptions).pipe(gunzip).pipe(untar);
+    } else {
+        // Support zip or vsix
+        request(requestOptions).pipe(unzip.Extract({ path: targetPath }));
+    }
 }
