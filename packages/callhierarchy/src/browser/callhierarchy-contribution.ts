@@ -22,6 +22,7 @@ import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree
 import { CALLHIERARCHY_ID } from './callhierarchy';
 import { CurrentEditorAccess } from './current-editor-access';
 import { CallHierarchyServiceProvider } from './callhierarchy-service';
+import URI from '@theia/core/lib/common/uri';
 
 export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierachy:toggle';
 export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
@@ -53,7 +54,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
     protected isCallHierarchyAvailable(): boolean {
         const selection = this.editorAccess.getSelection();
         const languageId = this.editorAccess.getLanguageId();
-        return !!selection && !!languageId && !!this.callHierarchyServiceProvider.get(languageId);
+        return !!selection && !!languageId && !!this.callHierarchyServiceProvider.get(languageId, new URI(selection.uri));
     }
 
     async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {

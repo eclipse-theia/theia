@@ -111,7 +111,10 @@ import {
     FileSystemError,
     CommentThreadCollapsibleState,
     QuickInputButtons,
-    CommentMode
+    CommentMode,
+    CallHierarchyItem,
+    CallHierarchyIncomingCall,
+    CallHierarchyOutgoingCall
 } from './types-impl';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -122,11 +125,12 @@ import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExtImpl } from './output-channel-registry';
 import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
-import { LanguagesExtImpl, score } from './languages';
+import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { score } from '@theia/languages/lib/common/language-selector';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
 import { LanguagesContributionExtImpl } from './languages-contribution-ext';
@@ -527,7 +531,7 @@ export function createAPIFactory(
                 return languagesExt.changeLanguage(document.uri, languageId);
             },
             match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
-                return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
+                return score(fromDocumentSelector(selector), document.uri.scheme, document.uri.path, document.languageId, true);
             },
             get onDidChangeDiagnostics(): theia.Event<theia.DiagnosticChangeEvent> {
                 return languagesExt.onDidChangeDiagnostics;
@@ -619,6 +623,9 @@ export function createAPIFactory(
             registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider): theia.Disposable {
                 return languagesExt.registerRenameProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
+                return languagesExt.registerCallHierarchyProvider(selector, provider);
+            }
         };
 
         const plugins: typeof theia.plugins = {
@@ -847,7 +854,10 @@ export function createAPIFactory(
             FileSystemError,
             CommentThreadCollapsibleState,
             QuickInputButtons,
-            CommentMode
+            CommentMode,
+            CallHierarchyItem,
+            CallHierarchyIncomingCall,
+            CallHierarchyOutgoingCall
         };
     };
 }

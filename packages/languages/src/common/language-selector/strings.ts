@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// copied from https://github.com/Microsoft/vscode/blob/bf7ac9201e7a7d01741d4e6e64b5dc9f3197d97b/src/vs/base/common/strings.ts
+// based on https://github.com/Microsoft/vscode/blob/bf7ac9201e7a7d01741d4e6e64b5dc9f3197d97b/src/vs/base/common/strings.ts
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -103,4 +103,25 @@ export function startsWithIgnoreCase(str: string, candidate: string): boolean {
     }
 
     return doEqualsIgnoreCase(str, candidate, candidateLength);
+}
+
+export function* split(s: string, splitter: string): IterableIterator<string> {
+    let start = 0;
+    while (start < s.length) {
+        let end = s.indexOf(splitter, start);
+        if (end === -1) {
+            end = s.length;
+        }
+
+        yield s.substring(start, end);
+        start = end + splitter.length;
+    }
+}
+
+export function escapeInvisibleChars(value: string): string {
+    return value.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+}
+
+export function unescapeInvisibleChars(value: string): string {
+    return value.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
 }

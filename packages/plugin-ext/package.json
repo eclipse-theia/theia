@@ -6,6 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.14.0",
+    "@theia/callhierarchy": "^0.14.0",
     "@theia/debug": "^0.14.0",
     "@theia/editor": "^0.14.0",
     "@theia/file-search": "^0.14.0",

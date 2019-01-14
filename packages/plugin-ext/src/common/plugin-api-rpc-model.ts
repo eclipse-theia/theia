@@ -505,3 +505,17 @@ export interface RenameProvider {
     provideRenameEdits(model: monaco.editor.ITextModel, position: Position, newName: string): PromiseLike<WorkspaceEdit & Rejection>;
     resolveRenameLocation?(model: monaco.editor.ITextModel, position: Position): PromiseLike<RenameLocation & Rejection>;
 }
+
+export interface CallHierarchyDefinition {
+    name: string;
+    kind: SymbolKind;
+    detail?: string;
+    uri: UriComponents;
+    range: Range;
+    selectionRange: Range;
+}
+
+export interface CallHierarchyReference {
+    callerDefinition: CallHierarchyDefinition,
+    references: Range[]
+}

@@ -21,6 +21,7 @@ import { Definition, Caller } from '../callhierarchy';
 import { CallHierarchyService } from '../callhierarchy-service';
 
 import { Md5 } from 'ts-md5/dist/md5';
+import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 
 @injectable()
 export class CallHierarchyTree extends TreeImpl {
@@ -49,7 +50,8 @@ export class CallHierarchyTree extends TreeImpl {
             definition = parent.caller.callerDefinition;
         }
         if (definition) {
-            const callers = await this.callHierarchyService.getCallers(definition);
+            const cancellationSource = new CancellationTokenSource();
+            const callers = await this.callHierarchyService.getCallers(definition, cancellationSource.token);
             if (!callers) {
                 return Promise.resolve([]);
             }

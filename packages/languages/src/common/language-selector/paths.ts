@@ -20,9 +20,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 /* eslint-disable no-void */
+/* eslint-disable no-null/no-null */
 'use strict';
-import { startsWithIgnoreCase } from './strings';
 import { isWindows } from '@theia/core/lib/common/os';
+import { startsWithIgnoreCase } from './strings';
 import { CharCode } from './char-code';
 
 /**

@@ -14,6 +14,10 @@ Breaking changes:
       - `theiaPluginDir`: to specify the folder in which to download plugins, in respect to your `package.json`
       - `theiaPlugins`: to specify the list of plugins in the form of `"id": "url"`
 - [core] renamed method `registerComositionEventListeners()` to `registerCompositionEventListeners()` [#6961](https://github.com/eclipse-theia/theia/pull/6961)
+- [callhierarchy] changed CallHierarchyService to align with VS Code API: 
+  - Use LanaguageSelector instead of language id
+  - Use position instead of range for lookup of root symbol
+  - Changed data structures to be like VS Code API
 - [core] removed `virtual-renderer`. `react-renderer` should be used instead [#6885](https://github.com/eclipse-theia/theia/pull/6885)
 - [core] removed `virtual-widget`. `react-widget` should be used instead [#6885](https://github.com/eclipse-theia/theia/pull/6885)
 - [task] renamed method `getStrigifiedTaskSchema()` has been renamed to `getStringifiedTaskSchema()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)

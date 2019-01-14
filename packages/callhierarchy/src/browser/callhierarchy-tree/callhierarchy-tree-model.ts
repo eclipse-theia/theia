@@ -18,10 +18,14 @@ import { injectable, inject } from 'inversify';
 import { TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
 import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
 import { CallHierarchyServiceProvider } from '../callhierarchy-service';
-import { Location } from 'vscode-languageserver-types';
+import { Position } from 'vscode-languageserver-types';
+import URI from '@theia/core/lib/common/uri';
+import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 
 @injectable()
 export class CallHierarchyTreeModel extends TreeModelImpl {
+
+    private _languageId: string | undefined;
 
     @inject(CallHierarchyTree) protected readonly tree: CallHierarchyTree;
     @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider: CallHierarchyServiceProvider;
@@ -30,14 +34,20 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
         return this.tree;
     }
 
-    async initializeCallHierarchy(languageId: string | undefined, location: Location | undefined): Promise<void> {
+    get languageId(): string | undefined {
+        return this._languageId;
+    }
+
+    async initializeCallHierarchy(languageId: string | undefined, uri: string | undefined, position: Position | undefined): Promise<void> {
         this.tree.root = undefined;
         this.tree.callHierarchyService = undefined;
-        if (languageId && location) {
-            const callHierarchyService = this.callHierarchyServiceProvider.get(languageId);
+        this._languageId = languageId;
+        if (languageId && uri && position) {
+            const callHierarchyService = this.callHierarchyServiceProvider.get(languageId, new URI(uri));
             if (callHierarchyService) {
                 this.tree.callHierarchyService = callHierarchyService;
-                const rootDefinition = await callHierarchyService.getRootDefinition(location);
+                const cancellationSource = new CancellationTokenSource();
+                const rootDefinition = await callHierarchyService.getRootDefinition(uri, position, cancellationSource.token);
                 if (rootDefinition) {
                     const rootNode = DefinitionNode.create(rootDefinition, undefined);
                     this.tree.root = rootNode;
