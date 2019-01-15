@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplicationContribution } from './frontend-application';
@@ -28,6 +28,8 @@ import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
+import { ContextKeyService } from './context-key-service';
+import { OS } from '../common/os';
 
 export namespace CommonMenus {
 
@@ -197,6 +199,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
     ) { }
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    @postConstruct()
+    protected init(): void {
+        this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
+        this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
+        this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
+    }
 
     registerMenus(registry: MenuModelRegistry): void {
         registry.registerSubmenu(CommonMenus.FILE, 'File');
