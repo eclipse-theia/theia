@@ -521,16 +521,24 @@ export class DebugSession implements CompositeTreeElement {
                 });
                 response.body.breakpoints.map((raw, index) => enabled[index].update({ raw }));
             } catch (error) {
-                // handle adapters that send unsuccessful messages with error body for invalid breakpoints
-                enabled.forEach((brkPoint: DebugBreakpoint) => {
-                    const debugBreakpointData: Partial<DebugBreakpointData> = {
-                        raw: {
-                            verified: false,
-                            message: 'Breakpoint not valid for current debug session'
-                        }
-                    };
-                    brkPoint.update(debugBreakpointData);
-                });
+                // could be error or promise rejection of DebugProtocol.SetBreakpointsResponse
+                if (error instanceof Error) {
+                    console.error(`Error setting breakpoints: ${error.message}`);
+                } else {
+                    // handle adapters that send failed DebugProtocol.SetBreakpointsResponse for invalid breakpoints
+                    const genericMessage: string = 'Breakpoint not valid for current debug session';
+                    const message: string = error.message ? `${error.message}` : genericMessage;
+                    console.warn(`Could not handle breakpoints for ${affectedUri}: ${message}, disabling...`);
+                    enabled.forEach((brkPoint: DebugBreakpoint) => {
+                        const debugBreakpointData: Partial<DebugBreakpointData> = {
+                            raw: {
+                                verified: false,
+                                message
+                            }
+                        };
+                        brkPoint.update(debugBreakpointData);
+                    });
+                }
             } finally {
                 this.setBreakpoints(affectedUri, all);
             }
