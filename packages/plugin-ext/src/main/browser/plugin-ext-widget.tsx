@@ -22,10 +22,13 @@ import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
+import { PluginDeployNotificationService } from './plugin-ext-deploy-command';
+import { Disposable } from '@theia/core';
 
 @injectable()
 export class PluginWidget extends ReactWidget {
 
+    private disposableListener: Disposable;
     protected plugins: PluginMetadata[] = [];
     protected readonly toDisposeOnFetch = new DisposableCollection();
     protected readonly toDisposeOnSearch = new DisposableCollection();
@@ -33,7 +36,8 @@ export class PluginWidget extends ReactWidget {
 
     constructor(
         @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(PluginDeployNotificationService) protected readonly notificationService: PluginDeployNotificationService
     ) {
         super();
         this.id = 'plugins';
@@ -41,9 +45,13 @@ export class PluginWidget extends ReactWidget {
         this.title.caption = 'Plugins';
         this.title.iconClass = 'fa plugins-tab-icon';
         this.addClass('theia-plugins');
-
+        this.node.tabIndex = 0;
         this.update();
         this.fetchPlugins();
+
+        this.disposableListener = this.notificationService.event(() => {
+            this.refreshPlugins();
+        });
     }
 
     protected onActivateRequest(msg: Message) {
@@ -54,6 +62,10 @@ export class PluginWidget extends ReactWidget {
 
     public refreshPlugins(): void {
         this.fetchPlugins();
+    }
+
+    protected onBeforeDetach(): void {
+        this.disposableListener.dispose();
     }
 
     protected fetchPlugins(): Promise<PluginMetadata[]> {

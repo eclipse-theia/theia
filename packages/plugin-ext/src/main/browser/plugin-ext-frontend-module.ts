@@ -36,7 +36,7 @@ import { bindHostedPluginPreferences } from '../../hosted/browser/hosted-plugin-
 import { HostedPluginController } from '../../hosted/browser/hosted-plugin-controller';
 
 import '../../../src/main/browser/style/index.css';
-import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
+import { PluginExtDeployCommandService, PluginDeployNotificationService } from './plugin-ext-deploy-command';
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
@@ -100,6 +100,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(StoragePathService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, PluginFrontendViewContribution);
+
+    bind(PluginDeployNotificationService).toSelf().inSingletonScope();
 
     bind(PluginWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({

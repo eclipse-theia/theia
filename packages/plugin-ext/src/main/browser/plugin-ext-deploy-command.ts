@@ -19,7 +19,17 @@ import { QuickOpenService, QuickOpenItem, QuickOpenModel, QuickOpenMode } from '
 import { PluginServer } from '../../common';
 import { Command } from '@theia/core';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
-import { PluginWidget } from './plugin-ext-widget';
+import { Event, Emitter } from '@theia/core/lib/common';
+
+@injectable()
+export class PluginDeployNotificationService {
+    private emitter = new Emitter<void>();
+    event: Event<void> = this.emitter.event;
+
+    firePluginDeployed(): void {
+        this.emitter.fire(void 0);
+    }
+}
 
 @injectable()
 export class PluginExtDeployCommandService implements QuickOpenModel {
@@ -42,8 +52,8 @@ export class PluginExtDeployCommandService implements QuickOpenModel {
     @inject(HostedPluginSupport)
     protected readonly hostedPluginSupport: HostedPluginSupport;
 
-    @inject(PluginWidget)
-    protected readonly pluginWidget: PluginWidget;
+    @inject(PluginDeployNotificationService)
+    protected readonly pluginDeployNotificationService: PluginDeployNotificationService;
 
     constructor() {
         this.items = [];
@@ -73,7 +83,7 @@ export class PluginExtDeployCommandService implements QuickOpenModel {
     public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
         this.items = [];
         if (lookFor || lookFor.length > 0) {
-            this.items.push(new DeployQuickOpenItem(lookFor, this.pluginServer, this.hostedPluginSupport, this.pluginWidget, 'Deploy this plugin'));
+            this.items.push(new DeployQuickOpenItem(lookFor, this.pluginServer, this.hostedPluginSupport, this.pluginDeployNotificationService, 'Deploy this plugin'));
         }
         acceptor(this.items);
     }
@@ -86,7 +96,7 @@ export class DeployQuickOpenItem extends QuickOpenItem {
         protected readonly name: string,
         protected readonly pluginServer: PluginServer,
         protected readonly hostedPluginSupport: HostedPluginSupport,
-        protected readonly pluginWidget: PluginWidget,
+        protected readonly pluginDeployNotificationService: PluginDeployNotificationService,
         protected readonly description?: string,
     ) {
         super();
@@ -107,7 +117,7 @@ export class DeployQuickOpenItem extends QuickOpenItem {
         const promise = this.pluginServer.deploy(this.name);
         promise.then(() => {
             this.hostedPluginSupport.initPlugins();
-            this.pluginWidget.refreshPlugins();
+            this.pluginDeployNotificationService.firePluginDeployed();
         });
         return true;
     }

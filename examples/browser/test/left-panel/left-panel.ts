@@ -111,7 +111,7 @@ export class LeftPanel {
     }
 
     isPluginsViewVisible(): boolean {
-        return this.driver.isExisting('.p-Widget div.theia-output') && this.driver.element('#plugins').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
+        return this.driver.isExisting('.p-Widget div.theia-plugins') && this.driver.element('#plugins').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
     }
 
     waitForPluginsViewVisible(): void {
