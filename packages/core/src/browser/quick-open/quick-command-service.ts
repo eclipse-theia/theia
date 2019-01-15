@@ -20,6 +20,7 @@ import { Keybinding, KeybindingRegistry } from '../keybinding';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { QuickOpenOptions } from './quick-open-service';
 import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
+import { ContextKeyService } from '../context-key-service';
 
 @injectable()
 export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
@@ -36,6 +37,16 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     @inject(KeybindingRegistry)
     protected readonly keybindings: KeybindingRegistry;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    protected readonly contexts = new Map<string, string[]>();
+    pushCommandContext(commandId: string, when: string) {
+        const contexts = this.contexts.get(commandId) || [];
+        contexts.push(when);
+        this.contexts.set(commandId, contexts);
+    }
+
     /** Initialize this quick open model with the commands. */
     init(): void {
         // let's compute the items here to do it in the context of the currently activeElement
@@ -43,7 +54,10 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
         const filteredAndSortedCommands = this.commands.commands.filter(a => a.label).sort((a, b) => Command.compareCommands(a, b));
         for (const command of filteredAndSortedCommands) {
             if (command.label) {
-                this.items.push(new CommandQuickOpenItem(command, this.commands, this.keybindings));
+                const contexts = this.contexts.get(command.id);
+                if (!contexts || contexts.some(when => this.contextKeyService.match(when))) {
+                    this.items.push(new CommandQuickOpenItem(command, this.commands, this.keybindings));
+                }
             }
         }
     }

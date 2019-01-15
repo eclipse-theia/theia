@@ -29,6 +29,7 @@ import { MenusContributionPointHandler } from './menus-contribution-handler';
 import 'mocha';
 import * as sinon from 'sinon';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { QuickCommandService } from '@theia/core/lib/browser';
 
 disableJSDOM();
 
@@ -54,6 +55,8 @@ before(() => {
         bind(CommandRegistry).toSelf().inSingletonScope();
         bind(ContextKeyService).toSelf().inSingletonScope();
         bind(MenusContributionPointHandler).toSelf();
+        // tslint:disable-next-line:no-any mock QuickCommandService
+        bind(QuickCommandService).toConstantValue({} as any);
     });
 
     testContainer.load(module);
