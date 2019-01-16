@@ -98,7 +98,6 @@ export class EditorconfigDocumentManager {
             const uri = editor.uri.toString();
             this.editorconfigServer.getConfig(uri).then(properties => {
                 this.properties[uri] = properties;
-                this.applyProperties(properties, editor);
             });
         }
     }
@@ -120,14 +119,6 @@ export class EditorconfigDocumentManager {
 
         if (this.isSet(properties.end_of_line)) {
             this.ensureEndOfLine(editor, properties);
-        }
-
-        if (this.isSet(properties.trim_trailing_whitespace)) {
-            this.ensureTrimTrailingWhitespace(editor, properties);
-        }
-
-        if (this.isSet(properties.insert_final_newline)) {
-            this.ensureEndsWithNewLine(editor, properties);
         }
     }
 
@@ -202,17 +193,6 @@ export class EditorconfigDocumentManager {
     }
 
     /**
-     * trim_trailing_whitespace: set to true to remove any whitespace characters
-     * preceding newline characters and false to ensure it doesn't.
-     */
-    ensureTrimTrailingWhitespace(editor: MonacoEditor, properties: KnownProps): void {
-        const edits = this.getEditsTrimmingTrailingWhitespaces(editor, properties);
-        if (edits.length > 0) {
-            editor.document.textEditorModel.applyEdits(edits);
-        }
-    }
-
-    /**
      * Returns array of edits trimming trailing whitespaces for the whole document.
      *
      * @param editor editor
@@ -246,24 +226,6 @@ export class EditorconfigDocumentManager {
         }
 
         return edits;
-    }
-
-    /**
-     * insert_final_newline: set to true to ensure file ends with a newline
-     * when saving and false to ensure it doesn't.
-     */
-    ensureEndsWithNewLine(editor: MonacoEditor, properties: KnownProps): void {
-        const edit = this.getEditInsertingFinalNewLine(editor, properties);
-        if (edit) {
-            // remember cursor position
-            const cursor = editor.cursor;
-
-            // apply edit
-            editor.document.textEditorModel.applyEdits([edit]);
-
-            // restore cursor position
-            editor.cursor = cursor;
-        }
     }
 
     /**

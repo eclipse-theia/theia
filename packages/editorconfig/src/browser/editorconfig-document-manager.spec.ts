@@ -46,8 +46,6 @@ describe('Editorconfig document manager', function () {
         const stubIndentStyle = sinon.stub(documentManager, 'ensureIndentStyle');
         const stubIndentSize = sinon.stub(documentManager, 'ensureIndentSize');
         const stubEndOfLine = sinon.stub(documentManager, 'ensureEndOfLine');
-        const stubTrimTrailingWhitespace = sinon.stub(documentManager, 'ensureTrimTrailingWhitespace');
-        const stubEndsWithNewLine = sinon.stub(documentManager, 'ensureEndsWithNewLine');
 
         const properties = {
             indent_style: 'space',
@@ -63,8 +61,6 @@ describe('Editorconfig document manager', function () {
         expect(stubIndentStyle.called).to.be.true;
         expect(stubIndentSize.called).to.be.true;
         expect(stubEndOfLine.called).to.be.true;
-        expect(stubTrimTrailingWhitespace.called).to.be.true;
-        expect(stubEndsWithNewLine.called).to.be.true;
     });
 
     it('Should handle `tab_width` property when `indent_size` is set to `tab`', () => {
@@ -106,8 +102,6 @@ describe('Editorconfig document manager', function () {
         const stubIndentStyle = sinon.stub(documentManager, 'ensureIndentStyle');
         const stubIndentSize = sinon.stub(documentManager, 'ensureIndentSize');
         const stubEndOfLine = sinon.stub(documentManager, 'ensureEndOfLine');
-        const stubTrimTrailingWhitespace = sinon.stub(documentManager, 'ensureTrimTrailingWhitespace');
-        const stubEndsWithNewLine = sinon.stub(documentManager, 'ensureEndsWithNewLine');
 
         const properties = {} as KnownProps;
 
@@ -116,8 +110,6 @@ describe('Editorconfig document manager', function () {
         expect(stubIndentStyle.called).to.be.false;
         expect(stubIndentSize.called).to.be.false;
         expect(stubEndOfLine.called).to.be.false;
-        expect(stubTrimTrailingWhitespace.called).to.be.false;
-        expect(stubEndsWithNewLine.called).to.be.false;
     });
 
 });
