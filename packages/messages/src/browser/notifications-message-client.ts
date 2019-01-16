@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import {
     MessageClient,
     MessageType,
@@ -23,14 +23,25 @@ import {
     ProgressUpdate,
     CancellationToken
 } from '@theia/core/lib/common';
-import { Notifications, NotificationAction, NotificationProperties, ProgressNotification} from './notifications';
+import { Notifications, NotificationAction, NotificationProperties, ProgressNotification } from './notifications';
 import { NotificationPreferences } from './notification-preferences';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
 export class NotificationsMessageClient extends MessageClient {
 
     protected notifications: Notifications = new Notifications();
     @inject(NotificationPreferences) protected preferences: NotificationPreferences;
+
+    @inject(ContextKeyService)
+    protected contextKeyService: ContextKeyService;
+
+    protected notificationToastsVisibleKey: ContextKey<boolean>;
+
+    @postConstruct()
+    protected init(): void {
+        this.notificationToastsVisibleKey = this.contextKeyService.createKey<boolean>('notificationToastsVisible', false);
+    }
 
     showMessage(message: Message): Promise<string | undefined> {
         return this.show(message);
@@ -83,7 +94,9 @@ export class NotificationsMessageClient extends MessageClient {
         }
         this.visibleMessages.add(key);
         return new Promise(resolve => {
+            this.notificationToastsVisibleKey.set(true);
             this.notifications.show(this.getNotificationProperties(key, message, action => {
+                this.notificationToastsVisibleKey.set(false);
                 this.visibleMessages.delete(key);
                 resolve(action);
             }));
