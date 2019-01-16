@@ -41,6 +41,7 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -103,6 +104,9 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected readonly onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
     readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidCreateTerminalEmitter.event;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     @postConstruct()
     protected init(): void {
         this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
@@ -112,6 +116,11 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 this.onDidCreateTerminalEmitter.fire(widget);
             }
         });
+
+        const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocus', false);
+        const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
+        updateFocusKey();
+        this.shell.activeChanged.connect(updateFocusKey);
     }
 
     protected _currentTerminal: TerminalWidget | undefined;
