@@ -20,6 +20,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Emitter, Event, DisposableCollection, MessageService } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { DebugError, DebugService } from '../common/debug-service';
 import { DebugState, DebugSession } from './debug-session';
 import { DebugSessionFactory, DebugSessionContributionRegistry } from './debug-session-contribution';
@@ -78,6 +79,7 @@ export class DebugSessionManager {
     protected readonly onDidChangeEmitter = new Emitter<DebugSession | undefined>();
     readonly onDidChange: Event<DebugSession | undefined> = this.onDidChangeEmitter.event;
     protected fireDidChange(current: DebugSession | undefined): void {
+        this.inDebugModeKey.set(this.inDebugMode);
         this.onDidChangeEmitter.fire(current);
     }
 
@@ -105,9 +107,21 @@ export class DebugSessionManager {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    protected debugTypeKey: ContextKey<string>;
+    protected inDebugModeKey: ContextKey<boolean>;
+
     @postConstruct()
     protected init(): void {
+        this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
+        this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
+    }
+
+    get inDebugMode(): boolean {
+        return this.state > DebugState.Inactive;
     }
 
     async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
@@ -149,6 +163,7 @@ export class DebugSessionManager {
         const session = sessionFactory.get(sessionId, options);
         this._sessions.set(sessionId, session);
 
+        this.debugTypeKey.set(session.configuration.type);
         this.onDidCreateDebugSessionEmitter.fire(session);
 
         let state = DebugState.Inactive;

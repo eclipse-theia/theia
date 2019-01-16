@@ -31,6 +31,7 @@ import {
     DebugSessionContributionRegistryImpl
 } from './debug-session-contribution';
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
@@ -42,8 +43,13 @@ import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor
 import './debug-monaco-contribution';
 import { bindDebugPreferences } from './debug-preferences';
 import { DebugSchemaUpdater } from './debug-schema-updater';
+import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
+    bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
+        container.get(ContextKeyService).createKey('callStackItemType', undefined)
+    ).inSingletonScope();
+
     bindContributionProvider(bind, DebugSessionContribution);
     bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();

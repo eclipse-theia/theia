@@ -26,12 +26,14 @@ import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter, ResourceProvider } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { QuickPickService, StorageService } from '@theia/core/lib/browser';
+import { StorageService } from '@theia/core/lib/browser';
+import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugConfigurationModel } from './debug-configuration-model';
 import { DebugSessionOptions } from './debug-session-options';
 import { DebugService } from '../common/debug-service';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
 export class DebugConfigurationManager {
@@ -47,12 +49,18 @@ export class DebugConfigurationManager {
     @inject(QuickPickService)
     protected readonly quickPick: QuickPickService;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
+
+    protected debugConfigurationTypeKey: ContextKey<string>;
 
     protected initialized: Promise<void>;
     @postConstruct()
     protected async init(): Promise<void> {
+        this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
         this.initialized = this.updateModels();
         this.workspaceService.onWorkspaceChanged(() => this.updateModels());
     }
@@ -137,6 +145,7 @@ export class DebugConfigurationManager {
                 }
             }
         }
+        this.debugConfigurationTypeKey.set(this.current && this.current.configuration.type);
         this.onDidChangeEmitter.fire(undefined);
     }
     find(name: string, workspaceFolderUri: string | undefined): DebugSessionOptions | undefined {
