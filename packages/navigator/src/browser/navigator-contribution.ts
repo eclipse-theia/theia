@@ -29,6 +29,7 @@ import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
+import { NavigatorContextKeyService } from './navigator-context-key-service';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -60,6 +61,9 @@ export namespace NavigatorContextMenu {
 @injectable()
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution {
 
+    @inject(NavigatorContextKeyService)
+    protected readonly contextKeyService: NavigatorContextKeyService;
+
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
         @inject(OpenerService) protected readonly openerService: OpenerService,
@@ -83,6 +87,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     protected async init() {
         await this.fileNavigatorPreferences.ready;
         this.shell.currentChanged.connect(() => this.onCurrentWidgetChangedHandler());
+
+        const updateFocusContextKeys = () => {
+            const hasFocus = this.shell.activeWidget instanceof FileNavigatorWidget;
+            this.contextKeyService.explorerViewletFocus.set(hasFocus);
+            this.contextKeyService.filesExplorerFocus.set(hasFocus);
+        };
+        updateFocusContextKeys();
+        this.shell.activeChanged.connect(updateFocusContextKeys);
+
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {

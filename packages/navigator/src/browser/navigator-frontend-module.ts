@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule } from 'inversify';
 import { KeybindingContext, bindViewContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
@@ -23,11 +25,13 @@ import { createFileNavigatorWidget } from './navigator-container';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindFileNavigatorPreferences } from './navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
-import '../../src/browser/style/index.css';
+import { NavigatorContextKeyService } from './navigator-context-key-service';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
     bind(FileNavigatorFilter).toSelf().inSingletonScope();
+
+    bind(NavigatorContextKeyService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, FileNavigatorContribution);
     bind(FrontendApplicationContribution).toService(FileNavigatorContribution);
