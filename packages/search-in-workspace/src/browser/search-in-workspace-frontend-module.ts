@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/styles/index.css';
+
 import { ContainerModule, interfaces } from 'inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer } from '../common/search-in-workspace-interface';
@@ -23,10 +25,11 @@ import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceFrontendContribution } from './search-in-workspace-frontend-contribution';
 import { InMemoryTextResourceResolver } from './in-memory-text-resource';
-
-import '../../src/browser/styles/index.css';
+import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 
 export default new ContainerModule(bind => {
+    bind(SearchInWorkspaceContextKeyService).toSelf().inSingletonScope();
+
     bind(SearchInWorkspaceWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(ctx => ({
         id: SearchInWorkspaceWidget.ID,

@@ -16,13 +16,14 @@
 
 import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
+import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -50,6 +51,9 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
 
+    @inject(SearchInWorkspaceContextKeyService)
+    protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
+
     constructor() {
         super({
             widgetId: SearchInWorkspaceWidget.ID,
@@ -60,6 +64,14 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             },
             toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
         });
+    }
+
+    @postConstruct()
+    protected init(): void {
+        const updateFocusContextKey = () =>
+            this.contextKeyService.searchViewletFocus.set(this.shell.activeWidget instanceof SearchInWorkspaceWidget);
+        updateFocusContextKey();
+        this.shell.activeChanged.connect(updateFocusContextKey);
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {

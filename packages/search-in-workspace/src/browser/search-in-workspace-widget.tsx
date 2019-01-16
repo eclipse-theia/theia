@@ -22,6 +22,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Disposable } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 
 export interface SearchFieldState {
     className: string;
@@ -41,7 +42,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected includeIgnoredState: SearchFieldState;
 
     protected showSearchDetails = false;
-    protected hasResults = false;
+    protected _hasResults = false;
+    protected get hasResults(): boolean {
+        return this._hasResults;
+    }
+    protected set hasResults(hasResults: boolean) {
+        this.contextKeyService.hasSearchResult.set(hasResults);
+        this._hasResults = hasResults;
+    }
     protected resultNumber = 0;
 
     protected searchFieldContainerIsFocused = false;
@@ -51,7 +59,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected searchTerm = '';
     protected replaceTerm = '';
 
-    protected showReplaceField = false;
+    protected _showReplaceField = false;
+    protected get showReplaceField(): boolean {
+        return this._showReplaceField;
+    }
+    protected set showReplaceField(showReplaceField: boolean) {
+        this.contextKeyService.replaceActive.set(showReplaceField);
+        this._showReplaceField = showReplaceField;
+    }
 
     protected contentNode: HTMLElement;
     protected searchFormContainer: HTMLElement;
@@ -60,8 +75,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     @inject(SearchInWorkspaceResultTreeWidget) protected readonly resultTreeWidget: SearchInWorkspaceResultTreeWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
+    @inject(SearchInWorkspaceContextKeyService)
+    protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
+
     @postConstruct()
-    init() {
+    protected init(): void {
         this.id = SearchInWorkspaceWidget.ID;
         this.title.label = SearchInWorkspaceWidget.LABEL;
         this.title.caption = SearchInWorkspaceWidget.LABEL;
@@ -162,7 +180,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
-    protected onAfterAttach(msg: Message) {
+    protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
         Widget.attach(this.resultTreeWidget, this.contentNode);
@@ -171,7 +189,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }));
     }
 
-    protected onUpdateRequest(msg: Message) {
+    protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
     }
@@ -181,11 +199,18 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         MessageLoop.sendMessage(this.resultTreeWidget, Widget.ResizeMessage.UnknownSize);
     }
 
-    protected onAfterShow(msg: Message) {
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
         this.focusInputField();
+        this.contextKeyService.searchViewletVisible.set(true);
     }
 
-    protected onActivateRequest(msg: Message) {
+    protected onAfterHide(msg: Message): void {
+        super.onAfterHide(msg);
+        this.contextKeyService.searchViewletVisible.set(false);
+    }
+
+    protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.focusInputField();
     }
@@ -329,6 +354,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             placeholder='Search'
             defaultValue={this.searchTerm}
             onKeyUp={this.search}
+            onFocus={this.handleFocusSearchInputBox}
+            onBlur={this.handleBlurSearchInputBox}
         ></input>;
         const notification = this.renderNotification();
         const optionContainer = this.renderOptionContainer();
@@ -342,6 +369,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             {notification}
         </div>;
     }
+
+    protected handleFocusSearchInputBox = () => this.contextKeyService.setSearchInputBoxFocus(true);
+    protected handleBlurSearchInputBox = () => this.contextKeyService.setSearchInputBoxFocus(false);
 
     protected readonly updateReplaceTerm = (e: React.KeyboardEvent) => this.doUpdateReplaceTerm(e);
     protected doUpdateReplaceTerm(e: React.KeyboardEvent) {
@@ -363,11 +393,16 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 size={1}
                 placeholder='Replace'
                 defaultValue={this.replaceTerm}
-                onKeyUp={this.updateReplaceTerm}>
+                onKeyUp={this.updateReplaceTerm}
+                onFocus={this.handleFocusReplaceInputBox}
+                onBlur={this.handleBlurReplaceInputBox}>
             </input>
             {replaceAllButtonContainer}
         </div>;
     }
+
+    protected handleFocusReplaceInputBox = () => this.contextKeyService.setReplaceInputBoxFocus(true);
+    protected handleBlurReplaceInputBox = () => this.contextKeyService.setReplaceInputBoxFocus(false);
 
     protected renderReplaceAllButtonContainer(): React.ReactNode {
         return <div className='replace-all-button-container'>
@@ -451,9 +486,17 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                             this.searchInWorkspaceOptions[kind] = this.splitOnComma((e.target as HTMLInputElement).value);
                         }
                     }
-                }}></input>
+                }}
+                onFocus={kind === 'include' ? this.handleFocusIncludesInputBox : this.handleFocusExcludesInputBox}
+                onBlur={kind === 'include' ? this.handleBlurIncludesInputBox : this.handleBlurExcludesInputBox}></input>
         </div>;
     }
+
+    protected handleFocusIncludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(true);
+    protected handleBlurIncludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(false);
+
+    protected handleFocusExcludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(true);
+    protected handleBlurExcludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(false);
 
     protected splitOnComma(patterns: string): string[] {
         return patterns.length > 0 ? patterns.split(',').map(s => s.trim()) : [];
