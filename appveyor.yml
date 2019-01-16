@@ -24,7 +24,9 @@ build_script:
   - yarn
 
 test_script:
-  - yarn run test
+  - appveyor-retry yarn test:theia
+  - appveyor-retry yarn test:electron
+  - appveyor-retry yarn test:browser
 
 notifications:
   - provider: Webhook

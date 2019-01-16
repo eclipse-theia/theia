@@ -38,10 +38,10 @@
     "typedoc": "^0.13.0",
     "typescript": "^3.1.3",
     "uuid": "^3.1.0",
-    "wdio-mocha-framework": "0.5.9",
-    "wdio-selenium-standalone-service": "0.0.8",
-    "wdio-spec-reporter": "0.1.0",
-    "webdriverio": "4.9.2"
+    "wdio-mocha-framework": "0.5.13",
+    "wdio-selenium-standalone-service": "0.0.12",
+    "wdio-spec-reporter": "0.1.5",
+    "webdriverio": "4.14.1"
   },
   "scripts": {
     "prepare": "yarn prepare:travis && yarn rebuild:clean && yarn build:clean && yarn prepare:hoisting",
