@@ -51,7 +51,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     vscode.commands.registerCommand = function (command: any, handler?: <T>(...args: any[]) => T | Thenable<T>): any {
         // use of the ID when registering commands
         if (typeof command === 'string' && handler) {
-            return vscode.commands.registerHandler(command, handler);
+            return registerCommand({ id: command }, handler);
         }
         return registerCommand(command, handler);
     };

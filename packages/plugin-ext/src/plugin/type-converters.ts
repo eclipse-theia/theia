@@ -403,8 +403,8 @@ export function fromDocumentHighlight(documentHighlight: theia.DocumentHighlight
 
 export function toInternalCommand(command: theia.Command): model.Command {
     return {
-        id: command.id,
-        title: command.label || '',
+        id: command.command ? command.command : command.id,
+        title: command.title ? command.title : command.label || ' ',
         tooltip: command.tooltip,
         arguments: command.arguments
     };

@@ -176,6 +176,17 @@ declare module '@theia/plugin' {
          * invoked with.
          */
         arguments?: any[];
+
+        // Title and command fields are needed to make Command object similar to Command from vscode API
+
+        /**
+         * Title of the command, like "save".
+         */
+        title?: string;
+        /**
+         * The identifier of the actual command handler.
+         */
+        command?: string;
     }
 
     /**
