@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenOptions,
     QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
 } from '@theia/core/lib/browser';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -38,6 +39,11 @@ export class MonacoQuickOpenService extends QuickOpenService {
     protected opts: MonacoQuickOpenControllerOpts | undefined;
     protected previousActiveElement: Element | undefined;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    protected inQuickOpenKey: ContextKey<boolean>;
+
     constructor() {
         super();
         const overlayWidgets = document.createElement('div');
@@ -49,6 +55,11 @@ export class MonacoQuickOpenService extends QuickOpenService {
         container.style.top = '0px';
         container.style.right = '50%';
         overlayWidgets.appendChild(container);
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.inQuickOpenKey = this.contextKeyService.createKey<boolean>('inQuickOpen', false);
     }
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
@@ -75,6 +86,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         this.widget.show(this.opts.prefix || '');
         this.setPlaceHolder(opts.inputAriaLabel);
         this.setPassword(opts.password ? true : false);
+        this.inQuickOpenKey.set(true);
     }
 
     setPlaceHolder(placeHolder: string): void {
@@ -148,6 +160,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         if (this.opts && this.opts.onClose) {
             this.opts.onClose(cancelled);
         }
+        this.inQuickOpenKey.set(false);
     }
 
     protected async onType(lookFor: string): Promise<void> {
