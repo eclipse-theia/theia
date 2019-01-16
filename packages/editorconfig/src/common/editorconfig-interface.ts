@@ -22,7 +22,7 @@ export const EditorconfigService = Symbol('EditorconfigService');
 export interface EditorconfigService {
 
     /**
-     * Finds an apropriate editorconfgig properties for a file.
+     * Finds an apropriate editorconfig properties for a file.
      */
     getConfig(uri: string): Promise<KnownProps>;
 
