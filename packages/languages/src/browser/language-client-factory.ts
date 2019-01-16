@@ -64,7 +64,7 @@ export class LanguageClientFactory {
         }
         const initializationFailedHandler = clientOptions.initializationFailedHandler;
         clientOptions.initializationFailedHandler = e => !!initializationFailedHandler && initializationFailedHandler(e);
-        return new MonacoLanguageClient({
+        return this.patch4085(new MonacoLanguageClient({
             id: contribution.id,
             name: contribution.name,
             clientOptions,
@@ -74,7 +74,30 @@ export class LanguageClientFactory {
                     return createConnection(connection, errorHandler, closeHandler);
                 }
             }
-        });
+        }));
+    }
+
+    /**
+     * see https://github.com/theia-ide/theia/issues/4085
+     * remove when monaco-languageclient is upgraded to latest vscode-languageclient
+     */
+    protected patch4085(client: MonacoLanguageClient): MonacoLanguageClient {
+        const features = client['_dynamicFeatures'] as Map<string, {
+            _listener?: Object | undefined
+            dispose?: Function
+        }>;
+        for (const feature of features.values()) {
+            if (feature.dispose) {
+                const dispose = feature.dispose.bind(feature);
+                feature.dispose = () => {
+                    dispose();
+                    if (feature._listener) {
+                        feature._listener = undefined;
+                    }
+                };
+            }
+        }
+        return client;
     }
 
 }
