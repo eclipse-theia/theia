@@ -40,13 +40,23 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         const editorModel = this.getModel(editor);
         if (editor && editorModel) {
             this.setConfigTabSizeWidget();
+            this.setLineEndingWidget();
 
             this.toDispose.dispose();
             this.toDispose.push(editorModel.onDidChangeOptions(() => {
                 this.setConfigTabSizeWidget();
+                this.setLineEndingWidget();
+            }));
+            let previous = editorModel.getEOL();
+            this.toDispose.push(editorModel.onDidChangeContent(e => {
+                if (previous !== e.eol) {
+                    previous = e.eol;
+                    this.setLineEndingWidget();
+                }
             }));
         } else {
             this.removeConfigTabSizeWidget();
+            this.removeLineEndingWidget();
         }
     }
 
@@ -67,6 +77,24 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
     }
     protected removeConfigTabSizeWidget() {
         this.statusBar.removeElement('editor-status-tabbing-config');
+    }
+
+    protected setLineEndingWidget() {
+        const editor = this.editorManager.currentEditor;
+        const editorModel = this.getModel(editor);
+        if (editor && editorModel) {
+            const eol = editorModel.getEOL();
+            const text = eol === '\n' ? 'LF' : 'CRLF';
+            this.statusBar.setElement('editor-status-eol', {
+                text: `${text}`,
+                alignment: StatusBarAlignment.RIGHT,
+                priority: 11,
+                command: EditorCommands.CONFIG_EOL.id
+            });
+        }
+    }
+    protected removeLineEndingWidget() {
+        this.statusBar.removeElement('editor-status-eol');
     }
 
     protected getModel(editor: EditorWidget | undefined): monaco.editor.IModel | undefined {

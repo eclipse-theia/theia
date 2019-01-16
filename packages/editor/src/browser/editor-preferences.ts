@@ -458,6 +458,21 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'type': 'boolean',
             'description': 'Reveal first change.',
             'default': true
+        },
+        'files.eol': {
+            'type': 'string',
+            'enum': [
+                '\n',
+                '\r\n',
+                'auto'
+            ],
+            'enumDescriptions': [
+                'LF',
+                'CRLF',
+                'Uses operating system specific end of line character.'
+            ],
+            'default': 'auto',
+            'description': 'The default end of line character.'
         }
     }
 };
@@ -533,7 +548,9 @@ export interface EditorConfiguration {
     'diffEditor.followsCaret'?: boolean
     'diffEditor.ignoreCharChanges'?: boolean
     'diffEditor.alwaysRevealFirst'?: boolean
+    'files.eol': EndOfLinePreference
 }
+export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
 
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 

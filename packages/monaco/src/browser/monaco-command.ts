@@ -123,6 +123,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected registerEditorCommandHandlers(): void {
         this.registry.registerHandler(EditorCommands.SHOW_REFERENCES.id, this.newShowReferenceHandler());
         this.registry.registerHandler(EditorCommands.CONFIG_INDENTATION.id, this.newConfigIndentationHandler());
+        this.registry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
         this.registry.registerHandler(EditorCommands.INDENT_USING_SPACES.id, this.newConfigTabSizeHandler(true));
         this.registry.registerHandler(EditorCommands.INDENT_USING_TABS.id, this.newConfigTabSizeHandler(false));
     }
@@ -161,6 +162,42 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             placeholder: 'Select Action',
             fuzzyMatchLabel: true
         });
+    }
+
+    protected newConfigEolHandler(): MonacoEditorCommandHandler {
+        return {
+            execute: editor => this.configureEol(editor)
+        };
+    }
+
+    protected configureEol(editor: MonacoEditor): void {
+        const options = ['LF', 'CRLF'].map(lineEnding =>
+            new QuickOpenItem({
+                label: lineEnding,
+                run: (mode: QuickOpenMode) => {
+                    if (mode === QuickOpenMode.OPEN) {
+                        this.setEol(editor, lineEnding);
+                        return true;
+                    }
+                    return false;
+                }
+            })
+        );
+        this.quickOpenService.open({ onType: (_, acceptor) => acceptor(options) }, {
+            placeholder: 'Select End of Line Sequence',
+            fuzzyMatchLabel: true
+        });
+    }
+
+    protected setEol(editor: MonacoEditor, lineEnding: string): void {
+        const model = editor.document && editor.document.textEditorModel;
+        if (model) {
+            if (lineEnding === 'CRLF' || lineEnding === '\r\n') {
+                model.pushEOL(monaco.editor.EndOfLineSequence.CRLF);
+            } else {
+                model.pushEOL(monaco.editor.EndOfLineSequence.LF);
+            }
+        }
     }
 
     protected newConfigTabSizeHandler(useSpaces: boolean): MonacoEditorCommandHandler {
