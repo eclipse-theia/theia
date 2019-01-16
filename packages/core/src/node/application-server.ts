@@ -17,6 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { ApplicationServer, ExtensionInfo, ApplicationInfo } from '../common/application-protocol';
 import { ApplicationPackage } from '@theia/application-package';
+import { OS } from '../common/os';
 
 @injectable()
 export class ApplicationServerImpl implements ApplicationServer {
@@ -41,4 +42,7 @@ export class ApplicationServerImpl implements ApplicationServer {
         return Promise.resolve(undefined);
     }
 
+    async getBackendOS(): Promise<OS.Type> {
+        return OS.type();
+    }
 }

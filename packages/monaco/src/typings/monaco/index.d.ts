@@ -422,6 +422,7 @@ declare module monaco.keybindings {
 declare module monaco.services {
 
     export const ICodeEditorService: any;
+    export const IConfigurationService: any;
 
     export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
         constructor(themeService: IStandaloneThemeService);

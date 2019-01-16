@@ -16,7 +16,7 @@
 
 // tslint:disable:no-any
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
+import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator, EndOfLinePreference } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { DisposableCollection } from '@theia/core/lib/common';
@@ -34,12 +34,17 @@ import { MonacoWorkspace } from './monaco-workspace';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
+import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { OS } from '@theia/core';
 
 @injectable()
 export class MonacoEditorProvider {
 
     @inject(MonacoBulkEditService)
     protected readonly bulkEditService: MonacoBulkEditService;
+
+    private isWindowsBackend = false;
+    private hookedConfigService: any = undefined;
 
     constructor(
         @inject(MonacoEditorService) protected readonly codeEditorService: MonacoEditorService,
@@ -51,14 +56,43 @@ export class MonacoEditorProvider {
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
-        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory
+        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
+        @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer
     ) {
         const init = monaco.services.StaticServices.init.bind(monaco.services.StaticServices);
+        this.applicationServer.getBackendOS().then(os => {
+            this.isWindowsBackend = os === OS.Type.Windows;
+        });
         monaco.services.StaticServices.init = o => {
             const result = init(o);
             result[0].set(monaco.services.ICodeEditorService, codeEditorService);
+            if (!this.hookedConfigService) {
+                // TODO we should fully implement the IConfigurationService, see https://github.com/theia-ide/theia/issues/4073
+                this.hookedConfigService = result[0].get(monaco.services.IConfigurationService);
+                const originalGetValue = this.hookedConfigService.getValue.bind(this.hookedConfigService);
+                this.hookedConfigService.getValue = (arg1: any, arg2: any) => {
+                    const creationOptions = originalGetValue(arg1, arg2);
+                    if (creationOptions) {
+                        const eol = this.getEOL();
+                        creationOptions.files = {
+                            eol
+                        };
+                    }
+                    return creationOptions;
+                };
+            }
             return result;
         };
+    }
+
+    protected getEOL(): EndOfLinePreference {
+        const eol = this.editorPreferences['files.eol'];
+        if (eol) {
+            if (eol !== 'auto') {
+                return eol;
+            }
+        }
+        return this.isWindowsBackend ? '\r\n' : '\n';
     }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {

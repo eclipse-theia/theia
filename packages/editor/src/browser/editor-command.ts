@@ -37,6 +37,13 @@ export namespace EditorCommands {
     export const CONFIG_INDENTATION: Command = {
         id: 'textEditor.commands.configIndentation'
     };
+
+    export const CONFIG_EOL: Command = {
+        id: 'textEditor.commands.configEol',
+        category: EDITOR_CATEGORY,
+        label: 'Change End of Line Sequence'
+    };
+
     export const INDENT_USING_SPACES: Command = {
         id: 'textEditor.commands.indentUsingSpaces',
         category: EDITOR_CATEGORY,
@@ -102,6 +109,7 @@ export class EditorCommandContribution implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
         registry.registerCommand(EditorCommands.CONFIG_INDENTATION);
+        registry.registerCommand(EditorCommands.CONFIG_EOL);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
         registry.registerCommand(EditorCommands.CHANGE_LANGUAGE, {
