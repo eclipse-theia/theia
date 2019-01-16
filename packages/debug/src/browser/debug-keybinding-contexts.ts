@@ -17,7 +17,6 @@
 import { injectable, inject } from 'inversify';
 import { KeybindingContext } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
-import { DebugState } from './debug-session';
 import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugEditorModel } from './editor/debug-editor-model';
 
@@ -40,7 +39,7 @@ export class InDebugModeContext implements KeybindingContext {
     protected readonly manager: DebugSessionManager;
 
     isEnabled(): boolean {
-        return this.manager.state > DebugState.Inactive;
+        return this.manager.inDebugMode;
     }
 
 }
