@@ -28,22 +28,32 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
     private proxy: CommandRegistryMain;
     private commands = new Map<string, Handler>();
-
-    private readonly converter: CommandsConverter;
+    private converter: CommandsConverter;
+    private cache = new Map<number, theia.Command>();
+    private delegatingCommandId: string;
 
     // tslint:disable-next-line:no-any
     private static EMPTY_HANDLER(...args: any[]): Promise<any> { return Promise.resolve(undefined); }
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
-        this.converter = new CommandsConverter(this);
 
         // register internal VS Code commands
         this.registerHandler('vscode.previewHtml', CommandRegistryImpl.EMPTY_HANDLER);
     }
 
     getConverter(): CommandsConverter {
-        return this.converter;
+        if (this.converter) {
+            return this.converter;
+        } else {
+            this.delegatingCommandId = `_internal_command_delegation_${Date.now()}`;
+            const command: theia.Command = {
+                id: this.delegatingCommandId
+            };
+            this.registerCommand(command, this.executeConvertedCommand);
+            this.converter = new CommandsConverter(this.delegatingCommandId, this.cache);
+            return this.converter;
+        }
     }
 
     registerCommand(command: theia.Command, handler?: Handler): Disposable {
@@ -78,9 +88,9 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     // tslint:disable-next-line:no-any
-    $executeCommand<T>(id: string, args: any[]): PromiseLike<T> {
+    $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         if (this.commands.has(id)) {
-            return this.executeLocalCommand(id, args);
+            return this.executeLocalCommand(id, ...args);
         } else {
             return Promise.reject(`Command: ${id} does not exist.`);
         }
@@ -103,37 +113,56 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         const handler = this.commands.get(id);
         if (handler) {
-            return Promise.resolve(handler(...args));
+            const result = id === this.delegatingCommandId ?
+                handler(this, ...args)
+                : handler.apply(undefined, args);
+            return Promise.resolve(result);
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
         }
+    }
+
+    // tslint:disable-next-line:no-any
+    executeConvertedCommand(commands: CommandRegistryImpl, ...args: any[]): PromiseLike<any> {
+        const actualCmd = commands.cache.get(args[0]);
+        if (!actualCmd) {
+            return Promise.resolve(undefined);
+        }
+        return commands.executeCommand(actualCmd.command ? actualCmd.command : actualCmd.id, ...(actualCmd.arguments || []));
     }
 }
 
 /** Converter between internal and api commands. */
 export class CommandsConverter {
-
     private readonly delegatingCommandId: string;
-
     private cacheId = 0;
-    private cache = new Map<number, theia.Command>();
+    private cache: Map<number, theia.Command>;
 
-    constructor(private readonly commands: CommandRegistryImpl) {
-        this.delegatingCommandId = `_internal_command_delegation_${Date.now()}`;
-        this.commands.registerHandler(this.delegatingCommandId, this.executeConvertedCommand);
+    constructor(id: string, cache: Map<number, theia.Command>) {
+        this.cache = cache;
+        this.delegatingCommandId = id;
     }
 
     toInternal(command: theia.Command | undefined): Command | undefined {
-        if (!command || !command.label) {
+        if (!command) {
+            return undefined;
+        }
+
+        let title;
+        if (command.title) {
+            title = command.title;
+        } else if (command.label) {
+            title = command.label;
+        } else {
             return undefined;
         }
 
         const result: Command = {
-            id: command.id,
-            title: command.label
+            id: command.command ? command.command : command.id,
+            title: title
         };
 
-        if (command.id && !CommandsConverter.isFalsyOrEmpty(command.arguments)) {
+        if (command.command && !CommandsConverter.isFalsyOrEmpty(command.arguments)) {
             const id = this.cacheId++;
             ObjectIdentifier.mixin(result, id);
             this.cache.set(id, command);
@@ -161,18 +190,11 @@ export class CommandsConverter {
             return {
                 id: command.id,
                 label: command.title,
+                command: command.id,
+                title: command.title,
                 arguments: command.arguments
             };
         }
-    }
-
-    // tslint:disable-next-line:no-any
-    private executeConvertedCommand(...args: any[]): PromiseLike<any> {
-        const actualCmd = this.cache.get(args[0]);
-        if (!actualCmd) {
-            return Promise.resolve(undefined);
-        }
-        return this.commands.executeCommand(actualCmd.id, ...(actualCmd.arguments || []));
     }
 
     /**
