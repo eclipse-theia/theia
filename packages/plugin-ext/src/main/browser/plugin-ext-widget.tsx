@@ -23,12 +23,10 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
 import { PluginDeployNotificationService } from './plugin-ext-deploy-command';
-import { Disposable } from '@theia/core';
 
 @injectable()
 export class PluginWidget extends ReactWidget {
 
-    private disposableListener: Disposable;
     protected plugins: PluginMetadata[] = [];
     protected readonly toDisposeOnFetch = new DisposableCollection();
     protected readonly toDisposeOnSearch = new DisposableCollection();
@@ -49,9 +47,9 @@ export class PluginWidget extends ReactWidget {
         this.update();
         this.fetchPlugins();
 
-        this.disposableListener = this.notificationService.event(() => {
+        this.toDisposeOnDetach.push(this.notificationService.event(() => {
             this.refreshPlugins();
-        });
+        }));
     }
 
     protected onActivateRequest(msg: Message) {
@@ -62,10 +60,6 @@ export class PluginWidget extends ReactWidget {
 
     public refreshPlugins(): void {
         this.fetchPlugins();
-    }
-
-    protected onBeforeDetach(): void {
-        this.disposableListener.dispose();
     }
 
     protected fetchPlugins(): Promise<PluginMetadata[]> {
