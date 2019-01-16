@@ -15,6 +15,7 @@
     "@theia/navigator": "^0.3.19",
     "@theia/plugin": "^0.3.19",
     "@theia/preferences": "^0.3.19",
+    "@theia/search-in-workspace": "^0.3.19",
     "@theia/task": "^0.3.19",
     "@theia/workspace": "^0.3.19",
     "decompress": "^4.2.0",
