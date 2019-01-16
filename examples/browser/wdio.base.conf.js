@@ -91,7 +91,7 @@ function makeConfig(headless) {
         sync: true,
         //
         // Level of logging verbosity: silent | verbose | command | data | result | error
-        logLevel: 'result',
+        logLevel: 'error',
         //
         // Enables colors for log output.
         coloredLogs: true,
@@ -103,12 +103,15 @@ function makeConfig(headless) {
         // Saves a screenshot to a given path if a command fails.
         screenshotPath: './errorShots/',
         //
+        // Dismiss deprecation warning messages when running tests.
+        deprecationWarnings: false,
+        //
         // Set a base URL in order to shorten url command calls. If your url parameter starts
         // with "/", then the base url gets prepended.
         baseUrl: `http://${host}:${port}`,
         //
         // Default timeout for all waitFor* commands.
-        waitforTimeout: 30000,
+        waitforTimeout: 60000,
         //
         // Default timeout in milliseconds for request
         // if Selenium Grid doesn't send response
@@ -145,14 +148,14 @@ function makeConfig(headless) {
             javaArgs: ["-Xmx1024m", "-Djna.nosys=true"],
             drivers: {
                 chrome: {
-                    version: '2.33'
+                    version: '2.35'
                 }
             }
         },
         seleniumInstallArgs: {
             drivers: {
                 chrome: {
-                    version: '2.33'
+                    version: '2.35'
                 }
             }
         },
@@ -177,7 +180,7 @@ function makeConfig(headless) {
             ui: 'bdd',
             requires: ['reflect-metadata/Reflect'],
             watch: 'js',
-            timeout: 30000,
+            timeout: 60000,
         },
         //
         // =====
