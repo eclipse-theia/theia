@@ -64,7 +64,7 @@ export namespace Saveable {
     }
     // tslint:disable-next-line:no-any
     export async function save(arg: any): Promise<void> {
-        const saveable = getDirty(arg);
+        const saveable = get(arg);
         if (saveable) {
             await saveable.save();
         }
