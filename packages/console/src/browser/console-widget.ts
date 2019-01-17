@@ -17,6 +17,7 @@
 import { ElementExt } from '@phosphor/domutils';
 import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
+import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
@@ -38,6 +39,7 @@ export interface ConsoleOptions {
         uri: URI
         options?: MonacoEditor.IOptions
     }
+    inputFocusContextKey?: ContextKey<boolean>
 }
 
 @injectable()
@@ -84,7 +86,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const { id, title } = this.options;
+        const { id, title, inputFocusContextKey } = this.options;
         const { label, iconClass, caption } = Object.assign({}, title);
         this.id = id;
         this.title.closable = true;
@@ -109,6 +111,9 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(input.getControl().onDidLayoutChange(() => this.resizeContent()));
         this.toDispose.push(input.getControl().onDidChangeConfiguration(({ fontInfo }) => fontInfo && this.updateFont()));
         this.updateFont();
+        if (inputFocusContextKey) {
+            this.toDispose.push(input.onFocusChanged(() => inputFocusContextKey.set(this.hasInputFocus())));
+        }
     }
 
     protected createInput(node: HTMLElement): Promise<MonacoEditor> {
@@ -247,6 +252,10 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
             // tslint:disable-next-line:no-any
             this.input.restoreViewState((<any>oldState)['input']);
         }
+    }
+
+    hasInputFocus(): boolean {
+        return this._input && this._input.isFocused({ strict: true });
     }
 
 }

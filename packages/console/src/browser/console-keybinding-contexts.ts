@@ -57,7 +57,7 @@ export class ConsoleInputFocusContext implements KeybindingContext {
     }
 
     protected isConsoleEnabled(console: ConsoleWidget): boolean {
-        return console.input.isFocused({ strict: true });
+        return console.hasInputFocus();
     }
 
 }
