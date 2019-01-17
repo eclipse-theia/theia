@@ -21,7 +21,8 @@ import {
     QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
 } from '@theia/core/lib/browser';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { MonacoContextKeyService } from './monaco-context-key-service';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -39,8 +40,8 @@ export class MonacoQuickOpenService extends QuickOpenService {
     protected opts: MonacoQuickOpenControllerOpts | undefined;
     protected previousActiveElement: Element | undefined;
 
-    @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    @inject(MonacoContextKeyService)
+    protected readonly contextKeyService: MonacoContextKeyService;
 
     protected inQuickOpenKey: ContextKey<boolean>;
 
@@ -58,7 +59,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected init(): void {
         this.inQuickOpenKey = this.contextKeyService.createKey<boolean>('inQuickOpen', false);
     }
 
@@ -81,7 +82,11 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
         this.opts = opts;
-        this.previousActiveElement = window.document.activeElement || undefined;
+        const activeContext = window.document.activeElement || undefined;
+        if (!activeContext || !this.container.contains(activeContext)) {
+            this.previousActiveElement = activeContext;
+            this.contextKeyService.activeContext = activeContext instanceof HTMLElement ? activeContext : undefined;
+        }
         this.hideDecoration();
         this.widget.show(this.opts.prefix || '');
         this.setPlaceHolder(opts.inputAriaLabel);
@@ -126,6 +131,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         this._widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
             onOk: () => {
                 this.previousActiveElement = undefined;
+                this.contextKeyService.activeContext = undefined;
                 this.onClose(false);
             },
             onCancel: () => {
@@ -133,6 +139,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
                     this.previousActiveElement.focus();
                 }
                 this.previousActiveElement = undefined;
+                this.contextKeyService.activeContext = undefined;
                 this.onClose(true);
             },
             onType: lookFor => this.onType(lookFor || ''),
