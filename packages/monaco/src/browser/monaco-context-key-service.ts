@@ -27,12 +27,15 @@ export class MonacoContextKeyService extends ContextKeyService {
         return this.contextKeyService.createKey(key, defaultValue);
     }
 
+    activeContext?: HTMLElement;
+
     match(expression: string, context?: HTMLElement): boolean {
+        const ctx = context || this.activeContext || (window.document.activeElement instanceof HTMLElement ? window.document.activeElement : undefined);
         const parsed = this.parse(expression);
-        if (!context) {
+        if (!ctx) {
             return this.contextKeyService.contextMatchesRules(parsed);
         }
-        const keyContext = this.contextKeyService.getContext(context);
+        const keyContext = this.contextKeyService.getContext(ctx);
         return monaco.keybindings.KeybindingResolver.contextMatchesRules(keyContext, parsed);
     }
 
