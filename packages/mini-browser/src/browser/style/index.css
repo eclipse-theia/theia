@@ -96,13 +96,14 @@
 }
 
 .theia-mini-browser-content-area {
+    background-color: white;
     position: relative;
     display: flex;
     height: 100%;
     width: 100%;
     flex-direction: column;
     overflow: hidden;
-    padding-top: 6px;
+    margin-top: 6px;
 }
 
 .theia-mini-browser-pdf-container {
