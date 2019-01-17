@@ -308,7 +308,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
-        if (token.isCancellationRequested || !this.resource.saveContents || !this.dirty) {
+        if (token.isCancellationRequested || !this.resource.saveContents) {
             return;
         }
 
