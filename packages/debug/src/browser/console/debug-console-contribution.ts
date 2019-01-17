@@ -16,8 +16,12 @@
 
 import { interfaces, injectable } from 'inversify';
 import { AbstractViewContribution, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ConsoleWidget, ConsoleOptions } from '@theia/console/lib/browser/console-widget';
 import { DebugConsoleSession } from './debug-console-session';
+
+export type InDebugReplContextKey = ContextKey<boolean>;
+export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
 
 @injectable()
 export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> {
@@ -50,13 +54,20 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     };
 
     static create(parent: interfaces.Container): ConsoleWidget {
-        const child = ConsoleWidget.createContainer(parent, DebugConsoleContribution.options);
+        const inputFocusContextKey = parent.get<InDebugReplContextKey>(InDebugReplContextKey);
+        const child = ConsoleWidget.createContainer(parent, {
+            ...DebugConsoleContribution.options,
+            inputFocusContextKey
+        });
         const widget = child.get(ConsoleWidget);
         widget.session = child.get(DebugConsoleSession);
         return widget;
     }
 
     static bindContribution(bind: interfaces.Bind): void {
+        bind(InDebugReplContextKey).toDynamicValue(({ container }) =>
+            container.get(ContextKeyService).createKey('inDebugRepl', false)
+        ).inSingletonScope();
         bind(DebugConsoleSession).toSelf().inSingletonScope();
         bindViewContribution(bind, DebugConsoleContribution).onActivation((context, _) => {
             // eagerly initialize the debug console session
