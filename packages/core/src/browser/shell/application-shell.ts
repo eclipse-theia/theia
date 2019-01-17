@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, optional } from 'inversify';
+import { injectable, inject, optional, postConstruct } from 'inversify';
 import { ArrayExt, find, toArray } from '@phosphor/algorithm';
 import { Signal } from '@phosphor/signaling';
 import {
@@ -32,6 +32,7 @@ import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, Scrol
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
+import { ContextKeyService } from '../context-key-service';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -158,6 +159,9 @@ export class ApplicationShell extends Widget {
     private readonly tracker = new FocusTracker<Widget>();
     private dragState?: WidgetDragState;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     /**
      * Construct a new application shell.
      */
@@ -200,6 +204,39 @@ export class ApplicationShell extends Widget {
 
         this.tracker.currentChanged.connect(this.onCurrentChanged, this);
         this.tracker.activeChanged.connect(this.onActiveChanged, this);
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.initSidebarVisibleKeyContext();
+        this.initFocusKeyContexts();
+    }
+
+    protected initSidebarVisibleKeyContext(): void {
+        const leftSideBarPanel = this.leftPanelHandler.dockPanel;
+        const sidebarVisibleKey = this.contextKeyService.createKey('sidebarVisible', leftSideBarPanel.isVisible);
+        const onAfterShow = leftSideBarPanel['onAfterShow'].bind(leftSideBarPanel);
+        leftSideBarPanel['onAfterShow'] = (msg: Message) => {
+            onAfterShow(msg);
+            sidebarVisibleKey.set(true);
+        };
+        const onAfterHide = leftSideBarPanel['onAfterHide'].bind(leftSideBarPanel);
+        leftSideBarPanel['onAfterHide'] = (msg: Message) => {
+            onAfterHide(msg);
+            sidebarVisibleKey.set(false);
+        };
+    }
+
+    protected initFocusKeyContexts(): void {
+        const sideBarFocus = this.contextKeyService.createKey('sideBarFocus', false);
+        const panelFocus = this.contextKeyService.createKey('panelFocus', false);
+        const updateFocusContextKeys = () => {
+            const area = this.activeWidget && this.getAreaFor(this.activeWidget);
+            sideBarFocus.set(area === 'left');
+            panelFocus.set(area === 'main');
+        };
+        updateFocusContextKeys();
+        this.activeChanged.connect(updateFocusContextKeys);
     }
 
     protected onBeforeAttach(msg: Message): void {
