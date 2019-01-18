@@ -72,7 +72,7 @@ export class MonacoEditorProvider {
                 const originalGetValue = this.hookedConfigService.getValue.bind(this.hookedConfigService);
                 this.hookedConfigService.getValue = (arg1: any, arg2: any) => {
                     const creationOptions = originalGetValue(arg1, arg2);
-                    if (creationOptions) {
+                    if (typeof creationOptions === 'object') {
                         const eol = this.getEOL();
                         creationOptions.files = {
                             eol
