@@ -585,6 +585,10 @@ export function createAPIFactory(
 
             onDidStartTask(listener, thisArg?, disposables?) {
                 return tasksExt.onDidStartTask(listener, thisArg, disposables);
+            },
+
+            onDidEndTask(listener, thisArg?, disposables?) {
+                return tasksExt.onDidEndTask(listener, thisArg, disposables);
             }
         };
 

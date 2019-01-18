@@ -36,6 +36,7 @@ export class TasksExtImpl implements TasksExt {
     private taskExecutions = new Map<number, theia.TaskExecution>();
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
+    private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
@@ -48,6 +49,23 @@ export class TasksExtImpl implements TasksExt {
     $onDidStartTask(execution: TaskExecutionDto): void {
         this.onDidExecuteTask.fire({
             execution: this.getTaskExecution(execution)
+        });
+    }
+
+    get onDidEndTask(): Event<theia.TaskEndEvent> {
+        return this.onDidTerminateTask.event;
+    }
+
+    $onDidEndTask(id: number): void {
+        const taskExecution = this.taskExecutions.get(id);
+        if (!taskExecution) {
+            throw new Error(`Task execution with id ${id} is not found`);
+        }
+
+        this.taskExecutions.delete(id);
+
+        this.onDidTerminateTask.fire({
+            execution: taskExecution
         });
     }
 
