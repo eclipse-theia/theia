@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-declare module 'vscode-nsfw' {
+declare module 'nsfw' {
     function nsfw(dir: string, eventHandler: (events: nsfw.ChangeEvent[]) => void, options?: nsfw.Options): Promise<nsfw.NSFW>;
 
     namespace nsfw {

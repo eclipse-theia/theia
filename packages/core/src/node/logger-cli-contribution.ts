@@ -19,7 +19,7 @@ import { injectable } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { CliContribution } from './cli';
 import * as fs from 'fs-extra';
-import * as nsfw from 'vscode-nsfw';
+import * as nsfw from 'nsfw';
 import { Event, Emitter } from '../common/event';
 import * as path from 'path';
 
