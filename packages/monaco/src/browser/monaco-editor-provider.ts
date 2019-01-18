@@ -75,7 +75,7 @@ export class MonacoEditorProvider {
                     if (creationOptions) {
                         const eol = this.getEOL();
                         creationOptions.files = {
-                            eol
+                            eol: eol === 'CRLF' ? '\r\n' : '\n'
                         };
                     }
                     return creationOptions;
@@ -87,12 +87,10 @@ export class MonacoEditorProvider {
 
     protected getEOL(): EndOfLinePreference {
         const eol = this.editorPreferences['files.eol'];
-        if (eol) {
-            if (eol !== 'auto') {
+        if (eol && eol !== 'auto') {
                 return eol;
-            }
         }
-        return this.isWindowsBackend ? '\r\n' : '\n';
+        return this.isWindowsBackend ? 'CRLF' : 'LF';
     }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
