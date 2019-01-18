@@ -185,7 +185,6 @@ export class MonacoSnippetSuggestion implements monaco.modes.ISuggestion {
     resolve(): MonacoSnippetSuggestion {
         if (!this.resolved) {
             const codeSnippet = new monaco.snippetParser.SnippetParser().parse(this.snippet.body).toString();
-            this.insertText = codeSnippet;
             this.documentation = { value: '```\n' + codeSnippet + '```' };
             this.resolved = true;
         }
