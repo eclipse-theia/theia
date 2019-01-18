@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as fs from 'fs';
-import * as nsfw from 'vscode-nsfw';
+import * as nsfw from 'nsfw';
 import * as paths from 'path';
 import { IMinimatch, Minimatch } from 'minimatch';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
