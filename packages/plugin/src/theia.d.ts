@@ -7021,6 +7021,18 @@ declare module '@theia/plugin' {
         execution: TaskExecution;
     }
 
+    /**
+     * An event signaling the end of an executed task.
+     *
+     * This interface is not intended to be implemented.
+     */
+    interface TaskEndEvent {
+        /**
+         * The task item representing the task that finished.
+         */
+        execution: TaskExecution;
+    }
+
     export namespace tasks {
 
         /**
@@ -7034,6 +7046,9 @@ declare module '@theia/plugin' {
 
         /** Fires when a task starts. */
         export const onDidStartTask: Event<TaskStartEvent>;
+
+        /** Fires when a task ends. */
+        export const onDidEndTask: Event<TaskEndEvent>;
     }
 
     /**

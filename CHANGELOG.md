@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.3.20
+- [plugin] added `tasks.onDidEndTask` Plug-in API
+
+
 ## v0.3.19
 - [core] added `hostname` alias
 - [core] added new `editor.formatOnSave` preference, to format documents on manual save
