@@ -19,6 +19,7 @@ import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/
 import URI from '@theia/core/lib/common/uri';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { DebugSession } from '../debug-session';
+import Uri from 'vscode-uri';
 
 export class DebugSourceData {
     readonly raw: DebugProtocol.Source;
@@ -86,19 +87,6 @@ export class DebugSource extends DebugSourceData {
         if (raw.path.match(DebugSource.SCHEME_PATTERN)) {
             return new URI(raw.path);
         }
-        return new URI().withScheme('file').withPath(raw.path);
+        return new URI(Uri.file(raw.path));
     }
-    static toSource(uri: URI): DebugProtocol.Source {
-        if (uri.scheme === DebugSource.SCHEME) {
-            return {
-                name: uri.path.toString(),
-                sourceReference: Number(uri.query)
-            };
-        }
-        return {
-            name: uri.displayName,
-            path: uri.path.toString()
-        };
-    }
-
 }

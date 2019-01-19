@@ -21,7 +21,8 @@
     "p-debounce": "^1.0.0",
     "tar": "^4.0.0",
     "unzip-stream": "^0.3.0",
-    "vscode-debugprotocol": "^1.32.0"
+    "vscode-debugprotocol": "^1.32.0",
+    "vscode-uri": "^1.0.1"
   },
   "publishConfig": {
     "access": "public"

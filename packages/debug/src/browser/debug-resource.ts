@@ -29,12 +29,12 @@ export class DebugResource implements Resource {
 
     dispose(): void { }
 
-    readContents(): Promise<string> {
+    async readContents(): Promise<string> {
         const { currentSession } = this.manager;
         if (!currentSession) {
             throw new Error(`There is no active debug session to load content '${this.uri}'`);
         }
-        const source = currentSession.toSource(this.uri);
+        const source = await currentSession.toSource(this.uri);
         if (!source) {
             throw new Error(`There is no source for '${this.uri}'`);
         }
