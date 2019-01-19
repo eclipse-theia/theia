@@ -62,8 +62,9 @@
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn rebuild:electron",
     "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
     "publish": "yarn && yarn test && yarn publish:latest",
-    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --skip-git --force-publish",
-    "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes"
+    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --skip-git --force-publish && yarn publish:check",
+    "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes && yarn publish:check",
+    "publish:check": "node scripts/check-publish.js"
   },
   "workspaces": [
     "dev-packages/*",
