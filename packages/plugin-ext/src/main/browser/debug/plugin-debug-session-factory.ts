@@ -26,6 +26,7 @@ import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-opti
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 /**
  * Session factory for a client debug session that communicates with debug adapter contributed as plugin.
@@ -40,7 +41,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected readonly messages: MessageClient,
         protected readonly outputChannelManager: OutputChannelManager,
         protected readonly debugPreferences: DebugPreferences,
-        protected readonly connectionFactory: (sessionId: string) => Promise<IWebSocket>
+        protected readonly connectionFactory: (sessionId: string) => Promise<IWebSocket>,
+        protected readonly fileSystem: FileSystem
     ) {
         super();
     }
@@ -59,6 +61,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.editorManager,
             this.breakpoints,
             this.labelProvider,
-            this.messages);
+            this.messages,
+            this.fileSystem);
     }
 }
