@@ -48,6 +48,7 @@ import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
 import { PluginWebSocketChannel } from '../../../common/connection';
 import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from './plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 export class DebugMainImpl implements DebugMain {
     private readonly debugExt: DebugExt;
@@ -65,6 +66,7 @@ export class DebugMainImpl implements DebugMain {
     private readonly sessionContributionRegistrator: PluginDebugSessionContributionRegistrator;
     private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
     private readonly debugSchemaUpdater: DebugSchemaUpdater;
+    private readonly fileSystem: FileSystem;
 
     private readonly toDispose = new Map<string, DisposableCollection>();
 
@@ -83,6 +85,7 @@ export class DebugMainImpl implements DebugMain {
         this.adapterContributionRegistrator = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
         this.debugSchemaUpdater = container.get(DebugSchemaUpdater);
+        this.fileSystem = container.get(FileSystem);
 
         this.breakpointsManager.onDidChangeBreakpoints(({ added, removed, changed }) => {
             // TODO can we get rid of all to reduce amount of data set each time, should not it be possible to recover on another side from deltas?
@@ -124,7 +127,8 @@ export class DebugMainImpl implements DebugMain {
             async (sessionId: string) => {
                 const connection = await this.connectionMain.ensureConnection(sessionId);
                 return new PluginWebSocketChannel(connection);
-            }
+            },
+            this.fileSystem
         );
 
         disposable.pushAll([

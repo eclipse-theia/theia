@@ -167,6 +167,13 @@ export default class URI {
         return this.withFragment('');
     }
 
+    /**
+     * return a new URI replacing the current with the given file
+     */
+    withFile(file: string): URI {
+        return new URI(Uri.file(file));
+    }
+
     get scheme(): string {
         return this.codeUri.scheme;
     }
