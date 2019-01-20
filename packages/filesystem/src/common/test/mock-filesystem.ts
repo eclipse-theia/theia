@@ -97,7 +97,7 @@ export class MockFilesystem implements FileSystem {
         return [];
     }
 
-    async getFsPath(uri: string): Promise<string | undefined> {
-        return undefined;
+    async getFsPath(uri: string): Promise<string> {
+        return '';
     }
 }
