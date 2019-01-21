@@ -538,15 +538,19 @@ export interface HostedPluginClient {
     log(logPart: LogPart): void;
 }
 
+export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
+export interface PluginDeployerHandler {
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+}
+
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
     getHostedPlugin(): Promise<PluginMetadata | undefined>;
 
     getDeployedMetadata(): Promise<PluginMetadata[]>;
     getDeployedFrontendMetadata(): Promise<PluginMetadata[]>;
-    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     getDeployedBackendMetadata(): Promise<PluginMetadata[]>;
-    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 
@@ -590,4 +594,9 @@ export interface ServerPluginRunner {
     onMessage(jsonMessage: any): void;
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;
+
+    /**
+     * Provides additional metadata.
+     */
+    getExtraPluginMetadata(): Promise<PluginMetadata[]>;
 }

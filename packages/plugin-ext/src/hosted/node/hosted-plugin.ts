@@ -16,7 +16,7 @@
 
 import { injectable, inject, multiInject, postConstruct, optional } from 'inversify';
 import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
-import { HostedPluginClient, PluginModel, ServerPluginRunner } from '../../common/plugin-protocol';
+import { HostedPluginClient, PluginModel, ServerPluginRunner, PluginMetadata } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
 import { HostedPluginProcess } from './hosted-plugin-process';
 
@@ -95,6 +95,10 @@ export class HostedPluginSupport {
             this.hostedPluginProcess.runPluginServer();
             this.isPluginProcessRunning = true;
         }
+    }
+
+    public async getExtraPluginMetadata(): Promise<PluginMetadata[]> {
+        return [].concat.apply([], await Promise.all(this.pluginRunners.map(runner => runner.getExtraPluginMetadata())));
     }
 
     public sendLog(logPart: LogPart): void {

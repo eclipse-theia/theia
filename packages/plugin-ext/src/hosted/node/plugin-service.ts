@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, named } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry, DebugConfiguration } from '../../common/plugin-protocol';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry, DebugConfiguration, PluginDeployerHandler } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { HostedPluginSupport } from './hosted-plugin';
@@ -25,7 +25,7 @@ import { ContributionProvider } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 
 @injectable()
-export class HostedPluginServerImpl implements HostedPluginServer {
+export class HostedPluginServerImpl implements HostedPluginServer, PluginDeployerHandler {
     @inject(ILogger)
     protected readonly logger: ILogger;
     @inject(HostedPluginsManager)
@@ -69,11 +69,16 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return Promise.resolve(this.currentFrontendPluginsMetadata);
     }
 
-    getDeployedMetadata(): Promise<PluginMetadata[]> {
+    async getDeployedMetadata(): Promise<PluginMetadata[]> {
         const allMetadata: PluginMetadata[] = [];
         allMetadata.push(...this.currentFrontendPluginsMetadata);
         allMetadata.push(...this.currentBackendPluginsMetadata);
-        return Promise.resolve(allMetadata);
+
+        // ask remote as well
+        const extraBackendPluginsMetadata = await this.hostedPlugin.getExtraPluginMetadata();
+        allMetadata.push(...extraBackendPluginsMetadata);
+
+        return allMetadata;
     }
 
     // need to run a new node instance with plugin-host for all plugins
