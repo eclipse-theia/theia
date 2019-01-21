@@ -26,14 +26,18 @@ import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
 import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
-import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath } from '../../common/plugin-protocol';
+import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler } from '../../common/plugin-protocol';
 import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
-    bind(HostedPluginServer).to(HostedPluginServerImpl).inSingletonScope();
+
+    bind(HostedPluginServerImpl).toSelf().inSingletonScope();
+    bind(HostedPluginServer).toService(HostedPluginServerImpl);
+    bind(PluginDeployerHandler).toService(HostedPluginServerImpl);
+
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(MetadataScanner).toSelf().inSingletonScope();
     bind(HostedPluginsManager).to(HostedPluginsManagerImpl).inSingletonScope();

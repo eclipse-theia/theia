@@ -20,7 +20,7 @@ import { injectable, optional, multiInject, inject } from 'inversify';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
-    PluginDeployerDirectoryHandlerContext, HostedPluginServer, PluginDeployerEntryType,
+    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler,
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import { PluginDeployerResolverContextImpl, PluginDeployerResolverInitImpl } from './plugin-deployer-resolver-context-impl';
@@ -35,8 +35,8 @@ export class PluginDeployerImpl implements PluginDeployer {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    @inject(PluginDeployerHandler)
+    protected readonly hostedPluginServer: PluginDeployerHandler;
 
     /**
      * Deployer entries.
