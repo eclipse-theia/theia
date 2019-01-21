@@ -223,7 +223,10 @@ if (isMaster) {
                 // See: https://github.com/theia-ide/theia/issues/835
                 process.kill(cp.pid);
             });
-        }
+        }${
+            this.pck.targetElectronMasterModules.size > 0 ?
+                `
+        require('../backend/electron-master.js');` : ''}
     });
 } else {
     require('../backend/main');
