@@ -25,7 +25,7 @@ export class BackendGenerator extends AbstractGenerator {
 
         if (this.pck.targetElectronMasterModules.size > 0) {
             await this.write(
-                this.pck.backend('electronMaster.js'),
+                this.pck.backend('electron-master.js'),
                 this.compileElectronMaster(this.pck.targetElectronMasterModules)
             );
         }
@@ -81,8 +81,7 @@ module.exports = (port, host, argv) => Promise.resolve()${this.compileBackendMod
 
     protected compileElectronMaster(backendMasterModules: Map<string, string>) {
         return `// @ts-check
-${[...backendMasterModules.values()].map(module => `require('${module}')`)
-                .join('\n')}`;
+${[...backendMasterModules.values()].map(module => `require('${module}');`).join('\n')}`;
     }
 
     protected compileMain(backendModules: Map<string, string>): string {

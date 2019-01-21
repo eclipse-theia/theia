@@ -226,7 +226,7 @@ if (isMaster) {
         }${
             this.pck.targetElectronMasterModules.size > 0 ?
                 `
-        require('../backend/electronMaster.js')` : ''}
+        require('../backend/electron-master.js');` : ''}
     });
 } else {
     require('../backend/main');
