@@ -26,3 +26,11 @@ export function* split(s: string, splitter: string): IterableIterator<string> {
         start = end + splitter.length;
     }
 }
+
+export function escapeInvisibleChars(value: string ): string  {
+    return value.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+}
+
+export function unescapeInvisibleChars(value: string): string {
+    return value.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+}
