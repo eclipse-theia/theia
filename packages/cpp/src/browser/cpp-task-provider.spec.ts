@@ -20,7 +20,7 @@ import { TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution'
 import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
 import { Event } from '@theia/core';
 import { expect } from 'chai';
-import { TaskConfiguration } from '@theia/task/src/common';
+import { ResolvedTaskConfiguration } from '@theia/task/src/common';
 import { ProcessTaskConfiguration } from '@theia/task/lib/common/process/task-protocol';
 
 // The object under test.
@@ -74,7 +74,7 @@ beforeEach(function () {
     // depend.  Just return the task as-is, since we only need to verify what
     // CppTaskProvider passed to the shell task resolver.
     container.get(TaskResolverRegistry).register('shell', {
-        async resolveTask(task: TaskConfiguration): Promise<TaskConfiguration> {
+        async resolveTask(task: ResolvedTaskConfiguration): Promise<ResolvedTaskConfiguration> {
             return task;
         }
     });
@@ -84,12 +84,12 @@ describe('CppTaskProvider', function () {
     it('provide a task for each build config with a build command', async function () {
         const tasks = await taskProvider.provideTasks();
         expect(tasks).length(1);
-        expect(tasks[0].config.name === 'Build 1');
+        expect(tasks[0].task.config.name === 'Build 1');
 
         const resolvedTask = await taskProvider.resolveTask(tasks[0]);
-        expect(resolvedTask.type === 'shell');
-        expect((<ProcessTaskConfiguration>resolvedTask).cwd === '/tmp/build1');
-        expect((<ProcessTaskConfiguration>resolvedTask).command === 'very');
-        expect((<ProcessTaskConfiguration>resolvedTask).args).to.deep.equal(['complex', 'command']);
+        expect(resolvedTask.task.type === 'shell');
+        expect((<ProcessTaskConfiguration>resolvedTask.task).cwd === '/tmp/build1');
+        expect((<ProcessTaskConfiguration>resolvedTask.task).command === 'very');
+        expect((<ProcessTaskConfiguration>resolvedTask.task).args).to.deep.equal(['complex', 'command']);
     });
 });

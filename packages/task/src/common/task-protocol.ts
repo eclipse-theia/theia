@@ -22,17 +22,26 @@ export const TaskServer = Symbol('TaskServer');
 export const TaskClient = Symbol('TaskClient');
 
 export interface TaskConfiguration {
-    /**
-     * Source of the task configuration.
-     * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
-     */
-    readonly source: string;
     /** A label that uniquely identifies a task configuration per source */
     readonly label: string;
     readonly type: string;
     /** Additional task type specific properties. */
     // tslint:disable-next-line:no-any
     readonly [key: string]: any;
+}
+
+export interface ResolvedTaskConfiguration {
+    /**
+     * Source of the task configuration.
+     * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
+     */
+    readonly source: string;
+    readonly task: TaskConfiguration;
+}
+export namespace ResolvedTaskConfiguration {
+    export function fromTaskConfig(source: string, task: TaskConfiguration): ResolvedTaskConfiguration {
+        return { source, task };
+    }
 }
 
 /** Runtime information about Task. */
@@ -52,7 +61,7 @@ export interface TaskInfo {
 
 export interface TaskServer extends JsonRpcServer<TaskClient> {
     /** Run a task. Optionally pass a context.  */
-    run(task: TaskConfiguration, ctx?: string): Promise<TaskInfo>;
+    run(task: ResolvedTaskConfiguration, ctx?: string): Promise<TaskInfo>;
     /** Kill a task, by id. */
     kill(taskId: number): Promise<void>;
     /**

@@ -27,7 +27,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { TaskInfo } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
-import { TaskConfiguration } from '@theia/task/lib/common';
+import { TaskConfiguration, ResolvedTaskConfiguration } from '@theia/task/lib/common';
 
 export class TasksMainImpl implements TasksMain {
     private workspaceRootUri: string | undefined = undefined;
@@ -90,14 +90,32 @@ export class TasksMainImpl implements TasksMain {
     protected createTaskProvider(handle: number): TaskProvider {
         return {
             provideTasks: () =>
-                this.proxy.$provideTasks(handle).then(v => <TaskConfiguration[]>v),
+                this.proxy.$provideTasks(handle).then(v => {
+                    if (v) {
+                        return v.map(taskDto => {
+                            const source = taskDto.source;
+                            delete taskDto.source;
+                            return { task: <TaskConfiguration>taskDto, source } as ResolvedTaskConfiguration;
+                        });
+                    }
+                    return [];
+                }),
         };
     }
 
     protected createTaskResolver(handle: number): TaskResolver {
         return {
-            resolveTask: taskConfig =>
-                this.proxy.$resolveTask(handle, taskConfig).then(v => <TaskConfiguration>v!),
+            resolveTask: resolvedTaskConfig => {
+                const taskDto = {
+                    ...resolvedTaskConfig.task,
+                    source: resolvedTaskConfig.source
+                };
+                return this.proxy.$resolveTask(handle, taskDto).then(v => {
+                    const source = v!.source;
+                    delete v!.source;
+                    return { task: <TaskConfiguration>v!, source } as ResolvedTaskConfiguration;
+                });
+            }
         };
     }
 }

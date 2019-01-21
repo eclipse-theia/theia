@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/';
-import { TaskClient, TaskExitedEvent, TaskInfo, TaskServer, TaskConfiguration } from '../common/task-protocol';
+import { TaskClient, TaskExitedEvent, TaskInfo, TaskServer, ResolvedTaskConfiguration } from '../common/task-protocol';
 import { TaskManager } from './task-manager';
 import { TaskRunnerRegistry } from './task-runner';
 
@@ -53,9 +53,9 @@ export class TaskServerImpl implements TaskServer {
         return Promise.resolve(taskInfo);
     }
 
-    async run(taskConfiguration: TaskConfiguration, ctx?: string): Promise<TaskInfo> {
-        const runner = this.runnerRegistry.getRunner(taskConfiguration.type);
-        const task = await runner.run(taskConfiguration, ctx);
+    async run(resolvedTask: ResolvedTaskConfiguration, ctx?: string): Promise<TaskInfo> {
+        const runner = this.runnerRegistry.getRunner(resolvedTask.task.type);
+        const task = await runner.run(resolvedTask.task, ctx);
 
         task.onExit(event => {
             this.taskManager.delete(task);

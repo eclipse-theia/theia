@@ -19,13 +19,17 @@ import { inject, injectable } from 'inversify';
 import { ProcessTaskConfiguration } from '@theia/task/lib/common/process/task-protocol';
 import { TaskContribution, TaskProvider, TaskProviderRegistry, TaskResolver, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
 import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
-import { TaskConfiguration } from '@theia/task/lib/common/task-protocol';
+import { TaskConfiguration, ResolvedTaskConfiguration } from '@theia/task/lib/common/task-protocol';
 
 /**
  * Data required to define a C/C++ build task the user could run.
  */
 interface CppBuildTaskConfiguration extends TaskConfiguration {
     config: CppBuildConfiguration;
+}
+
+interface ResolvedCppBuildTaskConfiguration extends ResolvedTaskConfiguration {
+    task: CppBuildTaskConfiguration;
 }
 
 const CPP_BUILD_TASK_TYPE_KEY: string = 'cpp.build';
@@ -45,12 +49,13 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         registry.register(CPP_BUILD_TASK_TYPE_KEY, this);
     }
 
-    async resolveTask(task: CppBuildTaskConfiguration): Promise<TaskConfiguration> {
+    async resolveTask(resolvedCppTask: ResolvedCppBuildTaskConfiguration): Promise<ResolvedTaskConfiguration> {
         const resolver = this.taskResolverRegistry.getResolver('shell');
         if (!resolver) {
             throw new Error('No shell resolver found, cannot build.');
         }
 
+        const task = resolvedCppTask.task;
         const buildCommand = task.config.commands && task.config.commands['build'];
         if (buildCommand === undefined) {
             throw new Error(`No build command defined in build configuration ${task.config.name}.`);
@@ -72,20 +77,22 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
             args,
             cwd: task.config.directory,
         };
-        return resolver.resolveTask(resolvedTask);
+        return resolver.resolveTask({ source: CPP_BUILD_TASK_SOURCE, task: resolvedTask });
     }
 
     /**
      * Return a C/C++ build task configuration based on `config`, or undefined
      * if `config` doesn't specify a build command.
      */
-    makeTaskConfiguration(config: CppBuildConfiguration): CppBuildTaskConfiguration | undefined {
+    makeTaskConfiguration(config: CppBuildConfiguration): ResolvedCppBuildTaskConfiguration | undefined {
         if (config.commands && config.commands.build) {
             return {
-                type: CPP_BUILD_TASK_TYPE_KEY,
                 source: CPP_BUILD_TASK_SOURCE,
-                label: `C/C++ Build - ${config.name}`,
-                config
+                task: {
+                    type: CPP_BUILD_TASK_TYPE_KEY,
+                    label: `C/C++ Build - ${config.name}`,
+                    config
+                }
             };
         }
 
@@ -95,9 +102,9 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
     /**
      * Return the C/C++ build tasks (one task per existing build config).
      */
-    async provideTasks(): Promise<CppBuildTaskConfiguration[]> {
+    async provideTasks(): Promise<ResolvedCppBuildTaskConfiguration[]> {
         const buildConfigs = this.cppBuildConfigurationManager.getConfigs();
-        const taskConfigs: CppBuildTaskConfiguration[] = [];
+        const taskConfigs: ResolvedCppBuildTaskConfiguration[] = [];
         for (const buildConfig of buildConfigs) {
             const taskConfig = this.makeTaskConfiguration(buildConfig);
             if (taskConfig) {

@@ -18,7 +18,7 @@ import { inject, injectable } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, QuickOpenHandler, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/';
 import { TaskService } from './task-service';
 import { TaskConfigurations } from './task-configurations';
-import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
+import { TaskInfo, ResolvedTaskConfiguration } from '../common/task-protocol';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -119,7 +119,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
     constructor(
-        protected readonly task: TaskConfiguration,
+        protected readonly resolvedTask: ResolvedTaskConfiguration,
         protected taskService: TaskService,
         protected readonly isConfigured: boolean,
         protected readonly groupLabel: string | undefined
@@ -128,7 +128,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getLabel(): string {
-        return `${this.task.type}: ${this.task.label}`;
+        return `${this.resolvedTask.task.type}: ${this.resolvedTask.task.label}`;
     }
 
     getGroupLabel(): string {
@@ -137,16 +137,16 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
     getDescription(): string {
         if (this.isConfigured) {
-            return new URI(this.task.source).displayName;
+            return new URI(this.resolvedTask.source).displayName;
         }
-        return this.task.source;
+        return this.resolvedTask.source;
     }
 
     run(mode: QuickOpenMode): boolean {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        this.taskService.run(this.task.source, this.task.label);
+        this.taskService.run(this.resolvedTask.source, this.resolvedTask.task.label);
 
         return true;
     }

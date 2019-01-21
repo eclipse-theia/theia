@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration } from '../common/task-protocol';
+import { TaskConfiguration, ResolvedTaskConfiguration } from '../common/task-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcherServer, FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -42,7 +42,7 @@ export class TaskConfigurations implements Disposable {
      * Map of source (path of root folder that the task config comes from) and task config map.
      * For the inner map (i.e., task config map), the key is task label and value TaskConfiguration
      */
-    protected tasksMap = new Map<string, Map<string, TaskConfiguration>>();
+    protected tasksMap = new Map<string, Map<string, ResolvedTaskConfiguration>>();
     protected watchedConfigFileUris: string[] = [];
     protected watchersMap = new Map<string, Disposable>(); // map of watchers for task config files, where the key is folder uri
 
@@ -141,12 +141,12 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** returns the list of known tasks */
-    getTasks(): TaskConfiguration[] {
-        return Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
+    getTasks(): ResolvedTaskConfiguration[] {
+        return Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as ResolvedTaskConfiguration[]);
     }
 
     /** returns the task configuration for a given label or undefined if none */
-    getTask(source: string, taskLabel: string): TaskConfiguration | undefined {
+    getTask(source: string, taskLabel: string): ResolvedTaskConfiguration | undefined {
         const labelConfigMap = this.tasksMap.get(source);
         if (labelConfigMap) {
             return labelConfigMap.get(taskLabel);
@@ -184,18 +184,18 @@ export class TaskConfigurations implements Disposable {
      * If reading a config file wasn't successful then does nothing.
      */
     protected async refreshTasks(configFileUri: string) {
-        const tasksConfigsArray = await this.readTasks(configFileUri);
-        if (tasksConfigsArray) {
+        const resolvedTasksArray = await this.readTasks(configFileUri);
+        if (resolvedTasksArray) {
             // only clear tasks map when successful at parsing the config file
             // this way we avoid clearing and re-filling it multiple times if the
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
             this.removeTasks(configFileUri);
 
-            if (tasksConfigsArray.length > 0) {
-                const newTaskMap = new Map<string, TaskConfiguration>();
-                for (const task of tasksConfigsArray) {
-                    newTaskMap.set(task.label, task);
+            if (resolvedTasksArray.length > 0) {
+                const newTaskMap = new Map<string, ResolvedTaskConfiguration>();
+                for (const resolvedTask of resolvedTasksArray) {
+                    newTaskMap.set(resolvedTask.task.label, resolvedTask);
                 }
                 const source = this.getSourceFolderFromConfigUri(configFileUri);
                 this.tasksMap.set(source, newTaskMap);
@@ -204,7 +204,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** parses a config file and extracts the tasks launch configurations */
-    protected async readTasks(uri: string): Promise<TaskConfiguration[] | undefined> {
+    protected async readTasks(uri: string): Promise<ResolvedTaskConfiguration[] | undefined> {
         if (!await this.fileSystem.exists(uri)) {
             return undefined;
         } else {
@@ -220,7 +220,7 @@ export class TaskConfigurations implements Disposable {
                         console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
                     }
                 } else {
-                    return this.filterDuplicates(tasks['tasks']).map(t => Object.assign(t, { source: this.getSourceFolderFromConfigUri(uri) }));
+                    return this.filterDuplicates(tasks['tasks']).map(task => ({ task, source: this.getSourceFolderFromConfigUri(uri) }));
                 }
             } catch (err) {
                 console.error(`Error(s) reading config file: ${uri}`);

@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct } from 'inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { TaskConfiguration } from '../common/task-protocol';
+import { ResolvedTaskConfiguration } from '../common/task-protocol';
 
 export const TaskContribution = Symbol('TaskContribution');
 
@@ -28,12 +28,12 @@ export interface TaskContribution {
 
 export interface TaskResolver {
     /** Resolves a Task Configuration before sending it for execution to the Task Server. */
-    resolveTask(taskConfig: TaskConfiguration): Promise<TaskConfiguration>;
+    resolveTask(taskConfig: ResolvedTaskConfiguration): Promise<ResolvedTaskConfiguration>;
 }
 
 export interface TaskProvider {
     /** Returns the Task Configurations which are provides programmatically to the system. */
-    provideTasks(): Promise<TaskConfiguration[]>;
+    provideTasks(): Promise<ResolvedTaskConfiguration[]>;
 }
 
 @injectable()

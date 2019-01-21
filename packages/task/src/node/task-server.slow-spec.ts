@@ -16,7 +16,7 @@
 
 import { createTaskTestContainer } from './test/task-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
-import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration } from '../common';
+import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration, ResolvedTaskConfiguration } from '../common';
 import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-protocol';
 import * as http from 'http';
 import * as https from 'https';
@@ -156,7 +156,7 @@ describe('Task server / back-end', function () {
         const command = isWindows ? commandToFindInPathWindows : commandToFindInPathUnix;
 
         // there's no runner registered for the 'npm' task type
-        const taskConfig: TaskConfiguration = createTaskConfig('npm', command, []);
+        const taskConfig = createTaskConfig('npm', command, []);
         const taskInfo: TaskInfo = await taskServer.run(taskConfig, wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
@@ -167,7 +167,7 @@ describe('Task server / back-end', function () {
     it('task can successfully execute command found in system path using a terminal process', async function () {
         const command = isWindows ? commandToFindInPathWindows : commandToFindInPathUnix;
 
-        const opts: TaskConfiguration = createProcessTaskConfig('shell', command, []);
+        const opts = createProcessTaskConfig('shell', command, []);
         const taskInfo: TaskInfo = await taskServer.run(opts, wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
@@ -333,11 +333,10 @@ describe('Task server / back-end', function () {
 
 });
 
-function createTaskConfig(taskType: string, command: string, args: string[]): TaskConfiguration {
-    const options: TaskConfiguration = {
+function createTaskConfig(taskType: string, command: string, args: string[]): ResolvedTaskConfiguration {
+    const task: TaskConfiguration = {
         label: 'test task',
         type: taskType,
-        source: '/source/folder',
         command: command,
         args: args,
         windows: {
@@ -351,14 +350,13 @@ function createTaskConfig(taskType: string, command: string, args: string[]): Ta
         },
         cwd: wsRoot
     };
-    return options;
+    return { task, source: '/source/folder' };
 }
 
-function createProcessTaskConfig(processType: ProcessType, command: string, args: string[], cwd: string = wsRoot): TaskConfiguration {
+function createProcessTaskConfig(processType: ProcessType, command: string, args: string[], cwd: string = wsRoot): ResolvedTaskConfiguration {
     const options: ProcessTaskConfiguration = {
         label: 'test task',
         type: processType,
-        source: '/source/folder',
         command: command,
         args: args,
         windows: {
@@ -372,21 +370,22 @@ function createProcessTaskConfig(processType: ProcessType, command: string, args
         },
         cwd: cwd
     };
-    return options;
+    return { task: options, source: '/source/folder' };
 }
 
-function createProcessTaskConfig2(processType: ProcessType, command: string, args: string[]): TaskConfiguration {
-    return <ProcessTaskConfiguration>{
+function createProcessTaskConfig2(processType: ProcessType, command: string, args: string[]): ResolvedTaskConfiguration {
+    const task = <ProcessTaskConfiguration>{
         label: 'test task',
         type: processType,
         command: command,
         args: args,
         cwd: wsRoot
     };
+    return { task, source: '/source/folder' };
 }
 
-function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfiguration {
-    return <ProcessTaskConfiguration>{
+function createTaskConfigTaskLongRunning(processType: ProcessType): ResolvedTaskConfiguration {
+    const task = <ProcessTaskConfiguration>{
         label: '[Task] long running test task (~300s)',
         type: processType,
         source: '/source/folder',
@@ -401,6 +400,7 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
             ]
         }
     };
+    return { task, source: '/source/folder' };
 }
 
 function checkSuccessfullProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<object> {

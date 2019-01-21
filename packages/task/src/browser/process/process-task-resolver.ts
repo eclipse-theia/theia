@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskResolver } from '../task-contribution';
-import { TaskConfiguration } from '../../common/task-protocol';
+import { ResolvedTaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
 import URI from '@theia/core/lib/common/uri';
 
@@ -33,16 +33,16 @@ export class ProcessTaskResolver implements TaskResolver {
      * are optional to the user but required by the server will be defined, with
      * sane default values. Also, resolve all known variables, e.g. `${workspaceFolder}`.
      */
-    async resolveTask(taskConfig: TaskConfiguration): Promise<TaskConfiguration> {
+    async resolveTask(resolvedTaskConfig: ResolvedTaskConfiguration): Promise<ResolvedTaskConfiguration> {
+        const taskConfig = resolvedTaskConfig.task;
         if (taskConfig.type !== 'process' && taskConfig.type !== 'shell') {
             throw new Error('Unsupported task configuration type.');
         }
 
-        const options = { context: new URI(taskConfig.source).withScheme('file') };
+        const options = { context: new URI(resolvedTaskConfig.source).withScheme('file') };
         const processTaskConfig = taskConfig as ProcessTaskConfiguration;
-        const result: ProcessTaskConfiguration = {
+        const task: ProcessTaskConfiguration = {
             type: processTaskConfig.type,
-            source: processTaskConfig.source,
             label: processTaskConfig.label,
             command: await this.variableResolverService.resolve(processTaskConfig.command, options),
             args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, options) : undefined,
@@ -54,6 +54,6 @@ export class ProcessTaskResolver implements TaskResolver {
             } : undefined,
             cwd: await this.variableResolverService.resolve(processTaskConfig.cwd || '${workspaceFolder}', options)
         };
-        return result;
+        return { source: resolvedTaskConfig.source, task };
     }
 }

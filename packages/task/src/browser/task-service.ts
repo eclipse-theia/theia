@@ -22,7 +22,7 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
+import { TaskServer, TaskExitedEvent, TaskInfo, ResolvedTaskConfiguration } from '../common/task-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskWatcher } from '../common/task-watcher';
@@ -116,15 +116,15 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /** Returns an array of the task configurations configured in tasks.json and provided by the extensions. */
-    async getTasks(): Promise<TaskConfiguration[]> {
+    async getTasks(): Promise<ResolvedTaskConfiguration[]> {
         const configuredTasks = this.taskConfigurations.getTasks();
         const providedTasks = await this.getProvidedTasks();
         return [...configuredTasks, ...providedTasks];
     }
 
     /** Returns an array of the task configurations which are provided by the extensions. */
-    async getProvidedTasks(): Promise<TaskConfiguration[]> {
-        const providedTasks: TaskConfiguration[] = [];
+    async getProvidedTasks(): Promise<ResolvedTaskConfiguration[]> {
+        const providedTasks: ResolvedTaskConfiguration[] = [];
         const providers = this.taskProviderRegistry.getProviders();
         for (const provider of providers) {
             providedTasks.push(...await provider.provideTasks());
@@ -136,11 +136,11 @@ export class TaskService implements TaskConfigurationClient {
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
-    async getProvidedTask(source: string, label: string): Promise<TaskConfiguration | undefined> {
+    async getProvidedTask(source: string, label: string): Promise<ResolvedTaskConfiguration | undefined> {
         const provider = this.taskProviderRegistry.getProvider(source);
         if (provider) {
             const tasks = await provider.provideTasks();
-            return tasks.find(t => t.label === label);
+            return tasks.find(t => t.task.label === label);
         }
         return undefined;
     }
@@ -155,12 +155,12 @@ export class TaskService implements TaskConfigurationClient {
      * Note, it looks for a task configured in tasks.json only.
      */
     async runConfiguredTask(source: string, taskLabel: string): Promise<void> {
-        const task = this.taskConfigurations.getTask(source, taskLabel);
-        if (!task) {
+        const resolvedTask = this.taskConfigurations.getTask(source, taskLabel);
+        if (!resolvedTask) {
             this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
             return;
         }
-        this.run(task.source, task.label);
+        this.run(resolvedTask.source, resolvedTask.task.label);
     }
 
     /**
@@ -177,10 +177,10 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
-        const resolver = this.taskResolverRegistry.getResolver(task.type);
-        let resolvedTask: TaskConfiguration;
+        const resolver = this.taskResolverRegistry.getResolver(task.task.type);
+        let resolvedTask: ResolvedTaskConfiguration;
         try {
-            resolvedTask = resolver ? await resolver.resolveTask(task) : task;
+            resolvedTask = resolver ? await resolver.resolveTask(task) : ResolvedTaskConfiguration.fromTaskConfig(source, task.task);
         } catch (error) {
             this.logger.error(`Error resolving task '${taskLabel}': ${error}`);
             this.messageService.error(`Error resolving task '${taskLabel}': ${error}`);
