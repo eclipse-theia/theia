@@ -32,7 +32,7 @@
   "files": [
     "lib",
     "src",
-    "scripts"
+    "adapters"
   ],
   "scripts": {
     "postinstall": "download-debug-adapters",
@@ -50,7 +50,7 @@
     "extends": "../../configs/nyc.json"
   },
   "adapters": {
-    "node-debug": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug/1.29.2/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage",
-    "node-debug2": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/ms-vscode/extension/node-debug2/1.29.2/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+    "node-debug": "adapters/node-debug.vsix",
+    "node-debug2": "adapters/node-debug2.vsix"
   }
 }

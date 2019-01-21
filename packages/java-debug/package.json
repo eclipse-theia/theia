@@ -33,7 +33,7 @@
   "files": [
     "lib",
     "src",
-    "scripts"
+    "adapters"
   ],
   "scripts": {
     "postinstall": "download-debug-adapters",
@@ -51,6 +51,6 @@
     "extends": "../../configs/nyc.json"
   },
   "adapters": {
-    "java-debug": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/vscjava/extension/vscode-java-debug/0.15.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+    "java-debug": "adapters/java-debug.vsix"
   }
 }
