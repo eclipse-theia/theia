@@ -154,7 +154,7 @@ export class ApplicationPackage {
         if (!this._backendElectronMasterModules) {
             this._backendElectronMasterModules = this.computeModules('backendMasterElectron');
         }
-        return this._backendElectronMasterModules;
+        return this.ifElectron(this._backendElectronMasterModules, new Map<string, string>());
     }
 
     protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
@@ -226,10 +226,6 @@ export class ApplicationPackage {
 
     get targetBackendModules(): Map<string, string> {
         return this.ifBrowser(this.backendModules, this.backendElectronModules);
-    }
-
-    get targetElectronMasterModules(): Map<string, string> {
-        return this.ifElectron(this.backendElectronMasterModules, new Map<string, string>());
     }
 
     get targetFrontendModules(): Map<string, string> {

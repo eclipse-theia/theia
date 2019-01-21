@@ -22,11 +22,10 @@ export class BackendGenerator extends AbstractGenerator {
         const backendModules = this.pck.targetBackendModules;
         await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
         await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
-
-        if (this.pck.targetElectronMasterModules.size > 0) {
+        if (this.pck.backendElectronMasterModules.size > 0) {
             await this.write(
                 this.pck.backend('electron-master.js'),
-                this.compileElectronMaster(this.pck.targetElectronMasterModules)
+                this.compileElectronMaster(this.pck.backendElectronMasterModules)
             );
         }
     }
