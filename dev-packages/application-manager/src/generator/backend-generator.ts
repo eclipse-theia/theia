@@ -22,6 +22,12 @@ export class BackendGenerator extends AbstractGenerator {
         const backendModules = this.pck.targetBackendModules;
         await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
         await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
+        if (this.pck.backendElectronMasterModules.size > 0) {
+            await this.write(
+                this.pck.backend('electron-master.js'),
+                this.compileElectronMaster(this.pck.backendElectronMasterModules)
+            );
+        }
     }
 
     protected compileServer(backendModules: Map<string, string>): string {
@@ -68,6 +74,11 @@ module.exports = (port, host, argv) => Promise.resolve()${this.compileBackendMod
         }
         throw reason;
     });`;
+    }
+
+    protected compileElectronMaster(backendMasterModules: Map<string, string>) {
+        return `// @ts-check
+${[...backendMasterModules.values()].map(module => `require('${module}');`).join('\n')}`;
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
