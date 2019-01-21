@@ -138,7 +138,7 @@ if (isMaster) {
             const y = Math.floor(bounds.y + (bounds.height - height) / 2);
             const x = Math.floor(bounds.x + (bounds.width - width) / 2);
 
-            const newWindow = new BrowserWindow({ width, height, x, y, show: !!theUrl, title: applicationName });
+            const newWindow = new BrowserWindow({ width, height, x, y, show: !!theUrl, title: applicationName, webPreferences: { devTools: ${this.hasDevTools} } });
 
             if (windows.length === 0) {
                 newWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {

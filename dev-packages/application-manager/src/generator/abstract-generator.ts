@@ -84,4 +84,8 @@ export abstract class AbstractGenerator {
         return JSON.stringify(object, null, 4);
     }
 
+    protected get hasDevTools(): boolean {
+        return mode === 'development';
+    }
+
 }

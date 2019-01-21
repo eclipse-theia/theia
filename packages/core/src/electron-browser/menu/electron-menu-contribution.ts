@@ -52,10 +52,6 @@ export namespace ElectronMenus {
     export const VIEW_ZOOM = [...CommonMenus.VIEW, 'zoom'];
 }
 
-export namespace ElectronMenus {
-    export const HELP_TOGGLE = [...CommonMenus.HELP, 'z_toggle'];
-}
-
 @injectable()
 export class ElectronMenuContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
 
@@ -173,10 +169,6 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     registerMenus(registry: MenuModelRegistry) {
-        registry.registerMenuAction(ElectronMenus.HELP_TOGGLE, {
-            commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id
-        });
-
         registry.registerMenuAction(ElectronMenus.VIEW_WINDOW, {
             commandId: ElectronCommands.RELOAD.id,
             order: 'z0'
