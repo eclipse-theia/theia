@@ -1,16 +1,16 @@
 {
   "name": "@theia/typescript",
-  "version": "0.3.18",
+  "version": "0.3.19",
   "description": "Theia - Typescript Extension",
   "dependencies": {
-    "@theia/application-package": "^0.3.18",
-    "@theia/callhierarchy": "^0.3.18",
-    "@theia/core": "^0.3.18",
-    "@theia/editor": "^0.3.18",
-    "@theia/filesystem": "^0.3.18",
-    "@theia/languages": "^0.3.18",
-    "@theia/monaco": "^0.3.18",
-    "@theia/workspace": "^0.3.18",
+    "@theia/application-package": "^0.3.19",
+    "@theia/callhierarchy": "^0.3.19",
+    "@theia/core": "^0.3.19",
+    "@theia/editor": "^0.3.19",
+    "@theia/filesystem": "^0.3.19",
+    "@theia/languages": "^0.3.19",
+    "@theia/monaco": "^0.3.19",
+    "@theia/workspace": "^0.3.19",
     "command-exists": "^1.2.8",
     "typescript-language-server": "^0.3.7"
   },
@@ -49,7 +49,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.18"
+    "@theia/ext-scripts": "^0.3.19"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -1,10 +1,10 @@
 {
   "name": "@theia/java-debug",
-  "version": "0.3.18",
+  "version": "0.3.19",
   "description": "Theia - Java Debug Extension",
   "dependencies": {
-    "@theia/debug": "^0.3.18",
-    "@theia/java": "^0.3.18",
+    "@theia/debug": "^0.3.19",
+    "@theia/java": "^0.3.19",
     "lodash": "^4.17.10"
   },
   "publishConfig": {
@@ -45,7 +45,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.18"
+    "@theia/ext-scripts": "^0.3.19"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

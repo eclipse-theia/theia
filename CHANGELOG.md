@@ -1,11 +1,46 @@
 # Change Log
 
 ## v0.3.19
-- [cpp] added new `cpp.clangdExecutable` and `cpp.clangdArgs` to customize language server start command.
-- [monaco] Fix document-saving that was taking too long.
+- [core] added `hostname` alias
+- [core] added new `editor.formatOnSave` preference, to format documents on manual save
+- [core] added support for setting end of line character
+- [cpp] added new `cpp.clangdExecutable` and `cpp.clangdArgs` to customize language server start command
+- [debug] added node debugger as a Plug-in
+- [debug] added support for source breakpoints
+- [git] added `discardAll` command
+- [git] added `stageAll` command
+- [git] added `unstageAll` command
+- [git] added new `git pull` command, to pull from default configured remote
+- [git] added new `git push` command, to push from default configured remote
+- [git] added the ability to refresh git repositories when a change is detected within a workspace
+- [java] allow the ability to rebing `JavaContribution`
+- [languages] enabled INI syntax highlighting for `.properties` and `.toml` files
+- [monaco] fixed cross editor navigation
+- [monaco] fixed document-saving that took too long
+- [monaco] improved `MonacoWorkspace.fireWillSave` peformance
 - [plug-in] added `tasks.onDidStartTask` Plug-in API
-- Enabled INI syntax highlighting for `.properties` and `.toml` files
+- [plugin] added `globalState` and `workspaceState` Plug-in API
+- [plugin] added `registerColorProvider` Plug-in API
+- [plugin] added `registerRenameProvider` Plug-in API
+- [plugin] added `tasks.onDidStartTask` Plug-in API
+- [plugin] added basic support of snippets
+- [plugin] added common service to handle `when` expressions
+- [plugin] added debug Plug-in API
+- [plugin] added support for terminal APIs on window
+- [plugin] added the ability to debug VS Code extensions
+- [plugin] added the ability to get operating system connected to Plug-in
+- [plugin] added the ability to provide a way to initialize workspace folders when Theia is started
+- [plugin] added the ability to set the visiblity of menu items through `when` expressions
+- [plugin] added workspace symbols Plug-in API
+- [plugin] fixed spreading of command arguments
+- [preferences] added the ability to update settings schema resource on schema changes
+- [search-in-workspace] fixed issue regarding child root in `search-in-workspace` when there is a multiple-root workspace
+- [search-in-workspace] removed duplicates from `search-in-workspace` tree
 - [security] update xterm.js to 3.9.2
+- [task] added support to run tasks from mulitple-roots
+- [task] fixed cwd path
+- [workspace] added multiple-root support for `WorkspaceService.getWorkspaceRootUri()`
+
 
 ## v0.3.18
 - [core] added a preference to define how to handle application exit
