@@ -106,7 +106,8 @@ export class MarkdownPreviewHandler implements PreviewHandler {
         if (!elementToReveal) {
             return;
         }
-        elementToReveal.scrollIntoView({ behavior: 'instant' });
+        // tslint:disable-next-line:no-any
+        elementToReveal.scrollIntoView(<any>{ behavior: 'instant' });
     }
 
     findElementForFragment(content: HTMLElement, link: string): HTMLElement | undefined {

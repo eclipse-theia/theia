@@ -208,7 +208,8 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         const elementToReveal = this.previewHandler.findElementForFragment(this.node, uri.fragment);
         if (elementToReveal) {
             this.preventScrollNotification = true;
-            elementToReveal.scrollIntoView({ behavior: 'instant' });
+            // tslint:disable-next-line:no-any
+            elementToReveal.scrollIntoView(<any>{ behavior: 'instant' });
             window.setTimeout(() => {
                 this.preventScrollNotification = false;
             }, 50);
@@ -225,7 +226,8 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         const elementToReveal = this.previewHandler.findElementForSourceLine(this.node, sourceLine);
         if (elementToReveal) {
             this.preventScrollNotification = true;
-            elementToReveal.scrollIntoView({ behavior: 'instant' });
+            // tslint:disable-next-line:no-any
+            elementToReveal.scrollIntoView(<any>{ behavior: 'instant' });
             window.setTimeout(() => {
                 this.preventScrollNotification = false;
             }, 50);
