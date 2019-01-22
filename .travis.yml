@@ -60,6 +60,8 @@ cache:
   - packages/variable-resolver/node_modules
   - packages/workspace/node_modules
 # end_cache_directories
+  - packages/java-debug/download
+  - packages/debug-nodejs/download
 branches:
   only:
   - master
