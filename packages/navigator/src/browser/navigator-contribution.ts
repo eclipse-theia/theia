@@ -175,13 +175,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         this.workspacePreferences.ready.then(() => {
             if (this.workspacePreferences['workspace.supportMultiRootWorkspace']) {
-                registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
-                    commandId: WorkspaceCommands.ADD_FOLDER.id
-                });
-                registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
-                    commandId: WorkspaceCommands.REMOVE_FOLDER.id
-                });
+                this.registerAddRemoveFolderActions(registry);
             }
+            this.workspacePreferences.onPreferenceChanged(change => {
+                if (change.preferenceName === 'workspace.supportMultiRootWorkspace') {
+                    if (change.newValue) {
+                        this.registerAddRemoveFolderActions(registry);
+                    } else {
+                        this.unregisterAddRemoveFolderActions(registry);
+                    }
+                }
+            });
         });
     }
 
@@ -266,4 +270,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         }
     }
 
+    private registerAddRemoveFolderActions(registry: MenuModelRegistry): void {
+        registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+            commandId: WorkspaceCommands.ADD_FOLDER.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+            commandId: WorkspaceCommands.REMOVE_FOLDER.id
+        });
+    }
+
+    private unregisterAddRemoveFolderActions(registry: MenuModelRegistry): void {
+        registry.unregisterMenuAction({ commandId: WorkspaceCommands.ADD_FOLDER.id }, NavigatorContextMenu.WORKSPACE);
+        registry.unregisterMenuAction({ commandId: WorkspaceCommands.REMOVE_FOLDER.id }, NavigatorContextMenu.WORKSPACE);
+    }
 }
