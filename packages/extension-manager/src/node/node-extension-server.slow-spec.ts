@@ -82,7 +82,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('installed', function () {
+    it.skip('installed', function () {
         this.timeout(10000);
 
         return server.installed().then(extensions => {
@@ -93,7 +93,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('install', async function () {
+    it.skip('install', async function () {
         this.timeout(10000);
 
         const before = await server.installed();
@@ -109,7 +109,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('uninstall', async function () {
+    it.skip('uninstall', async function () {
         this.timeout(10000);
 
         const before = await server.installed();
@@ -125,7 +125,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('outdated', function () {
+    it.skip('outdated', function () {
         this.timeout(10000);
 
         return server.outdated().then(extensions => {
@@ -134,7 +134,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('update', async function () {
+    it.skip('update', async function () {
         this.timeout(10000);
 
         const before = await server.outdated();
@@ -150,7 +150,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it('list', function () {
+    it.skip('list', function () {
         this.timeout(10000);
 
         return server.list().then(extensions => {
