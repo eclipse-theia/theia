@@ -48,7 +48,7 @@ export class EnvExtImpl {
         this.queryParameters = queryParams;
     }
 
-    getOsType(): Promise<theia.OSType> {
-        return this.proxy.$getOsType();
+    getClientOperatingSystem(): Promise<theia.OperatingSystem> {
+        return this.proxy.$getClientOperatingSystem();
     }
 }

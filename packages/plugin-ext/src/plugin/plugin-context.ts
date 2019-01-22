@@ -93,7 +93,7 @@ import {
     Color,
     ColorInformation,
     ColorPresentation,
-    OSType,
+    OperatingSystem,
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -422,8 +422,8 @@ export function createAPIFactory(
             getQueryParameters(): QueryParameters {
                 return envExt.getQueryParameters();
             },
-            getOsType(): PromiseLike<theia.OSType> {
-                return envExt.getOsType();
+            getClientOperatingSystem(): PromiseLike<theia.OperatingSystem> {
+                return envExt.getClientOperatingSystem();
             }
 
         };
@@ -672,7 +672,7 @@ export function createAPIFactory(
             ColorPresentation,
             FoldingRange,
             FoldingRangeKind,
-            OSType
+            OperatingSystem
         };
     };
 }
