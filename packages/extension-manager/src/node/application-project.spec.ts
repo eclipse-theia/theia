@@ -75,7 +75,7 @@ describe('application-project', function () {
         fs.removeSync(appProjectPath);
     });
 
-    it('install', async function () {
+    it.skip('install', async function () {
         this.timeout(1800000);
 
         await fs.writeJSON(path.resolve(appProjectPath, 'package.json'), {
