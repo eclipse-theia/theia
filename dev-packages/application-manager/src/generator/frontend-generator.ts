@@ -224,7 +224,7 @@ if (isMaster) {
                 process.kill(cp.pid);
             });
         }${
-            this.pck.targetElectronMasterModules.size > 0 ?
+            this.pck.backendElectronMasterModules.size > 0 ?
                 `
         require('../backend/electron-master.js');` : ''}
     });
