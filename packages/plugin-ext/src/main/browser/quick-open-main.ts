@@ -74,13 +74,13 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
                 description: i.description,
                 detail: i.detail,
                 run: mode => {
-                    if (mode === QuickOpenMode.PREVIEW) {
+                    if (mode === QuickOpenMode.OPEN) {
                         this.proxy.$onItemSelected(i.handle);
-                    } else if (mode === QuickOpenMode.OPEN) {
                         this.doResolve(i.handle);
                         this.cleanUp();
+                        return true;
                     }
-                    return true;
+                    return false;
                 }
             }));
         }
