@@ -41,7 +41,7 @@ function makeConfig(headless) {
         // directory is where your package.json resides, so `wdio` will be called from there.
         //
         specs: [
-            './test/**/*spec.ts'
+            './lib/test/**/*spec.js'
         ],
         // Patterns to exclude.
         exclude: [
@@ -175,9 +175,8 @@ function makeConfig(headless) {
         // See the full list at http://mochajs.org/
         mochaOpts: {
             ui: 'bdd',
-            compilers: ['ts:ts-node/register'],
             requires: ['reflect-metadata/Reflect'],
-            watch: 'ts',
+            watch: 'js',
             timeout: 30000,
         },
         //
