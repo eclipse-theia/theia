@@ -25,8 +25,8 @@
     "ext:watch": "tsc -w -p compile.tsconfig.json",
     "ext:docs": "typedoc --tsconfig ../../configs/typedoc-tsconfig.json --options ../../configs/typedoc.json src",
     "ext:docs:clean": "rimraf docs/api",
-    "ext:test": "nyc mocha --opts ../../configs/mocha.opts \"./src/**/*.*spec.ts\"",
-    "ext:test:watch": "mocha -w --opts ../../configs/mocha.opts \"./src/**/*.*spec.ts\"",
+    "ext:test": "nyc mocha --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
+    "ext:test:watch": "mocha -w --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
     "ext:test:clean": "rimraf .nyc_output && rimraf coverage"
   }
 }

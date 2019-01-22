@@ -108,11 +108,11 @@
             "name": "Run Mocha Test",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "args": [
-                "${file}",
                 "--no-timeouts",
                 "--colors",
                 "--opts",
-                "${workspaceRoot}/configs/mocha.opts"
+                "${workspaceRoot}/configs/mocha.opts",
+                "**/${fileBasenameNoExtension}.js"
             ],
             "env": {
                 "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"
