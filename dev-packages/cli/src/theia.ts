@@ -17,6 +17,7 @@
 import * as yargs from 'yargs';
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 import { ApplicationProps } from '@theia/application-package';
+import checkHoisted from './check-hoisting';
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
@@ -118,7 +119,27 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
         })
         .command(rebuildCommand('rebuild', target))
         .command(rebuildCommand('rebuild:browser', 'browser'))
-        .command(rebuildCommand('rebuild:electron', 'electron'));
+        .command(rebuildCommand('rebuild:electron', 'electron'))
+        .command({
+            command: 'check:hoisted',
+            describe: 'check that all dependencies are hoisted',
+            builder: {
+                'suppress': {
+                    alias: 's',
+                    describe: 'suppress exiting with failure code',
+                    boolean: true,
+                    default: false
+                }
+            },
+            handler: args => {
+                try {
+                    checkHoisted(args);
+                } catch (err) {
+                    console.error(err);
+                    process.exit(1);
+                }
+            }
+        });
 
     // see https://github.com/yargs/yargs/issues/287#issuecomment-314463783
     // tslint:disable-next-line:no-any
