@@ -31,7 +31,7 @@ for (const name in workspaces) {
         if (cp.execSync(`npm view ${pckName} version --json`).toString().trim()) {
             console.info(`${pckName}: published`);
         } else {
-            console.error(`${pckName}: ${chalk.red('NOT')} published`);
+            console.error(`(${chalk.red('ERR')}) ${pckName}: ${chalk.red('NOT')} published`);
             code = 1;
         }
     }

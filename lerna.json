@@ -6,6 +6,11 @@
   "command": {
     "run": {
       "stream": true
+    },
+    "publish": {
+      "forcePublish": true,
+      "skipGit": true,
+      "registry": "https://registry.npmjs.org/"
     }
   }
 }
