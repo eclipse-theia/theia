@@ -46,7 +46,8 @@
     "webdriverio": "4.9.2"
   },
   "scripts": {
-    "prepare": "yarn prepare:travis && yarn prepare:hoisting && yarn rebuild:clean && yarn build:clean",
+    "prepare": "yarn prepare:references && yarn prepare:travis && yarn rebuild:clean && yarn build:clean",
+    "prepare:references": "node scripts/configure-references",
     "prepare:travis": "node scripts/prepare-travis",
     "prepare:hoisting": "cross-env THEIA_CHECK_HOISTING_NO_BAIL=true ts-node scripts/check-hoisting.ts",
     "build": "run build",
@@ -60,7 +61,8 @@
     "rebuild:browser": "theia rebuild:browser",
     "rebuild:electron": "theia rebuild:electron",
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn rebuild:electron",
-    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w -v",
     "publish": "yarn && yarn test && yarn publish:latest",
     "publish:latest": "lerna publish && yarn publish:check",
     "publish:next": "yarn next:publish && yarn next:publish --skip-npm && yarn publish:check",

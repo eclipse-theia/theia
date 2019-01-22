@@ -1,124 +1,152 @@
 {
-  "extends": "./configs/base.tsconfig",
-  "compilerOptions": {
-    "skipLibCheck": false,
-    "baseUrl": ".",
-    "paths": {
-      "@theia/application-package": [
-        "dev-packages/application-package/src"
-      ],
-      "@theia/application-package/lib/*": [
-        "dev-packages/application-package/src/*"
-      ],
-      "@theia/core": [
-        "packages/core/src/common"
-      ],
-      "@theia/core/lib/*": [
-        "packages/core/src/*"
-      ],
-      "@theia/extension-manager/lib/*": [
-        "packages/extension-manager/src/*"
-      ],
-      "@theia/filesystem/lib/*": [
-        "packages/filesystem/src/*"
-      ],
-      "mv": [
-        "packages/filesystem/src/typings/mv"
-      ],
-      "trash": [
-        "packages/filesystem/src/typings/trash"
-      ],
-      "@theia/navigator/lib/*": [
-        "packages/navigator/src/*"
-      ],
-      "@theia/preferences/lib/*": [
-        "packages/preferences/src/*"
-      ],
-      "@theia/workspace/lib/*": [
-        "packages/workspace/src/*"
-      ],
-      "@theia/terminal/lib/*": [
-        "packages/terminal/src/*"
-      ],
-      "@theia/languages/lib/*": [
-        "packages/languages/src/*"
-      ],
-      "@theia/editor/lib/*": [
-        "packages/editor/src/*"
-      ],
-      "@theia/mini-browser/lib/*": [
-        "packages/mini-browser/src/*"
-      ],
-      "@theia/monaco/lib/*": [
-        "packages/monaco/src/*"
-      ],
-      "@theia/cpp/lib/*": [
-        "packages/cpp/src/*"
-      ],
-      "@theia/java/lib/*": [
-        "packages/java/src/*"
-      ],
-      "@theia/java-debug/lib/*": [
-        "packages/java-debug/src/*"
-      ],
-      "@theia/debug/lib/*": [
-        "packages/debug/src/*"
-      ],
-      "@theia/debug-nodejs/lib/*": [
-        "packages/debug-nodejs/src/*"
-      ],
-      "@theia/python/lib/*": [
-        "packages/python/src/*"
-      ],
-      "@theia/git/lib/*": [
-        "packages/git/src/*"
-      ],
-      "@theia/process/lib*": [
-        "packages/process/src/*"
-      ],
-      "@theia/markers/lib/*": [
-        "packages/markers/src/*"
-      ],
-      "@theia/outline-view/lib/*": [
-        "packages/outline-view/src/*"
-      ],
-      "@theia/messages/lib/*": [
-        "packages/messages/src/*"
-      ],
-      "@theia/merge-conflicts/lib/*": [
-        "packages/merge-conflicts/src/*"
-      ],
-      "@theia/output/lib/*": [
-        "packages/output/src/*"
-      ],
-      "@theia/callhierarchy/lib/*": [
-        "packages/callhierarchy/src/*"
-      ],
-      "@theia/variable-resolver/lib/*": [
-        "packages/variable-resolver/src/*"
-      ],
-      "@theia/editorconfig/lib/*": [
-        "packages/editorconfig/src/*"
-      ],
-      "@theia/bunyan/lib/*": [
-        "packages/bunyan/src/*"
-      ],
-      "@theia/console/lib/*": [
-        "packages/console/src/*"
-      ],
-      "@theia/getting-started/lib/*": [
-        "packages/getting-started/src/*"
-      ]
+  "files": [],
+  "references": [
+    {
+      "path": "dev-packages/application-manager"
     },
-    "plugins": [
-      {
-        "name": "tslint-language-service"
-      }
-    ]
-  },
-  "include": [
-    "dev-packages/*/src",
-    "packages/*/src",
-    "examples/*/test"
+    {
+      "path": "dev-packages/application-package"
+    },
+    {
+      "path": "dev-packages/cli"
+    },
+    {
+      "path": "packages/bunyan"
+    },
+    {
+      "path": "packages/callhierarchy"
+    },
+    {
+      "path": "packages/console"
+    },
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/cpp"
+    },
+    {
+      "path": "packages/debug-nodejs"
+    },
+    {
+      "path": "packages/debug"
+    },
+    {
+      "path": "packages/editor-preview"
+    },
+    {
+      "path": "packages/editor"
+    },
+    {
+      "path": "packages/editorconfig"
+    },
+    {
+      "path": "packages/extension-manager"
+    },
+    {
+      "path": "packages/file-search"
+    },
+    {
+      "path": "packages/filesystem"
+    },
+    {
+      "path": "packages/getting-started"
+    },
+    {
+      "path": "packages/git"
+    },
+    {
+      "path": "packages/java-debug"
+    },
+    {
+      "path": "packages/java"
+    },
+    {
+      "path": "packages/json"
+    },
+    {
+      "path": "packages/keymaps"
+    },
+    {
+      "path": "packages/languages"
+    },
+    {
+      "path": "packages/markers"
+    },
+    {
+      "path": "packages/merge-conflicts"
+    },
+    {
+      "path": "packages/messages"
+    },
+    {
+      "path": "packages/metrics"
+    },
+    {
+      "path": "packages/mini-browser"
+    },
+    {
+      "path": "packages/monaco"
+    },
+    {
+      "path": "packages/navigator"
+    },
+    {
+      "path": "packages/outline-view"
+    },
+    {
+      "path": "packages/output"
+    },
+    {
+      "path": "packages/plugin-ext-vscode"
+    },
+    {
+      "path": "packages/plugin-ext"
+    },
+    {
+      "path": "packages/plugin"
+    },
+    {
+      "path": "packages/preferences"
+    },
+    {
+      "path": "packages/preview"
+    },
+    {
+      "path": "packages/process"
+    },
+    {
+      "path": "packages/python"
+    },
+    {
+      "path": "packages/search-in-workspace"
+    },
+    {
+      "path": "packages/task"
+    },
+    {
+      "path": "packages/terminal"
+    },
+    {
+      "path": "packages/textmate-grammars"
+    },
+    {
+      "path": "packages/tslint"
+    },
+    {
+      "path": "packages/typescript"
+    },
+    {
+      "path": "packages/userstorage"
+    },
+    {
+      "path": "packages/variable-resolver"
+    },
+    {
+      "path": "packages/workspace"
+    },
+    {
+      "path": "examples/browser"
+    }
   ]
 }
