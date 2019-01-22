@@ -57,8 +57,8 @@
   "scripts": {
     "prepare": "yarn run clean && yarn build",
     "clean": "theia clean && rimraf errorShots",
-    "build": "theia build --mode development",
-    "watch": "yarn build --watch",
+    "build": "theiaext compile && theia build --mode development",
+    "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
     "start": "export THEIA_DEFAULT_PLUGINS=local-dir:../../plugins && theia start",
     "start:debug": "yarn start --log-level=debug",
     "test": "wdio wdio.conf.js",

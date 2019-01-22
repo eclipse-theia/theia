@@ -60,11 +60,11 @@
   "scripts": {
     "prepare": "yarn run clean && yarn build",
     "clean": "theia clean",
-    "build": "theia build --mode development",
-    "watch": "yarn build --watch",
+    "build": "theiaext compile && theia build --mode development",
+    "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
     "start": "theia start",
     "start:debug": "yarn start --log-level=debug",
-    "test": "electron-mocha --timeout 60000 --require ts-node/register \"./test/**/*.espec.ts\"",
+    "test": "electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\"",
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
