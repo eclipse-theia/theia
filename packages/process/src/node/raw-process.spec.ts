@@ -31,7 +31,7 @@ const track = temp.track();
  */
 
 const expect = chai.expect;
-const FORK_TEST_FILE = path.join(__dirname, 'test', 'process-fork-test.js');
+const FORK_TEST_FILE = path.join(__dirname, '../../src/node/test/process-fork-test.js');
 
 describe('RawProcess', function () {
 
