@@ -1802,7 +1802,7 @@ export enum FoldingRangeKind {
 /**
  * Enumeration of the supported operating systems.
  */
-export enum OSType {
+export enum OperatingSystem {
     Windows = 'Windows',
     Linux = 'Linux',
     OSX = 'OSX'

@@ -93,7 +93,7 @@ declare module '@theia/plugin' {
     /**
      * Enumeration of the supported operating systems.
      */
-    export enum OSType {
+    export enum OperatingSystem {
         Windows = 'Windows',
         Linux = 'Linux',
         OSX = 'OSX'
@@ -102,10 +102,10 @@ declare module '@theia/plugin' {
     export namespace env {
 
         /**
-         * Returns with the type of the operating system. If it is neither [Windows](isWindows) nor [OS X](isOSX), then
+         * Returns the type of the operating system on the client side (like browser'OS if using browser mode). If it is neither [Windows](isWindows) nor [OS X](isOSX), then
          * it always return with the `Linux` OS type.
          */
-        export function getOsType(): PromiseLike<OSType>;
+        export function getClientOperatingSystem(): PromiseLike<OperatingSystem>;
 
     }
 }
