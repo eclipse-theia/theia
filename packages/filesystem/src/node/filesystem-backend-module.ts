@@ -45,7 +45,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
             });
         });
     } else {
-        bind(FileSystemWatcherServerClient).toSelf();
+        bind(FileSystemWatcherServerClient).toSelf().inSingletonScope();
         bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
     }
 }
