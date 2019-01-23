@@ -19,6 +19,7 @@ import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { StatusBarItemImpl } from './status-bar/status-bar-item';
 
 export class StatusBarExtImpl implements StatusBarExt {
     private readonly proxy: StatusBarMessageRegistryMain;
@@ -30,7 +31,8 @@ export class StatusBarExtImpl implements StatusBarExt {
     ): Promise<R> {
         const message = options.title ? '$(refresh~spin) ' + options.title : '';
         const token = new CancellationTokenImpl(this.onCancel);
-        const id = await this.proxy.$setMessage(message, 1, 1, undefined, undefined, undefined);
+        const id = StatusBarItemImpl.nextId();
+        await this.proxy.$setMessage(id, message, 1, 1, undefined, undefined, undefined);
         const promise = task(new ProgressCallback(id, message, this.proxy), token);
         await promise;
         this.proxy.$dispose(id);

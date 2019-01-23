@@ -13,13 +13,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import {Disposable, StatusBarAlignment} from './types-impl';
-import {StatusBarItem} from '@theia/plugin';
+import { Disposable, StatusBarAlignment } from './types-impl';
+import { StatusBarItem } from '@theia/plugin';
 import {
     PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain
 } from '../api/plugin-api';
-import {RPCProtocol} from '../api/rpc-protocol';
-import {StatusBarItemImpl} from './status-bar/status-bar-item';
+import { RPCProtocol } from '../api/rpc-protocol';
+import { StatusBarItemImpl } from './status-bar/status-bar-item';
 
 export class StatusBarMessageRegistryExt {
 
@@ -31,14 +31,12 @@ export class StatusBarMessageRegistryExt {
 
     // tslint:disable-next-line:no-any
     setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
-        let id: string;
-        this.proxy.$setMessage(text, 0, 1, undefined, undefined, undefined).then((messageId: string) => {
-            id = messageId;
-        });
-        let handle: NodeJS.Timer;
+        const id = StatusBarItemImpl.nextId();
+        this.proxy.$setMessage(id, text, 0, 1, undefined, undefined, undefined);
+        let handle: NodeJS.Timer | undefined;
 
         if (typeof arg === 'number') {
-            handle = setTimeout(() => this.dispose(id), <number>arg);
+            handle = setTimeout(() => this.dispose(id), arg);
         } else if (typeof arg !== 'undefined') {
             arg.then(() => this.dispose(id), () => this.dispose(id));
         }
@@ -52,9 +50,6 @@ export class StatusBarMessageRegistryExt {
     }
 
     private dispose(id: string): void {
-        if (!id) {
-            return;
-        }
         this.proxy.$dispose(id);
     }
 

@@ -4,7 +4,8 @@
     "await-promise": {
       "severity": "warning",
       "options": [
-        "Thenable"
+        "Thenable",
+        "PromiseLike"
       ]
     },
     "no-implicit-dependencies": {
