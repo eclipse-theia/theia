@@ -14,19 +14,4 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Location, SymbolKind } from 'vscode-languageserver-types';
-
 export const CALLHIERARCHY_ID = 'callhierarchy';
-
-export interface Definition {
-    location: Location,
-    symbolName: string,
-    symbolKind: SymbolKind,
-    containerName: string,
-    callers: Caller[] | undefined
-}
-
-export interface Caller {
-    callerDefinition: Definition,
-    references: Location[]
-}

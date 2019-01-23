@@ -6,7 +6,6 @@
     "@theia/core": "^0.3.19",
     "@theia/editor": "^0.3.19",
     "@theia/languages": "^0.3.19",
-    "@theia/monaco": "^0.3.19",
     "ts-md5": "^1.2.2"
   },
   "publishConfig": {

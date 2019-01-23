@@ -20,17 +20,18 @@ import {
     TreeModel, DockPanel
 } from '@theia/core/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { DefinitionNode, CallerNode } from './callhierarchy-tree';
+import { CallHierarchyTree } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
-import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
+import { CALLHIERARCHY_ID } from '../callhierarchy';
 import URI from '@theia/core/lib/common/uri';
 import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import * as React from 'react';
+import { CallHierarchyDirection } from '../callhierarchy-service';
 
-export const HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
-export const DEFINITION_NODE_CLASS = 'theia-CallHierarchyTreeNode';
-export const DEFINITION_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
+export const CALL_HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
+export const CALL_HIERARCHY_TREE_NODE_CLASS = 'theia-CallHierarchyTreeNode';
+export const CALL_HIERARCHY_TREE_NODE_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
 
 @injectable()
 export class CallHierarchyTreeWidget extends TreeWidget {
@@ -49,7 +50,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.title.caption = 'Call Hierarchy';
         this.title.iconClass = 'fa call-hierarchy-tab-icon';
         this.title.closable = true;
-        this.addClass(HIERARCHY_TREE_CLASS);
+        this.addClass(CALL_HIERARCHY_TREE_CLASS);
         this.toDispose.push(this.model.onSelectionChanged(selection => {
             const node = selection[0];
             if (node) {
@@ -61,14 +62,14 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }));
     }
 
-    initializeModel(selection: Location | undefined, languageId: string | undefined): void {
-        this.model.initializeCallHierarchy(languageId, selection);
+    initializeModel(selection: Location | undefined, direction: CallHierarchyDirection, languageId: string | undefined): void {
+        this.model.initializeCallHierarchy(languageId, selection, direction);
     }
 
     protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
-        if (DefinitionNode.is(node)) {
-            classNames.push(DEFINITION_NODE_CLASS);
+        if (CallHierarchyTree.ItemNode.is(node)) {
+            classNames.push(CALL_HIERARCHY_TREE_NODE_CLASS);
         }
         return classNames;
     }
@@ -86,50 +87,52 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (DefinitionNode.is(node)) {
-            return this.decorateDefinitionCaption(node.definition);
-        }
-        if (CallerNode.is(node)) {
-            return this.decorateCallerCaption(node.caller);
+        if (CallHierarchyTree.ItemNode.is(node)) {
+            if (!node.parent) {
+                return this.decorateRoot(node);
+            } else {
+                return this.decorateCall(node);
+            }
         }
         return 'caption';
     }
 
-    protected decorateDefinitionCaption(definition: Definition): React.ReactNode {
-        const containerName = definition.containerName;
-        const symbol = definition.symbolName;
-        const location = this.labelProvider.getName(new URI(definition.location.uri));
-        const container = (containerName) ? containerName + ' — ' + location : location;
-        return <div className='definitionNode'>
-            <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
+    protected decorateRoot(node: CallHierarchyTree.ItemNode): React.ReactNode {
+        const item = node.item;
+        const symbol = item.name;
+        const location = this.labelProvider.getName(new URI(item.uri));
+        return (<div className='itemNode'>
+            <i className={this.toCallDirectionClass(node.direction)}></i>
+            <div className={'symbol-icon ' + this.toIconClass(item.kind)}></div>
             <div className='symbol'>
                 {symbol}
             </div>
             <div className='container'>
-                {container}
+                {location}
             </div>
-        </div>;
+        </div>);
     }
 
-    protected decorateCallerCaption(caller: Caller): React.ReactNode {
-        const definition = caller.callerDefinition;
-        const containerName = definition.containerName;
-        const symbol = definition.symbolName;
-        const referenceCount = caller.references.length;
-        const location = this.labelProvider.getName(new URI(definition.location.uri));
-        const container = (containerName) ? containerName + ' — ' + location : location;
-        return <div className='definitionNode'>
-            <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
+    protected toCallDirectionClass(direction?: CallHierarchyDirection): string {
+        return 'fa fa-arrow-circle-up ' + (direction === CallHierarchyDirection.Outgoing ? 'rotation-outgoing' : 'rotation-incoming');
+    }
+
+    protected decorateCall(node: CallHierarchyTree.ItemNode): React.ReactNode {
+        const item = node.item;
+        const symbol = item.name;
+        const fileName = this.labelProvider.getName(new URI(item.callLocations![0].uri));
+        const line = `l.${item.callLocations![0].range.start.line + 1}`;
+        const location = ` ${line} in ${fileName}`;
+        return (<div className='itemNode'>
+            <i className={this.toCallDirectionClass(node.direction)}></i>
+            <div className={'symbol-icon ' + this.toIconClass(item.kind)}></div>
             <div className='symbol'>
                 {symbol}
             </div>
-            <div className='referenceCount'>
-                {(referenceCount > 1) ? `[${referenceCount}]` : ''}
-            </div>
             <div className='container'>
-                {container}
+                {location}
             </div>
-        </div>;
+        </div>);
     }
 
     protected toIconClass(symbolKind: number) {
@@ -157,46 +160,48 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     private openEditor(node: TreeNode, keepFocus: boolean) {
-        let location: Location | undefined;
-        if (DefinitionNode.is(node)) {
-            location = node.definition.location;
+        if (!CallHierarchyTree.ItemNode.is(node)) {
+            return;
         }
-        if (CallerNode.is(node)) {
-            location = node.caller.references[0];
-        }
-        if (location) {
-            this.editorManager.open(
-                new URI(location.uri), {
-                    mode: keepFocus ? 'reveal' : 'activate',
-                    selection: Range.create(location.range.start, location.range.end)
-                }
-            ).then(editorWidget => {
-                if (editorWidget.parent instanceof DockPanel) {
-                    editorWidget.parent.selectWidget(editorWidget);
-                }
-            });
-        }
+        const callerLocation = node.item.callLocations && node.item.callLocations![0];
+        const uri = callerLocation ? callerLocation.uri : node.item.uri;
+        const range = callerLocation ? callerLocation.range : node.item.selectionRange;
+
+        this.editorManager.open(
+            new URI(uri), {
+                mode: keepFocus ? 'reveal' : 'activate',
+                selection: Range.create(range.start, range.end)
+            }
+        ).then(editorWidget => {
+            if (editorWidget.parent instanceof DockPanel) {
+                editorWidget.parent.selectWidget(editorWidget);
+            }
+        });
     }
 
     storeState(): object {
         const callHierarchyService = this.model.getTree().callHierarchyService;
-        if (this.model.root && callHierarchyService) {
+        if (CallHierarchyTree.ItemNode.is(this.model.root) && callHierarchyService) {
             return {
                 root: this.deflateForStorage(this.model.root),
                 languageId: callHierarchyService.languageId,
+                direction: this.model.root.direction,
             };
         } else {
             return {};
         }
     }
 
-    restoreState(oldState: object): void {
-        // tslint:disable-next-line:no-any
-        if ((oldState as any).root && (oldState as any).languageId) {
-            // tslint:disable-next-line:no-any
-            this.model.root = this.inflateFromStorage((oldState as any).root);
-            // tslint:disable-next-line:no-any
-            this.model.initializeCallHierarchy((oldState as any).languageId, (this.model.root as DefinitionNode).definition.location);
+    // tslint:disable-next-line:no-any
+    restoreState(oldState: any): void {
+        if ('root' in oldState && 'languageId' in oldState && 'direction' in oldState) {
+            const root = this.inflateFromStorage(oldState.root);
+            if (CallHierarchyTree.ItemNode.is(root)) {
+                const item = root.item;
+                const location = Location.create(item.uri, item.selectionRange);
+                this.model.root = root;
+                this.model.initializeCallHierarchy(oldState.languageId, location, oldState.direction);
+            }
         }
     }
 }

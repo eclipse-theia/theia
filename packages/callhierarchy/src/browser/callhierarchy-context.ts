@@ -17,23 +17,20 @@
 import { ILanguageClient } from '@theia/languages/lib/browser';
 import {
     ReferencesRequest, DocumentSymbolRequest, DefinitionRequest, TextDocumentPositionParams,
-    TextDocumentIdentifier, SymbolInformation, Location, Position, DocumentSymbol, ReferenceParams
-} from 'monaco-languageclient/lib/services';
+    TextDocumentIdentifier, Location, Position, DocumentSymbol, ReferenceParams
+} from 'vscode-languageserver-protocol';
 import * as utils from './utils';
 import { ILogger, Disposable } from '@theia/core';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import URI from '@theia/core/lib/common/uri';
 
 export class CallHierarchyContext implements Disposable {
 
-    protected readonly symbolCache = new Map<string, DocumentSymbol[] | SymbolInformation[]>();
+    protected readonly symbolCache = new Map<string, DocumentSymbol[]>();
     protected readonly disposables: Disposable[] = [];
 
     constructor(protected readonly languageClient: ILanguageClient,
-        protected readonly textModelService: MonacoTextModelService,
         protected readonly logger: ILogger) { }
 
-    async getAllSymbols(uri: string): Promise<DocumentSymbol[] | SymbolInformation[]> {
+    async getAllSymbols(uri: string): Promise<DocumentSymbol[]> {
         const cachedSymbols = this.symbolCache.get(uri);
         if (cachedSymbols) {
             return cachedSymbols;
@@ -41,20 +38,13 @@ export class CallHierarchyContext implements Disposable {
         const result = await this.languageClient.sendRequest(DocumentSymbolRequest.type, {
             textDocument: TextDocumentIdentifier.create(uri)
         });
-        const symbols = (result || []) as DocumentSymbol[] | SymbolInformation[];
+        const symbols = (result || []) as DocumentSymbol[];
         this.symbolCache.set(uri, symbols);
         return symbols;
     }
 
-    async getEditorModelReference(uri: string) {
-        const model = await this.textModelService.createModelReference(new URI(uri));
-        this.disposables.push(model);
-        return model;
-    }
-
-    async getDefinitionLocation(location: Location): Promise<Location | undefined> {
-        const uri = location.uri;
-        const { line, character } = location.range.start;
+    async getDefinitionLocation(uri: string, position: Position): Promise<Location | undefined> {
+        const { line, character } = position;
 
         // Definition can be null
         // tslint:disable-next-line:no-null-keyword
@@ -73,22 +63,22 @@ export class CallHierarchyContext implements Disposable {
         return Array.isArray(locations) ? locations[0] : locations;
     }
 
-    async getCallerReferences(definition: Location): Promise<Location[]> {
+    async getCallerReferences(uri: string, position: Position): Promise<Location[]> {
         try {
             const references = await this.languageClient.sendRequest(ReferencesRequest.type, <ReferenceParams>{
                 context: {
                     includeDeclaration: false // TODO find out, why definitions are still contained
                 },
                 position: {
-                    line: definition.range.start.line,
-                    character: definition.range.start.character
+                    line: position.line,
+                    character: position.character
                 },
                 textDocument: {
-                    uri: definition.uri
+                    uri
                 }
             });
             const uniqueReferences = utils.filterUnique(references);
-            const filteredReferences = utils.filterSame(uniqueReferences, definition);
+            const filteredReferences = utils.filterSame(uniqueReferences, uri, position);
             return filteredReferences;
         } catch (error) {
             this.logger.error('Error from references request', error);

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Location, Range } from 'vscode-languageserver-types';
+import { Location, Range, Position } from 'vscode-languageserver-types';
 
 /**
  * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
@@ -35,16 +35,15 @@ export function containsRange(range: Range, otherRange: Range): boolean {
     return true;
 }
 
-function sameStart(a: Range, b: Range): boolean {
+function startsAt(a: Range, position: Position): boolean {
     const pos1 = a.start;
-    const pos2 = b.start;
-    return pos1.line === pos2.line
-        && pos1.character === pos2.character;
+    return pos1.line === position.line
+        && pos1.character === position.character;
 }
 
-export function filterSame(locations: Location[], definition: Location): Location[] {
-    return locations.filter(candidate => candidate.uri !== definition.uri
-        || !sameStart(candidate.range, definition.range)
+export function filterSame(locations: Location[], uri: string, position: Position): Location[] {
+    return locations.filter(candidate => candidate.uri !== uri
+        || !startsAt(candidate.range, position)
     );
 }
 
@@ -62,29 +61,4 @@ export function filterUnique(locations: Location[] | null): Location[] {
         }
     }
     return result;
-}
-
-export function startsAfter(a: Range, b: Range) {
-    if (a.start.line > b.start.line) {
-        return true;
-    }
-    if (a.start.line === b.start.line) {
-        if (a.start.character > b.start.character) {
-            return true;
-        }
-        if (a.start.character === b.start.character) {
-            if (a.end.line > b.end.line) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-export function isSame(a: Location, b: Location) {
-    return a.uri === b.uri
-        && a.range.start.line === b.range.start.line
-        && a.range.end.line === b.range.end.line
-        && a.range.start.character === b.range.start.character
-        && a.range.end.character === b.range.end.character;
 }

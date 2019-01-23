@@ -15,11 +15,10 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { AbstractDefaultCallHierarchyService, ExtendedDocumentSymbol } from '@theia/callhierarchy/lib/browser/callhierarchy-service-impl';
+import { AbstractDefaultCallHierarchyService, ExtendedDocumentSymbol } from '@theia/callhierarchy/lib/browser/legacy/callhierarchy-service-impl';
 import { CallHierarchyContext } from '@theia/callhierarchy/lib/browser/callhierarchy-context';
 import { TYPESCRIPT_LANGUAGE_ID } from '../common';
-import { SymbolInformation, Range, Location, DocumentSymbol } from 'vscode-languageserver-types';
-import * as utils from '@theia/callhierarchy/lib/browser/utils';
+import { Location, DocumentSymbol } from 'vscode-languageserver-types';
 
 @injectable()
 export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchyService {
@@ -33,7 +32,7 @@ export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchy
      * are returned as a reference as well. As these are not calls they have to be filtered.
      * We also just want ot see the top-most caller symbol.
      */
-    async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | SymbolInformation | undefined> {
+    async getEnclosingCallerSymbol(reference: Location, context: CallHierarchyContext): Promise<ExtendedDocumentSymbol | undefined> {
         const allSymbols = await context.getAllSymbols(reference.uri);
         if (allSymbols.length === 0) {
             return undefined;
@@ -41,26 +40,6 @@ export class TypeScriptCallHierarchyService extends AbstractDefaultCallHierarchy
         if (DocumentSymbol.is(allSymbols[0])) {
             return this.getEnclosingRootSymbol(reference, context);
         }
-        const symbols = (allSymbols as SymbolInformation[]).filter(s => this.isCallable(s));
-        let bestMatch: SymbolInformation | undefined = undefined;
-        let bestRange: Range | undefined = undefined;
-        for (const candidate of symbols) {
-            const candidateRange = candidate.location.range;
-            if (utils.containsRange(candidateRange, reference.range)) {
-                // as opposed to default, find the topmost (earliest) symbol
-                if (!bestMatch || utils.startsAfter(bestRange!, candidateRange)) {
-                    bestMatch = candidate;
-                    bestRange = candidateRange;
-                }
-            }
-        }
-        if (bestMatch) {
-            // filter references that are in fact definitions
-            const nameLocation = await this.getSymbolNameLocation(bestMatch, context);
-            if (!nameLocation || utils.isSame(nameLocation, reference)) {
-                return undefined;
-            }
-        }
-        return bestMatch;
+        return undefined;
     }
 }

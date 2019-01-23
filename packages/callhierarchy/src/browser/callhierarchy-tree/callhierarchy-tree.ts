@@ -17,8 +17,7 @@
 import { injectable } from 'inversify';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 
-import { Definition, Caller } from '../callhierarchy';
-import { CallHierarchyService } from '../callhierarchy-service';
+import { CallHierarchyService, CallHierarchyItem, CallHierarchyDirection } from '../callhierarchy-service';
 
 import { Md5 } from 'ts-md5/dist/md5';
 
@@ -36,84 +35,64 @@ export class CallHierarchyTree extends TreeImpl {
     }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+        if (!CallHierarchyTree.ItemNode.is(parent)) {
+            return [];
+        }
         if (!this.callHierarchyService) {
-            return Promise.resolve([]);
+            return [];
         }
-        if (parent.children.length > 0) {
-            return Promise.resolve([...parent.children]);
+        if (parent.resolved) {
+            return parent.children.slice();
         }
-        let definition: Definition | undefined;
-        if (DefinitionNode.is(parent)) {
-            definition = parent.definition;
-        } else if (CallerNode.is(parent)) {
-            definition = parent.caller.callerDefinition;
+        const item = parent.item;
+        const direction = parent.direction;
+        const result = await this.callHierarchyService.resolve({ direction, item, resolve: 1 });
+        parent.resolved = true;
+
+        const nextItems = result.calls || [];
+        return this.toNodes(nextItems, direction, parent);
+    }
+
+    protected toNodes(nextItems: CallHierarchyItem[], direction: CallHierarchyDirection, parent: CallHierarchyTree.ItemNode): TreeNode[] {
+        return nextItems.map(nextItem => this.toNode(nextItem, direction, parent));
+    }
+
+    protected toNode(nextItem: CallHierarchyItem, direction: CallHierarchyDirection, parent: CompositeTreeNode | undefined): TreeNode {
+        return CallHierarchyTree.ItemNode.create(nextItem, direction, parent as TreeNode);
+    }
+}
+
+export namespace CallHierarchyTree {
+
+    export interface ItemNode extends SelectableTreeNode, ExpandableTreeNode {
+        resolved: boolean;
+        direction: CallHierarchyDirection;
+        item: CallHierarchyItem;
+    }
+    export namespace ItemNode {
+        export function is(node: TreeNode | undefined): node is ItemNode {
+            return !!node
+                && 'item' in node
+                && 'direction' in node;
         }
-        if (definition) {
-            const callers = await this.callHierarchyService.getCallers(definition);
-            if (!callers) {
-                return Promise.resolve([]);
-            }
-            return this.toNodes(callers, parent);
+        export function create(item: CallHierarchyItem, direction: CallHierarchyDirection, parent: TreeNode | undefined): ItemNode {
+            const name = item.name;
+            const id = createId(item, parent);
+            return <ItemNode>{
+                id, item, name, parent,
+                direction,
+                visible: true,
+                children: [],
+                expanded: false,
+                selected: false,
+                resolved: false
+            };
         }
-        return Promise.resolve([]);
     }
 
-    protected toNodes(callers: Caller[], parent: CompositeTreeNode): TreeNode[] {
-        return callers.map(caller => this.toNode(caller, parent));
+    export function createId(item: CallHierarchyItem, parent: TreeNode | undefined): string {
+        const idPrefix = (parent) ? parent.id + '/' : '';
+        const id = idPrefix + Md5.hashStr(JSON.stringify(item));
+        return id;
     }
-
-    protected toNode(caller: Caller, parent: CompositeTreeNode | undefined): TreeNode {
-        return CallerNode.create(caller, parent as TreeNode);
-    }
-}
-
-export interface DefinitionNode extends SelectableTreeNode, ExpandableTreeNode {
-    definition: Definition;
-}
-
-export namespace DefinitionNode {
-    export function is(node: TreeNode | undefined): node is DefinitionNode {
-        return !!node && 'definition' in node;
-    }
-
-    export function create(definition: Definition, parent: TreeNode | undefined): DefinitionNode {
-        const name = definition.symbolName;
-        const id = createId(definition, parent);
-        return <DefinitionNode>{
-            id, definition, name, parent,
-            visible: true,
-            children: [],
-            expanded: false,
-            selected: false,
-        };
-    }
-}
-
-export interface CallerNode extends SelectableTreeNode, ExpandableTreeNode {
-    caller: Caller;
-}
-
-export namespace CallerNode {
-    export function is(node: TreeNode | undefined): node is CallerNode {
-        return !!node && 'caller' in node;
-    }
-
-    export function create(caller: Caller, parent: TreeNode | undefined): CallerNode {
-        const callerDefinition = caller.callerDefinition;
-        const name = callerDefinition.symbolName;
-        const id = createId(callerDefinition, parent);
-        return <CallerNode>{
-            id, caller, name, parent,
-            visible: true,
-            children: [],
-            expanded: false,
-            selected: false,
-        };
-    }
-}
-
-function createId(definition: Definition, parent: TreeNode | undefined): string {
-    const idPrefix = (parent) ? parent.id + '/' : '';
-    const id = idPrefix + Md5.hashStr(JSON.stringify(definition));
-    return id;
 }

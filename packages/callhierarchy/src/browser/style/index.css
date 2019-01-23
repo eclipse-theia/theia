@@ -31,30 +31,31 @@
     margin: 5px;
 }
 
-.theia-CallHierarchyTree .definitionNode {
+.theia-CallHierarchyTree .itemNode {
     display: flex;
 }
 
-.theia-CallHierarchyTree .definitionNode {
+.theia-CallHierarchyTree .itemNode {
     width: calc(100% - 32px);
 }
 
-.theia-CallHierarchyTree .definitionNode div {
+.theia-CallHierarchyTree .itemNode div {
     margin-right: 5px;
 }
 
-.theia-CallHierarchyTree .definitionNode .symbol {
+.theia-CallHierarchyTree .itemNode .symbol {
     white-space: nowrap;
     overflow: hidden;
+    margin-left: 0px;
 }
 
-.theia-CallHierarchyTree .definitionNode .referenceCount {
+.theia-CallHierarchyTree .itemNode .referenceCount {
     white-space: nowrap;
     overflow: hidden;
     color: var(--theia-ui-font-color3);
 }
 
-.theia-CallHierarchyTree .definitionNode .container {
+.theia-CallHierarchyTree .itemNode .container {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -63,4 +64,24 @@
 
 .call-hierarchy-tab-icon::before {
     content: "\f0ab"
+}
+
+.theia-CallHierarchyTree .itemNode .rotation-incoming {
+    -webkit-transform: rotate(135deg);
+    -moz-transform: rotate(135deg);
+    -ms-transform: rotate(135deg);
+    -o-transform: rotate(135deg);
+    transform: rotate(135deg);
+    line-height: var(--theia-private-horizontal-tab-height) !important;
+    margin-right: 5px;
+}
+
+ .theia-CallHierarchyTree .itemNode .rotation-outgoing {
+    -webkit-transform: rotate(315deg);
+    -moz-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
+    transform: rotate(315deg);
+    line-height: var(--theia-private-horizontal-tab-height) !important;
+    margin-right: 5px;
 }

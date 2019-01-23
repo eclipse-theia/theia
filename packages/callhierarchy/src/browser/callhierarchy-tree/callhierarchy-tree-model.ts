@@ -16,8 +16,8 @@
 
 import { injectable, inject } from 'inversify';
 import { TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
-import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
-import { CallHierarchyServiceProvider } from '../callhierarchy-service';
+import { CallHierarchyTree } from './callhierarchy-tree';
+import { CallHierarchyServiceProvider, CallHierarchyDirection } from '../callhierarchy-service';
 import { Location } from 'vscode-languageserver-types';
 
 @injectable()
@@ -30,23 +30,31 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
         return this.tree;
     }
 
-    async initializeCallHierarchy(languageId: string | undefined, location: Location | undefined): Promise<void> {
+    async initializeCallHierarchy(languageId: string | undefined, location: Location | undefined, direction: CallHierarchyDirection): Promise<void> {
         this.tree.root = undefined;
         this.tree.callHierarchyService = undefined;
         if (languageId && location) {
-            const callHierarchyService = this.callHierarchyServiceProvider.get(languageId);
+            const callHierarchyService = await this.callHierarchyServiceProvider.get(languageId);
             if (callHierarchyService) {
                 this.tree.callHierarchyService = callHierarchyService;
-                const rootDefinition = await callHierarchyService.getRootDefinition(location);
-                if (rootDefinition) {
-                    const rootNode = DefinitionNode.create(rootDefinition, undefined);
+                const rootItem = await callHierarchyService.callHierarchy({
+                    position: location.range.start,
+                    textDocument: { uri: location.uri },
+                    resolve: 1,
+                    direction
+                });
+                if (rootItem) {
+                    const rootNode = CallHierarchyTree.ItemNode.create(rootItem, direction, undefined);
+                    const nextItems = rootItem.calls || [];
+                    rootNode.children = nextItems.map(nextItem => CallHierarchyTree.ItemNode.create(nextItem, direction, rootNode));
+                    rootNode.resolved = true;
                     this.tree.root = rootNode;
                 }
             }
         }
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected doOpenNode(_node: TreeNode): void {
         // do nothing (in particular do not expand the node)
     }
 }

@@ -23,6 +23,7 @@ import {
     ILanguageClient, LanguageClientOptions, MonacoLanguageClient,
     createConnection, LanguageContribution
 } from './language-client-services';
+import { CallHierarchyFeature } from './call-hierarchy/call-hierarchy-feature.proposed';
 
 @injectable()
 export class LanguageClientFactory {
@@ -64,7 +65,7 @@ export class LanguageClientFactory {
         }
         const initializationFailedHandler = clientOptions.initializationFailedHandler;
         clientOptions.initializationFailedHandler = e => !!initializationFailedHandler && initializationFailedHandler(e);
-        return this.patch4085(new MonacoLanguageClient({
+        const languageClient = new MonacoLanguageClient({
             id: contribution.id,
             name: contribution.name,
             clientOptions,
@@ -74,7 +75,10 @@ export class LanguageClientFactory {
                     return createConnection(connection, errorHandler, closeHandler);
                 }
             }
-        }));
+        });
+        languageClient.registerFeature(new CallHierarchyFeature(languageClient));
+        this.patch4085(languageClient);
+        return languageClient;
     }
 
     /**

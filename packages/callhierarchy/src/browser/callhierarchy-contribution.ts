@@ -21,15 +21,21 @@ import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
 import { CALLHIERARCHY_ID } from './callhierarchy';
 import { CurrentEditorAccess } from './current-editor-access';
-import { CallHierarchyServiceProvider } from './callhierarchy-service';
+import { CallHierarchyServiceProvider, CallHierarchyDirection } from './callhierarchy-service';
 
 export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierachy:toggle';
 export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
 
 export namespace CallHierarchyCommands {
-    export const OPEN: Command = {
-        id: 'callhierarchy:open',
-        label: 'Open Call Hierarchy'
+    export const CALLERS: Command = {
+        id: 'callhierarchy:callers',
+        label: 'Show Callers',
+        category: 'Call Hierarchy',
+    };
+    export const CALLEES: Command = {
+        id: 'callhierarchy:callees',
+        label: 'Show Callees',
+        category: 'Call Hierarchy',
     };
 }
 
@@ -53,22 +59,32 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
     protected isCallHierarchyAvailable(): boolean {
         const selection = this.editorAccess.getSelection();
         const languageId = this.editorAccess.getLanguageId();
-        return !!selection && !!languageId && !!this.callHierarchyServiceProvider.get(languageId);
+        return !!selection && !!languageId;
     }
 
-    async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {
+    async openView(args?: Partial<OpenViewArguments> & { direction?: CallHierarchyDirection }): Promise<CallHierarchyTreeWidget> {
         const widget = await super.openView(args);
         const selection = this.editorAccess.getSelection();
         const languageId = this.editorAccess.getLanguageId();
-        widget.initializeModel(selection, languageId);
+        const direction = args && args.direction ? args.direction : CallHierarchyDirection.Incoming;
+        widget.initializeModel(selection, direction, languageId);
         return widget;
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(CallHierarchyCommands.OPEN, {
+        commands.registerCommand(CallHierarchyCommands.CALLERS, {
             execute: () => this.openView({
                 toggle: false,
-                activate: true
+                activate: true,
+                direction: CallHierarchyDirection.Incoming,
+            }),
+            isEnabled: this.isCallHierarchyAvailable.bind(this)
+        });
+        commands.registerCommand(CallHierarchyCommands.CALLEES, {
+            execute: () => this.openView({
+                toggle: false,
+                activate: true,
+                direction: CallHierarchyDirection.Outgoing,
             }),
             isEnabled: this.isCallHierarchyAvailable.bind(this)
         });
@@ -78,8 +94,12 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
     registerMenus(menus: MenuModelRegistry): void {
         const menuPath = [...EDITOR_CONTEXT_MENU, 'navigation'];
         menus.registerMenuAction(menuPath, {
-            commandId: CallHierarchyCommands.OPEN.id,
-            label: CALL_HIERARCHY_LABEL
+            commandId: CallHierarchyCommands.CALLERS.id,
+            label: CallHierarchyCommands.CALLERS.label
+        });
+        menus.registerMenuAction(menuPath, {
+            commandId: CallHierarchyCommands.CALLEES.id,
+            label: CallHierarchyCommands.CALLEES.label
         });
         super.registerMenus(menus);
     }
@@ -87,8 +107,12 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
     registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
-            command: CallHierarchyCommands.OPEN.id,
+            command: CallHierarchyCommands.CALLERS.id,
             keybinding: 'ctrlcmd+f1'
+        });
+        keybindings.registerKeybinding({
+            command: CallHierarchyCommands.CALLEES.id,
+            keybinding: 'shift+ctrlcmd+f1'
         });
     }
 }
