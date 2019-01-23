@@ -22,7 +22,6 @@
 - [monaco] fixed cross editor navigation
 - [monaco] fixed document-saving that took too long
 - [monaco] improved `MonacoWorkspace.fireWillSave` peformance
-- [plug-in] added `tasks.onDidStartTask` Plug-in API
 - [plugin] added `globalState` and `workspaceState` Plug-in API
 - [plugin] added `registerColorProvider` Plug-in API
 - [plugin] added `registerRenameProvider` Plug-in API
