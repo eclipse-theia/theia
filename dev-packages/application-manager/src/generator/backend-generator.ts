@@ -96,7 +96,7 @@ function load(raw) {
 module.exports = () =>
     Promise.resolve()${this.compileBackendModuleImports(backendMasterModules)}
         .catch(err => {
-            console.error('Can\'t import master modules:', err));
+            console.error('Failed to import master modules:', err));
             throw err;
         }`;
     }
