@@ -96,15 +96,17 @@ function load(raw) {
 module.exports = () =>
     Promise.resolve()${this.compileBackendModuleImports(backendMasterModules)}
         .catch(err => {
-            console.error('Failed to import master modules:', err));
+            console.error('Failed to import master modules:', err);
             throw err;
-        }`;
+        });`;
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
         return `// @ts-check
 const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
-BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
+BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)}); ${this.pck.backendMasterModules.size === 0 ? '' : `
+const { isMaster } = require('cluster');
+if (isMaster) { require('./master')(); }`}
 
 const serverPath = require('path').resolve(__dirname, 'server');
 const address = require('@theia/core/lib/node/cluster/main').default(serverPath);
