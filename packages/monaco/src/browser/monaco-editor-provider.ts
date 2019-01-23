@@ -68,7 +68,6 @@ export class MonacoEditorProvider {
             const result = init(o);
             result[0].set(monaco.services.ICodeEditorService, codeEditorService);
             if (!this.hookedConfigService) {
-                // TODO we should fully implement the IConfigurationService, see https://github.com/theia-ide/theia/issues/4073
                 this.hookedConfigService = result[0].get(monaco.services.IConfigurationService);
                 const originalGetValue = this.hookedConfigService.getValue.bind(this.hookedConfigService);
                 this.hookedConfigService.getValue = (arg1: any, arg2: any) => {

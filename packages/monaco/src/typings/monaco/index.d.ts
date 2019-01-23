@@ -429,7 +429,18 @@ declare module monaco.services {
     export const ICodeEditorService: any;
     export const IConfigurationService: any;
 
-    export interface IConfigurationService { }
+    export interface Configuration {
+        getValue(section: string, overrides: any, workspace: any): any;
+    }
+
+    export class ConfigurationChangeEvent {
+        change(keys: string[]): ConfigurationChangeEvent;
+    }
+
+    export interface IConfigurationService {
+        _onDidChangeConfiguration: monaco.Emitter<ConfigurationChangeEvent>;
+        _configuration: Configuration;
+    }
 
     export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
         constructor(themeService: IStandaloneThemeService);
