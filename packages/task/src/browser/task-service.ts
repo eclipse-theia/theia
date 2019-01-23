@@ -160,7 +160,7 @@ export class TaskService implements TaskConfigurationClient {
             this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
             return;
         }
-        this.run(task.source, task.label);
+        this.run(task._source, task.label);
     }
 
     /**

@@ -27,7 +27,6 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { TaskInfo, TaskExitedEvent } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
-import { TaskConfiguration } from '@theia/task/lib/common';
 
 export class TasksMainImpl implements TasksMain {
     private workspaceRootUri: string | undefined = undefined;
@@ -96,14 +95,16 @@ export class TasksMainImpl implements TasksMain {
     protected createTaskProvider(handle: number): TaskProvider {
         return {
             provideTasks: () =>
-                this.proxy.$provideTasks(handle).then(v => <TaskConfiguration[]>v),
+                this.proxy.$provideTasks(handle).then(v => v!.map(taskDto =>
+                    Object.assign(taskDto, { _source: taskDto.source || 'plugin' })
+                )),
         };
     }
 
     protected createTaskResolver(handle: number): TaskResolver {
         return {
             resolveTask: taskConfig =>
-                this.proxy.$resolveTask(handle, taskConfig).then(v => <TaskConfiguration>v!),
+                this.proxy.$resolveTask(handle, taskConfig).then(v => Object.assign(v!, { _source: v!.source || 'plugin' })),
         };
     }
 }
