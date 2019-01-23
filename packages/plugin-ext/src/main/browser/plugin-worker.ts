@@ -23,15 +23,15 @@ export class PluginWorker {
     private worker: Worker;
     public readonly rpc: RPCProtocol;
     constructor() {
-        const emmitter = new Emitter();
+        const emitter = new Emitter();
         this.worker = new (require('../../hosted/browser/worker/worker-main'));
         this.worker.onmessage = message => {
-            emmitter.fire(message.data);
+            emitter.fire(message.data);
         };
         this.worker.onerror = e => console.error(e);
 
         this.rpc = new RPCProtocolImpl({
-            onMessage: emmitter.event,
+            onMessage: emitter.event,
             send: (m: {}) => {
                 this.worker.postMessage(m);
             }

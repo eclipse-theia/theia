@@ -65,11 +65,15 @@ import { SymbolInformation } from 'vscode-languageserver-types';
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
-    preferences: { [key: string]: any };
+    preferences: PreferenceData;
     globalState: KeysToKeysToAnyValue;
     workspaceState: KeysToKeysToAnyValue;
     env: EnvInit;
     extApi?: ExtPluginApi[];
+}
+
+export interface PreferenceData {
+    [scope: number]: any;
 }
 
 export interface Plugin {

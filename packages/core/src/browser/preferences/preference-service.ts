@@ -25,8 +25,17 @@ import { PreferenceProvider } from './preference-provider';
 import { PreferenceSchemaProvider } from './preference-contribution';
 
 export enum PreferenceScope {
+    Default,
     User,
     Workspace
+}
+
+export namespace PreferenceScope {
+    export function getScopes(): PreferenceScope[] {
+        return Object.keys(PreferenceScope)
+            .filter(k => typeof PreferenceScope[k as any] === 'string')
+            .map(v => <PreferenceScope>Number(v));
+    }
 }
 
 export interface PreferenceChangedEvent {

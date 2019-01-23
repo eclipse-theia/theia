@@ -25,6 +25,8 @@ import { EnvExtImpl } from '../../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 import { createDebugExtStub } from './debug-stub';
+import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
+import { WorkspaceExtImpl } from '../../../plugin/workspace';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -47,7 +49,9 @@ function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
     ctx.importScripts('/context/' + contextPath);
 }
 const envExt = new EnvExtImpl(rpc);
-const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc);
+const editorsAndDocuments = new EditorsAndDocumentsExtImpl(rpc);
+const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments);
+const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
@@ -124,7 +128,10 @@ const apiFactory = createAPIFactory(
     pluginManager,
     envExt,
     debugExt,
-    preferenceRegistryExt);
+    preferenceRegistryExt,
+    editorsAndDocuments,
+    workspaceExt
+);
 let defaultApi: typeof theia;
 
 const handler = {
@@ -147,6 +154,8 @@ const handler = {
 ctx['theia'] = new Proxy(Object.create(null), handler);
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
+rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);
+rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
 rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
 
 function isElectron() {

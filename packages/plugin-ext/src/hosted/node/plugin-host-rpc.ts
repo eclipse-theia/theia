@@ -22,6 +22,8 @@ import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { DebugExtImpl } from '../../plugin/node/debug/debug';
+import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
+import { WorkspaceExtImpl } from '../../plugin/workspace';
 
 /**
  * Handle the RPC calls.
@@ -39,9 +41,13 @@ export class PluginHostRPC {
     initialize() {
         const envExt = new EnvExtImpl(this.rpc);
         const debugExt = new DebugExtImpl(this.rpc);
-        const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc);
+        const editorsAndDocumentsExt = new EditorsAndDocumentsExtImpl(this.rpc);
+        const workspaceExt = new WorkspaceExtImpl(this.rpc, editorsAndDocumentsExt);
+        const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc, workspaceExt);
         this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
+        this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
+        this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
 
         PluginHostRPC.apiFactory = createAPIFactory(
@@ -49,7 +55,10 @@ export class PluginHostRPC {
             this.pluginManager,
             envExt,
             debugExt,
-            preferenceRegistryExt);
+            preferenceRegistryExt,
+            editorsAndDocumentsExt,
+            workspaceExt
+        );
     }
 
     // tslint:disable-next-line:no-any

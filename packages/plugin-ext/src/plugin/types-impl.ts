@@ -578,8 +578,11 @@ export enum OverviewRulerLane {
 }
 
 export enum ConfigurationTarget {
-    User = 0,
-    Workspace = 1
+    Global = 1,
+    Workspace,
+    WorkspaceFolder,
+    Default,
+    Memory
 }
 
 export class RelativePattern {

@@ -3462,11 +3462,15 @@ declare module '@theia/plugin' {
         /**
          * Global configuration
          */
-        User = 0,
+        Global = 1,
         /**
          * Workspace configuration
          */
-        Workspace = 1
+        Workspace = 2,
+        /**
+         * Workspace folder configuration
+         */
+        WorkspaceFolder = 3
     }
 
     /**
@@ -3813,18 +3817,18 @@ declare module '@theia/plugin' {
         export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 
         /**
-		 * An event that is emitted when a [text document](#TextDocument) will be saved to disk.
-		 *
-		 * *Note 1:* Subscribers can delay saving by registering asynchronous work. For the sake of data integrity the editor
-		 * might save without firing this event. For instance when shutting down with dirty files.
-		 *
-		 * *Note 2:* Subscribers are called sequentially and they can [delay](#TextDocumentWillSaveEvent.waitUntil) saving
-		 * by registering asynchronous work. Protection against misbehaving listeners is implemented as such:
-		 *  * there is an overall time budget that all listeners share and if that is exhausted no further listener is called
-		 *  * listeners that take a long time or produce errors frequently will not be called anymore
-		 *
-		 * The current thresholds are 1.5 seconds as overall time budget and a listener can misbehave 3 times before being ignored.
-		 */
+         * An event that is emitted when a [text document](#TextDocument) will be saved to disk.
+         *
+         * *Note 1:* Subscribers can delay saving by registering asynchronous work. For the sake of data integrity the editor
+         * might save without firing this event. For instance when shutting down with dirty files.
+         *
+         * *Note 2:* Subscribers are called sequentially and they can [delay](#TextDocumentWillSaveEvent.waitUntil) saving
+         * by registering asynchronous work. Protection against misbehaving listeners is implemented as such:
+         *  * there is an overall time budget that all listeners share and if that is exhausted no further listener is called
+         *  * listeners that take a long time or produce errors frequently will not be called anymore
+         *
+         * The current thresholds are 1.5 seconds as overall time budget and a listener can misbehave 3 times before being ignored.
+         */
         export const onWillSaveTextDocument: Event<TextDocumentWillSaveEvent>;
 
         /**
@@ -3930,21 +3934,21 @@ declare module '@theia/plugin' {
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
         /**
-		 * Make changes to one or many resources or create, delete, and rename resources as defined by the given
-		 * [workspace edit](#WorkspaceEdit).
-		 *
-		 * All changes of a workspace edit are applied in the same order in which they have been added. If
-		 * multiple textual inserts are made at the same position, these strings appear in the resulting text
-		 * in the order the 'inserts' were made. Invalid sequences like 'delete file a' -> 'insert text in file a'
-		 * cause failure of the operation.
-		 *
-		 * When applying a workspace edit that consists only of text edits an 'all-or-nothing'-strategy is used.
-		 * A workspace edit with resource creations or deletions aborts the operation, e.g. consective edits will
-		 * not be attempted, when a single edit fails.
-		 *
-		 * @param edit A workspace edit.
-		 * @return A thenable that resolves when the edit could be applied.
-		 */
+         * Make changes to one or many resources or create, delete, and rename resources as defined by the given
+         * [workspace edit](#WorkspaceEdit).
+         *
+         * All changes of a workspace edit are applied in the same order in which they have been added. If
+         * multiple textual inserts are made at the same position, these strings appear in the resulting text
+         * in the order the 'inserts' were made. Invalid sequences like 'delete file a' -> 'insert text in file a'
+         * cause failure of the operation.
+         *
+         * When applying a workspace edit that consists only of text edits an 'all-or-nothing'-strategy is used.
+         * A workspace edit with resource creations or deletions aborts the operation, e.g. consective edits will
+         * not be attempted, when a single edit fails.
+         *
+         * @param edit A workspace edit.
+         * @return A thenable that resolves when the edit could be applied.
+         */
         export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
 
 

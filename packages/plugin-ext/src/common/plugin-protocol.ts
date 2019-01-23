@@ -54,7 +54,7 @@ export interface PluginPackage {
  * This interface describes a package.json contribution section object.
  */
 export interface PluginPackageContribution {
-    configuration: PreferenceSchema;
+    configuration?: PreferenceSchema;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
