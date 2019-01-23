@@ -19,15 +19,15 @@ import { AbstractGenerator } from './abstract-generator';
 export class BackendGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
-        const backendModules = this.pck.targetBackendModules;
+        const { backendModules, backendMasterModules } = this.pck;
         await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
         await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
-        if (this.pck.backendElectronMasterModules.size > 0) {
-            await this.write(
-                this.pck.backend('electron-master.js'),
-                this.compileElectronMaster(this.pck.backendElectronMasterModules)
-            );
-        }
+        await this.writeIf(this.pck.backend('master.js'), this.compileMaster(backendMasterModules));
+    }
+
+    protected async writeIf(path: string, content: string): Promise<void> {
+        if (content === undefined || content === '') { return; }
+        await this.write(path, content);
     }
 
     protected compileServer(backendModules: Map<string, string>): string {
@@ -78,9 +78,27 @@ module.exports = (port, host, argv) => Promise.resolve()${this.compileBackendMod
     });`;
     }
 
-    protected compileElectronMaster(backendMasterModules: Map<string, string>) {
+    protected compileMaster(backendMasterModules: Map<string, string>): string {
+        if (backendMasterModules.size === 0) { return ''; }
         return `// @ts-check
-${[...backendMasterModules.values()].map(module => `require('${module}');`).join('\n')}`;
+require('reflect-metadata');
+const { Container, injectable } = require('inversify');
+// Add master modules entry point container;
+
+const container = new Container();
+
+function load(raw) {
+    return Promise.resolve(raw.default).then(module => {
+        container.load(module)
+    });
+}
+
+module.exports = () =>
+    Promise.resolve()${this.compileBackendModuleImports(backendMasterModules)}
+        .catch(err => {
+            console.error('Can\'t import master modules:', err));
+            throw err;
+        }`;
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
