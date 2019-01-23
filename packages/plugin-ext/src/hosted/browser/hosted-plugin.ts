@@ -24,13 +24,14 @@ import { MAIN_RPC_CONTEXT, ConfigStorage, PluginManagerExt } from '../../api/plu
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger, ContributionProvider } from '@theia/core';
-import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 import { StoragePathService } from '../../main/browser/storage-path-service';
+import { getPreferences } from '../../main/browser/preference-registry-main';
 import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
 
@@ -59,6 +60,9 @@ export class HostedPluginSupport {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(PreferenceProviderProvider)
+    protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
     private theiaReadyPromise: Promise<any>;
     private frontendExtManagerProxy: PluginManagerExt;
@@ -119,7 +123,7 @@ export class HostedPluginSupport {
                 const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                 hostedExtManager.$init({
                     plugins: initData.plugins,
-                    preferences: this.preferenceServiceImpl.getPreferences(),
+                    preferences: getPreferences(this.preferenceProviderProvider),
                     globalState: initData.globalStates,
                     workspaceState: initData.workspaceStates,
                     env: { queryParams: getQueryParameters() },
@@ -153,7 +157,7 @@ export class HostedPluginSupport {
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                     hostedExtManager.$init({
                         plugins: plugins,
-                        preferences: this.preferenceServiceImpl.getPreferences(),
+                        preferences: getPreferences(this.preferenceProviderProvider),
                         globalState: initData.globalStates,
                         workspaceState: initData.workspaceStates,
                         env: { queryParams: getQueryParameters() },

@@ -21,14 +21,27 @@ import * as theia from '@theia/plugin';
 import {
     PLUGIN_RPC_CONTEXT,
     PreferenceRegistryExt,
-    PreferenceRegistryMain
+    PreferenceRegistryMain,
+    PreferenceData
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { isObject } from '../common/types';
 import { PreferenceChange } from '@theia/core/lib/browser';
-import { ConfigurationTarget } from './types-impl';
-
+import { Configuration, ConfigurationModel } from './preferences/configuration';
+import { WorkspaceExtImpl } from './workspace';
 import cloneDeep = require('lodash.clonedeep');
+
+enum ConfigurationTarget {
+    Global = 1,
+    Workspace = 2,
+    WorkspaceFolder = 3
+}
+
+enum PreferenceScope {
+    Default,
+    User,
+    Workspace,
+}
 
 interface ConfigurationInspect<T> {
     key: string;
@@ -54,31 +67,31 @@ function lookUp(tree: any, key: string): any {
 
 export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     private proxy: PreferenceRegistryMain;
-    // tslint:disable-next-line:no-any
-    private _preferences: any;
+    private _preferences: Configuration;
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
     readonly onDidChangeConfiguration: Event<theia.ConfigurationChangeEvent> = this._onDidChangeConfiguration.event;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(
+        rpc: RPCProtocol,
+        private readonly workspace: WorkspaceExtImpl
+    ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN);
     }
 
-    // tslint:disable-next-line:no-any
-    init(data: { [key: string]: any }): void {
+    init(data: PreferenceData): void {
         this._preferences = this.parse(data);
     }
 
-    // tslint:disable-next-line:no-any
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void {
+    $acceptConfigurationChanged(data: PreferenceData, eventData: PreferenceChange): void {
         this.init(data);
         this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
         const preferences = this.toReadonlyValue(section
-            ? lookUp(this._preferences, section)
-            : this._preferences);
+            ? lookUp(this._preferences.getValue(), section)
+            : this._preferences.getValue());
 
         const configuration: theia.WorkspaceConfiguration = {
             has(key: string): boolean {
@@ -144,7 +157,27 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     return this.proxy.$removeConfigurationOption(arg, key, resource);
                 }
             },
-            inspect: <T>(key: string): ConfigurationInspect<T> => ({ key: key })
+            inspect: <T>(key: string): ConfigurationInspect<T> => {
+                key = section ? `${section}.${key}` : key;
+                resource = resource === null ? undefined : resource;
+                const result = cloneDeep(this._preferences.inspect<T>(key, this.workspace));
+
+                if (!result) {
+                    return undefined!;
+                }
+
+                const configInspect: ConfigurationInspect<T> = { key };
+                if (result.default) {
+                    configInspect.defaultValue = result.default;
+                }
+                if (result.user) {
+                    configInspect.globalValue = result.user;
+                }
+                if (result.workspace) {
+                    configInspect.workspaceValue = result.workspace;
+                }
+                return configInspect;
+            }
         };
         return configuration;
     }
@@ -172,7 +205,21 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         return readonlyProxy(data);
     }
 
-    private parse(data: any): any {
+    private parse(data: PreferenceData): Configuration {
+        const defaultConfiguration = this.getConfigurationModel(data[PreferenceScope.Default]);
+        const userConfiguration = this.getConfigurationModel(data[PreferenceScope.User]);
+        const workspaceConfiguration = this.getConfigurationModel(data[PreferenceScope.Workspace]);
+        return new Configuration(defaultConfiguration, userConfiguration, workspaceConfiguration);
+    }
+
+    private getConfigurationModel(data: { [key: string]: any }): ConfigurationModel {
+        if (!data) {
+            return new ConfigurationModel();
+        }
+        return new ConfigurationModel(this.parseConfigurationData(data), Object.keys(data));
+    }
+
+    private parseConfigurationData(data: { [key: string]: any }): { [key: string]: any } {
         return Object.keys(data).reduce((result: any, key: string) => {
             const parts = key.split('.');
             let branch = result;
