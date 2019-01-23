@@ -257,12 +257,13 @@ export interface MessageRegistryMain {
 }
 
 export interface StatusBarMessageRegistryMain {
-    $setMessage(text: string | undefined,
+    $setMessage(id: string,
+        text: string | undefined,
         priority: number,
         alignment: theia.StatusBarAlignment,
         color: string | undefined,
         tooltip: string | undefined,
-        command: string | undefined): PromiseLike<string>;
+        command: string | undefined): PromiseLike<void>;
     $update(id: string, message: string): void;
     $dispose(id: string): void;
 }
