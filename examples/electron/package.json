@@ -24,7 +24,6 @@
     "@theia/editor": "^0.3.18",
     "@theia/editor-preview": "^0.3.18",
     "@theia/editorconfig": "^0.3.18",
-    "@theia/example-backend": "^0.3.18",
     "@theia/extension-manager": "^0.3.18",
     "@theia/file-search": "^0.3.18",
     "@theia/filesystem": "^0.3.18",
