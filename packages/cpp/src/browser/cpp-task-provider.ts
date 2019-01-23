@@ -83,7 +83,7 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         if (config.commands && config.commands.build) {
             return {
                 type: CPP_BUILD_TASK_TYPE_KEY,
-                source: CPP_BUILD_TASK_SOURCE,
+                _source: CPP_BUILD_TASK_SOURCE,
                 label: `C/C++ Build - ${config.name}`,
                 config
             };

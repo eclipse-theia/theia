@@ -25,8 +25,9 @@ export interface TaskConfiguration {
     /**
      * Source of the task configuration.
      * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
+     * This field is not supposed to be used in `tasks.json`
      */
-    readonly source: string;
+    readonly _source: string;
     /** A label that uniquely identifies a task configuration per source */
     readonly label: string;
     readonly type: string;

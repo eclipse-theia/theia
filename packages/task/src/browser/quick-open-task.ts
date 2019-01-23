@@ -137,16 +137,16 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
     getDescription(): string {
         if (this.isConfigured) {
-            return new URI(this.task.source).displayName;
+            return new URI(this.task._source).displayName;
         }
-        return this.task.source;
+        return this.task._source;
     }
 
     run(mode: QuickOpenMode): boolean {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        this.taskService.run(this.task.source, this.task.label);
+        this.taskService.run(this.task._source, this.task.label);
 
         return true;
     }
