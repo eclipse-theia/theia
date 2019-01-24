@@ -21,10 +21,16 @@ import { EditorCommands } from './editor-command';
 
 export const EDITOR_CONTEXT_MENU: MenuPath = ['editor_context_menu'];
 
+/**
+ * Editor context menu default groups should be aligned
+ * with VS Code default groups: https://code.visualstudio.com/api/references/contribution-points#contributes.menus
+ */
 export namespace EditorContextMenu {
-    export const UNDO_REDO = [...EDITOR_CONTEXT_MENU, '1_undo'];
-    export const CUT_COPY_PASTE = [...EDITOR_CONTEXT_MENU, '2_cut_copy_paste'];
     export const NAVIGATION = [...EDITOR_CONTEXT_MENU, 'navigation'];
+    export const MODIFICATION = [...EDITOR_CONTEXT_MENU, '1_modification'];
+    export const CUT_COPY_PASTE = [...EDITOR_CONTEXT_MENU, '9_cutcopypaste'];
+    export const COMMANDS = [...EDITOR_CONTEXT_MENU, 'z_commands'];
+    export const UNDO_REDO = [...EDITOR_CONTEXT_MENU, '1_undo'];
 }
 
 export namespace EditorMainMenu {
