@@ -18,7 +18,7 @@ import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenu
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from 'inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
-import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
+import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -120,7 +120,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
-        menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '6_find'], {
+        menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
             commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {

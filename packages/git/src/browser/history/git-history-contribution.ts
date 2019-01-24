@@ -17,7 +17,7 @@
 import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser';
 import { injectable, inject, postConstruct } from 'inversify';
-import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
+import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { GitHistoryWidget } from './git-history-widget';
@@ -95,7 +95,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '5_history'], {
+        menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
             commandId: GitHistoryCommands.OPEN_FILE_HISTORY.id,
             label: GIT_HISTORY_LABEL
         });
