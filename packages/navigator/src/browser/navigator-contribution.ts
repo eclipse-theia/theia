@@ -47,15 +47,33 @@ export namespace FileNavigatorCommands {
 
 export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
 
+/**
+ * Navigator context menu default groups should be aligned
+ * with VS Code default groups: https://code.visualstudio.com/api/references/contribution-points#contributes.menus
+ */
 export namespace NavigatorContextMenu {
-    export const OPEN = [...NAVIGATOR_CONTEXT_MENU, '1_open'];
-    export const OPEN_WITH = [...OPEN, 'open_with'];
-    export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '2_clipboard'];
-    export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
-    export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
-    export const DIFF = [...NAVIGATOR_CONTEXT_MENU, '5_diff'];
-    export const WORKSPACE = [...NAVIGATOR_CONTEXT_MENU, '6_workspace'];
-    export const ACTIONS = [...NAVIGATOR_CONTEXT_MENU, '7_actions'];
+    export const NAVIGATION = [...NAVIGATOR_CONTEXT_MENU, 'navigation'];
+    /** @deprecated use NAVIGATION */
+    export const OPEN = NAVIGATION;
+    /** @deprecated use NAVIGATION */
+    export const NEW = NAVIGATION;
+
+    export const WORKSPACE = [...NAVIGATOR_CONTEXT_MENU, '2_workspace'];
+
+    export const COMPARE = [...NAVIGATOR_CONTEXT_MENU, '3_compare'];
+    /** @deprecated use COMPARE */
+    export const DIFF = COMPARE;
+
+    export const SEARCH = [...NAVIGATOR_CONTEXT_MENU, '4_search'];
+    export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '5_cutcopypaste'];
+
+    export const MODIFICATION = [...NAVIGATOR_CONTEXT_MENU, '7_modification'];
+    /** @deprecated use MODIFICATION */
+    export const MOVE = MODIFICATION;
+    /** @deprecated use MODIFICATION */
+    export const ACTIONS = MODIFICATION;
+
+    export const OPEN_WITH = [...NAVIGATION, 'open_with'];
 }
 
 @injectable()
@@ -131,7 +149,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             order: '5'
         });
 
-        registry.registerMenuAction(NavigatorContextMenu.OPEN, {
+        registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: CommonCommands.OPEN.id
         });
         registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
@@ -157,33 +175,34 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             commandId: CommonCommands.PASTE.id
         });
 
-        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+        registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: WorkspaceCommands.FILE_RENAME.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+        registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: WorkspaceCommands.FILE_DELETE.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+        registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: WorkspaceCommands.FILE_DUPLICATE.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+        registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: FileDownloadCommands.DOWNLOAD.id,
             label: 'Download',
-            order: 'z' // Should be the last item in the "move" menu group.
+            order: 'z1' // Should be the last item in the "move" menu group.
         });
 
-        registry.registerMenuAction(NavigatorContextMenu.NEW, {
+        registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: WorkspaceCommands.NEW_FILE.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.NEW, {
+        registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: WorkspaceCommands.NEW_FOLDER.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.DIFF, {
+        registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: WorkspaceCommands.FILE_COMPARE.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.ACTIONS, {
+        registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
-            label: 'Collapse All'
+            label: 'Collapse All',
+            order: 'z2'
         });
 
         this.workspacePreferences.ready.then(() => {
