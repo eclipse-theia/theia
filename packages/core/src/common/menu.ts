@@ -178,6 +178,13 @@ export class CompositeMenuNode implements MenuNode {
     public addNode(node: MenuNode): Disposable {
         this._children.push(node);
         this._children.sort((m1, m2) => {
+            // The navigation group is special as it will always be sorted to the top/beginning of a menu.
+            if (CompositeMenuNode.isNavigationGroup(m1)) {
+                return -1;
+            }
+            if (CompositeMenuNode.isNavigationGroup(m2)) {
+                return 1;
+            }
             if (m1.sortString < m2.sortString) {
                 return -1;
             } else if (m1.sortString > m2.sortString) {
@@ -212,6 +219,10 @@ export class CompositeMenuNode implements MenuNode {
 
     get isSubmenu(): boolean {
         return this.label !== undefined;
+    }
+
+    static isNavigationGroup(node: MenuNode): node is CompositeMenuNode {
+        return node instanceof CompositeMenuNode && node.id === 'navigation';
     }
 }
 
