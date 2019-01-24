@@ -32,13 +32,13 @@ export class CppContribution extends BaseLanguageServerContribution {
     public start(clientConnection: IConnection, { parameters }: CppStartOptions): void {
 
         const command =
-            (parameters && parameters.clangdExecutable)
-            || process.env.CPP_CLANGD_COMMAND
+            process.env.CPP_CLANGD_COMMAND
+            || (parameters && parameters.clangdExecutable)
             || CLANGD_EXECUTABLE_DEFAULT;
 
         const args = parseArgs(
-            (parameters && parameters.clangdArgs)
-            || process.env.CPP_CLANGD_ARGS
+            process.env.CPP_CLANGD_ARGS
+            || (parameters && parameters.clangdArgs)
             || undefined
         );
 

@@ -12,15 +12,16 @@ To install Clangd on Ubuntu 18.04:
 
 See [here](https://clang.llvm.org/extra/clangd.html#id4) for detailed installation instructions.
 
-To get accurate diagnostics, it helps to...
+To get accurate diagnostics, it helps to:
 
-1. ... have the build system of the C/C++ project generate a
+1. Have the build system of the C/C++ project generate a
    [`compile_commands.json`](https://clang.llvm.org/docs/JSONCompilationDatabase.html)
-   file and...
-2. ... point Clangd to the build directory containing said
-   `compile_commands.json`.
+   file.
+2. Point Clangd to the build directory containing said `compile_commands.json`.
+3. Set path to Clangd executable.
+4. Set arguments to pass to clangd when starting the language server.
 
-\#2 can be done using the `cpp.buildConfigurations` preference.  In your home
+\#2 can be done using the `cpp.buildConfigurations` preference. In your home
 or your project `.theia/settings.json`, define one or more build
 configurations:
 
@@ -36,6 +37,26 @@ configurations:
 
 You can then select an active configuration using the
 `C/C++: Change Build Configuration` command from the command palette.
+
+\#3 can be done either by:
+
+- Setting `CPP_CLANGD_COMMAND` environment variable
+- Adding `cpp.clangdExecutable` preference in your home or your project `.theia/settings.json`:
+
+        {
+            "cpp.clangdExecutable": "/path/to/my/clangd/executable"
+        }
+
+- Adding clangd to system path. Default value of executable path is set to `clangd`
+
+\#4 can be done either by:
+
+- Setting `CPP_CLANGD_ARGS` environment variable
+- Adding `cpp.clangdArgs` preference in your home or your project `.theia/settings.json`:
+
+        {
+            "cpp.clangdArgs": "list of clangd arguments"
+        }
 
 ## License
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
