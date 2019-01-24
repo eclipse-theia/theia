@@ -18,7 +18,8 @@ import { inject, injectable } from 'inversify';
 import { TaskConfiguration } from '../common/task-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystemWatcherServer, FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
+import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import * as jsoncparser from 'jsonc-parser';
 import { ParseError } from 'jsonc-parser';
@@ -54,24 +55,25 @@ export class TaskConfigurations implements Disposable {
     protected client: TaskConfigurationClient | undefined = undefined;
 
     constructor(
-        @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
+        @inject(FileSystemWatcher) protected readonly watcherServer: FileSystemWatcher,
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         this.toDispose.push(watcherServer);
-
-        watcherServer.setClient({
-            onDidFilesChanged: async event => {
-                try {
-                    const watchedConfigFileChanges = event.changes.filter(change => this.watchedConfigFileUris.some(fileUri => fileUri === change.uri));
-                    if (watchedConfigFileChanges.length >= 0) {
-                        await this.onDidTaskFileChange(watchedConfigFileChanges);
-                        if (this.client) {
-                            this.client.taskConfigurationChanged(this.getTaskLabels());
-                        }
+        this.watcherServer.onFilesChanged(async changes => {
+            try {
+                const watchedConfigFileChanges = changes.filter(change =>
+                    this.watchedConfigFileUris.some(fileUri => FileChangeEvent.isAffected([change], new URI(fileUri)))
+                ).map(relatedChange => (
+                    { uri: relatedChange.uri.toString(), type: relatedChange.type }
+                ));
+                if (watchedConfigFileChanges.length >= 0) {
+                    await this.onDidTaskFileChange(watchedConfigFileChanges);
+                    if (this.client) {
+                        this.client.taskConfigurationChanged(this.getTaskLabels());
                     }
-                } catch (err) {
-                    console.error(err);
                 }
+            } catch (err) {
+                console.error(err);
             }
         });
 
@@ -101,9 +103,9 @@ export class TaskConfigurations implements Disposable {
         const configFileUri = this.getConfigFileUri(rootUri);
         if (!this.watchedConfigFileUris.some(uri => uri === configFileUri)) {
             this.watchedConfigFileUris.push(configFileUri);
-            const watchId = await this.watcherServer.watchFileChanges(configFileUri);
+            const disposableWatcher = await this.watcherServer.watchFileChanges(new URI(configFileUri));
             const disposable = Disposable.create(() => {
-                this.watcherServer.unwatchFileChanges(watchId);
+                disposableWatcher.dispose();
                 this.watchersMap.delete(configFileUri);
                 const ind = this.watchedConfigFileUris.findIndex(uri => uri === configFileUri);
                 if (ind >= 0) {
