@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
-import { MenuPath } from '@theia/core';
+import { MenuPath, SelectionService } from '@theia/core';
 import { TreeNode, NodeProps, SelectableTreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { DebugStackFramesSource, LoadMoreStackFrames } from './debug-stack-frames-source';
@@ -47,6 +47,9 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
 
     @inject(DebugViewModel)
     protected readonly viewModel: DebugViewModel;
+
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
 
     @inject(DebugCallStackItemTypeKey)
     protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
@@ -88,13 +91,23 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
         }
         this.updatingSelection = true;
         try {
+            let selection: string | number | undefined;
             const node = this.model.selectedNodes[0];
             if (TreeElementNode.is(node)) {
                 if (node.element instanceof DebugStackFrame) {
                     node.element.thread.currentFrame = node.element;
                     this.debugCallStackItemTypeKey.set('stackFrame');
+                    const source = node.element.source;
+                    if (source) {
+                        if (source.inMemory) {
+                            selection = source.raw.path || source.raw.sourceReference;
+                        } else {
+                            selection = source.uri.toString();
+                        }
+                    }
                 }
             }
+            this.selectionService.selection = selection;
         } finally {
             this.updatingSelection = false;
         }

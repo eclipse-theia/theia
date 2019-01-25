@@ -25,6 +25,8 @@ import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-co
 import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
 import { PluginContribution, Menu, PluginCommand } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
+import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
+import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -47,9 +49,6 @@ export class MenusContributionPointHandler {
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
 
-    // menu location to command IDs
-    protected readonly registeredMenus: Map<string, Set<string>> = new Map();
-
     /**
      * Handles the `menus` contribution point.
      * In VSCode, a menu can have more than one item for the same command. Each item may have it's own visibility rules.
@@ -71,15 +70,15 @@ export class MenusContributionPointHandler {
             } else if (location === 'editor/title') {
                 this.registerEditorTitleActions(allMenus[location], contributions);
             } else if (allMenus.hasOwnProperty(location)) {
-                const menuPath = MenusContributionPointHandler.parseMenuPath(location);
-                if (!menuPath) {
+                const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
+                if (!menuPaths.length) {
                     this.logger.warn(`Plugin contributes items to a menu with invalid identifier: ${location}`);
                     continue;
                 }
                 const menus = allMenus[location];
                 menus.forEach(menu => {
-                    if (!this.isMenuItemRegistered(location, menu.command)) {
-                        this.registerMenuAction(menuPath, location, menu);
+                    for (const menuPath of menuPaths) {
+                        this.registerMenuAction(menuPath, menu);
                     }
                 });
             }
@@ -124,20 +123,17 @@ export class MenusContributionPointHandler {
         this.tabBarToolbar.registerItem({ id, command, tooltip, group, when });
     }
 
-    protected static parseMenuPath(value: string): MenuPath | undefined {
+    protected static parseMenuPaths(value: string): MenuPath[] {
         switch (value) {
-            case 'editor/context': return EDITOR_CONTEXT_MENU;
-            case 'explorer/context': return NAVIGATOR_CONTEXT_MENU;
-            case 'view/item/context': return VIEW_ITEM_CONTEXT_MENU;
+            case 'editor/context': return [EDITOR_CONTEXT_MENU];
+            case 'explorer/context': return [NAVIGATOR_CONTEXT_MENU];
+            case 'view/item/context': return [VIEW_ITEM_CONTEXT_MENU];
+            case 'debug/callstack/context': return [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU];
         }
+        return [];
     }
 
-    protected isMenuItemRegistered(location: string, commandId: string): boolean {
-        const commands = this.registeredMenus.get(location);
-        return commands !== undefined && commands.has(commandId);
-    }
-
-    protected registerMenuAction(menuPath: MenuPath, location: string, menu: Menu): void {
+    protected registerMenuAction(menuPath: MenuPath, menu: Menu): void {
         const [group = '', order = undefined] = (menu.group || '').split('@');
         // Registering a menu action requires the related command to be already registered.
         // But Theia plugin registers the commands dynamically via the Commands API.
@@ -150,12 +146,5 @@ export class MenusContributionPointHandler {
                 when: menu.when
             });
         }, 2000);
-
-        let commands = this.registeredMenus.get(location);
-        if (!commands) {
-            commands = new Set();
-        }
-        commands.add(menu.command);
-        this.registeredMenus.set(location, commands);
     }
 }

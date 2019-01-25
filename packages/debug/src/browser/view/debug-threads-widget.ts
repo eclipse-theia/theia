@@ -17,6 +17,7 @@
 import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
 import { MenuPath } from '@theia/core';
 import { TreeNode, NodeProps, SelectableTreeNode } from '@theia/core/lib/browser';
+import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { DebugThreadsSource } from './debug-threads-source';
 import { DebugSession } from '../debug-session';
@@ -51,6 +52,9 @@ export class DebugThreadsWidget extends SourceTreeWidget {
 
     @inject(DebugViewModel)
     protected readonly viewModel: DebugViewModel;
+
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
 
     @inject(DebugCallStackItemTypeKey)
     protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
@@ -91,6 +95,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
         }
         this.updatingSelection = true;
         try {
+            let selection: number | undefined;
             const node = this.model.selectedNodes[0];
             if (TreeElementNode.is(node)) {
                 if (node.element instanceof DebugSession) {
@@ -99,8 +104,10 @@ export class DebugThreadsWidget extends SourceTreeWidget {
                 } else if (node.element instanceof DebugThread) {
                     node.element.session.currentThread = node.element;
                     this.debugCallStackItemTypeKey.set('thread');
+                    selection = node.element.raw.id;
                 }
             }
+            this.selectionService.selection = selection;
         } finally {
             this.updatingSelection = false;
         }
