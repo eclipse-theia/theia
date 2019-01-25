@@ -30,6 +30,8 @@ import 'mocha';
 import * as sinon from 'sinon';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { QuickCommandService } from '@theia/core/lib/browser';
+import { PluginSharedStyle } from '../plugin-shared-style';
+import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 disableJSDOM();
 
@@ -57,6 +59,10 @@ before(() => {
         bind(MenusContributionPointHandler).toSelf();
         // tslint:disable-next-line:no-any mock QuickCommandService
         bind(QuickCommandService).toConstantValue({} as any);
+        // tslint:disable-next-line:no-any mock TabBarToolbarRegistry
+        bind(TabBarToolbarRegistry).toConstantValue({} as any);
+        // tslint:disable-next-line:no-any mock PluginSharedStyle
+        bind(PluginSharedStyle).toConstantValue({} as any);
     });
 
     testContainer.load(module);
