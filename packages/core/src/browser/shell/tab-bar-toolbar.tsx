@@ -22,6 +22,7 @@ import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution } from '../frontend-application';
 import { CommandRegistry, CommandService } from '../../common/command';
 import { Disposable } from '../../common/disposable';
+import { ContextKeyService } from '../context-key-service';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -39,7 +40,7 @@ export class TabBarToolbar extends ReactWidget {
     protected current: Widget | undefined;
     protected items = new Map<string, TabBarToolbarItem>();
 
-    constructor(protected readonly commandService: CommandService, protected readonly labelParser: LabelParser) {
+    constructor(protected readonly commands: CommandRegistry, protected readonly labelParser: LabelParser) {
         super();
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR);
         this.hide();
@@ -68,13 +69,20 @@ export class TabBarToolbar extends ReactWidget {
     protected renderItem(item: TabBarToolbarItem): React.ReactNode {
         let innerText = '';
         const classNames = [];
-        for (const labelPart of this.labelParser.parse(item.text)) {
-            if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
-                const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
-                classNames.push(...className.split(' '));
-            } else {
-                innerText = labelPart;
+        if (item.text) {
+            for (const labelPart of this.labelParser.parse(item.text)) {
+                if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
+                    const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
+                    classNames.push(...className.split(' '));
+                } else {
+                    innerText = labelPart;
+                }
             }
+        }
+        const command = this.commands.getCommand(item.command);
+        const iconClass = command && command.iconClass;
+        if (iconClass) {
+            classNames.push(iconClass);
         }
         return <div key={item.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM} >
             <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={item.tooltip}>{innerText}</div>
@@ -84,7 +92,7 @@ export class TabBarToolbar extends ReactWidget {
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
         const item = this.items.get(e.currentTarget.id);
         if (item) {
-            this.commandService.executeCommand(item.command, this.current);
+            this.commands.executeCommand(item.command, this.current);
         }
     }
 
@@ -127,7 +135,7 @@ export interface TabBarToolbarItem {
     readonly command: string;
 
     /**
-     * Text of the item.
+     * Optional text of the item.
      *
      * Shamelessly copied and reused from `status-bar`:
      *
@@ -144,7 +152,7 @@ export interface TabBarToolbarItem {
      * The type of animation can be either `spin` or `pulse`.
      * Look [here](http://fontawesome.io/examples/#animated) for more information to animated icons.
      */
-    readonly text: string;
+    readonly text?: string;
 
     /**
      * Priority among the items. Can be negative. The smaller the number the left-most the item will be placed in the toolbar. It is `0` by default.
@@ -152,9 +160,19 @@ export interface TabBarToolbarItem {
     readonly priority?: number;
 
     /**
+     * Optional group for the item.
+     */
+    readonly group?: string;
+
+    /**
      * Optional tooltip for the item.
      */
     readonly tooltip?: string;
+
+    /**
+     * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
+     */
+    readonly when?: string;
 
 }
 
@@ -163,7 +181,31 @@ export namespace TabBarToolbarItem {
     /**
      * Compares the items by `priority` in ascending. Undefined priorities will be treated as `0`.
      */
-    export const PRIORITY_COMPARATOR = (left: TabBarToolbarItem, right: TabBarToolbarItem) => (left.priority || 0) - (right.priority || 0);
+    export const PRIORITY_COMPARATOR = (left: TabBarToolbarItem, right: TabBarToolbarItem) => {
+        // The navigation group is special as it will always be sorted to the top/beginning of a menu.
+        if (left.group === 'navigation') {
+            return -1;
+        }
+        if (right.group === 'navigation') {
+            return 1;
+        }
+        if (left.group && right.group) {
+            if (left.group < right.group) {
+                return -1;
+            } else if (left.group > right.group) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        if (left.group) {
+            return -1;
+        }
+        if (right.group) {
+            return 1;
+        }
+        return (left.priority || 0) - (right.priority || 0);
+    };
 
 }
 
@@ -177,6 +219,9 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     @inject(ContributionProvider)
     @named(TabBarToolbarContribution)
@@ -208,7 +253,14 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * By default returns with all items where the command is enabled and `item.isVisible` is `true`.
      */
     visibleItems(widget: Widget): TabBarToolbarItem[] {
-        return [...this.items.values()].filter(item => this.commandRegistry.isVisible(item.command, widget));
+        const result = [];
+        for (const item of this.items.values()) {
+            if (this.commandRegistry.isVisible(item.command, widget) &&
+                (!item.when || this.contextKeyService.match(item.when, widget.node))) {
+                result.push(item);
+            }
+        }
+        return result;
     }
 
 }

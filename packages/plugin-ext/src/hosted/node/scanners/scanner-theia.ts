@@ -39,7 +39,11 @@ import {
     PluginPackageMenu,
     PluginPackageDebuggersContribution,
     DebuggerContribution,
-    SnippetContribution
+    SnippetContribution,
+    PluginPackageCommand,
+    PluginCommand,
+    IconUrl,
+    getPluginId
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -152,6 +156,12 @@ export class TheiaPluginScanner implements PluginScanner {
             });
         }
 
+        const pluginCommands = rawPlugin.contributes.commands;
+        if (pluginCommands) {
+            const commands = Array.isArray(pluginCommands) ? pluginCommands : [pluginCommands];
+            contributions.commands = commands.map(command => this.readCommand(command, rawPlugin));
+        }
+
         if (rawPlugin.contributes!.menus) {
             contributions.menus = {};
 
@@ -172,6 +182,25 @@ export class TheiaPluginScanner implements PluginScanner {
 
         contributions.snippets = this.readSnippets(rawPlugin);
         return contributions;
+    }
+
+    protected readCommand({ command, title, category, icon }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
+        let iconUrl: IconUrl | undefined;
+        if (icon) {
+            if (typeof icon === 'string') {
+                iconUrl = this.toPluginUrl(pck, icon);
+            } else {
+                iconUrl = {
+                    light: this.toPluginUrl(pck, icon.light),
+                    dark: this.toPluginUrl(pck, icon.dark)
+                };
+            }
+        }
+        return { command, title, category, iconUrl };
+    }
+
+    protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
+        return path.join('hostedPlugin', getPluginId(pck), relativePath);
     }
 
     protected readSnippets(pck: PluginPackage): SnippetContribution[] | undefined {

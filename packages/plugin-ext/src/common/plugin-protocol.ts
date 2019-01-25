@@ -59,6 +59,7 @@ export interface PluginPackageContribution {
     grammars?: PluginPackageGrammarsContribution[];
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
     views?: { [location: string]: PluginPackageView[] };
+    commands?: PluginPackageCommand | PluginPackageCommand[];
     menus?: { [location: string]: PluginPackageMenu[] };
     keybindings?: PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
@@ -74,6 +75,13 @@ export interface PluginPackageViewContainer {
 export interface PluginPackageView {
     id: string;
     name: string;
+}
+
+export interface PluginPackageCommand {
+    command: string;
+    title: string;
+    category?: string;
+    icon?: string | { light: string; dark: string; };
 }
 
 export interface PluginPackageMenu {
@@ -340,6 +348,7 @@ export interface PluginContribution {
     grammars?: GrammarsContribution[];
     viewsContainers?: { [location: string]: ViewContainer[] };
     views?: { [location: string]: View[] };
+    commands?: PluginCommand[]
     menus?: { [location: string]: Menu[] };
     keybindings?: Keybinding[];
     debuggers?: DebuggerContribution[];
@@ -448,6 +457,15 @@ export interface View {
     id: string;
     name: string;
 }
+
+export interface PluginCommand {
+    command: string;
+    title: string;
+    category?: string;
+    iconUrl?: IconUrl;
+}
+
+export type IconUrl = string | { light: string; dark: string; };
 
 /**
  * Menu contribution
