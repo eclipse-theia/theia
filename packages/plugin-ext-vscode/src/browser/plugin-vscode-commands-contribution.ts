@@ -19,11 +19,16 @@ import { CommandContribution, CommandRegistry, Command } from '@theia/core';
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import URI from 'vscode-uri';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
         id: 'vscode.open',
         label: 'VSCode open link'
+    };
+
+    export const SET_CONTEXT: Command = {
+        id: 'setContext'
     };
 }
 
@@ -31,12 +36,22 @@ export namespace VscodeCommands {
 export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(CommandService)
     protected readonly commandService: CommandService;
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
             execute: (resource: URI) => {
                 this.commandService.executeCommand('theia.open', new TheiaURI(resource));
+            }
+        });
+
+        commands.registerCommand(VscodeCommands.SET_CONTEXT, {
+            isVisible: () => false,
+            // tslint:disable-next-line: no-any
+            execute: (contextKey: any, contextValue: any) => {
+                this.contextKeyService.createKey(String(contextKey), contextValue);
             }
         });
     }
