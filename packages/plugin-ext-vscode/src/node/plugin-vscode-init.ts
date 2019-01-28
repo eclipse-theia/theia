@@ -78,10 +78,10 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     // use Theia plugin api instead vscode extensions
     (<any>vscode).extensions = {
         get all(): any[] {
-            return vscode.plugins.all;
+            return vscode.plugins.all.map(p => withExtensionPath(p));
         },
         getExtension(pluginId: string): any | undefined {
-            return vscode.plugins.getPlugin(pluginId);
+            return withExtensionPath(vscode.plugins.getPlugin(pluginId));
         }
     };
 
@@ -128,4 +128,12 @@ function overrideInternalLoad(): void {
 
 function findPlugin(filePath: string): Plugin | undefined {
     return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+}
+
+function withExtensionPath(plugin: any | undefined): any | undefined {
+    if (plugin && plugin.pluginPath) {
+        plugin.extensionPath = plugin.pluginPath;
+    }
+
+    return plugin;
 }

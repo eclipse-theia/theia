@@ -28,11 +28,14 @@ export const JAVASCRIPT_LANGUAGE_NAME = 'JavaScript';
 export const JAVASCRIPT_REACT_LANGUAGE_ID = 'javascriptreact';
 export const JAVASCRIPT_REACT_LANGUAGE_NAME = 'JavaScript React';
 
+export const JSX_TAGS_LANGUAGE_ID = 'jsx-tags';
+
 export const TS_JS_LANGUAGES = new Set([
     TYPESCRIPT_LANGUAGE_ID,
     TYPESCRIPT_REACT_LANGUAGE_ID,
     JAVASCRIPT_LANGUAGE_ID,
-    JAVASCRIPT_REACT_LANGUAGE_ID
+    JAVASCRIPT_REACT_LANGUAGE_ID,
+    JSX_TAGS_LANGUAGE_ID
 ]);
 
 export interface TypescriptStartParams {

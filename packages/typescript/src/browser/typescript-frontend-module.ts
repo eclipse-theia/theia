@@ -28,6 +28,7 @@ import { TypeScriptFrontendContribution } from './typescript-frontend-contributi
 import { TypeScriptEditorTextFocusContext } from './typescript-keybinding-contexts';
 import { bindTypescriptPreferences } from './typescript-preferences';
 import { TypescriptVersionService, typescriptVersionPath } from '../common/typescript-version-service';
+import { JsxTagsGrammarContribution } from './jsx-tags-language-config';
 
 export default new ContainerModule(bind => {
     bindTypescriptPreferences(bind);
@@ -43,6 +44,7 @@ export default new ContainerModule(bind => {
 
     bind(LanguageGrammarDefinitionContribution).to(TypescriptGrammarContribution).inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).to(JavascriptGrammarContribution).inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).to(JsxTagsGrammarContribution).inSingletonScope();
 
     bind(TypeScriptFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(TypeScriptFrontendContribution);

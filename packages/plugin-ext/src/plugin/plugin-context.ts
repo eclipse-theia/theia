@@ -354,7 +354,7 @@ export function createAPIFactory(
             },
             onWillSaveTextDocument(listener, thisArg?, disposables?) {
                 // TODO to implement
-                return { dispose: () => {}};
+                return { dispose: () => { } };
             },
             onDidSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidSaveTextDocument(listener, thisArg, disposables);
@@ -410,6 +410,16 @@ export function createAPIFactory(
             asRelativePath(pathOrUri: theia.Uri | string, includeWorkspace?: boolean): string | undefined {
                 return workspaceExt.getRelativePath(pathOrUri, includeWorkspace);
             },
+            registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
+                return tasks.registerTaskProvider(type, provider);
+            },
+            // Experimental API https://github.com/theia-ide/theia/issues/4167
+            onDidRenameFile(listener, thisArg?, disposables?): theia.Disposable {
+                return new Disposable(() => { });
+            },
+            onWillRenameFile(listener, thisArg?, disposables?): theia.Disposable {
+                return new Disposable(() => { });
+            }
         };
 
         const env: typeof theia.env = {
