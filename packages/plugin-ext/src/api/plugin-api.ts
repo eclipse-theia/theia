@@ -977,7 +977,7 @@ export interface DebugMain {
     $addBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
     $removeBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
     $startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): Promise<boolean>;
-    $customRequest(command: string, args?: any): Promise<DebugProtocol.Response>;
+    $customRequest(sessionId: string, command: string, args?: any): Promise<DebugProtocol.Response>;
 }
 
 export const PLUGIN_RPC_CONTEXT = {

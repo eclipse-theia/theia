@@ -172,8 +172,8 @@ export class DebugExtImpl implements DebugExt {
     }
 
     async $sessionDidChange(sessionId: string | undefined): Promise<void> {
-        const activeDebugSession = sessionId ? this.sessions.get(sessionId) : undefined;
-        this.onDidChangeActiveDebugSessionEmitter.fire(activeDebugSession);
+        this.activeDebugSession = sessionId ? this.sessions.get(sessionId) : undefined;
+        this.onDidChangeActiveDebugSessionEmitter.fire(this.activeDebugSession);
     }
 
     async $breakpointsDidChange(all: Breakpoint[], added: Breakpoint[], removed: Breakpoint[], changed: Breakpoint[]): Promise<void> {
@@ -195,7 +195,7 @@ export class DebugExtImpl implements DebugExt {
             sessionId,
             debugConfiguration,
             communicationProvider,
-            (command: string, args?: any) => this.proxy.$customRequest(command, args));
+            (command: string, args?: any) => this.proxy.$customRequest(sessionId, command, args));
         this.sessions.set(sessionId, debugAdapterSession);
 
         const connection = await this.connectionExt!.ensureConnection(sessionId);

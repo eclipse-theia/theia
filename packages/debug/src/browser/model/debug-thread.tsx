@@ -61,6 +61,9 @@ export class DebugThread extends DebugThreadData implements TreeElement {
 
     update(data: Partial<DebugThreadData>): void {
         Object.assign(this, data);
+        if ('stoppedDetails' in data) {
+            this.clearFrames();
+        }
     }
 
     clear(): void {
@@ -68,7 +71,6 @@ export class DebugThread extends DebugThreadData implements TreeElement {
             raw: this.raw,
             stoppedDetails: undefined
         });
-        this.clearFrames();
     }
 
     continue(): Promise<DebugProtocol.ContinueResponse> {
