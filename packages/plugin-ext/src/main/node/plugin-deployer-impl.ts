@@ -191,7 +191,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             });
 
         });
-        return await Promise.all(waitPromises);
+        return Promise.all(waitPromises);
     }
 
     /**
