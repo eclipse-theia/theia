@@ -42,7 +42,8 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
 
         // check directory exists
         if (!fs.existsSync(dirPath)) {
-            throw new Error('The directory referenced by ' + pluginResolverContext.getOriginId() + ' does not exist.');
+            console.warn(`The directory referenced by ${pluginResolverContext.getOriginId()} does not exist.`);
+            return;
 
         }
         // list all stuff from this directory
