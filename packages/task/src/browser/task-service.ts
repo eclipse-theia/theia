@@ -191,8 +191,9 @@ export class TaskService implements TaskConfigurationClient {
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
         } catch (error) {
-            this.logger.error(`Error launching task '${taskLabel}': ${error}`);
-            this.messageService.error(`Error launching task '${taskLabel}': ${error}`);
+            const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
+            this.logger.error(errorStr);
+            this.messageService.error(errorStr);
             return;
         }
 

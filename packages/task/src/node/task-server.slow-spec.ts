@@ -242,12 +242,12 @@ describe('Task server / back-end', function () {
 
     it('task using terminal process can handle command that does not exist', async function () {
         const p = taskServer.run(createProcessTaskConfig2('shell', bogusCommand, []), wsRoot);
-        await expectThrowsAsync(p, `Command not found: ${bogusCommand}`);
+        await expectThrowsAsync(p, 'ENOENT');
     });
 
     it('task using raw process can handle command that does not exist', async function () {
         const p = taskServer.run(createProcessTaskConfig2('process', bogusCommand, []), wsRoot);
-        await expectThrowsAsync(p, `Command not found: ${bogusCommand}`);
+        await expectThrowsAsync(p, 'ENOENT');
     });
 
     it('getTasks(ctx) returns tasks according to created context', async function () {

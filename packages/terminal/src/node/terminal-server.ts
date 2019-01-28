@@ -34,14 +34,18 @@ export class TerminalServer extends BaseTerminalServer implements ITerminalServe
         super(processManager, logger);
     }
 
-    async create(options: ITerminalServerOptions): Promise<number> {
-        try {
+    create(options: ITerminalServerOptions): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
             const term = this.terminalFactory(options);
-            this.postCreate(term);
-            return term.id;
-        } catch (error) {
-            this.logger.error('Error while creating terminal', error);
-            return -1;
-        }
+            term.onStart(_ => {
+                this.postCreate(term);
+                resolve(term.id);
+            });
+            term.onError(error => {
+                this.logger.error('Error while creating terminal', error);
+                resolve(-1);
+            });
+        });
+
     }
 }
