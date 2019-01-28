@@ -27,25 +27,29 @@ import {
     ResourceFileEditDto,
 } from '../../api/plugin-api';
 import { interfaces } from 'inversify';
-import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider } from '../../api/model';
+import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation, MarkerSeverity } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
-import { UriComponents } from '../../common/uri-components';
 import { LanguageSelector } from '../../plugin/languages';
 import { DocumentFilter, MonacoModelIdentifier, testGlob, getLanguages } from 'monaco-languageclient/lib';
 import { DisposableCollection, Emitter } from '@theia/core';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import URI from 'vscode-uri/lib/umd';
+import CoreURI from '@theia/core/lib/common/uri';
+import { ProblemManager } from '@theia/markers/lib/browser';
+import * as vst from 'vscode-languageserver-types';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
     private ml: MonacoLanguages;
+    private problemManager: ProblemManager;
 
     private readonly proxy: LanguagesExt;
     private readonly disposables = new Map<number, monaco.IDisposable>();
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.LANGUAGES_EXT);
         this.ml = container.get(MonacoLanguages);
+        this.problemManager = container.get(ProblemManager);
     }
 
     $getLanguages(): Promise<string[]> {
@@ -158,24 +162,15 @@ export class LanguagesMainImpl implements LanguagesMain {
     }
 
     $clearDiagnostics(id: string): void {
-        const markers = monaco.editor.getModelMarkers({ owner: id });
-        const clearedEditors = new Set<string>(); // uri to resource
-        for (const marker of markers) {
-            const uri = marker.resource;
-            const uriString = uri.toString();
-            if (!clearedEditors.has(uriString)) {
-                const textModel = monaco.editor.getModel(uri);
-                monaco.editor.setModelMarkers(textModel, id, []);
-                clearedEditors.add(uriString);
-            }
+        for (const uri of this.problemManager.getUris()) {
+            this.problemManager.setMarkers(new CoreURI(uri), id, []);
         }
     }
 
-    $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void {
-        for (const [uriComponents, markers] of delta) {
-            const uri = monaco.Uri.revive(uriComponents);
-            const textModel = monaco.editor.getModel(uri);
-            monaco.editor.setModelMarkers(textModel, id, markers.map(reviveMarker));
+    $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void {
+        for (const [uriString, markers] of delta) {
+            const uri = new CoreURI(uriString);
+            this.problemManager.setMarkers(uri, id, markers.map(reviveMarker));
         }
     }
 
@@ -698,33 +693,54 @@ export class LanguagesMainImpl implements LanguagesMain {
     }
 }
 
-function reviveMarker(marker: MarkerData): monaco.editor.IMarkerData {
-    const monacoMarker: monaco.editor.IMarkerData = {
+function reviveMarker(marker: MarkerData): vst.Diagnostic {
+    const monacoMarker: vst.Diagnostic = {
         code: marker.code,
-        severity: marker.severity,
+        severity: reviveSeverity(marker.severity),
+        range: reviveRange(marker.startLineNumber, marker.startColumn, marker.endLineNumber, marker.endColumn),
         message: marker.message,
         source: marker.source,
-        startLineNumber: marker.startLineNumber,
-        startColumn: marker.startColumn,
-        endLineNumber: marker.endLineNumber,
-        endColumn: marker.endColumn,
         relatedInformation: undefined
     };
+
     if (marker.relatedInformation) {
-        monacoMarker.relatedInformation = [];
-        for (const ri of marker.relatedInformation) {
-            monacoMarker.relatedInformation.push({
-                resource: monaco.Uri.revive(ri.resource),
-                message: ri.message,
-                startLineNumber: ri.startLineNumber,
-                startColumn: ri.startColumn,
-                endLineNumber: ri.endLineNumber,
-                endColumn: ri.endColumn
-            });
-        }
+        monacoMarker.relatedInformation = marker.relatedInformation.map(reviveRelated);
     }
 
     return monacoMarker;
+}
+
+function reviveSeverity(severity: MarkerSeverity): vst.DiagnosticSeverity {
+    switch (severity) {
+        case MarkerSeverity.Error: return vst.DiagnosticSeverity.Error;
+        case MarkerSeverity.Warning: return vst.DiagnosticSeverity.Warning;
+        case MarkerSeverity.Info: return vst.DiagnosticSeverity.Information;
+        case MarkerSeverity.Hint: return vst.DiagnosticSeverity.Hint;
+    }
+}
+
+function reviveRange(startLine: number, startColumn: number, endLine: number, endColumn: number): vst.Range {
+    // note: language server range is 0-based, marker is 1-based, so need to deduct 1 here
+    return {
+        start: {
+            line: startLine - 1,
+            character: startColumn - 1
+        },
+        end: {
+            line: endLine - 1,
+            character: endColumn - 1
+        }
+    };
+}
+
+function reviveRelated(related: RelatedInformation): vst.DiagnosticRelatedInformation {
+    return {
+        message: related.message,
+        location: {
+            uri: related.resource,
+            range: reviveRange(related.startLineNumber, related.startColumn, related.endLineNumber, related.endColumn)
+        }
+    };
 }
 
 function reviveRegExp(regExp?: SerializedRegExp): RegExp | undefined {

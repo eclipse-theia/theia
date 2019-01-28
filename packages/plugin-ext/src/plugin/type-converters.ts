@@ -347,7 +347,7 @@ function convertRelatedInformation(diagnosticsRelatedInformation: theia.Diagnost
     const relatedInformation: model.RelatedInformation[] = [];
     for (const item of diagnosticsRelatedInformation) {
         relatedInformation.push({
-            resource: item.location.uri,
+            resource: item.location.uri.toString(),
             message: item.message,
             startLineNumber: item.location.range.start.line + 1,
             startColumn: item.location.range.start.character + 1,

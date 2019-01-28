@@ -900,7 +900,7 @@ export interface LanguagesMain {
     $registerDocumentHighlightProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;
     $clearDiagnostics(id: string): void;
-    $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
+    $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerRangeFormattingProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;

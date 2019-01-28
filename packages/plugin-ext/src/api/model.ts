@@ -197,7 +197,7 @@ export interface MarkerData {
 }
 
 export interface RelatedInformation {
-    resource: UriComponents;
+    resource: string;
     message: string;
     startLineNumber: number;
     startColumn: number;

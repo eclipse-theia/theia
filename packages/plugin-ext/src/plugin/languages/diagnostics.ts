@@ -114,7 +114,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         if (this.has(uri)) {
             this.fireDiagnosticChangeEvent(uri);
             this.diagnostics.delete(uri.toString());
-            this.proxy.$changeDiagnostics(this.name, [[uri, []]]);
+            this.proxy.$changeDiagnostics(this.name, [[uri.toString(), []]]);
         }
     }
 
@@ -204,7 +204,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
     }
 
     private sendChangesToEditor(uris: URI[]): void {
-        const markers: [URI, MarkerData[]][] = [];
+        const markers: [string, MarkerData[]][] = [];
         nextUri:
         for (const uri of uris) {
             const uriMarkers: MarkerData[] = [];
@@ -224,7 +224,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
                                         endLineNumber: lastMarker.endLineNumber,
                                         endColumn: lastMarker.endColumn
                                     });
-                                    markers.push([uri, uriMarkers]);
+                                    markers.push([uri.toString(), uriMarkers]);
                                     continue nextUri;
                                 }
                             }
@@ -232,10 +232,10 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
                     }
                 } else {
                     uriDiagnostics.forEach(diagnostic => uriMarkers.push(convertDiagnosticToMarkerData(diagnostic)));
-                    markers.push([uri, uriMarkers]);
+                    markers.push([uri.toString(), uriMarkers]);
                 }
             } else {
-                markers.push([uri, []]);
+                markers.push([uri.toString(), []]);
             }
         }
 

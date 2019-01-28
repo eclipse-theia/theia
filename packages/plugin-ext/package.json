@@ -10,6 +10,7 @@
     "@theia/editor": "^0.3.19",
     "@theia/file-search": "^0.3.19",
     "@theia/filesystem": "^0.3.19",
+    "@theia/markers": "^0.3.19",
     "@theia/messages": "^0.3.19",
     "@theia/monaco": "^0.3.19",
     "@theia/navigator": "^0.3.19",
