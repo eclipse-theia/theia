@@ -144,9 +144,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     return this.proxy.$removeConfigurationOption(arg, key, resource);
                 }
             },
-            inspect: <T>(key: string): ConfigurationInspect<T> => {
-                throw new Error('Not implemented yet.');
-            }
+            inspect: <T>(key: string): ConfigurationInspect<T> => ({ key: key })
         };
         return configuration;
     }
