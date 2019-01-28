@@ -24,6 +24,20 @@ export interface IProcessExitEvent {
     readonly signal?: string
 }
 
+/**
+ * Data emitted when a process has been successfully started.
+ */
+export interface IProcessStartEvent {
+}
+
+/**
+ * Data emitted when a process has failed to start.
+ */
+export interface ProcessErrorEvent {
+    /** An errno-like error string (e.g. ENOENT).  */
+    code: string;
+}
+
 export enum ProcessType {
     'Raw',
     'Terminal'
@@ -61,8 +75,9 @@ export interface ForkOptions {
 export abstract class Process {
 
     readonly id: number;
+    protected readonly startEmitter: Emitter<IProcessStartEvent> = new Emitter<IProcessStartEvent>();
     protected readonly exitEmitter: Emitter<IProcessExitEvent> = new Emitter<IProcessExitEvent>();
-    protected readonly errorEmitter: Emitter<Error> = new Emitter<Error>();
+    protected readonly errorEmitter: Emitter<ProcessErrorEvent> = new Emitter<ProcessErrorEvent>();
     abstract readonly pid: number;
     protected _killed = false;
 
@@ -81,12 +96,20 @@ export abstract class Process {
         return this._killed;
     }
 
+    get onStart(): Event<IProcessStartEvent> {
+        return this.startEmitter.event;
+    }
+
     get onExit(): Event<IProcessExitEvent> {
         return this.exitEmitter.event;
     }
 
-    get onError(): Event<Error> {
+    get onError(): Event<ProcessErrorEvent> {
         return this.errorEmitter.event;
+    }
+
+    protected emitOnStarted() {
+        this.startEmitter.fire({});
     }
 
     /**
@@ -108,12 +131,12 @@ export abstract class Process {
             executable, this.options.args);
     }
 
-    protected emitOnError(err: Error) {
+    protected emitOnError(err: ProcessErrorEvent) {
         this.handleOnError(err);
         this.errorEmitter.fire(err);
     }
 
-    protected handleOnError(error: Error) {
+    protected handleOnError(error: ProcessErrorEvent) {
         this._killed = true;
         this.logger.error(error);
     }

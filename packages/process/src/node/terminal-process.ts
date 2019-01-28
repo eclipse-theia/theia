@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
-import { IPty, spawn } from 'node-pty';
+import { IPty, spawn } from '@theia/node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 import { signame } from './utils';
 
@@ -46,30 +46,57 @@ export class TerminalProcess extends Process {
 
         this.logger.debug('Starting terminal process', JSON.stringify(options, undefined, 2));
 
-        this.terminal = spawn(
-            options.command,
-            options.args || [],
-            options.options || {});
+        try {
+            this.terminal = spawn(
+                options.command,
+                options.args || [],
+                options.options || {});
 
-        this.terminal.on('exit', (code: number, signal?: number) => {
-            // Make sure to only pass either code or signal as !undefined, not
-            // both.
-            //
-            // node-pty quirk: On Linux/macOS, if the process exited through the
-            // exit syscall (with an exit code), signal will be 0 (an invalid
-            // signal value).  If it was terminated because of a signal, the
-            // signal parameter will hold the signal number and code should
-            // be ignored.
-            if (signal === undefined || signal === 0) {
-                this.emitOnExit(code, undefined);
-            } else {
-                this.emitOnExit(undefined, signame(signal));
-            }
-        });
+            this.terminal.on('exec', (reason: string | undefined) => {
+                if (reason === undefined) {
+                    this.emitOnStarted();
+                } else {
+                    this.emitOnError({ code: reason });
+                }
+            });
 
-        this.terminal.on('data', (data: string) => {
-            ringBuffer.enq(data);
-        });
+            this.terminal.on('exit', (code: number, signal?: number) => {
+                // Make sure to only pass either code or signal as !undefined, not
+                // both.
+                //
+                // node-pty quirk: On Linux/macOS, if the process exited through the
+                // exit syscall (with an exit code), signal will be 0 (an invalid
+                // signal value).  If it was terminated because of a signal, the
+                // signal parameter will hold the signal number and code should
+                // be ignored.
+                if (signal === undefined || signal === 0) {
+                    this.emitOnExit(code, undefined);
+                } else {
+                    this.emitOnExit(undefined, signame(signal));
+                }
+            });
+
+            this.terminal.on('data', (data: string) => {
+                ringBuffer.enq(data);
+            });
+        } catch (err) {
+            // node-pty throws exceptions on Windows.
+            // Call the client error handler, but first give them a chance to register it.
+            process.nextTick(() => {
+                // Normalize the error to make it as close as possible as what
+                // node's child_process.spawn would generate in the same
+                // situation.
+                const message: string = err.message;
+
+                if (message.startsWith('File not found: ')) {
+                    err.errno = 'ENOENT';
+                    err.code = 'ENOENT';
+                    err.path = options.command;
+                }
+
+                this.errorEmitter.fire(err);
+            });
+        }
     }
 
     createOutputStream(): MultiRingBufferReadableStream {

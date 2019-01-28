@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { TaskConfiguration, TaskInfo } from '../task-protocol';
+import { ApplicationError } from '@theia/core/lib/common/application-error';
 
 export type ProcessType = 'shell' | 'process';
 
@@ -46,4 +47,11 @@ export interface ProcessTaskConfiguration extends TaskConfiguration, CommandProp
 export interface ProcessTaskInfo extends TaskInfo {
     /** terminal id. Defined if task is run as a terminal process */
     readonly terminalId?: number,
+}
+
+export namespace ProcessTaskError {
+    export const CouldNotRun = ApplicationError.declare(1, (code: string) => ({
+        message: `Error starting process (${code})`,
+        data: { code }
+    }));
 }
