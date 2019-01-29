@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as net from 'net';
 import { CommunicationProvider, DebugAdapterExecutable } from '@theia/debug/lib/common/debug-model';
 import { ChildProcess, spawn, fork } from 'child_process';
 
@@ -36,5 +37,17 @@ export function startDebugAdapter(executable: DebugAdapterExecutable): Communica
         input: childProcess.stdin,
         output: childProcess.stdout,
         dispose: () => childProcess.kill()
+    };
+}
+
+/**
+ * Connects to a remote debug server.
+ */
+export function connectDebugAdapter(serverPort: number): CommunicationProvider {
+    const socket = net.createConnection(serverPort);
+    return {
+        input: socket,
+        output: socket,
+        dispose: () => socket.end()
     };
 }
