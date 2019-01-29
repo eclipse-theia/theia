@@ -18,8 +18,7 @@
 // @ts-check
 
 const fs = require('fs');
-const https = require('https');
-const http = require('http');
+const request = require('request');
 const path = require('path');
 const sha1 = require('sha1');
 
@@ -40,40 +39,33 @@ const archivePath = path.join(downloadPath, filename);
 const targetPath = path.join(packagePath, 'server');
 
 function downloadJavaServer() {
-    return new Promise((resolve, reject) => {
-        if (fs.existsSync(archivePath)) {
-            resolve();
-            return;
-        }
-        if (!fs.existsSync(downloadPath)) {
-            fs.mkdirSync(downloadPath);
-        }
-        const file = fs.createWriteStream(archivePath);
-        const downloadWithRedirect = url => {
-            /** @type { any } */
-            const h = url.toString().startsWith('https') ? https : http;
-            h.get(url, response => {
-                const statusCode = response.statusCode;
-                const redirectLocation = response.headers.location;
-                if (statusCode >= 300 && statusCode < 400 && redirectLocation) {
-                    console.log('Redirect location: ' + redirectLocation);
-                    downloadWithRedirect(redirectLocation);
-                } else if (statusCode === 200) {
-                    response.on('end', () => resolve());
-                    response.on('error', e => {
-                        file.destroy();
-                        reject(e);
-                    });
-                    response.pipe(file);
-                } else {
-                    file.destroy();
-                    reject(new Error(`Failed to download Java LS with code: ${statusCode}`));
-                }
-            })
-
-        };
-        downloadWithRedirect(downloadUrl);
-    });
+	if (fs.existsSync(archivePath)) {
+        return;
+    }
+    if (!fs.existsSync(downloadPath)) {
+        fs.mkdirSync(downloadPath);
+    }
+    const file = fs.createWriteStream(archivePath);    
+    const req = request.get(downloadUrl)
+        .on('response', function(response) {
+            if (response.statusCode === 200) {
+                req.pipe(file).on('finish', function() {
+                	console.log('Successfully downloaded Java LS');
+                    updateDownloadHistory();
+                    shared.decompressArchive(archivePath, targetPath);
+                });
+            } else {
+                console.error(`Failed to download Java LS with code: ${response.statusCode}`);
+                process.exitCode = 1;
+                file.destroy();
+                fs.unlinkSync(archivePath);
+            }
+        }).on('error', function(err) {
+            console.error('Failed to download Java LS: ' + err);
+            process.exitCode = 1;
+            file.destroy();
+            fs.unlinkSync(archivePath);
+        });
 }
 
 // Just to make sure we can reverse-engineer the download URL from the hash of the file name.
@@ -86,10 +78,4 @@ function updateDownloadHistory() {
     fs.writeFileSync(downloadHistoryPath, JSON.stringify(downloadHistory, null, 4), { encoding: 'utf8' });
 }
 
-downloadJavaServer().then(() => {
-    updateDownloadHistory();
-    shared.decompressArchive(archivePath, targetPath);
-}).catch(error => {
-    console.error(error);
-    process.exit(1);
-});
+downloadJavaServer();
