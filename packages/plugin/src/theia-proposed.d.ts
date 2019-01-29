@@ -47,7 +47,7 @@ declare module '@theia/plugin' {
     export interface FileWillRenameEvent {
         readonly oldUri: Uri;
         readonly newUri: Uri;
-        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
+        waitUntil(thenable: PromiseLike<WorkspaceEdit>): void;
     }
 
     /**
