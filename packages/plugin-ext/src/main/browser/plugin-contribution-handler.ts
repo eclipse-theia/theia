@@ -24,6 +24,9 @@ import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
+import { PluginSharedStyle } from './plugin-shared-style';
+import { CommandRegistry } from '@theia/core';
+import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 
 @injectable()
 export class PluginContributionHandler {
@@ -50,6 +53,12 @@ export class PluginContributionHandler {
 
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
+
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
+    @inject(PluginSharedStyle)
+    protected readonly style: PluginSharedStyle;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {
@@ -133,6 +142,7 @@ export class PluginContributionHandler {
             }
         }
 
+        this.registerCommands(contributions);
         this.menusContributionHandler.handle(contributions);
         this.keybindingsContributionHandler.handle(contributions);
         if (contributions.snippets) {
@@ -142,6 +152,32 @@ export class PluginContributionHandler {
                     source: snippet.source
                 });
             }
+        }
+    }
+
+    protected pluginCommandIconId = 0;
+    protected registerCommands(contribution: PluginContribution): void {
+        if (!contribution.commands) {
+            return;
+        }
+        for (const { iconUrl, command, category, title } of contribution.commands) {
+            let iconClass: string | undefined;
+            if (iconUrl) {
+                iconClass = 'plugin-command-icon-' + this.pluginCommandIconId++;
+                const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
+                const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
+                this.style.insertRule('.' + iconClass, theme => `
+                    width: 16px;
+                    height: 16px;
+                    background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                `);
+            }
+            this.commands.registerCommand({
+                id: command,
+                category,
+                label: title,
+                iconClass
+            });
         }
     }
 

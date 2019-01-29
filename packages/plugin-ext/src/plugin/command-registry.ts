@@ -27,7 +27,8 @@ export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
 export class CommandRegistryImpl implements CommandRegistryExt {
 
     private proxy: CommandRegistryMain;
-    private commands = new Map<string, Handler>();
+    private readonly commands = new Set<string>();
+    private readonly handlers = new Map<string, Handler>();
     private converter: CommandsConverter;
     private cache = new Map<number, theia.Command>();
     private delegatingCommandId: string;
@@ -39,7 +40,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
 
         // register internal VS Code commands
-        this.registerHandler('vscode.previewHtml', CommandRegistryImpl.EMPTY_HANDLER);
+        this.registerCommand({ id: 'vscode.previewHtml' }, CommandRegistryImpl.EMPTY_HANDLER);
     }
 
     getConverter(): CommandsConverter {
@@ -60,26 +61,29 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
         }
-        if (handler) {
-            this.commands.set(command.id, handler);
-        }
+        this.commands.add(command.id);
         this.proxy.$registerCommand(command);
 
-        return Disposable.create(() => {
+        const toDispose: Disposable[] = [];
+        if (handler) {
+            toDispose.push(this.registerHandler(command.id, handler));
+        }
+        toDispose.push(Disposable.create(() => {
             this.commands.delete(command.id);
             this.proxy.$unregisterCommand(command.id);
-        });
-
+        }));
+        return Disposable.from(...toDispose);
     }
 
     registerHandler(commandId: string, handler: Handler): Disposable {
-        if (this.commands.has(commandId)) {
-            throw new Error(`Command ${commandId} already has handler`);
+        if (this.handlers.has(commandId)) {
+            throw new Error(`Command "${commandId}" already has handler`);
         }
-        this.commands.set(commandId, handler);
+        this.proxy.$registerHandler(commandId);
+        this.handlers.set(commandId, handler);
         return Disposable.create(() => {
-            this.commands.delete(commandId);
-            this.proxy.$unregisterCommand(commandId);
+            this.handlers.delete(commandId);
+            this.proxy.$unregisterHandler(commandId);
         });
     }
 
@@ -89,7 +93,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
     // tslint:disable-next-line:no-any
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
-        if (this.commands.has(id)) {
+        if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
         } else {
             return Promise.reject(`Command: ${id} does not exist.`);
@@ -98,7 +102,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
     // tslint:disable-next-line:no-any
     executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
-        if (this.commands.has(id)) {
+        if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
         } else {
             return this.proxy.$executeCommand(id, ...args);
@@ -111,7 +115,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
     // tslint:disable-next-line:no-any
     private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
-        const handler = this.commands.get(id);
+        const handler = this.handlers.get(id);
         if (handler) {
             const result = id === this.delegatingCommandId ?
                 handler(this, ...args)
