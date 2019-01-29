@@ -295,7 +295,7 @@ export class GitViewContribution extends AbstractViewContribution<ScmContainerWi
         });
         registry.registerCommand(GIT_COMMANDS.STAGE_ALL, {
             execute: async () => {
-                const widget = this.tryGetWidget();
+                const widget = this.tryGetGitWidget();
                 if (!!widget) {
                     widget.stageAll();
                 }
@@ -304,7 +304,7 @@ export class GitViewContribution extends AbstractViewContribution<ScmContainerWi
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE_ALL, {
             execute: async () => {
-                const widget = this.tryGetWidget();
+                const widget = this.tryGetGitWidget();
                 if (!!widget) {
                     widget.unstageAll();
                 }
@@ -313,7 +313,7 @@ export class GitViewContribution extends AbstractViewContribution<ScmContainerWi
         });
         registry.registerCommand(GIT_COMMANDS.DISCARD_ALL, {
             execute: async () => {
-                const widget = this.tryGetWidget();
+                const widget = this.tryGetGitWidget();
                 if (!!widget) {
                     widget.discardAll();
                 }
