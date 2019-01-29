@@ -32,26 +32,12 @@ let pluginApiFactory: PluginAPIFactory;
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
     const vscode = apiFactory(plugin);
 
-    // register the commands that are in the package.json file
-    const contributes: any = plugin.rawModel.contributes;
-    if (contributes && contributes.commands) {
-        contributes.commands.forEach((commandItem: any) => {
-            let commandLabel: string;
-            if (commandItem.category) { // if VS Code command has category we will add it before title, so label will looks like 'category: title'
-                commandLabel = commandItem.category + ': ' + commandItem.title;
-            } else {
-                commandLabel = commandItem.title;
-            }
-            vscode.commands.registerCommand({ id: commandItem.command, label: commandLabel });
-        });
-    }
-
     // replace command API as it will send only the ID as a string parameter
     const registerCommand = vscode.commands.registerCommand;
     vscode.commands.registerCommand = function (command: any, handler?: <T>(...args: any[]) => T | Thenable<T>): any {
         // use of the ID when registering commands
         if (typeof command === 'string' && handler) {
-            return registerCommand({ id: command }, handler);
+            return vscode.commands.registerHandler(command, handler);
         }
         return registerCommand(command, handler);
     };

@@ -14,17 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable, inject } from 'inversify';
-import { MenuPath, ILogger, CommandRegistry } from '@theia/core';
+import CoreURI from '@theia/core/lib/common/uri';
+import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
-import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
-import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
 import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
-import { PluginContribution, Menu, PluginCommand } from '../../../common';
-import { PluginSharedStyle } from '../plugin-shared-style';
+import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 
@@ -46,9 +47,6 @@ export class MenusContributionPointHandler {
     @inject(TabBarToolbarRegistry)
     protected readonly tabBarToolbar: TabBarToolbarRegistry;
 
-    @inject(PluginSharedStyle)
-    protected readonly style: PluginSharedStyle;
-
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
         if (!allMenus) {
@@ -62,7 +60,9 @@ export class MenusContributionPointHandler {
                     }
                 }
             } else if (location === 'editor/title') {
-                this.registerEditorTitleActions(allMenus[location], contributions);
+                for (const action of allMenus[location]) {
+                    this.registerEditorTitleAction(action);
+                }
             } else if (allMenus.hasOwnProperty(location)) {
                 const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
                 if (!menuPaths.length) {
@@ -79,42 +79,23 @@ export class MenusContributionPointHandler {
         }
     }
 
-    protected registerEditorTitleActions(actions: Menu[], contributions: PluginContribution): void {
-        if (!contributions.commands || !actions.length) {
-            return;
-        }
-        const commands = new Map(contributions.commands.map(c => [c.command, c] as [string, PluginCommand]));
-        for (const action of actions) {
-            const pluginCommand = commands.get(action.command);
-            if (pluginCommand) {
-                this.registerEditorTitleAction(action, pluginCommand);
-            }
-        }
-    }
-
-    protected editorTitleActionId = 0;
-    protected registerEditorTitleAction(action: Menu, pluginCommand: PluginCommand): void {
-        const id = pluginCommand.command;
-        const command = '__editor.title.' + id;
-        const tooltip = pluginCommand.title;
-        const iconClass = 'plugin-editor-title-action-' + this.editorTitleActionId++;
-        const { group, when } = action;
-
-        const { iconUrl } = pluginCommand;
-        const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
-        const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
-        this.style.insertRule('.' + iconClass, theme => `
-            width: 16px;
-            height: 16px;
-            background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
-        `);
-
-        this.commands.registerCommand({ id: command, iconClass }, {
-            execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(id, widget.editor.uri),
-            isEnabled: widget => widget instanceof EditorWidget,
-            isVisible: widget => widget instanceof EditorWidget
+    protected registerEditorTitleAction(action: Menu): void {
+        const id = this.createSyntheticCommandId(action, { prefix: '__plugin.editor.title.action.' });
+        const command: Command = { id };
+        this.commands.registerCommand(command, {
+            execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(action.command, widget.editor.uri['codeUri']),
+            isEnabled: widget => widget instanceof EditorWidget && this.commands.isEnabled(action.command, widget.editor.uri['codeUri']),
+            isVisible: widget => widget instanceof EditorWidget && this.commands.isVisible(action.command, widget.editor.uri['codeUri'])
         });
-        this.tabBarToolbar.registerItem({ id, command, tooltip, group, when });
+
+        const { group, when } = action;
+        const item: Mutable<TabBarToolbarItem> = { id, command: id, group, when };
+        this.tabBarToolbar.registerItem(item);
+
+        this.onDidRegisterCommand(action.command, pluginCommand => {
+            command.iconClass = pluginCommand.iconClass;
+            item.tooltip = pluginCommand.label;
+        });
     }
 
     protected static parseMenuPaths(value: string): MenuPath[] {
@@ -128,17 +109,50 @@ export class MenusContributionPointHandler {
     }
 
     protected registerMenuAction(menuPath: MenuPath, menu: Menu): void {
+        const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.menu.action.' });
+        const command: Command = { id: commandId };
+        // convert Core URI of a selected resource to a plugin (VS Code) URI format
+        const resolveArgs = (...args: any[]) => (args || []).map(arg => arg instanceof CoreURI ? arg['codeUri'] : arg);
+        this.commands.registerCommand(command, {
+            execute: (...args: any[]) => this.commands.executeCommand(menu.command, ...resolveArgs(...args)),
+            isEnabled: (...args: any[]) => this.commands.isEnabled(menu.command, ...resolveArgs(...args)),
+            isVisible: (...args: any[]) => this.commands.isVisible(menu.command, ...resolveArgs(...args))
+        });
+
+        const { when } = menu;
         const [group = '', order = undefined] = (menu.group || '').split('@');
-        // Registering a menu action requires the related command to be already registered.
-        // But Theia plugin registers the commands dynamically via the Commands API.
-        // Let's wait for ~2 sec. It should be enough to finish registering all the contributed commands.
-        // FIXME: remove this workaround (timer) once the https://github.com/theia-ide/theia/issues/3344 is fixed
-        setTimeout(() => {
-            this.menuRegistry.registerMenuAction([...menuPath, group], {
-                commandId: menu.command,
-                order,
-                when: menu.when
-            });
-        }, 2000);
+        const action: MenuAction = { commandId, order, when };
+        this.menuRegistry.registerMenuAction([...menuPath, group], action);
+
+        this.onDidRegisterCommand(menu.command, pluginCommand => {
+            command.category = pluginCommand.category;
+            action.label = pluginCommand.label;
+            action.icon = pluginCommand.iconClass;
+        });
     }
+
+    protected createSyntheticCommandId(menu: Menu, { prefix }: { prefix: string }): string {
+        const command = menu.command;
+        let id = prefix + command;
+        let index = 0;
+        while (this.commands.getCommand(id)) {
+            id = prefix + command + ':' + index;
+            index++;
+        }
+        return id;
+    }
+
+    protected onDidRegisterCommand(id: string, cb: (command: Command) => void): void {
+        const command = this.commands.getCommand(id);
+        if (command) {
+            cb(command);
+        } else {
+            // Registering a menu action requires the related command to be already registered.
+            // But Theia plugin registers the commands dynamically via the Commands API.
+            // Let's wait for ~2 sec. It should be enough to finish registering all the contributed commands.
+            // FIXME: remove this workaround (timer) once the https://github.com/theia-ide/theia/issues/3344 is fixed
+            setTimeout(() => this.onDidRegisterCommand(id, cb), 2000);
+        }
+    }
+
 }

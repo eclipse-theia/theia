@@ -155,8 +155,11 @@ export interface PluginManagerExt {
 
 export interface CommandRegistryMain {
     $registerCommand(command: theia.Command): void;
-
     $unregisterCommand(id: string): void;
+
+    $registerHandler(id: string): void;
+    $unregisterHandler(id: string): void;
+
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined>;
     $getCommands(): PromiseLike<string[]>;
     $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined>;

@@ -2003,6 +2003,8 @@ declare module '@theia/plugin' {
          *
          * @param commandId a given command id
          * @param handler a command handler
+         *
+         * Throw if a handler for the given command identifier is already registered.
          */
         export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable;
 

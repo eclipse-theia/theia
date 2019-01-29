@@ -24,7 +24,8 @@ import { KeybindingRegistry } from '@theia/core/lib/browser';
 
 export class CommandRegistryMainImpl implements CommandRegistryMain {
     private proxy: CommandRegistryExt;
-    private disposables = new Map<string, Disposable>();
+    private readonly commands = new Map<string, Disposable>();
+    private readonly handlers = new Map<string, Disposable>();
     private delegate: CommandRegistry;
     private keyBinding: KeybindingRegistry;
 
@@ -35,26 +36,36 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
     }
 
     $registerCommand(command: theia.Command): void {
-        this.disposables.set(
-            command.id,
-            this.delegate.registerCommand(command, {
-                // tslint:disable-next-line:no-any
-                execute: (...args: any[]) => {
-                    this.proxy.$executeCommand(command.id, ...args);
-                },
-                // Always enabled - a command can be executed programmatically or via the commands palette.
-                isEnabled() { return true; },
-                // Visibility rules are defined via the `menus` contribution point.
-                isVisible() { return true; }
-            }));
+        this.commands.set(command.id, this.delegate.registerCommand(command));
     }
     $unregisterCommand(id: string): void {
-        const dis = this.disposables.get(id);
-        if (dis) {
-            dis.dispose();
-            this.disposables.delete(id);
+        const command = this.commands.get(id);
+        if (command) {
+            command.dispose();
+            this.commands.delete(id);
         }
     }
+
+    $registerHandler(id: string): void {
+        this.handlers.set(id, this.delegate.registerHandler(id, {
+            // tslint:disable-next-line:no-any
+            execute: (...args: any[]) => {
+                this.proxy.$executeCommand(id, ...args);
+            },
+            // Always enabled - a command can be executed programmatically or via the commands palette.
+            isEnabled() { return true; },
+            // Visibility rules are defined via the `menus` contribution point.
+            isVisible() { return true; }
+        }));
+    }
+    $unregisterHandler(id: string): void {
+        const handler = this.handlers.get(id);
+        if (handler) {
+            handler.dispose();
+            this.handlers.delete(id);
+        }
+    }
+
     // tslint:disable-next-line:no-any
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         try {
