@@ -49,12 +49,6 @@ export class MenusContributionPointHandler {
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
 
-    /**
-     * Handles the `menus` contribution point.
-     * In VSCode, a menu can have more than one item for the same command. Each item may have it's own visibility rules.
-     * In Theia, a menu can't have more than one item for the same command.
-     * So, several handlers for the same command are registered to support different visibility rules for a menu item in different contexts.
-     */
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
         if (!allMenus) {
