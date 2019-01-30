@@ -146,11 +146,12 @@ export class DebugSession implements CompositeTreeElement {
                 sourceReference: Number(uri.query)
             };
         }
-        const path = await this.fileSystem.getFsPath(uri.toString());
-        return {
-            name: uri.displayName,
-            path
-        };
+        const name = uri.displayName;
+        let path: string | undefined = uri.toString();
+        if (uri.scheme === 'file') {
+            path = await this.fileSystem.getFsPath(path);
+        }
+        return { name, path };
     }
 
     protected _threads = new Map<number, DebugThread>();
