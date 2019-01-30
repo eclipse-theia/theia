@@ -153,7 +153,8 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         }
         return versions[0];
     }
-    getVersions(): Promise<TypescriptVersion[]> {
+    async getVersions(): Promise<TypescriptVersion[]> {
+        await Promise.all([this.preferences.ready, this.workspace.ready]);
         return this.versionService.getVersions(this.versionOptions);
     }
     protected get versionOptions(): TypescriptVersionOptions {
