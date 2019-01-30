@@ -29,8 +29,16 @@ export namespace EditorCommands {
      * Show editor references
      */
     export const SHOW_REFERENCES: Command = {
+        id: 'editor.action.showReferences'
+    };
+
+    /**
+     * Show editor references
+     */
+    export const SHOW_REFERENCES_DEPRECATED: Command = {
         id: 'textEditor.commands.showReferences'
     };
+
     /**
      * Change indentation configuration (i.e., indent using tabs / spaces, and how many spaces per tab)
      */
@@ -108,6 +116,7 @@ export class EditorCommandContribution implements CommandContribution {
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
+        registry.registerCommand(EditorCommands.SHOW_REFERENCES_DEPRECATED);
         registry.registerCommand(EditorCommands.CONFIG_INDENTATION);
         registry.registerCommand(EditorCommands.CONFIG_EOL);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);

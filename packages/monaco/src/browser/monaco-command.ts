@@ -122,6 +122,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected registerEditorCommandHandlers(): void {
         this.registry.registerHandler(EditorCommands.SHOW_REFERENCES.id, this.newShowReferenceHandler());
+        this.registry.registerHandler(EditorCommands.SHOW_REFERENCES_DEPRECATED.id, this.newShowReferenceHandler());
         this.registry.registerHandler(EditorCommands.CONFIG_INDENTATION.id, this.newConfigIndentationHandler());
         this.registry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
         this.registry.registerHandler(EditorCommands.INDENT_USING_SPACES.id, this.newConfigTabSizeHandler(true));
