@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 
 import { Container, ContainerModule } from 'inversify';
-import { ILogger, MessageClient, MessageService, MenuPath, MenuAction, CommandRegistry, bindContributionProvider, CommandContribution } from '@theia/core';
+import { ILogger, MessageClient, MessageService, MenuPath, MenuAction, CommandRegistry, bindContributionProvider, CommandContribution, SelectionService } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MockMenuModelRegistry } from '@theia/core/lib/common/test/mock-menu';
@@ -63,6 +63,7 @@ before(() => {
         bind(TabBarToolbarRegistry).toConstantValue({} as any);
         // tslint:disable-next-line:no-any mock PluginSharedStyle
         bind(PluginSharedStyle).toConstantValue({} as any);
+        bind(SelectionService).toSelf().inSingletonScope();
     });
 
     testContainer.load(module);
