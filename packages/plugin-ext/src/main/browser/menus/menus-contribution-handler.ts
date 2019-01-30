@@ -17,8 +17,7 @@
 // tslint:disable:no-any
 
 import { injectable, inject } from 'inversify';
-import CoreURI from '@theia/core/lib/common/uri';
-import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction } from '@theia/core';
+import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, UriSelection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -46,6 +45,9 @@ export class MenusContributionPointHandler {
 
     @inject(TabBarToolbarRegistry)
     protected readonly tabBarToolbar: TabBarToolbarRegistry;
+
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
 
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
@@ -111,12 +113,15 @@ export class MenusContributionPointHandler {
     protected registerMenuAction(menuPath: MenuPath, menu: Menu): void {
         const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
-        // convert Core URI of a selected resource to a plugin (VS Code) URI format
-        const resolveArgs = (...args: any[]) => (args || []).map(arg => arg instanceof CoreURI ? arg['codeUri'] : arg);
+        const selectedResource = () => {
+            const selection = this.selectionService.selection;
+            const uri = UriSelection.getUri(selection);
+            return uri ? uri['codeUri'] : (typeof selection !== 'object' && typeof selection !== 'function') ? selection : undefined;
+        };
         this.commands.registerCommand(command, {
-            execute: (...args: any[]) => this.commands.executeCommand(menu.command, ...resolveArgs(...args)),
-            isEnabled: (...args: any[]) => this.commands.isEnabled(menu.command, ...resolveArgs(...args)),
-            isVisible: (...args: any[]) => this.commands.isVisible(menu.command, ...resolveArgs(...args))
+            execute: () => this.commands.executeCommand(menu.command, selectedResource()),
+            isEnabled: () => this.commands.isEnabled(menu.command, selectedResource()),
+            isVisible: () => this.commands.isVisible(menu.command, selectedResource())
         });
 
         const { when } = menu;
