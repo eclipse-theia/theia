@@ -15,10 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { PluginContribution } from '../../../common';
+import { PluginContribution, Keybinding as PluginKeybinding } from '../../../common';
 import { Keybinding, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
 import { KeySequence } from '@theia/core/lib/browser';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { OS } from '@theia/core/lib/common/os';
 
 @injectable()
 export class KeybindingsContributionPointHandler {
@@ -33,19 +34,43 @@ export class KeybindingsContributionPointHandler {
         if (!contributions || !contributions.keybindings) {
             return;
         }
-
-        const keybindings = contributions.keybindings;
-        keybindings.forEach(keybinding => {
-            try {
-                const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(KeySequence.parse(keybinding.keybinding));
-                this.handleShadingKeybindings(keybinding, keybindingResult.shadow);
-                this.handlePartialKeybindings(keybinding, keybindingResult.partial);
-            } catch (e) {
-                this.logger.error(e.message || e);
+        const keybindings: Keybinding[] = [];
+        for (const raw of contributions.keybindings) {
+            const keybinding = this.toKeybinding(raw);
+            if (keybinding) {
+                try {
+                    const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(KeySequence.parse(keybinding.keybinding));
+                    this.handleShadingKeybindings(keybinding, keybindingResult.shadow);
+                    this.handlePartialKeybindings(keybinding, keybindingResult.partial);
+                    keybindings.push(keybinding);
+                } catch (e) {
+                    this.logger.error(e.message || e);
+                }
             }
-        });
+        }
+        this.keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
+    }
 
-        this.keybindingRegistry.setKeymap(KeybindingScope.USER, contributions.keybindings);
+    protected toKeybinding(pluginKeybinding: PluginKeybinding): Keybinding | undefined {
+        const keybinding = this.toOSKeybinding(pluginKeybinding);
+        if (!keybinding) {
+            return undefined;
+        }
+        const { command, when } = pluginKeybinding;
+        return { keybinding, command, when };
+    }
+
+    protected toOSKeybinding(pluginKeybinding: PluginKeybinding): string | undefined {
+        let keybinding: string | undefined;
+        const os = OS.type();
+        if (os === OS.Type.Windows) {
+            keybinding = pluginKeybinding.win;
+        } else if (os === OS.Type.OSX) {
+            keybinding = pluginKeybinding.mac;
+        } else {
+            keybinding = pluginKeybinding.linux;
+        }
+        return keybinding || pluginKeybinding.keybinding;
     }
 
     private handlePartialKeybindings(keybinding: Keybinding, partialKeybindings: Keybinding[]) {

@@ -91,9 +91,12 @@ export interface PluginPackageMenu {
 }
 
 export interface PluginPackageKeybinding {
-    key: string;
+    key?: string;
     command: string;
     when?: string;
+    mac?: string;
+    linux?: string;
+    win?: string;
 }
 
 export interface PluginPackageGrammarsContribution {
@@ -480,9 +483,12 @@ export interface Menu {
  * Keybinding contribution
  */
 export interface Keybinding {
-    keybinding: string;
+    keybinding?: string;
     command: string;
     when?: string;
+    mac?: string;
+    linux?: string;
+    win?: string;
 }
 
 /**
