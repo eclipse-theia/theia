@@ -13,7 +13,7 @@
     "@types/fs-extra": "^4.0.2",
     "@types/p-queue": "^2.3.1",
     "diff": "^3.4.0",
-    "dugite-extra": "0.1.9",
+    "dugite-extra": "0.1.10",
     "find-git-exec": "^0.0.1-alpha.2",
     "find-git-repositories": "^0.1.0",
     "fs-extra": "^4.0.2",
@@ -35,8 +35,7 @@
       "backendElectron": "lib/electron-node/env/electron-git-env-module"
     },
     {
-      "backend": "lib/node/init/git-init-module",
-      "backendElectron": "lib/electron-node/init/electron-git-init-module"
+      "backend": "lib/node/init/git-init-module"
     },
     {
       "frontend": "lib/browser/prompt/git-prompt-module",

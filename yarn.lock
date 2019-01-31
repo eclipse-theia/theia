@@ -3301,18 +3301,20 @@ dtrace-provider@~0.8:
   dependencies:
     nan "^2.10.0"
 
-dugite-extra@0.1.9:
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.9.tgz#31f73c683804e3c059a5dba512e5159de18975df"
+dugite-extra@0.1.10:
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.10.tgz#145a3c85f59b468effa73c70a1dd4a03d9af3889"
+  integrity sha512-J0FXzulIKl0NchW/B03OPy9AqHo3fEkqNXxhjsiHWHuoxMpvkj7WZ2Uj2+kZO2enKtTPx6uag89A77cACx3yvA==
   dependencies:
     byline "^5.0.0"
-    dugite "1.67.0"
+    dugite-no-gpl "1.69.0"
     find-git-exec "0.0.1-alpha.2"
     upath "^1.0.0"
 
-dugite@1.67.0:
-  version "1.67.0"
-  resolved "https://registry.yarnpkg.com/dugite/-/dugite-1.67.0.tgz#389f95051aa1fb2bc78dcee4294f913ae3438c47"
+dugite-no-gpl@1.69.0:
+  version "1.69.0"
+  resolved "https://registry.yarnpkg.com/dugite-no-gpl/-/dugite-no-gpl-1.69.0.tgz#bc9007cf5a595180f563ccc0e4f2cc80ebbaa52e"
+  integrity sha512-9NzPMyWW1uWEm+rEGivfQ0+zZ9soXrtk/zb6FIVpPa5CLoUdhMkLY4jHc0DDyayarxivJgrI/rHDdTUej4Zhrw==
   dependencies:
     checksum "^0.1.1"
     mkdirp "^0.5.1"
