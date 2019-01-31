@@ -150,7 +150,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                         try {
                             // avoid calling stop if start failed
                             await this._languageClient!.onReady();
-                            // remove all listerens
+                            // remove all listeners
                             await this._languageClient!.stop();
                         } catch {
                             try {
