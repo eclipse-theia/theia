@@ -1,9 +1,20 @@
 # Change Log
 
-## v0.3.20
+## v0.4.0
 - [plugin] added `tasks.onDidEndTask` Plug-in API
 - [cpp] fixed `CPP_CLANGD_COMMAND` and `CPP_CLANGD_ARGS` environment variables
 
+Breaking changes:
+- menus aligned with built-in VS Code menus [#4173](https://github.com/theia-ide/theia/pull/4173)
+  - navigator context menu group changes:
+    - `1_open` and `4_new` replaced by `navigation` group
+    - `6_workspace` renamed to `2_workspace` group
+    - `5_diff` renamed to `3_compare` group
+    - `6_find` renamed to `4_search` group
+    - `2_clipboard` renamed to `5_cutcopypaste` group
+    - `3_move` and `7_actions` replaced by `navigation` group
+  - editor context menu group changes:
+    - `2_cut_copy_paste` renamed to `9_cutcopypaste` group
 
 ## v0.3.19
 - [core] added `hostname` alias
