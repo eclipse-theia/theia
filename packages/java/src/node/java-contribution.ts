@@ -75,11 +75,12 @@ export class JavaContribution extends BaseLanguageServerContribution {
         await this.ready;
 
         const socketPort = this.cli.lsPort();
+        // Only if the JDT LS has been started in debug mode.
         if (socketPort) {
-            const socket = new Socket();
-            const serverConnection = createSocketConnection(socket, socket, () => socket.destroy());
-            this.forward(clientConnection, serverConnection);
-            socket.connect(socketPort);
+            const debugSocket = new Socket();
+            const debugConnection = createSocketConnection(debugSocket, debugSocket, () => debugSocket.destroy());
+            this.forward(clientConnection, debugConnection);
+            debugSocket.connect(socketPort);
             return;
         }
 
@@ -130,17 +131,16 @@ export class JavaContribution extends BaseLanguageServerContribution {
             '-data', workspacePath
         );
 
-        this.startSocketServer().then(server => {
-            const socket = this.accept(server);
+        const server = await this.startSocketServer();
+        const socket = this.accept(server);
 
-            this.logInfo('logs at ' + path.resolve(workspacePath, '.metadata', '.log'));
-            const env = Object.create(process.env);
-            const address = server.address();
-            env.CLIENT_HOST = address.address;
-            env.CLIENT_PORT = address.port;
-            this.createProcessSocketConnection(socket, socket, command, args, { env })
-                .then(serverConnection => this.forward(clientConnection, serverConnection));
-        });
+        this.logInfo('logs at ' + path.resolve(workspacePath, '.metadata', '.log'));
+        const env = Object.create(process.env);
+        const address = server.address();
+        env.CLIENT_HOST = address.address;
+        env.CLIENT_PORT = address.port;
+        const serverConnection = await this.createProcessSocketConnection(socket, socket, command, args, { env });
+        this.forward(clientConnection, serverConnection);
     }
 
     protected generateDataFolderSuffix(workspaceUri: string): string {

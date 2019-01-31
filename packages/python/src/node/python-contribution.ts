@@ -26,7 +26,7 @@ export class PythonContribution extends BaseLanguageServerContribution {
     readonly id = PYTHON_LANGUAGE_ID;
     readonly name = PYTHON_LANGUAGE_NAME;
 
-    start(clientConnection: IConnection): void {
+    async start(clientConnection: IConnection): Promise<void> {
         let command = 'python';
         let args = ['-m', 'pyls'];
         const pythonLsCommand = process.env.PYTHON_LS_COMMAND;
@@ -34,7 +34,7 @@ export class PythonContribution extends BaseLanguageServerContribution {
             command = pythonLsCommand;
             args = parseArgs(process.env.PYTHON_LS_ARGS || '');
         }
-        const serverConnection = this.createProcessStreamConnection(command, args, this.getSpawnOptions());
+        const serverConnection = await this.createProcessStreamConnectionAsync(command, args, this.getSpawnOptions());
         this.forward(clientConnection, serverConnection);
     }
 
