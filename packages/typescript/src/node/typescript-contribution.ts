@@ -53,7 +53,7 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         }
     }
 
-    start(clientConnection: IConnection, { parameters }: TypeScriptStartOptions): void {
+    async start(clientConnection: IConnection, { parameters }: TypeScriptStartOptions): Promise<void> {
         const command = 'node';
         const args: string[] = [
             __dirname + '/startserver.js',
@@ -63,7 +63,7 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         if (tsServerPath) {
             args.push(`--tsserver-path=${tsServerPath}`);
         }
-        const serverConnection = this.createProcessStreamConnection(command, args);
+        const serverConnection = await this.createProcessStreamConnectionAsync(command, args);
         this.forward(clientConnection, serverConnection);
     }
 

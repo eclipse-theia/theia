@@ -29,7 +29,7 @@ export class CppContribution extends BaseLanguageServerContribution {
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
 
-    public start(clientConnection: IConnection, { parameters }: CppStartOptions): void {
+    async start(clientConnection: IConnection, { parameters }: CppStartOptions): Promise<void> {
 
         const command =
             process.env.CPP_CLANGD_COMMAND
@@ -42,7 +42,7 @@ export class CppContribution extends BaseLanguageServerContribution {
             || undefined
         );
 
-        const serverConnection = this.createProcessStreamConnection(command, args);
+        const serverConnection = await this.createProcessStreamConnectionAsync(command, args);
         this.forward(clientConnection, serverConnection);
     }
 }

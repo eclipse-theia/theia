@@ -42,7 +42,7 @@ export interface LanguageServerStartOptions {
 
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
 export interface LanguageServerContribution extends LanguageContribution {
-    start(clientConnection: IConnection, options: LanguageServerStartOptions): void;
+    start(clientConnection: IConnection, options: LanguageServerStartOptions): MaybePromise<void>;
 }
 
 @injectable()
@@ -58,7 +58,6 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     protected readonly processManager: ProcessManager;
 
     abstract start(clientConnection: IConnection, options: LanguageServerStartOptions): void;
-
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
         forward(clientConnection, serverConnection, this.map.bind(this));
     }
@@ -76,21 +75,52 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     protected async createProcessSocketConnection(outSocket: MaybePromise<net.Socket>, inSocket: MaybePromise<net.Socket>,
         command: string, args?: string[], options?: cp.SpawnOptions): Promise<IConnection> {
 
-        const process = this.spawnProcess(command, args, options);
+        const process = await this.spawnProcessAsync(command, args, options);
         const [outSock, inSock] = await Promise.all([outSocket, inSocket]);
         return createProcessSocketConnection(process.process, outSock, inSock);
     }
 
+    /**
+     * @deprecated use `createProcessStreamConnectionAsync` instead.
+     * Otherwise, the backend cannot notify the client if the LS has failed at start-up.
+     */
     protected createProcessStreamConnection(command: string, args?: string[], options?: cp.SpawnOptions): IConnection {
         const process = this.spawnProcess(command, args, options);
         return createStreamConnection(process.output, process.input, () => process.kill());
     }
 
+    protected async createProcessStreamConnectionAsync(command: string, args?: string[], options?: cp.SpawnOptions): Promise<IConnection> {
+        const process = await this.spawnProcessAsync(command, args, options);
+        return createStreamConnection(process.output, process.input, () => process.kill());
+    }
+
+    /**
+     * @deprecated use `spawnProcessAsync` instead.
+     */
     protected spawnProcess(command: string, args?: string[], options?: cp.SpawnOptions): RawProcess {
         const rawProcess = this.processFactory({ command, args, options });
         rawProcess.process.once('error', this.onDidFailSpawnProcess.bind(this));
         rawProcess.process.stderr.on('data', this.logError.bind(this));
         return rawProcess;
+    }
+
+    protected spawnProcessAsync(command: string, args?: string[], options?: cp.SpawnOptions): Promise<RawProcess> {
+        const rawProcess = this.processFactory({ command, args, options });
+        rawProcess.process.stderr.on('data', this.logError.bind(this));
+        return new Promise<RawProcess>((resolve, reject) => {
+            rawProcess.onError(error => {
+                this.onDidFailSpawnProcess(error);
+                if (isErrnoException(error) && error.code === 'ENOENT') {
+                    const guess = command.split('\S').shift();
+                    if (guess) {
+                        reject(new Error(`${error.message}\nPerhaps '${guess}' is not on the PATH.`));
+                        return;
+                    }
+                }
+                reject(error);
+            });
+            process.nextTick(() => resolve(rawProcess));
+        });
     }
 
     protected onDidFailSpawnProcess(error: Error): void {
@@ -131,4 +161,9 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         });
     }
 
+}
+
+// tslint:disable-next-line:no-any
+function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {
+    return (<NodeJS.ErrnoException>error).code !== undefined && (<NodeJS.ErrnoException>error).errno !== undefined;
 }
