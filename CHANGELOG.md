@@ -15,6 +15,17 @@ Breaking changes:
     - `3_move` and `7_actions` replaced by `navigation` group
   - editor context menu group changes:
     - `2_cut_copy_paste` renamed to `9_cutcopypaste` group
+- [debug] align commands with VS Code [#4204](https://github.com/theia-ide/theia/issues/4204)
+    - `debug.breakpoint.toggle` renamed to `editor.debug.action.toggleBreakpoint`
+    - `debug.start` renamed to `workbench.action.debug.start`
+    - `debug.thread.continue` renamed to `workbench.action.debug.continue`
+    - `debug.start.noDebug` renamed to `workbench.action.debug.run`
+    - `debug.thread.pause` renamed to `workbench.action.debug.pause`
+    - `debug.thread.stepin` renamed to `workbench.action.debug.stepInto`
+    - `debug.thread.stepout` renamed to `workbench.action.debug.stepOut`
+    - `debug.thread.next` renamed to `workbench.action.debug.stepOver`
+    - `debug.stop` renamed to `workbench.action.debug.stop`
+    - `debug.editor.showHover` renamed to `editor.debug.action.showDebugHover`
 
 ## v0.3.19
 - [core] added `hostname` alias
