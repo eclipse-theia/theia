@@ -55,17 +55,17 @@ export namespace DebugCommands {
     const DEBUG_CATEGORY = 'Debug';
 
     export const START: Command = {
-        id: 'debug.start',
+        id: 'workbench.action.debug.start',
         category: DEBUG_CATEGORY,
         label: 'Start Debugging',
         iconClass: 'fa fa-play'
     };
     export const START_NO_DEBUG: Command = {
-        id: 'debug.start.noDebug',
+        id: 'workbench.action.debug.run',
         label: 'Debug: Start Without Debugging'
     };
     export const STOP: Command = {
-        id: 'debug.stop',
+        id: 'workbench.action.debug.stop',
         category: DEBUG_CATEGORY,
         label: 'Stop Debugging',
         iconClass: 'fa fa-stop'
@@ -86,31 +86,31 @@ export namespace DebugCommands {
     };
 
     export const STEP_OVER: Command = {
-        id: 'debug.thread.next',
+        id: 'workbench.action.debug.stepOver',
         category: DEBUG_CATEGORY,
         label: 'Step Over',
         iconClass: 'fa fa-arrow-right'
     };
     export const STEP_INTO: Command = {
-        id: 'debug.thread.stepin',
+        id: 'workbench.action.debug.stepInto',
         category: DEBUG_CATEGORY,
         label: 'Step Into',
         iconClass: 'fa fa-arrow-down'
     };
     export const STEP_OUT: Command = {
-        id: 'debug.thread.stepout',
+        id: 'workbench.action.debug.stepOut',
         category: DEBUG_CATEGORY,
         label: 'Step Out',
         iconClass: 'fa fa-arrow-up'
     };
     export const CONTINUE: Command = {
-        id: 'debug.thread.continue',
+        id: 'workbench.action.debug.continue',
         category: DEBUG_CATEGORY,
         label: 'Continue',
         iconClass: 'fa fa-play-circle'
     };
     export const PAUSE: Command = {
-        id: 'debug.thread.pause',
+        id: 'workbench.action.debug.pause',
         category: DEBUG_CATEGORY,
         label: 'Pause',
         iconClass: 'fa fa-pause'
@@ -129,7 +129,7 @@ export namespace DebugCommands {
     };
 
     export const TOGGLE_BREAKPOINT: Command = {
-        id: 'debug.breakpoint.toggle',
+        id: 'editor.debug.action.toggleBreakpoint',
         category: DEBUG_CATEGORY,
         label: 'Toggle Breakpoint',
     };
@@ -179,7 +179,7 @@ export namespace DebugCommands {
         label: 'Remove All Breakpoints',
     };
     export const SHOW_HOVER = {
-        id: 'debug.editor.showHover',
+        id: 'editor.debug.action.showDebugHover',
         label: 'Debug: Show Hover'
     };
 
