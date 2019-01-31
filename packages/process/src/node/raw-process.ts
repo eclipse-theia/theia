@@ -35,10 +35,10 @@ export interface RawProcessOptions extends ProcessOptions {
 }
 
 /**
- * Options to fork a new process using the current Node interpeter (`fork`).
+ * Options to fork a new process using the current Node interpreter (`fork`).
  *
  * For more information please refer to the fork function of Node's
- * child_process module:
+ * `child_process` module:
  *
  *   https://nodejs.org/api/child_process.html#child_process_child_process_fork_modulepath_args_options
  */
@@ -50,9 +50,11 @@ export interface RawProcessFactory {
     (options: RawProcessOptions | RawForkOptions): RawProcess;
 }
 
-/* A Node stream like /dev/null.
-
-   Writing goes to a black hole, reading returns EOF.  */
+/**
+ * A Node stream like `/dev/null`.
+ *
+ * Writing goes to a black hole, reading returns `EOF`.
+ */
 class DevNullStream extends stream.Duplex {
     // tslint:disable-next-line:no-any
     _write(chunk: any, encoding: string, callback: (err?: Error) => void): void {

@@ -20,7 +20,7 @@ import { JavaDebugAdapterContribution, JavaDebugExtensionContribution } from './
 import { DebugAdapterContribution } from '@theia/debug/lib/common/debug-model';
 
 export default new ContainerModule(bind => {
-    /* explcit inTransientScope because it is very important, that
+    /* explicit inTransientScope because it is very important, that
        each web socket connection gets its own instance,
        since it is using frontend services via this connection */
     bind(DebugAdapterContribution).to(JavaDebugAdapterContribution).inTransientScope();
