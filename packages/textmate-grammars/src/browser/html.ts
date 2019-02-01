@@ -28,7 +28,7 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
             id: this.id,
-            extensions: ['.html', '.htm', '.shtml', '.xhtml', '.mdoc', '.jsp', '.asp', '.aspx', '.jshtm'],
+            extensions: ['.html', '.htm', '.shtml', '.xhtml', '.mdoc', '.jsp', '.asp', '.aspx', '.jshtm', '.gohtml'],
             aliases: ['HTML', 'htm', 'html', 'xhtml'],
             mimetypes: ['text/html', 'text/x-jshtm', 'text/template', 'text/ng-template'],
         });
