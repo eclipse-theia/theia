@@ -17,6 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, CommandService, MenuPath } from '@theia/core';
+import { DisposableCollection } from '@theia/core/lib/common';
 import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message, SELECTED_CLASS, Key, ConfirmDialog } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -52,6 +53,8 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     protected lastSelectedNode?: { id: number, node: GitFileChangeNode };
     protected listContainer: GitChangesListContainer | undefined;
     protected readonly selectChange = (change: GitFileChangeNode) => this.selectNode(change);
+
+    protected readonly toDisposeOnInitialize = new DisposableCollection();
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -94,10 +97,11 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     }
 
     async initialize(repository: Repository | undefined): Promise<void> {
+        this.toDisposeOnInitialize.dispose();
         if (repository) {
-            this.toDispose.dispose();
-            this.toDispose.push(await this.gitWatcher.watchGitChanges(repository));
-            this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
+            this.toDispose.push(this.toDisposeOnInitialize);
+            this.toDisposeOnInitialize.push(await this.gitWatcher.watchGitChanges(repository));
+            this.toDisposeOnInitialize.push(this.gitWatcher.onGitEvent(async gitEvent => {
                 if (GitStatusChangeEvent.is(gitEvent)) {
                     if (gitEvent.status.currentHead !== this.lastHead) {
                         this.lastHead = gitEvent.status.currentHead;
