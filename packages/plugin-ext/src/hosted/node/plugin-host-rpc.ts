@@ -74,6 +74,7 @@ export class PluginHostRPC {
 
     // tslint:disable-next-line:no-any
     createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
+        const { extensionTestsPath } = process.env;
         const pluginManager = new PluginManagerExtImpl({
             loadPlugin(plugin: Plugin): void {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
@@ -132,7 +133,35 @@ export class PluginHostRPC {
                         }
                     }
                 }
-            }
+            },
+            loadTests: extensionTestsPath ? async () => {
+                // tslint:disable:no-any
+                // Require the test runner via node require from the provided path
+                let testRunner: any;
+                let requireError: Error | undefined;
+                try {
+                    testRunner = require(extensionTestsPath);
+                } catch (error) {
+                    requireError = error;
+                }
+
+                // Execute the runner if it follows our spec
+                if (testRunner && typeof testRunner.run === 'function') {
+                    return new Promise<void>((resolve, reject) => {
+                        testRunner.run(extensionTestsPath, (error: any) => {
+                            if (error) {
+                                reject(error.toString());
+                            } else {
+                                resolve(undefined);
+                            }
+                        });
+                    });
+                }
+                throw new Error(requireError ?
+                    requireError.toString() :
+                    `Path ${extensionTestsPath} does not point to a valid extension test runner.`
+                );
+            } : undefined
         }, envExt, preferencesManager, rpc);
         return pluginManager;
     }

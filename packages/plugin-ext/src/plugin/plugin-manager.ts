@@ -43,6 +43,8 @@ export interface PluginHost {
     init(data: PluginMetadata[]): [Plugin[], Plugin[]];
 
     initExtApi(extApi: ExtPluginApi[]): void;
+
+    loadTests?(): Promise<void>;
 }
 
 interface StopFn {
@@ -120,10 +122,13 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             if (pluginMain !== undefined) {
                 this.startPlugin(plugin, configStorage, pluginMain);
             } else {
-                return Promise.reject(new Error('Unable to load the given plugin'));
+                console.error(`Unable to load a plugin from "${plugin.pluginPath}"`);
             }
         }
 
+        if (this.host.loadTests) {
+            return this.host.loadTests();
+        }
         return Promise.resolve();
     }
 
