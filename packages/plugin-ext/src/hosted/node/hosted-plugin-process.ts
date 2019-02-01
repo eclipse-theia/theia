@@ -23,6 +23,7 @@ import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, ServerPluginRunner, PluginMetadata } from '../../common/plugin-protocol';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -36,6 +37,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    @inject(HostedPluginCliContribution)
+    protected readonly cli: HostedPluginCliContribution;
 
     private childProcess: cp.ChildProcess | undefined;
     private client: HostedPluginClient;
@@ -117,6 +121,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
         env.PATH = process.env.PATH;
         // add HOME to env since some plug-ins need to read files from user's home dir
         env.HOME = process.env.HOME;
+        if (this.cli.extensionTestsPath) {
+            env.extensionTestsPath = this.cli.extensionTestsPath;
+        }
 
         const forkOptions: cp.ForkOptions = {
             silent: true,

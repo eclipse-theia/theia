@@ -16,6 +16,7 @@
 
 import { interfaces } from 'inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { CliContribution } from '@theia/core/lib/node/cli';
 import { HostedInstanceManager, NodeHostedPluginRunner } from './hosted-instance-manager';
 import { HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
@@ -30,8 +31,12 @@ import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePat
 import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
+import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
+    bind(HostedPluginCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toService(HostedPluginCliContribution);
+
     bind(HostedPluginReader).toSelf().inSingletonScope();
 
     bind(HostedPluginServerImpl).toSelf().inSingletonScope();
