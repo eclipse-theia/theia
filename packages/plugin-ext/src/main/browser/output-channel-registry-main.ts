@@ -59,17 +59,14 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
         return Promise.resolve();
     }
 
-    $reveal(channelName: string, preserveFocus: boolean): PromiseLike<void> {
+    async $reveal(channelName: string, preserveFocus: boolean): Promise<void> {
         const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
+            const activate = !preserveFocus;
+            const reveal = preserveFocus;
+            this.commonOutputWidget = await this.outputContribution.openView({ activate, reveal });
             outputChannel.setVisibility(true);
-            return this.outputContribution.openView({ activate: !preserveFocus }).then((outputWidget: OutputWidget) => {
-                this.commonOutputWidget = outputWidget;
-                return Promise.resolve();
-            });
         }
-
-        return Promise.resolve();
     }
 
     $close(channelName: string): PromiseLike<void> {
