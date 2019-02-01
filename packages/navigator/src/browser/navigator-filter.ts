@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { Minimatch } from 'minimatch';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -28,16 +28,20 @@ import { FileNavigatorPreferences, FileNavigatorConfiguration } from './navigato
 @injectable()
 export class FileNavigatorFilter {
 
-    protected readonly emitter: Emitter<void>;
+    protected readonly emitter: Emitter<void> = new Emitter<void>();
 
     protected filterPredicate: FileNavigatorFilter.Predicate;
 
     protected showHiddenFiles: boolean;
 
-    constructor(@inject(FileNavigatorPreferences) protected readonly preferences: FileNavigatorPreferences) {
-        this.emitter = new Emitter<void>();
+    constructor(
+        @inject(FileNavigatorPreferences) protected readonly preferences: FileNavigatorPreferences
+    ) { }
+
+    @postConstruct()
+    protected async init(): Promise<void> {
         this.filterPredicate = this.createFilterPredicate(this.preferences['navigator.exclude']);
-        preferences.onPreferenceChanged(this.onPreferenceChanged.bind(this));
+        this.preferences.onPreferenceChanged(this.onPreferenceChanged.bind(this));
     }
 
     async filter<T extends { id: string }>(items: MaybePromise<T[]>): Promise<T[]> {

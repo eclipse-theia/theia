@@ -146,7 +146,7 @@ export class FileSystemWatcher implements Disposable {
      * Return a disposable to stop file watching under the given uri.
      */
     watchFileChanges(uri: URI): Promise<Disposable> {
-        return this.createWatchOptions()
+        return this.createWatchOptions(uri.toString())
             .then(options =>
                 this.server.watchFileChanges(uri.toString(), options)
             )
@@ -167,16 +167,15 @@ export class FileSystemWatcher implements Disposable {
             });
     }
 
-    protected createWatchOptions(): Promise<WatchOptions> {
-        return this.getIgnored().then(ignored => ({
+    protected createWatchOptions(uri: string): Promise<WatchOptions> {
+        return this.getIgnored(uri).then(ignored => ({
             ignored
         }));
     }
 
-    protected getIgnored(): Promise<string[]> {
-        const patterns = this.preferences['files.watcherExclude'];
-
-        return Promise.resolve(Object.keys(patterns).filter(pattern => patterns[pattern]));
+    protected async getIgnored(uri: string): Promise<string[]> {
+        const patterns = this.preferences.get('files.watcherExclude', undefined, uri);
+        return Object.keys(patterns).filter(pattern => patterns[pattern]);
     }
 
     protected fireDidMove(sourceUri: string, targetUri: string): void {

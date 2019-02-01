@@ -18,7 +18,6 @@ import {
     PreferenceService,
     PreferenceServiceImpl,
     PreferenceScope,
-    PreferenceChange,
     PreferenceProviderProvider
 } from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
@@ -52,12 +51,7 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
 
         preferenceServiceImpl.onPreferenceChanged(e => {
             const data = getPreferences(this.preferenceProviderProvider);
-            const eventData: PreferenceChange = {
-                preferenceName: e.preferenceName,
-                newValue: e.newValue,
-                oldValue: e.oldValue
-            };
-            this.proxy.$acceptConfigurationChanged(data, eventData);
+            this.proxy.$acceptConfigurationChanged(data, Object.assign({}, e));
         });
     }
 

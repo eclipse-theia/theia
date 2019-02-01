@@ -73,6 +73,22 @@
   display: inline-block;
 }
 
+.p-TabBar-tab-secondary-label {
+  color: var(--theia-brand-color2);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size0);
+  margin-left: 5px;
+  text-decoration-line: underline;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--theia-ui-font-color1) 50%), linear-gradient(135deg, var(--theia-ui-font-color1) 50%, transparent 50%);
+  background-position: calc(100% - 6px) 8px, calc(100% - 2px) 8px, 100% 0;
+  background-size: 4px 5px;
+  background-repeat: no-repeat;
+  padding: 2px 14px 0 0;
+}
+
 .p-TabBar .p-TabBar-tabIcon {
   width: 15px;
   line-height: 1.7;

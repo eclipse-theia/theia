@@ -24,7 +24,7 @@ import {
     ApplicationShell,
     ContextMenuRenderer,
     ExpandableTreeNode,
-    PreferenceProperty,
+    PreferenceDataProperty,
     PreferenceSchemaProvider,
     PreferenceScope,
     PreferenceService,
@@ -39,16 +39,15 @@ import {
 } from '@theia/core/lib/browser';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
+import { PreferencesEditorWidget, PreferenceEditorContainerTabBarRenderer } from './preference-editor-widget';
+import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
+import { JSONC_LANGUAGE_ID } from '@theia/json/lib/common';
 import { DisposableCollection, Emitter, Event, MessageService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
 import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import { UserStorageUri, THEIA_USER_STORAGE_FOLDER } from '@theia/userstorage/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
-
-export interface PreferencesEditorWidget extends EditorWidget {
-    scope?: PreferenceScope;
-}
 
 @injectable()
 export class PreferencesContainer extends SplitPanel implements ApplicationShell.TrackableWidgetProvider, Saveable {
@@ -57,12 +56,15 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
 
     protected treeWidget: PreferencesTreeWidget | undefined;
     protected editorsContainer: PreferencesEditorsContainer;
-    private currentEditor: EditorWidget | undefined;
-    private readonly editors: EditorWidget[] = [];
-    private deferredEditors = new Deferred<EditorWidget[]>();
+    private currentEditor: PreferencesEditorWidget | undefined;
+    private readonly editors: PreferencesEditorWidget[] = [];
+    private deferredEditors = new Deferred<PreferencesEditorWidget[]>();
 
     protected readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged: Event<void> = this.onDirtyChangedEmitter.event;
+
+    protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
+    readonly onDidChangeTrackableWidgets = this.onDidChangeTrackableWidgetsEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -78,6 +80,9 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     protected _preferenceScope: PreferenceScope = PreferenceScope.User;
 
     @postConstruct()
@@ -88,7 +93,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         this.title.closable = true;
         this.title.iconClass = 'fa fa-sliders';
 
-        this.toDispose.push(this.onDirtyChangedEmitter);
+        this.toDispose.pushAll([this.onDirtyChangedEmitter, this.onDidChangeTrackableWidgetsEmitter]);
     }
 
     dispose(): void {
@@ -135,34 +140,43 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             if (this.dirty) {
                 this.messageService.warn('Preferences editor(s) has/have unsaved changes');
             } else if (this.currentEditor) {
-                this.preferenceService.set(preferenceName,
-                    preferenceValue,
-                    this.currentEditor.title.label === 'User Preferences'
-                        ? PreferenceScope.User
-                        : PreferenceScope.Workspace);
+                this.preferenceService.set(preferenceName, preferenceValue, this.currentEditor.scope, this.currentEditor.editor.uri.toString());
             }
         });
 
         this.editorsContainer = await this.widgetManager.getOrCreateWidget<PreferencesEditorsContainer>(PreferencesEditorsContainer.ID);
         this.toDispose.push(this.editorsContainer);
         this.editorsContainer.activatePreferenceEditor(this.preferenceScope);
-        this.editorsContainer.onInit(() => {
-            toArray(this.editorsContainer.widgets()).forEach(editor => {
-                const editorWidget = editor as EditorWidget;
-                this.editors.push(editorWidget);
-                const savable = editorWidget.saveable;
-                savable.onDirtyChanged(() => {
-                    this.onDirtyChangedEmitter.fire(undefined);
-                });
-            });
+        this.toDispose.push(this.editorsContainer.onInit(() => {
+            this.handleEditorsChanged();
             this.deferredEditors.resolve(this.editors);
-        });
-        this.editorsContainer.onEditorChanged(editor => {
+        }));
+        this.toDispose.push(this.editorsContainer.onEditorChanged(editor => {
             if (this.currentEditor && this.currentEditor.editor.uri.toString() !== editor.editor.uri.toString()) {
                 this.currentEditor.saveable.save();
             }
+            if (editor) {
+                this.preferenceScope = editor.scope || PreferenceScope.User;
+            } else {
+                this.preferenceScope = PreferenceScope.User;
+            }
             this.currentEditor = editor;
-        });
+        }));
+        this.toDispose.push(this.editorsContainer.onFolderPreferenceEditorUriChanged(uriStr => {
+            if (this.treeWidget) {
+                this.treeWidget.setActiveFolder(uriStr);
+            }
+            this.handleEditorsChanged();
+        }));
+        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(async workspaceFile => {
+            await this.editorsContainer.refreshWorkspacePreferenceEditor();
+            await this.refreshFoldersPreferencesEditor();
+            this.activatePreferenceEditor(this.preferenceScope);
+            this.handleEditorsChanged();
+        }));
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(async roots => {
+            await this.refreshFoldersPreferencesEditor();
+        }));
 
         const treePanel = new BoxPanel();
         treePanel.addWidget(this.treeWidget);
@@ -188,9 +202,41 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         this.dispose();
     }
 
-    public activatePreferenceEditor(preferenceScope: PreferenceScope) {
+    public activatePreferenceEditor(preferenceScope: PreferenceScope): void {
+        this.preferenceScope = preferenceScope;
         if (this.editorsContainer) {
             this.editorsContainer.activatePreferenceEditor(preferenceScope);
+        }
+    }
+
+    protected handleEditorsChanged(): void {
+        const currentEditors = toArray(this.editorsContainer.widgets());
+        currentEditors.forEach(editor => {
+            if (editor instanceof EditorWidget && this.editors.findIndex(e => e === editor) < 0) {
+                const editorWidget = editor as PreferencesEditorWidget;
+                this.editors.push(editorWidget);
+                const savable = editorWidget.saveable;
+                savable.onDirtyChanged(() => {
+                    this.onDirtyChangedEmitter.fire(undefined);
+                });
+            }
+        });
+        for (let i = this.editors.length - 1; i >= 0; i--) {
+            if (currentEditors.findIndex(e => e === this.editors[i]) < 0) {
+                this.editors.splice(i, 1);
+            }
+        }
+        this.onDidChangeTrackableWidgetsEmitter.fire(this.editors);
+        this.activatePreferenceEditor(this.preferenceScope);
+    }
+
+    private async refreshFoldersPreferencesEditor(): Promise<void> {
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length === 0) {
+            this.editorsContainer.closeFoldersPreferenceEditorWidget();
+        } else if (!roots.some(r => r.uri === this.editorsContainer.activeFolder)) {
+            const firstRoot = roots[0];
+            await this.editorsContainer.refreshFoldersPreferencesEditorWidget(firstRoot ? firstRoot.uri : undefined);
         }
     }
 }
@@ -199,9 +245,6 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
 export class PreferencesEditorsContainer extends DockPanel {
 
     static ID = 'preferences_editors_container';
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -212,18 +255,30 @@ export class PreferencesEditorsContainer extends DockPanel {
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
     protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
 
-    private preferenceScope: PreferenceScope;
+    private userPreferenceEditorWidget: PreferencesEditorWidget;
+    private workspacePreferenceEditorWidget: PreferencesEditorWidget | undefined;
+    private foldersPreferenceEditorWidget: PreferencesEditorWidget | undefined;
 
     private readonly onInitEmitter = new Emitter<void>();
     readonly onInit: Event<void> = this.onInitEmitter.event;
 
-    private readonly onEditorChangedEmitter = new Emitter<EditorWidget>();
-    readonly onEditorChanged: Event<EditorWidget> = this.onEditorChangedEmitter.event;
+    private readonly onEditorChangedEmitter = new Emitter<PreferencesEditorWidget>();
+    readonly onEditorChanged: Event<PreferencesEditorWidget> = this.onEditorChangedEmitter.event;
+
+    private readonly onFolderPreferenceEditorUriChangedEmitter = new Emitter<string>();
+    readonly onFolderPreferenceEditorUriChanged: Event<string> = this.onFolderPreferenceEditorUriChangedEmitter.event;
 
     protected readonly toDispose = new DisposableCollection(
         this.onEditorChangedEmitter,
         this.onInitEmitter
     );
+
+    constructor(
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem
+    ) {
+        super({ renderer: new PreferenceEditorContainerTabBarRenderer(workspaceService, fileSystem) });
+    }
 
     dispose(): void {
         this.toDispose.dispose();
@@ -236,36 +291,119 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     onUpdateRequest(msg: Message) {
-        this.onEditorChangedEmitter.fire(this.selectedWidgets().next() as EditorWidget);
-
+        const editor = this.selectedWidgets().next();
+        if (editor) {
+            this.onEditorChangedEmitter.fire(<PreferencesEditorWidget>editor);
+        }
         super.onUpdateRequest(msg);
     }
 
     protected async onAfterAttach(msg: Message): Promise<void> {
-        const userPreferenceUri = this.userPreferenceProvider.getUri();
-        const userPreferences = await this.editorManager.getOrCreateByUri(userPreferenceUri) as PreferencesEditorWidget;
-        userPreferences.title.label = 'User Preferences';
-        userPreferences.title.caption = await this.getPreferenceEditorCaption(userPreferenceUri);
-        userPreferences.scope = PreferenceScope.User;
-        this.addWidget(userPreferences);
+        this.userPreferenceEditorWidget = await this.getUserPreferenceEditorWidget();
+        this.addWidget(this.userPreferenceEditorWidget);
+        await this.refreshWorkspacePreferenceEditor();
+        await this.refreshFoldersPreferencesEditorWidget(undefined);
 
-        const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
-        const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri) as PreferencesEditorWidget;
-
-        if (workspacePreferences) {
-            workspacePreferences.title.label = 'Workspace Preferences';
-            workspacePreferences.title.caption = await this.getPreferenceEditorCaption(workspacePreferenceUri!);
-            workspacePreferences.scope = PreferenceScope.Workspace;
-            this.addWidget(workspacePreferences);
-        }
-
-        this.activatePreferenceEditor(this.preferenceScope);
         super.onAfterAttach(msg);
         this.onInitEmitter.fire(undefined);
     }
 
+    protected async getUserPreferenceEditorWidget(): Promise<PreferencesEditorWidget> {
+        const userPreferenceUri = this.userPreferenceProvider.getUri();
+        const userPreferences = await this.editorManager.getOrCreateByUri(userPreferenceUri) as PreferencesEditorWidget;
+        userPreferences.title.label = 'User';
+        userPreferences.title.caption = `User Preferences: ${await this.getPreferenceEditorCaption(userPreferenceUri)}`;
+        userPreferences.scope = PreferenceScope.User;
+        return userPreferences;
+    }
+
+    async refreshWorkspacePreferenceEditor(): Promise<void> {
+        const newWorkspacePreferenceEditorWidget = await this.getWorkspacePreferenceEditorWidget();
+        if (newWorkspacePreferenceEditorWidget) {
+            this.addWidget(newWorkspacePreferenceEditorWidget,
+                { ref: this.workspacePreferenceEditorWidget || this.userPreferenceEditorWidget });
+            if (this.workspacePreferenceEditorWidget) {
+                this.workspacePreferenceEditorWidget.close();
+                this.workspacePreferenceEditorWidget.dispose();
+            }
+            this.workspacePreferenceEditorWidget = newWorkspacePreferenceEditorWidget;
+        }
+    }
+
+    protected async getWorkspacePreferenceEditorWidget(): Promise<PreferencesEditorWidget | undefined> {
+        const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
+        const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri) as PreferencesEditorWidget;
+
+        if (workspacePreferences) {
+            workspacePreferences.title.label = 'Workspace';
+            workspacePreferences.title.caption = `Workspace Preferences: ${await this.getPreferenceEditorCaption(workspacePreferenceUri!)}`;
+            workspacePreferences.title.iconClass = 'database-icon medium-yellow file-icon';
+            workspacePreferences.editor.setLanguage(JSONC_LANGUAGE_ID);
+            workspacePreferences.scope = PreferenceScope.Workspace;
+        }
+        return workspacePreferences;
+    }
+
+    get activeFolder(): string | undefined {
+        if (this.foldersPreferenceEditorWidget) {
+            return this.foldersPreferenceEditorWidget.editor.uri.parent.parent.toString();
+        }
+    }
+
+    async refreshFoldersPreferencesEditorWidget(currentFolder: string | undefined): Promise<void> {
+        const folders = this.workspaceService.tryGetRoots().map(r => r.uri);
+        const newFolderUri = currentFolder || folders[0];
+        const newFoldersPreferenceEditorWidget = await this.getFoldersPreferencesEditor(newFolderUri);
+        if (newFoldersPreferenceEditorWidget && // new widget is created
+            // the FolderPreferencesEditor is not available, OR the existing FolderPreferencesEditor is displaying the content of a different file
+            (!this.foldersPreferenceEditorWidget || this.foldersPreferenceEditorWidget.editor.uri.parent.parent.toString() !== newFolderUri)) {
+            this.addWidget(newFoldersPreferenceEditorWidget,
+                { ref: this.foldersPreferenceEditorWidget || this.workspacePreferenceEditorWidget || this.userPreferenceEditorWidget });
+            this.closeFoldersPreferenceEditorWidget();
+            this.foldersPreferenceEditorWidget = newFoldersPreferenceEditorWidget;
+            this.onFolderPreferenceEditorUriChangedEmitter.fire(newFoldersPreferenceEditorWidget.editor.uri.toString());
+        }
+    }
+
+    closeFoldersPreferenceEditorWidget(): void {
+        if (this.foldersPreferenceEditorWidget) {
+            this.foldersPreferenceEditorWidget.close();
+            this.foldersPreferenceEditorWidget.dispose();
+            this.foldersPreferenceEditorWidget = undefined;
+        }
+    }
+
+    protected async getFoldersPreferencesEditor(folder: string | undefined): Promise<PreferencesEditorWidget | undefined> {
+        if (this.workspaceService.saved) {
+            const settingsUri = await this.getFolderSettingsUri(folder);
+            const foldersPreferences = settingsUri && await this.editorManager.getOrCreateByUri(settingsUri) as PreferencesEditorWidget;
+            if (foldersPreferences) {
+                foldersPreferences.title.label = 'Folder';
+                foldersPreferences.title.caption = `Folder Preferences: ${await this.getPreferenceEditorCaption(settingsUri!)}`;
+                foldersPreferences.title.clickableText = new URI(folder).displayName;
+                foldersPreferences.title.clickableTextTooltip = 'Click to manage preferences in another folder';
+                foldersPreferences.title.clickableTextCallback = async (folderUriStr: string) => {
+                    await foldersPreferences.saveable.save();
+                    await this.refreshFoldersPreferencesEditorWidget(folderUriStr);
+                    this.activatePreferenceEditor(PreferenceScope.Folder);
+                };
+                foldersPreferences.scope = PreferenceScope.Folder;
+            }
+            return foldersPreferences;
+        }
+    }
+
+    private async getFolderSettingsUri(folder: string | undefined): Promise<URI | undefined> {
+        if (folder) {
+            const settingsUri = new URI(folder).resolve('.theia').resolve('settings.json');
+            if (!(await this.fileSystem.exists(settingsUri.toString()))) {
+                await this.fileSystem.createFile(settingsUri.toString());
+            }
+            return settingsUri;
+        }
+    }
+
     activatePreferenceEditor(preferenceScope: PreferenceScope) {
-        this.preferenceScope = preferenceScope;
         for (const widget of toArray(this.widgets())) {
             const preferenceEditor = widget as PreferencesEditorWidget;
             if (preferenceEditor.scope === preferenceScope) {
@@ -294,8 +432,9 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     static ID = 'preferences_tree_widget';
 
+    private activeFolderUri: string | undefined;
     private preferencesGroupNames: string[] = [];
-    private readonly properties: { [name: string]: PreferenceProperty };
+    private readonly properties: { [name: string]: PreferenceDataProperty };
     private readonly onPreferenceSelectedEmitter: Emitter<{ [key: string]: string }>;
     readonly onPreferenceSelected: Event<{ [key: string]: string }>;
 
@@ -373,7 +512,7 @@ export class PreferencesTreeWidget extends TreeWidget {
         if (node && SelectableTreeNode.is(node)) {
             const contextMenu = this.preferencesMenuFactory.createPreferenceContextMenu(
                 node.id,
-                this.preferenceService.get(node.id),
+                this.preferenceService.get(node.id, undefined, this.activeFolderUri),
                 this.properties[node.id],
                 (property, value) => {
                     this.onPreferenceSelectedEmitter.fire({ [property]: value });
@@ -398,7 +537,7 @@ export class PreferencesTreeWidget extends TreeWidget {
             children: preferencesGroups,
             expanded: true,
         };
-        const nodes: { [id: string]: PreferenceProperty }[] = [];
+        const nodes: { [id: string]: PreferenceDataProperty }[] = [];
         for (const group of this.preferencesGroupNames.sort((a, b) => a.localeCompare(b))) {
             const propertyNodes: SelectableTreeNode[] = [];
             const properties: string[] = [];
@@ -432,5 +571,10 @@ export class PreferencesTreeWidget extends TreeWidget {
         }
         this.decorator.fireDidChangeDecorations(nodes);
         this.model.root = root;
+    }
+
+    setActiveFolder(folder: string) {
+        this.activeFolderUri = folder;
+        this.decorator.setActiveFolder(folder);
     }
 }

@@ -193,6 +193,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
+    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
     bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
         if (scope === PreferenceScope.Default) {
             return ctx.container.get(PreferenceSchemaProvider);

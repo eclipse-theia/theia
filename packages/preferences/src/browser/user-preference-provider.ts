@@ -18,6 +18,7 @@ import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
+import { PreferenceScope, PreferenceProvider, PreferenceProviderPriority } from '@theia/core/lib/browser';
 
 export const USER_PREFERENCE_URI = new URI().withScheme(UserStorageUri.SCHEME).withPath('settings.json');
 @injectable()
@@ -27,4 +28,15 @@ export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
         return USER_PREFERENCE_URI;
     }
 
+    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
+        const value = this.get(preferenceName);
+        if (value === undefined || value === null) {
+            return super.canProvide(preferenceName, resourceUri);
+        }
+        return { priority: PreferenceProviderPriority.User, provider: this };
+    }
+
+    protected getScope() {
+        return PreferenceScope.User;
+    }
 }

@@ -27,6 +27,7 @@ import { isOSX } from '@theia/core/lib/common/os';
 
 export const editorPreferenceSchema: PreferenceSchema = {
     'type': 'object',
+    'scope': 'resource',
     'properties': {
         'editor.tabSize': {
             'type': 'number',

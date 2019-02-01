@@ -166,4 +166,15 @@ export class Path {
         return !!this.relative(path);
     }
 
+    relativity(path: Path): number {
+        const relative = this.relative(path);
+        if (relative) {
+            const relativeStr = relative.toString();
+            if (relativeStr === '') {
+                return 0;
+            }
+            return relativeStr.split(Path.separator).length;
+        }
+        return -1;
+    }
 }
