@@ -518,7 +518,7 @@ describe('keys api', () => {
     });
 
     it('parse bogus keybinding', () => {
-        const [first, second] = KeySequence.parse('  CtrlCmd+sHiFt+F10     b ');
+        const [first, second] = KeySequence.parse('  Ctrl+sHiFt+F10     b ');
         expect(first.ctrl).to.be.true;
         expect(first.shift).to.be.true;
         expect(first.key).is.equal(Key.F10);
