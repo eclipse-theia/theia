@@ -57,12 +57,13 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
+        const uriStr = uri.toString();
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
         const model = await (new MonacoEditorModel(resource, this.m2p, this.p2m).load());
-        model.autoSave = this.editorPreferences['editor.autoSave'];
-        model.autoSaveDelay = this.editorPreferences['editor.autoSaveDelay'];
-        model.textEditorModel.updateOptions(this.getModelOptions());
+        model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, uriStr);
+        model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, uriStr);
+        model.textEditorModel.updateOptions(this.getModelOptions(uriStr));
         const disposable = this.editorPreferences.onPreferenceChanged(change => this.updateModel(model, change));
         model.onDispose(() => disposable.dispose());
         return model;
@@ -77,10 +78,10 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     protected updateModel(model: MonacoEditorModel, change: EditorPreferenceChange): void {
         if (change.preferenceName === 'editor.autoSave') {
-            model.autoSave = this.editorPreferences['editor.autoSave'];
+            model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, model.uri);
         }
         if (change.preferenceName === 'editor.autoSaveDelay') {
-            model.autoSaveDelay = this.editorPreferences['editor.autoSaveDelay'];
+            model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, model.uri);
         }
         const modelOption = this.modelOptions[change.preferenceName];
         if (modelOption) {
@@ -91,10 +92,10 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         }
     }
 
-    protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
+    protected getModelOptions(uri: string): monaco.editor.ITextModelUpdateOptions {
         return {
-            tabSize: this.editorPreferences['editor.tabSize'],
-            insertSpaces: this.editorPreferences['editor.insertSpaces']
+            tabSize: this.editorPreferences.get('editor.tabSize', undefined, uri),
+            insertSpaces: this.editorPreferences.get('editor.insertSpaces', undefined, uri)
         };
     }
 

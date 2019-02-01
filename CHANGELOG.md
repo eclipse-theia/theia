@@ -27,6 +27,19 @@ Breaking changes:
     - `debug.thread.next` renamed to `workbench.action.debug.stepOver`
     - `debug.stop` renamed to `workbench.action.debug.stop`
     - `debug.editor.showHover` renamed to `editor.debug.action.showDebugHover`
+- multi-root workspace support for preferences [#3247](https://github.com/theia-ide/theia/pull/3247)
+  - `PreferenceProvider` 
+    - is changed from a regular class to an abstract class.
+    - the `fireOnDidPreferencesChanged` function is deprecated. `emitPreferencesChangedEvent` function should be used instead. `fireOnDidPreferencesChanged` will be removed with the next major release.
+  - `PreferenceServiceImpl`
+    - `preferences` is deprecated. `getPreferences` function should be used instead. `preferences` will be removed with the next major release.
+  - having `properties` property defined in the `PreferenceSchema` object is now mandatory.
+  - `PreferenceProperty` is renamed to `PreferenceDataProperty`.
+  - `PreferenceSchemaProvider`
+    - the type of `combinedSchema` property is changed from `PreferenceSchema` to `PreferenceDataSchema`.
+    - the return type of `getCombinedSchema` function is changed from `PreferenceSchema` to `PreferenceDataSchema`.
+  - `affects` function is added to `PreferenceChangeEvent` and `PreferenceChange` interface.
+
 
 ## v0.3.19
 - [core] added `hostname` alias

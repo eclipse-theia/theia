@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { PreferenceScope, PreferenceProvider, PreferenceProviderPriority } from '@theia/core/lib/browser';
+import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/workspace-service';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 
 @injectable()
@@ -25,13 +26,72 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    async getUri(): Promise<URI | undefined> {
-        const workspaceFolder = (await this.workspaceService.roots)[0];
-        if (workspaceFolder) {
-            const rootUri = new URI(workspaceFolder.uri);
-            return rootUri.resolve('.theia').resolve('settings.json');
-        }
-        return undefined;
+    @postConstruct()
+    protected async init(): Promise<void> {
+        await super.init();
+        this.workspaceService.onWorkspaceLocationChanged(workspaceFile => {
+            if (workspaceFile && !workspaceFile.isDirectory) {
+                this.toDisposeOnWorkspaceLocationChanged.dispose();
+                super.init();
+            }
+        });
     }
 
+    async getUri(): Promise<URI | undefined> {
+        await this.workspaceService.roots;
+        const workspace = this.workspaceService.workspace;
+        if (workspace) {
+            const uri = new URI(workspace.uri);
+            return workspace.isDirectory ? uri.resolve('.theia').resolve('settings.json') : uri;
+        }
+    }
+
+    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
+        const value = this.get(preferenceName);
+        if (value === undefined || value === null) {
+            return super.canProvide(preferenceName, resourceUri);
+        }
+        if (resourceUri) {
+            const folderPaths = this.getDomain().map(f => new URI(f).path);
+            if (folderPaths.every(p => p.relativity(new URI(resourceUri).path) < 0)) {
+                return super.canProvide(preferenceName, resourceUri);
+            }
+        }
+
+        return { priority: PreferenceProviderPriority.Workspace, provider: this };
+    }
+
+    // tslint:disable-next-line:no-any
+    protected async getParsedContent(content: string): Promise<{ [key: string]: any }> {
+        const data = await super.getParsedContent(content);
+        if (this.workspaceService.saved) {
+            if (WorkspaceData.is(data)) {
+                return data.settings || {};
+            }
+        } else {
+            return data || {};
+        }
+        return {};
+    }
+
+    protected getPath(preferenceName: string): string[] {
+        if (this.workspaceService.saved) {
+            return ['settings', preferenceName];
+        }
+        return super.getPath(preferenceName);
+    }
+
+    protected getScope() {
+        return PreferenceScope.Workspace;
+    }
+
+    getDomain(): string[] {
+        const workspace = this.workspaceService.workspace;
+        if (workspace) {
+            return workspace.isDirectory
+                ? [workspace.uri]
+                : this.workspaceService.tryGetRoots().map(r => r.uri).concat([workspace.uri]); // workspace file is treated as part of the workspace
+        }
+        return [];
+    }
 }

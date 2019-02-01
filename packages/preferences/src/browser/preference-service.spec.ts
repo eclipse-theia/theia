@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
 // tslint:disable:no-unused-expression
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
@@ -26,8 +27,8 @@ import * as fs from 'fs-extra';
 import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
-    PreferenceService, PreferenceScope,
-    PreferenceProviderProvider, PreferenceServiceImpl, PreferenceProvider, bindPreferenceSchemaProvider
+    PreferenceService, PreferenceScope, PreferenceProviderDataChanges,
+    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -36,9 +37,12 @@ import { FileSystemPreferences, createFileSystemPreferences } from '@theia/files
 import { ILogger, MessageService, MessageClient } from '@theia/core';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
+import { FoldersPreferencesProvider, } from './folders-preferences-provider';
+import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
 import { ResourceProvider } from '@theia/core/lib/common/resource';
 import { WorkspaceServer } from '@theia/workspace/lib/common/';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { MockPreferenceProvider } from '@theia/core/lib/browser/preferences/test';
 import { MockFilesystem, MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MockResourceProvider } from '@theia/core/lib/common/test/mock-resource-provider';
@@ -55,11 +59,11 @@ disableJSDOM();
 const expect = chai.expect;
 let testContainer: Container;
 
-let prefService: PreferenceService;
 const tempPath = temp.track().openSync().path;
 
-const mockUserPreferenceEmitter = new Emitter<void>();
-const mockWorkspacePreferenceEmitter = new Emitter<void>();
+const mockUserPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
+const mockWorkspacePreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
+const mockFolderPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 
 function testContainerSetup() {
     testContainer = new Container();
@@ -67,18 +71,42 @@ function testContainerSetup() {
 
     testContainer.bind(UserPreferenceProvider).toSelf().inSingletonScope();
     testContainer.bind(WorkspacePreferenceProvider).toSelf().inSingletonScope();
+    testContainer.bind(FoldersPreferencesProvider).toSelf().inSingletonScope();
+
+    testContainer.bind(FolderPreferenceProvider).toSelf().inSingletonScope();
+    testContainer.bind(FolderPreferenceProviderOptions).toConstantValue({ folder: <FileStat>{ uri: 'file:///home/oneFile', isDirectory: true, lastModification: 0 } });
+    testContainer.bind(FolderPreferenceProviderFactory).toFactory(ctx =>
+        (options: FolderPreferenceProviderOptions) => {
+            const child = new Container({ defaultScope: 'Transient' });
+            child.parent = ctx.container;
+            child.bind(FolderPreferenceProviderOptions).toConstantValue(options);
+            return child.get(FolderPreferenceProvider);
+        }
+    );
 
     testContainer.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
-        const userProvider = ctx.container.get(UserPreferenceProvider);
-        const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
-
-        sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
-            mockUserPreferenceEmitter.event
-        );
-        sinon.stub(workspaceProvider, 'onDidPreferencesChanged').get(() =>
-            mockWorkspacePreferenceEmitter.event
-        );
-        return scope === PreferenceScope.User ? userProvider : workspaceProvider;
+        switch (scope) {
+            case PreferenceScope.User:
+                const userProvider = ctx.container.get(UserPreferenceProvider);
+                sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
+                    mockUserPreferenceEmitter.event
+                );
+                return userProvider;
+            case PreferenceScope.Workspace:
+                const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
+                sinon.stub(workspaceProvider, 'onDidPreferencesChanged').get(() =>
+                    mockWorkspacePreferenceEmitter.event
+                );
+                return workspaceProvider;
+            case PreferenceScope.Folder:
+                const folderProvider = ctx.container.get(FoldersPreferencesProvider);
+                sinon.stub(folderProvider, 'onDidPreferencesChanged').get(() =>
+                    mockFolderPreferenceEmitter.event
+                );
+                return folderProvider;
+            default:
+                return ctx.container.get(PreferenceSchemaProvider);
+        }
     });
     testContainer.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
@@ -137,7 +165,10 @@ function testContainerSetup() {
     testContainer.bind(MessageClient).toSelf().inSingletonScope();
 }
 
-describe('Preference Service', function () {
+describe('Preference Service', () => {
+    let prefService: PreferenceService;
+    let prefSchema: PreferenceSchemaProvider;
+    const stubs: sinon.SinonStub[] = [];
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -152,6 +183,7 @@ describe('Preference Service', function () {
     });
 
     beforeEach(() => {
+        prefSchema = testContainer.get(PreferenceSchemaProvider);
         prefService = testContainer.get<PreferenceService>(PreferenceService);
         const impl = testContainer.get(PreferenceServiceImpl);
         impl.initialize();
@@ -159,146 +191,160 @@ describe('Preference Service', function () {
 
     afterEach(() => {
         prefService.dispose();
+        stubs.forEach(s => s.restore());
+        stubs.length = 0;
     });
 
-    it('Should get notified if a provider gets a change', function (done) {
-
-        const prefValue = true;
-        prefService.onPreferenceChanged(pref => {
-            try {
-                expect(pref.preferenceName).eq('testPref');
-            } catch (e) {
-                stubGet.restore();
-                done(e);
-                return;
-            }
-            expect(pref.newValue).eq(prefValue);
-            stubGet.restore();
-            done();
-        });
-
+    it('should get notified if a provider emits a change', done => {
         const userProvider = testContainer.get(UserPreferenceProvider);
-        const stubGet = sinon.stub(userProvider, 'getPreferences').returns({
-            'testPref': prefValue
+        stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
+            testPref: 'oldVal'
+        }));
+        prefService.onPreferenceChanged(pref => {
+            if (pref) {
+                expect(pref.preferenceName).eq('testPref');
+                expect(pref.newValue).eq('newVal');
+                return done();
+            }
+            return done(new Error('onPreferenceChanged() fails to return any preference change infomation'));
         });
-
-        mockUserPreferenceEmitter.fire(undefined);
-
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        mockUserPreferenceEmitter.fire({
+            testPref: {
+                preferenceName: 'testPref',
+                newValue: 'newVal',
+                oldValue: 'oldVal',
+                scope: PreferenceScope.User,
+                domain: []
+            }
+        });
     }).timeout(2000);
 
-    it('Should return the preference from the more specific scope (user > workspace)', () => {
+    it('should return the preference from the more specific scope (user > workspace)', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+        stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
-        });
-        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
+        }));
+        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
             'test.number': 0
-        });
-        mockUserPreferenceEmitter.fire(undefined);
-
-        let value = prefService.get('test.boolean');
-        expect(value).to.be.false;
-
-        value = prefService.get('test.number');
-        expect(value).equals(0);
-
-        [stubUser, stubWorkspace].forEach(stub => {
-            stub.restore();
-        });
+        }));
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        expect(prefService.get('test.boolean')).to.be.false;
+        expect(prefService.get('test.number')).equals(0);
     });
 
-    it('Should return the preference from the less specific scope if the value is removed from the more specific one', () => {
+    it('should return the preference from the more specific scope (folders > workspace)', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+        const foldersProvider = testContainer.get(FoldersPreferencesProvider);
+        const oneFolderProvider = testContainer.get(FolderPreferenceProvider);
+        stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
+            'test.string': 'userValue',
+            'test.number': 1
+        }));
+        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({
+            'test.string': 'wsValue',
+            'test.number': 0
+        }));
+        stubs.push(sinon.stub(foldersProvider, 'canProvide').returns({ priority: 10, provider: oneFolderProvider }));
+        stubs.push(sinon.stub(foldersProvider, 'getPreferences').returns({
+            'test.string': 'folderValue',
+            'test.number': 20
+        }));
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        expect(prefService.get('test.string')).equals('folderValue');
+        expect(prefService.get('test.number')).equals(20);
+    });
+
+    it('should return the preference from the less specific scope if the value is removed from the more specific one', () => {
+        const userProvider = testContainer.get(UserPreferenceProvider);
+        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+        stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
-        });
+        }));
         const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
             'test.number': 0
         });
-        mockUserPreferenceEmitter.fire(undefined);
-
-        let value = prefService.get('test.boolean');
-        expect(value).to.be.false;
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        expect(prefService.get('test.boolean')).to.be.false;
 
         stubWorkspace.restore();
-        mockUserPreferenceEmitter.fire(undefined);
-
-        value = prefService.get('test.boolean');
-        expect(value).to.be.true;
-
-        stubUser.restore();
+        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({}));
+        expect(prefService.get('test.boolean')).to.be.true;
     });
 
-    it('Should throw a TypeError if the preference (reference object) is modified', () => {
+    it('should throw a TypeError if the preference (reference object) is modified', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
-        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+        stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
             'test.immutable': [
                 'test', 'test', 'test'
             ]
-        });
-        mockUserPreferenceEmitter.fire(undefined);
-
+        }));
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
         const immutablePref: string[] | undefined = prefService.get('test.immutable');
         expect(immutablePref).to.not.be.undefined;
         if (immutablePref !== undefined) {
-            expect(() => {
-                immutablePref.push('fails');
-            }).to.throw(TypeError);
+            expect(() => immutablePref.push('fails')).to.throw(TypeError);
         }
-        stubUser.restore();
     });
 
-    it('Should still report the more specific preference even though the less specific one changed', () => {
+    it('should still report the more specific preference even though the less specific one changed', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        let stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
         });
-        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
+        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
             'test.number': 0
+        }));
+        mockUserPreferenceEmitter.fire({
+            'test.number': {
+                preferenceName: 'test.number',
+                newValue: 2,
+                scope: PreferenceScope.User,
+                domain: []
+            }
         });
-        mockUserPreferenceEmitter.fire(undefined);
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        expect(prefService.get('test.number')).equals(0);
 
-        let value = prefService.get('test.number');
-        expect(value).equals(0);
         stubUser.restore();
-
-        stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+        stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 4
+        }));
+        mockUserPreferenceEmitter.fire({
+            'test.number': {
+                preferenceName: 'test.number',
+                newValue: 4,
+                scope: PreferenceScope.User,
+                domain: []
+            }
         });
-        mockUserPreferenceEmitter.fire(undefined);
-
-        value = prefService.get('test.number');
-        expect(value).equals(0);
-
-        [stubUser, stubWorkspace].forEach(stub => {
-            stub.restore();
-        });
+        expect(prefService.get('test.number')).equals(0);
     });
 
-    it('Should store preference when settings file is empty', async () => {
+    it('should store preference when settings file is empty', async () => {
         const settings = '{\n   "key": "value"\n}';
         await prefService.set('key', 'value', PreferenceScope.User);
         expect(fs.readFileSync(tempPath).toString()).equals(settings);
     });
 
-    it('Should store preference when settings file is not empty', async () => {
+    it('should store preference when settings file is not empty', async () => {
         const settings = '{\n   "key": "value",\n   "newKey": "newValue"\n}';
         fs.writeFileSync(tempPath, '{\n   "key": "value"\n}');
         await prefService.set('newKey', 'newValue', PreferenceScope.User);
         expect(fs.readFileSync(tempPath).toString()).equals(settings);
     });
 
-    it('Should override existing preference', async () => {
+    it('should override existing preference', async () => {
         const settings = '{\n   "key": "newValue"\n}';
         fs.writeFileSync(tempPath, '{\n   "key": "oldValue"\n}');
         await prefService.set('key', 'newValue', PreferenceScope.User);
@@ -306,39 +352,70 @@ describe('Preference Service', function () {
     });
 
     /**
+     * A slow provider that becomes ready after 1 second.
+     */
+    class SlowProvider extends MockPreferenceProvider {
+        constructor() {
+            super();
+            setTimeout(() => {
+                this.prefs['mypref'] = 2;
+                this._ready.resolve();
+            }, 1000);
+        }
+    }
+    /**
+     * Default provider that becomes ready after constructor gets called
+     */
+    class MockDefaultProvider extends MockPreferenceProvider {
+        constructor() {
+            super();
+            this.prefs['mypref'] = 5;
+            this._ready.resolve();
+        }
+    }
+
+    /**
      * Make sure that the preference service is ready only once the providers
      * are ready to provide preferences.
      */
-    it('Should be ready only when all providers are ready', async () => {
-        /**
-         * A slow provider that becomes ready after 1 second.
-         */
-        class SlowProvider extends PreferenceProvider {
-            // tslint:disable-next-line:no-any
-            readonly prefs: { [p: string]: any } = {};
-
-            constructor() {
-                super();
-                setTimeout(() => {
-                    this.prefs['mypref'] = 2;
-                    this._ready.resolve();
-                }, 1000);
-            }
-
-            getPreferences() {
-                return this.prefs;
-            }
-        }
-
+    it('should be ready only when all providers are ready', async () => {
         const container = new Container();
         bindPreferenceSchemaProvider(container.bind.bind(container));
-        container.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => new SlowProvider());
+        container.bind(ILogger).to(MockLogger);
+        container.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
+            if (scope === PreferenceScope.User) {
+                return new MockDefaultProvider();
+            }
+            return new SlowProvider();
+        });
         container.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
         const service = container.get<PreferenceServiceImpl>(PreferenceServiceImpl);
         service.initialize();
+        prefSchema = container.get(PreferenceSchemaProvider);
         await service.ready;
-        const n = service.getNumber('mypref');
-        expect(n).to.equal(2);
+        stubs.push(sinon.stub(PreferenceServiceImpl, <any>'doSetProvider').callsFake(() => { }));
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        expect(service.get('mypref')).to.equal(2);
+    });
+
+    it('should answer queries before all providers are ready', async () => {
+        const container = new Container();
+        bindPreferenceSchemaProvider(container.bind.bind(container));
+        container.bind(ILogger).to(MockLogger);
+        container.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
+            if (scope === PreferenceScope.User) {
+                return new MockDefaultProvider();
+            }
+            return new SlowProvider();
+        });
+        container.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+
+        const service = container.get<PreferenceServiceImpl>(PreferenceServiceImpl);
+        service.initialize();
+        prefSchema = container.get(PreferenceSchemaProvider);
+        stubs.push(sinon.stub(PreferenceServiceImpl, <any>'doSetProvider').callsFake(() => { }));
+        stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+        expect(service.get('mypref')).to.equal(5);
     });
 });

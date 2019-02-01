@@ -27,8 +27,10 @@ import { DefaultWindowService, WindowService } from '@theia/core/lib/browser/win
 import { WorkspaceServer } from '../common';
 import { DefaultWorkspaceServer } from '../node/default-workspace-server';
 import { Emitter, Disposable, DisposableCollection, ILogger, Logger } from '@theia/core';
+import { PreferenceServiceImpl, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { WorkspacePreferences } from './workspace-preferences';
 import { createMockPreferenceProxy } from '@theia/core/lib/browser/preferences/test';
+import * as jsoncparser from 'jsonc-parser';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import URI from '@theia/core/lib/common/uri';
@@ -46,6 +48,10 @@ const folderB = Object.freeze(<FileStat>{
     lastModification: 0,
     isDirectory: true
 });
+const getFormattedJson = (data: string): string => {
+    const edits = jsoncparser.format(data, undefined, { tabSize: 3, insertSpaces: true, eol: '' });
+    return jsoncparser.applyEdits(data, edits);
+};
 
 // tslint:disable:no-any
 // tslint:disable:no-unused-expression
@@ -66,6 +72,8 @@ describe('WorkspaceService', () => {
     let mockWindowService: WindowService;
     let mockILogger: ILogger;
     let mockPref: WorkspacePreferences;
+    let mockPreferenceServiceImpl: PreferenceServiceImpl;
+    let mockPreferenceSchemaProvider: PreferenceSchemaProvider;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -86,6 +94,8 @@ describe('WorkspaceService', () => {
         mockWindowService = sinon.createStubInstance(DefaultWindowService);
         mockILogger = sinon.createStubInstance(Logger);
         mockPref = createMockPreferenceProxy(mockPreferenceValues);
+        mockPreferenceServiceImpl = sinon.createStubInstance(PreferenceServiceImpl);
+        mockPreferenceSchemaProvider = sinon.createStubInstance(PreferenceSchemaProvider);
 
         const testContainer = new Container();
         testContainer.bind(WorkspaceService).toSelf().inSingletonScope();
@@ -95,6 +105,8 @@ describe('WorkspaceService', () => {
         testContainer.bind(WindowService).toConstantValue(mockWindowService);
         testContainer.bind(ILogger).toConstantValue(mockILogger);
         testContainer.bind(WorkspacePreferences).toConstantValue(mockPref);
+        testContainer.bind(PreferenceServiceImpl).toConstantValue(mockPreferenceServiceImpl);
+        testContainer.bind(PreferenceSchemaProvider).toConstantValue(mockPreferenceSchemaProvider);
 
         // stub the updateTitle() & reloadWindow() function because `document` and `window` are unavailable
         updateTitleStub = sinon.stub(WorkspaceService.prototype, <any>'updateTitle').callsFake(() => { });
@@ -462,14 +474,14 @@ describe('WorkspaceService', () => {
             wsService['_workspace'] = workspaceFileStat;
             wsService['_roots'] = [folderA];
             (<sinon.SinonStub>mockFilesystem.getFileStat).resolves(folderB);
+            (<sinon.SinonStub>mockFilesystem.resolveContent).resolves({
+                stat: workspaceFileStat, content: JSON.stringify({ folders: [{ path: 'folderA' }] })
+            });
+            (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
+            const spyWriteFile = sinon.spy(wsService, <any>'writeWorkspaceFile');
 
             await wsService.addRoot(new URI(folderB.uri));
-            expect((<sinon.SinonStub>mockFilesystem.setContent).calledWith(workspaceFileStat,
-                JSON.stringify({
-                    folders: [
-                        { path: 'folderA' }, { path: 'folderB' }
-                    ]
-                }))).to.be.true;
+            expect(spyWriteFile.calledWith(workspaceFileStat, { folders: [{ path: folderA.uri }, { path: folderB.uri }] })).to.be.true;
         });
 
         [true, false].forEach(existTemporaryWorkspaceFile => {
@@ -517,15 +529,18 @@ describe('WorkspaceService', () => {
                 lastModification: 0,
                 isDirectory: false
             };
+            const oldWorkspaceData = { folders: [{ path: 'folderA' }, { path: 'folderB' }], settings: {} };
             (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
             (<sinon.SinonStub>mockFilesystem.getFileStat).resolves(file);
             wsService['_workspace'] = file;
+            wsService['_roots'] = [folderA, folderB];
             const stubSetContent = (<sinon.SinonStub>mockFilesystem.setContent).resolves(file);
+            (<sinon.SinonStub>mockFilesystem.resolveContent).resolves({ stat: file, content: JSON.stringify(oldWorkspaceData) });
 
             expect(wsService.workspace && wsService.workspace.uri).to.eq(file.uri);
             await wsService.save(new URI(file.uri));
             expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(file.uri)).to.be.true;
-            expect(stubSetContent.calledWith(file, JSON.stringify({ folders: [] }))).to.be.true;
+            expect(stubSetContent.calledWith(file, getFormattedJson(JSON.stringify(oldWorkspaceData)))).to.be.true;
             expect(wsService.workspace && wsService.workspace.uri).to.eq(file.uri);
         });
 
@@ -540,6 +555,8 @@ describe('WorkspaceService', () => {
                 lastModification: 0,
                 isDirectory: false
             };
+            const oldWorkspaceData = { folders: [{ path: 'folderA' }, { path: 'folderB' }], settings: {} };
+            wsService['_roots'] = [folderA, folderB];
             const stubExist = <sinon.SinonStub>mockFilesystem.exists;
             stubExist.withArgs(oldFile.uri).resolves(true);
             stubExist.withArgs(newFile.uri).resolves(false);
@@ -547,16 +564,17 @@ describe('WorkspaceService', () => {
             (<sinon.SinonStub>mockFileSystemWatcher.watchFileChanges).resolves(new DisposableCollection());
             wsService['_workspace'] = oldFile;
             const stubSetContent = (<sinon.SinonStub>mockFilesystem.setContent).resolves(newFile);
+            (<sinon.SinonStub>mockFilesystem.resolveContent).resolves({ stat: oldFile, content: JSON.stringify(oldWorkspaceData) });
 
             expect(wsService.workspace && wsService.workspace.uri).to.eq(oldFile.uri);
             await wsService.save(new URI(newFile.uri));
             expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(newFile.uri)).to.be.true;
-            expect(stubSetContent.calledWith(newFile, JSON.stringify({ folders: [] }))).to.be.true;
+            expect(stubSetContent.calledWith(newFile, getFormattedJson(JSON.stringify(oldWorkspaceData)))).to.be.true;
             expect(wsService.workspace && wsService.workspace.uri).to.eq(newFile.uri);
             expect(updateTitleStub.called).to.be.true;
         });
 
-        it('should use relative paths or translate relative paths to absolute path when necessary before saving', async () => {
+        it('should use relative paths or translate relative paths to absolute path when necessary before saving, and emit "savedLocationChanged" event', done => {
             const oldFile = <FileStat>{
                 uri: 'file:///home/oldFolder/oldFile',
                 lastModification: 0,
@@ -577,6 +595,8 @@ describe('WorkspaceService', () => {
                 lastModification: 0,
                 isDirectory: true
             };
+            const oldWorkspaceData = { folders: [{ path: folder1.uri }, { path: folder2.uri }], settings: {} };
+            (<sinon.SinonStub>mockFilesystem.resolveContent).resolves({ stat: oldFile, content: JSON.stringify(oldWorkspaceData) });
             const stubExist = <sinon.SinonStub>mockFilesystem.exists;
             stubExist.withArgs(oldFile.uri).resolves(true);
             stubExist.withArgs(newFile.uri).resolves(false);
@@ -587,12 +607,16 @@ describe('WorkspaceService', () => {
             (<sinon.SinonStub>mockFileSystemWatcher.watchFileChanges).resolves(new DisposableCollection());
 
             expect(wsService.workspace && wsService.workspace.uri).to.eq(oldFile.uri);
-            await wsService.save(new URI(newFile.uri));
-            expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(newFile.uri)).to.be.true;
-            expect(stubSetContent.calledWith(newFile, JSON.stringify({ folders: [{ path: folder1.uri }, { path: 'folder2' }] }))).to.be.true;
-            expect(wsService.workspace && wsService.workspace.uri).to.eq(newFile.uri);
-            expect(updateTitleStub.called).to.be.true;
-        });
+            wsService.onWorkspaceLocationChanged(() => {
+                done();
+            });
+            wsService.save(new URI(newFile.uri)).then(() => {
+                expect((<sinon.SinonStub>mockWorkspaceServer.setMostRecentlyUsedWorkspace).calledWith(newFile.uri)).to.be.true;
+                expect(stubSetContent.calledWith(newFile, getFormattedJson(JSON.stringify({ folders: [{ path: folder1.uri }, { path: 'folder2' }], settings: {} })))).to.be.true;
+                expect(wsService.workspace && wsService.workspace.uri).to.eq(newFile.uri);
+                expect(updateTitleStub.called).to.be.true;
+            });
+        }).timeout(2000);
     });
 
     describe('saved status', () => {
@@ -608,6 +632,25 @@ describe('WorkspaceService', () => {
             expect(wsService.saved).to.be.true;
             wsService['_workspace'] = folderA;
             expect(wsService.saved).to.be.false;
+        });
+    });
+
+    describe('isMultiRootWorkspaceOpened status', () => {
+        it('should be true if there is an opened workspace and preference["workspace.supportMultiRootWorkspace"] = true, otherwise false', () => {
+            mockPreferenceValues['workspace.supportMultiRootWorkspace'] = true;
+            expect(wsService.isMultiRootWorkspaceOpened).to.be.false;
+
+            const file = <FileStat>{
+                uri: 'file:///home/file',
+                lastModification: 0,
+                isDirectory: false
+            };
+            wsService['_workspace'] = file;
+            mockPreferenceValues['workspace.supportMultiRootWorkspace'] = true;
+            expect(wsService.isMultiRootWorkspaceOpened).to.be.true;
+
+            mockPreferenceValues['workspace.supportMultiRootWorkspace'] = false;
+            expect(wsService.isMultiRootWorkspaceOpened).to.be.false;
         });
     });
 
@@ -671,12 +714,14 @@ describe('WorkspaceService', () => {
             wsService['_roots'] = [folderA, folderB];
             const stubSetContent = <sinon.SinonStub>mockFilesystem.setContent;
             stubSetContent.resolves(file);
+            (<sinon.SinonStub>mockFilesystem.resolveContent).resolves({ stat: file, content: JSON.stringify({ folders: [{ path: 'folderA' }, { path: 'folderB' }] }) });
+            (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
 
             await wsService.removeRoots([new URI()]);
-            expect(stubSetContent.calledWith(file, JSON.stringify({ folders: [{ path: 'folderA' }, { path: 'folderB' }] }))).to.be.true;
+            expect(stubSetContent.calledWith(file, getFormattedJson(JSON.stringify({ folders: [{ path: 'folderA' }, { path: 'folderB' }] })))).to.be.true;
 
             await wsService.removeRoots([new URI(folderB.uri)]);
-            expect(stubSetContent.calledWith(file, JSON.stringify({ folders: [{ path: 'folderA' }] }))).to.be.true;
+            expect(stubSetContent.calledWith(file, getFormattedJson(JSON.stringify({ folders: [{ path: 'folderA' }] })))).to.be.true;
         });
     });
 

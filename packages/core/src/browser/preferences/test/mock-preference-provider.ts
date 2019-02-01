@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
+ * Copyright (C) 2019 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,21 +15,24 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { PreferenceService, PreferenceChange } from '../';
-import { Emitter, Event } from '../../../common';
+import { PreferenceProvider, PreferenceProviderPriority } from '../';
 
 @injectable()
-export class MockPreferenceService implements PreferenceService {
-    constructor() { }
-    dispose() { }
-    get<T>(preferenceName: string): T | undefined;
-    get<T>(preferenceName: string, defaultValue: T): T;
-    get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
-        return undefined;
+export class MockPreferenceProvider extends PreferenceProvider {
+    // tslint:disable-next-line:no-any
+    readonly prefs: { [p: string]: any } = {};
+
+    getPreferences() {
+        return this.prefs;
     }
     // tslint:disable-next-line:no-any
-    set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
-    ready: Promise<void> = Promise.resolve();
-    readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
+    setPreference(key: string, value: any, resourceUri?: string): Promise<void> {
+        return Promise.resolve();
+    }
+    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
+        if (this.prefs[preferenceName] === undefined) {
+            return { priority: PreferenceProviderPriority.NA, provider: this };
+        }
+        return { priority: PreferenceProviderPriority.User, provider: this };
+    }
 }

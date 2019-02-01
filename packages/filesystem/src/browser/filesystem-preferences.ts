@@ -35,13 +35,14 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
                 '**/.git/objects/**': true,
                 '**/.git/subtree-cache/**': true,
                 '**/node_modules/**': true
-            }
+            },
+            'scope': 'resource'
         }
     }
 };
 
 export interface FileSystemConfiguration {
-    'files.watcherExclude': { [globPattern: string]: boolean }
+    'files.watcherExclude': { [globPattern: string]: boolean };
 }
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');

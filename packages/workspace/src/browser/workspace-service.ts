@@ -20,7 +20,9 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider
+} from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -56,6 +58,12 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;
+
+    @inject(PreferenceServiceImpl)
+    protected readonly preferenceImpl: PreferenceServiceImpl;
+
+    @inject(PreferenceSchemaProvider)
+    protected readonly schemaProvider: PreferenceSchemaProvider;
 
     protected applicationName: string;
 
@@ -117,6 +125,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return this.onWorkspaceChangeEmitter.event;
     }
 
+    protected readonly onWorkspaceLocationChangedEmitter = new Emitter<FileStat | undefined>();
+    get onWorkspaceLocationChanged(): Event<FileStat | undefined> {
+        return this.onWorkspaceLocationChangedEmitter.event;
+    }
+
     protected readonly toDisposeOnWorkspace = new DisposableCollection();
     protected async setWorkspace(workspaceStat: FileStat | undefined): Promise<void> {
         if (FileStat.equals(this._workspace, workspaceStat)) {
@@ -136,16 +149,33 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async updateWorkspace(): Promise<void> {
+        if (this._workspace) {
+            this.toFileStat(this._workspace.uri).then(stat => this._workspace = stat);
+        }
         await this.updateRoots();
         this.watchRoots();
     }
 
     protected async updateRoots(): Promise<void> {
-        this._roots = await this.computeRoots();
-        this.deferredRoots.resolve(this._roots); // in order to resolve first
-        this.deferredRoots = new Deferred<FileStat[]>();
-        this.deferredRoots.resolve(this._roots);
-        this.onWorkspaceChangeEmitter.fire(this._roots);
+        const newRoots = await this.computeRoots();
+        let rootsChanged = false;
+        if (newRoots.length !== this._roots.length || newRoots.length === 0) {
+            rootsChanged = true;
+        } else {
+            for (const newRoot of newRoots) {
+                if (!this._roots.some(r => r.uri === newRoot.uri)) {
+                    rootsChanged = true;
+                    break;
+                }
+            }
+        }
+        if (rootsChanged) {
+            this._roots = newRoots;
+            this.deferredRoots.resolve(this._roots); // in order to resolve first
+            this.deferredRoots = new Deferred<FileStat[]>();
+            this.deferredRoots.resolve(this._roots);
+            this.onWorkspaceChangeEmitter.fire(this._roots);
+        }
     }
 
     protected async computeRoots(): Promise<FileStat[]> {
@@ -223,7 +253,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Returns `true` if current workspace root is set.
+     * Returns `true` if theia has an opened workspace or folder
      * @returns {boolean}
      */
     get opened(): boolean {
@@ -260,7 +290,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             if (preserveWindow) {
                 this._workspace = stat;
             }
-            await this.openWindow(stat, { preserveWindow });
+            this.openWindow(stat, { preserveWindow });
             return;
         }
         throw new Error('Invalid workspace root URI. Expected an existing directory location.');
@@ -288,7 +318,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
                     await this.save(tempFile);
                 }
             }
-            this._workspace = await this.writeWorkspaceFile(this._workspace, [...this._roots, valid]);
+            const workspaceData = await this.getWorkspaceDataFromFile();
+            this._workspace = await this.writeWorkspaceFile(this._workspace,
+                WorkspaceData.buildWorkspaceData([...this._roots, valid], workspaceData ? workspaceData.settings : undefined));
         }
     }
 
@@ -300,21 +332,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
             throw new Error('Folder cannot be removed as there is no active folder in the current workspace.');
         }
         if (this._workspace) {
-            this._workspace = await this.writeWorkspaceFile(
-                this._workspace, this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0)
+            const workspaceData = await this.getWorkspaceDataFromFile();
+            this._workspace = await this.writeWorkspaceFile(this._workspace,
+                WorkspaceData.buildWorkspaceData(
+                    this._roots.filter(root => uris.findIndex(u => u.toString() === root.uri) < 0),
+                    workspaceData!.settings
+                )
             );
         }
     }
 
-    private async writeWorkspaceFile(workspaceFile: FileStat | undefined, rootFolders: FileStat[]): Promise<FileStat | undefined> {
+    private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
         if (workspaceFile) {
-            const workspaceData = WorkspaceData.transformToRelative(
-                WorkspaceData.buildWorkspaceData(rootFolders.map(f => f.uri)), workspaceFile
-            );
-            if (workspaceData) {
-                const stat = await this.fileSystem.setContent(workspaceFile, JSON.stringify(workspaceData));
-                return stat;
-            }
+            const data = JSON.stringify(WorkspaceData.transformToRelative(workspaceData, workspaceFile));
+            const edits = jsoncparser.format(data, undefined, { tabSize: 3, insertSpaces: true, eol: '' });
+            const result = jsoncparser.applyEdits(data, edits);
+            const stat = await this.fileSystem.setContent(workspaceFile, result);
+            return stat;
         }
     }
 
@@ -444,10 +478,24 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!await this.fileSystem.exists(uriStr)) {
             await this.fileSystem.createFile(uriStr);
         }
+        const workspaceData: WorkspaceData = { folders: [], settings: {} };
+        if (!this.saved) {
+            for (const p of Object.keys(this.schemaProvider.getCombinedSchema().properties)) {
+                if (this.schemaProvider.isValidInScope(p, PreferenceScope.Folder)) {
+                    continue;
+                }
+                const preferences = this.preferenceImpl.inspect(p);
+                if (preferences && preferences.workspaceValue) {
+                    workspaceData.settings![p] = preferences.workspaceValue;
+                }
+            }
+        }
         let stat = await this.toFileStat(uriStr);
-        stat = await this.writeWorkspaceFile(stat, this._roots);
+        Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
+        stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData ? workspaceData.settings : undefined));
         await this.server.setMostRecentlyUsedWorkspace(uriStr);
         await this.setWorkspace(stat);
+        this.onWorkspaceLocationChangedEmitter.fire(stat);
     }
 
     protected readonly rootWatchers = new Map<string, Disposable>();
@@ -512,8 +560,9 @@ export interface WorkspaceInput {
 }
 
 export interface WorkspaceData {
-    folders: Array<{ path: string }>;
-    // TODO add workspace settings settings?: { [id: string]: any };
+    folders: Array<{ path: string, name?: string }>;
+    // tslint:disable-next-line:no-any
+    settings?: { [id: string]: any };
 }
 
 export namespace WorkspaceData {
@@ -532,8 +581,13 @@ export namespace WorkspaceData {
                     },
                     required: ['path']
                 }
+            },
+            settings: {
+                description: 'Workspace preferences',
+                type: 'object'
             }
-        }
+        },
+        required: ['folders']
     });
 
     // tslint:disable-next-line:no-any
@@ -541,10 +595,23 @@ export namespace WorkspaceData {
         return !!validateSchema(data);
     }
 
-    export function buildWorkspaceData(folders: string[]): WorkspaceData {
-        return {
-            folders: folders.map(f => ({ path: f }))
+    // tslint:disable-next-line:no-any
+    export function buildWorkspaceData(folders: string[] | FileStat[], settings: { [id: string]: any } | undefined): WorkspaceData {
+        let roots: string[] = [];
+        if (folders.length > 0) {
+            if (typeof folders[0] !== 'string') {
+                roots = (<FileStat[]>folders).map(folder => folder.uri);
+            } else {
+                roots = <string[]>folders;
+            }
+        }
+        const data: WorkspaceData = {
+            folders: roots.map(folder => ({ path: folder }))
         };
+        if (settings) {
+            data.settings = settings;
+        }
+        return data;
     }
 
     export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
@@ -559,7 +626,7 @@ export namespace WorkspaceData {
                 folderUris.push(folderUri.toString());
             }
         }
-        return buildWorkspaceData(folderUris);
+        return buildWorkspaceData(folderUris, data.settings);
     }
 
     export function transformToAbsolute(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
@@ -574,7 +641,7 @@ export namespace WorkspaceData {
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders));
+            return Object.assign(data, buildWorkspaceData(folders, data.settings));
         }
         return data;
     }
