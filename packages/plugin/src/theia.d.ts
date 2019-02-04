@@ -3767,6 +3767,17 @@ declare module '@theia/plugin' {
      * the editor-process so that they should be always used instead of nodejs-equivalents.
      */
     export namespace workspace {
+
+        /**
+         * ~~The folder that is open in the editor. `undefined` when no folder
+         * has been opened.~~
+         *
+         * @deprecated Use [`workspaceFolders`](#workspace.workspaceFolders) instead.
+         *
+         * @readonly
+         */
+        export let rootPath: string | undefined;
+
         /**
          * List of workspace folders or `undefined` when no folder is open.
          * *Note* that the first entry corresponds to the value of `rootPath`.
