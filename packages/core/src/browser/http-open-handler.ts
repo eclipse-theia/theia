@@ -31,9 +31,8 @@ export class HttpOpenHandler implements OpenHandler {
         return uri.scheme.startsWith('http') ? 500 : 0;
     }
 
-    open(uri: URI): undefined {
-        this.windowService.openNewWindow(uri.toString(true), { external: true });
-        return undefined;
+    open(uri: URI): Window | undefined {
+        return this.windowService.openNewWindow(uri.toString(true), { external: true });
     }
 
 }
