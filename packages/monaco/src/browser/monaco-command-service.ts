@@ -49,6 +49,9 @@ export class MonacoCommandService implements ICommandService {
             ));
         }
     }
+    getDelegate(): ICommandService | undefined {
+        return this.delegate;
+    }
 
     // tslint:disable-next-line:no-any
     executeCommand(commandId: any, ...args: any[]): monaco.Promise<any> {

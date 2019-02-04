@@ -35,6 +35,7 @@ import {
     EditorMouseEvent
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
+import { MonacoCommandService } from './monaco-command-service';
 
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions;
 import IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;
@@ -362,7 +363,11 @@ export class MonacoEditor implements TextEditor {
     }
 
     get commandService(): monaco.commands.ICommandService {
-        return this.editor._commandService;
+        const commandService = this.editor._commandService;
+        if (commandService instanceof MonacoCommandService) {
+            return commandService.getDelegate() || commandService;
+        }
+        return commandService;
     }
 
     get instantiationService(): monaco.instantiation.IInstantiationService {

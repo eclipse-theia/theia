@@ -83,6 +83,8 @@ export namespace MonacoCommands {
             const label = command.label;
             const iconClass = iconClasses.get(id);
             ACTIONS.push({ id, label, iconClass });
+        } else {
+            ACTIONS.push({ id });
         }
     }
 }
@@ -239,9 +241,96 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     protected registerMonacoActionCommands(): void {
+        const missingMonacoCommands = new Set([
+            'undo',
+            'redo',
+            // https://code.visualstudio.com/docs/getstarted/keybindings#_basic-editing
+            'editor.action.clipboardCutAction',
+            'editor.action.clipboardCopyAction',
+            'editor.action.deleteLines',
+            'editor.action.insertLineAfter',
+            'editor.action.insertLineBefore',
+            'editor.action.moveLinesDownAction',
+            'editor.action.moveLinesUpAction',
+            'editor.action.copyLinesDownAction',
+            'editor.action.copyLinesUpAction',
+            'editor.action.addSelectionToNextFindMatch',
+            'editor.action.moveSelectionToNextFindMatch',
+            'cursorUndo',
+            'editor.action.insertCursorAtEndOfEachLineSelected',
+            'editor.action.selectHighlights',
+            'editor.action.changeAll',
+            'expandLineSelection',
+            'editor.action.insertCursorBelow',
+            'editor.action.insertCursorAbove',
+            'editor.action.jumpToBracket',
+            'editor.action.indentLines',
+            'editor.action.outdentLines',
+            'cursorHome',
+            'cursorEnd',
+            'cursorBottom',
+            'cursorTop',
+            'scrollLineDown',
+            'scrollLineUp',
+            'scrollPageDown',
+            'scrollPageUp',
+            'editor.fold',
+            'editor.unfold',
+            'editor.foldRecursively',
+            'editor.unfoldRecursively',
+            'editor.foldAll',
+            'editor.unfoldAll',
+            'editor.action.addCommentLine',
+            'editor.action.removeCommentLine',
+            'editor.action.commentLine',
+            'editor.action.blockComment',
+            'actions.find',
+            'editor.action.startFindReplaceAction',
+            'editor.action.nextMatchFindAction',
+            'editor.action.previousMatchFindAction',
+            'editor.action.selectAllMatches',
+            'toggleFindCaseSensitive',
+            'toggleFindRegex',
+            'toggleFindWholeWord',
+            'editor.action.toggleTabFocusMode',
+            // Should be reimplemented by plugin extension, not part of Monaco
+            // 'toggleRenderWhitespace',
+            // 'editor.action.toggleWordWrap',
+            // 'workbench.action.editor.changeLanguageMode',
+            // https://code.visualstudio.com/docs/getstarted/keybindings#_rich-languages-editing
+            'editor.action.triggerSuggest',
+            'editor.action.triggerParameterHints',
+            'editor.action.formatDocument',
+            'editor.action.formatSelection',
+            'editor.action.showHover',
+            // Requier Monaco upgrade
+            // 'editor.action.revealDefinition',
+            // 'editor.action.peekDefinition',
+            // 'editor.action.revealDefinitionAside',
+            'editor.action.quickFix',
+            'editor.action.referenceSearch.trigger',
+            'editor.action.rename',
+            'editor.action.inPlaceReplace.down',
+            'editor.action.inPlaceReplace.up',
+            'editor.action.smartSelect.grow',
+            'editor.action.smartSelect.shrink',
+            'editor.action.trimTrailingWhitespace',
+        ]);
         for (const action of MonacoCommands.ACTIONS) {
+            missingMonacoCommands.delete(action.id);
             const handler = this.newMonacoActionHandler(action);
             this.registry.registerCommand(action, handler);
+        }
+        for (const id of missingMonacoCommands) {
+            const command = monaco.commands.CommandsRegistry.getCommand(id);
+            if (command) {
+                missingMonacoCommands.delete(id);
+                const handler = this.newCommandHandler(id);
+                this.registry.registerCommand({ id }, handler);
+            }
+        }
+        if (missingMonacoCommands.size) {
+            console.error('Missing VS Code commands', JSON.stringify([...missingMonacoCommands], undefined, 2));
         }
     }
     protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {

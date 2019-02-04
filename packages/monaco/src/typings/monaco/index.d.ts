@@ -277,6 +277,16 @@ declare module monaco.commands {
         executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
 
+    export interface ICommand {
+        id: string;
+    }
+
+    export interface ICommandRegistry {
+        getCommand(id: string): ICommand | undefined;
+    }
+
+    export const CommandsRegistry: ICommandRegistry;
+
 }
 
 declare module monaco.actions {
