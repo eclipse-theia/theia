@@ -7,6 +7,9 @@
 - [electron] open markdown links in the OS default browser
 - [plugin] added ability to display webview panel in 'left', 'right' and 'bottom' area
 - [plugin] added `tasks.taskExecutions` Plug-in API
+- [plugin] the "Command" interface has been split into two: "CommandDescription" and "Command". "Command" has been
+made compatible with the "Command" interface in vscode. This is not a breaking change, currently, but fields in those interfaces
+have been deprecated and will be removed in the future.
 
 Breaking changes:
 - menus aligned with built-in VS Code menus [#4173](https://github.com/theia-ide/theia/pull/4173)

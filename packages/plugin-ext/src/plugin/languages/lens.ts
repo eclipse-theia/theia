@@ -25,7 +25,7 @@ import { createToken } from '../token-provider';
 /** Adapts the calls from main to extension thread for providing/resolving the code lenses. */
 export class CodeLensAdapter {
 
-    private static readonly BAD_CMD: theia.Command = { id: 'missing', label: '<<MISSING COMMAND>>' };
+    private static readonly BAD_CMD: theia.Command = { command: 'missing', title: '<<MISSING COMMAND>>' };
 
     private cacheId = 0;
     private cache = new Map<number, theia.CodeLens>();
@@ -47,7 +47,6 @@ export class CodeLensAdapter {
             if (Array.isArray(lenses)) {
                 return lenses.map(lens => {
                     const id = this.cacheId++;
-                    console.log(lens);
                     const lensSymbol = ObjectIdentifier.mixin({
                         range: Converter.fromRange(lens.range)!,
                         command: lens.command ? Converter.toInternalCommand(lens.command) : undefined

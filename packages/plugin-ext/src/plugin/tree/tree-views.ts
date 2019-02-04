@@ -263,7 +263,7 @@ class TreeViewExtImpl<T> extends Disposable {
             const treeItem = await this.treeDataProvider.getTreeItem(cachedElement);
 
             if (treeItem.command) {
-                this.commandRegistry.executeCommand(treeItem.command.id, ...(treeItem.command.arguments || []));
+                this.commandRegistry.executeCommand((treeItem.command.command || treeItem.command.id)!, ...(treeItem.command.arguments || []));
             }
         }
     }

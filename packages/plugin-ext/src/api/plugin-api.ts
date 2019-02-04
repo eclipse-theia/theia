@@ -153,7 +153,7 @@ export interface PluginManagerExt {
 }
 
 export interface CommandRegistryMain {
-    $registerCommand(command: theia.Command): void;
+    $registerCommand(command: theia.CommandDescription): void;
     $unregisterCommand(id: string): void;
 
     $registerHandler(id: string): void;
