@@ -161,7 +161,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
                     execute: uri => opener.open(uri),
                     isEnabled: uri => opener.canHandle(uri) > 0,
-                    isVisible: uri => opener.canHandle(uri) > 0
+                    isVisible: uri => opener.canHandle(uri) > 0 && this.areMultipleOpenHandlersPresent(openers, uri)
                 }));
             }
         });
@@ -403,6 +403,19 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 await this.workspaceService.removeRoots(toRemove);
             }
         }
+    }
+
+    protected areMultipleOpenHandlersPresent(openers: OpenHandler[], uri: URI): boolean {
+        let count = 0;
+        for (const opener of openers) {
+            if (opener.canHandle(uri) > 0) {
+                count++;
+            }
+            if (count > 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
