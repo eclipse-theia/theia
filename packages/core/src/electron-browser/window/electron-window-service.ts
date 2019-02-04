@@ -21,12 +21,13 @@ import { WindowService, NewWindowOptions } from '../../browser/window/window-ser
 @injectable()
 export class ElectronWindowService implements WindowService {
 
-    openNewWindow(url: string, { external }: NewWindowOptions = {}): void {
+    openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         if (external) {
             ipcRenderer.send('open-external', url);
         } else {
             ipcRenderer.send('create-new-window', url);
         }
+        return undefined;
     }
 
 }
