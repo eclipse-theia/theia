@@ -67,7 +67,7 @@ export class CodeActionAdapter {
                 }
                 if (CodeActionAdapter._isCommand(candidate)) {
                     result.push({
-                        title: candidate.label || '',
+                        title: candidate.title || '',
                         command: Converter.toInternalCommand(candidate)
                     });
                 } else {
@@ -98,7 +98,7 @@ export class CodeActionAdapter {
 
     // tslint:disable-next-line:no-any
     private static _isCommand(smth: any): smth is theia.Command {
-        return typeof (<theia.Command>smth).id === 'string';
+        return typeof (<theia.Command>smth).command === 'string' || typeof (<theia.Command>smth).id === 'string';
     }
 
     // tslint:disable-next-line:no-any

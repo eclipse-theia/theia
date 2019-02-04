@@ -18,8 +18,7 @@ import * as theia from '@theia/plugin';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from './types-impl';
-import { Command } from '../api/model';
-import { ObjectIdentifier } from '../common/object-identifier';
+import { KnownCommands } from './type-converters';
 
 // tslint:disable-next-line:no-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
@@ -29,30 +28,13 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private proxy: CommandRegistryMain;
     private readonly commands = new Set<string>();
     private readonly handlers = new Map<string, Handler>();
-    private converter: CommandsConverter;
-    private cache = new Map<number, theia.Command>();
-    private delegatingCommandId: string;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
     }
 
-    getConverter(): CommandsConverter {
-        if (this.converter) {
-            return this.converter;
-        } else {
-            this.delegatingCommandId = `_internal_command_delegation_${Date.now()}`;
-            const command: theia.Command = {
-                id: this.delegatingCommandId
-            };
-            this.registerCommand(command, this.executeConvertedCommand);
-            this.converter = new CommandsConverter(this.delegatingCommandId, this.cache);
-            return this.converter;
-        }
-    }
-
     // tslint:disable-next-line:no-any
-    registerCommand(command: theia.Command, handler?: Handler, thisArg?: any): Disposable {
+    registerCommand(command: theia.CommandDescription, handler?: Handler, thisArg?: any): Disposable {
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
         }
@@ -97,14 +79,16 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // tslint:disable:no-any
     executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
         } else {
-            return this.proxy.$executeCommand(id, ...args);
+            return KnownCommands.map(id, args, (mappedId: string, mappedArgs: any[] | undefined) =>
+                this.proxy.$executeCommand(mappedId, ...mappedArgs));
         }
     }
+    // tslint:enable:no-any
 
     getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
         return this.proxy.$getKeyBinding(commandId);
@@ -114,22 +98,10 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         const handler = this.handlers.get(id);
         if (handler) {
-            const result = id === this.delegatingCommandId ?
-                handler(this, ...args)
-                : handler.apply(undefined, args);
-            return Promise.resolve(result);
+            return Promise.resolve(handler(...args));
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
         }
-    }
-
-    // tslint:disable-next-line:no-any
-    executeConvertedCommand(commands: CommandRegistryImpl, ...args: any[]): PromiseLike<any> {
-        const actualCmd = commands.cache.get(args[0]);
-        if (!actualCmd) {
-            return Promise.resolve(undefined);
-        }
-        return commands.executeCommand(actualCmd.command ? actualCmd.command : actualCmd.id, ...(actualCmd.arguments || []));
     }
 
     async getCommands(filterUnderscoreCommands: boolean = false): Promise<string[]> {
@@ -138,80 +110,5 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             return result.filter(command => command[0] !== '_');
         }
         return result;
-    }
-}
-
-/** Converter between internal and api commands. */
-export class CommandsConverter {
-    private readonly delegatingCommandId: string;
-    private cacheId = 0;
-    private cache: Map<number, theia.Command>;
-
-    constructor(id: string, cache: Map<number, theia.Command>) {
-        this.cache = cache;
-        this.delegatingCommandId = id;
-    }
-
-    toInternal(command: theia.Command | undefined): Command | undefined {
-        if (!command) {
-            return undefined;
-        }
-
-        let title;
-        if (command.title) {
-            title = command.title;
-        } else if (command.label) {
-            title = command.label;
-        } else {
-            return undefined;
-        }
-
-        const result: Command = {
-            id: command.command ? command.command : command.id,
-            title: title
-        };
-
-        if (command.command && !CommandsConverter.isFalsyOrEmpty(command.arguments)) {
-            const id = this.cacheId++;
-            ObjectIdentifier.mixin(result, id);
-            this.cache.set(id, command);
-
-            result.id = this.delegatingCommandId;
-            result.arguments = [id];
-        }
-
-        if (command.tooltip) {
-            result.tooltip = command.tooltip;
-        }
-
-        return result;
-    }
-
-    fromInternal(command: Command | undefined): theia.Command | undefined {
-        if (!command) {
-            return undefined;
-        }
-
-        const id = ObjectIdentifier.of(command);
-        if (typeof id === 'number') {
-            return this.cache.get(id);
-        } else {
-            return {
-                id: command.id,
-                label: command.title,
-                command: command.id,
-                title: command.title,
-                arguments: command.arguments
-            };
-        }
-    }
-
-    /**
-     * @returns `false` if the provided object is an array and not empty.
-     */
-    // tslint:disable-next-line:no-any
-    private static isFalsyOrEmpty(obj: any): boolean {
-        // tslint:disable-next-line:no-any
-        return !Array.isArray(obj) || (<Array<any>>obj).length === 0;
     }
 }
