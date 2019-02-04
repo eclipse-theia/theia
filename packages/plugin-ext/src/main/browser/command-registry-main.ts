@@ -91,7 +91,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
     }
 
     $getCommands(): PromiseLike<string[]> {
-        throw new Error('Method not implemented.');
+        return Promise.resolve(this.delegate.commandIds);
     }
 
 }
