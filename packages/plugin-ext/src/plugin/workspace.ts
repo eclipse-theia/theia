@@ -50,6 +50,11 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         this.fileSystemWatcherManager = new InPluginFileSystemWatcherProxy(this.proxy);
     }
 
+    get rootPath(): string | undefined {
+        const folder = this.folders && this.folders[0];
+        return folder && folder.uri.fsPath;
+    }
+
     get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
         return this.folders;
     }

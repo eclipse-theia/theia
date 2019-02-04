@@ -354,6 +354,9 @@ export function createAPIFactory(
         };
 
         const workspace: typeof theia.workspace = {
+            get rootPath(): string | undefined {
+                return workspaceExt.rootPath;
+            },
             get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
                 return workspaceExt.workspaceFolders;
             },
