@@ -2009,12 +2009,20 @@ declare module '@theia/plugin' {
         export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable;
 
         /**
-         * Register a text editor command which can execute only if active editor present and command has access to the active editor
+         * Registers a text editor command that can be invoked via a keyboard shortcut,
+         * a menu item, an action, or directly.
          *
-         * @param command a command description
-         * @param handler a command handler with access to text editor
+         * Text editor commands are different from ordinary [commands](#commands.registerCommand) as
+         * they only execute when there is an active editor when the command is called. Also, the
+         * command handler of an editor command has access to the active editor and to an
+         * [edit](#TextEditorEdit)-builder.
+         *
+         * @param command A unique identifier for the command.
+         * @param callback A command handler function with access to an [editor](#TextEditor) and an [edit](#TextEditorEdit).
+         * @param thisArg The `this` context used when invoking the handler function.
+         * @return Disposable which unregisters this command on disposal.
          */
-        export function registerTextEditorCommand(command: Command, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void): Disposable;
+        export function registerTextEditorCommand(command: string, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void, thisArg?: any): Disposable;
 
         /**
          * Execute the active handler for the given command and arguments.
