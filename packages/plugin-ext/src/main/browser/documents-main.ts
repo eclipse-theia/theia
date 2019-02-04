@@ -23,6 +23,7 @@ import { EditorModelService } from './text-editor-model-service';
 import { createUntitledResource } from './editor/untitled-resource';
 import { EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import CodeURI from 'vscode-uri';
 import { ApplicationShell, OpenerOptions, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../api/model';
 import { Range } from 'vscode-languageserver-types';
@@ -154,16 +155,16 @@ export class DocumentsMainImpl implements DocumentsMain {
                     widgetOptions
                 };
             }
-            const uriArg = new URI(uri.external!);
+            const uriArg = new URI(CodeURI.revive(uri));
             const opener = await this.openerService.getOpener(uriArg, openerOptions);
-            opener.open(uriArg, openerOptions);
+            await opener.open(uriArg, openerOptions);
         } catch (err) {
             throw new Error(err);
         }
     }
 
     async $trySaveDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManger.getByUri(new URI(uri.external!));
+        const widget = await this.editorManger.getByUri(new URI(CodeURI.revive(uri)));
         if (widget) {
             await Saveable.save(widget);
             return true;
