@@ -170,7 +170,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             isVisible: widget => !!this.getSourceUri(widget)
         });
         commands.registerCommand(MiniBrowserCommands.OPEN_URL, {
-            execute: () => this.openUrl()
+            execute: (arg?: string) => this.openUrl(arg)
         });
     }
 
@@ -243,8 +243,8 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         return uri;
     }
 
-    protected async openUrl(): Promise<void> {
-        const url = await this.quickInputService.open({
+    protected async openUrl(arg?: string): Promise<void> {
+        const url = arg ? arg : await this.quickInputService.open({
             prompt: 'URL to open',
             placeHolder: 'Type a URL'
         });
