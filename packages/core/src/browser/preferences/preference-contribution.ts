@@ -125,8 +125,30 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
             }
         }
         for (const property of props) {
-            this.preferences[property] = this.combinedSchema.properties[property].default;
+            this.preferences[property] = this.getDefaultValue(this.combinedSchema.properties[property]);
         }
+    }
+
+    protected getDefaultValue(property: PreferenceDataProperty): any {
+        if (property.default) {
+            return property.default;
+        }
+        const type = Array.isArray(property.type) ? property.type[0] : property.type;
+        switch (type) {
+            case 'boolean':
+                return false;
+            case 'integer':
+            case 'number':
+                return 0;
+            case 'string':
+                return '';
+            case 'array':
+                return [];
+            case 'object':
+                return {};
+        }
+        // tslint:disable-next-line:no-null-keyword
+        return null;
     }
 
     protected updateValidate(): void {
