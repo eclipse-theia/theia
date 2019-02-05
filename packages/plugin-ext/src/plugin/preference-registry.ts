@@ -25,7 +25,7 @@ import {
     PreferenceData
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { isObject } from '../common/types';
+import { isObject, mixin } from '../common/types';
 import { PreferenceChange } from '@theia/core/lib/browser';
 import { Configuration, ConfigurationModel } from './preferences/configuration';
 import { WorkspaceExtImpl } from './workspace';
@@ -179,7 +179,12 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                 return configInspect;
             }
         };
-        return configuration;
+
+        if (typeof preferences === 'object') {
+            mixin(configuration, preferences, false);
+        }
+
+        return Object.freeze(configuration);
     }
 
     private toReadonlyValue(data: any): any {
