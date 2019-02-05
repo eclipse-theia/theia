@@ -49,7 +49,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
         // redefine property
         Object.defineProperty(panel.webview, 'html', {
             set: function (html: string) {
-                const newHtml = html.replace('vscode-resource:/', '/webview/');
+                const newHtml = html.replace(new RegExp('vscode-resource:/', 'g'), '/webview/');
                 this.checkIsDisposed();
                 if (this._html !== newHtml) {
                     this._html = newHtml;
