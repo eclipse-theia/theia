@@ -1996,7 +1996,7 @@ declare module '@theia/plugin' {
          *
          * Throw if a command is already registered for the given command identifier.
          */
-        export function registerCommand(command: Command, handler?: (...args: any[]) => any): Disposable;
+        export function registerCommand(command: Command, handler?: (...args: any[]) => any, thisArg?: any): Disposable;
 
         /**
          * Register the given handler for the given command identifier.
@@ -2006,7 +2006,7 @@ declare module '@theia/plugin' {
          *
          * Throw if a handler for the given command identifier is already registered.
          */
-        export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable;
+        export function registerHandler(commandId: string, handler: (...args: any[]) => any, thisArg?: any): Disposable;
 
         /**
          * Registers a text editor command that can be invoked via a keyboard shortcut,

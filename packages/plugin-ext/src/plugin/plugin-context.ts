@@ -154,8 +154,8 @@ export function createAPIFactory(
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
             // tslint:disable-next-line:no-any
-            registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
-                return commandRegistry.registerCommand(command, handler);
+            registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): Disposable {
+                return commandRegistry.registerCommand(command, handler, thisArg);
             },
             // tslint:disable-next-line:no-any
             executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined> {
@@ -182,8 +182,8 @@ export function createAPIFactory(
                 });
             },
             // tslint:disable-next-line:no-any
-            registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable {
-                return commandRegistry.registerHandler(commandId, handler);
+            registerHandler(commandId: string, handler: (...args: any[]) => any, thisArg?: any): Disposable {
+                return commandRegistry.registerHandler(commandId, handler, thisArg);
             },
             getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
                 return commandRegistry.getKeyBinding(commandId);

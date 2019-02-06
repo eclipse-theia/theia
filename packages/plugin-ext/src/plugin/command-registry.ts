@@ -57,7 +57,8 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
-    registerCommand(command: theia.Command, handler?: Handler): Disposable {
+    // tslint:disable-next-line:no-any
+    registerCommand(command: theia.Command, handler?: Handler, thisArg?: any): Disposable {
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
         }
@@ -66,7 +67,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
         const toDispose: Disposable[] = [];
         if (handler) {
-            toDispose.push(this.registerHandler(command.id, handler));
+            toDispose.push(this.registerHandler(command.id, handler, thisArg));
         }
         toDispose.push(Disposable.create(() => {
             this.commands.delete(command.id);
@@ -75,12 +76,14 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         return Disposable.from(...toDispose);
     }
 
-    registerHandler(commandId: string, handler: Handler): Disposable {
+    // tslint:disable-next-line:no-any
+    registerHandler(commandId: string, handler: Handler, thisArg?: any): Disposable {
         if (this.handlers.has(commandId)) {
             throw new Error(`Command "${commandId}" already has handler`);
         }
         this.proxy.$registerHandler(commandId);
-        this.handlers.set(commandId, handler);
+        // tslint:disable-next-line:no-any
+        this.handlers.set(commandId, (...args: any[]) => handler.apply(thisArg, args));
         return Disposable.create(() => {
             this.handlers.delete(commandId);
             this.proxy.$unregisterHandler(commandId);
