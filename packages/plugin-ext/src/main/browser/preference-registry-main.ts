@@ -51,7 +51,10 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
 
         preferenceServiceImpl.onPreferenceChanged(e => {
             const data = getPreferences(this.preferenceProviderProvider);
-            this.proxy.$acceptConfigurationChanged(data, Object.assign({}, e));
+            this.proxy.$acceptConfigurationChanged(data, {
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            });
         });
     }
 
