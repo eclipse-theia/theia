@@ -41,7 +41,7 @@
 
 .dialogContent .theia-NavigationPanel,
 .dialogContent .theia-FiltersPanel {
-    height: 27px;
+    min-height: 27px;
 }
 
 .dialogContent .theia-FileNamePanel {

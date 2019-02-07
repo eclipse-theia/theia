@@ -49,12 +49,12 @@
     background-color: var(--theia-ui-dialog-header-color);
     color: var(--theia-ui-dialog-header-font-color);
     padding: 0 calc(var(--theia-ui-padding)*2);
-    height: 28px;
+    min-height: 24px;
 }
 
 .p-Widget.dialogOverlay .dialogTitle i.closeButton {
     cursor: pointer;
-} 
+}
 
 .p-Widget.dialogOverlay .dialogContent {
     display: flex;
@@ -74,6 +74,7 @@
     align-content: right;
     flex-wrap: nowrap;
     justify-content: flex-end;
+    min-height: 21px;
 }
 
 input {
@@ -98,7 +99,7 @@ input {
     font-size: var(--theia-ui-font-size1);
     border-radius: 0;
     background: transparent;
-    outline: none;    
+    outline: none;
 }
 
 .p-Widget.dialogOverlay.hidden {
