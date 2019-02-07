@@ -53,8 +53,7 @@ export class PreferencesDecorator implements TreeDecorator {
                 tooltip: preferenceValue.description,
                 captionSuffixes: [
                     {
-                        data: storedValue !== undefined && typeof storedValue === 'string' ? ': ' + escapeInvisibleChars(storedValue) :
-                            preferenceValue.default !== undefined ? ': ' + preferenceValue.default : undefined,
+                        data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.default)}`
                     },
                     {
                         data: ' ' + preferenceValue.description,
@@ -72,5 +71,16 @@ export class PreferencesDecorator implements TreeDecorator {
     setActiveFolder(folder: string) {
         this.activeFolderUri = folder;
         this.fireDidChangeDecorations(this.preferences);
+    }
+
+    // tslint:disable-next-line:no-any
+    private getPreferenceDisplayValue(storedValue: any, defaultValue: any): any {
+        if (storedValue !== undefined) {
+            if (typeof storedValue === 'string') {
+                return escapeInvisibleChars(storedValue);
+            }
+            return storedValue;
+        }
+        return defaultValue;
     }
 }
