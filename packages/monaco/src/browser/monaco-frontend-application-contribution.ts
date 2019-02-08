@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 
@@ -28,12 +28,24 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
 
+    @inject(PreferenceSchemaProvider)
+    protected readonly preferenceSchema: PreferenceSchemaProvider;
+
     async initialize() {
         const currentTheme = this.themeService.getCurrentTheme();
         this.changeTheme(currentTheme.editorTheme);
         this.themeService.onThemeChange(event => this.changeTheme(event.newTheme.editorTheme));
 
         monaco.suggest.setSnippetSuggestSupport(this.snippetSuggestProvider);
+
+        for (const language of monaco.languages.getLanguages()) {
+            this.preferenceSchema.registerOverrideIdentifier(language.id);
+        }
+        const registerLanguage = monaco.languages.register.bind(monaco.languages);
+        monaco.languages.register = language => {
+            registerLanguage(language);
+            this.preferenceSchema.registerOverrideIdentifier(language.id);
+        };
     }
 
     protected changeTheme(editorTheme: string | undefined) {

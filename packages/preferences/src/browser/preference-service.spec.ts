@@ -22,13 +22,14 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
+import * as assert from 'assert';
 import * as chai from 'chai';
 import * as fs from 'fs-extra';
 import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
     PreferenceService, PreferenceScope, PreferenceProviderDataChanges,
-    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider
+    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider, PreferenceChange
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -418,4 +419,233 @@ describe('Preference Service', () => {
         stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
         expect(service.get('mypref')).to.equal(5);
     });
+
+    describe('overridden preferences', () => {
+
+        it('getPreferences', () => {
+            const { preferences, schema } = prepareServices();
+            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+
+            assert.deepEqual({
+                'editor.tabSize': 4
+            }, preferences.getPreferences());
+
+            schema.registerOverrideIdentifier('json');
+
+            assert.deepEqual({
+                'editor.tabSize': 4,
+                '[json].editor.tabSize': 2
+            }, preferences.getPreferences());
+        });
+
+        it('get #0', () => {
+            const { preferences, schema } = prepareServices();
+            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+
+            assert.equal(4, preferences.get('editor.tabSize'));
+            assert.equal(undefined, preferences.get('[json].editor.tabSize'));
+
+            schema.registerOverrideIdentifier('json');
+
+            assert.equal(4, preferences.get('editor.tabSize'));
+            assert.equal(2, preferences.get('[json].editor.tabSize'));
+        });
+
+        it('get #1', () => {
+            const { preferences, schema } = prepareServices();
+            schema.registerOverrideIdentifier('json');
+
+            assert.equal(4, preferences.get('editor.tabSize'));
+            assert.equal(4, preferences.get('[json].editor.tabSize'));
+
+            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+
+            assert.equal(4, preferences.get('editor.tabSize'));
+            assert.equal(2, preferences.get('[json].editor.tabSize'));
+        });
+
+        it('get #2', () => {
+            const { preferences, schema } = prepareServices();
+            schema.registerOverrideIdentifier('json');
+
+            assert.equal(4, preferences.get('editor.tabSize'));
+            assert.equal(4, preferences.get('[json].editor.tabSize'));
+
+            preferences.set('editor.tabSize', 2, PreferenceScope.User);
+
+            assert.equal(2, preferences.get('editor.tabSize'));
+            assert.equal(2, preferences.get('[json].editor.tabSize'));
+        });
+
+        it('has', () => {
+            const { preferences, schema } = prepareServices();
+
+            assert.ok(preferences.has('editor.tabSize'));
+            assert.ok(!preferences.has('[json].editor.tabSize'));
+
+            schema.registerOverrideIdentifier('json');
+
+            assert.ok(preferences.has('editor.tabSize'));
+            assert.ok(preferences.has('[json].editor.tabSize'));
+        });
+
+        it('inspect #0', () => {
+            const { preferences, schema } = prepareServices();
+
+            const expected = {
+                preferenceName: 'editor.tabSize',
+                defaultValue: 4,
+                globalValue: undefined,
+                workspaceValue: undefined,
+                workspaceFolderValue: undefined,
+            };
+            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.ok(!preferences.has('[json].editor.tabSize'));
+
+            schema.registerOverrideIdentifier('json');
+
+            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepEqual({
+                ...expected,
+                preferenceName: '[json].editor.tabSize'
+            }, preferences.inspect('[json].editor.tabSize'));
+        });
+
+        it('inspect #1', () => {
+            const { preferences, schema } = prepareServices();
+
+            const expected = {
+                preferenceName: 'editor.tabSize',
+                defaultValue: 4,
+                globalValue: 2,
+                workspaceValue: undefined,
+                workspaceFolderValue: undefined,
+            };
+            preferences.set('editor.tabSize', 2, PreferenceScope.User);
+
+            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.ok(!preferences.has('[json].editor.tabSize'));
+
+            schema.registerOverrideIdentifier('json');
+
+            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepEqual({
+                ...expected,
+                preferenceName: '[json].editor.tabSize'
+            }, preferences.inspect('[json].editor.tabSize'));
+        });
+
+        it('inspect #2', () => {
+            const { preferences, schema } = prepareServices();
+
+            const expected = {
+                preferenceName: 'editor.tabSize',
+                defaultValue: 4,
+                globalValue: undefined,
+                workspaceValue: undefined,
+                workspaceFolderValue: undefined,
+            };
+            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.ok(!preferences.has('[json].editor.tabSize'));
+
+            schema.registerOverrideIdentifier('json');
+            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+
+            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepEqual({
+                ...expected,
+                preferenceName: '[json].editor.tabSize',
+                globalValue: 2
+            }, preferences.inspect('[json].editor.tabSize'));
+        });
+
+        it('onPreferenceChanged #0', () => {
+            const { preferences, schema } = prepareServices();
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+
+            schema.registerOverrideIdentifier('json');
+            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 3, PreferenceScope.User);
+
+            assert.deepEqual([{
+                preferenceName: '[json].editor.tabSize',
+                newValue: 2
+            }, {
+                preferenceName: 'editor.tabSize',
+                newValue: 3
+            }], events.map(e => ({
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            })));
+        });
+
+        it('onPreferenceChanged #1', () => {
+            const { preferences, schema } = prepareServices();
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+
+            schema.registerOverrideIdentifier('json');
+            preferences.set('editor.tabSize', 2, PreferenceScope.User);
+
+            assert.deepEqual([{
+                preferenceName: 'editor.tabSize',
+                newValue: 2
+            }, {
+                preferenceName: '[json].editor.tabSize',
+                newValue: 2
+            }], events.map(e => ({
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            })));
+        });
+
+        it('onPreferenceChanged #3', () => {
+            const { preferences, schema } = prepareServices();
+
+            schema.registerOverrideIdentifier('json');
+            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 3, PreferenceScope.User);
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+
+            preferences.set('[json].editor.tabSize', undefined, PreferenceScope.User);
+
+            assert.deepEqual([{
+                preferenceName: '[json].editor.tabSize',
+                newValue: 3
+            }], events.map(e => ({
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            })));
+        });
+
+        function prepareServices() {
+            const container = new Container();
+            bindPreferenceSchemaProvider(container.bind.bind(container));
+            container.bind(PreferenceProviderProvider).toFactory(() => () => new MockPreferenceProvider());
+            container.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+
+            const schema = container.get(PreferenceSchemaProvider);
+            schema.setSchema({
+                properties: {
+                    'editor.tabSize': {
+                        type: 'number',
+                        description: '',
+                        overridable: true,
+                        default: 4
+                    }
+                }
+            });
+
+            const preferences = container.get(PreferenceServiceImpl);
+            preferences.initialize();
+            return { preferences, schema };
+        }
+
+    });
+
 });

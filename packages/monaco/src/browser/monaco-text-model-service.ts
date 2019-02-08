@@ -57,13 +57,11 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
-        const uriStr = uri.toString();
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
         const model = await (new MonacoEditorModel(resource, this.m2p, this.p2m).load());
-        model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, uriStr);
-        model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, uriStr);
-        model.textEditorModel.updateOptions(this.getModelOptions(uriStr));
+        this.updateModel(model);
+        model.textEditorModel.onDidChangeLanguage(() => this.updateModel(model));
         const disposable = this.editorPreferences.onPreferenceChanged(change => this.updateModel(model, change));
         model.onDispose(() => disposable.dispose());
         return model;
@@ -76,26 +74,40 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
             'editor.insertSpaces': 'insertSpaces'
         };
 
-    protected updateModel(model: MonacoEditorModel, change: EditorPreferenceChange): void {
-        if (change.preferenceName === 'editor.autoSave') {
+    protected updateModel(model: MonacoEditorModel, change?: EditorPreferenceChange): void {
+        if (change) {
+            if (!change.affects(model.uri, model.languageId)) {
+                return;
+            }
+            if (change.preferenceName === 'editor.autoSave') {
+                model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, model.uri);
+            }
+            if (change.preferenceName === 'editor.autoSaveDelay') {
+                model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, model.uri);
+            }
+            const modelOption = this.modelOptions[change.preferenceName];
+            if (modelOption) {
+                const options: monaco.editor.ITextModelUpdateOptions = {};
+                // tslint:disable-next-line:no-any
+                options[modelOption] = change.newValue as any;
+                model.textEditorModel.updateOptions(options);
+            }
+        } else {
             model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, model.uri);
-        }
-        if (change.preferenceName === 'editor.autoSaveDelay') {
             model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, model.uri);
-        }
-        const modelOption = this.modelOptions[change.preferenceName];
-        if (modelOption) {
-            const options: monaco.editor.ITextModelUpdateOptions = {};
-            // tslint:disable-next-line:no-any
-            options[modelOption] = change.newValue as any;
-            model.textEditorModel.updateOptions(options);
+            model.textEditorModel.updateOptions(this.getModelOptions(model));
         }
     }
 
-    protected getModelOptions(uri: string): monaco.editor.ITextModelUpdateOptions {
+    /** @deprecated pass MonacoEditorModel instead  */
+    protected getModelOptions(uri: string): monaco.editor.ITextModelUpdateOptions;
+    protected getModelOptions(model: MonacoEditorModel): monaco.editor.ITextModelUpdateOptions;
+    protected getModelOptions(arg: string | MonacoEditorModel): monaco.editor.ITextModelUpdateOptions {
+        const uri = typeof arg === 'string' ? arg : arg.uri;
+        const overrideIdentifier = typeof arg === 'string' ? undefined : arg.languageId;
         return {
-            tabSize: this.editorPreferences.get('editor.tabSize', undefined, uri),
-            insertSpaces: this.editorPreferences.get('editor.insertSpaces', undefined, uri)
+            tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
+            insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri)
         };
     }
 
