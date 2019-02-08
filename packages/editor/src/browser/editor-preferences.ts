@@ -28,6 +28,7 @@ import { isOSX } from '@theia/core/lib/common/os';
 export const editorPreferenceSchema: PreferenceSchema = {
     'type': 'object',
     'scope': 'resource',
+    'overridable': true,
     'properties': {
         'editor.tabSize': {
             'type': 'number',
@@ -65,12 +66,14 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'off'
             ],
             'default': 'on',
-            'description': 'Configure whether the editor should be auto saved.'
+            'description': 'Configure whether the editor should be auto saved.',
+            overridable: false
         },
         'editor.autoSaveDelay': {
             'type': 'number',
             'default': 500,
-            'description': 'Configure the auto save delay in milliseconds.'
+            'description': 'Configure the auto save delay in milliseconds.',
+            overridable: false
         },
         'editor.rulers': {
             'type': 'array',

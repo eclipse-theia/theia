@@ -119,8 +119,31 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     // tslint:disable-next-line:no-any
     protected async getParsedContent(content: string): Promise<{ [key: string]: any }> {
         const strippedContent = jsoncparser.stripComments(content);
-        const newPrefs = jsoncparser.parse(strippedContent) || {};
-        return newPrefs;
+        const jsonData = jsoncparser.parse(strippedContent);
+        // tslint:disable-next-line:no-any
+        const preferences: { [key: string]: any } = {};
+        if (typeof jsonData !== 'object') {
+            return preferences;
+        }
+        const uri = (await this.resource).uri.toString();
+        // tslint:disable-next-line:forin
+        for (const preferenceName in jsonData) {
+            const preferenceValue = jsonData[preferenceName];
+            if (preferenceValue !== undefined && !this.schemaProvider.validate(preferenceName, preferenceValue)) {
+                console.warn(`Preference ${preferenceName} in ${uri} is invalid.`);
+                continue;
+            }
+            if (this.schemaProvider.testOverrideValue(preferenceName, preferenceValue)) {
+                // tslint:disable-next-line:forin
+                for (const overriddenPreferenceName in preferenceValue) {
+                    const overriddeValue = preferenceValue[overriddenPreferenceName];
+                    preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddeValue;
+                }
+            } else {
+                preferences[preferenceName] = preferenceValue;
+            }
+        }
+        return preferences;
     }
 
     // tslint:disable-next-line:no-any
@@ -129,24 +152,19 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.preferences = newPrefs;
         const prefNames = new Set([...Object.keys(oldPrefs), ...Object.keys(newPrefs)]);
         const prefChanges: PreferenceProviderDataChange[] = [];
+        const uri = (await this.resource).uri.toString();
         for (const prefName of prefNames.values()) {
             const oldValue = oldPrefs[prefName];
             const newValue = newPrefs[prefName];
-            const prefNameAndFile = `Preference ${prefName} in ${(await this.resource).uri.toString()}`;
-            if (!this.schemaProvider.validate(prefName, newValue) && newValue !== undefined) { // do not emit the change event if pref is not defined in schema
-                console.warn(`${prefNameAndFile} is invalid.`);
-                continue;
-            }
             const schemaProperties = this.schemaProvider.getCombinedSchema().properties[prefName];
             if (schemaProperties) {
                 const scope = schemaProperties.scope;
                 // do not emit the change event if the change is made out of the defined preference scope
                 if (!this.schemaProvider.isValidInScope(prefName, this.getScope())) {
-                    console.warn(`${prefNameAndFile} can only be defined in scopes: ${PreferenceScope.getScopeNames(scope).join(', ')}.`);
+                    console.warn(`Preference ${prefName} in ${uri} can only be defined in scopes: ${PreferenceScope.getScopeNames(scope).join(', ')}.`);
                     continue;
                 }
             }
-
             if (newValue === undefined && oldValue !== newValue
                 || oldValue === undefined && newValue !== oldValue // JSONExt.deepEqual() does not support handling `undefined`
                 || !JSONExt.deepEqual(oldValue, newValue)) {

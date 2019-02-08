@@ -119,6 +119,7 @@ export class TheiaPluginScanner implements PluginScanner {
             const config = this.readConfiguration(rawPlugin.contributes.configuration!, rawPlugin.packagePath);
             contributions.configuration = config;
         }
+        contributions.configurationDefaults = rawPlugin.contributes.configurationDefaults;
 
         if (rawPlugin.contributes!.languages) {
             const languages = this.readLanguages(rawPlugin.contributes.languages!, rawPlugin.packagePath);

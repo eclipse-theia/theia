@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { PreferenceProvider, PreferenceProviderPriority } from '../';
+import { PreferenceScope } from '../preference-service';
 
 @injectable()
 export class MockPreferenceProvider extends PreferenceProvider {
@@ -26,8 +27,10 @@ export class MockPreferenceProvider extends PreferenceProvider {
         return this.prefs;
     }
     // tslint:disable-next-line:no-any
-    setPreference(key: string, value: any, resourceUri?: string): Promise<void> {
-        return Promise.resolve();
+    async setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<void> {
+        const oldValue = this.prefs[preferenceName];
+        this.prefs[preferenceName] = newValue;
+        this.emitPreferencesChangedEvent([{ preferenceName, oldValue, newValue, scope: PreferenceScope.User, domain: [] }]);
     }
     canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
         if (this.prefs[preferenceName] === undefined) {

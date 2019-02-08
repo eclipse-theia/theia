@@ -36,7 +36,7 @@ export class PreferencesFrontendApplicationContribution implements FrontendAppli
             fileMatch: ['.theia/settings.json', USER_PREFERENCE_URI.toString()],
             url: uri.toString()
         });
-        this.schemaProvider.onDidPreferencesChanged(() =>
+        this.schemaProvider.onDidPreferenceSchemaChanged(() =>
             this.inmemoryResources.update(uri, serializeSchema())
         );
     }

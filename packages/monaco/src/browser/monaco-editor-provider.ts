@@ -144,10 +144,11 @@ export class MonacoEditorProvider {
         const options = this.createMonacoEditorOptions(model);
         const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
-            if (event.affects(uri.toString())) {
+            if (event.affects(uri.toString(), model.languageId)) {
                 this.updateMonacoEditorOptions(editor, event);
             }
         }));
+        toDispose.push(editor.onLanguageChanged(() => this.updateMonacoEditorOptions(editor)));
         editor.document.onWillSaveModel(event => {
             event.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async resolve => {
                 if (event.reason === TextDocumentSaveReason.Manual && this.editorPreferences['editor.formatOnSave']) {
@@ -159,15 +160,22 @@ export class MonacoEditorProvider {
         return editor;
     }
     protected createMonacoEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
-        const options = this.createOptions(this.preferencePrefixes, model.uri);
+        const options = this.createOptions(this.preferencePrefixes, model.uri, model.languageId);
         options.model = model.textEditorModel;
         options.readOnly = model.readOnly;
         return options;
     }
-    protected updateMonacoEditorOptions(editor: MonacoEditor, event: EditorPreferenceChange): void {
-        const preferenceName = event.preferenceName;
-        const newValue = this.editorPreferences.get(preferenceName, undefined, editor.uri.toString());
-        editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
+    protected updateMonacoEditorOptions(editor: MonacoEditor, event?: EditorPreferenceChange): void {
+        if (event) {
+            const preferenceName = event.preferenceName;
+            const overrideIdentifier = editor.document.languageId;
+            const newValue = this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, editor.uri.toString());
+            editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
+        } else {
+            const options = this.createMonacoEditorOptions(editor.document);
+            delete options.model;
+            editor.getControl().updateOptions(options);
+        }
     }
 
     protected get diffPreferencePrefixes(): string[] {
@@ -189,27 +197,37 @@ export class MonacoEditorProvider {
             override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
             const originalFileUri = original.withoutQuery().withScheme('file').toString();
-            if (event.affects(originalFileUri)) {
+            if (event.affects(originalFileUri, editor.document.languageId)) {
                 this.updateMonacoDiffEditorOptions(editor, event, originalFileUri);
             }
         }));
+        toDispose.push(editor.onLanguageChanged(() => this.updateMonacoDiffEditorOptions(editor)));
         return editor;
     }
     protected createMonacoDiffEditorOptions(original: MonacoEditorModel, modified: MonacoEditorModel): MonacoDiffEditor.IOptions {
-        const options = this.createOptions(this.diffPreferencePrefixes, modified.uri);
+        const options = this.createOptions(this.diffPreferencePrefixes, modified.uri, modified.languageId);
         options.originalEditable = !original.readOnly;
         options.readOnly = modified.readOnly;
         return options;
     }
-    protected updateMonacoDiffEditorOptions(editor: MonacoDiffEditor, event: EditorPreferenceChange, resourceUri?: string): void {
-        const preferenceName = event.preferenceName;
-        const newValue = this.editorPreferences.get(preferenceName, undefined, resourceUri);
-        editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
+    protected updateMonacoDiffEditorOptions(editor: MonacoDiffEditor, event?: EditorPreferenceChange, resourceUri?: string): void {
+        if (event) {
+            const preferenceName = event.preferenceName;
+            const overrideIdentifier = editor.document.languageId;
+            const newValue = this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, resourceUri);
+            editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
+        } else {
+            const options = this.createMonacoDiffEditorOptions(editor.originalModel, editor.modifiedModel);
+            editor.diffEditor.updateOptions(options);
+        }
     }
 
-    protected createOptions(prefixes: string[], uri: string): { [name: string]: any } {
+    /** @deprecated always pass a language as an overrideIdentifier */
+    protected createOptions(prefixes: string[], uri: string): { [name: string]: any };
+    protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any };
+    protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
         return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
-            const value = (<any>this.editorPreferences).get(preferenceName, undefined, uri);
+            const value = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
             return this.setOption(preferenceName, value, prefixes, options);
         }, {});
     }
