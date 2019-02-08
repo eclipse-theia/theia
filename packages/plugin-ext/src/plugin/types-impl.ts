@@ -1801,3 +1801,11 @@ export enum OperatingSystem {
     Linux = 'Linux',
     OSX = 'OSX'
 }
+
+/** The areas of the application shell where webview panel can reside. */
+export enum WebviewPanelTargetArea {
+    Main = 'main',
+    Left = 'left',
+    Right = 'right',
+    Bottom = 'bottom'
+}

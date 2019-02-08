@@ -919,11 +919,6 @@ export interface WebviewPanelViewState {
     readonly position: number;
 }
 
-export interface WebviewPanelShowOptions {
-    readonly viewColumn?: number;
-    readonly preserveFocus?: boolean;
-}
-
 export interface WebviewsExt {
     $onMessage(handle: string, message: any): void;
     $onDidChangeWebviewPanelViewState(handle: string, newState: WebviewPanelViewState): void;
@@ -940,11 +935,11 @@ export interface WebviewsMain {
     $createWebviewPanel(handle: string,
         viewType: string,
         title: string,
-        showOptions: WebviewPanelShowOptions,
+        showOptions: theia.WebviewPanelShowOptions,
         options: theia.WebviewPanelOptions & theia.WebviewOptions | undefined,
         pluginLocation: UriComponents): void;
     $disposeWebview(handle: string): void;
-    $reveal(handle: string, showOptions: WebviewPanelShowOptions): void;
+    $reveal(handle: string, showOptions: theia.WebviewPanelShowOptions): void;
     $setTitle(handle: string, value: string): void;
     $setIconPath(handle: string, value: { light: string, dark: string } | string | undefined): void;
     $setHtml(handle: string, value: string): void;

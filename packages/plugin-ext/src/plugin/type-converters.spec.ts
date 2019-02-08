@@ -254,4 +254,64 @@ describe('Type converters:', () => {
             assert.deepEqual(result, taskDtoWithCommandLine);
         });
     });
+
+    describe('Webview Panel Show Options:', () => {
+        it('should create options from view column ', () => {
+            const viewColumn = types.ViewColumn.Five;
+
+            const showOptions: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Four,
+                preserveFocus: false
+            };
+
+            // when
+            const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(viewColumn);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, showOptions);
+        });
+
+        it('should create options from given "WebviewPanelShowOptions" object ', () => {
+            const incomingObject: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Five,
+                preserveFocus: true
+            };
+
+            const showOptions: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Four,
+                preserveFocus: true
+            };
+
+            // when
+            const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(incomingObject);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, showOptions);
+        });
+
+        it('should set default "main" area', () => {
+            const incomingObject: theia.WebviewPanelShowOptions = {
+                viewColumn: types.ViewColumn.Five,
+                preserveFocus: false
+            };
+
+            const showOptions: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Four,
+                preserveFocus: false
+            };
+
+            // when
+            const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(incomingObject);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, showOptions);
+        });
+    });
 });
