@@ -39,7 +39,7 @@ export namespace SearchInWorkspaceCommands {
     export const FIND_IN_FOLDER: Command = {
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
-        label: 'Find in Folder...'
+        label: 'Find in Folder'
     };
 }
 
