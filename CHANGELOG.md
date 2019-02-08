@@ -4,6 +4,7 @@
 - [plugin] added `tasks.onDidEndTask` Plug-in API
 - [cpp] fixed `CPP_CLANGD_COMMAND` and `CPP_CLANGD_ARGS` environment variables
 - [electron] open markdown links in the OS default browser
+- [plugin] added ability to display webview panel in 'left', 'right' and 'bottom' area
 
 Breaking changes:
 - menus aligned with built-in VS Code menus [#4173](https://github.com/theia-ide/theia/pull/4173)

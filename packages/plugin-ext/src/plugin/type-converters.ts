@@ -54,6 +54,23 @@ export function fromViewColumn(column?: theia.ViewColumn): number {
     return ACTIVE_GROUP;
 }
 
+export function toWebviewPanelShowOptions(options: theia.ViewColumn | theia.WebviewPanelShowOptions): theia.WebviewPanelShowOptions {
+    if (typeof options === 'object') {
+        const showOptions = options as theia.WebviewPanelShowOptions;
+        return {
+            area: showOptions.area ? showOptions.area : types.WebviewPanelTargetArea.Main,
+            viewColumn: showOptions.viewColumn ? fromViewColumn(showOptions.viewColumn) : undefined,
+            preserveFocus: showOptions.preserveFocus ? showOptions.preserveFocus : false
+        };
+    }
+
+    return {
+        area: types.WebviewPanelTargetArea.Main,
+        viewColumn: fromViewColumn(options as theia.ViewColumn),
+        preserveFocus: false
+    };
+}
+
 export function toSelection(selection: Selection): types.Selection {
     const { selectionStartLineNumber, selectionStartColumn, positionLineNumber, positionColumn } = selection;
     const start = new types.Position(selectionStartLineNumber - 1, selectionStartColumn - 1);

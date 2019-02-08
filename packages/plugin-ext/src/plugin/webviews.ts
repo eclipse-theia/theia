@@ -19,9 +19,9 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../api/rpc-protocol';
 import URI from 'vscode-uri/lib/umd';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { fromViewColumn, toViewColumn } from './type-converters';
+import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
 import { IdGenerator } from '../common/id-generator';
-import { Disposable } from './types-impl';
+import { Disposable, WebviewPanelTargetArea } from './types-impl';
 
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
@@ -80,21 +80,16 @@ export class WebviewsExtImpl implements WebviewsExt {
 
     createWebview(viewType: string,
         title: string,
-        showOptions: theia.ViewColumn | { viewColumn: theia.ViewColumn, preserveFocus?: boolean },
+        showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
         options: (theia.WebviewPanelOptions & theia.WebviewOptions) | undefined,
         extensionLocation: URI): theia.WebviewPanel {
 
-        const viewColumn = typeof showOptions === 'object' ? showOptions.viewColumn : showOptions;
-        const webviewShowOptions = {
-            viewColumn: fromViewColumn(viewColumn),
-            preserveFocus: typeof showOptions === 'object' && !!showOptions.preserveFocus
-        };
-
+        const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
         const viewId = this.idGenerator.nextId();
         this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, options, extensionLocation);
 
         const webview = new WebviewImpl(viewId, this.proxy, options);
-        const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, viewColumn, options, webview);
+        const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
         return panel;
 
@@ -189,6 +184,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
     private isDisposed = false;
     private _active = true;
     private _visible = true;
+    private _showOptions: theia.WebviewPanelShowOptions;
 
     readonly onDisposeEmitter = new Emitter<void>();
     public readonly onDidDispose: Event<void> = this.onDisposeEmitter.event;
@@ -200,11 +196,11 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         private readonly proxy: WebviewsMain,
         private readonly _viewType: string,
         private _title: string,
-        private _viewColumn: theia.ViewColumn,
+        showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
         private readonly _options: theia.WebviewPanelOptions | undefined,
         private readonly _webview: WebviewImpl
     ) {
-
+        this._showOptions = typeof showOptions === 'object' ? showOptions : { viewColumn: showOptions as theia.ViewColumn };
     }
 
     dispose() {
@@ -262,14 +258,24 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         return this._options!;
     }
 
-    get viewColumn(): theia.ViewColumn {
+    get viewColumn(): theia.ViewColumn | undefined {
         this.checkIsDisposed();
-        return this._viewColumn;
+        return this._showOptions.viewColumn;
     }
 
     setViewColumn(value: theia.ViewColumn) {
         this.checkIsDisposed();
-        this._viewColumn = value;
+        this._showOptions.viewColumn = value;
+    }
+
+    get showOptions(): theia.WebviewPanelShowOptions {
+        this.checkIsDisposed();
+        return this._showOptions;
+    }
+
+    setShowOptions(value: theia.WebviewPanelShowOptions) {
+        this.checkIsDisposed();
+        this._showOptions = value;
     }
 
     get active(): boolean {
@@ -292,9 +298,10 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         this._visible = value;
     }
 
-    reveal(viewColumn?: theia.ViewColumn, preserveFocus?: boolean): void {
+    reveal(area?: WebviewPanelTargetArea, viewColumn?: theia.ViewColumn, preserveFocus?: boolean): void {
         this.checkIsDisposed();
         this.proxy.$reveal(this.viewId, {
+            area: area,
             viewColumn: viewColumn ? fromViewColumn(viewColumn) : undefined,
             preserveFocus: !!preserveFocus
         });

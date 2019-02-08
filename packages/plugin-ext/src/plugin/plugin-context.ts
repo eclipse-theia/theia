@@ -97,6 +97,7 @@ import {
     ColorInformation,
     ColorPresentation,
     OperatingSystem,
+    WebviewPanelTargetArea
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -312,7 +313,7 @@ export function createAPIFactory(
             },
             createWebviewPanel(viewType: string,
                 title: string,
-                showOptions: theia.ViewColumn | { viewColumn: theia.ViewColumn, preserveFocus?: boolean },
+                showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
                 options: theia.WebviewPanelOptions & theia.WebviewOptions): theia.WebviewPanel {
                 return webviewExt.createWebview(viewType, title, showOptions, options, Uri.file(plugin.pluginPath));
             },
@@ -712,7 +713,8 @@ export function createAPIFactory(
             ColorPresentation,
             FoldingRange,
             FoldingRangeKind,
-            OperatingSystem
+            OperatingSystem,
+            WebviewPanelTargetArea
         };
     };
 }
