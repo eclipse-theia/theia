@@ -274,14 +274,7 @@ export class FrontendApplication {
             }
         }
 
-        /**
-         * FIXME:
-         * - decouple commands & menus
-         * - consider treat commands, keybindings and menus as frontend application contributions
-         */
-        this.commands.onStart();
-        this.keybindings.onStart();
-        this.menus.onStart();
+        // Bring up contributions and await their onStart functions
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStart) {
                 try {
@@ -293,6 +286,15 @@ export class FrontendApplication {
                 }
             }
         }
+
+        /**
+         * FIXME:
+         * - decouple commands & menus
+         * - consider treat commands, keybindings and menus as frontend application contributions
+         */
+        this.commands.onStart();
+        this.keybindings.onStart();
+        this.menus.onStart();
     }
 
     /**
