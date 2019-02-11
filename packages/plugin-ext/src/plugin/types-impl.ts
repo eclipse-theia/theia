@@ -1536,7 +1536,6 @@ export class Task {
         if (value === undefined || value === null) {
             throw illegalArgument('Kind can\'t be undefined or null');
         }
-        this.clear();
         this.taskDefinition = value;
     }
 
@@ -1545,7 +1544,6 @@ export class Task {
     }
 
     set scope(value: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined) {
-        this.clear();
         this.taskScope = value;
     }
 
@@ -1557,7 +1555,6 @@ export class Task {
         if (typeof value !== 'string') {
             throw illegalArgument('name');
         }
-        this.clear();
         this.taskName = value;
     }
 
@@ -1569,8 +1566,8 @@ export class Task {
         if (value === null) {
             value = undefined;
         }
-        this.clear();
         this.taskExecution = value;
+        this.updateDefinitionBasedOnExecution();
     }
 
     get problemMatchers(): string[] {
@@ -1583,7 +1580,6 @@ export class Task {
             this.hasTaskProblemMatchers = false;
             return;
         }
-        this.clear();
         this.taskProblemMatchers = value;
         this.hasTaskProblemMatchers = true;
     }
@@ -1600,7 +1596,6 @@ export class Task {
         if (value !== true && value !== false) {
             value = false;
         }
-        this.clear();
         this.isTaskBackground = value;
     }
 
@@ -1612,7 +1607,6 @@ export class Task {
         if (typeof value !== 'string' || value.length === 0) {
             throw illegalArgument('source must be a string of length > 0');
         }
-        this.clear();
         this.taskSource = value;
     }
 
@@ -1625,7 +1619,6 @@ export class Task {
             this.taskGroup = undefined;
             return;
         }
-        this.clear();
         this.taskGroup = value;
     }
 
@@ -1637,12 +1630,10 @@ export class Task {
         if (value === null) {
             value = undefined;
         }
-        this.clear();
         this.taskPresentationOptions = value;
     }
 
-    private clear(): void {
-        this.taskScope = undefined;
+    private updateDefinitionBasedOnExecution(): void {
         this.taskDefinition = undefined;
         if (this.taskExecution instanceof ProcessExecution) {
             this.taskDefinition = {
