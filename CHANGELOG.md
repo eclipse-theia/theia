@@ -39,6 +39,7 @@ Breaking changes:
     - the type of `combinedSchema` property is changed from `PreferenceSchema` to `PreferenceDataSchema`.
     - the return type of `getCombinedSchema` function is changed from `PreferenceSchema` to `PreferenceDataSchema`.
   - `affects` function is added to `PreferenceChangeEvent` and `PreferenceChange` interface.
+- `navigator.exclude` preference is renamed to `files.exclude` [#4274](https://github.com/theia-ide/theia/pull/4274)
 
 
 ## v0.3.19
