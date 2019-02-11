@@ -22,7 +22,6 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitErrorHandler } from './git-error-handler';
 
@@ -273,13 +272,14 @@ export class GitQuickOpenService {
     async changeRepository(): Promise<void> {
         const repositories = this.repositoryProvider.allRepositories;
         if (repositories.length > 1) {
-            const items = repositories.map(repository => {
+            const items = await Promise.all(repositories.map(async repository => {
                 const uri = new URI(repository.localUri);
                 const execute = () => this.repositoryProvider.selectedRepository = repository;
                 const toLabel = () => uri.path.base;
-                const toDescription = () => FileUri.fsPath(uri);
+                const fsPath = await this.fileSystem.getFsPath(uri.toString());
+                const toDescription = () => fsPath;
                 return new GitQuickOpenItem<Repository>(repository, execute, toLabel, toDescription);
-            });
+            }));
             this.open(items, 'Select a local Git repository to work with:');
         }
     }
