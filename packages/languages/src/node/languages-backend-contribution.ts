@@ -35,12 +35,12 @@ export class LanguagesBackendContribution implements MessagingService.Contributi
     @inject(ContributionProvider) @named(LanguageServerContribution)
     protected readonly contributors: ContributionProvider<LanguageServerContribution>;
 
-    protected readonly ids = new Map<string, number>();
+    protected nextId: number = 1;
     protected readonly sessions = new Map<string, any>();
 
     async create(contributionId: string, startParameters: any): Promise<string> {
-        const id = (this.ids.get(contributionId) || 0) + 1;
-        this.ids.set(contributionId, id);
+        const id = this.nextId;
+        this.nextId++;
         const sessionId = String(id);
         this.sessions.set(sessionId, startParameters);
         return sessionId;
