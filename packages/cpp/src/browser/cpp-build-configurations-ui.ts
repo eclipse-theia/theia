@@ -54,7 +54,7 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
             if (mode !== QuickOpenMode.OPEN) {
                 return false;
             }
-            this.createConfig();
+            this.commandService.executeCommand(CPP_CREATE_NEW_BUILD_CONFIGURATION.id);
             return true;
         },
     });
@@ -67,7 +67,7 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
             if (mode !== QuickOpenMode.OPEN) {
                 return false;
             }
-            this.cppBuildConfigurations.setActiveConfig(undefined);
+            this.commandService.executeCommand(CPP_RESET_BUILD_CONFIGURATION.id);
             return true;
         },
     });
@@ -134,13 +134,33 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
 
 }
 
+export const CPP_CATEGORY = 'C/C++';
+
 /**
- * Open the quick open menu to let the user change the active build
- * configuration.
+ * Reset active build configuration if applicable.
+ * Set active build configuration to `None`.
+ */
+export const CPP_RESET_BUILD_CONFIGURATION: Command = {
+    id: 'cpp.resetBuildConfiguration',
+    category: CPP_CATEGORY,
+    label: 'Reset Build Configuration'
+};
+
+/**
+ * Create a new build configuration, and trigger opening the preferences widget.
+ */
+export const CPP_CREATE_NEW_BUILD_CONFIGURATION: Command = {
+    id: 'cpp.createNewBuildConfiguration',
+    category: CPP_CATEGORY,
+    label: 'Create New Build Configuration'
+};
+
+/**
+ * Open the quick open menu to let the user change the active build configuration.
  */
 export const CPP_CHANGE_BUILD_CONFIGURATION: Command = {
     id: 'cpp.change-build-configuration',
-    category: 'C/C++',
+    category: CPP_CATEGORY,
     label: 'Change Build Configuration'
 };
 
@@ -150,7 +170,18 @@ export class CppBuildConfigurationsContributions implements CommandContribution 
     @inject(CppBuildConfigurationChanger)
     protected readonly cppChangeBuildConfiguration: CppBuildConfigurationChanger;
 
+    @inject(CppBuildConfigurationManager)
+    protected readonly cppManager: CppBuildConfigurationManager;
+
     registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(CPP_RESET_BUILD_CONFIGURATION, {
+            isEnabled: () => !!this.cppManager.getActiveConfig(),
+            isVisible: () => !!this.cppManager.getActiveConfig(),
+            execute: () => this.cppManager.setActiveConfig(undefined)
+        });
+        commands.registerCommand(CPP_CREATE_NEW_BUILD_CONFIGURATION, {
+            execute: () => this.cppChangeBuildConfiguration.createConfig()
+        });
         commands.registerCommand(CPP_CHANGE_BUILD_CONFIGURATION, {
             execute: () => this.cppChangeBuildConfiguration.open()
         });
