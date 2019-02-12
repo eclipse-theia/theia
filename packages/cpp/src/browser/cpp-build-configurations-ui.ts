@@ -127,10 +127,9 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     /** Create a new build configuration with placeholder values.  */
     async createConfig(): Promise<void> {
         this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, PreferenceScope.Workspace);
-        const configs = this.cppBuildConfigurations.getConfigs();
-        const newConfigs = configs.slice(0);
-        newConfigs.push({ name: '', directory: '' });
-        await this.preferenceService.set(CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY, newConfigs, PreferenceScope.Workspace);
+        const configs = this.cppBuildConfigurations.getConfigs().slice(0);
+        configs.push({ name: '', directory: '' });
+        await this.preferenceService.set(CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY, configs, PreferenceScope.Workspace);
     }
 
 }

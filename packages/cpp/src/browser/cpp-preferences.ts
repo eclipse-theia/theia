@@ -45,12 +45,7 @@ export const cppPreferencesSchema: PreferenceSchema = {
                 },
                 required: ['name', 'directory'],
             },
-            default: [
-                {
-                    name: '',
-                    directory: ''
-                }
-            ],
+            default: [],
         },
         'cpp.experimentalCommands': {
             description: 'Enable experimental commands mostly intended for Clangd developers.',
