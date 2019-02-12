@@ -38,7 +38,7 @@
     "reflect-metadata": "^0.1.10",
     "route-parser": "^0.0.5",
     "vscode-languageserver-types": "^3.10.0",
-    "vscode-nsfw": "^1.0.17",
+    "vscode-nsfw": "^1.1.2",
     "vscode-uri": "^1.0.1",
     "vscode-ws-jsonrpc": "^0.0.2-1",
     "ws": "^5.2.2",
@@ -47,8 +47,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
+  "theiaExtensions": [{
       "frontend": "lib/browser/menu/browser-menu-module",
       "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
     },
