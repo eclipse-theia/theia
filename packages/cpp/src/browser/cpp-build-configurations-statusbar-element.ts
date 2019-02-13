@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson
+ * Copyright (C) 2018-2019 Ericsson
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -31,8 +31,8 @@ export class CppBuildConfigurationsStatusBarElement {
     protected readonly cppIdentifier = 'cpp-configurator';
 
     /**
-     * Display the cpp build configurations status bar element,
-     * and listen to any changes in the active build configuration
+     * Display the `CppBuildConfiguration` status bar element,
+     * and listen to changes to the active build configuration.
      */
     show(): void {
         this.setCppBuildConfigElement(this.cppManager.getActiveConfig());
@@ -40,8 +40,10 @@ export class CppBuildConfigurationsStatusBarElement {
     }
 
     /**
-     * Set the cpp build configurations status bar element
-     * used to set the workspace's active build configuration
+     * Set the `CppBuildConfiguration` status bar element
+     * used to create a new cpp build configuration and set the active build configuration.
+     *
+     * @param config the active `CppBuildConfiguration`.
      */
     protected setCppBuildConfigElement(config: CppBuildConfiguration | undefined): void {
         this.statusBar.setElement(this.cppIdentifier, {
