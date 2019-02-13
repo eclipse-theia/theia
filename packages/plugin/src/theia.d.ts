@@ -1871,12 +1871,12 @@ declare module '@theia/plugin' {
         /**
          * A flag to include the description when filtering
          */
-        machOnDescription?: boolean;
+        matchOnDescription?: boolean;
 
         /**
          *  A flag to include the detail when filtering
          */
-        machOnDetail?: boolean;
+        matchOnDetail?: boolean;
 
         /**
          * The place holder in input box
@@ -2022,7 +2022,7 @@ declare module '@theia/plugin' {
          * @param thisArg The `this` context used when invoking the handler function.
          * @return Disposable which unregisters this command on disposal.
          */
-        export function registerTextEditorCommand(command: string, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void, thisArg?: any): Disposable;
+        export function registerTextEditorCommand(command: string, callback: (textEditor: TextEditor, edit: TextEditorEdit, ...args: any[]) => void, thisArg?: any): Disposable;
 
         /**
          * Execute the active handler for the given command and arguments.
@@ -3108,7 +3108,7 @@ declare module '@theia/plugin' {
          * @param options Options object to provide [TreeDataProvider](#TreeDataProvider) for the view.
          * @returns a [TreeView](#TreeView).
          */
-        export function createTreeView<T>(viewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T>;
+        export function createTreeView<T>(viewId: string, options: TreeViewOptions<T>): TreeView<T>;
 
         /**
          * Show progress in the editor. Progress is shown while running the given callback
@@ -3181,6 +3181,22 @@ declare module '@theia/plugin' {
          * report on how much work finished
          */
         report(value: T): void;
+    }
+
+    /**
+     * Options for creating a [TreeView](#TreeView)
+     */
+    export interface TreeViewOptions<T> {
+
+        /**
+         * A data provider that provides tree data.
+         */
+        treeDataProvider: TreeDataProvider<T>;
+
+        /**
+         * Whether to show collapse all action or not.
+         */
+        showCollapseAll?: boolean;
     }
 
     /**
