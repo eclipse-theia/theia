@@ -54,8 +54,8 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             canSelectMany: options && options.canPickMany,
             placeHolder: options && options.placeHolder,
             autoFocus: { autoFocusFirstEntry: true },
-            matchOnDescription: options && options.machOnDescription,
-            matchOnDetail: options && options.machOnDetail,
+            matchOnDescription: options && options.matchOnDescription,
+            matchOnDetail: options && options.matchOnDetail,
             ignoreFocusLost: options && options.ignoreFocusOut
         });
 
