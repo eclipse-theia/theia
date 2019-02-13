@@ -124,3 +124,7 @@ input {
     font-size: var(--theia-ui-font-size1);
     display: block;
 }
+
+.p-Widget.dialogOverlay select {
+    background: var(--theia-layout-color2);
+}

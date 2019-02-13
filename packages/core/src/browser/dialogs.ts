@@ -350,3 +350,48 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     }
 
 }
+
+@injectable()
+export class SelectDialogProps<T> extends DialogProps {
+    readonly items: T[];
+    readonly ok?: string;
+    readonly cancel?: string;
+    /**
+     * Label provider for the `items`. If not specified `String(item)` will be used instead.
+     */
+    label?(item: T): string;
+}
+
+export class SelectDialog<T> extends AbstractDialog<T> {
+
+    protected selectedIndex: number;
+    protected items: T[];
+
+    constructor(@inject(SelectDialogProps) protected readonly props: SelectDialogProps<T>) {
+        super(props);
+        this.selectedIndex = 0;
+        this.items = this.props.items.slice();
+        if (props.items.length < 1) {
+            throw new Error("'props.items' cannot be empty.");
+        }
+        const select = document.createElement('select');
+        const label = this.props.label ? this.props.label : (item: T) => String(item);
+        for (const item of this.items) {
+            const option = document.createElement('option');
+            option.text = label(item);
+            option.value = label(item);
+            select.appendChild(option);
+        }
+        const selectionListener = () => this.selectedIndex = select.selectedIndex;
+        select.addEventListener('change', selectionListener);
+        this.toDispose.push(Disposable.create(() => select.removeEventListener('change', selectionListener)));
+        this.contentNode.appendChild(select);
+        this.appendCloseButton(props.cancel || 'Cancel');
+        this.appendAcceptButton(props.ok || 'OK');
+    }
+
+    get value(): T {
+        return this.items[this.selectedIndex];
+    }
+
+}
