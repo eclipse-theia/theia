@@ -39,6 +39,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     autoSave: 'on' | 'off' = 'on';
     autoSaveDelay: number = 500;
+    readonly onWillSaveLoopTimeOut = 1500;
 
     protected model: monaco.editor.IModel;
     protected readonly resolveModel: Promise<void>;
@@ -344,7 +345,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         const timeoutPromise = new Promise((resolve, reject) => timeoutHandle = <any>setTimeout(() => {
             didTimeout = true;
             reject(new Error('onWillSave listener loop timeout'));
-        }, 1000));
+        }, this.onWillSaveLoopTimeOut));
 
         const firing = this.onWillSaveModelEmitter.sequence(async listener => {
             if (shouldStop()) {
