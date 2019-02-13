@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
-import { CppBuildConfigurationManager } from './cpp-build-configurations';
+import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
 import { CPP_CHANGE_BUILD_CONFIGURATION } from './cpp-build-configurations-ui';
 
 @injectable()
@@ -35,18 +35,17 @@ export class CppBuildConfigurationsStatusBarElement {
      * and listen to any changes in the active build configuration
      */
     show(): void {
-        this.setCppBuildConfigElement();
-        this.cppManager.onActiveConfigChange(e => { this.setCppBuildConfigElement(); });
+        this.setCppBuildConfigElement(this.cppManager.getActiveConfig());
+        this.cppManager.onActiveConfigChange(config => this.setCppBuildConfigElement(config));
     }
 
     /**
      * Set the cpp build configurations status bar element
      * used to set the workspace's active build configuration
      */
-    protected setCppBuildConfigElement() {
-        const activeConfig = this.cppManager.getActiveConfig();
+    protected setCppBuildConfigElement(config: CppBuildConfiguration | undefined): void {
         this.statusBar.setElement(this.cppIdentifier, {
-            text: `$(wrench) C/C++ Build Config ${(activeConfig) ? activeConfig.name : ''}`,
+            text: `$(wrench) C/C++ Build Config ${(config) ? config.name : ''}`,
             alignment: StatusBarAlignment.RIGHT,
             command: CPP_CHANGE_BUILD_CONFIGURATION.id,
             priority: 0.5,

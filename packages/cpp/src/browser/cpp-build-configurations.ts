@@ -95,6 +95,7 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         this.ready = new Promise(async resolve => {
             await this.cppPreferences.ready;
             this.loadActiveConfiguration().then(resolve);
+            this.cppPreferences.onPreferenceChanged(() => this.handlePreferencesUpdate());
         });
     }
 
@@ -122,6 +123,29 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
             this.ACTIVE_BUILD_CONFIGURATION_STORAGE_KEY, {
                 configName: config ? config.name : undefined,
             });
+    }
+
+    /**
+     * Update the active build configuration if applicable.
+     */
+    protected handlePreferencesUpdate(): void {
+        const active = this.getActiveConfig();
+        const valid = (active)
+            ? this.getValidConfigs().some(a => this.equals(a, active))
+            : false;
+        if (!valid) {
+            this.setActiveConfig(undefined);
+        }
+    }
+
+    /**
+     * Determine if two `CppBuildConfiguration` are equal.
+     *
+     * @param a `CppBuildConfiguration`.
+     * @param b `CppBuildConfiguration`.
+     */
+    protected equals(a: CppBuildConfiguration, b: CppBuildConfiguration): boolean {
+        return a.name === b.name && a.directory === b.directory;
     }
 
     getActiveConfig(): CppBuildConfiguration | undefined {
