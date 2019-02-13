@@ -666,7 +666,7 @@ export class TextEdit {
         if (!thing) {
             return false;
         }
-        return Range.isRange((<TextEdit>thing))
+        return Range.isRange((<TextEdit>thing).range)
             && typeof (<TextEdit>thing).newText === 'string';
     }
 

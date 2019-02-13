@@ -380,8 +380,7 @@ export function createAPIFactory(
                 return documents.onDidAddDocument(listener, thisArg, disposables);
             },
             onWillSaveTextDocument(listener, thisArg?, disposables?) {
-                // TODO to implement
-                return { dispose: () => { } };
+                return documents.onWillSaveTextDocument(listener, thisArg, disposables);
             },
             onDidSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidSaveTextDocument(listener, thisArg, disposables);
