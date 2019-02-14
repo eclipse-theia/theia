@@ -35,9 +35,6 @@
       "backendElectron": "lib/electron-node/env/electron-git-env-module"
     },
     {
-      "backend": "lib/node/init/git-init-module"
-    },
-    {
       "frontend": "lib/browser/prompt/git-prompt-module",
       "frontendElectron": "lib/electron-browser/prompt/electron-git-prompt-module"
     }

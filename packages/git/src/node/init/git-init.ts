@@ -20,6 +20,7 @@ import { dirname } from 'path';
 import { pathExists } from 'fs-extra';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { MessageService } from '@theia/core';
 
 /**
  * Initializer hook for Git.
@@ -46,6 +47,9 @@ export class DefaultGitInit implements GitInit {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    @inject(MessageService)
+    protected readonly messages: MessageService;
 
     async init(): Promise<void> {
         const { env } = process;
@@ -82,7 +86,7 @@ export class DefaultGitInit implements GitInit {
         if (err) {
             this.logger.error(err);
         }
-        this.logger.info('Could not find Git on the PATH. Falling back to the embedded Git.');
+        this.messages.info('Could not find Git on the PATH.');
     }
 
 }

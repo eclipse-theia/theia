@@ -51,6 +51,11 @@ describe('git-watcher-slow', () => {
         repository = { localUri };
 
         await git!.clone('https://github.com/TypeFox/find-git-exec.git', { localUri });
+
+        // This test has different bindings than other Git tests. We want to check the `watcher` here.
+        // Watching repository changes will initialize Git, so we need to get rid of the env variables here after the clone.
+        delete process.env.LOCAL_GIT_DIRECTORY;
+        delete process.env.GIT_EXEC_PATH;
     });
 
     after(function () {

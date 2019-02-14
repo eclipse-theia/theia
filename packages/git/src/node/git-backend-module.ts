@@ -29,6 +29,8 @@ import { GitLocatorImpl } from './git-locator/git-locator-impl';
 import { GitExecProvider } from './git-exec-provider';
 import { GitPromptServer, GitPromptClient, GitPrompt } from '../common/git-prompt';
 import { DugiteGitPromptServer } from './dugite-git-prompt';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { DefaultGitInit, GitInit } from './init/git-init';
 
 export interface GitBindingOptions {
     readonly bindManager: (binding: interfaces.BindingToSyntax<{}>) => interfaces.BindingWhenOnSyntax<{}>;
@@ -62,14 +64,21 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     } else {
         bind(GitLocator).to(GitLocatorClient);
     }
-    bind(DugiteGit).toSelf().inSingletonScope();
     bind(OutputParser).toSelf().inSingletonScope();
     bind(NameStatusParser).toSelf().inSingletonScope();
     bind(CommitDetailsParser).toSelf().inSingletonScope();
     bind(GitBlameParser).toSelf().inSingletonScope();
     bind(GitExecProvider).toSelf().inSingletonScope();
-    bind(Git).toService(DugiteGit);
+    bind(ConnectionContainerModule).toConstantValue(gitConnectionModule);
 }
+
+const gitConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
+    bind(DefaultGitInit).toSelf();
+    bind(GitInit).toService(DefaultGitInit);
+    bind(DugiteGit).toSelf().inSingletonScope();
+    bind(Git).toService(DugiteGit);
+    bindBackendService(GitPath, Git);
+});
 
 export function bindRepositoryWatcher(bind: interfaces.Bind): void {
     bind(DugiteGitWatcherServer).toSelf();
@@ -83,13 +92,6 @@ export function bindPrompt(bind: interfaces.Bind): void {
 
 export default new ContainerModule(bind => {
     bindGit(bind);
-    bind(ConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler(GitPath, client => {
-            const server = context.container.get<Git>(Git);
-            client.onDidCloseConnection(() => server.dispose());
-            return server;
-        })
-    ).inSingletonScope();
 
     bindRepositoryWatcher(bind);
     bind(ConnectionHandler).toDynamicValue(context =>
