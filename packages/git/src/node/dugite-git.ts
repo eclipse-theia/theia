@@ -524,7 +524,7 @@ export class DugiteGit implements Git {
         const mode = this.getResetMode(options.mode);
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         return this.manager.run(repository, () =>
-            reset(repositoryPath, mode, options.mode ? options.mode : 'HEAD', { exec, env })
+            reset(repositoryPath, mode, options.ref ? options.ref : 'HEAD', { exec, env })
         );
     }
 
