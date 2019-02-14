@@ -47,10 +47,10 @@ describe('git', async function () {
             fs.mkdirSync(path.join(root, 'A'));
             fs.mkdirSync(path.join(root, 'B'));
             fs.mkdirSync(path.join(root, 'C'));
+            const git = await createGit();
             await initRepository(path.join(root, 'A'));
             await initRepository(path.join(root, 'B'));
             await initRepository(path.join(root, 'C'));
-            const git = await createGit();
             const workspaceRootUri = FileUri.create(root).toString();
             const repositories = await git.repositories(workspaceRootUri, { maxCount: 1 });
             expect(repositories.length).to.deep.equal(1);
@@ -63,10 +63,10 @@ describe('git', async function () {
             fs.mkdirSync(path.join(root, 'A'));
             fs.mkdirSync(path.join(root, 'B'));
             fs.mkdirSync(path.join(root, 'C'));
+            const git = await createGit();
             await initRepository(path.join(root, 'A'));
             await initRepository(path.join(root, 'B'));
             await initRepository(path.join(root, 'C'));
-            const git = await createGit();
             const workspaceRootUri = FileUri.create(root).toString();
             const repositories = await git.repositories(workspaceRootUri, {});
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'C']);
@@ -80,11 +80,11 @@ describe('git', async function () {
             fs.mkdirSync(path.join(root, 'BASE', 'A'));
             fs.mkdirSync(path.join(root, 'BASE', 'B'));
             fs.mkdirSync(path.join(root, 'BASE', 'C'));
+            const git = await createGit();
             await initRepository(path.join(root, 'BASE'));
             await initRepository(path.join(root, 'BASE', 'A'));
             await initRepository(path.join(root, 'BASE', 'B'));
             await initRepository(path.join(root, 'BASE', 'C'));
-            const git = await createGit();
             const workspaceRootUri = FileUri.create(path.join(root, 'BASE')).toString();
             const repositories = await git.repositories(workspaceRootUri, {});
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'BASE', 'C']);
@@ -99,11 +99,11 @@ describe('git', async function () {
             fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'A'));
             fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'B'));
             fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'C'));
+            const git = await createGit();
             await initRepository(path.join(root, 'BASE'));
             await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'A'));
             await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'B'));
             await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'C'));
-            const git = await createGit();
             const workspaceRootUri = FileUri.create(path.join(root, 'BASE', 'WS_ROOT')).toString();
             const repositories = await git.repositories(workspaceRootUri, {});
             const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
@@ -741,8 +741,8 @@ describe('git', async function () {
         before(async () => {
             root = track.mkdirSync('ls-files');
             localUri = FileUri.create(root).toString();
-            await createTestRepository(root);
             git = await createGit();
+            await createTestRepository(root);
         });
 
         ([
@@ -765,39 +765,17 @@ describe('git', async function () {
 
 describe('log', function () {
 
-    this.timeout(10000);
-
-    async function testLogFromRepoRoot(testLocalGit: string) {
-        const savedValue = process.env.USE_LOCAL_GIT;
-        try {
-            process.env.USE_LOCAL_GIT = testLocalGit;
-            const root = await createTestRepository(track.mkdirSync('log-test'));
-            const localUri = FileUri.create(root).toString();
-            const repository = { localUri };
-            const git = await createGit();
-            const result = await git.log(repository, { uri: localUri });
-            expect(result.length === 1).to.be.true;
-            expect(result[0].author.email === 'jon@doe.com').to.be.true;
-        } catch (err) {
-            throw err;
-        } finally {
-            process.env.USE_LOCAL_GIT = savedValue;
-        }
-    }
-
     // See https://github.com/theia-ide/theia/issues/2143
-    it('should not fail with embedded git when executed from the repository root', async () => {
-        await testLogFromRepoRoot('false');
+    it('should not fail when executed from the repository root', async () => {
+        const root = await createTestRepository(track.mkdirSync('log-test'));
+        const localUri = FileUri.create(root).toString();
+        const repository = { localUri };
+        const git = await createGit();
+        const result = await git.log(repository, { uri: localUri });
+        expect(result.length === 1).to.be.true;
+        expect(result[0].author.email === 'jon@doe.com').to.be.true;
     });
 
-    // See https://github.com/theia-ide/theia/issues/2143
-    it('should not fail with local git when executed from the repository root', async () => {
-        await testLogFromRepoRoot('true');
-    });
-
-    // THE ABOVE TEST SHOULD ALWAYS BE THE LAST GIT TEST RUN.
-    // It changes the underlying git to be the local git, which can't be
-    // undone. (See https://github.com/theia-ide/theia/issues/2246).
 });
 
 function toPathSegment(repository: Repository, uri: string): string {

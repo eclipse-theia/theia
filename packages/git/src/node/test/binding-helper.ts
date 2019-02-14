@@ -22,6 +22,9 @@ import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import { NoSyncRepositoryManager } from '.././test/no-sync-repository-manager';
 import { GitEnvProvider, DefaultGitEnvProvider } from '../env/git-env-provider';
 import { GitInit, DefaultGitInit } from '../init/git-init';
+import { MessageService, LogLevel } from '@theia/core/lib/common';
+import { MessageClient } from '@theia/core';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 // tslint:disable-next-line:no-any
 export function initializeBindings(): { container: Container, bind: interfaces.Bind } {
@@ -31,16 +34,28 @@ export function initializeBindings(): { container: Container, bind: interfaces.B
     bind(GitEnvProvider).toService(DefaultGitEnvProvider);
     bind(DefaultGitInit).toSelf();
     bind(GitInit).toService(DefaultGitInit);
+    bind(MessageService).toSelf();
+    bind(MessageClient).toSelf();
+    bind(DugiteGit).toSelf();
+    bind(Git).toService(DugiteGit);
     bindLogger(bind);
     return { container, bind };
 }
 
+/**
+ * For testing only.
+ */
 export async function createGit(bindingOptions: GitBindingOptions = GitBindingOptions.Default): Promise<Git> {
+    delete process.env.LOCAL_GIT_DIRECTORY;
+    delete process.env.GIT_EXEC_PATH;
     const { container, bind } = initializeBindings();
     bindGit(bind, {
         bindManager(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
             return binding.to(NoSyncRepositoryManager).inSingletonScope();
         }
     });
-    return container.get(DugiteGit);
+    (container.get(ILogger) as ILogger).setLogLevel(LogLevel.ERROR);
+    const git = container.get(DugiteGit);
+    await git.exec({ localUri: '' }, ['--version']); // Enforces eager Git initialization by setting the `LOCAL_GIT_DIRECTORY` and `GIT_EXEC_PATH` env variables.
+    return git;
 }
