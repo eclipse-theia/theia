@@ -20,6 +20,8 @@
 
 </div>
 
+HELLO WORLD
+
 <div style='margin:0 auto;width:80%;'>
 
 ![Theia](/doc/images/theia-screenshot.png)
@@ -78,9 +80,9 @@ Read below how to engage with Theia community:
  - __Debugging__
 
    A visual debugger leveraging the Debug Server Protocol defined by the VS Code team.
-   
+
  - __Plug-in System__
- 
+
    A plug-in system supporting VS Code extensions.
 
  - __Workbench Improvements__
@@ -92,7 +94,7 @@ Read below how to engage with Theia community:
    Integration with testing frameworks, based on a Test Adapter Protocol.
 
  - __Robustness and Improved UX__
- 
+
    We will further work on simplifying Theia and its UI / UX, improve the performance and keep working on bug reports that are rolling in.
 
  - __More__
