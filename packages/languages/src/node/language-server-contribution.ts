@@ -29,6 +29,7 @@ import { MaybePromise } from '@theia/core/lib/common';
 import { LanguageContribution } from '../common';
 import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
 import { ProcessManager } from '@theia/process/lib/node/process-manager';
+import { ProcessErrorEvent } from '@theia/process/lib/node/process';
 
 export {
     LanguageContribution, IConnection, Message
@@ -108,12 +109,12 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         const rawProcess = this.processFactory({ command, args, options });
         rawProcess.process.stderr.on('data', this.logError.bind(this));
         return new Promise<RawProcess>((resolve, reject) => {
-            rawProcess.onError(error => {
+            rawProcess.onError((error: ProcessErrorEvent) => {
                 this.onDidFailSpawnProcess(error);
-                if (isErrnoException(error) && error.code === 'ENOENT') {
+                if (error.code === 'ENOENT') {
                     const guess = command.split('\S').shift();
                     if (guess) {
-                        reject(new Error(`${error.message}\nPerhaps '${guess}' is not on the PATH.`));
+                        reject(new Error(`Failed to spawn ${guess}\nPerhaps it is not on the PATH.`));
                         return;
                     }
                 }
@@ -123,7 +124,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         });
     }
 
-    protected onDidFailSpawnProcess(error: Error): void {
+    protected onDidFailSpawnProcess(error: ProcessErrorEvent): void {
         console.error(error);
     }
 
@@ -161,9 +162,4 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         });
     }
 
-}
-
-// tslint:disable-next-line:no-any
-function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {
-    return (<NodeJS.ErrnoException>error).code !== undefined && (<NodeJS.ErrnoException>error).errno !== undefined;
 }
