@@ -171,7 +171,6 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(async workspaceFile => {
             await this.editorsContainer.refreshWorkspacePreferenceEditor();
             await this.refreshFoldersPreferencesEditor();
-            this.activatePreferenceEditor(this.preferenceScope);
             this.handleEditorsChanged();
         }));
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(async roots => {
@@ -202,7 +201,12 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         this.dispose();
     }
 
-    public activatePreferenceEditor(preferenceScope: PreferenceScope): void {
+    public async activatePreferenceEditor(preferenceScope: PreferenceScope): Promise<void> {
+        await this.deferredEditors.promise;
+        this.doActivatePreferenceEditor(preferenceScope);
+    }
+
+    private doActivatePreferenceEditor(preferenceScope: PreferenceScope): void {
         this.preferenceScope = preferenceScope;
         if (this.editorsContainer) {
             this.editorsContainer.activatePreferenceEditor(preferenceScope);
@@ -227,7 +231,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             }
         }
         this.onDidChangeTrackableWidgetsEmitter.fire(this.editors);
-        this.activatePreferenceEditor(this.preferenceScope);
+        this.doActivatePreferenceEditor(this.preferenceScope);
     }
 
     private async refreshFoldersPreferencesEditor(): Promise<void> {
