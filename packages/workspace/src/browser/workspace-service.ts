@@ -93,8 +93,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected getDefaultWorkspacePath(): MaybePromise<string | undefined> {
         // Prefer the workspace path specified as the URL fragment, if present.
         if (window.location.hash.length > 1) {
-            // Remove the leading #.
-            const wpPath = window.location.hash.substring(1);
+            // Remove the leading # and decode the URI.
+            const wpPath = decodeURI(window.location.hash.substring(1));
             return new URI().withPath(wpPath).withScheme('file').toString();
         } else {
             // Else, ask the server for its suggested workspace (usually the one
