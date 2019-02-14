@@ -24,6 +24,7 @@ import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
+import { serveGzip } from './backend-application-gzip-middleware';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 export interface BackendApplicationContribution {
@@ -137,6 +138,7 @@ export class BackendApplication {
 
     use(...handlers: express.Handler[]): void {
         this.app.use(...handlers);
+        this.app.use(serveGzip);
     }
 
     async start(aPort?: number, aHostname?: string): Promise<http.Server | https.Server> {

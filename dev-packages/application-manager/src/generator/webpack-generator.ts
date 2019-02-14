@@ -37,6 +37,7 @@ const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const CompressionPlugin = require('compression-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
@@ -144,6 +145,7 @@ module.exports = {
     },
     devtool: 'source-map',
     plugins: [
+        new CompressionPlugin({ threshold: 4096, filename: '[path].gz[query]' }),
         new CopyWebpackPlugin([${this.ifMonaco(() => `
             {
                 from: monacoEditorCorePath,
