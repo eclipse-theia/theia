@@ -19,6 +19,7 @@ import { BaseLanguageServerContribution, IConnection } from '@theia/languages/li
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { SpawnOptions } from 'child_process';
+import { ProcessErrorEvent } from '@theia/process/lib/node/process';
 
 @injectable()
 export class PythonContribution extends BaseLanguageServerContribution {
@@ -42,7 +43,7 @@ export class PythonContribution extends BaseLanguageServerContribution {
         return undefined;
     }
 
-    protected onDidFailSpawnProcess(error: Error): void {
+    protected onDidFailSpawnProcess(error: ProcessErrorEvent): void {
         super.onDidFailSpawnProcess(error);
         console.error('Python language server cannot be started.');
         console.error("Make sure `pyls` is installed: e.g. `pip install 'python-language-server[all]'`");
