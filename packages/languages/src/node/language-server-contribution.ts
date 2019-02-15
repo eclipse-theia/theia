@@ -112,7 +112,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
             rawProcess.onError((error: ProcessErrorEvent) => {
                 this.onDidFailSpawnProcess(error);
                 if (error.code === 'ENOENT') {
-                    const guess = command.split('\S').shift();
+                    const guess = command.split(/\s+/).shift();
                     if (guess) {
                         reject(new Error(`Failed to spawn ${guess}\nPerhaps it is not on the PATH.`));
                         return;
