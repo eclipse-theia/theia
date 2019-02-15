@@ -30,6 +30,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
+import { LocationMapperService } from './location-mapper-service';
 
 export namespace MiniBrowserCommands {
     export const PREVIEW: Command = {
@@ -57,6 +58,8 @@ export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrows
 export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBrowser>
     implements FrontendApplicationContribution, CommandContribution, MenuContribution, TabBarToolbarContribution {
 
+    static PREVIEW_URI = new URI().withScheme('__minibrowser__preview__');
+
     /**
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
      * we have this map of extension and priority pairs that we populate at application startup.
@@ -82,6 +85,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     @inject(MiniBrowserService)
     protected readonly miniBrowserService: MiniBrowserService;
 
+    @inject(LocationMapperService)
+    protected readonly locationMapperService: LocationMapperService;
+
     onStart(): void {
         (async () => (await this.miniBrowserService.supportedFileExtensions()).forEach(entry => {
             const { extension, priority } = entry;
@@ -92,7 +98,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     canHandle(uri: URI): number {
         // It does not guard against directories. For instance, a folder with this name: `Hahahah.html`.
         // We could check with the FS, but then, this method would become async again.
-        const extension = uri.toString().split('.').pop();
+        const extension = uri.path.ext;
         if (extension) {
             return this.supportedExtensions.get(extension.toLocaleLowerCase()) || 0;
         }
@@ -114,6 +120,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         widget.setProps(props);
         return widget;
     }
+
     protected async options(uri?: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowserOpenerOptions & { widgetOptions: ApplicationShell.WidgetOptions }> {
         // Get the default options.
         let result = await this.defaultOptions();
@@ -253,18 +260,21 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         }
     }
 
-    static PREVIEW_URI = new URI().withScheme('__minibrowser__preview__');
     async openPreview(startPage: string): Promise<MiniBrowser> {
-        return this.open(MiniBrowserOpenHandler.PREVIEW_URI, this.getOpenPreviewProps(startPage));
+        const props = await this.getOpenPreviewProps(await this.locationMapperService.map(startPage));
+        return this.open(MiniBrowserOpenHandler.PREVIEW_URI, props);
     }
-    protected getOpenPreviewProps(startPage: string): MiniBrowserOpenerOptions {
+
+    protected async getOpenPreviewProps(startPage: string): Promise<MiniBrowserOpenerOptions> {
+        const resetBackground = await this.resetBackground(new URI(startPage));
         return {
             name: 'Preview',
             startPage,
             toolbar: 'read-only',
             widgetOptions: {
                 area: 'right'
-            }
+            },
+            resetBackground
         };
     }
 
