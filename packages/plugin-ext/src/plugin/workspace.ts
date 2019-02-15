@@ -42,7 +42,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
 
-    private folders: theia.WorkspaceFolder[] | undefined;
+    private folders: theia.WorkspaceFolder[] = [];
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
 
     constructor(rpc: RPCProtocol, private editorsAndDocuments: EditorsAndDocumentsExtImpl) {
@@ -55,7 +55,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return folder && folder.uri.fsPath;
     }
 
-    get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
+    get workspaceFolders(): theia.WorkspaceFolder[] {
         return this.folders;
     }
 
@@ -199,7 +199,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     getWorkspaceFolder(uri: theia.Uri, resolveParent?: boolean): theia.WorkspaceFolder | URI | undefined {
-        if (!this.folders || !this.folders.length) {
+        if (!this.folders.length) {
             return undefined;
         }
 
@@ -238,7 +238,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     private hasFolder(uri: URI): boolean {
-        if (!this.folders) {
+        if (!this.folders.length) {
             return false;
         }
         return this.folders.some(folder => folder.uri.toString() === uri.toString());
@@ -266,7 +266,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         }
 
         if (typeof includeWorkspace === 'undefined') {
-            includeWorkspace = this.folders!.length > 1;
+            includeWorkspace = this.folders.length > 1;
         }
 
         let result = relative(folder.uri.fsPath, path);

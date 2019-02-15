@@ -354,10 +354,10 @@ export function createAPIFactory(
         };
 
         const workspace: typeof theia.workspace = {
-            get rootPath(): string | undefined {
+            get rootPath(): string | undefined {
                 return workspaceExt.rootPath;
             },
-            get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
+            get workspaceFolders(): theia.WorkspaceFolder[] {
                 return workspaceExt.workspaceFolders;
             },
             get name(): string | undefined {
