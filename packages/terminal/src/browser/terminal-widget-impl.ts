@@ -30,6 +30,7 @@ import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from './terminal-preferences';
+import debounce = require('lodash.debounce');
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -306,9 +307,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.update();
     }
     protected onResize(msg: Widget.ResizeMessage): void {
+        this.debouncedResize();
+    }
+
+    protected debouncedResize = debounce(() => {
         this.needsResize = true;
         this.update();
-    }
+    }, 300);
 
     protected needsResize = true;
     protected onUpdateRequest(msg: Message): void {
