@@ -620,6 +620,10 @@ export function createAPIFactory(
                 return tasksExt.registerTaskProvider(type, provider);
             },
 
+            get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
+                return tasksExt.taskExecutions;
+            },
+
             onDidStartTask(listener, thisArg?, disposables?) {
                 return tasksExt.onDidStartTask(listener, thisArg, disposables);
             },

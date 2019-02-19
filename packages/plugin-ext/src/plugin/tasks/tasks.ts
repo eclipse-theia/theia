@@ -33,13 +33,18 @@ export class TasksExtImpl implements TasksExt {
 
     private callId = 0;
     private adaptersMap = new Map<number, TaskProviderAdapter>();
-    private taskExecutions = new Map<number, theia.TaskExecution>();
+    private executions = new Map<number, theia.TaskExecution>();
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
     private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
+        this.fetchTaskExecutions();
+    }
+
+    get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
+        return [...this.executions.values()];
     }
 
     get onDidStartTask(): Event<theia.TaskStartEvent> {
@@ -57,12 +62,12 @@ export class TasksExtImpl implements TasksExt {
     }
 
     $onDidEndTask(id: number): void {
-        const taskExecution = this.taskExecutions.get(id);
+        const taskExecution = this.executions.get(id);
         if (!taskExecution) {
             throw new Error(`Task execution with id ${id} is not found`);
         }
 
-        this.taskExecutions.delete(id);
+        this.executions.delete(id);
 
         this.onDidTerminateTask.fire({
             execution: taskExecution
@@ -110,9 +115,18 @@ export class TasksExtImpl implements TasksExt {
         });
     }
 
+    private async fetchTaskExecutions() {
+        try {
+            const taskExecutions = await this.proxy.$taskExecutions();
+            taskExecutions.forEach(execution => this.getTaskExecution(execution));
+        } catch (error) {
+            console.error(`Can not fetch running tasks: ${error}`);
+        }
+    }
+
     private getTaskExecution(execution: TaskExecutionDto): theia.TaskExecution {
         const executionId = execution.id;
-        let result: theia.TaskExecution | undefined = this.taskExecutions.get(executionId);
+        let result: theia.TaskExecution | undefined = this.executions.get(executionId);
         if (result) {
             return result;
         }
@@ -123,7 +137,7 @@ export class TasksExtImpl implements TasksExt {
                 this.proxy.$terminateTask(executionId);
             }
         };
-        this.taskExecutions.set(executionId, result);
+        this.executions.set(executionId, result);
         return result;
     }
 }

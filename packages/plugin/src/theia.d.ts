@@ -7140,6 +7140,11 @@ declare module '@theia/plugin' {
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
 
+        /**
+         * The currently active task executions or an empty array.
+         */
+        export const taskExecutions: ReadonlyArray<TaskExecution>;
+
         /** Fires when a task starts. */
         export const onDidStartTask: Event<TaskStartEvent>;
 
