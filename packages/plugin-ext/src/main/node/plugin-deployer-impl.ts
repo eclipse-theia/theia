@@ -28,6 +28,7 @@ import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
 import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
 import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
 import { ILogger } from '@theia/core';
+import { PluginCliContribution } from './plugin-cli-contribution';
 
 @injectable()
 export class PluginDeployerImpl implements PluginDeployer {
@@ -37,6 +38,9 @@ export class PluginDeployerImpl implements PluginDeployer {
 
     @inject(PluginDeployerHandler)
     protected readonly hostedPluginServer: PluginDeployerHandler;
+
+    @inject(PluginCliContribution)
+    protected readonly cliContribution: PluginCliContribution;
 
     /**
      * Deployer entries.
@@ -86,14 +90,17 @@ export class PluginDeployerImpl implements PluginDeployer {
         // check THEIA_DEFAULT_PLUGINS or THEIA_PLUGINS env var
         const defaultPluginsValue = process.env.THEIA_DEFAULT_PLUGINS || undefined;
         const pluginsValue = process.env.THEIA_PLUGINS || undefined;
+        // check the `--plugins` CLI option
+        const defaultPluginsValueViaCli = this.cliContribution.localDir();
 
         this.logger.debug('Found the list of default plugins ID on env:', defaultPluginsValue);
         this.logger.debug('Found the list of plugins ID on env:', pluginsValue);
+        this.logger.debug('Found the list of default plugins ID from CLI:', defaultPluginsValueViaCli);
 
         // transform it to array
         const defaultPluginIdList = defaultPluginsValue ? defaultPluginsValue.split(',') : [];
         const pluginIdList = pluginsValue ? pluginsValue.split(',') : [];
-        const pluginsList = defaultPluginIdList.concat(pluginIdList);
+        const pluginsList = defaultPluginIdList.concat(pluginIdList).concat(defaultPluginsValueViaCli ? defaultPluginsValueViaCli.split(',') : []);
 
         // skip if no plug-ins
         if (pluginsList.length === 0) {

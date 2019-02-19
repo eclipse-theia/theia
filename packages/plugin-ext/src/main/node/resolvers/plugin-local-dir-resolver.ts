@@ -24,6 +24,8 @@ import * as path from 'path';
 @injectable()
 export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResolver {
 
+    static LOCAL_DIR = 'local-dir';
+
     /**
      * Check all files/folder from the local-dir referenced and add them as plugins.
      */
@@ -31,11 +33,11 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
 
         // get directory
         const localDirSetting = pluginResolverContext.getOriginId();
-        if (!localDirSetting.startsWith('local-dir')) {
+        if (!localDirSetting.startsWith(LocalDirectoryPluginDeployerResolver.LOCAL_DIR)) {
             return;
         }
         // remove prefix
-        let dirPath = localDirSetting.substring('local-dir'.length + 1);
+        let dirPath = localDirSetting.substring(LocalDirectoryPluginDeployerResolver.LOCAL_DIR.length + 1);
         if (!path.isAbsolute(dirPath)) {
             dirPath = path.resolve(process.cwd(), dirPath);
         }
@@ -60,6 +62,6 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
         return Promise.resolve();
     }
     accept(pluginId: string): boolean {
-        return pluginId.startsWith('local-dir');
+        return pluginId.startsWith(LocalDirectoryPluginDeployerResolver.LOCAL_DIR);
     }
 }
