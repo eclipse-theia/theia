@@ -5562,7 +5562,6 @@ jsonc-parser@^2.0.0-next.1, jsonc-parser@^2.0.1:
 jsonc-parser@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/jsonc-parser/-/jsonc-parser-2.0.2.tgz#42fcf56d70852a043fadafde51ddb4a85649978d"
-  integrity sha512-TSU435K5tEKh3g7bam1AFf+uZrISheoDsLlpmAo6wWZYqjsnd09lHYK1Qo+moK4Ikifev1Gdpa69g4NELKnCrQ==
 
 jsonfile@^2.1.0:
   version "2.4.0"
@@ -10355,7 +10354,6 @@ xtend@~2.1.1:
 xterm@3.9.2:
   version "3.9.2"
   resolved "https://registry.yarnpkg.com/xterm/-/xterm-3.9.2.tgz#e94bfbb84217b19bc1c16ed43d303b8245c9313d"
-  integrity sha512-fpQJQFTosY97EK4eB7UOrlFAwwqv1rSqlXgttEVD0S1v4MlevsUkRwrM/ew5X73jQXc+vdglRtccIhcXg5wtGg==
 
 y18n@^3.2.1:
   version "3.2.1"

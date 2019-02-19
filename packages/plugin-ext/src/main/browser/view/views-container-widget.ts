@@ -37,8 +37,7 @@ export class ViewsContainerWidget extends BaseWidget {
 
     sectionTitle: HTMLElement;
 
-    constructor(protected viewContainer: ViewContainer,
-        protected views: View[]) {
+    constructor(protected viewContainer: ViewContainer) {
         super();
 
         this.id = `views-container-widget-${viewContainer.id}`;
@@ -51,20 +50,21 @@ export class ViewsContainerWidget extends BaseWidget {
         this.sectionTitle = createElement('theia-views-container-title');
         this.sectionTitle.innerText = viewContainer.title;
         this.node.appendChild(this.sectionTitle);
+    }
 
-        // update sections
-        const instance = this;
-
-        this.views.forEach(view => {
-            const section = new ViewContainerSection(view, instance);
-            this.sections.set(view.id, section);
-            this.node.appendChild(section.node);
+    public addView(view: View): void {
+        if (this.hasView(view.id)) {
+            return;
+        }
+        const section = new ViewContainerSection(view, () => {
+            this.updateDimensions();
         });
+        this.sections.set(view.id, section);
+        this.node.appendChild(section.node);
     }
 
     public hasView(viewId: string): boolean {
-        const result = this.views.find(view => view.id === viewId);
-        return result !== undefined;
+        return this.sections.has(viewId);
     }
 
     public addWidget(viewId: string, viewWidget: TreeViewWidget) {
@@ -135,7 +135,7 @@ export class ViewContainerSection {
 
     private viewWidget: TreeViewWidget;
 
-    constructor(public view: View, protected container: ViewsContainerWidget) {
+    constructor(public view: View, private updateDimensionsCallback: Function) {
         this.node = createElement('theia-views-container-section');
 
         this.createTitle();
@@ -171,7 +171,7 @@ export class ViewContainerSection {
         this.control.setAttribute('opened', '' + this.opened);
         this.content.setAttribute('opened', '' + this.opened);
 
-        this.container.updateDimensions();
+        this.updateDimensionsCallback();
 
         setTimeout(() => {
             if (this.opened) {
