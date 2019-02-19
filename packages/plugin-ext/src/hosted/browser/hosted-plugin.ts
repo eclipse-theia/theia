@@ -58,9 +58,6 @@ export class HostedPluginSupport {
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
 
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
-
     @inject(PreferenceProviderProvider)
     protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
@@ -72,8 +69,9 @@ export class HostedPluginSupport {
         @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
         @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
         @inject(StoragePathService) private readonly storagePathService: StoragePathService,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
     ) {
-        this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
+        this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
 
         this.storagePathService.onStoragePathChanged(path => {
             this.updateStoragePath(path);
