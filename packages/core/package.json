@@ -21,6 +21,7 @@
     "ajv": "^6.5.3",
     "body-parser": "^1.17.2",
     "electron": "^2.0.14",
+    "electron-store": "^2.0.0",
     "es6-promise": "^4.2.4",
     "express": "^4.16.3",
     "file-icons-js": "^1.0.3",
