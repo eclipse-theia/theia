@@ -67,10 +67,7 @@ export class WorkspaceMainImpl implements WorkspaceMain {
 
         this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
 
-        this.workspaceService.roots.then(roots => {
-            this.processWorkspaceFoldersChanged(roots);
-        });
-
+        this.processWorkspaceFoldersChanged(this.workspaceService.tryGetRoots());
         this.workspaceService.onWorkspaceChanged(roots => {
             this.processWorkspaceFoldersChanged(roots);
         });
@@ -81,13 +78,13 @@ export class WorkspaceMainImpl implements WorkspaceMain {
             return;
         }
         this.roots = roots;
+        this.proxy.$onWorkspaceFoldersChanged({ roots });
 
         await this.storagePathService.updateStoragePath(roots);
 
         const keyValueStorageWorkspacesData = await this.pluginServer.keyValueStorageGetAll(false);
         this.storageProxy.$updatePluginsWorkspaceData(keyValueStorageWorkspacesData);
 
-        this.proxy.$onWorkspaceFoldersChanged({ roots });
     }
 
     private isAnyRootChanged(roots: FileStat[]): boolean {
