@@ -88,6 +88,14 @@ export class TasksMainImpl implements TasksMain {
         }
     }
 
+    async $taskExecutions() {
+        const runningTasks = await this.taskService.getRunningTasks();
+        return runningTasks.map(taskInfo => ({
+            id: taskInfo.taskId,
+            task: taskInfo.config
+        }));
+    }
+
     $terminateTask(id: number): void {
         this.taskService.kill(id);
     }
