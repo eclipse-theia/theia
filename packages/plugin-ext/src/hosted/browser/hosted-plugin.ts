@@ -152,6 +152,7 @@ export class HostedPluginSupport {
                         pluginID = getPluginId(plugins[0].model);
                     }
                     const rpc = this.createServerRpc(pluginID, hostKey);
+                    setUpPluginApi(rpc, container);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                     hostedExtManager.$init({
                         plugins: plugins,
@@ -161,7 +162,6 @@ export class HostedPluginSupport {
                         env: { queryParams: getQueryParameters() },
                         extApi: initData.pluginAPIs
                     }, confStorage);
-                    setUpPluginApi(rpc, container);
                     this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
                     this.backendExtManagerProxy = hostedExtManager;
                 });
