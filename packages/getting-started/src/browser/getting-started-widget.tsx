@@ -25,7 +25,7 @@ import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { CoreFrontendApplicationConfig } from '@theia/core/lib/browser/core-frontend-application-config';
 
 @injectable()
 export class GettingStartedWidget extends ReactWidget {
@@ -34,7 +34,7 @@ export class GettingStartedWidget extends ReactWidget {
     static readonly LABEL = 'Getting Started';
 
     protected applicationInfo: ApplicationInfo | undefined;
-    protected applicationName = FrontendApplicationConfigProvider.get().applicationName;
+    protected applicationName = CoreFrontendApplicationConfig.get().applicationName;
 
     protected stat: FileStat | undefined;
     protected home: string | undefined;

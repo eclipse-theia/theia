@@ -6,7 +6,9 @@
     "target": "electron",
     "frontend": {
       "config": {
-        "applicationName": "Theia Electron Example"
+        "core": {
+          "applicationName": "Theia Electron Example"
+        }
       }
     }
   },

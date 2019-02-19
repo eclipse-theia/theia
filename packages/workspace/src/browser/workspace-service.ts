@@ -28,7 +28,7 @@ import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from 'ajv';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { CoreFrontendApplicationConfig } from '@theia/core/lib/browser/core-frontend-application-config';
 
 /**
  * The workspace service.
@@ -69,7 +69,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
+        this.applicationName = CoreFrontendApplicationConfig.get().applicationName;
         const wpUriString = await this.getDefaultWorkspacePath();
         const wpStat = await this.toFileStat(wpUriString);
         await this.setWorkspace(wpStat);

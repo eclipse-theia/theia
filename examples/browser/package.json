@@ -5,7 +5,9 @@
   "theia": {
     "frontend": {
       "config": {
-        "applicationName": "Theia Browser Example"
+        "core": {
+          "applicationName": "Theia Browser Example"
+        }
       }
     }
   },

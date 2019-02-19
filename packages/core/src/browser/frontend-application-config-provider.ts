@@ -20,6 +20,11 @@ export class FrontendApplicationConfigProvider {
 
     private static KEY = Symbol('FrontendApplicationConfigProvider');
 
+    /**
+     * Set of already registered scopes.
+     */
+    static readonly SCOPES = new Set<string>();
+
     static get(): FrontendApplicationConfig {
         const config = FrontendApplicationConfigProvider.doGet();
         if (config === undefined) {
@@ -45,4 +50,35 @@ export class FrontendApplicationConfigProvider {
         return globalObject[key];
     }
 
+}
+
+export class CustomFrontendConfigurationProvider<T extends object = {}> {
+
+    protected cached?: FrontendApplicationConfig & T;
+
+    constructor(
+        public readonly scope: string,
+        protected defaultConfig: T,
+    ) { }
+
+    get(): FrontendApplicationConfig & T {
+        return this.cached || (this.cached = {
+            ...this.defaultConfig as object,
+            // tslint:disable-next-line:no-any
+            ...(FrontendApplicationConfigProvider.get() as any || {})[this.scope],
+        });
+    }
+}
+
+/**
+ * Creates a specialized configuration provider, for your own needs.
+ *
+ * @param defaultConfig the default values for your config type.
+ */
+export function createConfigurationProvider<T extends object>(scope: string, defaultConfig: T): CustomFrontendConfigurationProvider<T> {
+    if (FrontendApplicationConfigProvider.SCOPES.has(scope)) {
+        throw new Error(`"${scope}" scope already registered`);
+    }
+    FrontendApplicationConfigProvider.SCOPES.add(scope);
+    return new CustomFrontendConfigurationProvider<T>(scope, defaultConfig);
 }
