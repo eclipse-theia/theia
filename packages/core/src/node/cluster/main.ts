@@ -31,8 +31,8 @@ const args = yargs.option(MasterProcess.startupTimeoutOption, {
     type: 'number',
     default: BackendApplicationConfigProvider.get().startupTimeout || MasterProcess.defaultStartupTimeoutOption
 }).help(false).argv;
-const noCluster = args['cluster'] === false;
-const isMaster = !noCluster && cluster.isMaster;
+const useCluster = args['cluster'] === true;
+const isMaster = useCluster && cluster.isMaster;
 const development = process.env.NODE_ENV === 'development';
 
 const startupTimeout = args[MasterProcess.startupTimeoutOption] as number;
