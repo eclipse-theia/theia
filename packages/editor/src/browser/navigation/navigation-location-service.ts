@@ -165,6 +165,15 @@ export class NavigationLocationService {
     }
 
     /**
+     * Clears the navigation history.
+     */
+    clearHistory(): void {
+        this.stack = [];
+        this.pointer = -1;
+        this._lastEditLocation = undefined;
+    }
+
+    /**
      * Reveals the location argument. If not given, reveals the `current location`. Does nothing, if the argument is `undefined`.
      */
     async reveal(location: NavigationLocation | undefined = this.currentLocation()): Promise<void> {
