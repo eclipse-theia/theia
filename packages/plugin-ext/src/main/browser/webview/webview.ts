@@ -115,7 +115,6 @@ export class WebviewWidget extends BaseWidget {
                     this.handleMessage(e);
                 };
                 newFrame.style.visibility = 'visible';
-                newFrame.contentWindow!.focus();
             }
         };
 
@@ -138,6 +137,10 @@ export class WebviewWidget extends BaseWidget {
         newFrame.contentDocument!.close();
 
         this.updateSandboxAttribute(newFrame);
+    }
+
+    focus() {
+      this.iframe.contentWindow!.focus();
     }
 
     private reloadFrame() {

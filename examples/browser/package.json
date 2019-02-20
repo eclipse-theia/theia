@@ -61,7 +61,7 @@
     "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
     "start": "export THEIA_DEFAULT_PLUGINS=local-dir:../../plugins && theia start",
     "start:debug": "yarn start --log-level=debug",
-    "test": "wdio --max-old-space-size=4096 wdio.conf.js",
+    "test": "wdio wdio.conf.js",
     "test-non-headless": "wdio wdio-non-headless.conf.js",
     "coverage:compile": "yarn build --config coverage-webpack.config.js",
     "coverage:remap": "remap-istanbul -i coverage/coverage.json -o coverage/coverage-final.json --exclude 'frontend/index.js' && rimraf coverage/coverage.json",
