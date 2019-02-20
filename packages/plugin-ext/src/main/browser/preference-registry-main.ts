@@ -29,11 +29,23 @@ import {
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 
-export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider): PreferenceData {
-    return PreferenceScope.getScopes().reduce((result, scope) => {
+export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider, rootFolders: FileStat[]): PreferenceData {
+    const folders = rootFolders.map(root => root.uri.toString());
+    /* tslint:disable-next-line:no-any */
+    return PreferenceScope.getScopes().reduce((result: { [key: number]: any }, scope: PreferenceScope) => {
+        result[scope] = {};
         const provider = preferenceProviderProvider(scope);
-        result[scope] = provider.getPreferences();
+        if (scope === PreferenceScope.Folder) {
+            for (const f of folders) {
+                const folderPrefs = provider.getPreferences(f);
+                result[scope][f] = folderPrefs;
+            }
+        } else {
+            result[scope] = provider.getPreferences();
+        }
         return result;
     }, {} as PreferenceData);
 }
@@ -48,9 +60,11 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
         this.preferenceService = container.get(PreferenceService);
         this.preferenceProviderProvider = container.get(PreferenceProviderProvider);
         const preferenceServiceImpl = container.get(PreferenceServiceImpl);
+        const workspaceService = container.get(WorkspaceService);
 
-        preferenceServiceImpl.onPreferenceChanged(e => {
-            const data = getPreferences(this.preferenceProviderProvider);
+        preferenceServiceImpl.onPreferenceChanged(async e => {
+            const roots = await workspaceService.roots;
+            const data = getPreferences(this.preferenceProviderProvider, roots);
             this.proxy.$acceptConfigurationChanged(data, {
                 preferenceName: e.preferenceName,
                 newValue: e.newValue
@@ -59,14 +73,14 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
     }
 
     // tslint:disable-next-line:no-any
-    $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any): PromiseLike<void> {
+    $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, value, scope);
+        return this.preferenceService.set(key, value, scope, resource);
     }
 
-    $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string): PromiseLike<void> {
+    $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string): PromiseLike<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, undefined, scope);
+        return this.preferenceService.set(key, undefined, scope, resource);
     }
 
     private parseConfigurationTarget(arg?: boolean | ConfigurationTarget): PreferenceScope {
