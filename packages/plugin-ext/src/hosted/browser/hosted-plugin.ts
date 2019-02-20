@@ -34,6 +34,7 @@ import { StoragePathService } from '../../main/browser/storage-path-service';
 import { getPreferences } from '../../main/browser/preference-registry-main';
 import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
+import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 
 @injectable()
 export class HostedPluginSupport {
@@ -97,6 +98,7 @@ export class HostedPluginSupport {
             this.server.getExtPluginAPI(),
             this.pluginServer.keyValueStorageGetAll(true),
             this.pluginServer.keyValueStorageGetAll(false),
+            this.workspaceService.roots,
         ]).then(metadata => {
             const pluginsInitData: PluginsInitializationData = {
                 plugins: metadata['0'],
@@ -105,7 +107,8 @@ export class HostedPluginSupport {
                 storagePath: metadata['3'],
                 pluginAPIs: metadata['4'],
                 globalStates: metadata['5'],
-                workspaceStates: metadata['6']
+                workspaceStates: metadata['6'],
+                roots: metadata['7']
             };
             this.loadPlugins(pluginsInitData, this.container);
         }).catch(e => console.error(e));
@@ -130,7 +133,7 @@ export class HostedPluginSupport {
                 const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                 hostedExtManager.$init({
                     plugins: initData.plugins,
-                    preferences: getPreferences(this.preferenceProviderProvider),
+                    preferences: getPreferences(this.preferenceProviderProvider, initData.roots),
                     globalState: initData.globalStates,
                     workspaceState: initData.workspaceStates,
                     env: { queryParams: getQueryParameters(), language: navigator.language },
@@ -171,7 +174,7 @@ export class HostedPluginSupport {
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                     hostedExtManager.$init({
                         plugins: plugins,
-                        preferences: getPreferences(this.preferenceProviderProvider),
+                        preferences: getPreferences(this.preferenceProviderProvider, initData.roots),
                         globalState: initData.globalStates,
                         workspaceState: initData.workspaceStates,
                         env: { queryParams: getQueryParameters(), language: navigator.language },
@@ -234,5 +237,6 @@ interface PluginsInitializationData {
     storagePath: string | undefined,
     pluginAPIs: ExtPluginApi[],
     globalStates: KeysToKeysToAnyValue,
-    workspaceStates: KeysToKeysToAnyValue
+    workspaceStates: KeysToKeysToAnyValue,
+    roots: FileStat[],
 }
