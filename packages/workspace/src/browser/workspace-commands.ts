@@ -16,7 +16,6 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
@@ -32,6 +31,7 @@ import { WorkspacePreferences } from './workspace-preferences';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common';
+import { WorkspaceCompareHandler } from './workspace-compare-handler';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -153,6 +153,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
+    @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
 
     registerCommands(registry: CommandRegistry): void {
         this.openerService.getOpeners().then(openers => {
@@ -242,43 +243,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }));
         registry.registerCommand(WorkspaceCommands.FILE_DUPLICATE, this.newMultiUriAwareCommandHandler(this.duplicateHandler));
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler(this.deleteHandler));
-        registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
-            isVisible: uris => uris.length === 2,
-            isEnabled: uris => uris.length === 2,
-            execute: async uris => {
-                const [left, right] = uris;
-                const [leftExists, rightExists] = await Promise.all([
-                    this.fileSystem.exists(left.toString()),
-                    this.fileSystem.exists(right.toString())
-                ]);
-                if (leftExists && rightExists) {
-                    const [leftStat, rightStat] = await Promise.all([
-                        this.fileSystem.getFileStat(left.toString()),
-                        this.fileSystem.getFileStat(right.toString()),
-                    ]);
-                    if (leftStat && rightStat) {
-                        if (!leftStat.isDirectory && !rightStat.isDirectory) {
-                            const uri = DiffUris.encode(left, right);
-                            const opener = await this.openerService.getOpener(uri);
-                            opener.open(uri);
-                        } else {
-                            const details = (() => {
-                                if (leftStat.isDirectory && rightStat.isDirectory) {
-                                    return 'Both resource were a directory.';
-                                } else {
-                                    if (leftStat.isDirectory) {
-                                        return `'${left.path.base}' was a directory.`;
-                                    } else {
-                                        return `'${right.path.base}' was a directory.`;
-                                    }
-                                }
-                            });
-                            this.messageService.warn(`Directories cannot be compared. ${details()}`);
-                        }
-                    }
-                }
-            }
-        }));
+        registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler(this.compareHandler));
         this.preferences.ready.then(() => {
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
