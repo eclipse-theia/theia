@@ -84,6 +84,14 @@ export namespace EditorCommands {
         category: EDITOR_CATEGORY,
         label: 'Go to Last Edit Location'
     };
+    /**
+     * Command that clears the editor navigation history.
+     */
+    export const CLEAR_EDITOR_HISTORY: Command = {
+        id: 'textEditor.commands.clear.history',
+        category: EDITOR_CATEGORY,
+        label: 'Clear Editor History'
+    };
 }
 
 @injectable()
@@ -121,6 +129,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.GO_BACK);
         registry.registerCommand(EditorCommands.GO_FORWARD);
         registry.registerCommand(EditorCommands.GO_LAST_EDIT);
+        registry.registerCommand(EditorCommands.CLEAR_EDITOR_HISTORY);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),
