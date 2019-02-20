@@ -730,12 +730,12 @@ export interface PreferenceRegistryMain {
         target: boolean | ConfigurationTarget | undefined,
         key: string,
         value: any,
-        resource: any | undefined
+        resource?: string
     ): PromiseLike<void>;
     $removeConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
-        resource: any | undefined
+        resource?: string
     ): PromiseLike<void>;
 }
 
