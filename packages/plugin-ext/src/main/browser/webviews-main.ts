@@ -87,6 +87,9 @@ export class WebviewsMainImpl implements WebviewsMain {
         this.views.set(viewId, view);
         this.shell.addWidget(view, { area: showOptions.area ? showOptions.area : 'main' });
         this.shell.activateWidget(view.id);
+        if (showOptions.preserveFocus) {
+            view.focus();
+        }
     }
     $disposeWebview(handle: string): void {
         const view = this.views.get(handle);
