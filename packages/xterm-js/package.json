@@ -4,6 +4,7 @@
   "description": "Theia - xterm.js Extension",
   "dependencies": {
     "@theia/core": "^0.3.19",
+    "@theia/editor": "^0.3.19",
     "@theia/terminal": "^0.3.19",
     "@theia/filesystem": "^0.3.19",
     "@theia/workspace": "^0.3.19",
