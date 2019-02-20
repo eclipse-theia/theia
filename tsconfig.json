@@ -40,6 +40,9 @@
       "@theia/terminal/lib/*": [
         "packages/terminal/src/*"
       ],
+      "@theia/xterm.js/lib/*": [
+        "packages/xterm-js/src/*"
+      ],
       "@theia/languages/lib/*": [
         "packages/languages/src/*"
       ],

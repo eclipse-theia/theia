@@ -1,25 +1,20 @@
 {
-  "name": "@theia/task",
+  "name": "@theia/xterm.js",
   "version": "0.3.19",
-  "description": "Theia - Task extension. This extension adds support for executing raw or terminal processes in the backend.",
+  "description": "Theia - xterm.js Extension",
   "dependencies": {
     "@theia/core": "^0.3.19",
-    "@theia/filesystem": "^0.3.19",
-    "@theia/markers": "^0.3.19",
-    "@theia/process": "^0.3.19",
     "@theia/terminal": "^0.3.19",
-    "@theia/xterm.js": "^0.3.19",
-    "@theia/variable-resolver": "^0.3.19",
+    "@theia/filesystem": "^0.3.19",
     "@theia/workspace": "^0.3.19",
-    "jsonc-parser": "^2.0.2"
+    "xterm": "3.9.2"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/task-frontend-module",
-      "backend": "lib/node/task-backend-module"
+        "frontend": "lib/browser/terminal-frontend-module"
     }
   ],
   "keywords": [

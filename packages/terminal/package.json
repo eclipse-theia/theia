@@ -6,15 +6,13 @@
     "@theia/core": "^0.3.19",
     "@theia/filesystem": "^0.3.19",
     "@theia/process": "^0.3.19",
-    "@theia/workspace": "^0.3.19",
-    "xterm": "3.9.2"
+    "@theia/workspace": "^0.3.19"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/terminal-frontend-module",
       "backend": "lib/node/terminal-backend-module"
     }
   ],

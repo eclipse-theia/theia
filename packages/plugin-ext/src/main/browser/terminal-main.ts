@@ -17,8 +17,8 @@
 import { interfaces } from 'inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalOptions } from '@theia/plugin';
-import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
+import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 

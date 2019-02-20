@@ -21,12 +21,12 @@ import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@thei
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
-import { terminalsPath } from '../common/terminal-protocol';
-import { IBaseTerminalServer } from '../common/base-terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
+import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
+import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
+import { IBaseTerminalServer } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { TerminalWatcher } from '@theia/terminal/lib/common/terminal-watcher';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from './terminal-preferences';

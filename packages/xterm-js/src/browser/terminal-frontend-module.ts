@@ -20,13 +20,13 @@ import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, Key
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
-import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
-import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
+import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/terminal-widget';
+import { ITerminalServer, terminalPath } from '@theia/terminal/lib/common/terminal-protocol';
+import { TerminalWatcher } from '@theia/terminal/lib/common/terminal-watcher';
+import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
-import { createCommonBindings } from '../common/terminal-common-module';
-import { TerminalService } from './base/terminal-service';
+import { createCommonBindings } from '@theia/terminal/lib/common/terminal-common-module';
+import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
 import { bindTerminalPreferences } from './terminal-preferences';
 
 import '../../src/browser/terminal.css';
