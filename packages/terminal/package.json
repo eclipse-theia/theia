@@ -4,6 +4,7 @@
   "description": "Theia - Terminal Extension",
   "dependencies": {
     "@theia/core": "^0.3.19",
+    "@theia/editor": "^0.3.19",
     "@theia/filesystem": "^0.3.19",
     "@theia/process": "^0.3.19",
     "@theia/workspace": "^0.3.19"

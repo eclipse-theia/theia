@@ -34,6 +34,11 @@ interface Diagnostic {
 
 type DiagnosticMap = Map<string, Diagnostic[]>;
 
+/**
+ * Folders to skip inside the `node_modules` when checking the hoisted dependencies. Such as the `.bin` and `.cache` folders.
+ */
+const toSkip = ['.bin', '.cache'];
+
 function collectIssues(): DiagnosticMap {
     console.log('🔍  Analyzing hoisted dependencies in the Theia extensions...');
     const root = process.cwd();
@@ -45,7 +50,7 @@ function collectIssues(): DiagnosticMap {
         const extensionPath = path.join(packages, extension);
         const nodeModulesPath = path.join(extensionPath, 'node_modules');
         if (fs.existsSync(nodeModulesPath)) {
-            for (const dependency of fs.readdirSync(nodeModulesPath).filter(name => name !== '.bin')) {
+            for (const dependency of fs.readdirSync(nodeModulesPath).filter(name => toSkip.indexOf(name) === -1)) {
                 const dependencyPath = path.join(nodeModulesPath, dependency);
                 const version = versionOf(dependencyPath);
                 let message = `Dependency '${dependency}' ${version ? `[${version}] ` : ''}was not hoisted to the root 'node_modules' folder.`;

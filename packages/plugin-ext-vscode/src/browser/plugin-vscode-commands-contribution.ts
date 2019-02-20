@@ -20,6 +20,10 @@ import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import URI from 'vscode-uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { WebviewWidget } from '@theia/plugin-ext/lib/main/browser/webview/webview';
+import { ApplicationShell } from '@theia/core/lib/browser';
+import { ResourceProvider } from '@theia/core';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -30,6 +34,10 @@ export namespace VscodeCommands {
     export const SET_CONTEXT: Command = {
         id: 'setContext'
     };
+
+    export const PREVIEW_HTML: Command = {
+        id: 'vscode.previewHtml'
+    };
 }
 
 @injectable()
@@ -38,6 +46,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly commandService: CommandService;
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+    @inject(ResourceProvider)
+    protected readonly resources: ResourceProvider;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -54,5 +68,31 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 this.contextKeyService.createKey(String(contextKey), contextValue);
             }
         });
+        commands.registerCommand(VscodeCommands.PREVIEW_HTML, {
+            isVisible: () => true,
+            // tslint:disable-next-line: no-any
+            execute: async (resource: URI, position?: any, label?: string, options?: any) => {
+                label = label || resource.fsPath;
+                const view = new WebviewWidget(label, { allowScripts: true }, {});
+                const res = await this.resources(new TheiaURI(resource));
+                const str = await res.readContents();
+                const html = this.getHtml(str);
+                this.shell.addWidget(view, { area: 'main', mode: 'split-right' });
+                this.shell.activateWidget(view.id);
+                view.setHTML(html);
+
+                const editorWidget = await this.editorManager.getOrCreateByUri(new TheiaURI(resource));
+                editorWidget.editor.onDocumentContentChanged(listener => {
+                    view.setHTML(this.getHtml(editorWidget.editor.document.getText()));
+                });
+
+            }
+        }
+        );
     }
+
+    private getHtml(body: String) {
+        return `<!DOCTYPE html><html><head></head>${body}</html>`;
+    }
+
 }

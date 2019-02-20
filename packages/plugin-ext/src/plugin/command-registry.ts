@@ -33,14 +33,8 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private cache = new Map<number, theia.Command>();
     private delegatingCommandId: string;
 
-    // tslint:disable-next-line:no-any
-    private static EMPTY_HANDLER(...args: any[]): Promise<any> { return Promise.resolve(undefined); }
-
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
-
-        // register internal VS Code commands
-        this.registerCommand({ id: 'vscode.previewHtml' }, CommandRegistryImpl.EMPTY_HANDLER);
     }
 
     getConverter(): CommandsConverter {

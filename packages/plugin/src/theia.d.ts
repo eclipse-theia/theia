@@ -2554,6 +2554,36 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The areas of the application shell where webview panel can reside.
+     */
+    export enum WebviewPanelTargetArea {
+        Main = 'main',
+        Left = 'left',
+        Right = 'right',
+        Bottom = 'bottom'
+    }
+
+    /**
+     * Settings to determine where webview panel will be reside
+     */
+    export interface WebviewPanelShowOptions {
+        /**
+         * Target area where webview panel will be resided. Shows in the 'WebviewPanelTargetArea.Main' area if undefined.
+         */
+        area?: WebviewPanelTargetArea;
+
+        /**
+         * Editor View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         */
+        viewColumn?: number;
+
+        /**
+         * When `true`, the webview will not take focus.
+         */
+        preserveFocus?: boolean;
+    }
+
+    /**
      * A panel that contains a webview.
      */
     interface WebviewPanel {
@@ -2582,6 +2612,10 @@ declare module '@theia/plugin' {
          */
         readonly options: WebviewPanelOptions;
 
+        /**
+         * Settings to determine where webview panel will be reside
+         */
+        readonly showOptions?: WebviewPanelShowOptions;
         /**
          * Editor position of the panel. This property is only set if the webview is in
          * one of the editor view columns.
@@ -2614,15 +2648,16 @@ declare module '@theia/plugin' {
         readonly onDidDispose: Event<void>;
 
         /**
-         * Show the webview panel in a given column.
+         * Show the webview panel according to a given options.
          *
          * A webview panel may only show in a single column at a time. If it is already showing, this
          * method moves it to a new column.
          *
+         * @param area target area where webview panel will be resided. Shows in the 'WebviewPanelTargetArea.Main' area if undefined.
          * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
          * @param preserveFocus When `true`, the webview will not take focus.
          */
-        reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
+        reveal(area?: WebviewPanelTargetArea, viewColumn?: ViewColumn, preserveFocus?: boolean): void;
 
         /**
          * Dispose of the webview panel.
@@ -2983,12 +3018,12 @@ declare module '@theia/plugin' {
          *
          * @param viewType Identifies the type of the webview panel.
          * @param title Title of the panel.
-         * @param showOptions Where to show the webview in the editor. If preserveFocus is set, the new webview will not take focus.
+         * @param showOptions where webview panel will be reside. If preserveFocus is set, the new webview will not take focus.
          * @param options Settings for the new panel.
          *
          * @return New webview panel.
          */
-        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | { viewColumn: ViewColumn, preserveFocus?: boolean }, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | WebviewPanelShowOptions, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
 
         /**
          * Registers a webview panel serializer.
