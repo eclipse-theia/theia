@@ -114,13 +114,16 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     }
 
+    readonly HOSTED_PLUGIN_ENV_REGEXP_EXCLUSION = new RegExp('HOSTED_PLUGIN*');
     private fork(options: IPCConnectionOptions): cp.ChildProcess {
 
         // create env and add PATH to it so any executable from root process is available
-        const env = createIpcEnv();
-        env.PATH = process.env.PATH;
-        // add HOME to env since some plug-ins need to read files from user's home dir
-        env.HOME = process.env.HOME;
+        const env = createIpcEnv({ env: process.env });
+        for (const key of Object.keys(env)) {
+            if (this.HOSTED_PLUGIN_ENV_REGEXP_EXCLUSION.test(key)) {
+                delete env[key];
+            }
+        }
         if (this.cli.extensionTestsPath) {
             env.extensionTestsPath = this.cli.extensionTestsPath;
         }

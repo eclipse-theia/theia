@@ -185,6 +185,7 @@ export class PluginContributionHandler {
     }
 
     private updateConfigurationSchema(schema: PreferenceSchema): void {
+        this.validateConfigurationSchema(schema);
         this.preferenceSchemaProvider.setSchema(schema);
     }
 
@@ -289,5 +290,44 @@ export class PluginContributionHandler {
             result[scope] = getEncodedLanguageId(langId);
         }
         return result;
+    }
+
+    protected validateConfigurationSchema(schema: PreferenceSchema): void {
+        // tslint:disable-next-line:forin
+        for (const p in schema.properties) {
+            const property = schema.properties[p];
+            if (property.type !== 'object') {
+                continue;
+            }
+
+            if (!property.default) {
+                this.validateDefaultValue(property);
+            }
+
+            const properties = property['properties'];
+            if (properties) {
+                // tslint:disable-next-line:forin
+                for (const key in properties) {
+                    if (typeof properties[key] !== 'object') {
+                        delete properties[key];
+                    }
+                }
+            }
+        }
+    }
+
+    private validateDefaultValue(property: PreferenceSchemaProperties): void {
+        property.default = {};
+
+        const properties = property['properties'];
+        if (properties) {
+            // tslint:disable-next-line:forin
+            for (const key in properties) {
+                if (properties[key].default) {
+                    property.default[key] = properties[key].default;
+                    delete properties[key].default;
+                }
+            }
+        }
     }
 }
