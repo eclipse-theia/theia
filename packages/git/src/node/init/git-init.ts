@@ -53,40 +53,39 @@ export class DefaultGitInit implements GitInit {
 
     async init(): Promise<void> {
         const { env } = process;
-        if (typeof env.LOCAL_GIT_DIRECTORY !== 'undefined' || typeof env.GIT_EXEC_PATH !== 'undefined') {
-            await this.handleExternalNotFound('Cannot use Git from the PATH when the LOCAL_GIT_DIRECTORY or the GIT_EXEC_PATH environment variables are set.');
-        } else {
-            try {
-                const { execPath, path, version } = await findGit();
-                if (!!execPath && !!path && !!version) {
-                    // https://github.com/desktop/dugite/issues/111#issuecomment-323222834
-                    // Instead of the executable path, we need the root directory of Git.
-                    const dir = dirname(dirname(path));
-                    const [execPathOk, pathOk, dirOk] = await Promise.all([pathExists(execPath), pathExists(path), pathExists(dir)]);
-                    if (execPathOk && pathOk && dirOk) {
-                        process.env.LOCAL_GIT_DIRECTORY = dir;
-                        process.env.GIT_EXEC_PATH = execPath;
-                        this.logger.info(`Using Git [${version}] from the PATH. (${path})`);
+        try {
+            const { execPath, path, version } = await findGit();
+            if (!!execPath && !!path && !!version) {
+                // https://github.com/desktop/dugite/issues/111#issuecomment-323222834
+                // Instead of the executable path, we need the root directory of Git.
+                const dir = dirname(dirname(path));
+                const [execPathOk, pathOk, dirOk] = await Promise.all([pathExists(execPath), pathExists(path), pathExists(dir)]);
+                if (execPathOk && pathOk && dirOk) {
+                    if (typeof env.LOCAL_GIT_DIRECTORY !== 'undefined' && env.LOCAL_GIT_DIRECTORY !== dir) {
+                        this.logger.error(`Misconfigured env.LOCAL_GIT_DIRECTORY: ${env.LOCAL_GIT_DIRECTORY}. dir was: ${dir}`);
+                        this.messages.error('The LOCAL_GIT_DIRECTORY env variable was already set to a different value.', { timeout: 0 });
                         return;
                     }
+                    if (typeof env.GIT_EXEC_PATH !== 'undefined' && env.GIT_EXEC_PATH !== execPath) {
+                        this.logger.error(`Misconfigured env.GIT_EXEC_PATH: ${env.GIT_EXEC_PATH}. execPath was: ${execPath}`);
+                        this.messages.error('The GIT_EXEC_PATH env variable was already set to a different value.', { timeout: 0 });
+                        return;
+                    }
+                    process.env.LOCAL_GIT_DIRECTORY = dir;
+                    process.env.GIT_EXEC_PATH = execPath;
+                    this.logger.info(`Using Git [${version}] from the PATH. (${path})`);
+                    return;
                 }
-                await this.handleExternalNotFound();
-            } catch (err) {
-                await this.handleExternalNotFound(err);
             }
+            this.messages.error('Could not find Git on the PATH.', { timeout: 0 });
+        } catch (err) {
+            this.logger.error(err);
+            this.messages.error('An unexpected error occurred when locating the Git executable.', { timeout: 0 });
         }
     }
 
     dispose(): void {
         this.toDispose.dispose();
-    }
-
-    // tslint:disable-next-line:no-any
-    protected async handleExternalNotFound(err?: any): Promise<void> {
-        if (err) {
-            this.logger.error(err);
-        }
-        this.messages.info('Could not find Git on the PATH.');
     }
 
 }

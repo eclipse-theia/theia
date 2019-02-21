@@ -46,8 +46,6 @@ export function initializeBindings(): { container: Container, bind: interfaces.B
  * For testing only.
  */
 export async function createGit(bindingOptions: GitBindingOptions = GitBindingOptions.Default): Promise<Git> {
-    delete process.env.LOCAL_GIT_DIRECTORY;
-    delete process.env.GIT_EXEC_PATH;
     const { container, bind } = initializeBindings();
     bindGit(bind, {
         bindManager(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
