@@ -2,7 +2,7 @@
 
 ## v0.4.0
 - [plugin] added `tasks.onDidEndTask` Plug-in API
-- [plugin] Introduce `vscode.previeHtml` command support 
+- [plugin] Introduce `vscode.previewHtml` command support
 - [cpp] fixed `CPP_CLANGD_COMMAND` and `CPP_CLANGD_ARGS` environment variables
 - [electron] open markdown links in the OS default browser
 - [plugin] added ability to display webview panel in 'left', 'right' and 'bottom' area
@@ -31,7 +31,7 @@ Breaking changes:
     - `debug.stop` renamed to `workbench.action.debug.stop`
     - `debug.editor.showHover` renamed to `editor.debug.action.showDebugHover`
 - multi-root workspace support for preferences [#3247](https://github.com/theia-ide/theia/pull/3247)
-  - `PreferenceProvider` 
+  - `PreferenceProvider`
     - is changed from a regular class to an abstract class.
     - the `fireOnDidPreferencesChanged` function is deprecated. `emitPreferencesChangedEvent` function should be used instead. `fireOnDidPreferencesChanged` will be removed with the next major release.
   - `PreferenceServiceImpl`
