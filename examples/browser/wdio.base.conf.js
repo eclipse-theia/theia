@@ -261,7 +261,7 @@ function makeConfig(headless) {
             try {
                 result = browser.execute("return window.__coverage__;");
             } catch (error) {
-                console.error(`Error retreiving the coverage: ${error}`);
+                console.error(`Error retrieving the coverage: ${error}`);
                 return;
             }
             try {
