@@ -15,14 +15,19 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
-
+import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { createCommonBindings } from '../common/terminal-common-module';
+import { TerminalActiveContext } from './terminal-keybinding-contexts';
+import { TerminalService } from './terminal-service';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 
 export default new ContainerModule(bind => {
+    bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
 
     bind(ITerminalServer).toDynamicValue(ctx => {
@@ -37,6 +42,12 @@ export default new ContainerModule(bind => {
         return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
     }).inSingletonScope();
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
+
+    bind(TerminalFrontendContribution).toSelf().inSingletonScope();
+    bind(TerminalService).toService(TerminalFrontendContribution);
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
+        bind(identifier).toService(TerminalFrontendContribution);
+    }
 
     createCommonBindings(bind);
 });

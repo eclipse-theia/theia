@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { KeybindingContext, ApplicationShell } from '@theia/core/lib/browser';
-import { TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
+import { TerminalWidget } from './terminal-widget';
 
 export namespace TerminalKeybindingContexts {
     export const terminalActive = 'terminalActive';

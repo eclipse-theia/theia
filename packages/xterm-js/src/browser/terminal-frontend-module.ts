@@ -15,22 +15,16 @@
  ********************************************************************************/
 
 import { ContainerModule, Container } from 'inversify';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { KeybindingContribution, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
-import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
 import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/terminal-widget';
-import { TerminalActiveContext } from './terminal-keybinding-contexts';
-import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
 import { bindTerminalPreferences } from './terminal-preferences';
+import { WidgetFactory } from '@theia/core/lib/browser';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
-    bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
 
     bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
 
@@ -54,11 +48,4 @@ export default new ContainerModule(bind => {
             return child.get(TerminalWidget);
         }
     }));
-
-    // todo move it back to the @theia/terminal
-    bind(TerminalFrontendContribution).toSelf().inSingletonScope();
-    bind(TerminalService).toService(TerminalFrontendContribution);
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
-        bind(identifier).toService(TerminalFrontendContribution);
-    }
 });

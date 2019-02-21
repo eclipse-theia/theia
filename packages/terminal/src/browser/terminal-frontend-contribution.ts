@@ -32,10 +32,10 @@ import {
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/xterm.js/lib/browser/terminal-widget-impl';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
-import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
+import { TerminalService } from './terminal-service';
+import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
