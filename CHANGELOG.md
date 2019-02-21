@@ -73,6 +73,7 @@
 - [workspace] added support for easier overriding of the `DefaultWorkspaceServer`
 - [workspace] added support for workspace `when` contexts
 - [workspace] fixed displaying the `Open With...` context menu only when more than one open handler is present
+- [mini-browser] improved handling of iframe errors and time-outs
 
 
 Breaking changes:
