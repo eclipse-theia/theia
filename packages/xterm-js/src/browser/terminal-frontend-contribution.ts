@@ -314,10 +314,15 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
-        const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
-            created: new Date().toString(),
-            ...options
-        });
+        let widget;
+        try {
+            widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
+                created: new Date().toString(),
+                ...options
+            });
+        } catch (e) {
+            throw new Error('Unable to create terminal widget. The reason is ' + e);
+        }
         return widget;
     }
 

@@ -14,6 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// import { injectable } from 'inversify';
+import { TerminalWidget } from '@theia/terminal/src/browser/terminal-widget';
+
 /**
  * TerminalClient contains connection logic between terminal server side and terminal widget. So it's incupsulated connection
  * specific logic in the separated code layer. Terminal widget responsible to render backend output and catch user input. Terminal client
@@ -26,15 +29,45 @@
 export interface TerminalClient {
 
     /**
-     * Create connection with terminal backend.
+     * Create connection with terminal backend and return connection id.
      */
-    createConnection(): Promise<string>;
+    createConnection(terminlaWidget: TerminalWidget): Promise<string>;
 
-    resize(id: string): Promise <void>;
+    // onSessionIdChanged - for reconnection stuff, but need to think about it.
 
-    kill(id: string): Promise<string>;
+    resize(): Promise <void>;
 
-    sendText(id: string, text: string): Promise<void>
+    kill(): Promise<string>;
+
+    sendText(text: string): Promise<void>
 
     // define iterceptor function, but like optional argument.
+}
+
+// todo move implementation to the separated ts file.
+/**
+ * Default implementation Terminal Client.
+ */
+// @injectable()
+export class DefaultTerminalClient implements TerminalClient {
+
+    private termWidget: TerminalWidget;
+
+    createConnection(terminalWidget: TerminalWidget): Promise<string> {
+        this.termWidget = terminalWidget;
+        throw new Error('Method not implemented.');
+    }
+
+    resize(): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    kill(): Promise<string> {
+        throw new Error('Method not implemented.');
+    }
+
+    sendText(text: string): Promise<void> {
+        this.termWidget.sendText(text);
+        throw new Error('Method not implemented.');
+    }
 }

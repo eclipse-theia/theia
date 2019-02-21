@@ -16,16 +16,12 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
+import { KeybindingContribution, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
 import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/terminal-widget';
-import { ITerminalServer, terminalPath } from '@theia/terminal/lib/common/terminal-protocol';
-import { TerminalWatcher } from '@theia/terminal/lib/common/terminal-watcher';
-import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
-import { createCommonBindings } from '@theia/terminal/lib/common/terminal-common-module';
 import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
 import { bindTerminalPreferences } from './terminal-preferences';
 
@@ -37,7 +33,6 @@ export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
 
     bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
-    bind(TerminalWatcher).toSelf().inSingletonScope();
 
     let terminalNum = 0;
     bind(WidgetFactory).toDynamicValue(ctx => ({
@@ -60,24 +55,10 @@ export default new ContainerModule(bind => {
         }
     }));
 
+    // todo move it back to the @theia/terminal
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
     bind(TerminalService).toService(TerminalFrontendContribution);
     for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
         bind(identifier).toService(TerminalFrontendContribution);
     }
-
-    bind(ITerminalServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
-
-    bind(ShellTerminalServerProxy).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
-    bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
-
-    createCommonBindings(bind);
 });
