@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
@@ -52,6 +52,10 @@ export default new ContainerModule(bind => {
     for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
         bind(identifier).toService(TerminalFrontendContribution);
     }
+
+    bind<interfaces.Factory<TerminalClient>>('Factory<TerminalClient>').toFactory<TerminalClient>((context: interfaces.Context) =>
+        () => context.container.get(TerminalClient)
+    );
 
     createCommonBindings(bind);
 });

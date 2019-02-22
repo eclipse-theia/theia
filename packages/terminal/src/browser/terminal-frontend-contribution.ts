@@ -42,6 +42,7 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { TerminalClient } from '@theia/terminal/src/browser/terminal-client';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -106,6 +107,9 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject('Factory<TerminalClient>')
+    protected readonly terminalClientFactory: () => TerminalClient;
 
     @postConstruct()
     protected init(): void {
@@ -372,7 +376,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
         const termWidget = await this.newTerminal({ cwd });
-        termWidget.start(); // move to the client
+        const terminalClient: TerminalClient = this.terminalClientFactory();
+        const connectionId = await terminalClient.createConnection(termWidget);
+        console.log(connectionId);
+        // termWidget.start(); // move to the client
         this.open(termWidget, { widgetOptions: options });
     }
 

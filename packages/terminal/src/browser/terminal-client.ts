@@ -39,7 +39,7 @@ export interface TerminalClient {
     /**
      * Create connection with terminal backend and return connection id.
      */
-    createConnection(terminlaWidget: TerminalWidget): Promise<number>;
+    createConnection(terminalWidget: TerminalWidget): Promise<number>;
 
     // onSessionIdChanged - for reconnection stuff, but need to think about it.
 
