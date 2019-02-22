@@ -14,12 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { ViewContainer, View } from '../../../common';
 import { ApplicationShell } from '@theia/core/lib/browser';
-import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import {
+    FrontendApplicationState,
+    FrontendApplicationStateService
+} from '@theia/core/lib/browser/frontend-application-state';
 import { ViewsContainerWidget } from './views-container-widget';
 import { TreeViewWidget } from './tree-views-main';
+
+const READY: FrontendApplicationState = 'ready';
+const DEFAULT_LOCATION: ApplicationShell.Area = 'left';
 
 @injectable()
 export class ViewRegistry {
@@ -30,42 +36,54 @@ export class ViewRegistry {
     @inject(FrontendApplicationStateService)
     protected applicationStateService: FrontendApplicationStateService;
 
-    private containersWidgets: Map<string, ViewsContainerWidget> = new Map<string, ViewsContainerWidget>();
-    private promiseChain: Promise<void>;
+    private treeViewWidgets: Map<string, TreeViewWidget> = new Map();
+    private containerWidgets: Map<string, ViewsContainerWidget> = new Map();
+    private updateContainerOnApplicationReady: Promise<void>;
 
-    registerViewContainer(location: string, viewContainer: ViewContainer) {
-        const widget = new ViewsContainerWidget(viewContainer);
-        this.containersWidgets.set(viewContainer.id, widget);
-        this.updatePromiseChain(() => {
-            if (widget && !this.applicationShell.getTabBarFor(widget)) {
-                this.applicationShell.addWidget(widget, {
-                    area: ApplicationShell.isSideArea(location) ? location : 'left'
-                });
+    @postConstruct()
+    init() {
+        this.updateContainerOnApplicationReady = this.applicationStateService.reachedState(READY);
+    }
+
+    registerViewContainer(location: string, viewsContainer: ViewContainer, containerViews: View[]): void {
+        if (this.containerWidgets.has(viewsContainer.id)) {
+            return;
+        }
+        const containerWidget = new ViewsContainerWidget(viewsContainer, containerViews);
+        this.containerWidgets.set(viewsContainer.id, containerWidget);
+
+        // add to the promise chain
+        this.updateContainerOnApplicationReady = this.updateContainerOnApplicationReady.then(() => {
+            if (this.applicationShell.getTabBarFor(containerWidget)) {
+                return;
             }
+            this.applicationShell.addWidget(containerWidget, {
+                area: ApplicationShell.isSideArea(location) ? location : DEFAULT_LOCATION
+            });
+
+            // update container
+            this.treeViewWidgets.forEach((treeViewWidget: TreeViewWidget, viewId: string) => {
+                this.addTreeViewWidget(viewsContainer.id, viewId, treeViewWidget);
+            });
         });
     }
 
-    registerView(location: string, view: View) {
-        const widget = this.containersWidgets.get(location);
-        if (widget) {
-            widget.addView(view);
-        }
-    }
+    registerTreeView(viewId: string, treeViewWidget: TreeViewWidget): void {
+        this.treeViewWidgets.set(viewId, treeViewWidget);
 
-    onRegisterTreeView(viewId: string, treeViewWidget: TreeViewWidget) {
-        this.containersWidgets.forEach(async (viewsContainerWidget: ViewsContainerWidget) => {
-            await this.promiseChain;
-            if (viewsContainerWidget.hasView(viewId)) {
-                viewsContainerWidget.addWidget(viewId, treeViewWidget);
-                this.applicationShell.activateWidget(viewsContainerWidget.id);
-            }
+        if (this.applicationStateService.state !== READY) {
+            return;
+        }
+        // update containers
+        this.containerWidgets.forEach((containerWidget: ViewsContainerWidget, viewsContainerId: string) => {
+            this.addTreeViewWidget(viewsContainerId, viewId, treeViewWidget);
         });
     }
 
-    private updatePromiseChain(callback: () => void): void {
-        if (!this.promiseChain) {
-            this.promiseChain = this.applicationStateService.reachedState('ready');
+    private addTreeViewWidget(viewsContainerId: string, viewId: string, treeViewWidget: TreeViewWidget) {
+        const containerWidget = this.containerWidgets.get(viewsContainerId);
+        if (containerWidget && containerWidget.hasView(viewId) && !containerWidget.hasWidget(treeViewWidget)) {
+            containerWidget.addWidget(viewId, treeViewWidget);
         }
-        this.promiseChain = this.promiseChain.then(callback);
     }
 }

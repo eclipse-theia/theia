@@ -131,16 +131,11 @@ export class PluginContributionHandler {
             for (const location in contributions.viewsContainers) {
                 if (contributions.viewsContainers!.hasOwnProperty(location)) {
                     const viewContainers = contributions.viewsContainers[location];
-                    viewContainers.forEach(container => this.viewRegistry.registerViewContainer(location, container));
-                }
-            }
-        }
-
-        if (contributions.views) {
-            for (const location in contributions.views) {
-                if (contributions.views.hasOwnProperty(location)) {
-                    const views = contributions.views[location];
-                    views.forEach(view => this.viewRegistry.registerView(location, view));
+                    viewContainers.forEach(container => {
+                        const views = !contributions.views || !contributions.views[container.id] ? [] :
+                            contributions.views[container.id].filter(view => view.id === container.id);
+                        this.viewRegistry.registerViewContainer(location, container, views);
+                    });
                 }
             }
         }
