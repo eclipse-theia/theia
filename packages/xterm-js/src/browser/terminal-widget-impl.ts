@@ -53,7 +53,9 @@ interface TerminalCSSProperties {
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
-    protected readonly onTermDidClose = new Emitter<TerminalWidget>();
+    protected readonly _onTermDidClose = new Emitter<TerminalWidget>();
+    private readonly _onUserInput = new Emitter<string | undefined>();
+
     protected terminalId = -1;
     protected term: Xterm.Terminal;
     protected restored = false;
@@ -134,20 +136,21 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.title.label = title;
             }
         });
+        this.term.on('data', data => this._onUserInput.fire(data));
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
                 this.dispose();
-                this.onTermDidClose.fire(this);
-                this.onTermDidClose.dispose();
+                this._onTermDidClose.fire(this);
+                this._onTermDidClose.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
                 this.dispose();
-                this.onTermDidClose.fire(this);
-                this.onTermDidClose.dispose();
+                this._onTermDidClose.fire(this);
+                this._onTermDidClose.dispose();
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -158,8 +161,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             });
             this.toDispose.push(disposable);
         }));
-        this.toDispose.push(this.onTermDidClose);
+        this.toDispose.push(this._onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
+        this.toDispose.push(this._onUserInput);
     }
 
     get processId(): Promise<number> {
@@ -388,7 +392,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
-        return this.onTermDidClose.event;
+        return this._onTermDidClose.event;
+    }
+
+    get onUserInput(): Event<string | undefined> {
+        return this._onUserInput.event;
     }
 
     dispose(): void {
@@ -396,8 +404,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
             this.shellTerminalServer.close(this.terminalId);
-            this.onTermDidClose.fire(this);
-            this.onTermDidClose.dispose();
+            this._onTermDidClose.fire(this);
+            this._onTermDidClose.dispose();
         }
         super.dispose();
     }

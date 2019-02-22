@@ -116,8 +116,7 @@ export class DefaultTerminalClient implements TerminalClient {
             onConnection: connection => {
                 connection.onNotification('onData', (data: string) => this.termWidget.write(data));
 
-                // const sendData = (data?: string) => data && connection.sendRequest('write', data);
-                // this.term.on('data', sendData);
+                this.termWidget.onUserInput(data => data && connection.sendRequest('write', data));
                 // connection.onDispose(() => this.term.off('data', sendData));
 
                 // this.toDisposeOnConnect.push(connection);

@@ -40,6 +40,8 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract onDidOpen: Event<void>;
 
+    abstract onUserInput: Event<string | undefined>;
+
     /**
      * Event which fires when terminal did closed. Event value contains closed terminal widget definition.
      */
