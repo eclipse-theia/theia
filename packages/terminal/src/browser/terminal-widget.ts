@@ -28,13 +28,15 @@ export abstract class TerminalWidget extends BaseWidget {
      * Start terminal and return terminal id.
      * @param id - terminal id.
      */
-    abstract start(id?: number): Promise<number>;
+    abstract start(id?: number): Promise<number>; // todo delete this method. It should be in the client.
 
     /**
      * Send text to the terminal server.
      * @param text - text content.
      */
     abstract sendText(text: string): void;
+
+    abstract write(data: string): void;
 
     abstract onDidOpen: Event<void>;
 

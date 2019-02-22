@@ -355,6 +355,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected termOpened = false;
     protected initialData = '';
     protected open(): void {
+        console.log('open1');
         if (this.termOpened) {
             return;
         }
@@ -370,7 +371,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
         }
     }
-    protected write(data: string): void {
+    public write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
         } else {

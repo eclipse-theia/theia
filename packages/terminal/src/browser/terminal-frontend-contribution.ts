@@ -372,7 +372,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
         const termWidget = await this.newTerminal({ cwd });
-        termWidget.start();
+        termWidget.start(); // move to the client
         this.open(termWidget, { widgetOptions: options });
     }
 

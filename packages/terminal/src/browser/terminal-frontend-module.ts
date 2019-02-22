@@ -25,10 +25,14 @@ import { TerminalService } from './terminal-service';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
+import { DefaultTerminalClient, TerminalClient } from './terminal-client';
 
 export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
+
+    bind(DefaultTerminalClient).toSelf();
+    bind(TerminalClient).toService(DefaultTerminalClient);
 
     bind(ITerminalServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
