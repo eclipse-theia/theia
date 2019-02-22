@@ -138,7 +138,7 @@
 /* Make horizontal scrollbar, decorations overview ruler and vertical scrollbar arrows opaque */
 .vs .monaco-scrollable-element > .scrollbar,
 .vs-dark .monaco-scrollable-element > .scrollbar,
-.decorationsOverviewRuler, {
+.decorationsOverviewRuler {
     background: var(--theia-scrollbar-rail-color);
 }
 
@@ -157,8 +157,16 @@
     background: var(--theia-scrollbar-active-thumb-color) !important;
 }
 
+.monaco-scrollable-element > .visible.scrollbar.vertical:hover > .slider {
+    background: var(--theia-scrollbar-thumb-color) !important;
+}
+
 .monaco-scrollable-element > .scrollbar.vertical > .slider {
     width: var(--theia-scrollbar-width) !important;
+}
+
+.monaco-scrollable-element > .scrollbar.vertical > .slider.active {
+    background: var(--theia-scrollbar-active-thumb-color) !important;
 }
 
 .monaco-scrollable-element > .scrollbar.horizontal > .slider {
