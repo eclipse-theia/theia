@@ -527,10 +527,10 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     }
 
     taskDto.type = taskDefinition.type;
-    taskDto.properties = {};
-    for (const key in taskDefinition) {
-        if (key !== 'type' && taskDefinition.hasOwnProperty(key)) {
-            taskDto.properties[key] = taskDefinition[key];
+    const { type, ...properties } = taskDefinition;
+    for (const key in properties) {
+        if (properties.hasOwnProperty(key)) {
+            taskDto[key] = properties[key];
         }
     }
 
@@ -556,11 +556,12 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
+    const { type, label, source, command, args, options, windows, cwd, ...properties } = taskDto;
     const result = {} as theia.Task;
-    result.name = taskDto.label;
-    result.source = taskDto.source;
+    result.name = label;
+    result.source = source;
 
-    const taskType = taskDto.type;
+    const taskType = type;
     const taskDefinition: theia.TaskDefinition = {
         type: taskType
     };
@@ -575,7 +576,6 @@ export function toTask(taskDto: TaskDto): theia.Task {
         result.execution = getShellExecution(taskDto as ProcessTaskDto);
     }
 
-    const properties = taskDto.properties;
     if (!properties) {
         return result;
     }
