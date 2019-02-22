@@ -175,54 +175,55 @@ describe('Type converters:', () => {
         const command = 'yarn';
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
+        const additionalProperty = 'some property';
 
         const shellTaskDto: ProcessTaskDto = {
-            type: type,
-            label: label,
+            type,
+            label,
             source,
-            command: command,
-            args: args,
-            cwd: cwd,
+            command,
+            args,
+            cwd,
             options: {},
-            properties: {}
+            additionalProperty
         };
 
         const shellPluginTask: theia.Task = {
             name: label,
             source,
             definition: {
-                type: type
+                type,
+                additionalProperty
             },
             execution: {
-                command: command,
-                args: args,
+                command,
+                args,
                 options: {
-                    cwd: cwd
+                    cwd
                 }
             }
         };
 
         const taskDtoWithCommandLine: ProcessTaskDto = {
-            type: type,
-            label: label,
+            type,
+            label,
             source,
-            command: command,
-            args: args,
-            cwd: cwd,
-            options: {},
-            properties: {}
+            command,
+            args,
+            cwd,
+            options: {}
         };
 
         const pluginTaskWithCommandLine: theia.Task = {
             name: label,
             source,
             definition: {
-                type: type
+                type
             },
             execution: {
                 commandLine: 'yarn run build',
                 options: {
-                    cwd: cwd
+                    cwd
                 }
             }
         };

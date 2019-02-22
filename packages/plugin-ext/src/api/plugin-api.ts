@@ -829,7 +829,7 @@ export interface TaskDto {
     label: string;
     source?: string;
     // tslint:disable-next-line:no-any
-    properties?: { [key: string]: any };
+    [key: string]: any;
 }
 
 export interface TaskExecutionDto {
