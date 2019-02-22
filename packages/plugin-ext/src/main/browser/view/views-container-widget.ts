@@ -16,7 +16,7 @@
 
 import { ViewContainer, View } from '../../../common';
 import { TreeViewWidget } from './tree-views-main';
-import { BaseWidget, Widget } from '@theia/core/lib/browser';
+import { Widget } from '@theia/core/lib/browser';
 
 export function createElement(className?: string): HTMLDivElement {
     const div = document.createElement('div');
@@ -26,18 +26,14 @@ export function createElement(className?: string): HTMLDivElement {
     return div;
 }
 
-export interface SectionParams {
-    view: View,
-    container: ViewsContainerWidget
-}
-
-export class ViewsContainerWidget extends BaseWidget {
+export class ViewsContainerWidget extends Widget {
 
     private sections: Map<string, ViewContainerSection> = new Map<string, ViewContainerSection>();
+    private childrenId: string[] = [];
 
     sectionTitle: HTMLElement;
 
-    constructor(protected viewContainer: ViewContainer) {
+    constructor(protected viewContainer: ViewContainer, protected views: View[]) {
         super();
 
         this.id = `views-container-widget-${viewContainer.id}`;
@@ -50,26 +46,31 @@ export class ViewsContainerWidget extends BaseWidget {
         this.sectionTitle = createElement('theia-views-container-title');
         this.sectionTitle.innerText = viewContainer.title;
         this.node.appendChild(this.sectionTitle);
-    }
 
-    public addView(view: View): void {
-        if (this.hasView(view.id)) {
-            return;
-        }
-        const section = new ViewContainerSection(view, () => {
-            this.updateDimensions();
+        views.forEach((view: View) => {
+            if (this.hasView(view.id)) {
+                return;
+            }
+            const section = new ViewContainerSection(view, () => {
+                this.updateDimensions();
+            });
+            this.sections.set(view.id, section);
+            this.node.appendChild(section.node);
         });
-        this.sections.set(view.id, section);
-        this.node.appendChild(section.node);
     }
 
     public hasView(viewId: string): boolean {
         return this.sections.has(viewId);
     }
 
+    public hasWidget(viewWidget: TreeViewWidget): boolean {
+        return this.childrenId.indexOf(viewWidget.id) !== -1;
+    }
+
     public addWidget(viewId: string, viewWidget: TreeViewWidget) {
         const section = this.sections.get(viewId);
         if (section) {
+            this.childrenId.push(viewWidget.id);
             section.addViewWidget(viewWidget);
             this.updateDimensions();
         }
@@ -83,54 +84,37 @@ export class ViewsContainerWidget extends BaseWidget {
     public updateDimensions() {
         let visibleSections = 0;
         let availableHeight = this.node.offsetHeight;
-
         availableHeight -= this.sectionTitle.offsetHeight;
-
         // Determine available space for sections and how much sections are opened
-        this.sections.forEach((section, key) => {
+        this.sections.forEach((section: ViewContainerSection) => {
             availableHeight -= section.header.offsetHeight;
-
             if (section.opened) {
                 visibleSections++;
             }
         });
-
         // Do nothing if there is no opened sections
         if (visibleSections === 0) {
             return;
         }
-
         // Get section height
         const sectionHeight = availableHeight / visibleSections;
-
         // Update height of opened sections
-        this.sections.forEach((section, key) => {
+        this.sections.forEach((section: ViewContainerSection) => {
             if (section.opened) {
-                section.content.style.height = sectionHeight + 'px';
+                section.content.style.height = `${sectionHeight}px`;
+                section.update();
             }
         });
-
-        setTimeout(() => {
-            // Update content of visible sections
-            this.sections.forEach((section, key) => {
-                if (section.opened) {
-                    section.update();
-                }
-            });
-        }, 1);
     }
 
 }
 
 export class ViewContainerSection {
-
     node: HTMLDivElement;
-
     header: HTMLDivElement;
     control: HTMLDivElement;
     title: HTMLDivElement;
     content: HTMLDivElement;
-
     opened: boolean = true;
 
     private viewWidget: TreeViewWidget;
@@ -142,7 +126,7 @@ export class ViewContainerSection {
         this.createContent();
     }
 
-    createTitle() {
+    createTitle(): void {
         this.header = createElement('theia-views-container-section-title');
         this.node.appendChild(this.header);
 
@@ -157,15 +141,15 @@ export class ViewContainerSection {
         this.header.onclick = () => { this.handleClick(); };
     }
 
-    createContent() {
+    createContent(): void {
         this.content = createElement('theia-views-container-section-content');
         this.content.setAttribute('opened', '' + this.opened);
         this.node.appendChild(this.content);
 
-        this.content.innerHTML = '<div style=\'padding: 20px 0px; text-align: center; \'>' + this.view.name + '</div>';
+        this.content.innerHTML = `<div style='padding: 20px 0; text-align: center; '>${this.view.name}</div>`;
     }
 
-    handleClick() {
+    handleClick(): void {
         this.opened = !this.opened;
 
         this.control.setAttribute('opened', '' + this.opened);
@@ -173,30 +157,26 @@ export class ViewContainerSection {
 
         this.updateDimensionsCallback();
 
-        setTimeout(() => {
-            if (this.opened) {
-                this.update();
-            }
-        }, 1);
+        if (this.opened) {
+            this.update();
+        }
     }
 
-    addViewWidget(viewWidget: TreeViewWidget) {
+    addViewWidget(viewWidget: TreeViewWidget): void {
         this.content.innerHTML = '';
 
         this.viewWidget = viewWidget;
         Widget.attach(viewWidget, this.content);
 
-        viewWidget.model.onChanged(e => {
+        viewWidget.model.onChanged(() => {
             this.update();
         });
-
         this.update();
     }
 
-    update() {
+    update(): void {
         if (this.viewWidget) {
             this.viewWidget.updateWidget();
         }
     }
-
 }

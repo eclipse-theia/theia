@@ -79,7 +79,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
         this.treeViewWidgets.set(treeViewId, treeViewWidget);
 
-        this.viewRegistry.onRegisterTreeView(treeViewId, treeViewWidget);
+        this.viewRegistry.registerTreeView(treeViewId, treeViewWidget);
 
         this.handleTreeEvents(treeViewId, treeViewWidget);
     }
