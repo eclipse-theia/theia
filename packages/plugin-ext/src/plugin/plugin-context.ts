@@ -431,10 +431,10 @@ export function createAPIFactory(
             },
             // Experimental API https://github.com/theia-ide/theia/issues/4167
             onDidRenameFile(listener, thisArg?, disposables?): theia.Disposable {
-                return new Disposable(() => { });
+                return workspaceExt.onDidRenameFile(listener, thisArg, disposables);
             },
             onWillRenameFile(listener, thisArg?, disposables?): theia.Disposable {
-                return new Disposable(() => { });
+                return workspaceExt.onWillRenameFile(listener, thisArg, disposables);
             }
         };
 

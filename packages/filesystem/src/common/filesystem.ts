@@ -200,6 +200,7 @@ export interface FileSystemClient {
 
     onDidMove(sourceUri: string, targetUri: string): void;
 
+    onWillMove(sourceUri: string, targetUri: string): void;
 }
 
 @injectable()
@@ -215,6 +216,10 @@ export class DispatchingFileSystemClient implements FileSystemClient {
 
     onDidMove(sourceUri: string, targetUri: string): void {
         this.clients.forEach(client => client.onDidMove(sourceUri, targetUri));
+    }
+
+    onWillMove(sourceUri: string, targetUri: string): void {
+        this.clients.forEach(client => client.onWillMove(sourceUri, targetUri));
     }
 
 }

@@ -26,7 +26,7 @@ import {
 } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { WorkspaceRootsChangeEvent, FileChangeEvent } from '../api/model';
+import { WorkspaceRootsChangeEvent, FileChangeEvent, FileMoveEvent, FileWillMoveEvent } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
 import URI from 'vscode-uri';
@@ -280,4 +280,30 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return normalize(result, true);
     }
 
+    // Experimental API https://github.com/theia-ide/theia/issues/4167
+    private workspaceWillRenameFileEmitter = new Emitter<theia.FileWillRenameEvent>();
+    private workspaceDidRenameFileEmitter = new Emitter<theia.FileRenameEvent>();
+
+    /**
+     * Adds a listener for an event that is emitted when a workspace file is going to be renamed.
+     */
+    public readonly onWillRenameFile: Event<theia.FileWillRenameEvent> = this.workspaceWillRenameFileEmitter.event;
+
+    /**
+     * Adds a listener for an event that is emitted when a workspace file is renamed.
+     */
+    public readonly onDidRenameFile: Event<theia.FileRenameEvent> = this.workspaceDidRenameFileEmitter.event;
+
+    $onFileRename(event: FileMoveEvent) {
+        this.workspaceDidRenameFileEmitter.fire(Object.freeze({ oldUri: URI.revive(event.oldUri), newUri: URI.revive(event.newUri) }));
+    }
+
+    /* tslint:disable-next-line:no-any */
+    $onWillRename(event: FileWillMoveEvent): Promise<any> {
+        return this.workspaceWillRenameFileEmitter.fire({
+            oldUri: URI.revive(event.oldUri),
+            newUri: URI.revive(event.newUri),
+            waitUntil: (thenable: Promise<theia.WorkspaceEdit>): void => { }
+        });
+    }
 }

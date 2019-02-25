@@ -76,6 +76,11 @@ export namespace FileMoveEvent {
     }
 }
 
+export interface FileWillMoveEvent {
+    sourceUri: URI
+    targetUri: URI
+}
+
 @injectable()
 export class FileSystemWatcher implements Disposable {
 
@@ -87,6 +92,9 @@ export class FileSystemWatcher implements Disposable {
 
     protected readonly onDidMoveEmitter = new Emitter<FileMoveEvent>();
     readonly onDidMove: Event<FileMoveEvent> = this.onDidMoveEmitter.event;
+
+    protected readonly onWillMoveEmitter = new Emitter<FileWillMoveEvent>();
+    readonly onWillMove: Event<FileWillMoveEvent> = this.onWillMoveEmitter.event;
 
     @inject(FileSystemWatcherServer)
     protected readonly server: FileSystemWatcherServer;
@@ -120,7 +128,8 @@ export class FileSystemWatcher implements Disposable {
 
         this.filesystem.setClient({
             shouldOverwrite: this.shouldOverwrite.bind(this),
-            onDidMove: this.fireDidMove.bind(this)
+            onDidMove: this.fireDidMove.bind(this),
+            onWillMove: this.fireWillMove.bind(this)
         });
     }
 
@@ -180,6 +189,13 @@ export class FileSystemWatcher implements Disposable {
 
     protected fireDidMove(sourceUri: string, targetUri: string): void {
         this.onDidMoveEmitter.fire({
+            sourceUri: new URI(sourceUri),
+            targetUri: new URI(targetUri)
+        });
+    }
+
+    protected fireWillMove(sourceUri: string, targetUri: string): void {
+        this.onWillMoveEmitter.fire({
             sourceUri: new URI(sourceUri),
             targetUri: new URI(targetUri)
         });
