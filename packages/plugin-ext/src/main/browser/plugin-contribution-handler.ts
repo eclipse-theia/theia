@@ -132,8 +132,7 @@ export class PluginContributionHandler {
                 if (contributions.viewsContainers!.hasOwnProperty(location)) {
                     const viewContainers = contributions.viewsContainers[location];
                     viewContainers.forEach(container => {
-                        const views = !contributions.views || !contributions.views[container.id] ? [] :
-                            contributions.views[container.id].filter(view => view.id === container.id);
+                        const views = contributions.views && contributions.views[container.id] ? contributions.views[container.id] : [];
                         this.viewRegistry.registerViewContainer(location, container, views);
                     });
                 }
