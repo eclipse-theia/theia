@@ -24,7 +24,7 @@ import { MessageConnection } from 'vscode-jsonrpc';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { terminalsPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { ILogger, Disposable } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection } from '@theia/core';
 
 export const TerminalClient = Symbol('TerminalClient');
 /**
@@ -64,7 +64,7 @@ export class TerminalClientOptions {
  * Default implementation Terminal Client.
  */
 @injectable()
-export class DefaultTerminalClient implements TerminalClient {
+export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     @inject(ShellTerminalServerProxy)
     protected readonly shellTerminalServer: ShellTerminalServerProxy;
@@ -72,7 +72,7 @@ export class DefaultTerminalClient implements TerminalClient {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(WebSocketConnectionProvider) // ability rebind WebSocketConnectionProvider
+    @inject(WebSocketConnectionProvider)
     protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
 
     @inject(TerminalClientOptions)
@@ -86,7 +86,10 @@ export class DefaultTerminalClient implements TerminalClient {
 
     private termWidget: TerminalWidget;
     private terminalId: number;
+
     protected waitForConnection: Deferred<MessageConnection>;
+
+    protected readonly toDispose = new DisposableCollection();
     protected onDidCloseDisposable: Disposable;
 
     @postConstruct()
@@ -101,24 +104,34 @@ export class DefaultTerminalClient implements TerminalClient {
             if (terminalId === this.terminalId) {
                 this.disposeWidget();
             }
-        })
+        });
     }
 
     private disposeWidget(): void {
         if (this.onDidCloseDisposable) {
             this.onDidCloseDisposable.dispose();
         }
-        this.termWidget.dispose();
+        if (this.options.closeOnDispose) {
+            this.termWidget.dispose();
+        }
     }
 
-    async createConnection(terminalWidget: TerminalWidget): Promise<number> { // support reconnection ...
-        this.terminalId = await this.createTerminalProcess(); // : await this.attachTerminal(id);
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    async createConnection(terminalWidget: TerminalWidget): Promise<number> {
         this.termWidget = terminalWidget;
+        this.toDispose.push(this.termWidget);
+
+        this.terminalId = await this.createTerminalProcess(); // : await this.attachTerminal(id);
 
         console.log(' check options ', this.options);
         this.connectTerminalProcess();
         this.onDidCloseDisposable = this.termWidget.onTerminalDidClose(() => this.kill());
-        this.termWidget.onTerminalResize(size => this.resize(size.cols, size.rows));
+        const onResizeDisposable = this.termWidget.onTerminalResize(size => this.resize(size.cols, size.rows));
+
+        this.toDispose.pushAll([this.onDidCloseDisposable, onResizeDisposable]);
 
         return this.terminalId;
     }
