@@ -82,7 +82,7 @@ export class ViewRegistry {
 
     private addTreeViewWidget(viewsContainerId: string, viewId: string, treeViewWidget: TreeViewWidget) {
         const containerWidget = this.containerWidgets.get(viewsContainerId);
-        if (containerWidget && containerWidget.hasView(viewId) && !containerWidget.hasWidget(treeViewWidget)) {
+        if (containerWidget && containerWidget.hasView(viewId)) {
             containerWidget.addWidget(viewId, treeViewWidget);
         }
     }
