@@ -127,21 +127,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         });
         this.term.on('data', data => this._onUserInput.fire(data));
 
-        // this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
-        //     if (terminalId === this.terminalId) {
-        //         this.dispose();
-        //         this._onTermDidClose.fire(this);
-        //         this._onTermDidClose.dispose();
-        //         this.logger.error(`The terminal process terminated. Cause: ${error}`);
-        //     }
-        // }));
-        // this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
-        //     if (terminalId === this.terminalId) {
-        //         this.dispose();
-        //         this._onTermDidClose.fire(this);
-        //         this._onTermDidClose.dispose();
-        //     }
-        // }));
         this.toDispose.push(this.toDisposeOnConnect);
         // this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
         //     const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
@@ -387,13 +372,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     dispose(): void {
-        /* Close the backend terminal only when explicitly closing the terminal
-         * a refresh for example won't close it.  */
-        if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
-            this._onTermDidClose.fire(this);
-            this._onTermDidClose.dispose();
-        }
         super.dispose();
+        this._onTermDidClose.fire(this);
+        this._onTermDidClose.dispose();
     }
 
     protected resizeTerminal(): void {

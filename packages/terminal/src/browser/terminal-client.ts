@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct, named } from 'inversify';
 import { TerminalWidget } from './terminal-widget';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
@@ -23,6 +23,8 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { terminalsPath } from '../common/terminal-protocol';
+import { TerminalWatcher } from '../common/terminal-watcher';
+import { ILogger, Disposable } from '@theia/core';
 
 export const TerminalClient = Symbol('TerminalClient');
 /**
@@ -54,6 +56,7 @@ export interface TerminalClient {
 
 export class TerminalClientOptions {
     readonly cwd?: string;
+    readonly closeOnDispose: string
 }
 
 // todo move implementation to the separated ts file.
@@ -75,9 +78,38 @@ export class DefaultTerminalClient implements TerminalClient {
     @inject(TerminalClientOptions)
     protected readonly options: TerminalClientOptions;
 
+    @inject(TerminalWatcher)
+    protected readonly terminalWatcher: TerminalWatcher;
+
+    @inject(ILogger) @named('terminal') 
+    protected readonly logger: ILogger;
+
     private termWidget: TerminalWidget;
     private terminalId: number;
     protected waitForConnection: Deferred<MessageConnection>;
+    protected onDidCloseDisposable: Disposable;
+
+    @postConstruct()
+    protected init(): void {
+        this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
+            if (terminalId === this.terminalId) {
+                this.disposeWidget();
+                this.logger.error(`The terminal process terminated. Cause: ${error}`);
+            }
+        });
+        this.terminalWatcher.onTerminalExit(({ terminalId }) => {
+            if (terminalId === this.terminalId) {
+                this.disposeWidget();
+            }
+        })
+    }
+
+    private disposeWidget(): void {
+        if (this.onDidCloseDisposable) {
+            this.onDidCloseDisposable.dispose();
+        }
+        this.termWidget.dispose();
+    }
 
     async createConnection(terminalWidget: TerminalWidget): Promise<number> { // support reconnection ...
         this.terminalId = await this.createTerminalProcess(); // : await this.attachTerminal(id);
@@ -85,8 +117,8 @@ export class DefaultTerminalClient implements TerminalClient {
 
         console.log(' check options ', this.options);
         this.connectTerminalProcess();
+        this.onDidCloseDisposable = this.termWidget.onTerminalDidClose(() => this.kill());
         this.termWidget.onTerminalResize(size => this.resize(size.cols, size.rows));
-        this.termWidget.onTerminalDidClose(() => this.kill());
 
         return this.terminalId;
     }
