@@ -96,9 +96,10 @@
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
   padding-top: 6px;
+  padding-left: 10px;
   height: 16px;
   width: 16px;
-  background-size: 16px;
+  background-size: 13px;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -111,6 +112,11 @@
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon {
   background-size: 10px;
   background-image: var(--theia-icon-circle);
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon:hover {
+  background-size: 13px;
+  background-image: var(--theia-icon-close);
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tab > .p-TabBar-tabIcon.no-icon {
