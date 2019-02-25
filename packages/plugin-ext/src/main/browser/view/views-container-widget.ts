@@ -63,15 +63,11 @@ export class ViewsContainerWidget extends Widget {
         return this.sections.has(viewId);
     }
 
-    public hasWidget(viewWidget: TreeViewWidget): boolean {
-        return this.childrenId.indexOf(viewWidget.id) !== -1;
-    }
-
     public addWidget(viewId: string, viewWidget: TreeViewWidget) {
         const section = this.sections.get(viewId);
-        if (section) {
-            this.childrenId.push(viewWidget.id);
+        if (section && this.childrenId.indexOf(viewId) === -1) {
             section.addViewWidget(viewWidget);
+            this.childrenId.push(viewId);
             this.updateDimensions();
         }
     }
