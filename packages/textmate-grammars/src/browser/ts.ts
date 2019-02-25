@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TYPESCRIPT_REACT_LANGUAGE_NAME } from '../common';
 import { injectable, inject } from 'inversify';
 import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 
 @injectable()
-export class TypescriptGrammarContribution implements LanguageGrammarDefinitionContribution {
+export class TypescriptContribution implements LanguageGrammarDefinitionContribution {
+    private readonly ts_id = 'typescript';
+    private readonly ts_react_id = 'typescriptreact';
 
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
@@ -28,7 +29,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
     registerTextmateLanguage(registry: TextmateRegistry) {
         this.registerTypeScript();
         this.registerSnippets();
-        const grammar = require('../../data/grammars/typescript.tmlanguage.json');
+        const grammar = require('../../data/typescript.tmlanguage.json');
         registry.registerTextmateGrammarScope('source.ts', {
             async getGrammarDefinition() {
                 return {
@@ -38,8 +39,8 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             }
         });
 
-        registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_LANGUAGE_ID, 'source.ts');
-        registry.registerGrammarConfiguration(TYPESCRIPT_LANGUAGE_ID, {
+        registry.mapLanguageIdToTextmateGrammar(this.ts_id, 'source.ts');
+        registry.registerGrammarConfiguration(this.ts_id, {
             tokenTypes: {
                 'entity.name.type.instance.jsdoc': 0,
                 'entity.name.function.tagged-template': 0,
@@ -48,7 +49,7 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             }
         });
 
-        const jsxGrammar = require('../../data/grammars/typescript.tsx.tmlanguage.json');
+        const jsxGrammar = require('../../data/typescript.tsx.tmlanguage.json');
         registry.registerTextmateGrammarScope('source.tsx', {
             async getGrammarDefinition() {
                 return {
@@ -58,22 +59,22 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             }
         });
 
-        registry.mapLanguageIdToTextmateGrammar(TYPESCRIPT_REACT_LANGUAGE_ID, 'source.tsx');
+        registry.mapLanguageIdToTextmateGrammar(this.ts_react_id, 'source.tsx');
     }
 
     protected registerSnippets(): void {
         const snippets = require('../../data/snippets/typescript.json');
         this.snippetSuggestProvider.fromJSON(snippets, {
-            language: [TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_REACT_LANGUAGE_ID],
+            language: [this.ts_id, this.ts_react_id],
             source: 'TypeScript Language'
         });
     }
 
     protected registerTypeScript() {
         monaco.languages.register({
-            id: TYPESCRIPT_LANGUAGE_ID,
+            id: this.ts_id,
             aliases: [
-                TYPESCRIPT_LANGUAGE_NAME,
+                'TypeScript',
                 'typescript',
                 'ts'
             ],
@@ -85,22 +86,22 @@ export class TypescriptGrammarContribution implements LanguageGrammarDefinitionC
             ]
         });
 
-        monaco.languages.onLanguage(TYPESCRIPT_LANGUAGE_ID, () => {
-            monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, this.configuration);
+        monaco.languages.onLanguage(this.ts_id, () => {
+            monaco.languages.setLanguageConfiguration(this.ts_id, this.configuration);
         });
 
         monaco.languages.register({
-            id: TYPESCRIPT_REACT_LANGUAGE_ID,
+            id: this.ts_react_id,
             aliases: [
-                TYPESCRIPT_REACT_LANGUAGE_NAME,
+                'TypeScript React',
                 'tsx'
             ],
             extensions: [
                 '.tsx'
             ]
         });
-        monaco.languages.onLanguage(TYPESCRIPT_REACT_LANGUAGE_ID, () => {
-            monaco.languages.setLanguageConfiguration(TYPESCRIPT_REACT_LANGUAGE_ID, this.configuration);
+        monaco.languages.onLanguage(this.ts_react_id, () => {
+            monaco.languages.setLanguageConfiguration(this.ts_react_id, this.configuration);
         });
     }
 

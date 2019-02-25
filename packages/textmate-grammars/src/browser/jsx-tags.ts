@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { JSX_TAGS_LANGUAGE_ID } from '../common';
 import { injectable } from 'inversify';
 import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 
 @injectable()
-export class JsxTagsGrammarContribution implements LanguageGrammarDefinitionContribution {
+export class JsxTagsContribution implements LanguageGrammarDefinitionContribution {
+    private readonly id = 'jsx-tags';
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         this.registerJsxTags();
@@ -27,11 +27,11 @@ export class JsxTagsGrammarContribution implements LanguageGrammarDefinitionCont
 
     protected registerJsxTags() {
         monaco.languages.register({
-            id: JSX_TAGS_LANGUAGE_ID
+            id: this.id
         });
 
-        monaco.languages.onLanguage(JSX_TAGS_LANGUAGE_ID, () => {
-            monaco.languages.setLanguageConfiguration(JSX_TAGS_LANGUAGE_ID, this.configuration);
+        monaco.languages.onLanguage(this.id, () => {
+            monaco.languages.setLanguageConfiguration(this.id, this.configuration);
         });
     }
 
