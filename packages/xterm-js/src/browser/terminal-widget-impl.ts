@@ -18,17 +18,11 @@ import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
+import { Widget, Message, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
-import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 import { IBaseTerminalServer } from '@theia/terminal/lib/common/base-terminal-protocol';
-import { TerminalWatcher } from '@theia/terminal/lib/common/terminal-watcher';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
-import { MessageConnection } from 'vscode-jsonrpc';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { TerminalWidgetOptions, TerminalWidget, TerminalSize } from '@theia/terminal/lib/browser/terminal-widget';
 import { TerminalPreferences } from './terminal-preferences';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
@@ -53,25 +47,20 @@ interface TerminalCSSProperties {
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
-    protected readonly _onTermDidClose = new Emitter<TerminalWidget>();
-    private readonly _onUserInput = new Emitter<string | undefined>();
-
     protected terminalId = -1;
     protected term: Xterm.Terminal;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<MessageConnection> | undefined;
 
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
-    @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
-    @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
     @inject('terminal-dom-id') public readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
 
+    protected readonly _onTermDidClose = new Emitter<TerminalWidget>();
+    protected readonly _onUserInput = new Emitter<string | undefined>();
+    protected readonly _onTerminalResize = new Emitter<TerminalSize>();
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
 
@@ -138,29 +127,29 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         });
         this.term.on('data', data => this._onUserInput.fire(data));
 
-        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
-            if (terminalId === this.terminalId) {
-                this.dispose();
-                this._onTermDidClose.fire(this);
-                this._onTermDidClose.dispose();
-                this.logger.error(`The terminal process terminated. Cause: ${error}`);
-            }
-        }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
-            if (terminalId === this.terminalId) {
-                this.dispose();
-                this._onTermDidClose.fire(this);
-                this._onTermDidClose.dispose();
-            }
-        }));
+        // this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
+        //     if (terminalId === this.terminalId) {
+        //         this.dispose();
+        //         this._onTermDidClose.fire(this);
+        //         this._onTermDidClose.dispose();
+        //         this.logger.error(`The terminal process terminated. Cause: ${error}`);
+        //     }
+        // }));
+        // this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
+        //     if (terminalId === this.terminalId) {
+        //         this.dispose();
+        //         this._onTermDidClose.fire(this);
+        //         this._onTermDidClose.dispose();
+        //     }
+        // }));
         this.toDispose.push(this.toDisposeOnConnect);
-        this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
-            const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
-                disposable.dispose();
-                this.reconnectTerminalProcess();
-            });
-            this.toDispose.push(disposable);
-        }));
+        // this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
+        //     const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
+        //         disposable.dispose();
+        //         this.reconnectTerminalProcess();
+        //     });
+        //     this.toDispose.push(disposable);
+        // }));
         this.toDispose.push(this._onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this._onUserInput);
@@ -171,7 +160,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             if (!IBaseTerminalServer.validateId(this.terminalId)) {
                 throw new Error('terminal is not started');
             }
-            return this.shellTerminalServer.getProcessId(this.terminalId);
+            // return this.shellTerminalServer.getProcessId(this.terminalId);
+            return -1;
         })();
     }
 
@@ -190,7 +180,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
-            this.start(state.terminalId);
+            // this.start(state.terminalId);
         }
     }
 
@@ -239,47 +229,49 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * new terminal widget.
      * If id is provided attach to the terminal for this id.
      */
-    async start(id?: number): Promise<number> {
-        this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
-        this.resizeTerminalProcess();
-        this.connectTerminalProcess();
-        if (IBaseTerminalServer.validateId(this.terminalId)) {
-            this.onDidOpenEmitter.fire(undefined);
-            return this.terminalId;
-        }
-        throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : '.'));
-    }
+    // async start(id?: number): Promise<number> {
+    //     this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+    //     // this.resizeTerminalProcess();
 
-    protected async attachTerminal(id: number): Promise<number> {
-        const terminalId = await this.shellTerminalServer.attach(id);
-        if (IBaseTerminalServer.validateId(terminalId)) {
-            return terminalId;
-        }
-        this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
-        return this.createTerminal();
-    }
+    //     this._onTerminalResize.fire({cols: this.term.cols, rows: this.term.rows});
+    //     this.connectTerminalProcess();
+    //     if (IBaseTerminalServer.validateId(this.terminalId)) {
+    //         this.onDidOpenEmitter.fire(undefined);
+    //         return this.terminalId;
+    //     }
+    //     throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : '.'));
+    // }
 
-    protected async createTerminal(): Promise<number> {
-        let rootURI = this.options.cwd;
-        if (!rootURI) {
-            const root = (await this.workspaceService.roots)[0];
-            rootURI = root && root.uri;
-        }
-        const { cols, rows } = this.term;
+    // protected async attachTerminal(id: number): Promise<number> {
+    //     const terminalId = await this.shellTerminalServer.attach(id);
+    //     if (IBaseTerminalServer.validateId(terminalId)) {
+    //         return terminalId;
+    //     }
+    //     this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
+    //     return this.createTerminal();
+    // }
 
-        const terminalId = await this.shellTerminalServer.create({
-            shell: this.options.shellPath,
-            args: this.options.shellArgs,
-            env: this.options.env,
-            rootURI,
-            cols,
-            rows
-        });
-        if (IBaseTerminalServer.validateId(terminalId)) {
-            return terminalId;
-        }
-        throw new Error('Error creating terminal widget, see the backend error log for more information.');
-    }
+    // protected async createTerminal(): Promise<number> {
+    //     let rootURI = this.options.cwd;
+    //     if (!rootURI) {
+    //         const root = (await this.workspaceService.roots)[0];
+    //         rootURI = root && root.uri;
+    //     }
+    //     const { cols, rows } = this.term;
+
+    //     const terminalId = await this.shellTerminalServer.create({
+    //         shell: this.options.shellPath,
+    //         args: this.options.shellArgs,
+    //         env: this.options.env,
+    //         rootURI,
+    //         cols,
+    //         rows
+    //     });
+    //     if (IBaseTerminalServer.validateId(terminalId)) {
+    //         return terminalId;
+    //     }
+    //     throw new Error('Error creating terminal widget, see the backend error log for more information.');
+    // }
 
     processMessage(msg: Message): void {
         super.processMessage(msg);
@@ -321,45 +313,44 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.resizeTerminal();
             this.needsResize = false;
 
-            this.resizeTerminalProcess();
+            this._onTerminalResize.fire({cols: this.term.cols, rows: this.term.rows});
         }
     }
 
-    protected connectTerminalProcess(): void {
-        if (typeof this.terminalId !== 'number') {
-            return;
-        }
-        this.toDisposeOnConnect.dispose();
-        this.toDispose.push(this.toDisposeOnConnect);
-        this.term.reset();
-        const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
-        this.webSocketConnectionProvider.listen({
-            path: `${terminalsPath}/${this.terminalId}`,
-            onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.write(data));
+    // protected connectTerminalProcess(): void {
+    //     if (typeof this.terminalId !== 'number') {
+    //         return;
+    //     }
+    //     this.toDisposeOnConnect.dispose();
+    //     this.toDispose.push(this.toDisposeOnConnect);
+    //     this.term.reset();
+    //     const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
+    //     this.webSocketConnectionProvider.listen({
+    //         path: `${terminalsPath}/${this.terminalId}`,
+    //         onConnection: connection => {
+    //             connection.onNotification('onData', (data: string) => this.write(data));
 
-                const sendData = (data?: string) => data && connection.sendRequest('write', data);
-                this.term.on('data', sendData);
-                connection.onDispose(() => this.term.off('data', sendData));
+    //             const sendData = (data?: string) => data && connection.sendRequest('write', data);
+    //             this.term.on('data', sendData);
+    //             connection.onDispose(() => this.term.off('data', sendData));
 
-                this.toDisposeOnConnect.push(connection);
-                connection.listen();
-                if (waitForConnection) {
-                    waitForConnection.resolve(connection);
-                }
-            }
-        }, { reconnecting: false });
-    }
-    protected async reconnectTerminalProcess(): Promise<void> {
-        if (typeof this.terminalId === 'number') {
-            await this.start(this.terminalId);
-        }
-    }
+    //             this.toDisposeOnConnect.push(connection);
+    //             connection.listen();
+    //             if (waitForConnection) {
+    //                 waitForConnection.resolve(connection);
+    //             }
+    //         }
+    //     }, { reconnecting: false });
+    // }
+    // protected async reconnectTerminalProcess(): Promise<void> {
+    //     if (typeof this.terminalId === 'number') {
+    //         await this.start(this.terminalId);
+    //     }
+    // }
 
     protected termOpened = false;
     protected initialData = '';
     protected open(): void {
-        console.log('open1');
         if (this.termOpened) {
             return;
         }
@@ -383,14 +374,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
-    sendText(text: string): void {
-        if (this.waitForConnection) {
-            this.waitForConnection.promise.then(connection =>
-                connection.sendRequest('write', text)
-            );
-        }
-    }
-
     get onTerminalDidClose(): Event<TerminalWidget> {
         return this._onTermDidClose.event;
     }
@@ -399,11 +382,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._onUserInput.event;
     }
 
+    get onTerminalResize(): Event<TerminalSize> {
+        return this._onTerminalResize.event;
+    }
+
     dispose(): void {
         /* Close the backend terminal only when explicitly closing the terminal
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
-            this.shellTerminalServer.close(this.terminalId);
             this._onTermDidClose.fire(this);
             this._onTermDidClose.dispose();
         }
@@ -415,14 +401,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(cols, rows);
-    }
-
-    protected resizeTerminalProcess(): void {
-        if (typeof this.terminalId !== 'number') {
-            return;
-        }
-        const { cols, rows } = this.term;
-        this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
 
     protected get enableCopy(): boolean {

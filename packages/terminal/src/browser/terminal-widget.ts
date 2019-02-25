@@ -17,30 +17,37 @@
 import { Event } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 
+export class TerminalSize {
+    readonly cols: number;
+    readonly rows: number;
+}
+
 /**
  * Terminal UI widget.
  */
 export abstract class TerminalWidget extends BaseWidget {
 
-    abstract processId: Promise<number>;
+    // abstract processId: Promise<number>;
 
     /**
      * Start terminal and return terminal id.
      * @param id - terminal id.
      */
-    abstract start(id?: number): Promise<number>; // todo delete this method. It should be in the client.
+    // abstract start(id?: number): Promise<number>; // todo delete this method. It should be in the client.
 
     /**
      * Send text to the terminal server.
      * @param text - text content.
      */
-    abstract sendText(text: string): void;
+    // abstract sendText(text: string): void;
 
     abstract write(data: string): void;
 
     abstract onDidOpen: Event<void>;
 
     abstract onUserInput: Event<string | undefined>;
+
+    abstract onTerminalResize: Event<TerminalSize>;
 
     /**
      * Event which fires when terminal did closed. Event value contains closed terminal widget definition.
@@ -77,12 +84,12 @@ export interface TerminalWidgetOptions {
     /**
      * Current working directory.
      */
-    readonly cwd?: string;
+    readonly cwd?: string; // move to the terminalClient
 
     /**
      * Environment variables for terminal.
      */
-    readonly env?: { [key: string]: string | null };
+    readonly env?: { [key: string]: string | null }; // move to the terminalClient
 
     /**
      * In case `destroyTermOnClose` is true - terminal process will be destroyed on close terminal widget, otherwise will be kept

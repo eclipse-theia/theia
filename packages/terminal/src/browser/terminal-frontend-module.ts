@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, Container, interfaces } from 'inversify';
 import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
@@ -25,7 +25,7 @@ import { TerminalService } from './terminal-service';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { DefaultTerminalClient, TerminalClient } from './terminal-client';
+import { DefaultTerminalClient, TerminalClient, TerminalClientOptions } from './terminal-client';
 
 export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
@@ -54,7 +54,13 @@ export default new ContainerModule(bind => {
     }
 
     bind<interfaces.Factory<TerminalClient>>('Factory<TerminalClient>').toFactory<TerminalClient>((context: interfaces.Context) =>
-        () => context.container.get(TerminalClient)
+        (options: TerminalClientOptions) => {
+            const child = new Container({ defaultScope: 'Singleton' });
+            child.parent = context.container;
+            child.bind(TerminalClientOptions).toConstantValue(options);
+
+            return child.get(TerminalClient);
+        }
     );
 
     createCommonBindings(bind);

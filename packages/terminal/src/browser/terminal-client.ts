@@ -43,13 +43,17 @@ export interface TerminalClient {
 
     // onSessionIdChanged - for reconnection stuff, but need to think about it.
 
-    resize(): Promise <void>;
+    resize(cols: number, rows: number): void;
 
-    kill(): Promise<string>;
+    kill(): Promise<void>;
 
     sendText(text: string): Promise<void>
 
     // define iterceptor function, but like optional argument.
+}
+
+export class TerminalClientOptions {
+    readonly cwd?: string;
 }
 
 // todo move implementation to the separated ts file.
@@ -68,31 +72,38 @@ export class DefaultTerminalClient implements TerminalClient {
     @inject(WebSocketConnectionProvider) // ability rebind WebSocketConnectionProvider
     protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
 
+    @inject(TerminalClientOptions)
+    protected readonly options: TerminalClientOptions;
+
     private termWidget: TerminalWidget;
     private terminalId: number;
     protected waitForConnection: Deferred<MessageConnection>;
 
-    async createConnection(terminalWidget: TerminalWidget): Promise<number> {
-        this.terminalId = await this.createTerminal(); // : await this.attachTerminal(id);
+    async createConnection(terminalWidget: TerminalWidget): Promise<number> { // support reconnection ...
+        this.terminalId = await this.createTerminalProcess(); // : await this.attachTerminal(id);
         this.termWidget = terminalWidget;
+
+        console.log(' check options ', this.options);
         this.connectTerminalProcess();
+        this.termWidget.onTerminalResize(size => this.resize(size.cols, size.rows));
+        this.termWidget.onTerminalDidClose(() => this.kill());
 
         return this.terminalId;
     }
 
-    protected async createTerminal(): Promise<number> {
-        // let rootURI = this.options.cwd;
-        // if (!rootURI) {
-        //     const root = (await this.workspaceService.roots)[0];
-        //     rootURI = root && root.uri;
-        // }
+    protected async createTerminalProcess(): Promise<number> {
+        let rootURI = this.options.cwd;
+        if (!rootURI) {
+            const root = (await this.workspaceService.roots)[0];
+            rootURI = root && root.uri;
+        }
         // const { cols, rows } = this.term;
 
         const terminalId = await this.shellTerminalServer.create({
             shell: 'sh', // this.options.shellPath,
             args: [],  // this.options.shellArgs,
             // env: this.options.env,
-            rootURI: '/projects', // rootURI,
+            rootURI: rootURI,
             cols: 80,
             rows: 24
         });
@@ -128,16 +139,24 @@ export class DefaultTerminalClient implements TerminalClient {
         }, { reconnecting: false });
     }
 
-    resize(): Promise<void> {
-        throw new Error('Method not implemented.');
+    resize(cols: number, rows: number): void {
+        if (typeof this.terminalId !== 'number') {
+            return;
+        }
+
+        this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
 
-    kill(): Promise<string> {
-        throw new Error('Method not implemented.');
+    async kill(): Promise<void> {
+        console.log('kill terminal ', this.terminalId);
+        await this.shellTerminalServer.close(this.terminalId);
     }
 
-    sendText(text: string): Promise<void> {
-        this.termWidget.sendText(text);
-        throw new Error('Method not implemented.');
+    async sendText(text: string): Promise<void> {
+        if (this.waitForConnection) {
+            this.waitForConnection.promise.then(connection =>
+                connection.sendRequest('write', text)
+            );
+        }
     }
 }

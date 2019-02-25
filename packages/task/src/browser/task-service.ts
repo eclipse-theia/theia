@@ -219,7 +219,7 @@ export class TaskService implements TaskConfigurationClient {
         );
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
-        widget.start(terminalId);
+        // widget.start(terminalId);
     }
 
     protected isEventForThisClient(context: string | undefined): boolean {

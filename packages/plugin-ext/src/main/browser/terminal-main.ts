@@ -57,12 +57,12 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
                 this.extProxy.$terminalNameChanged(terminal.id, name);
             }
         });
-        const updateProcessId = () => terminal.processId.then(
-            processId => this.extProxy.$terminalOpened(terminal.id, processId),
-            () => {/*no-op*/ }
-        );
-        updateProcessId();
-        terminal.onDidOpen(() => updateProcessId());
+        // const updateProcessId = () => terminal.processId.then(
+        //     processId => this.extProxy.$terminalOpened(terminal.id, processId),
+        //     () => {/*no-op*/ }
+        // );
+        // updateProcessId();
+        // terminal.onDidOpen(() => updateProcessId());
         terminal.onTerminalDidClose(() => this.extProxy.$terminalClosed(terminal.id));
     }
 
@@ -79,7 +79,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
                 useServerTitle: false,
                 attributes: options.attributes
             });
-            terminal.start();
+            // terminal.start();
             return terminal.id;
         } catch (error) {
             throw new Error('Failed to create terminal. Cause: ' + error);
@@ -93,7 +93,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
             if (addNewLine && text.charAt(text.length - 1) !== '\r') {
                 text += '\r';
             }
-            terminal.sendText(text);
+            // terminal.sendText(text);
         }
     }
 

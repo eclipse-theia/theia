@@ -36,13 +36,13 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
-import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+// import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TerminalClient } from '@theia/terminal/src/browser/terminal-client';
+import { TerminalClient, TerminalClientOptions } from '@theia/terminal/src/browser/terminal-client';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -109,7 +109,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected readonly contextKeyService: ContextKeyService;
 
     @inject('Factory<TerminalClient>')
-    protected readonly terminalClientFactory: () => TerminalClient;
+    protected readonly terminalClientFactory: (options: TerminalClientOptions) => TerminalClient;
 
     @postConstruct()
     protected init(): void {
@@ -173,23 +173,23 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
         });
 
-        commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
-            execute: async uri => {
-                // Determine folder path of URI
-                const stat = await this.fileSystem.getFileStat(uri.toString());
-                if (!stat) {
-                    return;
-                }
+        // commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
+        //     execute: async uri => {
+        //         // Determine folder path of URI
+        //         const stat = await this.fileSystem.getFileStat(uri.toString());
+        //         if (!stat) {
+        //             return;
+        //         }
 
-                // Use folder if a file was selected
-                const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
+        //         // Use folder if a file was selected
+        //         const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
 
-                // Open terminal
-                const termWidget = await this.newTerminal({ cwd });
-                termWidget.start();
-                this.activateTerminal(termWidget);
-            }
-        }));
+        //         // Open terminal
+        //         const termWidget = await this.newTerminal({ cwd });
+        //         termWidget.start();
+        //         this.activateTerminal(termWidget);
+        //     }
+        // }));
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -375,8 +375,8 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
-        const termWidget = await this.newTerminal({ cwd });
-        const terminalClient: TerminalClient = this.terminalClientFactory();
+        const termWidget = await this.newTerminal({});
+        const terminalClient: TerminalClient = this.terminalClientFactory({ cwd });
         const connectionId = await terminalClient.createConnection(termWidget);
         console.log(connectionId);
         // termWidget.start(); // move to the client
@@ -385,7 +385,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const termWidget = await this.newTerminal({});
-        termWidget.start();
+        // termWidget.start();
         this.open(termWidget, { widgetOptions: options });
     }
 }
