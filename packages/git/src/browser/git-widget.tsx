@@ -718,6 +718,7 @@ export namespace GitWidget {
         export const OTHER_GROUP: MenuPath = [...PATH, '1_other'];
         export const COMMIT_GROUP: MenuPath = [...PATH, '2_commit'];
         export const BATCH: MenuPath = [...PATH, '3_batch'];
+        export const STASH: MenuPath = [...PATH, '4_stash'];
     }
 
     export namespace Styles {

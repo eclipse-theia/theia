@@ -22,6 +22,7 @@ import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
 import { clone } from 'dugite-extra/lib/command/clone';
 import { fetch } from 'dugite-extra/lib/command/fetch';
+import { stash } from 'dugite-extra/lib/command/stash';
 import { merge } from 'dugite-extra/lib/command/merge';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
@@ -39,7 +40,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as strings from '@theia/core/lib/common/strings';
 import {
     Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit,
-    CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine, GitError, Remote
+    CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine, GitError, Remote, StashEntry
 } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
@@ -548,6 +549,47 @@ export class DugiteGit implements Git {
             return (await getBlobContents(repositoryPath, commitish, path, { exec, env })).toString();
         }
         return (await getTextContents(repositoryPath, commitish, path, { exec, env })).toString();
+    }
+
+    async stash(repository: Repository, options?: Readonly<{ action?: 'push', message?: string }>): Promise<void>;
+    async stash(repository: Repository, options: Readonly<{ action: 'list' }>): Promise<StashEntry[]>;
+    async stash(repository: Repository, options: Readonly<{ action: 'clear' }>): Promise<void>;
+    async stash(repository: Repository, options: Readonly<{ action: 'apply' | 'pop' | 'drop', id?: string }>): Promise<void>;
+    async stash(repository: Repository, options?: Git.Options.Stash): Promise<StashEntry[] | void> {
+        const repositoryPath: string = this.getFsPath(repository);
+        try {
+            if (!options || (options && !options.action)) {
+                await stash.push(repositoryPath, options ? options.message : undefined);
+                return;
+            }
+            switch (options.action) {
+                case 'push':
+                    await stash.push(repositoryPath, options.message);
+                    break;
+                case 'apply':
+                    await stash.apply(repositoryPath, options.id);
+                    break;
+                case 'pop':
+                    await stash.pop(repositoryPath, options.id);
+                    break;
+                case 'list':
+                    const stashList = await stash.list(repositoryPath);
+                    const stashes: StashEntry[] = [];
+                    stashList.forEach(stashItem => {
+                        const splitIndex = stashItem.indexOf(':');
+                        stashes.push({
+                            id: stashItem.substring(0, splitIndex),
+                            message: stashItem.substring(splitIndex + 1)
+                        });
+                    });
+                    return stashes;
+                case 'drop':
+                    await stash.drop(repositoryPath, options.id);
+                    break;
+            }
+        } catch (err) {
+            this.fail(repository, err);
+        }
     }
 
     async remote(repository: Repository): Promise<string[]>;

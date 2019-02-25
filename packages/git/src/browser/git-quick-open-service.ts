@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
-import { Git, Repository, Branch, BranchType, Tag, Remote } from '../common';
+import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
@@ -341,6 +341,108 @@ export class GitQuickOpenService {
             };
             this.quickOpenService.open(createEditCommitMessageModel, this.getOptions(message, false, onClose));
         });
+    }
+
+    async stash(): Promise<void> {
+        const doStash = async (message: string) => {
+            if (this.repositoryProvider.selectedRepository) {
+                this.git.stash(this.repositoryProvider.selectedRepository, { message });
+            }
+        };
+        const quickOpenModel: QuickOpenModel = {
+            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                const dynamicItems: QuickOpenItem[] = [];
+                const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
+
+                if (lookFor === undefined || lookFor.length === 0) {
+                    dynamicItems.push(new SingleStringInputOpenItem(
+                        `Stash changes. ${suffix}`,
+                        () => doStash(lookFor)
+                    ));
+                } else {
+                    dynamicItems.push(new SingleStringInputOpenItem(
+                        `Stash changes with message: ${lookFor}. ${suffix}`,
+                        () => doStash(lookFor)
+                    ));
+                }
+                acceptor(dynamicItems);
+            }
+        };
+        this.quickOpenService.open(quickOpenModel, this.getOptions('Stash message', false));
+    }
+
+    protected async doStashAction(action: 'pop' | 'apply' | 'drop', text: string, getMessage?: () => Promise<string>) {
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            const list = await this.git.stash(repo, { action: 'list' });
+            if (list) {
+                const quickOpenItems = list.map(stash => new GitQuickOpenItem<StashEntry>(stash, async () => {
+                    try {
+                        await this.git.stash(repo, {
+                            action,
+                            id: stash.id
+                        });
+                        if (getMessage) {
+                            this.messageService.info(await getMessage());
+                        }
+                    } catch (error) {
+                        this.gitErrorHandler.handleError(error);
+                    }
+                }, () => stash.message));
+                this.open(quickOpenItems, text);
+            }
+        }
+    }
+
+    async applyStash(): Promise<void> {
+        this.doStashAction('apply', 'Select a stash to \'apply\'.');
+    }
+
+    async popStash(): Promise<void> {
+        this.doStashAction('pop', 'Select a stash to \'pop\'.');
+    }
+
+    async dropStash(): Promise<void> {
+        this.doStashAction('drop', 'Select a stash entry to remove it from the list of stash entries.',
+            async () => {
+                if (this.repositoryProvider.selectedRepository) {
+                    const list = await this.git.stash(this.repositoryProvider.selectedRepository, { action: 'list' });
+                    let listString = '';
+                    list.forEach(stashEntry => {
+                        listString += stashEntry.message + '\n';
+                    });
+                    return `Stash successfully removed.
+                    There ${list.length === 1 ? 'is' : 'are'} ${list.length || 'no'} more entry in stash list.
+                    \n${listString}`;
+                }
+                return '';
+            });
+    }
+
+    async applyLatestStash(): Promise<void> {
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            try {
+                await this.git.stash(repo, {
+                    action: 'apply'
+                });
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
+            }
+        }
+    }
+
+    async popLatestStash(): Promise<void> {
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            try {
+                await this.git.stash(repo, {
+                    action: 'pop'
+                });
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
+            }
+        }
     }
 
     private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
