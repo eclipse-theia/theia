@@ -53,6 +53,8 @@ import {
     Breakpoint,
     ColorPresentation,
     RenameLocation,
+    FileMoveEvent,
+    FileWillMoveEvent
 } from './model';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
@@ -388,6 +390,8 @@ export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $fileChanged(event: FileChangeEvent): void;
+    $onFileRename(event: FileMoveEvent): void;
+    $onWillRename(event: FileWillMoveEvent): Promise<any>;
 }
 
 export interface DialogsMain {

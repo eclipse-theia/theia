@@ -93,6 +93,18 @@ export interface FileChangeEvent {
     type: FileChangeEventType
 }
 
+export interface FileMoveEvent {
+    subscriberId: string,
+    oldUri: UriComponents,
+    newUri: UriComponents
+}
+
+export interface FileWillMoveEvent {
+    subscriberId: string,
+    oldUri: UriComponents,
+    newUri: UriComponents
+}
+
 export type FileChangeEventType = 'created' | 'updated' | 'deleted';
 
 export enum CompletionTriggerKind {

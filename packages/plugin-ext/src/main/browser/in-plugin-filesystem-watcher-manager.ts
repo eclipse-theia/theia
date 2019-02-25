@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange, FileMoveEvent, FileWillMoveEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceExt } from '../../api/plugin-api';
 import { FileWatcherSubscriberOptions } from '../../api/model';
 import { parse, ParsedPattern, IRelativePattern } from '../../common/glob';
@@ -41,6 +41,8 @@ export class InPluginFileSystemWatcherManager {
 
         const fileSystemWatcher = container.get(FileSystemWatcher);
         fileSystemWatcher.onFilesChanged(event => this.onFilesChangedEventHandler(event));
+        fileSystemWatcher.onDidMove(event => this.onDidMoveEventHandler(event));
+        fileSystemWatcher.onWillMove(event => this.onWillMoveEventHandler(event));
     }
 
     // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
@@ -69,6 +71,28 @@ export class InPluginFileSystemWatcherManager {
                     }
                     break;
             }
+        }
+    }
+
+    // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
+    onDidMoveEventHandler(change: FileMoveEvent): void {
+        for (const [id] of this.subscribers) {
+            this.proxy.$onFileRename({
+                subscriberId: id,
+                oldUri: theiaUritoUriComponents(change.sourceUri),
+                newUri: theiaUritoUriComponents(change.targetUri)
+            });
+        }
+    }
+
+    // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
+    onWillMoveEventHandler(change: FileWillMoveEvent): void {
+        for (const [id] of this.subscribers) {
+            this.proxy.$onWillRename({
+                subscriberId: id,
+                oldUri: theiaUritoUriComponents(change.sourceUri),
+                newUri: theiaUritoUriComponents(change.targetUri)
+            });
         }
     }
 
