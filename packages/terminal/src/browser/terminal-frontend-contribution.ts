@@ -120,7 +120,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidCreateTerminalEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
-    protected termClientsToRestore = new Map<number, TerminalClientOptions>();
+
+    protected termClients = new Map<string, TerminalClientOptions>();
+    protected termClientsToRestore = new Map<string, TerminalClientOptions>();
 
     @postConstruct()
     protected init(): void {
@@ -129,6 +131,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
                 this.onDidCreateTerminalEmitter.fire(widget);
+
+                const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
+                if (clientOpsToRestore) {
+                    const client = this.createTerminalClient(clientOpsToRestore);
+                    this.createConnection(client, widget as TerminalWidget);
+                }
             }
         });
 
@@ -138,61 +146,29 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         this.shell.activeChanged.connect(updateFocusKey);
 
         this.toDispose.pushAll([this.onDidCreateTerminalEmitter, this.onDidChangeCurrentTerminalEmitter]);
-    }
-
-    onStart() {
-        this.restoreTerminalClientInfo();
+        this.restore();
     }
 
     onStop(): void {
         this.storeState();
         this.dispose();
         this.termClientsToRestore.clear();
+        this.termClients.clear();
     }
 
     private storeState() {
-        // const restoreOptions = Array.from<number, TerminalClientOptions>(this.termClientOpsToRestore.keys(), id => {
-        //     const options = this.termClientOpsToRestore.get(id);
-        //     const restoreClientOption: TerminalClientOptionsToRestore = {connectionId: id, ...options};
-        //     return restoreClientOption;
-        // })
-
-        // const restoreOptions = Array.from<number, TerminalClientOptions>(this.termClientOpsToRestore.keys(), id => {
-        //     const options = this.termClientOpsToRestore.get(id);
-
-        //     const restoreClientOption: TerminalClientOptions = {connectionId: id, ...options};
-        //     return restoreClientOption;
-        // })
-
-        const toStore = Array.from(this.termClientsToRestore.values(), value => {
-            return value
-        });
-        console.log('***************************** to store ', toStore);
-
-        this.storageService.setData(TerminalFrontendContribution.ID, toStore); // restoreOptions => fitler store only with sessionId
+        this.storageService.setData(TerminalFrontendContribution.ID, Array.from(this.termClients.values()));
     }
 
-    protected async restoreTerminalClientInfo(): Promise<void> {
+    protected async restore(): Promise<void> {
         const dataToRestore = await this.storageService.getData<TerminalClientOptions[]>(TerminalFrontendContribution.ID) || [];
 
         if (dataToRestore) {
             dataToRestore.reduce((mapAcum, termClientOps) => {
-                if (termClientOps.connectionId) {
-                    mapAcum.set(termClientOps.connectionId, termClientOps);
-                }
+                mapAcum.set(termClientOps.terminalDomId, termClientOps);
                 return mapAcum;
             }, this.termClientsToRestore);
         }
-        // this.widgetManager.getWidgets(TERMINAL_WIDGET_FACTORY_ID).find((widget) => widget.id === '');
-        setTimeout(() => {console.log('amount of widgets... ', this.widgetManager.getWidgets(TERMINAL_WIDGET_FACTORY_ID).length);}, 5000);
-        
-        console.log('term client ops restored');
-    }
-
-    async restoreState(widget: TerminalWidget) {
-        console.log('restore widget');
-        // const terminalClient = this.createTerminalClient(termClientOps);
-        // this.createConnection(terminalClient, widget, termClientOps);
     }
 
     private dispose() {
@@ -451,9 +427,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
         const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: termWidget.id };
         const terminalClient = this.createTerminalClient(termClientOpts);
-
-        const connectionId = await terminalClient.createConnection(termWidget);
-        this.termClientsToRestore.set(connectionId, termClientOpts);
+        await this.createConnection(terminalClient, termWidget);
 
         this.open(termWidget, { widgetOptions: options });
     }
@@ -466,9 +440,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     // todo inject terminal widget and options to the constructor of the terminal client!!!!
-    protected async createConnection(terminalClient: TerminalClient, termWidget: TerminalWidget, clientOps: TerminalClientOptions): Promise<number> {
+    protected async createConnection(terminalClient: TerminalClient, termWidget: TerminalWidget): Promise<number> {
         const connectionId = await terminalClient.createConnection(termWidget);
-        this.termClientsToRestore.set(connectionId, clientOps);
+        this.termClients.set(termWidget.id, terminalClient.options);
 
         return connectionId;
     }
