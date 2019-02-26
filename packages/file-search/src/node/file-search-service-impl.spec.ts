@@ -81,23 +81,41 @@ describe('search-service', function () {
 
     describe('search with glob', () => {
         it('should support file searches with globs', async () => {
-            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1')).toString();
+            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const matches = await service.find('**/*oo.*', { rootUris: [rootUri] });
             expect(matches).to.be.not.undefined;
-            expect(matches.length).to.eq(3);
+            expect(matches.length).to.eq(1);
         });
 
         it('should support file searches with globs without the prefixed or trailing star (*)', async () => {
-            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1')).toString();
+            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const trailingMatches = await service.find('*oo', { rootUris: [rootUri] });
             expect(trailingMatches).to.be.not.undefined;
-            expect(trailingMatches.length).to.eq(3);
+            expect(trailingMatches.length).to.eq(1);
 
             const prefixedMatches = await service.find('oo*', { rootUris: [rootUri] });
             expect(prefixedMatches).to.be.not.undefined;
-            expect(prefixedMatches.length).to.eq(3);
+            expect(prefixedMatches.length).to.eq(1);
+        });
+    });
+
+    describe('search with ignored patterns', () => {
+        it('should ignore strings passed through the search options', async () => {
+            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+
+            const matches = await service.find('**/*oo.*', { rootUris: [rootUri], defaultIgnorePatterns: ['foo'] });
+            expect(matches).to.be.not.undefined;
+            expect(matches.length).to.eq(0);
+        });
+
+        it('should ignore globs passed through the search options', async () => {
+            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+
+            const matches = await service.find('**/*oo.*', { rootUris: [rootUri], defaultIgnorePatterns: ['*fo*'] });
+            expect(matches).to.be.not.undefined;
+            expect(matches.length).to.eq(0);
         });
     });
 });

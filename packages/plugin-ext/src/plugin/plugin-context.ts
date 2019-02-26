@@ -355,7 +355,7 @@ export function createAPIFactory(
         };
 
         const workspace: typeof theia.workspace = {
-            get rootPath(): string | undefined {
+            get rootPath(): string | undefined {
                 return workspaceExt.rootPath;
             },
             get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
@@ -418,7 +418,7 @@ export function createAPIFactory(
                 return workspaceExt.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
             },
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
-                return workspaceExt.findFiles(include, undefined, maxResults, token);
+                return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
             applyEdit(edit: theia.WorkspaceEdit): PromiseLike<boolean> {
                 return editors.applyWorkspaceEdit(edit);
