@@ -48,6 +48,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     protected status: WorkingDirectoryStatus | undefined;
     protected scrollContainer: string;
     protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
+    protected amendingCommits: { commit: CommitWithChanges, avatar: string }[] = [];
     protected lastCommit: { commit: CommitWithChanges, avatar: string } | undefined;
     protected lastHead: string | undefined;
     protected lastSelectedNode?: { id: number, node: GitFileChangeNode };
@@ -183,11 +184,31 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     }
 
     protected async amend(): Promise<void> {
+        if (this.lastCommit) {
+            this.amendingCommits.push(this.lastCommit);
+        }
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository) {
             const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
             const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
             await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
+            if (commitTextArea) {
+                this.message = message;
+                commitTextArea.value = message;
+                this.resize(commitTextArea);
+                commitTextArea.focus();
+            }
+        }
+    }
+
+    protected async unAmend(): Promise<void> {
+        this.lastCommit = this.amendingCommits.pop();
+
+        const { selectedRepository } = this.repositoryProvider;
+        if (selectedRepository && this.lastCommit) {
+            const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B', this.lastCommit.commit.sha])).stdout.trim();
+            const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
+            await this.git.exec(selectedRepository, ['reset', this.lastCommit.commit.sha, '--soft']);
             if (commitTextArea) {
                 this.message = message;
                 commitTextArea.value = message;
@@ -413,9 +434,23 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 onFocus={this.handleListFocus}
             />
             {
-                this.lastCommit ?
+                this.amendingCommits.length > 0 ?
                     <div>
                         <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
+                            {this.renderAmendingCommits()}
+                        </div>
+                    </div>
+                    : ''
+            }
+            {
+                this.lastCommit ?
+                    <div>
+                        <div id='lastCommit' className='changesContainer'>
+                            <div className='theia-header git-theia-header'>
+                                Head Commit
+                                {1}
+                                {[]}
+                            </div>
                             {this.renderLastCommit()}
                         </div>
                     </div>
@@ -450,12 +485,40 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         return undefined;
     }
 
+    protected renderAmendingCommits(): React.ReactNode {
+        if (this.amendingCommits.length > 0) {
+            return <div id='stagedChanges' className='changesContainer'>
+                <div className='theia-header git-theia-header'>
+                    Commits being Amended
+                    {this.renderCommitCount(this.amendingCommits.length)}
+                    {this.renderAmendCommitListButtons()}
+                </div>
+                {this.amendingCommits.map((value, index, map) =>
+                    <GitCommit
+                        key={value.commit.sha}
+                        commit={value.commit}
+                        avatar={value.avatar}
+                        isOldestAmendCommit={index === map.length - 1}
+                        onUnAmend={() => this.unAmend.bind(this)()} />
+                )}
+            </div>;
+        } else {
+            return undefined;
+        }
+    }
+
+    protected renderAmendCommitListButtons(): React.ReactNode {
+        const unamendAll = <a className='toolbar-button' title='Unstage All Changes' onClick={this.doUnamendAll}><i className='fa fa-minus' /></a>;
+        return <div className='git-change-list-buttons-container'>{unamendAll}</div>;
+    }
+
     protected renderLastCommit(): React.ReactNode {
         if (!this.lastCommit) {
             return '';
         }
+
         const { commit, avatar } = this.lastCommit;
-        return <React.Fragment>
+        return <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
             <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
                 <img src={avatar} />
             </div>
@@ -466,9 +529,15 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
             <div className={GitWidget.Styles.FLEX_CENTER}>
                 <button className='theia-button' title='Amend last commit' onClick={() => this.amend.bind(this)()}>
                     Amend
-            </button>
+                </button>
             </div>
-        </React.Fragment>;
+        </div>;
+    }
+
+    protected renderCommitCount(commits: number): React.ReactNode {
+        return <div className='notification-count-container git-change-count'>
+            <span className='notification-count'>{commits}</span>
+        </div>;
     }
 
     protected readonly refresh = () => this.doRefresh();
@@ -603,6 +672,16 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         }
         if (this.listContainer) {
             this.listContainer.focus();
+        }
+    }
+
+    protected async doUnamendAll() {
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            while (this.amendingCommits.length > 0) {
+                this.unAmend();
+            }
+            this.update();
         }
     }
 
@@ -800,6 +879,39 @@ export class GitItem extends React.Component<GitItem.Props> {
                             <i className='fa fa-plus' />
                         </a>
                     </React.Fragment>
+            }
+        </div>;
+    }
+}
+
+export namespace GitCommit {
+    export interface Props {
+        commit: CommitWithChanges
+        avatar: string
+        isOldestAmendCommit: boolean
+        onUnAmend: () => Promise<void>
+    }
+}
+
+export class GitCommit extends React.Component<GitCommit.Props> {
+
+    render() {
+        return <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
+            <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
+                <img src={this.props.avatar} />
+            </div>
+            <div className={GitWidget.Styles.LAST_COMMIT_DETAILS}>
+                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY}>{this.props.commit.summary}</div>
+                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${this.props.commit.authorDateRelative} by ${this.props.commit.author.name}`}</div>
+            </div>
+            {
+                this.props.isOldestAmendCommit
+                    ? <div className={GitWidget.Styles.FLEX_CENTER}>
+                        <button className='theia-button' title='Un-amend commit' onClick={() => this.props.onUnAmend()}>
+                            Un-amend
+                        </button>
+                    </div>
+                    : ''
             }
         </div>;
     }
