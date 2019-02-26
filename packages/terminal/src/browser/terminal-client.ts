@@ -46,7 +46,9 @@ export interface TerminalClient extends Disposable {
     /**
      * Create connection with terminal backend and return connection id.
      */
-    createConnection(terminalWidget: TerminalWidget): Promise<number>;
+    createProcess(terminalWidget: TerminalWidget): Promise<number>; // todo rename it ? or maybe combination create(); attach(); and for reconnection only attach()?
+
+    attach(connectionId: number, terminalWidget: TerminalWidget): Promise<number>;
 
     // onSessionIdChanged - for reconnection stuff, but need to think about it.
 
@@ -112,7 +114,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     protected init(): void {
         this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
-                this.disposeWidget();
+                this.disposeWidget(); // todo use despose() at all?
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         });
@@ -134,27 +136,43 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
-        console.log('dispose terminal client!!!!');
     }
 
-    async createConnection(terminalWidget: TerminalWidget): Promise<number> {
+    async attach(id: number, terminalWidget: TerminalWidget): Promise<number> { // todo inject terminal widget to the constructor!!!!
         this.termWidget = terminalWidget;
         this.toDispose.push(this.termWidget);
 
-        this.terminalId = await this.createTerminalProcess(); // : await this.attachTerminal(id);
+        this.terminalId = await this.shellTerminalServer.attach(id); // todo remove this.terminalId... ?
+
+        this.connectWidgetToProcess();
+        if (IBaseTerminalServer.validateId(this.terminalId)) {
+            return this.terminalId;
+        }
+        // this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
+        throw new Error(`attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
+    }
+
+    async createProcess(terminalWidget: TerminalWidget): Promise<number> {
+        this.termWidget = terminalWidget;
+        this.toDispose.push(this.termWidget);
+
+        this.terminalId = await this.createTerminal(); // : await this.attachTerminal(id);
         this._options = {connectionId: this.terminalId , ...this.options};
 
-        console.log(' check options ', this.options);
+        this.connectWidgetToProcess();
+
+        return this.terminalId;
+    }
+
+    private connectWidgetToProcess() {
         this.connectTerminalProcess();
         this.onDidCloseDisposable = this.termWidget.onTerminalDidClose(() => this.kill());
         const onResizeDisposable = this.termWidget.onTerminalResize(size => this.resize(size.cols, size.rows));
 
         this.toDispose.pushAll([this.onDidCloseDisposable, onResizeDisposable]);
-
-        return this.terminalId;
     }
 
-    protected async createTerminalProcess(): Promise<number> {
+    protected async createTerminal(): Promise<number> {
         let rootURI = this.options.cwd;
         if (!rootURI) {
             const root = (await this.workspaceService.roots)[0];

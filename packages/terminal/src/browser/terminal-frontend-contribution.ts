@@ -135,7 +135,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
                 if (clientOpsToRestore) {
                     const client = this.createTerminalClient(clientOpsToRestore);
-                    this.createConnection(client, widget as TerminalWidget);
+                    this.attachClient(client, widget as TerminalWidget);
                 }
             }
         });
@@ -441,10 +441,18 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     // todo inject terminal widget and options to the constructor of the terminal client!!!!
     protected async createConnection(terminalClient: TerminalClient, termWidget: TerminalWidget): Promise<number> {
-        const connectionId = await terminalClient.createConnection(termWidget);
+        const connectionId = await terminalClient.createProcess(termWidget);
         this.termClients.set(termWidget.id, terminalClient.options);
 
         return connectionId;
+    }
+
+    protected async attachClient(terminalClient: TerminalClient, termWidget: TerminalWidget): Promise<void> {
+        const connectionId = terminalClient.options.connectionId;
+        if (connectionId) {
+            await terminalClient.attach(connectionId, termWidget);
+            this.termClients.set(termWidget.id, terminalClient.options); // todo use connection id...
+        }
     }
 
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
