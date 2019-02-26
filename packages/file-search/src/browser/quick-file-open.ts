@@ -153,7 +153,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         const locations = [...this.navigationLocationService.locations()].reverse();
         for (const location of locations) {
             const uriString = location.uri.toString();
-            if (!alreadyCollected.has(uriString) && fuzzy.test(lookFor, uriString)) {
+            if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(lookFor, uriString)) {
                 recentlyUsedItems.push(await this.toItem(location.uri, { groupLabel: recentlyUsedItems.length === 0 ? 'recently opened' : undefined, showBorder: false }));
                 alreadyCollected.add(uriString);
             }
