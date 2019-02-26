@@ -417,7 +417,7 @@ export function createAPIFactory(
                 ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
                 return workspaceExt.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
             },
-            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
+            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
             applyEdit(edit: theia.WorkspaceEdit): PromiseLike<boolean> {

@@ -156,7 +156,13 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         maxResults?: number, token?: theia.CancellationToken): Promise<UriComponents[]> {
         const opts: FileSearchService.Options = { rootUris: this.roots.map(r => r.uri) };
         if (typeof excludePatternOrDisregardExcludes === 'string') {
-            opts.defaultIgnorePatterns = [excludePatternOrDisregardExcludes];
+            if (excludePatternOrDisregardExcludes === '') { // default excludes
+                opts.defaultIgnorePatterns = [];
+            } else {
+                opts.defaultIgnorePatterns = [excludePatternOrDisregardExcludes];
+            }
+        } else {
+            opts.defaultIgnorePatterns = undefined; // no excludes
         }
         if (typeof maxResults === 'number') {
             opts.limit = maxResults;

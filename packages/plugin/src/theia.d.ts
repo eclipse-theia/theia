@@ -4028,7 +4028,7 @@ declare module '@theia/plugin' {
          * @return A thenable that resolves to an array of resource identifiers. Will return no results if no
          * [workspace folders](#workspace.workspaceFolders) are opened.
          */
-        export function findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
+        export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
         /**
          * Make changes to one or many resources or create, delete, and rename resources as defined by the given

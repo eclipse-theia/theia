@@ -32,13 +32,13 @@ export class FileSearchServiceImpl implements FileSearchService {
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory) { }
 
     async find(searchPattern: string, options: FileSearchService.Options, cancellationToken?: CancellationToken): Promise<string[]> {
+        if (options.defaultIgnorePatterns && options.defaultIgnorePatterns.length === 0) { // default excludes
+            options.defaultIgnorePatterns.push('.git');
+        }
         const opts = {
             fuzzyMatch: true,
             limit: Number.MAX_SAFE_INTEGER,
             useGitIgnore: true,
-            defaultIgnorePatterns: [
-                '.git'
-            ],
             ...options
         };
         const args: string[] = this.getSearchArgs(opts);
