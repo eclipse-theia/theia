@@ -37,18 +37,11 @@ export class FileSearchServiceImpl implements FileSearchService {
             limit: Number.MAX_SAFE_INTEGER,
             useGitIgnore: true,
             defaultIgnorePatterns: [
-                '^.git$'
+                '.git'
             ],
             ...options
         };
-        const args: string[] = [
-            '--files',
-            '--sort-files',
-        ];
-        if (!options.useGitIgnore) {
-            args.push('-uu');
-        }
-        args.push(...opts.rootUris.map(r => FileUri.fsPath(r)));
+        const args: string[] = this.getSearchArgs(opts);
 
         const resultDeferred = new Deferred<string[]>();
         try {
@@ -149,6 +142,32 @@ export class FileSearchServiceImpl implements FileSearchService {
             resultDeferred.reject(e);
         });
         return resultDeferred.promise;
+    }
+
+    private getSearchArgs(options: FileSearchService.Options): string[] {
+        const args: string[] = [
+            '--files'
+        ];
+        if (!options.useGitIgnore) {
+            args.push('-uu');
+        }
+        if (options && options.defaultIgnorePatterns) {
+            options.defaultIgnorePatterns.filter(p => p !== '')
+                .forEach(ignore => {
+                    if (!ignore.endsWith('*')) {
+                        ignore = `${ignore}*`;
+                    }
+                    if (!ignore.startsWith('*')) {
+                        ignore = `!*${ignore}`;
+                    } else {
+                        ignore = `!${ignore}`;
+                    }
+                    args.push('--glob');
+                    args.push(ignore);
+                });
+        }
+        args.push(...options.rootUris.map(r => FileUri.fsPath(r)));
+        return args;
     }
 
     private setupCancellation(onCancel: () => void, cancellationToken?: CancellationToken) {
