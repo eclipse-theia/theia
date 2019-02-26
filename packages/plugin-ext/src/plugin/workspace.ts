@@ -112,7 +112,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         });
     }
 
-    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number,
+    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number,
         token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
         let includePattern: string;
         if (include) {
@@ -127,7 +127,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         let excludePatternOrDisregardExcludes: string | false;
         if (exclude === undefined) {
-            excludePatternOrDisregardExcludes = false;
+            excludePatternOrDisregardExcludes = ''; // default excludes
         } else if (exclude) {
             if (typeof exclude === 'string') {
                 excludePatternOrDisregardExcludes = exclude;
@@ -135,7 +135,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 excludePatternOrDisregardExcludes = exclude.pattern;
             }
         } else {
-            excludePatternOrDisregardExcludes = false;
+            excludePatternOrDisregardExcludes = false; // no excludes
         }
 
         if (token && token.isCancellationRequested) {
