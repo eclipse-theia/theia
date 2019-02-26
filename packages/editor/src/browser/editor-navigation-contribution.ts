@@ -98,6 +98,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
                 editor.onSelectionChanged(selection => this.onSelectionChanged(editor, selection)),
                 editor.onDocumentContentChanged(event => this.onDocumentContentChanged(editor, event))
             ]);
+            this.locationStack.register(NavigationLocation.create(editor, editor.selection));
         }
     }
 
