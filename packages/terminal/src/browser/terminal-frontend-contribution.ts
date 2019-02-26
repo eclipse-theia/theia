@@ -28,7 +28,8 @@ import {
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions
+    KeyModifier, KeybindingRegistry, Widget, LabelProvider,
+    WidgetOpenerOptions, FrontendApplicationContribution, StorageService,
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -43,6 +44,7 @@ import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TerminalClient, TerminalClientOptions } from '@theia/terminal/src/browser/terminal-client';
+import { DisposableCollection } from '@theia/core';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -81,7 +83,10 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution {
+export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution,
+                                                     MenuContribution, KeybindingContribution, TabBarToolbarContribution {
+
+    private static ID = 'terminal-frontend-contribution';
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -99,17 +104,23 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
-    readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
-
-    protected readonly onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
-    readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidCreateTerminalEmitter.event;
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
     @inject('Factory<TerminalClient>')
     protected readonly terminalClientFactory: (options: TerminalClientOptions) => TerminalClient;
+
+    protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
+    readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
+
+    protected readonly onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
+    readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidCreateTerminalEmitter.event;
+
+    protected readonly toDispose = new DisposableCollection();
+    protected termClientsToRestore = new Map<number, TerminalClientOptions>();
 
     @postConstruct()
     protected init(): void {
@@ -125,6 +136,67 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
         updateFocusKey();
         this.shell.activeChanged.connect(updateFocusKey);
+
+        this.toDispose.pushAll([this.onDidCreateTerminalEmitter, this.onDidChangeCurrentTerminalEmitter]);
+    }
+
+    onStart() {
+        this.restoreTerminalClientInfo();
+    }
+
+    onStop(): void {
+        this.storeState();
+        this.dispose();
+        this.termClientsToRestore.clear();
+    }
+
+    private storeState() {
+        // const restoreOptions = Array.from<number, TerminalClientOptions>(this.termClientOpsToRestore.keys(), id => {
+        //     const options = this.termClientOpsToRestore.get(id);
+        //     const restoreClientOption: TerminalClientOptionsToRestore = {connectionId: id, ...options};
+        //     return restoreClientOption;
+        // })
+
+        // const restoreOptions = Array.from<number, TerminalClientOptions>(this.termClientOpsToRestore.keys(), id => {
+        //     const options = this.termClientOpsToRestore.get(id);
+
+        //     const restoreClientOption: TerminalClientOptions = {connectionId: id, ...options};
+        //     return restoreClientOption;
+        // })
+
+        const toStore = Array.from(this.termClientsToRestore.values(), value => {
+            return value
+        });
+        console.log('***************************** to store ', toStore);
+
+        this.storageService.setData(TerminalFrontendContribution.ID, toStore); // restoreOptions => fitler store only with sessionId
+    }
+
+    protected async restoreTerminalClientInfo(): Promise<void> {
+        const dataToRestore = await this.storageService.getData<TerminalClientOptions[]>(TerminalFrontendContribution.ID) || [];
+
+        if (dataToRestore) {
+            dataToRestore.reduce((mapAcum, termClientOps) => {
+                if (termClientOps.connectionId) {
+                    mapAcum.set(termClientOps.connectionId, termClientOps);
+                }
+                return mapAcum;
+            }, this.termClientsToRestore);
+        }
+        // this.widgetManager.getWidgets(TERMINAL_WIDGET_FACTORY_ID).find((widget) => widget.id === '');
+        setTimeout(() => {console.log('amount of widgets... ', this.widgetManager.getWidgets(TERMINAL_WIDGET_FACTORY_ID).length);}, 5000);
+        
+        console.log('term client ops restored');
+    }
+
+    async restoreState(widget: TerminalWidget) {
+        console.log('restore widget');
+        // const terminalClient = this.createTerminalClient(termClientOps);
+        // this.createConnection(terminalClient, widget, termClientOps);
+    }
+
+    private dispose() {
+        this.toDispose.dispose();
     }
 
     protected _currentTerminal: TerminalWidget | undefined;
@@ -376,16 +448,34 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
         const termWidget = await this.newTerminal({});
-        const terminalClient: TerminalClient = this.terminalClientFactory({ cwd });
+
+        const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: termWidget.id };
+        const terminalClient = this.createTerminalClient(termClientOpts);
+
         const connectionId = await terminalClient.createConnection(termWidget);
-        console.log(connectionId);
-        // termWidget.start(); // move to the client
+        this.termClientsToRestore.set(connectionId, termClientOpts);
+
         this.open(termWidget, { widgetOptions: options });
+    }
+
+    protected createTerminalClient(termClientOpts: TerminalClientOptions): TerminalClient {
+        const terminalClient: TerminalClient = this.terminalClientFactory(termClientOpts);
+        this.toDispose.push(terminalClient);
+
+        return terminalClient;
+    }
+
+    // todo inject terminal widget and options to the constructor of the terminal client!!!!
+    protected async createConnection(terminalClient: TerminalClient, termWidget: TerminalWidget, clientOps: TerminalClientOptions): Promise<number> {
+        const connectionId = await terminalClient.createConnection(termWidget);
+        this.termClientsToRestore.set(connectionId, clientOps);
+
+        return connectionId;
     }
 
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const termWidget = await this.newTerminal({});
-        // termWidget.start();
+
         this.open(termWidget, { widgetOptions: options });
     }
 }

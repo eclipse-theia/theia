@@ -165,6 +165,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
+
             // this.start(state.terminalId);
         }
     }
@@ -372,6 +373,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     dispose(): void {
+        console.log('dispose terminal widget.');
         super.dispose();
         this._onTermDidClose.fire(this);
         this._onTermDidClose.dispose();

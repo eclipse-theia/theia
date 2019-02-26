@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule, Container, interfaces } from 'inversify';
-import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -49,7 +49,7 @@ export default new ContainerModule(bind => {
 
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
     bind(TerminalService).toService(TerminalFrontendContribution);
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, FrontendApplicationContribution]) {
         bind(identifier).toService(TerminalFrontendContribution);
     }
 

@@ -36,7 +36,12 @@ export const TerminalClient = Symbol('TerminalClient');
  * This interface provide extensibility terminal wiget and terminal server side. This common interface allow to use different implementation
  * terminal widget for the same terminal backend. Also it's allow to reuse current terminal widget to comunication with some custom server side.
  */
-export interface TerminalClient {
+export interface TerminalClient extends Disposable {
+
+    // todo
+    readonly options: TerminalClientOptions;
+
+    // readonly widget: TerminalWidget;
 
     /**
      * Create connection with terminal backend and return connection id.
@@ -49,15 +54,22 @@ export interface TerminalClient {
 
     kill(): Promise<void>;
 
-    sendText(text: string): Promise<void>
+    sendText(text: string): Promise<void>;
 
     // define iterceptor function, but like optional argument.
 }
 
-export class TerminalClientOptions {
+export const TerminalClientOptions = Symbol('TerminalClientOptions');
+export interface TerminalClientOptions {
     readonly cwd?: string;
-    readonly closeOnDispose: string
+    readonly connectionId?: number;
+    readonly closeOnDispose: boolean;
+    readonly terminalDomId: string;
 }
+
+// export interface TerminalClientOptionsToRestore extends Partial<TerminalClientOptions>{
+//     connectionId: number;
+// }
 
 // todo move implementation to the separated ts file.
 /**
@@ -76,12 +88,16 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
 
     @inject(TerminalClientOptions)
-    protected readonly options: TerminalClientOptions;
+    _options: TerminalClientOptions;
+
+    get options(): TerminalClientOptions {
+        return this._options;
+    }
 
     @inject(TerminalWatcher)
     protected readonly terminalWatcher: TerminalWatcher;
 
-    @inject(ILogger) @named('terminal') 
+    @inject(ILogger) @named('terminal')
     protected readonly logger: ILogger;
 
     private termWidget: TerminalWidget;
@@ -118,6 +134,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
+        console.log('dispose terminal client!!!!');
     }
 
     async createConnection(terminalWidget: TerminalWidget): Promise<number> {
@@ -125,6 +142,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         this.toDispose.push(this.termWidget);
 
         this.terminalId = await this.createTerminalProcess(); // : await this.attachTerminal(id);
+        this._options = {connectionId: this.terminalId , ...this.options};
 
         console.log(' check options ', this.options);
         this.connectTerminalProcess();
