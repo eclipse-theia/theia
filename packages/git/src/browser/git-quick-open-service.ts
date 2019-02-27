@@ -132,10 +132,10 @@ export class GitQuickOpenService {
             try {
                 if (action === GitAction.PULL) {
                     await this.git.pull(repository, { remote: defaultRemote });
-                    console.log(`Git Pull: sucessfully completed from ${defaultRemote}.`);
+                    console.log(`Git Pull: successfully completed from ${defaultRemote}.`);
                 } else if (action === GitAction.PUSH) {
                     await this.git.push(repository, { remote: defaultRemote });
-                    console.log(`Git Push: sucessfully completed to ${defaultRemote}.`);
+                    console.log(`Git Push: successfully completed to ${defaultRemote}.`);
                 }
             } catch (error) {
                 this.gitErrorHandler.handleError(error);
