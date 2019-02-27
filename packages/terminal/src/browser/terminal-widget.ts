@@ -17,6 +17,9 @@
 import { Event } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 
+/*
+ * Object to store terminal widget size.
+ */
 export class TerminalSize {
     readonly cols: number;
     readonly rows: number;
@@ -27,26 +30,24 @@ export class TerminalSize {
  */
 export abstract class TerminalWidget extends BaseWidget {
 
-    // abstract processId: Promise<number>;
-
     /**
-     * Start terminal and return terminal id.
-     * @param id - terminal id.
+     * Write some text content to the widget.
      */
-    // abstract start(id?: number): Promise<number>; // todo delete this method. It should be in the client.
-
-    /**
-     * Send text to the terminal server.
-     * @param text - text content.
-     */
-    // abstract sendText(text: string): void;
-
     abstract write(data: string): void;
 
+    /*
+     * Send event on open terminal widget.
+     */
     abstract onDidOpen: Event<void>;
 
+    /*
+     * Send event on user type.
+     */
     abstract onUserInput: Event<string | undefined>;
 
+    /*
+     * Send event on terminal resize.
+     */
     abstract onTerminalResize: Event<TerminalSize>;
 
     /**
@@ -58,6 +59,8 @@ export abstract class TerminalWidget extends BaseWidget {
      * Cleat terminal output.
      */
     abstract clearOutput(): void;
+
+    abstract reset(): void;
 }
 
 /**

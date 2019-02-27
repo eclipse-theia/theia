@@ -45,6 +45,16 @@ export class WebSocketConnectionProvider {
     constructor() {
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         const socket = this.createWebSocket(url);
+
+        // Added to test one of the case terminal reconnection.
+        // Remove it before code review
+        /* tslint:disable */
+        (window as any).closeConn = () => {
+            console.log('lets close connection :) and await reconnection');
+            socket.close();
+        };
+        /* tslint:enable */
+
         socket.onerror = console.error;
         socket.onclose = ({ code, reason }) => {
             for (const channel of [...this.channels.values()]) {

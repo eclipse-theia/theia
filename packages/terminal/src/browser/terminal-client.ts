@@ -38,7 +38,10 @@ export const TerminalClient = Symbol('TerminalClient');
  */
 export interface TerminalClient extends Disposable {
 
-    // todo
+    /**
+     * Terminal client options to setup server side terminal process
+     * and control terminal client configuration.
+     */
     readonly options: TerminalClientOptions;
 
     // readonly widget: TerminalWidget;
@@ -46,9 +49,9 @@ export interface TerminalClient extends Disposable {
     /**
      * Create connection with terminal backend and return connection id.
      */
-    createProcess(terminalWidget: TerminalWidget): Promise<number>; // todo rename it ? or maybe combination create(); attach(); and for reconnection only attach()?
+    create(terminalWidget: TerminalWidget): Promise<number>; // createAndAttach()
 
-    attach(connectionId: number, terminalWidget: TerminalWidget): Promise<number>;
+    attach(connectionId: number, terminalWidget: TerminalWidget): Promise<number>; // tryReatach()
 
     // onSessionIdChanged - for reconnection stuff, but need to think about it.
 
@@ -108,6 +111,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     protected waitForConnection: Deferred<MessageConnection>;
 
     protected readonly toDispose = new DisposableCollection();
+    protected readonly toDisposeOnConnect = new DisposableCollection();
     protected onDidCloseDisposable: Disposable;
 
     @postConstruct()
@@ -123,6 +127,26 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
                 this.disposeWidget();
             }
         });
+
+       this.configureReconnection();
+    }
+
+    // Reconnection feature. Main idea - recreate json-rpc channel for terminal proxy,
+    // and clean up previously created channel and related stuff.
+    protected configureReconnection() {
+        this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
+            const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
+                disposable.dispose();
+                this.reconnectTerminalProcess();
+            });
+            this.toDispose.push(disposable);
+        }));
+    }
+
+    protected async reconnectTerminalProcess(): Promise<void> {
+        if (typeof this.terminalId === 'number') {
+            await this.attach(this.terminalId, this.termWidget);
+        }
     }
 
     private disposeWidget(): void {
@@ -144,19 +168,20 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
         this.terminalId = await this.shellTerminalServer.attach(id); // todo remove this.terminalId... ?
 
-        this.connectWidgetToProcess();
-        if (IBaseTerminalServer.validateId(this.terminalId)) {
-            return this.terminalId;
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
+            this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
+            this.terminalId = await this.createProcess();
         }
-        // this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
-        throw new Error(`attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
+
+        this.connectWidgetToProcess();
+        return this.terminalId;
     }
 
-    async createProcess(terminalWidget: TerminalWidget): Promise<number> {
+    async create(terminalWidget: TerminalWidget): Promise<number> {
         this.termWidget = terminalWidget;
         this.toDispose.push(this.termWidget);
 
-        this.terminalId = await this.createTerminal(); // : await this.attachTerminal(id);
+        this.terminalId = await this.createProcess(); // : await this.attachTerminal(id);
         this._options = {connectionId: this.terminalId , ...this.options};
 
         this.connectWidgetToProcess();
@@ -172,7 +197,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         this.toDispose.pushAll([this.onDidCloseDisposable, onResizeDisposable]);
     }
 
-    protected async createTerminal(): Promise<number> {
+    protected async createProcess(): Promise<number> {
         let rootURI = this.options.cwd;
         if (!rootURI) {
             const root = (await this.workspaceService.roots)[0];
@@ -195,23 +220,23 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     }
 
      protected connectTerminalProcess(): void {
-        if (typeof this.terminalId !== 'number') {
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return;
         }
 
-        // this.toDisposeOnConnect.dispose();
-        // this.toDispose.push(this.toDisposeOnConnect);
-        // this.term.reset();
+        this.toDisposeOnConnect.dispose();
+        this.toDispose.push(this.toDisposeOnConnect);
+        this.termWidget.reset();
+
         const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
                 connection.onNotification('onData', (data: string) => this.termWidget.write(data));
 
-                this.termWidget.onUserInput(data => data && connection.sendRequest('write', data));
-                // connection.onDispose(() => this.term.off('data', sendData));
+                this.toDisposeOnConnect.push(this.termWidget.onUserInput(data => data && connection.sendRequest('write', data)));
+                this.toDisposeOnConnect.push(connection);
 
-                // this.toDisposeOnConnect.push(connection);
                 connection.listen();
                 if (waitForConnection) {
                     waitForConnection.resolve(connection);
@@ -221,7 +246,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     }
 
     resize(cols: number, rows: number): void {
-        if (typeof this.terminalId !== 'number') {
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return;
         }
 

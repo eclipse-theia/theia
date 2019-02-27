@@ -441,7 +441,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     // todo inject terminal widget and options to the constructor of the terminal client!!!!
     protected async createConnection(terminalClient: TerminalClient, termWidget: TerminalWidget): Promise<number> {
-        const connectionId = await terminalClient.createProcess(termWidget);
+        const connectionId = await terminalClient.create(termWidget);
         this.termClients.set(termWidget.id, terminalClient.options);
 
         return connectionId;
