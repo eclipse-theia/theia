@@ -26,6 +26,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TaskSchemaUpdater } from './task-schema-updater';
 
 export namespace TaskCommands {
     const TASK_CATEGORY = 'Task';
@@ -74,6 +75,9 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(TaskService)
     protected readonly taskService: TaskService;
 
+    @inject(TaskSchemaUpdater)
+    protected readonly schemaUpdater: TaskSchemaUpdater;
+
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib => {
             if (contrib.registerResolvers) {
@@ -83,6 +87,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 contrib.registerProviders(this.taskProviderRegistry);
             }
         });
+        this.schemaUpdater.update();
     }
 
     registerCommands(registry: CommandRegistry): void {

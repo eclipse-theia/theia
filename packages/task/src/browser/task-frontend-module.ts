@@ -27,6 +27,7 @@ import { createCommonBindings } from '../common/task-common-module';
 import { TaskServer, taskPath } from '../common/task-protocol';
 import { TaskWatcher } from '../common/task-watcher';
 import { bindProcessTaskModule } from './process/process-task-frontend-module';
+import { TaskSchemaUpdater } from './task-schema-updater';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -50,6 +51,7 @@ export default new ContainerModule(bind => {
     bind(TaskProviderRegistry).toSelf().inSingletonScope();
     bind(TaskResolverRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, TaskContribution);
+    bind(TaskSchemaUpdater).toSelf().inSingletonScope();
 
     bindProcessTaskModule(bind);
 });

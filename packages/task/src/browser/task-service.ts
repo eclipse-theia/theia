@@ -155,6 +155,11 @@ export class TaskService implements TaskConfigurationClient {
         return this.taskServer.getTasks(this.getContext());
     }
 
+    /** Returns an array of task types that are registered, including the default types */
+    getRegisteredTaskTypes(): Promise<string[]> {
+        return this.taskServer.getRegisteredTaskTypes();
+    }
+
     /**
      * Get the last executed task.
      *

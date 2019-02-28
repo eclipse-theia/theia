@@ -65,6 +65,10 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
 
     /** removes the client that has disconnected */
     disconnectClient(client: TaskClient): void;
+
+    /** Returns the list of default and registered task runners */
+    getRegisteredTaskTypes(): Promise<string[]>
+
 }
 
 /** Event sent when a task has concluded its execution */
