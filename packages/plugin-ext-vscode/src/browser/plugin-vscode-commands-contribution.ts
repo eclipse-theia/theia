@@ -28,13 +28,11 @@ import { ResourceProvider } from '@theia/core';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
-        id: 'vscode.open',
-        label: 'VSCode open link'
+        id: 'vscode.open'
     };
 
     export const DIFF: Command = {
-       id: 'vscode.diff',
-       label: 'VSCode diff'
+       id: 'vscode.diff'
     };
 
     export const SET_CONTEXT: Command = {
@@ -70,7 +68,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
 
         commands.registerCommand(VscodeCommands.DIFF, {
-            isVisible: () => true,
+            isVisible: () => false,
             // tslint:disable-next-line: no-any
             execute: async uris => {
                 const [left, right] = uris;
@@ -86,7 +84,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
         commands.registerCommand(VscodeCommands.PREVIEW_HTML, {
-            isVisible: () => true,
+            isVisible: () => false,
             // tslint:disable-next-line: no-any
             execute: async (resource: URI, position?: any, label?: string, options?: any) => {
                 label = label || resource.fsPath;
