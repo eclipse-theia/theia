@@ -44,16 +44,14 @@ export interface TerminalClient extends Disposable {
      */
     readonly options: TerminalClientOptions;
 
-    // readonly widget: TerminalWidget;
+    readonly widget: TerminalWidget;
 
     /**
      * Create connection with terminal backend and return connection id.
      */
-    create(terminalWidget: TerminalWidget): Promise<number>; // createAndAttach()
+    create(): Promise<number>; // todo createAndAttach()
 
-    attach(connectionId: number, terminalWidget: TerminalWidget): Promise<number>; // tryReatach()
-
-    // onSessionIdChanged - for reconnection stuff, but need to think about it.
+    attach(connectionId: number): Promise<number>; // todo tryReatach()
 
     resize(cols: number, rows: number): void;
 
@@ -61,7 +59,6 @@ export interface TerminalClient extends Disposable {
 
     sendText(text: string): Promise<void>;
 
-    // define iterceptor function, but like optional argument.
 }
 
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
@@ -71,10 +68,6 @@ export interface TerminalClientOptions {
     readonly closeOnDispose: boolean;
     readonly terminalDomId: string;
 }
-
-// export interface TerminalClientOptionsToRestore extends Partial<TerminalClientOptions>{
-//     connectionId: number;
-// }
 
 // todo move implementation to the separated ts file.
 /**
@@ -92,6 +85,9 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     @inject(WebSocketConnectionProvider)
     protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
 
+    @inject(TerminalWidget)
+    readonly widget: TerminalWidget;
+
     @inject(TerminalClientOptions)
     _options: TerminalClientOptions;
 
@@ -105,7 +101,6 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     @inject(ILogger) @named('terminal')
     protected readonly logger: ILogger;
 
-    private termWidget: TerminalWidget;
     private terminalId: number;
 
     protected waitForConnection: Deferred<MessageConnection>;
@@ -116,18 +111,19 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     @postConstruct()
     protected init(): void {
-        this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
                 this.disposeWidget(); // todo use despose() at all?
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
-        });
-        this.terminalWatcher.onTerminalExit(({ terminalId }) => {
+        }));
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
                 this.disposeWidget();
             }
-        });
+        }));
 
+       this.toDispose.push(this.widget);
        this.configureReconnection();
     }
 
@@ -145,7 +141,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     protected async reconnectTerminalProcess(): Promise<void> {
         if (typeof this.terminalId === 'number') {
-            await this.attach(this.terminalId, this.termWidget);
+            await this.attach(this.terminalId);
         }
     }
 
@@ -154,7 +150,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
             this.onDidCloseDisposable.dispose();
         }
         if (this.options.closeOnDispose) {
-            this.termWidget.dispose();
+            this.widget.dispose();
         }
     }
 
@@ -162,10 +158,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         this.toDispose.dispose();
     }
 
-    async attach(id: number, terminalWidget: TerminalWidget): Promise<number> { // todo inject terminal widget to the constructor!!!!
-        this.termWidget = terminalWidget;
-        this.toDispose.push(this.termWidget);
-
+    async attach(id: number): Promise<number> { // todo inject terminal widget to the constructor!!!!
         this.terminalId = await this.shellTerminalServer.attach(id); // todo remove this.terminalId... ?
 
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
@@ -177,10 +170,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         return this.terminalId;
     }
 
-    async create(terminalWidget: TerminalWidget): Promise<number> {
-        this.termWidget = terminalWidget;
-        this.toDispose.push(this.termWidget);
-
+    async create(): Promise<number> {
         this.terminalId = await this.createProcess(); // : await this.attachTerminal(id);
         this._options = {connectionId: this.terminalId , ...this.options};
 
@@ -191,8 +181,8 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     private connectWidgetToProcess() {
         this.connectTerminalProcess();
-        this.onDidCloseDisposable = this.termWidget.onTerminalDidClose(() => this.kill());
-        const onResizeDisposable = this.termWidget.onTerminalResize(size => this.resize(size.cols, size.rows));
+        this.onDidCloseDisposable = this.widget.onTerminalDidClose(() => this.kill());
+        const onResizeDisposable = this.widget.onTerminalResize(size => this.resize(size.cols, size.rows));
 
         this.toDispose.pushAll([this.onDidCloseDisposable, onResizeDisposable]);
     }
@@ -226,15 +216,15 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        this.termWidget.reset();
+        this.widget.reset();
 
         const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.termWidget.write(data));
+                connection.onNotification('onData', (data: string) => this.widget.write(data));
 
-                this.toDisposeOnConnect.push(this.termWidget.onUserInput(data => data && connection.sendRequest('write', data)));
+                this.toDisposeOnConnect.push(this.widget.onUserInput(data => data && connection.sendRequest('write', data)));
                 this.toDisposeOnConnect.push(connection);
 
                 connection.listen();

@@ -111,7 +111,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     protected readonly contextKeyService: ContextKeyService;
 
     @inject('Factory<TerminalClient>')
-    protected readonly terminalClientFactory: (options: TerminalClientOptions) => TerminalClient;
+    protected readonly terminalClientFactory: (options: TerminalClientOptions, terminalWidget: TerminalWidget) => TerminalClient;
 
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
     readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
@@ -134,8 +134,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
                 const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
                 if (clientOpsToRestore) {
-                    const client = this.createTerminalClient(clientOpsToRestore);
-                    this.attachClient(client, widget as TerminalWidget);
+                    const client = this.createTerminalClient(clientOpsToRestore, widget as TerminalWidget);
+                    this.attachClient(client);
                 }
             }
         });
@@ -423,35 +423,36 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
-        const termWidget = await this.newTerminal({});
+        const terminalWidget = await this.newTerminal({});
 
-        const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: termWidget.id };
-        const terminalClient = this.createTerminalClient(termClientOpts);
-        await this.createConnection(terminalClient, termWidget);
+        const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: terminalWidget.id };
+        const terminalClient = this.createTerminalClient(termClientOpts, terminalWidget);
+        await this.createConnection(terminalClient);
 
-        this.open(termWidget, { widgetOptions: options });
+        this.open(terminalWidget, { widgetOptions: options });
     }
 
-    protected createTerminalClient(termClientOpts: TerminalClientOptions): TerminalClient {
-        const terminalClient: TerminalClient = this.terminalClientFactory(termClientOpts);
+    protected createTerminalClient(termClientOpts: TerminalClientOptions, terminalWidget: TerminalWidget): TerminalClient {
+        const terminalClient: TerminalClient = this.terminalClientFactory(termClientOpts, terminalWidget);
         this.toDispose.push(terminalClient);
 
         return terminalClient;
     }
 
-    // todo inject terminal widget and options to the constructor of the terminal client!!!!
-    protected async createConnection(terminalClient: TerminalClient, termWidget: TerminalWidget): Promise<number> {
-        const connectionId = await terminalClient.create(termWidget);
-        this.termClients.set(termWidget.id, terminalClient.options);
+    protected async createConnection(terminalClient: TerminalClient): Promise<number> {
+        const connectionId = await terminalClient.create();
+        this.termClients.set(terminalClient.widget.id, terminalClient.options);
+        console.log('new terminal and connection id ', connectionId);
 
         return connectionId;
     }
 
-    protected async attachClient(terminalClient: TerminalClient, termWidget: TerminalWidget): Promise<void> {
+    protected async attachClient(terminalClient: TerminalClient): Promise<void> {
         const connectionId = terminalClient.options.connectionId;
-        if (connectionId) {
-            await terminalClient.attach(connectionId, termWidget);
-            this.termClients.set(termWidget.id, terminalClient.options); // todo use connection id...
+        console.log('Try attach conn id: ', connectionId);
+        if (connectionId) {  // todo maybe if connectionId doesn't exist than create new one?
+            await terminalClient.attach(connectionId);
+            this.termClients.set(terminalClient.widget.id, terminalClient.options); // todo use connection id...
         }
     }
 
