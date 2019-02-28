@@ -1342,6 +1342,11 @@ export class ProcessExecution {
         }
         return hash.digest('hex');
     }
+
+    public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
+        const candidate = value as ProcessExecution;
+        return candidate && !!candidate.process;
+    }
 }
 
 export enum ShellQuoting {
@@ -1444,6 +1449,11 @@ export class ShellExecution {
             }
         }
         return hash.digest('hex');
+    }
+
+    public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
+        const candidate = value as ShellExecution;
+        return candidate && (!!candidate.commandLine || !!candidate.command);
     }
 }
 

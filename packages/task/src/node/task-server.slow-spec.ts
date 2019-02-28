@@ -338,6 +338,7 @@ function createTaskConfig(taskType: string, command: string, args: string[]): Ta
         label: 'test task',
         type: taskType,
         _source: '/source/folder',
+        _scope: '/source/folder',
         command: command,
         args: args,
         windows: {
@@ -359,6 +360,7 @@ function createProcessTaskConfig(processType: ProcessType, command: string, args
         label: 'test task',
         type: processType,
         _source: '/source/folder',
+        _scope: '/source/folder',
         command: command,
         args: args,
         windows: {
@@ -390,6 +392,7 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
         label: '[Task] long running test task (~300s)',
         type: processType,
         _source: '/source/folder',
+        _scope: '/source/folder',
         cwd: wsRoot,
         command: commandLongRunning,
         args: [],

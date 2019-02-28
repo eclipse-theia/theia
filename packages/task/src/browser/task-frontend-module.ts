@@ -22,6 +22,7 @@ import { QuickOpenTask } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TaskConfigurations } from './task-configurations';
+import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskFrontendContribution } from './task-frontend-contribution';
 import { createCommonBindings } from '../common/task-common-module';
 import { TaskServer, taskPath } from '../common/task-protocol';
@@ -39,6 +40,7 @@ export default new ContainerModule(bind => {
 
     bind(QuickOpenTask).toSelf().inSingletonScope();
     bind(TaskConfigurations).toSelf().inSingletonScope();
+    bind(ProvidedTaskConfigurations).toSelf().inSingletonScope();
 
     bind(TaskServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);

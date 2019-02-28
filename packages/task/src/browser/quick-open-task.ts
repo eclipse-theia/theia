@@ -17,8 +17,8 @@
 import { inject, injectable } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, QuickOpenHandler, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/';
 import { TaskService } from './task-service';
-import { TaskConfigurations } from './task-configurations';
 import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
+import { TaskConfigurations } from './task-configurations';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -33,15 +33,18 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     @inject(TaskService)
     protected readonly taskService: TaskService;
 
-    @inject(TaskConfigurations)
-    protected readonly taskConfigurations: TaskConfigurations;
-
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    /**
+     * @deprecated To be removed in 0.5.0
+     */
+    @inject(TaskConfigurations)
+    protected readonly taskConfigurations: TaskConfigurations;
+
     /** Initialize this quick open model with the tasks. */
     async init(): Promise<void> {
-        const configuredTasks = this.taskConfigurations.getTasks();
+        const configuredTasks = this.taskService.getConfiguredTasks();
         const providedTasks = await this.taskService.getProvidedTasks();
 
         this.items = [];
@@ -128,7 +131,10 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getLabel(): string {
-        return `${this.task.type}: ${this.task.label}`;
+        if (this.isConfigured) {
+            return `${this.task.type}: ${this.task.label}`;
+        }
+        return `${this.task._source}: ${this.task.label}`;
     }
 
     getGroupLabel(): string {
@@ -138,6 +144,9 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     getDescription(): string {
         if (this.isConfigured) {
             return new URI(this.task._source).displayName;
+        }
+        if (this.task._scope) {
+            return new URI(this.task._scope).path.toString();
         }
         return this.task._source;
     }
