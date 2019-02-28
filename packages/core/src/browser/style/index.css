@@ -109,7 +109,7 @@ body {
     border: none;
 }
 
-button, .theia-button {
+button.theia-button, .theia-button {
     border: none;
     color: var(--theia-ui-button-font-color);
     background-color: var(--theia-ui-button-color);
@@ -126,7 +126,7 @@ button, .theia-button {
     transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 
-button:hover, .theia-button:hover {
+button.theia-button:hover, .theia-button:hover {
   background-color: var(--theia-ui-button-color-hover);
 }
 
@@ -139,7 +139,7 @@ button.secondary:hover, .theia-button.secondary:hover {
   background-color: var(--theia-ui-button-color-secondary-hover);
 }
 
-button[disabled], .theia-button[disabled] {
+button.theia-button[disabled], .theia-button[disabled] {
   opacity: 0.6;
   color: var(--theia-ui-button-font-color-disabled);
   background-color: var(--theia-ui-button-color-disabled);
