@@ -43,6 +43,7 @@ export class ProcessTaskResolver implements TaskResolver {
         const result: ProcessTaskConfiguration = {
             type: processTaskConfig.type,
             _source: processTaskConfig._source,
+            _scope: processTaskConfig._scope,
             label: processTaskConfig.label,
             command: await this.variableResolverService.resolve(processTaskConfig.command, options),
             args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, options) : undefined,

@@ -103,16 +103,26 @@ export class TasksMainImpl implements TasksMain {
     protected createTaskProvider(handle: number): TaskProvider {
         return {
             provideTasks: () =>
-                this.proxy.$provideTasks(handle).then(v => v!.map(taskDto =>
-                    Object.assign(taskDto, { _source: taskDto.source || 'plugin' })
-                )),
+                this.proxy.$provideTasks(handle).then(v =>
+                    v!.map(taskDto =>
+                        Object.assign(taskDto, {
+                            _source: taskDto.source || 'plugin',
+                            _scope: taskDto.scope
+                        })
+                    )
+                )
         };
     }
 
     protected createTaskResolver(handle: number): TaskResolver {
         return {
             resolveTask: taskConfig =>
-                this.proxy.$resolveTask(handle, taskConfig).then(v => Object.assign(v!, { _source: v!.source || 'plugin' })),
+                this.proxy.$resolveTask(handle, taskConfig).then(v =>
+                    Object.assign(v!, {
+                        _source: v!.source || 'plugin',
+                        _scope: v!.scope
+                    })
+                )
         };
     }
 }

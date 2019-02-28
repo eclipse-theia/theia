@@ -828,6 +828,7 @@ export interface TaskDto {
     type: string;
     label: string;
     source?: string;
+    scope?: string;
     // tslint:disable-next-line:no-any
     [key: string]: any;
 }
