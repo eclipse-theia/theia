@@ -430,7 +430,7 @@ export function createAPIFactory(
                 // FIXME: to implement
                 return new Disposable(() => { });
             },
-            getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | Uri | undefined {
+            getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
                 return workspaceExt.getWorkspaceFolder(uri);
             },
             asRelativePath(pathOrUri: theia.Uri | string, includeWorkspace?: boolean): string | undefined {
