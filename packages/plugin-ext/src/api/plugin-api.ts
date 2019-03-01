@@ -250,16 +250,19 @@ export interface PickOpenItem {
     picked?: boolean;
 }
 
+export enum MainMessageType {
+    Error,
+    Warning,
+    Info
+}
+
+export interface MainMessageOptions {
+    modal?: boolean
+    onCloseActionHandle?: number
+}
+
 export interface MessageRegistryMain {
-    $showInformationMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showWarningMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showErrorMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: string[]): PromiseLike<number | undefined>;
 }
 
 export interface StatusBarMessageRegistryMain {

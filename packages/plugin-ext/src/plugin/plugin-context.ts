@@ -21,7 +21,7 @@ import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
-import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager, PluginAPIFactory } from '../api/plugin-api';
+import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager, PluginAPIFactory, MainMessageType } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
@@ -195,6 +195,9 @@ export function createAPIFactory(
         };
 
         const { onDidChangeActiveTerminal, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
+        const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
+        const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
+        const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
             get activeTerminal() {
                 return terminalExt.activeTerminal;
@@ -268,24 +271,9 @@ export function createAPIFactory(
             showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
                 return workspaceExt.pickWorkspaceFolder(options);
             },
-            showInformationMessage(message: string,
-                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                // tslint:disable-next-line:no-any
-                ...items: any[]): PromiseLike<any> {
-                return messageRegistryExt.showInformationMessage(message, optionsOrFirstItem, items);
-            },
-            showWarningMessage(message: string,
-                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                // tslint:disable-next-line:no-any
-                ...items: any[]): PromiseLike<any> {
-                return messageRegistryExt.showWarningMessage(message, optionsOrFirstItem, items);
-            },
-            showErrorMessage(message: string,
-                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                // tslint:disable-next-line:no-any
-                ...items: any[]): PromiseLike<any> {
-                return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
-            },
+            showInformationMessage,
+            showWarningMessage,
+            showErrorMessage,
             showOpenDialog(options: theia.OpenDialogOptions): PromiseLike<Uri[] | undefined> {
                 return dialogsExt.showOpenDialog(options);
             },
