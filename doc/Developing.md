@@ -46,7 +46,7 @@ For Windows instructions [click here](#building-on-windows).
 ## Prerequisites
  - Node.js `>= 8.x`, `< 9.x`.
    - Preferably, **use** version `8.11.4`, it has the [active LTS](https://github.com/nodejs/Release).
-   - Node.js `9.x` is untested. 
+   - Node.js `9.x` is untested.
    - Node.js `10.x` is **not** supported yet due to a known issue in [`nsfw`](https://github.com/theia-ide/theia/issues/2009).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
@@ -90,11 +90,11 @@ Start your browser on https://localhost:3000.
 ### Run the browser example with Gitpod
 
 [Gitpod](http://gitpod.io/) is a Theia-based IDE for GitHub.
-You can start by prefixing any GitHub URL in the Theia repository with `gitpod.io#`:
-- Open http://gitpod.io#https://github.com/theia-ide/theia to start development with the master branch.
+You can start by prefixing any GitHub URL in the Theia repository with `gitpod.io/#`:
+- Open http://gitpod.io/#https://github.com/theia-ide/theia to start development with the master branch.
 - Gitpod will start a properly configured for Theia development workspace, clone and build the Theia repository.
 - After the build is finished, run from the terminal in Gitpod:
-    
+
         cd examples/browser \
         && yarn run start ../.. --hostname 0.0.0.0
 
@@ -216,7 +216,7 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
 
  - In VS Code: Start the debug tab and run the `Launch Backend` configuration.
  - Then run the `Launch Frontend` configuration.
- 
+
 ### Debug the Electron example's backend
 
  - In VS Code: Start the debug tab and run the `Launch Electron Backend` configuration.
@@ -330,7 +330,7 @@ You need to have the Xcode command line tools installed in order to build and ru
 If you already have Xcode installed, but you see the `xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance` error, you need to run the following command to fix it: `sudo xcode-select --switch /Library/Developer/CommandLineTools`.
 
 The solution is the same if you have updated to `10.14` (Mojave) and you can see the `gyp: No Xcode or CLT version detected!` error. More details [here](https://github.com/nodejs/node-gyp#on-macos).
- 
+
 ### Root privileges errors
 When trying to install with root privileges, you might encounter errors such as
 `cannot run in wd`.
