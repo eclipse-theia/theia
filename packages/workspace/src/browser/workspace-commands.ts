@@ -24,7 +24,6 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -349,10 +348,9 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected getDefaultFileConfig(): { fileName: string, fileExtension: string } {
-        const { newFileExtension, newFileName } = FrontendApplicationConfigProvider.get();
         return {
-            fileName: newFileName ? newFileName : 'Untitled',
-            fileExtension: newFileExtension ? newFileExtension : '.txt'
+            fileName: 'Untitled',
+            fileExtension: '.txt'
         };
     }
 
