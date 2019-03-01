@@ -37,6 +37,11 @@ export class TaskService implements TaskConfigurationClient {
      */
     protected configurationFileFound: boolean = false;
 
+    /**
+     * The last executed task.
+     */
+    protected lastTask: { source: string, taskLabel: string } | undefined = undefined;
+
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
 
@@ -151,6 +156,15 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
+     * Get the last executed task.
+     *
+     * @returns the last executed task or `undefined`.
+     */
+    getLastTask(): { source: string, taskLabel: string } | undefined {
+        return this.lastTask;
+    }
+
+    /**
      * Runs a task, by task configuration label.
      * Note, it looks for a task configured in tasks.json only.
      */
@@ -161,6 +175,17 @@ export class TaskService implements TaskConfigurationClient {
             return;
         }
         this.run(task._source, task.label);
+    }
+
+    /**
+     * Run the last executed task.
+     */
+    async runLastTask(): Promise<void> {
+        if (!this.lastTask) {
+            return;
+        }
+        const { source, taskLabel } = this.lastTask;
+        return this.run(source, taskLabel);
     }
 
     /**
@@ -190,6 +215,7 @@ export class TaskService implements TaskConfigurationClient {
         let taskInfo: TaskInfo;
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
+            this.lastTask = { source, taskLabel };
         } catch (error) {
             const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
             this.logger.error(errorStr);
