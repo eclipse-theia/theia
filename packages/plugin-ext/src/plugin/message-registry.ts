@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import {
-    PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain
+    PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain, MainMessageOptions, MainMessageType
 } from '../api/plugin-api';
-import {RPCProtocol} from '../api/rpc-protocol';
-import {MessageItem, MessageOptions} from '@theia/plugin';
+import { RPCProtocol } from '../api/rpc-protocol';
+import { MessageItem, MessageOptions } from '@theia/plugin';
 
 export class MessageRegistryExt {
 
@@ -27,21 +27,37 @@ export class MessageRegistryExt {
         this.proxy = rpc.getProxy(Ext.MESSAGE_REGISTRY_MAIN);
     }
 
-    showInformationMessage(message: string,
-                           optionsOrFirstItem: MessageOptions | string | MessageItem,
-                           items: string[] | MessageItem[]): PromiseLike<string | MessageItem | undefined> {
-        return this.proxy.$showInformationMessage(message, optionsOrFirstItem, items);
+    async showMessage(type: MainMessageType, message: string,
+        optionsOrFirstItem?: MessageOptions | string | MessageItem,
+        ...rest: (string | MessageItem)[]): Promise<string | MessageItem | undefined> {
+        const options: MainMessageOptions = {};
+        const actions: string[] = [];
+        const items: (string | MessageItem)[] = [];
+        const pushItem = (item: string | MessageItem) => {
+            items.push(item);
+            if (typeof item === 'string') {
+                actions.push(item);
+            } else {
+                actions.push(item.title);
+                if (item.isCloseAffordance) {
+                    options.onCloseActionHandle = actions.length - 1;
+                }
+            }
+        };
+        if (optionsOrFirstItem) {
+            if (typeof optionsOrFirstItem === 'string' || 'title' in optionsOrFirstItem) {
+                pushItem(optionsOrFirstItem);
+            } else {
+                if ('modal' in optionsOrFirstItem) {
+                    options.modal = optionsOrFirstItem.modal;
+                }
+            }
+        }
+        for (const item of rest) {
+            pushItem(item);
+        }
+        const actionHandle = await this.proxy.$showMessage(type, message, options, actions);
+        return actionHandle !== undefined ? items[actionHandle] : undefined;
     }
 
-    showWarningMessage(message: string,
-                           optionsOrFirstItem: MessageOptions | string | MessageItem,
-                           items: string[] | MessageItem[]): PromiseLike<string | MessageItem | undefined> {
-        return this.proxy.$showWarningMessage(message, optionsOrFirstItem, items);
-    }
-
-    showErrorMessage(message: string,
-                           optionsOrFirstItem: MessageOptions | string | MessageItem,
-                           items: string[] | MessageItem[]): PromiseLike<string | MessageItem | undefined> {
-        return this.proxy.$showErrorMessage(message, optionsOrFirstItem, items);
-    }
 }
