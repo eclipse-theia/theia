@@ -109,15 +109,6 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
      */
     readonly applicationName: string;
 
-    /**
-     * The name of the newly created file. `Untitled` by default.
-     */
-    readonly newFileName?: string;
-
-    /**
-     * The extension of the newly created file. `.txt` by default.
-     */
-    readonly newFileExtension?: string;
 }
 
 /**
