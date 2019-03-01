@@ -33,6 +33,7 @@ import URI from 'vscode-uri';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { normalize } from '../common/paths';
 import { relative } from '../common/paths-util';
+import { toWorkspaceFolder } from './type-converters';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
@@ -198,7 +199,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
-    getWorkspaceFolder(uri: theia.Uri, resolveParent?: boolean): theia.WorkspaceFolder | URI | undefined {
+    getWorkspaceFolder(uri: theia.Uri, resolveParent?: boolean): theia.WorkspaceFolder | undefined {
         if (!this.folders || !this.folders.length) {
             return undefined;
         }
@@ -224,8 +225,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             const folderPath = folder.uri.toString();
 
             if (resourcePath === folderPath) {
-                // return the input when the given uri is a workspace folder itself
-                return uri;
+                return toWorkspaceFolder(folder);
             }
 
             if (resourcePath.startsWith(folderPath)

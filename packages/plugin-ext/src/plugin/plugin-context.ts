@@ -355,7 +355,7 @@ export function createAPIFactory(
         };
 
         const workspace: typeof theia.workspace = {
-            get rootPath(): string | undefined {
+            get rootPath(): string | undefined {
                 return workspaceExt.rootPath;
             },
             get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
@@ -430,7 +430,7 @@ export function createAPIFactory(
                 // FIXME: to implement
                 return new Disposable(() => { });
             },
-            getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | Uri | undefined {
+            getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
                 return workspaceExt.getWorkspaceFolder(uri);
             },
             asRelativePath(pathOrUri: theia.Uri | string, includeWorkspace?: boolean): string | undefined {
