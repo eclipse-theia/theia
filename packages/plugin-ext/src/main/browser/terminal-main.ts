@@ -68,19 +68,20 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
 
     async $createTerminal(id: string, options: TerminalOptions): Promise<string> {
         try {
-            const terminal = await this.terminals.newTerminal({
-                id,
-                title: options.name,
-                shellPath: options.shellPath,
-                shellArgs: options.shellArgs,
-                cwd: options.cwd,
-                env: options.env,
-                destroyTermOnClose: true,
-                useServerTitle: false,
-                attributes: options.attributes
-            });
+            // const terminal = await this.terminals.newTerminalWidget({
+            //     id,
+            //     title: options.name,
+            //     shellPath: options.shellPath,
+            //     shellArgs: options.shellArgs,
+            //     cwd: options.cwd,
+            //     env: options.env,
+            //     destroyTermOnClose: true,
+            //     useServerTitle: false,
+            //     attributes: options.attributes
+            // });
             // terminal.start();
-            return terminal.id;
+            // return terminal.id;
+            return 'terminalwidget.id';
         } catch (error) {
             throw new Error('Failed to create terminal. Cause: ' + error);
         }

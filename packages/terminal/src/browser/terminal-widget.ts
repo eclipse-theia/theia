@@ -75,26 +75,6 @@ export interface TerminalWidgetOptions {
     readonly title?: string;
 
     /**
-     * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
-     */
-    readonly shellPath?: string;
-
-    /**
-     * Shell arguments to executable shell, for example: [`-l`] - without login.
-     */
-    readonly shellArgs?: string[];
-
-    /**
-     * Current working directory.
-     */
-    readonly cwd?: string; // move to the terminalClient
-
-    /**
-     * Environment variables for terminal.
-     */
-    readonly env?: { [key: string]: string | null }; // move to the terminalClient
-
-    /**
      * In case `destroyTermOnClose` is true - terminal process will be destroyed on close terminal widget, otherwise will be kept
      * alive.
      */

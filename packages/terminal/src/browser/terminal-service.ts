@@ -16,6 +16,7 @@
 import { Event } from '@theia/core/lib/common/event';
 import { WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
+import { TerminalClientOptions, TerminalClient } from './terminal-client';
 
 /**
  * Service manipulating terminal widgets.
@@ -27,14 +28,9 @@ export interface TerminalService {
      * Create new terminal with predefined options.
      * @param options - terminal options.
      */
-    newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget>;
+    newTerminalWidget(options: TerminalWidgetOptions): Promise<TerminalWidget>;
 
-    /**
-     * Display new terminal widget.
-     * @param terminal - widget to attach.
-     * @deprecated use #open
-     */
-    activateTerminal(terminal: TerminalWidget): void;
+    newTerminalClient(termClientOpts: TerminalClientOptions, terminalWidget: TerminalWidget): TerminalClient;
 
     open(terminal: TerminalWidget, options?: WidgetOpenerOptions): void;
 

@@ -24,7 +24,7 @@ import { MessageConnection } from 'vscode-jsonrpc';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { terminalsPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { ILogger, Disposable, DisposableCollection } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, MaybePromise } from '@theia/core';
 
 export const TerminalClient = Symbol('TerminalClient');
 /**
@@ -46,6 +46,10 @@ export interface TerminalClient extends Disposable {
 
     readonly widget: TerminalWidget;
 
+    readonly terminalId: number;
+
+    readonly processId: MaybePromise<number>
+
     /**
      * Create connection with terminal backend and return connection id.
      */
@@ -62,11 +66,28 @@ export interface TerminalClient extends Disposable {
 }
 
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
-export interface TerminalClientOptions {
-    readonly cwd?: string;
-    readonly connectionId?: number;
+export interface TerminalClientOptions { // I guess here should be used terminal based options?
     readonly closeOnDispose: boolean;
     readonly terminalDomId: string;
+    /**
+     * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
+     */
+    readonly shellPath?: string;
+
+    /**
+     * Shell arguments to executable shell, for example: [`-l`] - without login.
+     */
+    readonly shellArgs?: string[];
+
+    /**
+     * Current working directory.
+     */
+    readonly cwd?: string;
+
+    /**
+     * Environment variables for terminal.
+     */
+    readonly env?: { [key: string]: string | null };
 }
 
 // todo move implementation to the separated ts file.
@@ -89,11 +110,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     readonly widget: TerminalWidget;
 
     @inject(TerminalClientOptions)
-    _options: TerminalClientOptions;
-
-    get options(): TerminalClientOptions {
-        return this._options;
-    }
+    readonly options: TerminalClientOptions;
 
     @inject(TerminalWatcher)
     protected readonly terminalWatcher: TerminalWatcher;
@@ -101,13 +118,26 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     @inject(ILogger) @named('terminal')
     protected readonly logger: ILogger;
 
-    private terminalId: number;
+    private _terminalId: number = -1;
 
     protected waitForConnection: Deferred<MessageConnection>;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnConnect = new DisposableCollection();
     protected onDidCloseDisposable: Disposable;
+
+    get processId(): Promise<number> {
+        return (async () => {
+            if (!IBaseTerminalServer.validateId(this.terminalId)) {
+                throw new Error('terminal is not started');
+            }
+            return this.shellTerminalServer.getProcessId(this.terminalId);
+        })();
+    }
+
+    get terminalId(): number {
+        return this._terminalId;
+    }
 
     @postConstruct()
     protected init(): void {
@@ -159,11 +189,11 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     }
 
     async attach(id: number): Promise<number> { // todo inject terminal widget to the constructor!!!!
-        this.terminalId = await this.shellTerminalServer.attach(id); // todo remove this.terminalId... ?
+        this._terminalId = await this.shellTerminalServer.attach(id); // todo remove this.terminalId... ?
 
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
-            this.terminalId = await this.createProcess();
+            this._terminalId = await this.createProcess();
         }
 
         this.connectWidgetToProcess();
@@ -171,8 +201,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     }
 
     async create(): Promise<number> {
-        this.terminalId = await this.createProcess(); // : await this.attachTerminal(id);
-        this._options = {connectionId: this.terminalId , ...this.options};
+        this._terminalId = await this.createProcess();
 
         this.connectWidgetToProcess();
 

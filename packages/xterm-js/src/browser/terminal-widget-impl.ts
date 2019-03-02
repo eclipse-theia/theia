@@ -255,7 +255,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
         }
     }
-    public write(data: string): void {
+    write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
         } else {

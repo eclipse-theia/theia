@@ -43,8 +43,9 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TerminalClient, TerminalClientOptions } from '@theia/terminal/src/browser/terminal-client';
+import { TerminalClient, TerminalClientOptions } from './terminal-client';
 import { DisposableCollection } from '@theia/core';
+import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -80,6 +81,10 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal'
     };
+}
+
+export interface TerminalClientInfoToRestore extends TerminalClientOptions {
+    terminalId: number
 }
 
 @injectable()
@@ -121,8 +126,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected termClients = new Map<string, TerminalClientOptions>();
-    protected termClientsToRestore = new Map<string, TerminalClientOptions>();
+    protected termClients = new Map<string, TerminalClient>();
+    protected termClientsToRestore = new Map<string, TerminalClientInfoToRestore>();
 
     @postConstruct()
     protected init(): void {
@@ -134,8 +139,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
                 const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
                 if (clientOpsToRestore) {
-                    const client = this.createTerminalClient(clientOpsToRestore, widget as TerminalWidget);
-                    this.attachClient(client);
+                    const client = this.newTerminalClient(clientOpsToRestore, widget as TerminalWidget);
+                    if (clientOpsToRestore.terminalId) {
+                        client.attach(clientOpsToRestore.terminalId);
+                    }
                 }
             }
         });
@@ -157,11 +164,17 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     private storeState() {
-        this.storageService.setData(TerminalFrontendContribution.ID, Array.from(this.termClients.values()));
+        const optionsToStore = [...this.termClients.values()]
+        .filter(terminalClient => IBaseTerminalServer.validateId(terminalClient.terminalId))
+        .map<TerminalClientInfoToRestore>(terminalClient => {
+            const infoToRestore: TerminalClientInfoToRestore = {terminalId: terminalClient.terminalId, ...terminalClient.options};
+            return infoToRestore;
+        });
+        this.storageService.setData(TerminalFrontendContribution.ID, optionsToStore);
     }
 
     protected async restore(): Promise<void> {
-        const dataToRestore = await this.storageService.getData<TerminalClientOptions[]>(TerminalFrontendContribution.ID) || [];
+        const dataToRestore = await this.storageService.getData<TerminalClientInfoToRestore[]>(TerminalFrontendContribution.ID) || [];
 
         if (dataToRestore) {
             dataToRestore.reduce((mapAcum, termClientOps) => {
@@ -365,7 +378,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         }
     }
 
-    async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
+    async newTerminalWidget(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         let widget;
         try {
             widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
@@ -376,10 +389,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             throw new Error('Unable to create terminal widget. The reason is ' + e);
         }
         return widget;
-    }
-
-    activateTerminal(widget: TerminalWidget, widgetOptions?: ApplicationShell.WidgetOptions): void {
-        this.open(widget, { widgetOptions });
     }
 
     // TODO: reuse WidgetOpenHandler.open
@@ -423,42 +432,26 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
-        const terminalWidget = await this.newTerminal({});
+        const terminalWidget = await this.newTerminalWidget({});
 
         const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: terminalWidget.id };
-        const terminalClient = this.createTerminalClient(termClientOpts, terminalWidget);
-        await this.createConnection(terminalClient);
+        const terminalClient = this.newTerminalClient(termClientOpts, terminalWidget);
+        await terminalClient.create();
 
         this.open(terminalWidget, { widgetOptions: options });
     }
 
-    protected createTerminalClient(termClientOpts: TerminalClientOptions, terminalWidget: TerminalWidget): TerminalClient {
-        const terminalClient: TerminalClient = this.terminalClientFactory(termClientOpts, terminalWidget);
-        this.toDispose.push(terminalClient);
-
-        return terminalClient;
-    }
-
-    protected async createConnection(terminalClient: TerminalClient): Promise<number> {
-        const connectionId = await terminalClient.create();
-        this.termClients.set(terminalClient.widget.id, terminalClient.options);
-        console.log('new terminal and connection id ', connectionId);
-
-        return connectionId;
-    }
-
-    protected async attachClient(terminalClient: TerminalClient): Promise<void> {
-        const connectionId = terminalClient.options.connectionId;
-        console.log('Try attach conn id: ', connectionId);
-        if (connectionId) {  // todo maybe if connectionId doesn't exist than create new one?
-            await terminalClient.attach(connectionId);
-            this.termClients.set(terminalClient.widget.id, terminalClient.options); // todo use connection id...
-        }
-    }
-
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const termWidget = await this.newTerminal({});
+        const termWidget = await this.newTerminalWidget({});
 
         this.open(termWidget, { widgetOptions: options });
+    }
+
+    newTerminalClient(termClientOpts: TerminalClientOptions, terminalWidget: TerminalWidget): TerminalClient {
+        const terminalClient: TerminalClient = this.terminalClientFactory(termClientOpts, terminalWidget);
+        this.toDispose.push(terminalClient);
+        this.termClients.set(terminalClient.widget.id, terminalClient);
+
+        return terminalClient;
     }
 }
