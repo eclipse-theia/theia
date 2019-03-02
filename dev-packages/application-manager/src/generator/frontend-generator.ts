@@ -126,13 +126,15 @@ const electron = require('electron');
 const { join, resolve } = require('path');
 const { isMaster } = require('cluster');
 const { fork } = require('child_process');
-const Storage = require('electron-store');
-const electronStore = new Storage();
 const { app, shell, BrowserWindow, ipcMain, Menu } = electron;
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 
 if (isMaster) {
+
+    const Storage = require('electron-store');
+    const electronStore = new Storage();
+
     app.on('ready', () => {
         const { screen } = electron;
 
