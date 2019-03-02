@@ -55,7 +55,7 @@ export interface TerminalClient extends Disposable {
      */
     create(): Promise<number>; // todo createAndAttach()
 
-    attach(connectionId: number): Promise<number>; // todo tryReatach()
+    attach(connectionId: number, createNewTerminalOnFail?: boolean): Promise<number>;
 
     resize(cols: number, rows: number): void;
 
@@ -188,10 +188,10 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         this.toDispose.dispose();
     }
 
-    async attach(id: number): Promise<number> { // todo inject terminal widget to the constructor!!!!
-        this._terminalId = await this.shellTerminalServer.attach(id); // todo remove this.terminalId... ?
+    async attach(id: number, createNewTerminalOnFaill?: boolean): Promise<number> {
+        this._terminalId = await this.shellTerminalServer.attach(id);
 
-        if (!IBaseTerminalServer.validateId(this.terminalId)) {
+        if (!IBaseTerminalServer.validateId(this.terminalId) && createNewTerminalOnFaill) {
             this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
             this._terminalId = await this.createProcess();
         }

@@ -23,6 +23,7 @@ import { WidgetFactory } from '@theia/core/lib/browser';
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
 
+// Todo rename to xterm.js-frontend-module
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
 

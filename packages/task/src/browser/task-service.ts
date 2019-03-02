@@ -28,6 +28,7 @@ import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskWatcher } from '../common/task-watcher';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
 import URI from '@theia/core/lib/common/uri';
+import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
 
 @injectable()
 export class TaskService implements TaskConfigurationClient {
@@ -72,6 +73,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskProviderRegistry)
     protected readonly taskProviderRegistry: TaskProviderRegistry;
+
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
 
     @postConstruct()
     protected init(): void {
@@ -214,12 +218,14 @@ export class TaskService implements TaskConfigurationClient {
                 id: 'task-' + taskId,
                 caption: `Task #${taskId}`,
                 label: `Task #${taskId}`,
+                title: `Task #${taskId}`,
                 destroyTermOnClose: true
             }
         );
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
-        // widget.start(terminalId);
+        const terminalClient = this.terminalService.newTerminalClient({closeOnDispose: true, terminalDomId: widget.id}, widget);
+        terminalClient.attach(terminalId, false);
     }
 
     protected isEventForThisClient(context: string | undefined): boolean {
