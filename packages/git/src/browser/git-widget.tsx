@@ -38,6 +38,7 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     private static MESSAGE_BOX_MIN_HEIGHT = 25;
+    private static TRANSITION_TIME_MS = 500;
 
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
@@ -50,12 +51,37 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
     protected amendingCommits: { commit: CommitWithChanges, avatar: string }[] = [];
     protected lastCommit: { commit: CommitWithChanges, avatar: string } | undefined;
+
+    /**
+     * This is used for transitioning only. It may be cleared when the transition is
+     * finished.
+     */
+    protected transition: {
+        state: 'none'
+    } | {
+        state: 'start' | 'transitioning',
+        direction: 'up' | 'down',
+        previousLastCommit: { commit: CommitWithChanges, avatar: string }
+    } = { state: 'none' };
+
+    /**
+     * a hint on how to animate an update, set by certain user action handlers
+     * and used when updating the view based on a Git repository change
+     */
+    protected transitionHint: 'none' | 'amend' | 'unamend' = 'none';
     protected lastHead: string | undefined;
     protected lastSelectedNode?: { id: number, node: GitFileChangeNode };
     protected listContainer: GitChangesListContainer | undefined;
     protected readonly selectChange = (change: GitFileChangeNode) => this.selectNode(change);
 
     protected readonly toDisposeOnInitialize = new DisposableCollection();
+
+    protected lastCommitHeight: number = 100;
+    lastCommitScrollRef = (instance: HTMLDivElement) => {
+        if (instance && this.lastCommitHeight === 100) {
+            this.lastCommitHeight = instance.getBoundingClientRect().height;
+        }
+    }
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -107,7 +133,59 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 if (GitStatusChangeEvent.is(gitEvent)) {
                     if (gitEvent.status.currentHead !== this.lastHead) {
                         this.lastHead = gitEvent.status.currentHead;
-                        this.lastCommit = gitEvent.status.currentHead ? await this.getLastCommit() : undefined;
+
+                        const nextCommit = gitEvent.status.currentHead ? await this.getLastCommit() : undefined;
+                        if (nextCommit && this.lastCommit && nextCommit.commit.sha === this.lastCommit.commit.sha) {
+                            // No change here
+                        } else if (nextCommit === undefined && this.lastCommit === undefined) {
+                            // No change here
+                        } else if (this.transitionHint === 'none') {
+                            // There is a change to the last commit, but no transition hint so
+                            // the view just updates without transition.
+                            this.lastCommit = nextCommit;
+                            // If the 'last' commit changes, but we are not expecting an 'amend'
+                            // or 'unamend' to occur, then we clear out the list of amended commits.
+                            // This is because an unexpected change has happened to the repoistory,
+                            // perhaps the user commited, merged, or something.  The amended commits
+                            // will no longer be valid.
+                            this.amendingCommits = [];
+                        } else {
+                            if (this.lastCommit) {
+                                const direction = this.transitionHint === 'amend' ? 'up' : 'down';
+                                this.transition = { state: 'start', direction, previousLastCommit: this.lastCommit };
+                                switch (this.transitionHint) {
+                                    case 'amend':
+                                        if (this.lastCommit) {
+                                            this.amendingCommits.push(this.lastCommit);
+                                        }
+                                        break;
+                                    case 'unamend':
+                                        const commitToRestore = this.amendingCommits.pop();
+                                        if (!nextCommit || !commitToRestore || nextCommit.commit.sha !== commitToRestore.commit.sha) {
+                                            // something is wrong
+                                        }
+                                        break;
+                                }
+                                this.lastCommit = nextCommit;
+                                this.onNextFrame(() => {
+                                    this.transition.state = 'transitioning';
+                                    this.update();
+                                });
+
+                                setTimeout(
+                                    () => {
+                                        this.transition.state = 'none';
+                                        this.update();
+                                    },
+                                    GitWidget.TRANSITION_TIME_MS);
+                            } else {
+                                // No previous last commit so no transition
+                                this.transition.state = 'none';
+                                this.lastCommit = nextCommit;
+                            }
+                        }
+
+                        this.transitionHint = 'none';
                     }
                     this.status = gitEvent.status;
                     this.updateView(gitEvent.status);
@@ -183,14 +261,22 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         };
     }
 
+    /**
+     * This function will update the 'model' (lastCommit, amendingCommits) only
+     * when the Git repository sees the last commit change.
+     * 'render' can be called at any time, so be sure we don't update any 'model'
+     * fields until we actually start the transition.
+     */
     protected async amend(): Promise<void> {
-        if (this.lastCommit) {
-            this.amendingCommits.push(this.lastCommit);
+        if (this.transition.state !== 'none' && this.transitionHint !== 'none') {
+            return;
         }
+
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository) {
             const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
             const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
+            this.transitionHint = 'amend';
             await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
             if (commitTextArea) {
                 this.message = message;
@@ -201,14 +287,26 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         }
     }
 
-    protected async unAmend(): Promise<void> {
-        this.lastCommit = this.amendingCommits.pop();
+    protected async unamend(): Promise<void> {
+        if (this.transition.state !== 'none' && this.transitionHint !== 'none') {
+            return;
+        }
+
+        const commitToRestore = (this.amendingCommits.length >= 1)
+            ? this.amendingCommits[this.amendingCommits.length - 1]
+            : undefined;
+        const oldestAmendCommit = (this.amendingCommits.length >= 2)
+            ? this.amendingCommits[this.amendingCommits.length - 2]
+            : undefined;
 
         const { selectedRepository } = this.repositoryProvider;
-        if (selectedRepository && this.lastCommit) {
-            const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B', this.lastCommit.commit.sha])).stdout.trim();
+        if (selectedRepository && commitToRestore) {
+            const message = oldestAmendCommit
+                ? (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B', oldestAmendCommit.commit.sha])).stdout.trim()
+                : '';
             const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
-            await this.git.exec(selectedRepository, ['reset', this.lastCommit.commit.sha, '--soft']);
+            this.transitionHint = 'unamend';
+            await this.git.exec(selectedRepository, ['reset', commitToRestore.commit.sha, '--soft']);
             if (commitTextArea) {
                 this.message = message;
                 commitTextArea.value = message;
@@ -434,12 +532,8 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 onFocus={this.handleListFocus}
             />
             {
-                this.amendingCommits.length > 0 ?
-                    <div>
-                        <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
-                            {this.renderAmendingCommits()}
-                        </div>
-                    </div>
+                this.amendingCommits.length > 0 || (this.lastCommit && this.transition.state !== 'none' && this.transition.direction === 'down')
+                    ? this.renderAmendingCommits()
                     : ''
             }
             {
@@ -448,8 +542,6 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                         <div id='lastCommit' className='changesContainer'>
                             <div className='theia-header git-theia-header'>
                                 Head Commit
-                                {1}
-                                {[]}
                             </div>
                             {this.renderLastCommit()}
                         </div>
@@ -486,30 +578,39 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     }
 
     protected renderAmendingCommits(): React.ReactNode {
-        if (this.amendingCommits.length > 0) {
-            return <div id='stagedChanges' className='changesContainer'>
-                <div className='theia-header git-theia-header'>
-                    Commits being Amended
-                    {this.renderCommitCount(this.amendingCommits.length)}
-                    {this.renderAmendCommitListButtons()}
-                </div>
-                {this.amendingCommits.map((value, index, map) =>
-                    <GitCommit
-                        key={value.commit.sha}
-                        commit={value.commit}
-                        avatar={value.avatar}
-                        isOldestAmendCommit={index === map.length - 1}
-                        onUnAmend={() => this.unAmend.bind(this)()} />
-                )}
-            </div>;
-        } else {
-            return undefined;
-        }
+        return <div id='amendedCommits' className='amendedCommitsOuterContainer'>
+            <div className='theia-header git-theia-header'>
+                Commits being Amended
+                {this.renderCommitCount(this.amendingCommits.length)}
+                {this.renderAmendCommitListButtons()}
+            </div>
+            {this.amendingCommits.map((commitData, index, map) =>
+                this.renderCommitBeingAmended(commitData, index === map.length - 1)
+            )}
+            {
+                this.lastCommit && this.transition.state !== 'none' && this.transition.direction === 'down'
+                    ? <div style={this.styleExitAmend(this.transition.state)} key={this.lastCommit.commit.sha}>
+                        <div className='fixed-height-commit-container'>
+                            {this.renderCommitAvatarAndDetail(this.lastCommit)}
+                        </div>
+                    </div>
+                    : ''
+            }
+        </div>;
     }
 
     protected renderAmendCommitListButtons(): React.ReactNode {
-        const unamendAll = <a className='toolbar-button' title='Unstage All Changes' onClick={this.doUnamendAll}><i className='fa fa-minus' /></a>;
-        return <div className='git-change-list-buttons-container'>{unamendAll}</div>;
+        return <div className='git-change-list-buttons-container'>
+            <a className='toolbar-button' title='Unstage All Changes' onClick={this.unamendAll.bind(this)}>
+                <i className='fa fa-minus' />
+            </a>
+        </div>;
+    }
+
+    commitRefCallback = (instance: HTMLDivElement) => {
+        if (instance) {
+            instance.setAttribute('style', `height:${this.lastCommitHeight}px`);
+        }
     }
 
     protected renderLastCommit(): React.ReactNode {
@@ -517,15 +618,8 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
             return '';
         }
 
-        const { commit, avatar } = this.lastCommit;
-        return <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
-            <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
-                <img src={avatar} />
-            </div>
-            <div className={GitWidget.Styles.LAST_COMMIT_DETAILS}>
-                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY}>{commit.summary}</div>
-                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${commit.authorDateRelative} by ${commit.author.name}`}</div>
-            </div>
+        return <div className={GitWidget.Styles.LAST_COMMIT_AND_BUTTON}>
+            {this.renderLastCommitNoButton(this.lastCommit)}
             <div className={GitWidget.Styles.FLEX_CENTER}>
                 <button className='theia-button' title='Amend last commit' onClick={() => this.amend.bind(this)()}>
                     Amend
@@ -534,10 +628,219 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         </div>;
     }
 
+    protected renderLastCommitNoButton(lastCommit: { commit: CommitWithChanges, avatar: string }): React.ReactNode {
+        switch (this.transition.state) {
+            case 'none':
+                return <div ref={this.lastCommitScrollRef} className='scolling-container'>
+                    <div className='stationary-part' key={lastCommit.commit.sha}>
+                        {this.renderCommitAvatarAndDetail(lastCommit)}
+                    </div>
+                </div>;
+
+            case 'start':
+            case 'transitioning':
+                switch (this.transition.direction) {
+                    case 'up':
+                        return <div className='scolling-container' ref={this.commitRefCallback}>
+                            <div style={this.styleLastCommitOnTopMovingUp(this.transition.state)} key={this.transition.previousLastCommit.commit.sha}>
+                                {this.renderCommitAvatarAndDetail(this.transition.previousLastCommit)}
+                            </div>
+                            <div style={this.styleLastCommitOnBottomMovingUp(this.transition.state)} key={lastCommit.commit.sha}>
+                                {this.renderCommitAvatarAndDetail(lastCommit)}
+                            </div>
+                        </div>;
+                    case 'down':
+                        return <div className='scolling-container' ref={this.commitRefCallback}>
+                            <div style={this.styleLastCommitOnTopMovingDown(this.transition.state)} key={lastCommit.commit.sha}>
+                                {this.renderCommitAvatarAndDetail(lastCommit)}
+                            </div>
+                            <div style={this.styleLastCommitOnBottomMovingDown(this.transition.state)} key={this.transition.previousLastCommit.commit.sha}>
+                                {this.renderCommitAvatarAndDetail(this.transition.previousLastCommit)}
+                            </div>
+                        </div>;
+                }
+        }
+    }
+
+    /**
+     * See https://stackoverflow.com/questions/26556436/react-after-render-code
+     *
+     * @param callback
+     */
+    protected onNextFrame(callback: FrameRequestCallback) {
+        setTimeout(
+            () => window.requestAnimationFrame(callback),
+            0);
+    }
+
+    protected renderCommitAvatarAndDetail(commitData: { commit: CommitWithChanges, avatar: string }): React.ReactNode {
+        const { commit, avatar } = commitData;
+        return <div className={GitWidget.Styles.LAST_COMMIT_AVATAR_AND_TEXT} key={commit.sha}>
+            <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
+                <img src={avatar} />
+            </div>
+            <div className={GitWidget.Styles.LAST_COMMIT_DETAILS}>
+                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY}>{commit.summary}</div>
+                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${commit.authorDateRelative} by ${commit.author.name}`}</div>
+            </div>
+        </div>;
+    }
+
     protected renderCommitCount(commits: number): React.ReactNode {
         return <div className='notification-count-container git-change-count'>
             <span className='notification-count'>{commits}</span>
         </div>;
+    }
+
+    protected renderCommitBeingAmended(commitData: { commit: CommitWithChanges, avatar: string }, isOldestAmendCommit: boolean) {
+        if (isOldestAmendCommit && this.transition.state !== 'none' && this.transition.direction === 'up') {
+            return <div style={this.styleIntoAmend(this.transition.state)} key={commitData.commit.sha}>
+                <div className='fixed-height-commit-container'>
+                    {this.renderCommitAvatarAndDetail(commitData)}
+                </div>;
+            </div>;
+        } else {
+            return <div className={GitWidget.Styles.LAST_COMMIT_AVATAR_AND_TEXT} key={commitData.commit.sha}>
+                {this.renderCommitAvatarAndDetail(commitData)}
+                {
+                    isOldestAmendCommit
+                        ? <div className={GitWidget.Styles.FLEX_CENTER}>
+                            <button className='theia-button' title='Unamend commit' onClick={() => this.unamend.bind(this)()}>
+                                Unamend
+                        </button>
+                        </div>
+                        : ''
+                }
+            </div>;
+        }
+    }
+
+    protected styleIntoAmend(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        const base = {
+            display: 'flex',
+            whitespace: 'nowrap',
+            overflow: 'hidden',
+            width: '100%',
+            paddingTop: '2px'
+        };
+
+        switch (transitionState) {
+            case 'start':
+                return {
+                    ...base,
+                    height: 0,
+                };
+            case 'transitioning':
+                return {
+                    ...base,
+                    height: 32,
+                    transitionProperty: 'height',
+                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
+                    transitionTimingFunction: 'linear'
+                };
+        }
+    }
+
+    protected styleExitAmend(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        const base = {
+            display: 'flex',
+            whitespace: 'nowrap',
+            overflow: 'hidden',
+            width: '100%',
+            paddingTop: '2px'
+        };
+
+        switch (transitionState) {
+            case 'start':
+                return {
+                    ...base,
+                    height: 32,
+                };
+            case 'transitioning':
+                return {
+                    ...base,
+                    height: 0,
+                    transitionProperty: 'height',
+                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
+                    transitionTimingFunction: 'linear'
+                };
+        }
+    }
+
+    protected styleLastCommitOnTopMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        return this.styleLastCommitOnTop(transitionState, -5, -40);
+    }
+
+    protected styleLastCommitOnTopMovingDown(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        return this.styleLastCommitOnTop(transitionState, -40, -5);
+    }
+
+    protected styleLastCommitOnBottomMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        return this.styleLastCommitOnBottom(transitionState, -40, -5);
+    }
+
+    protected styleLastCommitOnBottomMovingDown(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        return this.styleLastCommitOnBottom(transitionState, -5, -40);
+    }
+
+    protected styleLastCommitOnTop(transitionState: 'start' | 'transitioning', startingTop: number, endingTop: number): React.CSSProperties {
+        const base = {
+            display: 'flex',
+            marginTop: 0,
+            marginBottom: 0,
+            paddingTop: 0,
+            paddingBottom: 0,
+            borderTop: 0,
+            borderBottom: 0
+        };
+
+        switch (transitionState) {
+            case 'start':
+                return {
+                    ...base,
+                    position: 'absolute',
+                    top: startingTop,
+                };
+            case 'transitioning':
+                return {
+                    ...base,
+                    position: 'absolute',
+                    top: endingTop,
+                    transitionProperty: 'top',
+                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
+                    transitionTimingFunction: 'linear'
+                };
+        }
+    }
+
+    protected styleLastCommitOnBottom(transitionState: 'start' | 'transitioning', startingBottom: number, endingBottom: number): React.CSSProperties {
+        const base = {
+            display: 'flex',
+            marginTop: 0,
+            marginBottom: 0,
+            paddingTop: 0,
+            paddingBottom: 0,
+            borderTop: 0,
+            borderBottom: 0
+        };
+
+        switch (transitionState) {
+            case 'start':
+                return {
+                    ...base,
+                    position: 'absolute',
+                    bottom: startingBottom,
+                };
+            case 'transitioning':
+                return {
+                    ...base,
+                    position: 'absolute',
+                    bottom: endingBottom,
+                    transitionProperty: 'bottom',
+                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
+                    transitionTimingFunction: 'linear'
+                };
+        }
     }
 
     protected readonly refresh = () => this.doRefresh();
@@ -675,13 +978,14 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         }
     }
 
+    readonly unamendAll = () => this.doUnamendAll();
     protected async doUnamendAll() {
         const repository = this.repositoryProvider.selectedRepository;
         if (repository) {
             while (this.amendingCommits.length > 0) {
-                this.unAmend();
+                this.unamend();
+                await new Promise(resolve => setTimeout(resolve, GitWidget.TRANSITION_TIME_MS));
             }
-            this.update();
         }
     }
 
@@ -806,12 +1110,15 @@ export namespace GitWidget {
     export namespace Styles {
         export const MAIN_CONTAINER = 'theia-git-main-container';
         export const CHANGES_CONTAINER = 'changesOuterContainer';
+        export const AMENDED_COMMITS_CONTAINER = 'amendedCommitsOuterContainer';
         export const COMMIT_MESSAGE_CONTAINER = 'theia-git-commit-message-container';
         export const COMMIT_MESSAGE = 'theia-git-commit-message';
         export const MESSAGE_CONTAINER = 'theia-git-message';
         export const WARNING_MESSAGE = 'theia-git-message-warning';
         export const VALIDATION_MESSAGE = 'theia-git-commit-validation-message';
         export const LAST_COMMIT_CONTAINER = 'theia-git-last-commit-container';
+        export const LAST_COMMIT_AND_BUTTON = 'theia-git-last-commit-and-button';
+        export const LAST_COMMIT_AVATAR_AND_TEXT = 'theia-git-last-commit-avatar-and-text';
         export const LAST_COMMIT_DETAILS = 'theia-git-last-commit-details';
         export const LAST_COMMIT_MESSAGE_AVATAR = 'theia-git-last-commit-message-avatar';
         export const LAST_COMMIT_MESSAGE_SUMMARY = 'theia-git-last-commit-message-summary';
@@ -879,39 +1186,6 @@ export class GitItem extends React.Component<GitItem.Props> {
                             <i className='fa fa-plus' />
                         </a>
                     </React.Fragment>
-            }
-        </div>;
-    }
-}
-
-export namespace GitCommit {
-    export interface Props {
-        commit: CommitWithChanges
-        avatar: string
-        isOldestAmendCommit: boolean
-        onUnAmend: () => Promise<void>
-    }
-}
-
-export class GitCommit extends React.Component<GitCommit.Props> {
-
-    render() {
-        return <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
-            <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
-                <img src={this.props.avatar} />
-            </div>
-            <div className={GitWidget.Styles.LAST_COMMIT_DETAILS}>
-                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY}>{this.props.commit.summary}</div>
-                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${this.props.commit.authorDateRelative} by ${this.props.commit.author.name}`}</div>
-            </div>
-            {
-                this.props.isOldestAmendCommit
-                    ? <div className={GitWidget.Styles.FLEX_CENTER}>
-                        <button className='theia-button' title='Un-amend commit' onClick={() => this.props.onUnAmend()}>
-                            Un-amend
-                        </button>
-                    </div>
-                    : ''
             }
         </div>;
     }
