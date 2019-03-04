@@ -24,13 +24,6 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TerminalWidgetOptions, TerminalWidget, TerminalSize } from '@theia/terminal/lib/browser/terminal-widget';
 import { TerminalPreferences } from './terminal-preferences';
 
-export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
-
-export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
-    /* a unique string per terminal */
-    created: string
-}
-
 interface TerminalCSSProperties {
     /* The text color, as a CSS color string.  */
     foreground: string;

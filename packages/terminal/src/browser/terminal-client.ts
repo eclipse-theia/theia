@@ -222,13 +222,9 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
             const root = (await this.workspaceService.roots)[0];
             rootURI = root && root.uri;
         }
-        // const { cols, rows } = this.term;
 
         const terminalId = await this.shellTerminalServer.create({
-            shell: 'sh', // this.options.shellPath,
-            args: [],  // this.options.shellArgs,
-            // env: this.options.env,
-            rootURI: rootURI,
+            ...this.options,
             cols: 80,
             rows: 24
         });

@@ -260,7 +260,7 @@ export class DebugSession implements CompositeTreeElement {
         });
         this._capabilities = response.body || {};
     }
-    protected async launchOrAttach(): Promise<void> {
+    protected async launchOrAttach(): Promise<void> { // todo
         try {
             if (this.configuration.request === 'attach') {
                 await this.sendRequest('attach', this.configuration);
@@ -378,7 +378,8 @@ export class DebugSession implements CompositeTreeElement {
             shellArgs: args.slice(1),
             env
         };
-        const terminalClient = await this.terminalServer.newTerminalClient(terminalClientOps, terminalWidget);
+
+        const terminalClient = this.terminalServer.newTerminalClient(terminalClientOps, terminalWidget);
         const processId = await terminalClient.create();
 
         return { processId };

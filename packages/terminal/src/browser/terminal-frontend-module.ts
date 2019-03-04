@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule, Container, interfaces } from 'inversify';
-import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -26,7 +26,7 @@ import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { DefaultTerminalClient, TerminalClient, TerminalClientOptions } from './terminal-client';
-import { TerminalWidget } from './terminal-widget';
+import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './terminal-widget';
 
 export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
@@ -64,6 +64,27 @@ export default new ContainerModule(bind => {
             return child.get(TerminalClient);
         }
     );
+
+    let terminalNum = 0;
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: TERMINAL_WIDGET_FACTORY_ID,
+        createWidget: (options: TerminalWidgetOptions) => {
+            const child = new Container({ defaultScope: 'Singleton' });
+            child.parent = ctx.container;
+            const counter = terminalNum++;
+            const domId = options.id || 'terminal-' + counter;
+            const widgetOptions: TerminalWidgetOptions = {
+                title: 'Terminal ' + counter,
+                useServerTitle: true,
+                destroyTermOnClose: true,
+                ...options
+            };
+            child.bind(TerminalWidgetOptions).toConstantValue(widgetOptions);
+            child.bind('terminal-dom-id').toConstantValue(domId);
+
+            return child.get(TerminalWidget);
+        }
+    }));
 
     createCommonBindings(bind);
 });
