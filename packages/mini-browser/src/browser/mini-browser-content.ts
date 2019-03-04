@@ -25,7 +25,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { FrontendApplicationContribution, ApplicationShell } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, ApplicationShell, parseCssTime } from '@theia/core/lib/browser';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { BaseWidget, addEventListener, FocusTracker, Widget } from '@theia/core/lib/browser/widgets/widget';
@@ -272,6 +272,7 @@ export class MiniBrowserContent extends BaseWidget {
 
     protected readonly input: HTMLInputElement;
     protected readonly loadIndicator: HTMLElement;
+    protected readonly errorBar: HTMLElement & Readonly<{ message: HTMLElement }>;
     protected readonly frame: HTMLIFrameElement;
     // tslint:disable-next-line:max-line-length
     // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets. On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
@@ -279,6 +280,7 @@ export class MiniBrowserContent extends BaseWidget {
     // XXX It is a hack. Instead of loading the PDF in an iframe we use `PDFObject` to render it in a div.
     protected readonly pdfContainer: HTMLElement;
 
+    protected frameLoadTimeout: number;
     protected readonly initialHistoryLength: number;
     protected readonly toDisposeOnGo = new DisposableCollection();
 
@@ -291,6 +293,7 @@ export class MiniBrowserContent extends BaseWidget {
         this.frame = contentArea.frame;
         this.transparentOverlay = contentArea.transparentOverlay;
         this.loadIndicator = contentArea.loadIndicator;
+        this.errorBar = contentArea.errorBar;
         this.pdfContainer = contentArea.pdfContainer;
         this.initialHistoryLength = history.length;
         this.toDispose.pushAll([
@@ -369,13 +372,15 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     // tslint:disable-next-line:max-line-length
-    protected createContentArea(parent: HTMLElement): HTMLElement & Readonly<{ frame: HTMLIFrameElement, loadIndicator: HTMLElement, pdfContainer: HTMLElement, transparentOverlay: HTMLElement }> {
+    protected createContentArea(parent: HTMLElement): HTMLElement & Readonly<{ frame: HTMLIFrameElement, loadIndicator: HTMLElement, errorBar: HTMLElement & Readonly<{ message: HTMLElement }>, pdfContainer: HTMLElement, transparentOverlay: HTMLElement }> {
         const contentArea = document.createElement('div');
         contentArea.classList.add(MiniBrowserContent.Styles.CONTENT_AREA);
 
         const loadIndicator = document.createElement('div');
         loadIndicator.classList.add(MiniBrowserContent.Styles.PRE_LOAD);
         loadIndicator.style.display = 'none';
+
+        const errorBar = this.createErrorBar();
 
         const frame = this.createIFrame();
         this.submitInputEmitter.event(input => this.go(input, {
@@ -395,13 +400,14 @@ export class MiniBrowserContent extends BaseWidget {
         pdfContainer.id = `${this.id}-pdf-container`;
         pdfContainer.style.display = 'none';
 
+        contentArea.appendChild(errorBar);
         contentArea.appendChild(transparentOverlay);
         contentArea.appendChild(pdfContainer);
         contentArea.appendChild(loadIndicator);
         contentArea.appendChild(frame);
 
         parent.appendChild(contentArea);
-        return Object.assign(contentArea, { frame, loadIndicator, pdfContainer, transparentOverlay });
+        return Object.assign(contentArea, { frame, loadIndicator, errorBar, pdfContainer, transparentOverlay });
     }
 
     protected createIFrame(): HTMLIFrameElement {
@@ -409,19 +415,80 @@ export class MiniBrowserContent extends BaseWidget {
         const sandbox = (this.props.sandbox || MiniBrowserProps.SandboxOptions.DEFAULT).map(name => MiniBrowserProps.SandboxOptions[name]);
         frame.sandbox.add(...sandbox);
         this.toDispose.push(addEventListener(frame, 'load', this.onFrameLoad.bind(this)));
+        this.toDispose.push(addEventListener(frame, 'error', this.onFrameError.bind(this)));
         return frame;
     }
 
+    protected createErrorBar(): HTMLElement & Readonly<{ message: HTMLElement }> {
+        const errorBar = document.createElement('div');
+        errorBar.classList.add(MiniBrowserContent.Styles.ERROR_BAR);
+        errorBar.style.display = 'none';
+
+        const icon = document.createElement('span');
+        icon.classList.add('fa', 'problem-tab-icon');
+        errorBar.appendChild(icon);
+
+        const message = document.createElement('span');
+        errorBar.appendChild(message);
+
+        return Object.assign(errorBar, { message });
+    }
+
     protected onFrameLoad(): void {
+        clearTimeout(this.frameLoadTimeout);
+        this.maybeResetBackground();
         this.hideLoadIndicator();
+        this.hideErrorBar();
+    }
+
+    protected onFrameError(): void {
+        clearTimeout(this.frameLoadTimeout);
+        this.maybeResetBackground();
+        this.hideLoadIndicator();
+        this.showErrorBar('An error occurred while loading this page');
+    }
+
+    protected onFrameTimeout(): void {
+        clearTimeout(this.frameLoadTimeout);
+        this.maybeResetBackground();
+        this.hideLoadIndicator();
+        this.showErrorBar('Loading this page is taking longer than usual');
     }
 
     protected showLoadIndicator(): void {
+        this.loadIndicator.classList.remove(MiniBrowserContent.Styles.FADE_OUT);
         this.loadIndicator.style.display = 'block';
     }
 
     protected hideLoadIndicator(): void {
-        this.loadIndicator.style.display = 'none';
+        // Start the fade-out transition.
+        this.loadIndicator.classList.add(MiniBrowserContent.Styles.FADE_OUT);
+        // Actually hide the load indicator after the transition is finished.
+        const preloadStyle = window.getComputedStyle(this.loadIndicator);
+        const transitionDuration = parseCssTime(preloadStyle.transitionDuration, 0);
+        setTimeout(() => {
+            // But don't hide it if it was shown again since the transition started.
+            if (this.loadIndicator.classList.contains(MiniBrowserContent.Styles.FADE_OUT)) {
+                this.loadIndicator.style.display = 'none';
+                this.loadIndicator.classList.remove(MiniBrowserContent.Styles.FADE_OUT);
+            }
+        }, transitionDuration);
+    }
+
+    protected showErrorBar(message: string): void {
+        this.errorBar.message.textContent = message;
+        this.errorBar.style.display = 'block';
+    }
+
+    protected hideErrorBar(): void {
+        this.errorBar.message.textContent = '';
+        this.errorBar.style.display = 'none';
+    }
+
+    protected maybeResetBackground(): void {
+        if (this.props.resetBackground === true) {
+            this.frame.style.backgroundColor = 'white';
+        }
     }
 
     protected handleBack(): void {
@@ -533,7 +600,7 @@ export class MiniBrowserContent extends BaseWidget {
         return this.locationMapper.map(location);
     }
 
-    protected setInput(value: string) {
+    protected setInput(value: string): void {
         if (this.input.value !== value) {
             this.input.value = value;
         }
@@ -590,6 +657,8 @@ export class MiniBrowserContent extends BaseWidget {
                 if (this.getToolbarProps() === 'read-only') {
                     this.input.title = `Open ${url} In A New Window`;
                 }
+                clearTimeout(this.frameLoadTimeout);
+                this.frameLoadTimeout = window.setTimeout(this.onFrameTimeout.bind(this), 3000);
                 if (showLoadIndicator) {
                     this.showLoadIndicator();
                 }
@@ -600,14 +669,12 @@ export class MiniBrowserContent extends BaseWidget {
                         // tslint:disable-next-line:max-line-length quotemark
                         fallbackLink: `<p style="padding: 0px 15px 0px 15px">Your browser does not support inline PDFs. Click on this <a href='[url]' target="_blank">link</a> to open the PDF in a new tab.</p>`
                     });
+                    clearTimeout(this.frameLoadTimeout);
                     this.hideLoadIndicator();
                     if (!preserveFocus) {
                         this.pdfContainer.focus();
                     }
                 } else {
-                    if (this.props.resetBackground === true) {
-                        this.frame.addEventListener('load', () => this.frame.style.backgroundColor = 'white', { once: true });
-                    }
                     this.pdfContainer.style.display = 'none';
                     this.frame.style.display = 'block';
                     this.frame.src = url;
@@ -635,7 +702,9 @@ export class MiniBrowserContent extends BaseWidget {
                     }
                 }));
             } catch (e) {
+                clearTimeout(this.frameLoadTimeout);
                 this.hideLoadIndicator();
+                this.showErrorBar(String(e));
                 console.log(e);
             }
         }
@@ -651,6 +720,7 @@ export namespace MiniBrowserContent {
         export const TOOLBAR = 'theia-mini-browser-toolbar';
         export const TOOLBAR_READ_ONLY = 'theia-mini-browser-toolbar-read-only';
         export const PRE_LOAD = 'theia-mini-browser-load-indicator';
+        export const FADE_OUT = 'theia-fade-out';
         export const CONTENT_AREA = 'theia-mini-browser-content-area';
         export const PDF_CONTAINER = 'theia-mini-browser-pdf-container';
         export const PREVIOUS = 'theia-mini-browser-previous';
@@ -660,6 +730,7 @@ export namespace MiniBrowserContent {
         export const BUTTON = 'theia-mini-browser-button';
         export const DISABLED = 'theia-mini-browser-button-disabled';
         export const TRANSPARENT_OVERLAY = 'theia-mini-browser-transparent-overlay';
+        export const ERROR_BAR = 'theia-mini-browser-error-bar';
 
     }
 

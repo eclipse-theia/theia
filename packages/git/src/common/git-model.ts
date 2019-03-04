@@ -378,6 +378,14 @@ export interface GitResult {
 }
 
 /**
+ * StashEntry
+ */
+export interface StashEntry {
+    readonly id: string;
+    readonly message: string;
+}
+
+/**
  * The Git errors which can be parsed from failed Git commands.
  */
 export enum GitError {

@@ -68,6 +68,11 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     @postConstruct()
     protected async init() {
+        const root = await this.getRoot();
+        this.root.resolve(root);
+    }
+
+    protected async getRoot(): Promise<string | undefined> {
         let root = await this.getWorkspaceURIFromCli();
         if (!root) {
             const data = await this.readRecentWorkspacePathsFromUserHome();
@@ -75,7 +80,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
                 root = data.recentRoots[0];
             }
         }
-        this.root.resolve(root);
+        return root;
     }
 
     getMostRecentlyUsedWorkspace(): Promise<string | undefined> {
@@ -115,7 +120,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         return listUri;
     }
 
-    private workspaceStillExist(wspath: string): boolean {
+    protected workspaceStillExist(wspath: string): boolean {
         return fs.pathExistsSync(FileUri.fsPath(wspath));
     }
 
@@ -128,12 +133,12 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
      * Writes the given uri as the most recently used workspace root to the user's home directory.
      * @param uri most recently used uri
      */
-    private async writeToUserHome(data: RecentWorkspacePathsData): Promise<void> {
+    protected async writeToUserHome(data: RecentWorkspacePathsData): Promise<void> {
         const file = this.getUserStoragePath();
         await this.writeToFile(file, data);
     }
 
-    private async writeToFile(filePath: string, data: object): Promise<void> {
+    protected async writeToFile(filePath: string, data: object): Promise<void> {
         if (!await fs.pathExists(filePath)) {
             await fs.mkdirs(path.resolve(filePath, '..'));
         }
@@ -143,13 +148,13 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     /**
      * Reads the most recently used workspace root from the user's home directory.
      */
-    private async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
+    protected async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
         const filePath = this.getUserStoragePath();
         const data = await this.readJsonFromFile(filePath);
         return RecentWorkspacePathsData.is(data) ? data : undefined;
     }
 
-    private async readJsonFromFile(filePath: string): Promise<object | undefined> {
+    protected async readJsonFromFile(filePath: string): Promise<object | undefined> {
         if (await fs.pathExists(filePath)) {
             const rawContent = await fs.readFile(filePath, 'utf-8');
             const strippedContent = jsoncparser.stripComments(rawContent);
@@ -168,6 +173,7 @@ interface RecentWorkspacePathsData {
 
 namespace RecentWorkspacePathsData {
     export function is(data: Object | undefined): data is RecentWorkspacePathsData {
-        return !!data && typeof data === 'object' && ('recentRoots' in data) && Array.isArray(data['recentRoots']);
+        // tslint:disable-next-line:no-any
+        return !!data && typeof data === 'object' && ('recentRoots' in data) && Array.isArray((data as any)['recentRoots']);
     }
 }

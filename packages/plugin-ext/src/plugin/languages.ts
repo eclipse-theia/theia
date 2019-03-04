@@ -70,7 +70,6 @@ import { TypeDefinitionAdapter } from './languages/type-definition';
 import { CodeActionAdapter } from './languages/code-action';
 import { LinkProviderAdapter } from './languages/link-provider';
 import { CodeLensAdapter } from './languages/lens';
-import { CommandRegistryImpl } from './command-registry';
 import { OutlineAdapter } from './languages/outline';
 import { ReferenceAdapter } from './languages/reference';
 import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
@@ -109,7 +108,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
 
-    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl, private readonly commands: CommandRegistryImpl) {
+    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
         this.diagnostics = new Diagnostics(rpc);
     }
@@ -401,7 +400,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Code Lens Provider begin
     registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
-        const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents, this.commands.getConverter()));
+        const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents));
         const eventHandle = typeof provider.onDidChangeCodeLenses === 'function' ? this.nextCallId() : undefined;
         this.proxy.$registerCodeLensSupport(callId, this.transformDocumentSelector(selector), eventHandle);
         let result = this.createDisposable(callId);

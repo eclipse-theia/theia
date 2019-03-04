@@ -58,11 +58,11 @@
                 "--port=3000",
                 "--no-cluster",
                 "--app-project-path=${workspaceRoot}/examples/browser",
-                "--no-app-auto-install"
+                "--no-app-auto-install",
+                "--plugins=local-dir:plugins"
             ],
             "env": {
-                "NODE_ENV": "development",
-                "THEIA_DEFAULT_PLUGINS": "local-dir:plugins"
+                "NODE_ENV": "development"
             },
             "sourceMaps": true,
             "outFiles": [

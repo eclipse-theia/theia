@@ -105,10 +105,20 @@ export class HttpsLocationMapper implements LocationMapper {
 
 }
 
-export class MiniBrowserEndpoint extends Endpoint {
-    constructor() {
-        super({ path: 'mini-browser' });
+/**
+ * Location mapper for locations without a scheme.
+ */
+@injectable()
+export class LocationWithoutSchemeMapper implements LocationMapper {
+
+    canHandle(location: string): MaybePromise<number> {
+        return new URI(location).scheme === '' ? 1 : 0;
     }
+
+    map(location: string): MaybePromise<string> {
+        return `http://${location}`;
+    }
+
 }
 
 /**
@@ -133,4 +143,10 @@ export class FileLocationMapper implements LocationMapper {
         return new MiniBrowserEndpoint().getRestUrl().resolve(rawLocation).toString();
     }
 
+}
+
+export class MiniBrowserEndpoint extends Endpoint {
+    constructor() {
+        super({ path: 'mini-browser' });
+    }
 }

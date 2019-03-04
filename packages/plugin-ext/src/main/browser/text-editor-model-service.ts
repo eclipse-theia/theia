@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { Event, Emitter } from '@theia/core';
-import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { MonacoEditorModel, WillSaveMonacoModelEvent } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { injectable, inject } from 'inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
@@ -25,6 +25,7 @@ export interface EditorModelService {
     onModelRemoved: Event<MonacoEditorModel>;
     onModelModeChanged: Event<{ model: MonacoEditorModel, oldModeId: string }>;
 
+    onModelWillSave: Event<WillSaveMonacoModelEvent>;
     onModelDirtyChanged: Event<MonacoEditorModel>;
     onModelSaved: Event<MonacoEditorModel>;
 
@@ -39,11 +40,13 @@ export class EditorModelServiceImpl implements EditorModelService {
     private onModelRemovedEmitter = new Emitter<MonacoEditorModel>();
     private modelDirtyEmitter = new Emitter<MonacoEditorModel>();
     private modelSavedEmitter = new Emitter<MonacoEditorModel>();
+    private onModelWillSavedEmitter = new Emitter<WillSaveMonacoModelEvent>();
 
     onModelDirtyChanged: Event<MonacoEditorModel> = this.modelDirtyEmitter.event;
     onModelSaved: Event<MonacoEditorModel> = this.modelSavedEmitter.event;
     onModelModeChanged = this.modelModeChangedEmitter.event;
     onModelRemoved = this.onModelRemovedEmitter.event;
+    onModelWillSave = this.onModelWillSavedEmitter.event;
 
     constructor(@inject(MonacoTextModelService) monacoModelService: MonacoTextModelService,
         @inject(MonacoWorkspace) monacoWorkspace: MonacoWorkspace) {
@@ -69,6 +72,9 @@ export class EditorModelServiceImpl implements EditorModelService {
 
         model.onDirtyChanged(_ => {
             this.modelDirtyEmitter.fire(model);
+        });
+        model.onWillSaveModel(willSaveModelEvent => {
+            this.onModelWillSavedEmitter.fire(willSaveModelEvent);
         });
     }
 

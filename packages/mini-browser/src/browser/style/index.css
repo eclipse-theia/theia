@@ -96,7 +96,6 @@
 }
 
 .theia-mini-browser-content-area {
-    background-color: white;
     position: relative;
     display: flex;
     height: 100%;
@@ -113,7 +112,7 @@
 
 .theia-mini-browser-load-indicator {
     position: absolute;
-    top: 6px;
+    top: 0;
     right: 0;
     bottom: 0;
     left: 0;
@@ -124,6 +123,24 @@
     background-repeat: no-repeat;
     background-position: center;
     transition: opacity 0.8s;
+}
+
+.theia-mini-browser-load-indicator.theia-fade-out {
+    opacity: 0;
+}
+
+.theia-mini-browser-error-bar {
+    height: 19px;
+    padding-left: var(--theia-ui-padding);
+    background-color: var(--theia-warn-color0);
+    color: var(--theia-warn-font-color0);
+    font-size: var(--theia-statusBar-font-size);
+    z-index: 1000; /* Above the transparent overlay (`z-index: 999;`). */
+}
+
+.theia-mini-browser-error-bar span {
+    margin-top: 3px;
+    margin-left: var(--theia-ui-padding);
 }
 
 .theia-mini-browser-content-area iframe {

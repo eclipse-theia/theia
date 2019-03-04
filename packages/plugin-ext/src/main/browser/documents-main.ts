@@ -42,7 +42,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         modelService: EditorModelService,
         rpc: RPCProtocol,
         private editorManger: EditorManager,
-        private openerService: OpenerService
+        private openerService: OpenerService,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -52,6 +52,18 @@ export class DocumentsMainImpl implements DocumentsMain {
 
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
+        }));
+        this.toDispose.push(modelService.onModelWillSave(onWillSaveModelEvent => {
+            onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async resolve => {
+                const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason);
+                const transformedEdits = edits.map((edit): monaco.editor.IIdentifiedSingleEditOperation =>
+                ({
+                    range: monaco.Range.lift(edit.range),
+                    text: edit.text!,
+                    forceMoveMarkers: edit.forceMoveMarkers
+                }));
+                resolve(transformedEdits);
+            }));
         }));
         this.toDispose.push(modelService.onModelDirtyChanged(m => {
             this.proxy.$acceptDirtyStateChanged(m.textEditorModel.uri, m.dirty);

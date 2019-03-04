@@ -144,7 +144,7 @@ export function createAPIFactory(
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
-    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
+    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
@@ -155,7 +155,7 @@ export function createAPIFactory(
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
             // tslint:disable-next-line:no-any
-            registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): Disposable {
+            registerCommand(command: theia.CommandDescription, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): Disposable {
                 return commandRegistry.registerCommand(command, handler, thisArg);
             },
             // tslint:disable-next-line:no-any
@@ -355,7 +355,7 @@ export function createAPIFactory(
         };
 
         const workspace: typeof theia.workspace = {
-            get rootPath(): string | undefined {
+            get rootPath(): string | undefined {
                 return workspaceExt.rootPath;
             },
             get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
@@ -380,8 +380,7 @@ export function createAPIFactory(
                 return documents.onDidAddDocument(listener, thisArg, disposables);
             },
             onWillSaveTextDocument(listener, thisArg?, disposables?) {
-                // TODO to implement
-                return { dispose: () => { } };
+                return documents.onWillSaveTextDocument(listener, thisArg, disposables);
             },
             onDidSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidSaveTextDocument(listener, thisArg, disposables);
@@ -418,8 +417,8 @@ export function createAPIFactory(
                 ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
                 return workspaceExt.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
             },
-            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
-                return workspaceExt.findFiles(include, undefined, maxResults, token);
+            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
+                return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
             applyEdit(edit: theia.WorkspaceEdit): PromiseLike<boolean> {
                 return editors.applyWorkspaceEdit(edit);
@@ -431,7 +430,7 @@ export function createAPIFactory(
                 // FIXME: to implement
                 return new Disposable(() => { });
             },
-            getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | Uri | undefined {
+            getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
                 return workspaceExt.getWorkspaceFolder(uri);
             },
             asRelativePath(pathOrUri: theia.Uri | string, includeWorkspace?: boolean): string | undefined {
@@ -618,6 +617,10 @@ export function createAPIFactory(
         const tasks: typeof theia.tasks = {
             registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
                 return tasksExt.registerTaskProvider(type, provider);
+            },
+
+            get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
+                return tasksExt.taskExecutions;
             },
 
             onDidStartTask(listener, thisArg?, disposables?) {

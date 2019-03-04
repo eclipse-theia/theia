@@ -87,8 +87,6 @@ before_install:
   - export PATH=$HOME/.yarn/bin:$PATH ;
 install: yarn && scripts/check_git_status.sh
 script:
-  # Unset the `protocol.version` in the `global` Git configuration. See: https://github.com/theia-ide/theia/issues/4371
-  - git config --global --unset protocol.version
   - travis_retry yarn test:theia ;
   - travis_retry yarn test:electron ;
   - travis_retry yarn test:browser ;
@@ -110,8 +108,6 @@ jobs:
     env: CXX=c++
     before_script: skip
     script:
-      # Unset the `protocol.version` in the `global` Git configuration.
-      - git config --global --unset protocol.version
       - travis_retry yarn test:theia ;
   - stage: deploy
     if: NOT type IN (cron, pull_request)

@@ -104,7 +104,7 @@ export class ProblemWidget extends TreeWidget {
                     <i className={severityClass}></i>
                 </div>
                 <div className='owner'>
-                    {'[' + problemMarker.owner + ']'}
+                    {'[' + (problemMarker.data.source || problemMarker.owner) + ']'}
                 </div>
                 <div className='message'>{problemMarker.data.message}
                     {

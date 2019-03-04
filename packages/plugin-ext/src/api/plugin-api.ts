@@ -153,7 +153,7 @@ export interface PluginManagerExt {
 }
 
 export interface CommandRegistryMain {
-    $registerCommand(command: theia.Command): void;
+    $registerCommand(command: theia.CommandDescription): void;
     $unregisterCommand(id: string): void;
 
     $registerHandler(id: string): void;
@@ -698,6 +698,7 @@ export interface ModelChangedEvent {
 export interface DocumentsExt {
     $acceptModelModeChanged(startUrl: UriComponents, oldModeId: string, newModeId: string): void;
     $acceptModelSaved(strUrl: UriComponents): void;
+    $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason): Promise<SingleEditOperation[]>;
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void;
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void;
 }
@@ -828,7 +829,7 @@ export interface TaskDto {
     label: string;
     source?: string;
     // tslint:disable-next-line:no-any
-    properties?: { [key: string]: any };
+    [key: string]: any;
 }
 
 export interface TaskExecutionDto {
@@ -899,7 +900,7 @@ export interface LanguagesMain {
     $registerDocumentHighlightProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;
     $clearDiagnostics(id: string): void;
-    $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
+    $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerRangeFormattingProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
@@ -1041,6 +1042,7 @@ export interface TasksExt {
 
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
+    $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
 }

@@ -33,6 +33,7 @@ import URI from 'vscode-uri';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { normalize } from '../common/paths';
 import { relative } from '../common/paths-util';
+import { toWorkspaceFolder } from './type-converters';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
@@ -112,7 +113,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         });
     }
 
-    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | undefined, maxResults?: number,
+    findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number,
         token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
         let includePattern: string;
         if (include) {
@@ -127,7 +128,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         let excludePatternOrDisregardExcludes: string | false;
         if (exclude === undefined) {
-            excludePatternOrDisregardExcludes = false;
+            excludePatternOrDisregardExcludes = ''; // default excludes
         } else if (exclude) {
             if (typeof exclude === 'string') {
                 excludePatternOrDisregardExcludes = exclude;
@@ -135,7 +136,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 excludePatternOrDisregardExcludes = exclude.pattern;
             }
         } else {
-            excludePatternOrDisregardExcludes = false;
+            excludePatternOrDisregardExcludes = false; // no excludes
         }
 
         if (token && token.isCancellationRequested) {
@@ -198,7 +199,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
-    getWorkspaceFolder(uri: theia.Uri, resolveParent?: boolean): theia.WorkspaceFolder | URI | undefined {
+    getWorkspaceFolder(uri: theia.Uri, resolveParent?: boolean): theia.WorkspaceFolder | undefined {
         if (!this.folders || !this.folders.length) {
             return undefined;
         }
@@ -224,8 +225,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             const folderPath = folder.uri.toString();
 
             if (resourcePath === folderPath) {
-                // return the input when the given uri is a workspace folder itself
-                return uri;
+                return toWorkspaceFolder(folder);
             }
 
             if (resourcePath.startsWith(folderPath)
