@@ -288,6 +288,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'default': false,
             'description': 'Enable format on manual save.'
         },
+        'editor.formatOnSaveTimeout': {
+            'type': 'number',
+            'default': 750,
+            'description': 'Timeout in milliseconds after which the formatting that is run on file save is cancelled.'
+        },
         'editor.formatOnType': {
             'type': 'boolean',
             'default': false,
@@ -560,7 +565,8 @@ export interface EditorConfiguration {
     'editor.autoClosingBrackets'?: boolean
     'editor.autoIndent'?: boolean
     'editor.formatOnType'?: boolean
-    'editor.formatOnSave'?: boolean
+    'editor.formatOnSave': boolean
+    'editor.formatOnSaveTimeout': number
     'editor.formatOnPaste'?: boolean
     'editor.dragAndDrop'?: boolean
     'editor.suggestOnTriggerCharacters'?: boolean
