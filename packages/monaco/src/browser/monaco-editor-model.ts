@@ -39,6 +39,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     autoSave: 'on' | 'off' = 'on';
     autoSaveDelay: number = 500;
+    /* @deprecated there is no general save timeout, each participant should introduce a sensible timeout  */
     readonly onWillSaveLoopTimeOut = 1500;
 
     protected model: monaco.editor.IModel;
@@ -336,19 +337,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
         type EditContributor = Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>;
 
-        let didTimeout = false;
-        let timeoutHandle: number = -1;
-
-        const shouldStop: () => boolean = () => token.isCancellationRequested || didTimeout;
-
-        // tslint:disable-next-line:no-any
-        const timeoutPromise = new Promise((resolve, reject) => timeoutHandle = <any>setTimeout(() => {
-            didTimeout = true;
-            reject(new Error('onWillSave listener loop timeout'));
-        }, this.onWillSaveLoopTimeOut));
-
         const firing = this.onWillSaveModelEmitter.sequence(async listener => {
-            if (shouldStop()) {
+            if (token.isCancellationRequested) {
                 return false;
             }
             const waitables: EditContributor[] = [];
@@ -379,7 +369,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             const edits = await Promise.all(waitables).then(allOperations =>
                 ([] as monaco.editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
             );
-            if (shouldStop()) {
+            if (token.isCancellationRequested) {
                 return false;
             }
 
@@ -399,11 +389,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         });
 
         try {
-            await Promise.race([timeoutPromise, firing]);
+            await firing;
         } catch (e) {
             console.error(e);
-        } finally {
-            clearTimeout(timeoutHandle);
         }
     }
 
