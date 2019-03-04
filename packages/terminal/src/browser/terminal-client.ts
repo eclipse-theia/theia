@@ -224,10 +224,14 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         }
 
         const terminalId = await this.shellTerminalServer.create({
-            ...this.options,
+            shell: this.options.shellPath,
+            args: this.options.shellArgs,
+            env: this.options.env,
+            rootURI,
             cols: 80,
             rows: 24
         });
+
         if (IBaseTerminalServer.validateId(terminalId)) {
             return terminalId;
         }
