@@ -157,12 +157,13 @@ declare module '@theia/plugin' {
         export let all: Plugin<any>[];
     }
 
+
     /**
-     * A command is a unique identifier of a function
-     * which can be executed by a user via a keyboard shortcut,
-     * a menu action or directly.
-     */
-    export interface Command {
+ * A command is a unique identifier of a function
+ * which can be executed by a user via a keyboard shortcut,
+ * a menu action or directly.
+ */
+    export interface CommandDescription {
         /**
          * A unique identifier of this command.
          */
@@ -172,29 +173,44 @@ declare module '@theia/plugin' {
          */
         label?: string;
         /**
-         * A tooltip for for command, when represented in the UI.
-         */
+          * A tooltip for for command, when represented in the UI.
+          */
         tooltip?: string;
         /**
          * An icon class of this command.
          */
         iconClass?: string;
+    }
+    /**
+     * Command represents a particular invocation of a registered command.
+     */
+    export interface Command {
+        /**
+         * The identifier of the actual command handler.
+         */
+        command?: string;
+        /**
+        * Title of the command invocation, like "Add local varible 'foo'".
+        */
+        title?: string;
+        /**
+          * A tooltip for for command, when represented in the UI.
+          */
+        tooltip?: string;
         /**
          * Arguments that the command handler should be
          * invoked with.
          */
         arguments?: any[];
 
-        // Title and command fields are needed to make Command object similar to Command from vscode API
-
         /**
-         * Title of the command, like "save".
+         * @deprecated use command instead
          */
-        title?: string;
+        id?: string;
         /**
-         * The identifier of the actual command handler.
+         * @deprecated use title instead
          */
-        command?: string;
+        label?: string;
     }
 
     /**
@@ -1871,12 +1887,12 @@ declare module '@theia/plugin' {
         /**
          * A flag to include the description when filtering
          */
-        machOnDescription?: boolean;
+        matchOnDescription?: boolean;
 
         /**
          *  A flag to include the detail when filtering
          */
-        machOnDetail?: boolean;
+        matchOnDetail?: boolean;
 
         /**
          * The place holder in input box
@@ -1996,7 +2012,7 @@ declare module '@theia/plugin' {
          *
          * Throw if a command is already registered for the given command identifier.
          */
-        export function registerCommand(command: Command, handler?: (...args: any[]) => any, thisArg?: any): Disposable;
+        export function registerCommand(command: CommandDescription, handler?: (...args: any[]) => any, thisArg?: any): Disposable;
 
         /**
          * Register the given handler for the given command identifier.
@@ -2022,7 +2038,7 @@ declare module '@theia/plugin' {
          * @param thisArg The `this` context used when invoking the handler function.
          * @return Disposable which unregisters this command on disposal.
          */
-        export function registerTextEditorCommand(command: string, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void, thisArg?: any): Disposable;
+        export function registerTextEditorCommand(command: string, callback: (textEditor: TextEditor, edit: TextEditorEdit, ...args: any[]) => void, thisArg?: any): Disposable;
 
         /**
          * Execute the active handler for the given command and arguments.
@@ -2554,6 +2570,36 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The areas of the application shell where webview panel can reside.
+     */
+    export enum WebviewPanelTargetArea {
+        Main = 'main',
+        Left = 'left',
+        Right = 'right',
+        Bottom = 'bottom'
+    }
+
+    /**
+     * Settings to determine where webview panel will be reside
+     */
+    export interface WebviewPanelShowOptions {
+        /**
+         * Target area where webview panel will be resided. Shows in the 'WebviewPanelTargetArea.Main' area if undefined.
+         */
+        area?: WebviewPanelTargetArea;
+
+        /**
+         * Editor View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         */
+        viewColumn?: number;
+
+        /**
+         * When `true`, the webview will not take focus.
+         */
+        preserveFocus?: boolean;
+    }
+
+    /**
      * A panel that contains a webview.
      */
     interface WebviewPanel {
@@ -2582,6 +2628,10 @@ declare module '@theia/plugin' {
          */
         readonly options: WebviewPanelOptions;
 
+        /**
+         * Settings to determine where webview panel will be reside
+         */
+        readonly showOptions?: WebviewPanelShowOptions;
         /**
          * Editor position of the panel. This property is only set if the webview is in
          * one of the editor view columns.
@@ -2614,15 +2664,16 @@ declare module '@theia/plugin' {
         readonly onDidDispose: Event<void>;
 
         /**
-         * Show the webview panel in a given column.
+         * Show the webview panel according to a given options.
          *
          * A webview panel may only show in a single column at a time. If it is already showing, this
          * method moves it to a new column.
          *
+         * @param area target area where webview panel will be resided. Shows in the 'WebviewPanelTargetArea.Main' area if undefined.
          * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
          * @param preserveFocus When `true`, the webview will not take focus.
          */
-        reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
+        reveal(area?: WebviewPanelTargetArea, viewColumn?: ViewColumn, preserveFocus?: boolean): void;
 
         /**
          * Dispose of the webview panel.
@@ -2983,12 +3034,12 @@ declare module '@theia/plugin' {
          *
          * @param viewType Identifies the type of the webview panel.
          * @param title Title of the panel.
-         * @param showOptions Where to show the webview in the editor. If preserveFocus is set, the new webview will not take focus.
+         * @param showOptions where webview panel will be reside. If preserveFocus is set, the new webview will not take focus.
          * @param options Settings for the new panel.
          *
          * @return New webview panel.
          */
-        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | { viewColumn: ViewColumn, preserveFocus?: boolean }, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | WebviewPanelShowOptions, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
 
         /**
          * Registers a webview panel serializer.
@@ -3108,7 +3159,7 @@ declare module '@theia/plugin' {
          * @param options Options object to provide [TreeDataProvider](#TreeDataProvider) for the view.
          * @returns a [TreeView](#TreeView).
          */
-        export function createTreeView<T>(viewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T>;
+        export function createTreeView<T>(viewId: string, options: TreeViewOptions<T>): TreeView<T>;
 
         /**
          * Show progress in the editor. Progress is shown while running the given callback
@@ -3181,6 +3232,22 @@ declare module '@theia/plugin' {
          * report on how much work finished
          */
         report(value: T): void;
+    }
+
+    /**
+     * Options for creating a [TreeView](#TreeView)
+     */
+    export interface TreeViewOptions<T> {
+
+        /**
+         * A data provider that provides tree data.
+         */
+        treeDataProvider: TreeDataProvider<T>;
+
+        /**
+         * Whether to show collapse all action or not.
+         */
+        showCollapseAll?: boolean;
     }
 
     /**
@@ -3961,7 +4028,7 @@ declare module '@theia/plugin' {
          * @return A thenable that resolves to an array of resource identifiers. Will return no results if no
          * [workspace folders](#workspace.workspaceFolders) are opened.
          */
-        export function findFiles(include: GlobPattern, exclude?: GlobPattern | undefined, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
+        export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
         /**
          * Make changes to one or many resources or create, delete, and rename resources as defined by the given
@@ -7088,6 +7155,11 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
+
+        /**
+         * The currently active task executions or an empty array.
+         */
+        export const taskExecutions: ReadonlyArray<TaskExecution>;
 
         /** Fires when a task starts. */
         export const onDidStartTask: Event<TaskStartEvent>;

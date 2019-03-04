@@ -18,7 +18,8 @@ import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plugin-api';
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
+// FIXME get rid of browser code in backend
+import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 
@@ -55,6 +56,7 @@ export interface PluginPackage {
  */
 export interface PluginPackageContribution {
     configuration?: PreferenceSchema;
+    configurationDefaults?: PreferenceSchemaProperties;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
@@ -347,6 +349,7 @@ export interface PluginModel {
  */
 export interface PluginContribution {
     configuration?: PreferenceSchema;
+    configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
     viewsContainers?: { [location: string]: ViewContainer[] };

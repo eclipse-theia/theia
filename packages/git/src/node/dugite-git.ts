@@ -22,6 +22,7 @@ import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
 import { clone } from 'dugite-extra/lib/command/clone';
 import { fetch } from 'dugite-extra/lib/command/fetch';
+import { stash } from 'dugite-extra/lib/command/stash';
 import { merge } from 'dugite-extra/lib/command/merge';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
@@ -39,7 +40,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as strings from '@theia/core/lib/common/strings';
 import {
     Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit,
-    CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine, GitError
+    CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine, GitError, Remote, StashEntry
 } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
@@ -524,7 +525,7 @@ export class DugiteGit implements Git {
         const mode = this.getResetMode(options.mode);
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         return this.manager.run(repository, () =>
-            reset(repositoryPath, mode, options.mode ? options.mode : 'HEAD', { exec, env })
+            reset(repositoryPath, mode, options.ref ? options.ref : 'HEAD', { exec, env })
         );
     }
 
@@ -550,10 +551,55 @@ export class DugiteGit implements Git {
         return (await getTextContents(repositoryPath, commitish, path, { exec, env })).toString();
     }
 
-    async remote(repository: Repository): Promise<string[]> {
+    async stash(repository: Repository, options?: Readonly<{ action?: 'push', message?: string }>): Promise<void>;
+    async stash(repository: Repository, options: Readonly<{ action: 'list' }>): Promise<StashEntry[]>;
+    async stash(repository: Repository, options: Readonly<{ action: 'clear' }>): Promise<void>;
+    async stash(repository: Repository, options: Readonly<{ action: 'apply' | 'pop' | 'drop', id?: string }>): Promise<void>;
+    async stash(repository: Repository, options?: Git.Options.Stash): Promise<StashEntry[] | void> {
+        const repositoryPath: string = this.getFsPath(repository);
+        try {
+            if (!options || (options && !options.action)) {
+                await stash.push(repositoryPath, options ? options.message : undefined);
+                return;
+            }
+            switch (options.action) {
+                case 'push':
+                    await stash.push(repositoryPath, options.message);
+                    break;
+                case 'apply':
+                    await stash.apply(repositoryPath, options.id);
+                    break;
+                case 'pop':
+                    await stash.pop(repositoryPath, options.id);
+                    break;
+                case 'list':
+                    const stashList = await stash.list(repositoryPath);
+                    const stashes: StashEntry[] = [];
+                    stashList.forEach(stashItem => {
+                        const splitIndex = stashItem.indexOf(':');
+                        stashes.push({
+                            id: stashItem.substring(0, splitIndex),
+                            message: stashItem.substring(splitIndex + 1)
+                        });
+                    });
+                    return stashes;
+                case 'drop':
+                    await stash.drop(repositoryPath, options.id);
+                    break;
+            }
+        } catch (err) {
+            this.fail(repository, err);
+        }
+    }
+
+    async remote(repository: Repository): Promise<string[]>;
+    async remote(repository: Repository, options: { verbose: true }): Promise<Remote[]>;
+    async remote(repository: Repository, options?: Git.Options.Remote): Promise<string[] | Remote[]> {
         await this.ready.promise;
         const repositoryPath = this.getFsPath(repository);
-        return this.getRemotes(repositoryPath);
+        const remotes = await this.getRemotes(repositoryPath);
+        const names = remotes.map(a => a.name);
+        return (options && options.verbose === true) ? remotes : names;
     }
 
     async exec(repository: Repository, args: string[], options?: Git.Options.Execution): Promise<GitResult> {
@@ -694,18 +740,28 @@ export class DugiteGit implements Git {
         return undefined;
     }
 
-    private async getRemotes(repositoryPath: string): Promise<string[]> {
+    private async getRemotes(repositoryPath: string): Promise<Remote[]> {
         await this.ready.promise;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
-        const result = await git(['remote'], repositoryPath, 'remote', { exec, env });
+        const result = await git(['remote', '-v'], repositoryPath, 'remote', { exec, env });
         const out = result.stdout || '';
-        return out.trim().match(/\S+/g) || [];
+        const results = out.trim().match(/\S+/g);
+        if (results) {
+            const values: Remote[] = [];
+            for (let i = 0; i < results.length; i += 6) {
+                values.push({ name: results[i], fetch: results[i + 1], push: results[i + 4] });
+            }
+            return values;
+        } else {
+            return [];
+        }
     }
 
     private async getDefaultRemote(repositoryPath: string, remote?: string): Promise<string | undefined> {
         if (remote === undefined) {
             const remotes = await this.getRemotes(repositoryPath);
-            return remotes.shift();
+            const name = remotes.map(a => a.name);
+            return name.shift();
         }
         return remote;
     }

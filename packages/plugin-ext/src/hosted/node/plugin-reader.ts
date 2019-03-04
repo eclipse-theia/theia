@@ -156,6 +156,9 @@ export class HostedPluginReader implements BackendApplicationContribution {
             }
             return result;
         }
+        if (value === null) {
+            return value;
+        }
         if (typeof value === 'object') {
             const result: { [key: string]: any } = {};
             // tslint:disable-next-line:forin

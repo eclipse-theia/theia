@@ -27,10 +27,14 @@ export function* split(s: string, splitter: string): IterableIterator<string> {
     }
 }
 
-export function escapeInvisibleChars(value: string ): string  {
+export function escapeInvisibleChars(value: string): string {
     return value.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
 }
 
 export function unescapeInvisibleChars(value: string): string {
     return value.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+}
+
+export function escapeRegExpCharacters(value: string): string {
+    return value.replace(/[\-\\\{\}\*\+\?\|\^\$\.\[\]\(\)\#]/g, '\\$&');
 }

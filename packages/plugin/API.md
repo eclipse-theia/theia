@@ -249,7 +249,7 @@ Where are:
  - "shellPath" - path to the executable shell, for example "/bin/bash", "bash", "sh" or so on.
  - "shellArgs" - shell command arguments, for example without login: "-l". If you defined shell command "/bin/bash" and set up shell arguments "-l" than will be created terminal process with command "/bin/bash -l". And client side will connect to stdin/stdout of this process to interaction with user.
  - "cwd" - current working directory;
- - "env"- enviroment variables for terminal process, for example TERM - identifier terminal window capabilities.
+ - "env"- environment variables for terminal process, for example TERM - identifier terminal window capabilities.
 
 Function to create new terminal with defined theia.TerminalOptions described above:
 
@@ -279,7 +279,7 @@ Where are:
 - first argument - text content.
 - second argument - in case true, terminal will apply new line after the text, otherwise will send only the text.
 
-Distroy terminal:
+Destroy terminal:
 
 ```typescript
 terminal.dispose();
@@ -355,7 +355,7 @@ If no diagnostics found empty array will be returned.
 
 Note, that returned array from `getDiagnostics` call are readonly.
 
-To tracks changes in diagnostics `onDidChangeDiagnostics` event should be used. Within event handler list of uris with changed diadgnostics is available. Example:
+To tracks changes in diagnostics `onDidChangeDiagnostics` event should be used. Within event handler list of uris with changed diagnostics is available. Example:
 
 ```typescript
 disposables.push(
@@ -371,7 +371,7 @@ Also it is possible to add own diagnostics. To do this, one should create diagno
 const diagnosticsCollection = theia.languages.createDiagnosticCollection(collectionName);
 ```
 
-Collection name can be ommited. In such case the name will be auto-generated.
+Collection name can be omitted. In such case the name will be auto-generated.
 
 When collection is created, one could operate with diagnostics. The collection object exposes all needed methods: `get`, `set`, `has`, `delete`, `clear`, `forEach` and `dispose`.
 
@@ -397,7 +397,7 @@ changes.push([uri1, diagnostics4]); // uri1 again
 diagnosticsCollection.set(changes);
 ```
 
-If the same uri is used a few times, corresponding diagnostics will be merged. In case of `undefined` all previous, but not following, diagnostics will be cleared. If `undefined` is given insted of tuples array the whole collection will be cleared.
+If the same uri is used a few times, corresponding diagnostics will be merged. In case of `undefined` all previous, but not following, diagnostics will be cleared. If `undefined` is given instead of tuples array the whole collection will be cleared.
 
 To iterate over all diagnostics within the collection `forEach` method could be used:
 
@@ -407,7 +407,7 @@ diagnosticsCollection.forEach((uri, diagnostics) => {
 }
 ```
 
-`dispose` method should be used when the collection is not needed any more. In case of attempt to do an operaton after disposing an error will be thrown.
+`dispose` method should be used when the collection is not needed any more. In case of attempt to do an operation after disposing an error will be thrown.
 
 #### Signature help
 

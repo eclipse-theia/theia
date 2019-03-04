@@ -17,18 +17,14 @@
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContext, KeybindingContribution, WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { CallHierarchyService } from '@theia/callhierarchy/lib/browser';
 import { TypeScriptClientContribution } from './typescript-client-contribution';
 import { TypeScriptCallHierarchyService } from './typescript-callhierarchy-service';
-import { TypescriptGrammarContribution } from './typescript-language-config';
-import { JavascriptGrammarContribution } from './javascript-language-config';
 import { TypeScriptFrontendContribution } from './typescript-frontend-contribution';
 import { TypeScriptEditorTextFocusContext } from './typescript-keybinding-contexts';
 import { bindTypescriptPreferences } from './typescript-preferences';
 import { TypescriptVersionService, typescriptVersionPath } from '../common/typescript-version-service';
-import { JsxTagsGrammarContribution } from './jsx-tags-language-config';
 
 export default new ContainerModule(bind => {
     bindTypescriptPreferences(bind);
@@ -41,10 +37,6 @@ export default new ContainerModule(bind => {
 
     bind(TypeScriptCallHierarchyService).toSelf().inSingletonScope();
     bind(CallHierarchyService).toService(TypeScriptCallHierarchyService);
-
-    bind(LanguageGrammarDefinitionContribution).to(TypescriptGrammarContribution).inSingletonScope();
-    bind(LanguageGrammarDefinitionContribution).to(JavascriptGrammarContribution).inSingletonScope();
-    bind(LanguageGrammarDefinitionContribution).to(JsxTagsGrammarContribution).inSingletonScope();
 
     bind(TypeScriptFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(TypeScriptFrontendContribution);

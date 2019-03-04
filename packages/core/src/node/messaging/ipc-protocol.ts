@@ -45,13 +45,22 @@ export function checkParentAlive(): void {
 
 export const ipcEntryPoint = process.env[THEIA_ENTRY_POINT];
 
+const THEIA_ENV_REGEXP_EXCLUSION = new RegExp('THEIA_*');
 export function createIpcEnv(options?: {
     entryPoint?: string
     env?: NodeJS.ProcessEnv
 }): NodeJS.ProcessEnv {
     const op = Object.assign({}, options);
     const childEnv = Object.assign({}, op.env);
+
+    for (const key of Object.keys(childEnv)) {
+        if (THEIA_ENV_REGEXP_EXCLUSION.test(key)) {
+            delete childEnv[key];
+        }
+    }
+
     childEnv[THEIA_PARENT_PID] = String(process.pid);
     childEnv[THEIA_ENTRY_POINT] = op.entryPoint;
+
     return childEnv;
 }

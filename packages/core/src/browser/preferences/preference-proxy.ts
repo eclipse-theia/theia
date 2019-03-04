@@ -17,14 +17,14 @@
 // tslint:disable:no-any
 
 import { Disposable, DisposableCollection, Event, Emitter } from '../../common';
-import { PreferenceService, PreferenceChange } from './preference-service';
-import { PreferenceSchema } from './preference-contribution';
+import { PreferenceService } from './preference-service';
+import { PreferenceSchema, OverridePreferenceName } from './preference-contribution';
 
 export interface PreferenceChangeEvent<T> {
     readonly preferenceName: keyof T;
     readonly newValue?: T[keyof T];
     readonly oldValue?: T[keyof T];
-    affects(resourceUri?: string): boolean;
+    affects(resourceUri?: string, overrideIdentifier?: string): boolean;
 }
 
 export interface PreferenceEventEmitter<T> {
@@ -33,23 +33,45 @@ export interface PreferenceEventEmitter<T> {
 }
 
 export interface PreferenceRetrieval<T> {
-    get<K extends keyof T>(preferenceName: K, defaultValue?: T[K], resourceUri?: string): T[K];
+    get<K extends keyof T>(preferenceName: K | {
+        preferenceName: K,
+        overrideIdentifier?: string
+    }, defaultValue?: T[K], resourceUri?: string): T[K];
 }
 
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T> & PreferenceRetrieval<T>;
 
 export function createPreferenceProxy<T>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
-    const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
+    const onPreferenceChangedEmitter = new Emitter<PreferenceChangeEvent<T>>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
-        if (schema.properties[e.preferenceName]) {
-            onPreferenceChangedEmitter.fire(e);
+        const overriden = preferences.overridenPreferenceName(e.preferenceName);
+        const preferenceName: any = overriden ? overriden.preferenceName : e.preferenceName;
+        if (schema.properties[preferenceName]) {
+            const { newValue, oldValue } = e;
+            onPreferenceChangedEmitter.fire({
+                newValue, oldValue, preferenceName,
+                affects: (resourceUri, overrideIdentifier) => {
+                    if (overrideIdentifier !== undefined) {
+                        if (overriden && overriden.overrideIdentifier !== overrideIdentifier) {
+                            return false;
+                        }
+                    }
+                    return e.affects(resourceUri);
+                }
+            });
         }
     }));
 
     const unsupportedOperation = (_: any, __: string) => {
         throw new Error('Unsupported operation');
+    };
+    const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) => {
+        const preferenceName = typeof arg === 'object' && arg.overrideIdentifier ?
+            preferences.overridePreferenceName(<OverridePreferenceName>arg) :
+            <string>arg;
+        return preferences.get(preferenceName, defaultValue, resourceUri);
     };
     return new Proxy({}, {
         get: (_, property: string) => {
@@ -66,7 +88,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
                 return preferences.ready;
             }
             if (property === 'get') {
-                return preferences.get.bind(preferences);
+                return getValue;
             }
             throw new Error(`unexpected property: ${property}`);
         },

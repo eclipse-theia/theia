@@ -32,9 +32,15 @@ export const FrontendApplicationContribution = Symbol('FrontendApplicationContri
 export interface FrontendApplicationContribution {
 
     /**
-     * Called on application startup before onStart is called.
+     * Called on application startup before configure is called.
      */
     initialize?(): void;
+
+    /**
+     * Called before commands, key bindings and menus are initialized.
+     * Should return a promise if it runs asynchronously.
+     */
+    configure?(app: FrontendApplication): MaybePromise<void>;
 
     /**
      * Called when the application is started. The application shell is not attached yet when this method runs.
@@ -270,6 +276,16 @@ export class FrontendApplication {
                     contribution.initialize();
                 } catch (error) {
                     this.logger.error('Could not initialize contribution', error);
+                }
+            }
+        }
+
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.configure) {
+                try {
+                    await contribution.configure(this);
+                } catch (error) {
+                    this.logger.error('Could not configure contribution', error);
                 }
             }
         }

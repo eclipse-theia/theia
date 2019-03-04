@@ -1,12 +1,12 @@
 {
   "name": "@theia/python",
-  "version": "0.3.19",
+  "version": "0.4.0",
   "description": "Theia - Python Extension",
   "dependencies": {
-    "@theia/core": "^0.3.19",
-    "@theia/languages": "^0.3.19",
-    "@theia/monaco": "^0.3.19",
-    "@theia/process": "^0.3.19"
+    "@theia/core": "^0.4.0",
+    "@theia/languages": "^0.4.0",
+    "@theia/monaco": "^0.4.0",
+    "@theia/process": "^0.4.0"
   },
   "publishConfig": {
     "access": "public"
@@ -43,7 +43,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.19"
+    "@theia/ext-scripts": "^0.4.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

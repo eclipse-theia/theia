@@ -23,7 +23,6 @@ import { ProcessType, ProcessTaskInfo } from '../../common/process/task-protocol
 
 export const TaskProcessOptions = Symbol('TaskProcessOptions');
 export interface TaskProcessOptions extends TaskOptions {
-    command: string,
     process: Process,
     processType: ProcessType
 }

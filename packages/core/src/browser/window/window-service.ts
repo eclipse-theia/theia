@@ -31,18 +31,19 @@ export interface WindowService {
      * In a browser, opening a new Theia tab or open a link is the same thing.
      * But in Electron, we want to open links in a browser, not in Electron.
      */
-    openNewWindow(url: string, options?: NewWindowOptions): void;
+    openNewWindow(url: string, options?: NewWindowOptions): Window | undefined;
 
 }
 
 @injectable()
 export class DefaultWindowService implements WindowService {
 
-    openNewWindow(url: string): void {
+    openNewWindow(url: string): Window {
         const newWindow = window.open(url);
         if (newWindow === null) {
             throw new Error('Cannot open a new window for URL: ' + url);
         }
+        return newWindow;
     }
 
 }

@@ -54,7 +54,7 @@ export class BreakpointWidgetInputFocusContext implements KeybindingContext {
 
     isEnabled(): boolean {
         const model = this.editors.model;
-        return !!model && this.isFocused(model);
+        return !!model && !!model.breakpointWidget.position && this.isFocused(model);
     }
 
     protected isFocused(model: DebugEditorModel): boolean {

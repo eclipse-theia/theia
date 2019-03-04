@@ -17,12 +17,11 @@
 import { injectable, inject } from 'inversify';
 import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
-import { Git, Repository, Branch, BranchType, Tag } from '../common';
+import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitErrorHandler } from './git-error-handler';
 
@@ -116,7 +115,11 @@ export class GitQuickOpenService {
                     this.gitErrorHandler.handleError(error);
                 }
             };
-            const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
+            const items = remotes.map(remote => {
+                const toLabel = () => remote.name;
+                const toDescription = () => remote.fetch;
+                return new GitQuickOpenItem(remote.name, execute, toLabel, toDescription);
+            });
             this.open(items, 'Pick a remote to fetch from:');
         }
     }
@@ -124,15 +127,15 @@ export class GitQuickOpenService {
     async performDefaultGitAction(action: GitAction): Promise<void> {
         const repository = this.getRepository();
         const remote = await this.getRemotes();
-        const defaultRemote = remote[0];
+        const defaultRemote = remote[0].name;
         if (repository) {
             try {
                 if (action === GitAction.PULL) {
                     await this.git.pull(repository, { remote: defaultRemote });
-                    console.log(`Git Pull: sucessfully completed from ${defaultRemote}.`);
+                    console.log(`Git Pull: successfully completed from ${defaultRemote}.`);
                 } else if (action === GitAction.PUSH) {
                     await this.git.push(repository, { remote: defaultRemote });
-                    console.log(`Git Push: sucessfully completed to ${defaultRemote}.`);
+                    console.log(`Git Push: successfully completed to ${defaultRemote}.`);
                 }
             } catch (error) {
                 this.gitErrorHandler.handleError(error);
@@ -151,7 +154,11 @@ export class GitQuickOpenService {
                     this.gitErrorHandler.handleError(error);
                 }
             };
-            const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
+            const items = remotes.map(remote => {
+                const toLabel = () => remote.name;
+                const toDescription = () => remote.push;
+                return new GitQuickOpenItem(remote.name, execute, toLabel, toDescription);
+            });
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
             this.open(items, `Pick a remote to push the currently active branch ${branchName}to:`);
         }
@@ -161,10 +168,10 @@ export class GitQuickOpenService {
         const repository = this.getRepository();
         if (repository) {
             const remotes = await this.getRemotes();
-            const defaultRemote = remotes[0]; // I wish I could use assignment destructuring here. (GH-413)
-            const executeRemote = async (remoteItem: GitQuickOpenItem<string>) => {
+            const defaultRemote = remotes[0].name; // I wish I could use assignment destructuring here. (GH-413)
+            const executeRemote = async (remoteItem: GitQuickOpenItem<Remote>) => {
                 // The first remote is the default.
-                if (remoteItem.ref === defaultRemote) {
+                if (remoteItem.ref.name === defaultRemote) {
                     try {
                         await this.git.pull(repository, { remote: remoteItem.getLabel() });
                     } catch (error) {
@@ -175,7 +182,7 @@ export class GitQuickOpenService {
                     const branches = await this.getBranches();
                     const executeBranch = async (branchItem: GitQuickOpenItem<Branch>) => {
                         try {
-                            await this.git.pull(repository, { remote: remoteItem.ref, branch: branchItem.ref.nameWithoutRemote });
+                            await this.git.pull(repository, { remote: remoteItem.ref.name, branch: branchItem.ref.nameWithoutRemote });
                         } catch (error) {
                             this.gitErrorHandler.handleError(error);
                         }
@@ -188,7 +195,11 @@ export class GitQuickOpenService {
                     this.open(branchItems, 'Select the branch to pull the changes from:');
                 }
             };
-            const remoteItems = remotes.map(remote => new GitQuickOpenItem(remote, executeRemote));
+            const remoteItems = remotes.map(remote => {
+                const toLabel = () => remote.name;
+                const toDescription = () => remote.fetch;
+                return new GitQuickOpenItem(remote, executeRemote, toLabel, toDescription);
+            });
             this.open(remoteItems, 'Pick a remote to pull the branch from:');
         }
     }
@@ -273,13 +284,14 @@ export class GitQuickOpenService {
     async changeRepository(): Promise<void> {
         const repositories = this.repositoryProvider.allRepositories;
         if (repositories.length > 1) {
-            const items = repositories.map(repository => {
+            const items = await Promise.all(repositories.map(async repository => {
                 const uri = new URI(repository.localUri);
                 const execute = () => this.repositoryProvider.selectedRepository = repository;
                 const toLabel = () => uri.path.base;
-                const toDescription = () => FileUri.fsPath(uri);
+                const fsPath = await this.fileSystem.getFsPath(uri.toString());
+                const toDescription = () => fsPath;
                 return new GitQuickOpenItem<Repository>(repository, execute, toLabel, toDescription);
-            });
+            }));
             this.open(items, 'Select a local Git repository to work with:');
         }
     }
@@ -331,6 +343,108 @@ export class GitQuickOpenService {
         });
     }
 
+    async stash(): Promise<void> {
+        const doStash = async (message: string) => {
+            if (this.repositoryProvider.selectedRepository) {
+                this.git.stash(this.repositoryProvider.selectedRepository, { message });
+            }
+        };
+        const quickOpenModel: QuickOpenModel = {
+            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                const dynamicItems: QuickOpenItem[] = [];
+                const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
+
+                if (lookFor === undefined || lookFor.length === 0) {
+                    dynamicItems.push(new SingleStringInputOpenItem(
+                        `Stash changes. ${suffix}`,
+                        () => doStash(lookFor)
+                    ));
+                } else {
+                    dynamicItems.push(new SingleStringInputOpenItem(
+                        `Stash changes with message: ${lookFor}. ${suffix}`,
+                        () => doStash(lookFor)
+                    ));
+                }
+                acceptor(dynamicItems);
+            }
+        };
+        this.quickOpenService.open(quickOpenModel, this.getOptions('Stash message', false));
+    }
+
+    protected async doStashAction(action: 'pop' | 'apply' | 'drop', text: string, getMessage?: () => Promise<string>) {
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            const list = await this.git.stash(repo, { action: 'list' });
+            if (list) {
+                const quickOpenItems = list.map(stash => new GitQuickOpenItem<StashEntry>(stash, async () => {
+                    try {
+                        await this.git.stash(repo, {
+                            action,
+                            id: stash.id
+                        });
+                        if (getMessage) {
+                            this.messageService.info(await getMessage());
+                        }
+                    } catch (error) {
+                        this.gitErrorHandler.handleError(error);
+                    }
+                }, () => stash.message));
+                this.open(quickOpenItems, text);
+            }
+        }
+    }
+
+    async applyStash(): Promise<void> {
+        this.doStashAction('apply', 'Select a stash to \'apply\'.');
+    }
+
+    async popStash(): Promise<void> {
+        this.doStashAction('pop', 'Select a stash to \'pop\'.');
+    }
+
+    async dropStash(): Promise<void> {
+        this.doStashAction('drop', 'Select a stash entry to remove it from the list of stash entries.',
+            async () => {
+                if (this.repositoryProvider.selectedRepository) {
+                    const list = await this.git.stash(this.repositoryProvider.selectedRepository, { action: 'list' });
+                    let listString = '';
+                    list.forEach(stashEntry => {
+                        listString += stashEntry.message + '\n';
+                    });
+                    return `Stash successfully removed.
+                    There ${list.length === 1 ? 'is' : 'are'} ${list.length || 'no'} more entry in stash list.
+                    \n${listString}`;
+                }
+                return '';
+            });
+    }
+
+    async applyLatestStash(): Promise<void> {
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            try {
+                await this.git.stash(repo, {
+                    action: 'apply'
+                });
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
+            }
+        }
+    }
+
+    async popLatestStash(): Promise<void> {
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            try {
+                await this.git.stash(repo, {
+                    action: 'pop'
+                });
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
+            }
+        }
+    }
+
     private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
         this.quickOpenService.open(this.getModel(Array.isArray(items) ? items : [items]), this.getOptions(placeholder));
     }
@@ -356,10 +470,10 @@ export class GitQuickOpenService {
         return this.repositoryProvider.selectedRepository;
     }
 
-    private async getRemotes(): Promise<string[]> {
+    private async getRemotes(): Promise<Remote[]> {
         const repository = this.getRepository();
         try {
-            return repository ? await this.git.remote(repository) : [];
+            return repository ? await this.git.remote(repository, { verbose: true }) : [];
         } catch (error) {
             this.gitErrorHandler.handleError(error);
             return [];

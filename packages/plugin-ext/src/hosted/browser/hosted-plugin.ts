@@ -58,9 +58,6 @@ export class HostedPluginSupport {
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
 
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
-
     @inject(PreferenceProviderProvider)
     protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
@@ -72,8 +69,9 @@ export class HostedPluginSupport {
         @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
         @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
         @inject(StoragePathService) private readonly storagePathService: StoragePathService,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
     ) {
-        this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
+        this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
 
         this.storagePathService.onStoragePathChanged(path => {
             this.updateStoragePath(path);
@@ -154,6 +152,7 @@ export class HostedPluginSupport {
                         pluginID = getPluginId(plugins[0].model);
                     }
                     const rpc = this.createServerRpc(pluginID, hostKey);
+                    setUpPluginApi(rpc, container);
                     const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
                     hostedExtManager.$init({
                         plugins: plugins,
@@ -163,7 +162,6 @@ export class HostedPluginSupport {
                         env: { queryParams: getQueryParameters() },
                         extApi: initData.pluginAPIs
                     }, confStorage);
-                    setUpPluginApi(rpc, container);
                     this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
                     this.backendExtManagerProxy = hostedExtManager;
                 });

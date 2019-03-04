@@ -87,10 +87,11 @@ export class RawProcess extends Process {
             + ` with args: ${options.args ? options.args.join(' ') : ''}, `
             + ` with options: ${JSON.stringify(options.options)}`);
 
-        /* spawn can throw exceptions, for example if the file is not
-           executable, it throws an error with EACCES.  Here, we try to
-           normalize the error handling by calling the error handler
-           instead.  */
+        // About catching errors: spawn will sometimes throw directly
+        // (EACCES on Linux), sometimes return a Process object with the pid
+        // property undefined (ENOENT on Linux) and then emit an 'error' event.
+        // For now, we try to normalize that into always emitting an 'error'
+        // event.
         try {
             if (this.isForkOptions(options)) {
                 this.process = fork(
@@ -104,7 +105,11 @@ export class RawProcess extends Process {
                     options.options);
             }
 
-            this.process.on('error', this.emitOnError.bind(this));
+            this.process.on('error', (error: NodeJS.ErrnoException) => {
+                this.emitOnError({
+                    code: error.code || 'Unknown error',
+                });
+            });
             this.process.on('exit', (exitCode: number, signal: string) => {
                 // node's child_process exit sets the unused parameter to null,
                 // but we want it to be undefined instead.
@@ -117,6 +122,12 @@ export class RawProcess extends Process {
             this.output = this.process.stdout;
             this.input = this.process.stdin;
             this.errorOutput = this.process.stderr;
+
+            if (this.process.pid !== undefined) {
+                process.nextTick(() => {
+                    this.emitOnStarted();
+                });
+            }
         } catch (error) {
             /* When an error is thrown, set up some fake streams, so the client
                code doesn't break because these field are undefined.  */

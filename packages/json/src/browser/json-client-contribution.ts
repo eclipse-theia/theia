@@ -66,8 +66,11 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         const registry: { [pattern: string]: string[] } = {};
         for (const s of allConfigs) {
             if (s.fileMatch) {
-                for (const p of s.fileMatch) {
-                    registry[p] = [s.url];
+                for (let fileMatch of s.fileMatch) {
+                    if (fileMatch.charAt(0) !== '/' && !fileMatch.match(/\w+:\/\//)) {
+                        fileMatch = '/' + fileMatch;
+                    }
+                    registry[fileMatch] = [s.url];
                 }
             }
         }

@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain } from '../api/plugin-api';
+import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../api/plugin-api';
 import URI from 'vscode-uri';
 import { UriComponents } from '../common/uri-components';
 import { RPCProtocol } from '../api/rpc-protocol';
@@ -24,6 +24,7 @@ import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Range, TextDocumentShowOptions } from '../api/model';
+import { TextEdit } from './types-impl';
 
 export class DocumentsExtImpl implements DocumentsExt {
     private toDispose = new DisposableCollection();
@@ -31,11 +32,13 @@ export class DocumentsExtImpl implements DocumentsExt {
     private _onDidRemoveDocument = new Emitter<theia.TextDocument>();
     private _onDidChangeDocument = new Emitter<theia.TextDocumentChangeEvent>();
     private _onDidSaveTextDocument = new Emitter<theia.TextDocument>();
+    private _onWillSaveTextDocument = new Emitter<theia.TextDocumentWillSaveEvent>();
 
     readonly onDidAddDocument: Event<theia.TextDocument> = this._onDidAddDocument.event;
     readonly onDidRemoveDocument: Event<theia.TextDocument> = this._onDidRemoveDocument.event;
     readonly onDidChangeDocument: Event<theia.TextDocumentChangeEvent> = this._onDidChangeDocument.event;
     readonly onDidSaveTextDocument: Event<theia.TextDocument> = this._onDidSaveTextDocument.event;
+    readonly onWillSaveTextDocument: Event<theia.TextDocumentWillSaveEvent> = this._onWillSaveTextDocument.event;
 
     private proxy: DocumentsMain;
     private loadingDocuments = new Map<string, Promise<DocumentDataExt | undefined>>();
@@ -78,6 +81,35 @@ export class DocumentsExtImpl implements DocumentsExt {
             this._onDidSaveTextDocument.fire(data.document);
         }
     }
+    $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason): Promise<SingleEditOperation[]> {
+        return new Promise<SingleEditOperation[]>((resolve, reject) => {
+            const uri = URI.revive(strUrl);
+            const uriString = uri.toString();
+            const data = this.editorsAndDocuments.getDocument(uriString);
+            if (data) {
+                const onWillSaveEvent: theia.TextDocumentWillSaveEvent = {
+                    document: data.document,
+                    reason: reason,
+                    /* tslint:disable:no-any */
+                    waitUntil: async (editsPromise: PromiseLike<theia.TextEdit[] | any>) => {
+                        const editsObjs = await editsPromise;
+                        if (this.isTextEditArray(editsObjs)) {
+                            const editOperations: SingleEditOperation[] = (editsObjs as theia.TextEdit[]).map(textEdit => Converter.fromTextEdit(textEdit));
+                            resolve(editOperations);
+                        } else {
+                            resolve([]);
+                        }
+                    }
+                };
+                this._onWillSaveTextDocument.fire(onWillSaveEvent);
+            }
+        });
+    }
+
+    isTextEditArray(obj: any): obj is theia.TextEdit[] {
+        return Array.isArray(obj) && obj.every((elem: any) => TextEdit.isTextEdit(elem));
+    }
+
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void {
         const uri = URI.revive(strUrl);
         const uriString = uri.toString();

@@ -22,11 +22,11 @@ import {
     PLUGIN_RPC_CONTEXT,
     PreferenceRegistryExt,
     PreferenceRegistryMain,
-    PreferenceData
+    PreferenceData,
+    PreferenceChangeExt
 } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { isObject } from '../common/types';
-import { PreferenceChange } from '@theia/core/lib/browser';
+import { isObject, mixin } from '../common/types';
 import { Configuration, ConfigurationModel } from './preferences/configuration';
 import { WorkspaceExtImpl } from './workspace';
 import cloneDeep = require('lodash.clonedeep');
@@ -83,7 +83,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         this._preferences = this.parse(data);
     }
 
-    $acceptConfigurationChanged(data: PreferenceData, eventData: PreferenceChange): void {
+    $acceptConfigurationChanged(data: PreferenceData, eventData: PreferenceChangeExt): void {
         this.init(data);
         this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
     }
@@ -179,7 +179,12 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                 return configInspect;
             }
         };
-        return configuration;
+
+        if (typeof preferences === 'object') {
+            mixin(configuration, preferences, false);
+        }
+
+        return Object.freeze(configuration);
     }
 
     private toReadonlyValue(data: any): any {
@@ -237,7 +242,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         }, {});
     }
 
-    private toConfigurationChangeEvent(eventData: PreferenceChange): theia.ConfigurationChangeEvent {
+    private toConfigurationChangeEvent(eventData: PreferenceChangeExt): theia.ConfigurationChangeEvent {
         return Object.freeze({
             affectsConfiguration: (section: string, uri?: theia.Uri): boolean => {
                 const tree = eventData.preferenceName

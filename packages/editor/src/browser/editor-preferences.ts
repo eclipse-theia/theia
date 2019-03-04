@@ -23,11 +23,28 @@ import {
     PreferenceSchema,
     PreferenceChangeEvent
 } from '@theia/core/lib/browser/preferences';
-import { isOSX } from '@theia/core/lib/common/os';
+import { isWindows, isOSX } from '@theia/core/lib/common/os';
+
+const DEFAULT_WINDOWS_FONT_FAMILY = 'Consolas, \'Courier New\', monospace';
+const DEFAULT_MAC_FONT_FAMILY = 'Menlo, Monaco, \'Courier New\', monospace';
+const DEFAULT_LINUX_FONT_FAMILY = '\'Droid Sans Mono\', \'monospace\', monospace, \'Droid Sans Fallback\'';
+
+export const EDITOR_FONT_DEFAULTS = {
+    fontFamily: (
+        isOSX ? DEFAULT_MAC_FONT_FAMILY : (isWindows ? DEFAULT_WINDOWS_FONT_FAMILY : DEFAULT_LINUX_FONT_FAMILY)
+    ),
+    fontWeight: 'normal',
+    fontSize: (
+        isOSX ? 12 : 14
+    ),
+    lineHeight: 0,
+    letterSpacing: 0,
+};
 
 export const editorPreferenceSchema: PreferenceSchema = {
     'type': 'object',
     'scope': 'resource',
+    'overridable': true,
     'properties': {
         'editor.tabSize': {
             'type': 'number',
@@ -37,8 +54,23 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         'editor.fontSize': {
             'type': 'number',
-            'default': (isOSX) ? 12 : 14,
+            'default': EDITOR_FONT_DEFAULTS.fontSize,
             'description': 'Configure the editor font size.'
+        },
+        'editor.fontFamily': {
+            'type': 'string',
+            'default': EDITOR_FONT_DEFAULTS.fontFamily,
+            'description': 'Controls the font family.'
+        },
+        'editor.lineHeight': {
+            'type': 'number',
+            'default': EDITOR_FONT_DEFAULTS.lineHeight,
+            'description': 'Controls the line height. Use 0 to compute the line height from the font size.'
+        },
+        'editor.letterSpacing': {
+            'type': 'number',
+            'default': EDITOR_FONT_DEFAULTS.letterSpacing,
+            'description': 'Controls the letter spacing in pixels.'
         },
         'editor.lineNumbers': {
             'enum': [
@@ -65,12 +97,14 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'off'
             ],
             'default': 'on',
-            'description': 'Configure whether the editor should be auto saved.'
+            'description': 'Configure whether the editor should be auto saved.',
+            overridable: false
         },
         'editor.autoSaveDelay': {
             'type': 'number',
             'default': 500,
-            'description': 'Configure the auto save delay in milliseconds.'
+            'description': 'Configure the auto save delay in milliseconds.',
+            overridable: false
         },
         'editor.rulers': {
             'type': 'array',
@@ -432,7 +466,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 '800',
                 '900'
             ],
-            'default': 'normal',
+            'default': EDITOR_FONT_DEFAULTS.fontWeight,
             'description': 'Controls the editor\'s font weight.'
         },
         'diffEditor.renderSideBySide': {
@@ -485,6 +519,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
 
 export interface EditorConfiguration {
     'editor.tabSize': number
+    'editor.fontFamily': string
     'editor.fontSize': number
     'editor.fontWeight'?: 'normal' | 'bold' | 'bolder' | 'lighter' | 'initial'
     | 'inherit' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'

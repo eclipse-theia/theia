@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson
+ * Copyright (C) 2018-2019 Ericsson
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
-import { CppBuildConfigurationManager } from './cpp-build-configurations';
+import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
 import { CPP_CHANGE_BUILD_CONFIGURATION } from './cpp-build-configurations-ui';
 
 @injectable()
@@ -31,22 +31,24 @@ export class CppBuildConfigurationsStatusBarElement {
     protected readonly cppIdentifier = 'cpp-configurator';
 
     /**
-     * Display the cpp build configurations status bar element,
-     * and listen to any changes in the active build configuration
+     * Display the `CppBuildConfiguration` status bar element,
+     * and listen to changes to the active build configuration.
      */
     show(): void {
-        this.setCppBuildConfigElement();
-        this.cppManager.onActiveConfigChange(e => { this.setCppBuildConfigElement(); });
+        this.setCppBuildConfigElement(this.cppManager.getActiveConfig());
+        this.cppManager.onActiveConfigChange(config => this.setCppBuildConfigElement(config));
     }
 
     /**
-     * Set the cpp build configurations status bar element
-     * used to set the workspace's active build configuration
+     * Set the `CppBuildConfiguration` status bar element
+     * used to create a new cpp build configuration and set the active build configuration.
+     *
+     * @param config the active `CppBuildConfiguration`.
      */
-    protected setCppBuildConfigElement() {
-        const activeConfig = this.cppManager.getActiveConfig();
+    protected setCppBuildConfigElement(config: CppBuildConfiguration | undefined): void {
         this.statusBar.setElement(this.cppIdentifier, {
-            text: `$(wrench) C/C++ Build Config ${(activeConfig) ? activeConfig.name : ''}`,
+            text: `$(wrench) C/C++ ${config ? '(' + config.name + ')' : 'Build Config'}`,
+            tooltip: 'C/C++ Build Config',
             alignment: StatusBarAlignment.RIGHT,
             command: CPP_CHANGE_BUILD_CONFIGURATION.id,
             priority: 0.5,

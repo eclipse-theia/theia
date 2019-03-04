@@ -23,7 +23,6 @@ import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction, FileOperationOptions } from '../plugin/types-impl';
 import { UriComponents } from '../common/uri-components';
-import { PreferenceChange } from '@theia/core/lib/browser';
 import { ConfigurationTarget } from '../plugin/types-impl';
 import {
     SerializedDocumentFilter,
@@ -154,7 +153,7 @@ export interface PluginManagerExt {
 }
 
 export interface CommandRegistryMain {
-    $registerCommand(command: theia.Command): void;
+    $registerCommand(command: theia.CommandDescription): void;
     $unregisterCommand(id: string): void;
 
     $registerHandler(id: string): void;
@@ -251,16 +250,19 @@ export interface PickOpenItem {
     picked?: boolean;
 }
 
+export enum MainMessageType {
+    Error,
+    Warning,
+    Info
+}
+
+export interface MainMessageOptions {
+    modal?: boolean
+    onCloseActionHandle?: number
+}
+
 export interface MessageRegistryMain {
-    $showInformationMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showWarningMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showErrorMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: string[]): PromiseLike<number | undefined>;
 }
 
 export interface StatusBarMessageRegistryMain {
@@ -699,6 +701,7 @@ export interface ModelChangedEvent {
 export interface DocumentsExt {
     $acceptModelModeChanged(startUrl: UriComponents, oldModeId: string, newModeId: string): void;
     $acceptModelSaved(strUrl: UriComponents): void;
+    $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason): Promise<SingleEditOperation[]>;
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void;
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void;
 }
@@ -727,8 +730,13 @@ export interface PreferenceRegistryMain {
         resource: any | undefined
     ): PromiseLike<void>;
 }
+
+export interface PreferenceChangeExt {
+    preferenceName: string,
+    newValue: any
+}
 export interface PreferenceRegistryExt {
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void;
+    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChangeExt): void;
 }
 
 export interface OutputChannelRegistryMain {
@@ -824,7 +832,7 @@ export interface TaskDto {
     label: string;
     source?: string;
     // tslint:disable-next-line:no-any
-    properties?: { [key: string]: any };
+    [key: string]: any;
 }
 
 export interface TaskExecutionDto {
@@ -895,7 +903,7 @@ export interface LanguagesMain {
     $registerDocumentHighlightProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;
     $clearDiagnostics(id: string): void;
-    $changeDiagnostics(id: string, delta: [UriComponents, MarkerData[]][]): void;
+    $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerRangeFormattingProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
@@ -915,11 +923,6 @@ export interface WebviewPanelViewState {
     readonly position: number;
 }
 
-export interface WebviewPanelShowOptions {
-    readonly viewColumn?: number;
-    readonly preserveFocus?: boolean;
-}
-
 export interface WebviewsExt {
     $onMessage(handle: string, message: any): void;
     $onDidChangeWebviewPanelViewState(handle: string, newState: WebviewPanelViewState): void;
@@ -936,11 +939,11 @@ export interface WebviewsMain {
     $createWebviewPanel(handle: string,
         viewType: string,
         title: string,
-        showOptions: WebviewPanelShowOptions,
+        showOptions: theia.WebviewPanelShowOptions,
         options: theia.WebviewPanelOptions & theia.WebviewOptions | undefined,
         pluginLocation: UriComponents): void;
     $disposeWebview(handle: string): void;
-    $reveal(handle: string, showOptions: WebviewPanelShowOptions): void;
+    $reveal(handle: string, showOptions: theia.WebviewPanelShowOptions): void;
     $setTitle(handle: string, value: string): void;
     $setIconPath(handle: string, value: { light: string, dark: string } | string | undefined): void;
     $setHtml(handle: string, value: string): void;
@@ -1042,6 +1045,7 @@ export interface TasksExt {
 
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
+    $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
 }

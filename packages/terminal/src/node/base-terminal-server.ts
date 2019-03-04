@@ -93,7 +93,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
             if (this.client !== undefined) {
                 this.client.onTerminalError({
                     'terminalId': term.id,
-                    'error': error
+                    'error': new Error(`Failed to execute terminal process (${error.code})`),
                 });
             }
         }));

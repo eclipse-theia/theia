@@ -16,7 +16,10 @@
 
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
-import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus, GitFileChange, CommitWithChanges, GitFileBlame } from './git-model';
+import {
+    Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus,
+    GitFileChange, CommitWithChanges, GitFileBlame, Remote as RemoteModel, StashEntry
+} from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -296,6 +299,28 @@ export namespace Git {
         }
 
         /**
+         * Options for further refining the `git stash` command.
+         */
+        export interface Stash {
+            /**
+             * The kind of stash action.
+             */
+            readonly action?: 'push' | 'apply' | 'pop' | 'list' | 'drop' | 'clear';
+
+            /**
+             * The stash id.
+             * This is an optional argument for actions of kind 'apply', 'pop' and 'drop'.
+             */
+            readonly id?: string;
+
+            /**
+             * The stash message.
+             * This is an optional argument for the `push` action.
+             */
+            readonly message?: string;
+        }
+
+        /**
          * Options for the `git fetch` command.
          */
         export interface Fetch {
@@ -546,8 +571,19 @@ export namespace Git {
 
         }
 
-    }
+        /**
+         * Options for the `git remote` command.
+         */
+        export interface Remote {
 
+            /**
+             * Be more verbose and get remote url for `fetch` and `push` actions.
+             */
+            readonly verbose?: true,
+
+        }
+
+    }
 }
 
 /**
@@ -691,11 +727,48 @@ export interface Git extends Disposable {
     show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string>;
 
     /**
-     * It resolves to an array of configured remotes for the given repository.
+     * The default `git stash` command. Equivalent to `git stash push`. If the `message` is not defined, the Git default *WIP on branchname* will be used instead.
+     */
+    stash(repository: Repository, options?: Readonly<{ action?: 'push', message?: string }>): Promise<void>;
+
+    /**
+     * Resolves to an array of stashed entries that you currently have. Same as `git stash list`.
+     */
+    stash(repository: Repository, options: Readonly<{ action: 'list' }>): Promise<StashEntry[]>;
+
+    /**
+     * Removes all the stash entries.
+     */
+    stash(repository: Repository, options: Readonly<{ action: 'clear' }>): Promise<void>;
+
+    /**
+     * Performs stash actions depending on given action option.
+     * pop:
+     * Removes a single stashed state from the stash list and applies it on top of the current working tree state.
+     * The single stashed state is identified by the optional `id`. If the `id` is not defined the latest stash will be popped.
      *
-     * @param repository the repository to get the remotes.
+     * apply:
+     * Like `git stash pop`, but does not remove the state from the stash list.
+     *
+     * drop:
+     * Removes a single stash entry from the list of stash entries. When the `id` is not given, it removes the latest one.
+     */
+    stash(repository: Repository, options: Readonly<{ action: 'apply' | 'pop' | 'drop', id?: string }>): Promise<void>;
+
+    /**
+     * It resolves to an array of configured remotes names for the given repository.
+     *
+     * @param repository the repository to get the remote names.
      */
     remote(repository: Repository): Promise<string[]>;
+
+    /**
+     * It resolves to an array of configured remote objects for the given Git action.
+     *
+     * @param repository the repository to get the remote objects.
+     * @param options `git remote` command refinements.
+     */
+    remote(repository: Repository, options: { verbose: true }): Promise<RemoteModel[]>;
 
     /**
      * Executes the Git command and resolves to the result. If an executed Git command exits with a code that is not in the `successExitCodes` or an error not in `expectedErrors`,

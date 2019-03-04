@@ -175,54 +175,55 @@ describe('Type converters:', () => {
         const command = 'yarn';
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
+        const additionalProperty = 'some property';
 
         const shellTaskDto: ProcessTaskDto = {
-            type: type,
-            label: label,
+            type,
+            label,
             source,
-            command: command,
-            args: args,
-            cwd: cwd,
+            command,
+            args,
+            cwd,
             options: {},
-            properties: {}
+            additionalProperty
         };
 
         const shellPluginTask: theia.Task = {
             name: label,
             source,
             definition: {
-                type: type
+                type,
+                additionalProperty
             },
             execution: {
-                command: command,
-                args: args,
+                command,
+                args,
                 options: {
-                    cwd: cwd
+                    cwd
                 }
             }
         };
 
         const taskDtoWithCommandLine: ProcessTaskDto = {
-            type: type,
-            label: label,
+            type,
+            label,
             source,
-            command: command,
-            args: args,
-            cwd: cwd,
-            options: {},
-            properties: {}
+            command,
+            args,
+            cwd,
+            options: {}
         };
 
         const pluginTaskWithCommandLine: theia.Task = {
             name: label,
             source,
             definition: {
-                type: type
+                type
             },
             execution: {
                 commandLine: 'yarn run build',
                 options: {
-                    cwd: cwd
+                    cwd
                 }
             }
         };
@@ -252,6 +253,66 @@ describe('Type converters:', () => {
             // then
             assert.notEqual(result, undefined);
             assert.deepEqual(result, taskDtoWithCommandLine);
+        });
+    });
+
+    describe('Webview Panel Show Options:', () => {
+        it('should create options from view column ', () => {
+            const viewColumn = types.ViewColumn.Five;
+
+            const showOptions: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Four,
+                preserveFocus: false
+            };
+
+            // when
+            const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(viewColumn);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, showOptions);
+        });
+
+        it('should create options from given "WebviewPanelShowOptions" object ', () => {
+            const incomingObject: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Five,
+                preserveFocus: true
+            };
+
+            const showOptions: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Four,
+                preserveFocus: true
+            };
+
+            // when
+            const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(incomingObject);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, showOptions);
+        });
+
+        it('should set default "main" area', () => {
+            const incomingObject: theia.WebviewPanelShowOptions = {
+                viewColumn: types.ViewColumn.Five,
+                preserveFocus: false
+            };
+
+            const showOptions: theia.WebviewPanelShowOptions = {
+                area: types.WebviewPanelTargetArea.Main,
+                viewColumn: types.ViewColumn.Four,
+                preserveFocus: false
+            };
+
+            // when
+            const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(incomingObject);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, showOptions);
         });
     });
 });

@@ -24,7 +24,7 @@ import URI from 'vscode-uri';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
-import { SymbolInformation, Range as R, Position as P, SymbolKind as S } from 'vscode-languageserver-types';
+import { SymbolInformation, Range as R, Position as P, SymbolKind as S, Location as L } from 'vscode-languageserver-types';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -52,6 +52,23 @@ export function fromViewColumn(column?: theia.ViewColumn): number {
     }
 
     return ACTIVE_GROUP;
+}
+
+export function toWebviewPanelShowOptions(options: theia.ViewColumn | theia.WebviewPanelShowOptions): theia.WebviewPanelShowOptions {
+    if (typeof options === 'object') {
+        const showOptions = options as theia.WebviewPanelShowOptions;
+        return {
+            area: showOptions.area ? showOptions.area : types.WebviewPanelTargetArea.Main,
+            viewColumn: showOptions.viewColumn ? fromViewColumn(showOptions.viewColumn) : undefined,
+            preserveFocus: showOptions.preserveFocus ? showOptions.preserveFocus : false
+        };
+    }
+
+    return {
+        area: types.WebviewPanelTargetArea.Main,
+        viewColumn: fromViewColumn(options as theia.ViewColumn),
+        preserveFocus: false
+    };
 }
 
 export function toSelection(selection: Selection): types.Selection {
@@ -330,7 +347,7 @@ function convertRelatedInformation(diagnosticsRelatedInformation: theia.Diagnost
     const relatedInformation: model.RelatedInformation[] = [];
     for (const item of diagnosticsRelatedInformation) {
         relatedInformation.push({
-            resource: item.location.uri,
+            resource: item.location.uri.toString(),
             message: item.message,
             startLineNumber: item.location.range.start.line + 1,
             startColumn: item.location.range.start.character + 1,
@@ -401,12 +418,70 @@ export function fromDocumentHighlight(documentHighlight: theia.DocumentHighlight
     };
 }
 
-export function toInternalCommand(command: theia.Command): model.Command {
-    return {
-        id: command.command ? command.command : command.id,
-        title: command.title ? command.title : command.label || ' ',
-        tooltip: command.tooltip,
-        arguments: command.arguments
+export function toInternalCommand(external: theia.Command): model.Command {
+    // we're deprecating Command.id, so it has to be optional.
+    // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
+    // tslint:disable-next-line: no-any
+    return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
+        ({
+            id: mappedId,
+            title: external.title || external.label || ' ',
+            tooltip: external.tooltip,
+            arguments: mappedArgs
+        }));
+}
+
+export namespace KnownCommands {
+    // tslint:disable: no-any
+    const mappings: { [id: string]: [string, (args: any[] | undefined) => any[] | undefined] } = {};
+    mappings['editor.action.showReferences'] = ['textEditor.commands.showReferences', createConversionFunction(
+        (uri: URI) => uri.toString(),
+        fromPositionToP,
+        toArrayConversion(fromLocationToL))];
+
+    export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined) => T): T {
+        if (mappings[id]) {
+            return toDo(mappings[id][0], mappings[id][1](args));
+        } else {
+            return toDo(id, args);
+        }
+    }
+
+    type conversionFunction = ((parameter: any) => any) | undefined;
+    function createConversionFunction(...conversions: conversionFunction[]): (args: any[] | undefined) => any[] | undefined {
+        return function (args: any[] | undefined): any[] | undefined {
+            if (!args) {
+                return args;
+            }
+            return args.map(function (arg: any, index: number): any {
+                if (index < conversions.length) {
+                    const conversion = conversions[index];
+                    if (conversion) {
+                        return conversion(arg);
+                    }
+                }
+                return arg;
+            });
+        };
+    }
+    // tslint:enable: no-any
+    function fromPositionToP(p: theia.Position): P {
+        return P.create(p.line, p.character);
+    }
+
+    function fromRangeToR(r: theia.Range): R {
+        return R.create(fromPositionToP(r.start), fromPositionToP(r.end));
+    }
+
+    function fromLocationToL(l: theia.Location): L {
+        return L.create(l.uri.toString(), fromRangeToR(l.range));
+    }
+
+}
+
+function toArrayConversion<T, U>(f: (a: T) => U): (a: T[]) => U[] {
+    return function (a: T[]) {
+        return a.map(f);
     };
 }
 
@@ -510,10 +585,10 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     }
 
     taskDto.type = taskDefinition.type;
-    taskDto.properties = {};
-    for (const key in taskDefinition) {
-        if (key !== 'type' && taskDefinition.hasOwnProperty(key)) {
-            taskDto.properties[key] = taskDefinition[key];
+    const { type, ...properties } = taskDefinition;
+    for (const key in properties) {
+        if (properties.hasOwnProperty(key)) {
+            taskDto[key] = properties[key];
         }
     }
 
@@ -539,11 +614,12 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
+    const { type, label, source, command, args, options, windows, cwd, ...properties } = taskDto;
     const result = {} as theia.Task;
-    result.name = taskDto.label;
-    result.source = taskDto.source;
+    result.name = label;
+    result.source = source;
 
-    const taskType = taskDto.type;
+    const taskType = type;
     const taskDefinition: theia.TaskDefinition = {
         type: taskType
     };
@@ -558,7 +634,6 @@ export function toTask(taskDto: TaskDto): theia.Task {
         result.execution = getShellExecution(taskDto as ProcessTaskDto);
     }
 
-    const properties = taskDto.properties;
     if (!properties) {
         return result;
     }

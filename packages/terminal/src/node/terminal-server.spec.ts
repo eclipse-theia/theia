@@ -16,10 +16,7 @@
 
 import * as chai from 'chai';
 import { createTerminalTestContainer } from './test/terminal-test-container';
-import { TerminalWatcher } from '../common/terminal-watcher';
 import { ITerminalServer } from '../common/terminal-protocol';
-import { IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
-import { isWindows } from '@theia/core/lib/common';
 
 /**
  * Globals
@@ -31,41 +28,20 @@ describe('TermninalServer', function () {
 
     this.timeout(5000);
     let terminalServer: ITerminalServer;
-    let terminalWatcher: TerminalWatcher;
 
     beforeEach(() => {
         const container = createTerminalTestContainer();
         terminalServer = container.get(ITerminalServer);
-        terminalWatcher = container.get(TerminalWatcher);
     });
 
     it('test terminal create', async function () {
         const args = ['--version'];
-        const createResult = terminalServer.create({ command: process.execPath, 'args': args });
-        expect(await createResult).to.be.greaterThan(-1);
+        const createResult = await terminalServer.create({ command: process.execPath, 'args': args });
+        expect(createResult).to.be.greaterThan(-1);
     });
 
-    it('test terminal create from non-existant path', async function () {
-        const createResult = terminalServer.create({ command: '/non-existant' });
-        if (isWindows) {
-            expect(await createResult).to.be.equal(-1);
-        } else {
-            const errorPromise = new Promise<void>((resolve, reject) => {
-                createResult.then((termId: number) => {
-                    terminalWatcher.onTerminalExit((event: IBaseTerminalExitEvent) => {
-                        if (event.terminalId === termId) {
-                            if (event.code === 1) {
-                                resolve();
-                            } else {
-                                reject();
-                            }
-                        }
-                    });
-                });
-            });
-
-            expect(await createResult).to.be.greaterThan(-1);
-            await errorPromise;
-        }
+    it('test terminal create from non-existent path', async function () {
+        const createError = await terminalServer.create({ command: '/non-existent' });
+        expect(createError).eq(-1);
     });
 });

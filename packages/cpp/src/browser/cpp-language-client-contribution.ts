@@ -89,10 +89,11 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     }
 
     async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
-        // Restart clangd.  The new config will be picked up when
-        // createOptions will be called to send the initialize request
-        // to the new instance of clangd.
+        // Override the initializationOptions to put the new path to the build,
+        // then restart clangd.
         if (this.running) {
+            const lc = await this.languageClient;
+            lc.clientOptions.initializationOptions = this.createClangdConfigurationParams(config);
             this.restart();
         }
     }

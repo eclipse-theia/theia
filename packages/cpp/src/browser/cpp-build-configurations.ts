@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
+ * Copyright (C) 2018-2019 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,39 +19,77 @@ import { Emitter, Event } from '@theia/core';
 import { CppPreferences } from './cpp-preferences';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 
+/**
+ * Representation of a cpp build configuration.
+ */
 export interface CppBuildConfiguration {
-    /** Human-readable configuration name.  */
+
+    /**
+     * The human-readable build configuration name.
+     */
     name: string;
 
-    /** Base directory of this build.  */
+    /**
+     * The base directory of the build configuration.
+     */
     directory: string;
 
-    /** List of commands for this build configuration.  */
+    /**
+     * The list of commands for the build configuration.
+     */
     commands?: {
         'build'?: string
     };
 }
 
-/** What we save in the local storage.  */
+/**
+ * Representation of a saved build configuration in local storage.
+ */
 class SavedActiveBuildConfiguration {
+
+    /**
+     * The name of the build configuration.
+     */
     configName?: string;
 }
 
 export const CppBuildConfigurationManager = Symbol('CppBuildConfigurationManager');
 export interface CppBuildConfigurationManager {
-    /** Get the list of defined build configurations.  */
+
+    /**
+     * Get the list of defined build configurations.
+     *
+     * @returns an array of defined `CppBuildConfiguration`.
+     */
     getConfigs(): CppBuildConfiguration[];
 
-    /** Get the list of valid defined build configurations.  */
+    /**
+     * Get the list of valid defined build configurations.
+     *
+     * @returns an array of valid defined `CppBuildConfiguration`.
+     * A `CppBuildConfiguration` is considered valid if it has a `name` and `directory`.
+     */
     getValidConfigs(): CppBuildConfiguration[];
 
-    /** Get the active build configuration.  */
+    /**
+     * Get the active build configuration.
+     *
+     * @returns the active `CppBuildConfiguration` if it exists, else `undefined`.
+     */
     getActiveConfig(): CppBuildConfiguration | undefined;
 
-    /** Change the active build configuration.  */
+    /**
+     * Set the active build configuration.
+     *
+     * @param config the active `CppBuildConfiguration`. If `undefined` no active build configuration will be set.
+     */
     setActiveConfig(config: CppBuildConfiguration | undefined): void;
 
-    /** Event emitted when the active build configuration changes.  */
+    /**
+     * Event emitted when the active build configuration changes.
+     *
+     * @returns an event with the active `CppBuildConfiguration` if it exists, else `undefined`.
+     */
     onActiveConfigChange: Event<CppBuildConfiguration | undefined>;
 
     /**
@@ -77,12 +115,14 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
     protected readonly storageService: StorageService;
 
     /**
-     * The current active build configuration.  undefined means there's not
-     * current active configuration.
+     * The current active build configuration.
+     * If `undefined` there is no current active build configuration selected.
      */
     protected activeConfig: CppBuildConfiguration | undefined;
 
-    /** Emitter for when the active build configuration changes.  */
+    /**
+     * Emitter for when the active build configuration changes.
+     */
     protected readonly activeConfigChangeEmitter = new Emitter<CppBuildConfiguration | undefined>();
 
     readonly ACTIVE_BUILD_CONFIGURATION_STORAGE_KEY = 'cpp.active-build-configuration';
@@ -95,11 +135,14 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         this.ready = new Promise(async resolve => {
             await this.cppPreferences.ready;
             this.loadActiveConfiguration().then(resolve);
+            this.cppPreferences.onPreferenceChanged(() => this.handlePreferencesUpdate());
         });
     }
 
-    /** Load the active build config from the persistent storage.  */
-    protected async loadActiveConfiguration() {
+    /**
+     * Load the active build configuration from persistent storage.
+     */
+    protected async loadActiveConfiguration(): Promise<void> {
         const savedConfig =
             await this.storageService.getData<SavedActiveBuildConfiguration>(
                 this.ACTIVE_BUILD_CONFIGURATION_STORAGE_KEY);
@@ -115,20 +158,45 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
     }
 
     /**
-     * Save the active build config name to persistent storage.
+     * Save the active build configuration to persistent storage.
+     *
+     * @param config the active `CppBuildConfiguration`.
      */
-    protected saveActiveConfiguration(config: CppBuildConfiguration | undefined) {
+    protected saveActiveConfiguration(config: CppBuildConfiguration | undefined): void {
         this.storageService.setData<SavedActiveBuildConfiguration>(
             this.ACTIVE_BUILD_CONFIGURATION_STORAGE_KEY, {
                 configName: config ? config.name : undefined,
             });
     }
 
+    /**
+     * Update the active build configuration if applicable.
+     */
+    protected handlePreferencesUpdate(): void {
+        const active = this.getActiveConfig();
+        const valid = (active)
+            ? this.getValidConfigs().some(a => this.equals(a, active))
+            : false;
+        if (!valid) {
+            this.setActiveConfig(undefined);
+        }
+    }
+
+    /**
+     * Determine if two `CppBuildConfiguration` are equal.
+     *
+     * @param a `CppBuildConfiguration`.
+     * @param b `CppBuildConfiguration`.
+     */
+    protected equals(a: CppBuildConfiguration, b: CppBuildConfiguration): boolean {
+        return a.name === b.name && a.directory === b.directory;
+    }
+
     getActiveConfig(): CppBuildConfiguration | undefined {
         return this.activeConfig;
     }
 
-    setActiveConfig(config: CppBuildConfiguration | undefined) {
+    setActiveConfig(config: CppBuildConfiguration | undefined): void {
         this.activeConfig = config;
         this.saveActiveConfiguration(config);
         this.activeConfigChangeEmitter.fire(config);

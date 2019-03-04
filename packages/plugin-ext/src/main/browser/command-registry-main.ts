@@ -35,7 +35,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
         this.keyBinding = container.get(KeybindingRegistry);
     }
 
-    $registerCommand(command: theia.Command): void {
+    $registerCommand(command: theia.CommandDescription): void {
         this.commands.set(command.id, this.delegate.registerCommand(command));
     }
     $unregisterCommand(id: string): void {

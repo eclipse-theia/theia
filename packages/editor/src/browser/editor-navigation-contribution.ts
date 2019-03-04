@@ -69,6 +69,10 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             execute: () => this.locationStack.reveal(this.locationStack.lastEditLocation()),
             isEnabled: () => !!this.locationStack.lastEditLocation()
         });
+        this.commandRegistry.registerHandler(EditorCommands.CLEAR_EDITOR_HISTORY.id, {
+            execute: () => this.locationStack.clearHistory(),
+            isEnabled: () => this.locationStack.locations().length > 0
+        });
     }
 
     async onStart(): Promise<void> {
@@ -94,6 +98,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
                 editor.onSelectionChanged(selection => this.onSelectionChanged(editor, selection)),
                 editor.onDocumentContentChanged(event => this.onDocumentContentChanged(editor, event))
             ]);
+            this.locationStack.register(NavigationLocation.create(editor, editor.selection));
         }
     }
 

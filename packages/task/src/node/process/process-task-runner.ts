@@ -23,14 +23,15 @@ import {
     TerminalProcessOptions,
     RawProcessOptions,
     RawProcessFactory,
-    TerminalProcessFactory
+    TerminalProcessFactory,
+    ProcessErrorEvent,
 } from '@theia/process/lib/node';
 import { TaskFactory } from './process-task';
 import { TaskRunner } from '../task-runner';
 import { Task } from '../task';
 import { TaskConfiguration } from '../../common/task-protocol';
 import * as fs from 'fs';
-import * as path from 'path';
+import { ProcessTaskError } from '../../common/process/task-protocol';
 
 /**
  * Task runner that runs a task as a process or a command inside a shell.
@@ -87,14 +88,6 @@ export class ProcessTaskRunner implements TaskRunner {
             env: process.env
         };
 
-        // When we create a process to execute a command, it's difficult to know if it failed
-        // because the executable or script was not found, or if it was found, ran, and exited
-        // unsuccessfully. So here we look to see if it seems we can find a file of that name
-        // that is likely to be the one we want, before attempting to execute it.
-        const cmd = await this.findCommand(command, cwd);
-        if (!cmd) {
-            throw new Error(`Command not found: ${command}`);
-        }
         try {
             // use terminal or raw process
             let proc: TerminalProcess | RawProcess;
@@ -115,9 +108,17 @@ export class ProcessTaskRunner implements TaskRunner {
                     options: options
                 });
             }
+
+            // Wait for the confirmation that the process is successfully started, or has failed to start.
+            await new Promise((resolve, reject) => {
+                proc.onStart(resolve);
+                proc.onError((error: ProcessErrorEvent) => {
+                    reject(ProcessTaskError.CouldNotRun(error.code));
+                });
+            });
+
             return this.taskFactory({
                 label: taskConfig.label,
-                command: cmd,
                 process: proc,
                 processType: processType,
                 context: ctx,
@@ -136,47 +137,7 @@ export class ProcessTaskRunner implements TaskRunner {
     }
 
     /**
-     * Uses heuristics to look-for a command. Will look into the system path, if the command
-     * is given without a path. Will resolve if a potential match is found, else reject. There
-     * is no guarantee that a command we find will be the one executed, if multiple commands with
-     * the same name exist.
-     * @param command command name to look for
-     * @param cwd current working directory (as a fs path, not URI)
-     */
-    protected async findCommand(command: string, cwd: string): Promise<string | undefined> {
-        const systemPath = process.env.PATH;
-        const pathDelimiter = path.delimiter;
-
-        if (path.isAbsolute(command)) {
-            if (await this.executableFileExists(command)) {
-                return command;
-            }
-        } else {
-            // look for command relative to cwd
-            const resolvedCommand = FileUri.fsPath(FileUri.create(cwd).resolve(command));
-
-            if (await this.executableFileExists(resolvedCommand)) {
-                return resolvedCommand;
-            } else {
-                // just a command to find in the system path?
-                if (path.basename(command) === command) {
-                    // search for this command in the system path
-                    if (systemPath !== undefined) {
-                        const pathArray: string[] = systemPath.split(pathDelimiter);
-
-                        for (const p of pathArray) {
-                            const candidate = FileUri.fsPath(FileUri.create(p).resolve(command));
-                            if (await this.executableFileExists(candidate)) {
-                                return candidate;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
+     * Remove ProcessTaskRunner.findCommand, introduce process "started" event
      * Checks for the existence of a file, at the provided path, and make sure that
      * it's readable and executable.
      */

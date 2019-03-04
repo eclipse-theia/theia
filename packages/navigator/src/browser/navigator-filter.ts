@@ -19,7 +19,10 @@ import { Minimatch } from 'minimatch';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { PreferenceChangeEvent } from '@theia/core/lib/browser/preferences';
+import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileNavigatorPreferences, FileNavigatorConfiguration } from './navigator-preferences';
+
+const FILES_EXCLUDE_PREFERENCE: keyof FileSystemConfiguration = 'files.exclude';
 
 /**
  * Filter for omitting elements from the navigator. For more details on the exclusion patterns,
@@ -27,12 +30,13 @@ import { FileNavigatorPreferences, FileNavigatorConfiguration } from './navigato
  */
 @injectable()
 export class FileNavigatorFilter {
-
     protected readonly emitter: Emitter<void> = new Emitter<void>();
 
     protected filterPredicate: FileNavigatorFilter.Predicate;
-
     protected showHiddenFiles: boolean;
+
+    @inject(FileSystemPreferences)
+    protected readonly filesPreferences: FileSystemPreferences;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly preferences: FileNavigatorPreferences
@@ -40,8 +44,9 @@ export class FileNavigatorFilter {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this.filterPredicate = this.createFilterPredicate(this.preferences['navigator.exclude']);
-        this.preferences.onPreferenceChanged(this.onPreferenceChanged.bind(this));
+        this.filterPredicate = this.createFilterPredicate(this.filesPreferences[FILES_EXCLUDE_PREFERENCE]);
+        this.filesPreferences.onPreferenceChanged(event => this.onFilesPreferenceChanged(event));
+        this.preferences.onPreferenceChanged(event => this.onPreferenceChanged(event));
     }
 
     async filter<T extends { id: string }>(items: MaybePromise<T[]>): Promise<T[]> {
@@ -60,16 +65,15 @@ export class FileNavigatorFilter {
         this.emitter.fire(undefined);
     }
 
-    protected onPreferenceChanged(event: PreferenceChangeEvent<FileNavigatorConfiguration>): void {
-        let hasChanged = false;
+    protected onFilesPreferenceChanged(event: PreferenceChangeEvent<FileSystemConfiguration>): void {
         const { preferenceName, newValue } = event;
-        if (preferenceName === 'navigator.exclude') {
+        if (preferenceName === FILES_EXCLUDE_PREFERENCE) {
             this.filterPredicate = this.createFilterPredicate(newValue as FileNavigatorFilter.Exclusions | undefined || {});
-            hasChanged = true;
-        }
-        if (hasChanged) {
             this.fireFilterChanged();
         }
+    }
+
+    protected onPreferenceChanged(event: PreferenceChangeEvent<FileNavigatorConfiguration>): void {
     }
 
     protected createFilterPredicate(exclusions: FileNavigatorFilter.Exclusions): FileNavigatorFilter.Predicate {
@@ -78,7 +82,9 @@ export class FileNavigatorFilter {
 
     toggleHiddenFiles(): void {
         this.showHiddenFiles = !this.showHiddenFiles;
-        this.filterPredicate = this.createFilterPredicate(this.preferences['navigator.exclude'] || {});
+        const filesExcludes = this.filesPreferences[FILES_EXCLUDE_PREFERENCE];
+
+        this.filterPredicate = this.createFilterPredicate(filesExcludes || {});
         this.fireFilterChanged();
     }
 
