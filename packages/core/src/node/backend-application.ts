@@ -19,12 +19,12 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
+import * as mimeType from 'mime-types';
 import { inject, named, injectable } from 'inversify';
 import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
-import { serveGzip } from './backend-application-gzip-middleware';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 export interface BackendApplicationContribution {
@@ -136,9 +136,29 @@ export class BackendApplication {
         }
     }
 
+    protected serveGzip(req: express.Request, res: express.Response, next: express.NextFunction) {
+
+        // check if browser supports it/we have the .gz equivalent of the file.
+        const acceptsEncodings  = req.acceptsEncodings();
+
+        if (acceptsEncodings.indexOf('gzip') === -1 || !fs.existsSync(`${req.url}.gz`)) {
+            next();
+            return;
+        }
+
+        // grab MIME before rewriting request
+        // that way, we get correct Content-Type
+        const contentType = mimeType.lookup(req.url);
+
+        req.url = `${req.url}.gz`;
+
+        res.set('Content-Encoding', 'gzip');
+        res.set('Content-Type', `${contentType}`);
+        next();
+    }
+
     use(...handlers: express.Handler[]): void {
         this.app.use(...handlers);
-        this.app.use(serveGzip);
     }
 
     async start(aPort?: number, aHostname?: string): Promise<http.Server | https.Server> {
