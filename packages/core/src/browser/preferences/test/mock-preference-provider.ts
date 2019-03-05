@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { PreferenceProvider, PreferenceProviderPriority } from '../';
-import { PreferenceScope } from '../preference-service';
+import { PreferenceScope } from '../preference-scope';
 
 @injectable()
 export class MockPreferenceProvider extends PreferenceProvider {

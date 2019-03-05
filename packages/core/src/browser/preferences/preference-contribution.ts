@@ -17,7 +17,7 @@
 import * as Ajv from 'ajv';
 import { inject, injectable, interfaces, named, postConstruct } from 'inversify';
 import { ContributionProvider, bindContributionProvider, escapeRegExpCharacters, Emitter, Event } from '../../common';
-import { PreferenceScope } from './preference-service';
+import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderPriority, PreferenceProviderDataChange } from './preference-provider';
 
 // tslint:disable:no-any
