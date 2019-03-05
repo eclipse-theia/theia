@@ -23,6 +23,7 @@ import { isOSX } from '@theia/core/lib/common';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TerminalWidgetOptions, TerminalWidget, TerminalSize } from '@theia/terminal/lib/browser/terminal-widget';
 import { TerminalPreferences } from './terminal-preferences';
+import { TerminalClientFactory, TerminalClient, TerminalClientOptions } from '@theia/terminal/lib/browser';
 
 interface TerminalCSSProperties {
     /* The text color, as a CSS color string.  */
@@ -50,6 +51,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject('terminal-dom-id') public readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
 
+    @inject(TerminalClientFactory) terminalClientFactory: TerminalClientFactory;
+
+    private terminalClient: TerminalClient;
+
     protected readonly _onTermDidClose = new Emitter<TerminalWidget>();
     protected readonly _onUserInput = new Emitter<string | undefined>();
     protected readonly _onTerminalResize = new Emitter<TerminalSize>();
@@ -60,6 +65,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     @postConstruct()
     protected init(): void {
+        const terminalClientOptions: TerminalClientOptions = {
+            closeOnDispose: false,
+            terminalDomId: this.id
+        };
+        this.terminalClient = this.terminalClientFactory(terminalClientOptions, this);
         this.title.caption = this.options.title || this.TERMINAL;
         this.title.label = this.options.title || this.TERMINAL;
         this.title.iconClass = 'fa fa-terminal';
@@ -122,6 +132,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this._onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this._onUserInput);
+    }
+
+    async start(id?: number): Promise<number> {
+        const terminalId = await this.terminalClient.create();
+        return terminalId;
     }
 
     clearOutput(): void {

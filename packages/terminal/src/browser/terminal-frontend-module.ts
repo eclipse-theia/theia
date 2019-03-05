@@ -25,7 +25,7 @@ import { TerminalService } from './terminal-service';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { DefaultTerminalClient, TerminalClient, TerminalClientOptions } from './terminal-client';
+import { DefaultTerminalClient, TerminalClient, TerminalClientOptions, TerminalClientFactory } from './terminal-client';
 import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './terminal-widget';
 
 export default new ContainerModule(bind => {
@@ -54,10 +54,10 @@ export default new ContainerModule(bind => {
         bind(identifier).toService(TerminalFrontendContribution);
     }
 
-    bind<interfaces.Factory<TerminalClient>>('Factory<TerminalClient>').toFactory<TerminalClient>((context: interfaces.Context) =>
+    bind(TerminalClientFactory).toFactory(ctx =>
         (options: TerminalClientOptions, terminalWidget: TerminalWidget) => {
             const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = context.container;
+            child.parent = ctx.container;
             child.bind(TerminalClientOptions).toConstantValue(options);
             child.bind(TerminalWidget).toConstantValue(terminalWidget);
 

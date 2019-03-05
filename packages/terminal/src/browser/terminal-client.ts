@@ -26,7 +26,9 @@ import { terminalsPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core';
 
-export const TerminalClient = Symbol('TerminalClient');
+export type TerminalClientFactory = (options: TerminalClientOptions, terminalWidget: TerminalWidget) => TerminalClient;
+export const TerminalClientFactory = Symbol('TerminalClientFactory');
+
 /**
  * TerminalClient contains connection logic between terminal server side and terminal widget. So it's incupsulated connection
  * specific logic in the separated code layer. Terminal widget responsible to render backend output and catch user input. Terminal client
@@ -36,6 +38,7 @@ export const TerminalClient = Symbol('TerminalClient');
  * This interface provide extensibility terminal wiget and terminal server side. This common interface allow to use different implementation
  * terminal widget for the same terminal backend. Also it's allow to reuse current terminal widget to comunication with some custom server side.
  */
+export const TerminalClient = Symbol('TerminalClient');
 export interface TerminalClient extends Disposable {
 
     /**

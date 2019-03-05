@@ -30,6 +30,14 @@ export class TerminalSize {
  */
 export abstract class TerminalWidget extends BaseWidget {
 
+    // abstract processId: Promise<number>;
+
+    /**
+     * Start terminal and return terminal id.
+     * @param id - terminal id.
+     */
+    abstract start(id?: number): Promise<number>;
+
     /**
      * Write some text content to the widget.
      */

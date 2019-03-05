@@ -135,15 +135,15 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
 
-                const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
-                if (clientOpsToRestore) { // todo use time instead of domId.
-                    this.termClientsToRestore.delete(widget.id);
-                    const client = this.newTerminalClient(clientOpsToRestore, widget as TerminalWidget);
-                    // try to reattach to the previous one process.
-                    if (clientOpsToRestore.terminalId) {
-                        client.attach(clientOpsToRestore.terminalId);
-                    }
-                }
+                // const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
+                // if (clientOpsToRestore) { // todo use time instead of domId.
+                //     this.termClientsToRestore.delete(widget.id);
+                //     const client = this.newTerminalClient(clientOpsToRestore, widget as TerminalWidget);
+                //     // try to reattach to the previous one process.
+                //     if (clientOpsToRestore.terminalId) {
+                //         client.attach(clientOpsToRestore.terminalId);
+                //     }
+                // }
                 this.onDidCreateTerminalEmitter.fire(widget);
             }
         });
@@ -436,12 +436,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const cwd = await this.selectTerminalCwd();
+        // const cwd = await this.selectTerminalCwd();
         const terminalWidget = await this.newTerminalWidget({});
-
-        const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: terminalWidget.id };
-        const terminalClient = this.newTerminalClient(termClientOpts, terminalWidget);
-        await terminalClient.create();
+        terminalWidget.start();
+        // const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: terminalWidget.id };
+        // const terminalClient = this.newTerminalClient(termClientOpts, terminalWidget);
+        // await terminalClient.create();
 
         this.open(terminalWidget, { widgetOptions: options });
     }
