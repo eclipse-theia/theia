@@ -66,7 +66,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         if (this.options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>
-                this.term.destroy()
+                this.term.dispose()
             ));
         }
 

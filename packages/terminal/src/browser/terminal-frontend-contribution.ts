@@ -134,15 +134,17 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
-                this.onDidCreateTerminalEmitter.fire(widget);
 
                 const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
                 if (clientOpsToRestore) { // todo use time instead of domId.
+                    this.termClientsToRestore.delete(widget.id);
                     const client = this.newTerminalClient(clientOpsToRestore, widget as TerminalWidget);
+                    // try to reattach to the previous one process.
                     if (clientOpsToRestore.terminalId) {
                         client.attach(clientOpsToRestore.terminalId);
                     }
                 }
+                this.onDidCreateTerminalEmitter.fire(widget);
             }
         });
 
@@ -212,6 +214,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     getById(id: string): TerminalWidget | undefined {
         return this.all.find(terminal => terminal.id === id);
+    }
+
+    getClientByWidgetId(widgetId: string): TerminalClient | undefined {
+        return this.termClients.get(widgetId);
     }
 
     registerCommands(commands: CommandRegistry): void {

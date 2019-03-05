@@ -38,6 +38,8 @@ export interface TerminalService {
 
     getById(id: string): TerminalWidget | undefined;
 
+    getClientByWidgetId(widgetId: string): TerminalClient | undefined;
+
     readonly onDidCreateTerminal: Event<TerminalWidget>;
 
     readonly currentTerminal: TerminalWidget | undefined;

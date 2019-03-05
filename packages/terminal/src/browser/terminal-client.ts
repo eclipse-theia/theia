@@ -24,7 +24,7 @@ import { MessageConnection } from 'vscode-jsonrpc';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { terminalsPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { ILogger, Disposable, DisposableCollection, MaybePromise } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection } from '@theia/core';
 
 export const TerminalClient = Symbol('TerminalClient');
 /**
@@ -48,7 +48,7 @@ export interface TerminalClient extends Disposable {
 
     readonly terminalId: number;
 
-    readonly processId: MaybePromise<number>
+    readonly processId: Promise<number>
 
     /**
      * Create connection with terminal backend and return connection id.
