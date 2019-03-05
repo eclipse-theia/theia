@@ -37,19 +37,36 @@ export class NotificationExtImpl implements NotificationExt {
         const message = options.title ? options.title : '';
         const id = await this.proxy.$startProgress(message);
         if (id) {
-            const token = new CancellationTokenImpl(id, this.onCancel);
-            const promise = await task(new ProgressCallback(id, this.proxy), token);
-            this.proxy.$stopProgress(id);
-            token.dispose();
-            return promise;
-        } else {
-            throw new Error('Failed to create progress notification');
+            return this.createProgress(id, task);
         }
+
+        throw new Error('Failed to create progress notification');
     }
 
     $onCancel(id: string): void {
         this.onCancelEmitter.fire(id);
     }
+
+    private createProgress<R>(id: string, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>): PromiseLike<R> {
+        const token = new CancellationTokenImpl(id, this.onCancel);
+        const progressEnd = (handler: string): void => {
+            this.proxy.$stopProgress(handler);
+            token.dispose();
+        };
+
+        let progress: PromiseLike<R>;
+
+        try {
+            progress = task(new ProgressCallback(id, this.proxy), token);
+        } catch (err) {
+            progressEnd(id);
+            throw err;
+        }
+
+        progress.then(() => progressEnd(id), () => progressEnd(id));
+        return progress;
+    }
+
 }
 
 class ProgressCallback<T> implements Progress<{ message?: string, increment?: number }> {
