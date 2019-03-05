@@ -77,11 +77,16 @@ export class GitQuickOpenService {
                     dynamicItems.push(new SingleStringInputOpenItem(
                         `Clone the Git repository: ${lookFor}. ${suffix}`,
                         async () => {
+                            const progress = await gitQuickOpenService.messageService.showProgress({
+                                text: `Cloning the Git repository: ${lookFor}.`,
+                                options: { cancelable: false }
+                            });
                             try {
                                 await gitQuickOpenService.git.clone(lookFor, { localUri: await gitQuickOpenService.buildDefaultProjectPath(gitCloneLocalTargetFolder, lookFor) });
                             } catch (error) {
                                 gitQuickOpenService.gitErrorHandler.handleError(error);
                             }
+                            progress.cancel();
                         }
                     ));
                 }
