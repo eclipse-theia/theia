@@ -1,0 +1,45 @@
+{
+  "name": "@theia/connection-event",
+  "version": "0.4.0",
+  "description": "Theia - Connection Event",
+  "dependencies": {
+    "@theia/core": "^0.4.0"
+  },
+  "publishConfig": {
+    "access": "private"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/connection-event"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.4.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
