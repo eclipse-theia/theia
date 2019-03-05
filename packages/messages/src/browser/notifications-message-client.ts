@@ -26,6 +26,8 @@ import {
 import { Notifications, NotificationAction, NotificationProperties, ProgressNotification } from './notifications';
 import { NotificationPreferences } from './notification-preferences';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
+import { StatusBarAlignment } from '@theia/core/lib/browser';
 
 @injectable()
 export class NotificationsMessageClient extends MessageClient {
@@ -38,6 +40,8 @@ export class NotificationsMessageClient extends MessageClient {
 
     protected notificationToastsVisibleKey: ContextKey<boolean>;
 
+    @inject(StatusBar) protected readonly statusBar: StatusBar;
+
     @postConstruct()
     protected init(): void {
         this.notificationToastsVisibleKey = this.contextKeyService.createKey<boolean>('notificationToastsVisible', false);
@@ -48,21 +52,59 @@ export class NotificationsMessageClient extends MessageClient {
     }
 
     showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken, update?: ProgressUpdate): Promise<string | undefined> {
-        const messageArguments = { ...message, type: MessageType.Progress, options: { ...(message.options || {}), timeout: 0 } };
-        if (this.visibleProgressNotifications.has(progressId)) {
+        const messageArguments = {
+            ...message,
+            type: MessageType.Progress,
+            options: {...(message.options || {})}
+        };
+        if (this.activeProgressNotifications.has(progressId)) {
             throw new Error('Cannot show new progress with already existing id.');
         }
         return new Promise(resolve => {
-            const progressNotification = this.notifications.create(this.getNotificationProperties(progressId, messageArguments, action => {
-                this.visibleProgressNotifications.delete(progressId);
+            let progressNotification: ProgressNotification;
+
+            const updateStatusBarEntry = () => {
+                const elementId = 'status-bar-progress';
+                const activeProgressQuantity = this.activeProgressNotifications.size;
+                if (!activeProgressQuantity) {
+                    this.statusBar.removeElement(elementId);
+                    return;
+                }
+                this.statusBar.setElement(elementId, {
+                    text: `$(spinner~spin) Tasks in Progress: ${activeProgressQuantity}`,
+                    tooltip: 'Click to show all notifications',
+                    alignment: StatusBarAlignment.LEFT,
+                    priority: 0,
+                    onclick: () => {
+                        this.activeProgressNotifications.forEach(notification => notification.show());
+                    }
+                });
+            };
+            const notificationProperties = this.getNotificationProperties(progressId, messageArguments, action => {
                 resolve(action);
-            }));
-            this.visibleProgressNotifications.set(progressId, progressNotification);
+                if (this.activeProgressNotifications.has(progressId)) {
+                    notificationProperties.timeout = undefined;
+                    progressNotification = this.notifications.create(notificationProperties);
+                    this.activeProgressNotifications.set(progressId, progressNotification);
+                    updateStatusBarEntry();
+                    if (!update) {
+                        return;
+                    }
+                    progressNotification.update(update);
+                }
+            });
+            progressNotification = this.notifications.create(notificationProperties);
+            this.activeProgressNotifications.set(progressId, progressNotification);
+            if (this.activeProgressNotifications.size > 1) {
+                updateStatusBarEntry();
+            }
             progressNotification.show();
             if (update) {
                 progressNotification.update(update);
             }
             const cancel = () => {
+                this.activeProgressNotifications.delete(progressId);
+                updateStatusBarEntry();
                 if (message.options && message.options.cancelable) {
                     resolve(ProgressMessage.Cancel);
                 }
@@ -77,7 +119,7 @@ export class NotificationsMessageClient extends MessageClient {
     }
 
     async reportProgress(progressId: string, update: ProgressUpdate, message: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
-        const notification = this.visibleProgressNotifications.get(progressId);
+        const notification = this.activeProgressNotifications.get(progressId);
         if (notification) {
             notification.update(update);
         } else {
@@ -86,7 +128,7 @@ export class NotificationsMessageClient extends MessageClient {
     }
 
     protected visibleMessages = new Set<string>();
-    protected visibleProgressNotifications = new Map<string, ProgressNotification>();
+    protected activeProgressNotifications = new Map<string, ProgressNotification>();
     protected show(message: Message): Promise<string | undefined> {
         const key = this.getKey(message);
         if (this.visibleMessages.has(key)) {

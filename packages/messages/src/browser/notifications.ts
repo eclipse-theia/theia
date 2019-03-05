@@ -19,6 +19,7 @@ export const NOTIFICATION = 'theia-Notification';
 export const ICON = 'icon';
 export const TEXT = 'text';
 export const BUTTONS = 'buttons';
+export const PROGRESS = 'progress';
 
 export interface NotificationAction {
     label: string;
@@ -57,6 +58,7 @@ export class Notifications {
     show(properties: NotificationProperties): void {
         const notificationElement = this.createNotificationElement(properties);
         this.container.appendChild(notificationElement);
+
     }
 
     create(properties: NotificationProperties): ProgressNotification {
@@ -81,8 +83,11 @@ export class Notifications {
             'fa',
             this.toIconClass(properties.icon),
         );
-        if (properties.icon === 'progress') {
+        if (properties.icon === PROGRESS) {
             icon.classList.add('fa-pulse');
+            const progressContainer = element.appendChild(document.createElement('div'));
+            progressContainer.classList.add(PROGRESS);
+            progressContainer.appendChild(document.createElement('p')).id = 'notification-progress-' + properties.id;
         }
         icon.classList.add(
             'fa-fw',
@@ -153,16 +158,8 @@ class ProgressNotificationImpl implements ProgressNotification {
     }
 
     show(): void {
-        let container = document.getElementById('notification-container-' + this.properties.id);
-        if (!container) {
+        if (!document.getElementById(`notification-container-${this.properties.id}`)) {
             this.container.appendChild(this.node);
-        }
-        container = document.getElementById('notification-container-' + this.properties.id);
-        if (container) {
-            const progressContainer = container.appendChild(document.createElement('div'));
-            progressContainer.className = 'progress';
-            const progress = progressContainer.appendChild(document.createElement('p'));
-            progress.id = 'notification-progress-' + this.properties.id;
         }
     }
 
