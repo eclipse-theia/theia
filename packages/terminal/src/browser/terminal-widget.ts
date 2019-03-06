@@ -30,13 +30,23 @@ export class TerminalSize {
  */
 export abstract class TerminalWidget extends BaseWidget {
 
-    // abstract processId: Promise<number>;
+    abstract processId: Promise<number>;
 
     /**
      * Start terminal and return terminal id.
      * @param id - terminal id.
      */
     abstract start(id?: number): Promise<number>;
+
+    abstract createProcess(): Promise<number>;
+
+    abstract attach(processId: number, createNewProcessOnFail?: boolean): Promise<number>;
+
+    /**
+     * Send text to the terminal server.
+     * @param text - text content.
+     */
+    abstract sendText(text: string): void;
 
     /**
      * Write some text content to the widget.
@@ -76,11 +86,30 @@ export abstract class TerminalWidget extends BaseWidget {
  */
 export const TerminalWidgetOptions = Symbol('TerminalWidgetOptions');
 export interface TerminalWidgetOptions {
-
     /**
      * Human readable terminal representation on the UI.
      */
     readonly title?: string;
+
+    /**
+     * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
+     */
+    readonly shellPath?: string;
+
+    /**
+     * Shell arguments to executable shell, for example: [`-l`] - without login.
+     */
+    readonly shellArgs?: string[];
+
+    /**
+     * Current working directory.
+     */
+    readonly cwd?: string;
+
+    /**
+     * Environment variables for terminal.
+     */
+    readonly env?: { [key: string]: string | null };
 
     /**
      * In case `destroyTermOnClose` is true - terminal process will be destroyed on close terminal widget, otherwise will be kept
@@ -110,4 +139,5 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
     created: string
 }
 
+// define factory method here?...
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';

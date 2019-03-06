@@ -36,7 +36,7 @@ import { WidgetManager } from '@theia/core/lib/browser';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './terminal-service';
 import { TerminalWidgetOptions, TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget';
-// import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
@@ -44,7 +44,6 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TerminalClient, TerminalClientOptions } from './terminal-client';
 import { DisposableCollection } from '@theia/core';
-import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -90,8 +89,6 @@ export interface TerminalClientInfoToRestore extends TerminalClientOptions {
 export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution,
                                                      MenuContribution, KeybindingContribution, TabBarToolbarContribution {
 
-    private static ID = 'terminal-frontend-contribution';
-
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
@@ -114,9 +111,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @inject('Factory<TerminalClient>')
-    protected readonly terminalClientFactory: (options: TerminalClientOptions, terminalWidget: TerminalWidget) => TerminalClient;
-
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
     readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
 
@@ -126,7 +120,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     protected readonly toDispose = new DisposableCollection();
 
     protected termClients = new Map<string, TerminalClient>();
-    protected termClientsToRestore = new Map<string, TerminalClientInfoToRestore>();
 
     @postConstruct()
     protected init(): void {
@@ -135,15 +128,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
 
-                // const clientOpsToRestore = this.termClientsToRestore.get(widget.id);
-                // if (clientOpsToRestore) { // todo use time instead of domId.
-                //     this.termClientsToRestore.delete(widget.id);
-                //     const client = this.newTerminalClient(clientOpsToRestore, widget as TerminalWidget);
-                //     // try to reattach to the previous one process.
-                //     if (clientOpsToRestore.terminalId) {
-                //         client.attach(clientOpsToRestore.terminalId);
-                //     }
-                // }
                 this.onDidCreateTerminalEmitter.fire(widget);
             }
         });
@@ -154,35 +138,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         this.shell.activeChanged.connect(updateFocusKey);
 
         this.toDispose.pushAll([this.onDidCreateTerminalEmitter, this.onDidChangeCurrentTerminalEmitter]);
-        this.restore();
+
     }
 
     onStop(): void {
-        this.storeState();
         this.dispose();
-        this.termClientsToRestore.clear();
         this.termClients.clear();
-    }
-
-    private storeState() {
-        const optionsToStore = [...this.termClients.values()]
-        .filter(terminalClient => IBaseTerminalServer.validateId(terminalClient.terminalId))
-        .map<TerminalClientInfoToRestore>(terminalClient => {
-            const infoToRestore: TerminalClientInfoToRestore = {terminalId: terminalClient.terminalId, ...terminalClient.options};
-            return infoToRestore;
-        });
-        this.storageService.setData(TerminalFrontendContribution.ID, optionsToStore);
-    }
-
-    protected async restore(): Promise<void> {
-        const dataToRestore = await this.storageService.getData<TerminalClientInfoToRestore[]>(TerminalFrontendContribution.ID) || [];
-
-        if (dataToRestore) {
-            dataToRestore.reduce((mapAcum, termClientOps) => {
-                mapAcum.set(termClientOps.terminalDomId, termClientOps);
-                return mapAcum;
-            }, this.termClientsToRestore);
-        }
     }
 
     private dispose() {
@@ -239,23 +200,28 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
         });
 
-        // commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
-        //     execute: async uri => {
-        //         // Determine folder path of URI
-        //         const stat = await this.fileSystem.getFileStat(uri.toString());
-        //         if (!stat) {
-        //             return;
-        //         }
+        commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
+            execute: async uri => {
+                // Determine folder path of URI
+                const stat = await this.fileSystem.getFileStat(uri.toString());
+                if (!stat) {
+                    return;
+                }
 
-        //         // Use folder if a file was selected
-        //         const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
+                // Use folder if a file was selected
+                const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
 
-        //         // Open terminal
-        //         const termWidget = await this.newTerminal({ cwd });
-        //         termWidget.start();
-        //         this.activateTerminal(termWidget);
-        //     }
-        // }));
+                // Open terminal
+                const termWidget = await this.newTerminal({ cwd });
+                termWidget.start();
+                this.open(termWidget);
+            }
+        }));
+    }
+
+    // don't use it @depracated
+    activateTerminal(widget: TerminalWidget, widgetOptions?: ApplicationShell.WidgetOptions): void {
+        this.open(widget, { widgetOptions });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -383,7 +349,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         }
     }
 
-    async newTerminalWidget(options: TerminalWidgetOptions): Promise<TerminalWidget> {
+    async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         let widget;
         try {
             widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
@@ -436,27 +402,16 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        // const cwd = await this.selectTerminalCwd();
-        const terminalWidget = await this.newTerminalWidget({});
-        terminalWidget.start();
-        // const termClientOpts: TerminalClientOptions = { cwd, closeOnDispose: true, terminalDomId: terminalWidget.id };
-        // const terminalClient = this.newTerminalClient(termClientOpts, terminalWidget);
-        // await terminalClient.create();
+        const cwd = await this.selectTerminalCwd();
+        const terminalWidget = await this.newTerminal({cwd});
+        terminalWidget.createProcess();
 
         this.open(terminalWidget, { widgetOptions: options });
     }
 
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const termWidget = await this.newTerminalWidget({});
+        const termWidget = await this.newTerminal({});
 
         this.open(termWidget, { widgetOptions: options });
-    }
-
-    newTerminalClient(termClientOpts: TerminalClientOptions, terminalWidget: TerminalWidget): TerminalClient {
-        const terminalClient: TerminalClient = this.terminalClientFactory(termClientOpts, terminalWidget);
-        this.toDispose.push(terminalClient);
-        this.termClients.set(terminalClient.widget.id, terminalClient);
-
-        return terminalClient;
     }
 }

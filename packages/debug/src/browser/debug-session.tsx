@@ -36,7 +36,6 @@ import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-sessio
 import { DebugConfiguration } from '../common/debug-common';
 import { SourceBreakpoint } from './breakpoint/breakpoint-marker';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { TerminalClientOptions } from '@theia/terminal/src/browser/terminal-client';
 
 export enum DebugState {
     Inactive,
@@ -368,20 +367,10 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
-        const terminalWidget = await this.terminalServer.newTerminalWidget({ title });
+        const terminalWidget = await this.terminalServer.newTerminal({ title, cwd, shellPath: args[0], shellArgs: args.slice(1), env });
 
-        const terminalClientOps: TerminalClientOptions = {
-            closeOnDispose: false, // todo ? what is the options value should be?
-            terminalDomId: terminalWidget.id, // todo ?
-            cwd,
-            shellPath: args[0],
-            shellArgs: args.slice(1),
-            env
-        };
-
-        const terminalClient = this.terminalServer.newTerminalClient(terminalClientOps, terminalWidget);
-        const processId = await terminalClient.create();
         this.terminalServer.open(terminalWidget);
+        const processId = await terminalWidget.createProcess();
 
         return { processId };
     }

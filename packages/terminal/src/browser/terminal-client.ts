@@ -70,7 +70,7 @@ export interface TerminalClient extends Disposable {
 
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
 export interface TerminalClientOptions { // I guess here should be used terminal based options?
-    readonly closeOnDispose: boolean;
+    readonly closeOnDispose?: boolean;
     readonly terminalDomId: string;
     /**
      * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
@@ -174,7 +174,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
     protected async reconnectTerminalProcess(): Promise<void> {
         if (typeof this.terminalId === 'number') {
-            await this.attach(this.terminalId);
+            this._terminalId = await this.attach(this.terminalId);
         }
     }
 
@@ -200,6 +200,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         }
 
         this.connectWidgetToProcess();
+
         return this.terminalId;
     }
 

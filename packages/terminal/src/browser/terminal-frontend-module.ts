@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, Container, interfaces } from 'inversify';
+import { ContainerModule, Container } from 'inversify';
 import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';

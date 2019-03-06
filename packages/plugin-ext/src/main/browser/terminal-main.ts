@@ -17,7 +17,7 @@
 import { interfaces } from 'inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalOptions } from '@theia/plugin';
-import { TerminalWidget, TerminalService, TerminalClientOptions } from '@theia/terminal/lib/browser';
+import { TerminalWidget, TerminalService } from '@theia/terminal/lib/browser';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 
@@ -57,39 +57,29 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
             }
         });
 
-        const terminalClient = this.terminals.getClientByWidgetId(terminal.id);
-
-        if (terminalClient) {
-            const updateProcessId = () => terminalClient.processId.then(
-                processId => this.extProxy.$terminalOpened(terminal.id, processId),
-                () => {/*no-op*/ }
-            );
-            updateProcessId();
-            terminal.onDidOpen(() => updateProcessId());
-        }
-
+        const updateProcessId = () => terminal.processId.then(
+            processId => this.extProxy.$terminalOpened(terminal.id, processId),
+            () => {/*no-op*/ }
+        );
+        updateProcessId();
+        terminal.onDidOpen(() => updateProcessId());
         terminal.onTerminalDidClose(() => this.extProxy.$terminalClosed(terminal.id));
     }
 
     async $createTerminal(id: string, options: TerminalOptions): Promise<string> {
         try {
-            const terminal = await this.terminals.newTerminalWidget({
+            const terminal = await this.terminals.newTerminal({
                 id,
                 title: options.name,
                 destroyTermOnClose: true,
                 useServerTitle: false,
-                attributes: options.attributes
-            });
-            const termialClientOptions: TerminalClientOptions = {
+                attributes: options.attributes,
                 shellPath: options.shellPath,
                 shellArgs: options.shellArgs,
                 cwd: options.cwd,
-                env: options.env,
-                closeOnDispose: false,
-                terminalDomId: id
-            };
-            const client = this.terminals.newTerminalClient(termialClientOptions, terminal);
-            client.create();
+                env: options.env
+            });
+            terminal.createProcess();
             return terminal.id;
         } catch (error) {
             throw new Error('Failed to create terminal. Cause: ' + error);
@@ -97,7 +87,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
     }
 
     $sendText(id: string, text: string, addNewLine?: boolean): void {
-        const terminal = this.terminals.getClientByWidgetId(id);
+        const terminal = this.terminals.getById(id);
         if (terminal) {
             text = text.replace(/\r?\n/g, '\r');
             if (addNewLine && text.charAt(text.length - 1) !== '\r') {

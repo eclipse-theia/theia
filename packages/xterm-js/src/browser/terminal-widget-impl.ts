@@ -40,7 +40,6 @@ interface TerminalCSSProperties {
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
-    protected terminalId = -1;
     protected term: Xterm.Terminal;
     protected restored = false;
     protected closeOnDispose = true;
@@ -55,7 +54,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     private terminalClient: TerminalClient;
 
-    protected readonly _onTermDidClose = new Emitter<TerminalWidget>();
+    protected readonly _onTerminalDidClose = new Emitter<TerminalWidget>();
     protected readonly _onUserInput = new Emitter<string | undefined>();
     protected readonly _onTerminalResize = new Emitter<TerminalSize>();
     protected readonly onDidOpenEmitter = new Emitter<void>();
@@ -66,8 +65,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @postConstruct()
     protected init(): void {
         const terminalClientOptions: TerminalClientOptions = {
-            closeOnDispose: false,
-            terminalDomId: this.id
+            closeOnDispose: this.options.destroyTermOnClose,
+            terminalDomId: this.id,
+            cwd: this.options.cwd,
+            env: this.options.env,
+            shellArgs: this.options.shellArgs,
+            shellPath: this.options.shellPath
         };
         this.terminalClient = this.terminalClientFactory(terminalClientOptions, this);
         this.title.caption = this.options.title || this.TERMINAL;
@@ -129,14 +132,35 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         });
         this.term.on('data', data => this._onUserInput.fire(data));
 
-        this.toDispose.push(this._onTermDidClose);
+        this.toDispose.push(this._onTerminalDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this._onUserInput);
     }
 
-    async start(id?: number): Promise<number> {
+    async start(id?: number): Promise<number> { // todo depracte it ? make the same behavior like it was here...
         const terminalId = await this.terminalClient.create();
+        this.onDidOpenEmitter.fire(undefined);
         return terminalId;
+    }
+
+    get processId(): Promise<number> {
+        return this.terminalClient.processId;
+    }
+
+    async createProcess(): Promise<number> {
+        const terminalId = await this.terminalClient.create();
+        this.onDidOpenEmitter.fire(undefined);
+        return terminalId;
+    }
+
+    async attach(processId: number, createNewProcessOnFail?: boolean): Promise<number> {
+        const terminalId = await this.terminalClient.attach(processId, createNewProcessOnFail);
+        this.onDidOpenEmitter.fire(undefined);
+        return terminalId;
+    }
+
+    sendText(text: string): void {
+        this.terminalClient.sendText(text);
     }
 
     clearOutput(): void {
@@ -149,7 +173,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     storeState(): object {
         this.closeOnDispose = false;
-        return { terminalId: this.terminalId, titleLabel: this.title.label };
+        // don't store if terminalId is -1;
+        return { terminalId: this.terminalClient.terminalId, titleLabel: this.title.label };
     }
 
     restoreState(oldState: object) {
@@ -158,6 +183,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
+            this.attach(state.terminalId);
         }
     }
 
@@ -272,7 +298,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
-        return this._onTermDidClose.event;
+        return this._onTerminalDidClose.event;
     }
 
     get onUserInput(): Event<string | undefined> {
@@ -285,9 +311,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     dispose(): void {
         console.log('dispose terminal widget.');
+        this._onTerminalDidClose.fire(this);
+        this._onTerminalDidClose.dispose();
         super.dispose();
-        this._onTermDidClose.fire(this);
-        this._onTermDidClose.dispose();
     }
 
     protected resizeTerminal(): void {
