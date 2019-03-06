@@ -259,7 +259,7 @@ export class DebugSession implements CompositeTreeElement {
         });
         this._capabilities = response.body || {};
     }
-    protected async launchOrAttach(): Promise<void> { // todo
+    protected async launchOrAttach(): Promise<void> {
         try {
             if (this.configuration.request === 'attach') {
                 await this.sendRequest('attach', this.configuration);

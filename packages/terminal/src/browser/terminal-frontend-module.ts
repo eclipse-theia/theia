@@ -25,8 +25,9 @@ import { TerminalService } from './terminal-service';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { DefaultTerminalClient, TerminalClient, TerminalClientOptions, TerminalClientFactory } from './terminal-client';
+import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './terminal-client';
 import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './terminal-widget';
+import { DefaultTerminalClient } from './default-terminal-client';
 
 export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();

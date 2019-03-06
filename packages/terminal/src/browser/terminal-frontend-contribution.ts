@@ -42,7 +42,7 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TerminalClient, TerminalClientOptions } from './terminal-client';
+import { TerminalClientOptions } from './terminal-client';
 import { DisposableCollection } from '@theia/core';
 
 export namespace TerminalMenus {
@@ -119,8 +119,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected termClients = new Map<string, TerminalClient>();
-
     @postConstruct()
     protected init(): void {
         this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
@@ -143,7 +141,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     onStop(): void {
         this.dispose();
-        this.termClients.clear();
     }
 
     private dispose() {
@@ -175,10 +172,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     getById(id: string): TerminalWidget | undefined {
         return this.all.find(terminal => terminal.id === id);
-    }
-
-    getClientByWidgetId(widgetId: string): TerminalClient | undefined {
-        return this.termClients.get(widgetId);
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -219,7 +212,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         }));
     }
 
-    // don't use it @depracated
+    // @depracated in the interface TerminalService
     activateTerminal(widget: TerminalWidget, widgetOptions?: ApplicationShell.WidgetOptions): void {
         this.open(widget, { widgetOptions });
     }

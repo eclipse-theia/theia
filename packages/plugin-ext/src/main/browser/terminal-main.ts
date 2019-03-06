@@ -71,13 +71,13 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
             const terminal = await this.terminals.newTerminal({
                 id,
                 title: options.name,
-                destroyTermOnClose: true,
-                useServerTitle: false,
-                attributes: options.attributes,
                 shellPath: options.shellPath,
                 shellArgs: options.shellArgs,
                 cwd: options.cwd,
-                env: options.env
+                env: options.env,
+                destroyTermOnClose: true,
+                useServerTitle: false,
+                attributes: options.attributes
             });
             terminal.createProcess();
             return terminal.id;
