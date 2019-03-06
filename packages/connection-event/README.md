@@ -26,7 +26,7 @@ An HTML that embed Theia in an IFrame, and listens to message events:
     function handleMessages(e) {
         let message = JSON.parse(e.data);
         if (message.topic === "Connection" && message.connected == false) {
-            alert("Connection disconnected. http code=" + message.code);
+            alert("Connection disconnected. http code=" + message.httpStatusCode);
         }
     }
     if (window.addEventListener) {
