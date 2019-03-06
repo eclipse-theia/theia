@@ -66,7 +66,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected init(): void {
         const terminalClientOptions: TerminalClientOptions = {
             closeOnDispose: this.options.destroyTermOnClose,
-            terminalDomId: this.id,
             cwd: this.options.cwd,
             env: this.options.env,
             shellArgs: this.options.shellArgs,

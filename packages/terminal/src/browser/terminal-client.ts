@@ -71,7 +71,7 @@ export interface TerminalClient extends Disposable {
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
 export interface TerminalClientOptions { // I guess here should be used terminal based options?
     readonly closeOnDispose?: boolean;
-    readonly terminalDomId: string;
+
     /**
      * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
      */
