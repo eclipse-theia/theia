@@ -70,9 +70,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.DIFF, {
             isVisible: () => false,
             // tslint:disable-next-line: no-any
-            execute: async uris => {
-                const [left, right] = uris;
-                await this.diffService.openDiffEditor(left, right);
+            execute: async (left: URI, right: URI) => {
+                await this.diffService.openDiffEditor(new TheiaURI(left), new TheiaURI(right));
             }
         });
 
