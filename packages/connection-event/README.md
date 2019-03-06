@@ -2,13 +2,16 @@
 
 This extension recognizes when the web-socket from the theia browser side to the node-server side is disconnected, and posts a message to the parent window.
 
-This allows listening on disconnect messages and react.
+This allows listening on connection messages and react.
 
-Existing messages:
-* 'Connection: SESSION_EXPIRED', when attempt to connect to the server returns http-status-code 401 or 403
-* 'Connection: SERVER_ERROR', for error 500
-* 'Connection: SERVER_UNAVAILABLE', for error 502 or for not being able to establish connection at all
-* 'Connection: OK', when web-socket is extablished (or re-established)
+Message format:
+```
+{
+    "topic":"Connection",
+    "connected": <true/false>,
+    "httpStatusCode: <optional, number - the returned code from an http request to the root of theia. 0 incase connection cannot be established>
+}
+```
 
 ### example usage
 
@@ -21,8 +24,9 @@ An HTML that embed Theia in an IFrame, and listens to message events:
 </head>
 <script>
     function handleMessages(e) {
-        if (e.data.contains("ACCESS_DENIED")) {
-            alert("Seems that your session is expired: " + e.data);
+        let message = JSON.parse(e.data);
+        if (message.topic === "Connection" && message.connected == false) {
+            alert("Connection disconnected. http code=" + message.code);
         }
     }
     if (window.addEventListener) {

@@ -22,14 +22,13 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ConnectionEvent);
 });
 
+const messageTopic = 'Connection';
+
 @injectable()
 export class ConnectionEvent implements FrontendApplicationContribution {
 
     @inject(FrontendConnectionStatusService)
     protected readonly connectionStatusService: FrontendConnectionStatusService;
-
-    constructor() {
-    }
 
     private _onConnectionStatusChanged(): void {
         if (this.connectionStatusService.currentStatus === ConnectionStatus.OFFLINE) {
@@ -38,23 +37,13 @@ export class ConnectionEvent implements FrontendApplicationContribution {
             request.onreadystatechange = function () {
                 if (this.readyState === XMLHttpRequest.DONE) {
                     const code = this.status;
-                    var msg = "";
-                    if (code > 0 && code < 300 || code == 404) {
-                        // connection is possible and ok - do nothing
-                    } else if (code == 401 || code == 403) {
-                        // connection is denied (due to permission)
-                        msg = "Connection: SESSION_EXPIRED"
-                    } else if (code == 500) {
-                        // server error
-                        msg = "Connection: SERVER_ERROR"
-                    } else if (code == 502 || code == 503 || code == 0) {
-                        msg = "Connection: SERVER_UNAVAILABLE"
-                    }
-                    if (msg.length > 0) {
-                        if (window.parent) {
-                            window.parent.postMessage(msg, '*');
-                        }
-                    }
+                    const msg = {
+                        topic: messageTopic,
+                        connected: (code > 0 && code < 300),
+                        httpStatusCode: code
+                    };
+
+                    window.parent.postMessage(JSON.stringify(msg), '*');
                 }
             };
 
@@ -63,16 +52,17 @@ export class ConnectionEvent implements FrontendApplicationContribution {
             request.withCredentials = true;
             request.send();
         } else {
-            if (window.parent) {
-                window.parent.postMessage("Connection: OK", '*');
-            }
+            const msg = {
+                topic: messageTopic,
+                connected: true
+            };
+            window.parent.postMessage(JSON.stringify(msg), '*');
         }
     }
 
-    onWillStop() {
-    }
-
     onStart() {
-        this.connectionStatusService.onStatusChange(() => this._onConnectionStatusChanged());
+        if (window.parent) {
+            this.connectionStatusService.onStatusChange(() => this._onConnectionStatusChanged());
+        }
     }
 }
