@@ -29,7 +29,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     accept(plugin: PluginDeployerEntry): boolean {
         console.debug(`Resolving "${plugin.id()}" as a VS Code extension...`);
-        return this.resolvePackage(plugin) || this.resolveFromSources(plugin) || this.resolveFromVSIX(plugin);
+        return this.resolvePackage(plugin) || this.resolveFromSources(plugin) || this.resolveFromVSIX(plugin) || this.resolveFromNpmTarball(plugin);
     }
 
     async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
@@ -46,6 +46,11 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
             return false;
         }
         const pluginPath = path.join(plugin.path(), 'extension');
+        return this.resolvePackage(plugin, { pluginPath, pck: this.requirePackage(pluginPath) });
+    }
+
+    protected resolveFromNpmTarball(plugin: PluginDeployerEntry): boolean {
+        const pluginPath = path.join(plugin.path(), 'package');
         return this.resolvePackage(plugin, { pluginPath, pck: this.requirePackage(pluginPath) });
     }
 
