@@ -13,6 +13,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+/**
+ * based on https://github.com/Microsoft/vscode/blob/bf9a27ec01f2ef82fc45f69e0c946c7d74a57d3e/src/vs/workbench/api/node/extHostDocumentSaveParticipant.ts
+ */
 import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../api/plugin-api';
 import URI from 'vscode-uri';
 import { UriComponents } from '../common/uri-components';
@@ -82,11 +89,12 @@ export class DocumentsExtImpl implements DocumentsExt {
         }
     }
 
-    async $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason): Promise<SingleEditOperation[]> {
+    async $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason, saveTimeout: number): Promise<SingleEditOperation[]> {
         const uri = URI.revive(strUrl).toString();
         const operations: SingleEditOperation[] = [];
         let didTimeout = false;
-        const didTimeoutHandle = setTimeout(() => didTimeout = true, 1500);
+        // try to timeout early to squeeze edits at least from some save participants
+        const didTimeoutHandle = setTimeout(() => didTimeout = true, saveTimeout - 250);
         try {
             await this._onWillSaveTextDocument.sequence(async fireEvent => {
                 if (didTimeout) {
