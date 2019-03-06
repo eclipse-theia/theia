@@ -66,10 +66,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected init(): void {
         const terminalClientOptions: TerminalClientOptions = {
             closeOnDispose: this.options.destroyTermOnClose,
-            cwd: this.options.cwd,
+            rootURI: this.options.cwd,
             env: this.options.env,
-            shellArgs: this.options.shellArgs,
-            shellPath: this.options.shellPath
+            args: this.options.shellArgs,
+            shell: this.options.shellPath
         };
         this.terminalClient = this.terminalClientFactory(terminalClientOptions, this);
         this.title.caption = this.options.title || this.TERMINAL;

@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct, named } from 'inversify';
 import { TerminalWidget } from './terminal-widget';
-import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
+import { ShellTerminalServerProxy, IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -69,28 +69,9 @@ export interface TerminalClient extends Disposable {
 }
 
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
-export interface TerminalClientOptions { // I guess here should be used terminal based options?
+export interface TerminalClientOptions extends Partial<IShellTerminalServerOptions> {
     readonly closeOnDispose?: boolean;
 
-    /**
-     * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
-     */
-    readonly shellPath?: string;
-
-    /**
-     * Shell arguments to executable shell, for example: [`-l`] - without login.
-     */
-    readonly shellArgs?: string[];
-
-    /**
-     * Current working directory.
-     */
-    readonly cwd?: string;
-
-    /**
-     * Environment variables for terminal.
-     */
-    readonly env?: { [key: string]: string | null };
 }
 
 // todo move implementation to the separated ts file.
@@ -221,19 +202,16 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     }
 
     protected async createProcess(): Promise<number> {
-        let rootURI = this.options.cwd;
+        let rootURI = this.options.rootURI;
         if (!rootURI) {
             const root = (await this.workspaceService.roots)[0];
             rootURI = root && root.uri;
         }
 
         const terminalId = await this.shellTerminalServer.create({
-            shell: this.options.shellPath,
-            args: this.options.shellArgs,
-            env: this.options.env,
-            rootURI,
             cols: 80,
-            rows: 24
+            rows: 24,
+            ... this.options
         });
 
         if (IBaseTerminalServer.validateId(terminalId)) {
