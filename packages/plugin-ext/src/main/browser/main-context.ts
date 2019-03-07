@@ -37,6 +37,7 @@ import { TasksMainImpl } from './tasks-main';
 import { StorageMainImpl } from './plugin-storage';
 import { LanguagesContributionMainImpl } from './languages-contribution-main';
 import { DebugMainImpl } from './debug/debug-main';
+import { FileSystemMainImpl } from './file-system-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -100,4 +101,6 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const debugMain = new DebugMainImpl(rpc, connectionMain, container);
     rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);
+
+    rpc.set(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN, new FileSystemMainImpl(rpc, container));
 }

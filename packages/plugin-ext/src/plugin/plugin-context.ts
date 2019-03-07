@@ -97,7 +97,8 @@ import {
     ColorInformation,
     ColorPresentation,
     OperatingSystem,
-    WebviewPanelTargetArea
+    WebviewPanelTargetArea,
+    FileSystemError
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -121,6 +122,7 @@ import { ConnectionExtImpl } from './connection-ext';
 import { WebviewsExtImpl } from './webviews';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
+import { FileSystemExtImpl } from './file-system';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -150,6 +152,7 @@ export function createAPIFactory(
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
     const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
+    const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -414,9 +417,8 @@ export function createAPIFactory(
             registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
-            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
-                // FIXME: to implement
-                return new Disposable(() => { });
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider): theia.Disposable {
+                return fileSystemExt.registerFileSystemProvider(scheme, provider);
             },
             getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
                 return workspaceExt.getWorkspaceFolder(uri);
@@ -705,7 +707,8 @@ export function createAPIFactory(
             FoldingRange,
             FoldingRangeKind,
             OperatingSystem,
-            WebviewPanelTargetArea
+            WebviewPanelTargetArea,
+            FileSystemError
         };
     };
 }

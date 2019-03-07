@@ -27,8 +27,22 @@ export interface UriComponents {
 
 // some well known URI schemas
 export namespace Schemes {
-    export const File = 'file';
-    export const Untitled = 'untitled';
+    export const FILE = 'file';
+    export const UNTITLED = 'untitled';
+    export const HTTP: string = 'http';
+    export const HTTPS: string = 'https';
+    export const MAILTO: string = 'mailto';
+    export const DATA: string = 'data';
+    /**
+     * A schema is used for models that exist in memory
+     * only and that have no correspondence on a server or such.
+     */
+    export const IN_MEMORY: string = 'inmemory';
+    /** A schema is used for settings files. */
+    export const VSCODE: string = 'vscode';
+    /** A schema is used for internal private files. */
+    export const INTERNAL: string = 'private';
+    export const COMMAND: string = 'command';
 }
 
 export function theiaUritoUriComponents(uri: URI): UriComponents {
