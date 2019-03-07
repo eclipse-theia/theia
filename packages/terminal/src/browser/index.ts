@@ -19,4 +19,5 @@ export * from './terminal-frontend-contribution';
 export * from './terminal-widget';
 export * from './terminal-client';
 export * from './terminal-keybinding-contexts';
+export * from './terminal-preferences';
 export * from './terminal-service';

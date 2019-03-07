@@ -20,7 +20,7 @@ import * as React from 'react';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable } from '@theia/core/lib/common';
-import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
+import { TerminalService } from '@theia/terminal/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';

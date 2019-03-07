@@ -18,7 +18,7 @@ import { injectable, inject, named, postConstruct } from 'inversify';
 import { MessageClient } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
+import { TerminalService } from '@theia/terminal/lib/browser';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';

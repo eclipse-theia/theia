@@ -28,8 +28,11 @@ import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './terminal-client';
 import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './terminal-widget';
 import { DefaultTerminalClient } from './default-terminal-client';
+import { bindTerminalPreferences } from './terminal-preferences';
 
 export default new ContainerModule(bind => {
+    bindTerminalPreferences(bind);
+
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
 

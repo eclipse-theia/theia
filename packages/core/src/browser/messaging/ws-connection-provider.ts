@@ -46,11 +46,11 @@ export class WebSocketConnectionProvider {
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         const socket = this.createWebSocket(url);
 
-        // Added to test one of the case terminal reconnection.
-        // Remove it before code review
+        // Added to test one of the cases terminal reconnection.
+        // Will be removed before merge.
         /* tslint:disable */
         (window as any).closeConn = () => {
-            console.log('lets close connection :) and await reconnection');
+            console.log('Lets close connection :) and await reconnection');
             socket.close();
         };
         /* tslint:enable */

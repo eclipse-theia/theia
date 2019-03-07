@@ -15,16 +15,13 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { TerminalWidgetImpl } from './terminal-widget-impl';
+import { XtermJsTerminalWidget } from './xterm-js-terminal-widget';
 import { TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
-import { bindTerminalPreferences } from './terminal-preferences';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
 
 // Todo rename to xterm.js-frontend-module
 export default new ContainerModule(bind => {
-    bindTerminalPreferences(bind);
-
-    bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
+    bind(TerminalWidget).to(XtermJsTerminalWidget).inTransientScope();
 });

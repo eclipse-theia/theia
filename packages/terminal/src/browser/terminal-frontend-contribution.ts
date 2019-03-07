@@ -28,8 +28,8 @@ import {
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry, Widget, LabelProvider,
-    WidgetOpenerOptions, FrontendApplicationContribution, StorageService,
+    KeyModifier, KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions,
+    FrontendApplicationContribution,
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -42,7 +42,6 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TerminalClientOptions } from './terminal-client';
 import { DisposableCollection } from '@theia/core';
 
 export namespace TerminalMenus {
@@ -81,13 +80,9 @@ export namespace TerminalCommands {
     };
 }
 
-export interface TerminalClientInfoToRestore extends TerminalClientOptions {
-    terminalId: number
-}
-
 @injectable()
 export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution,
-                                                     MenuContribution, KeybindingContribution, TabBarToolbarContribution {
+                                                     MenuContribution, KeybindingContribution, TabBarToolbarContribution  {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -105,9 +100,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(StorageService)
-    protected readonly storageService: StorageService;
-
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
@@ -122,13 +114,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @postConstruct()
     protected init(): void {
         this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
-        this.widgetManager.onDidCreateWidget(({ widget }) => {
+        this.toDispose.push(this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
-
                 this.onDidCreateTerminalEmitter.fire(widget);
             }
-        });
+        }));
 
         const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocus', false);
         const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
@@ -136,14 +127,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         this.shell.activeChanged.connect(updateFocusKey);
 
         this.toDispose.pushAll([this.onDidCreateTerminalEmitter, this.onDidChangeCurrentTerminalEmitter]);
-
     }
 
     onStop(): void {
-        this.dispose();
-    }
-
-    private dispose() {
         this.toDispose.dispose();
     }
 
@@ -206,7 +192,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
                 // Open terminal
                 const termWidget = await this.newTerminal({ cwd });
-                termWidget.start();
+                termWidget.createAndAttach();
                 this.open(termWidget);
             }
         }));
@@ -349,6 +335,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 created: new Date().toString(),
                 ...options
             });
+            this.toDispose.push(widget);
         } catch (e) {
             throw new Error('Unable to create terminal widget. The reason is ' + e);
         }
@@ -404,7 +391,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const termWidget = await this.newTerminal({});
-
+        termWidget.createAndAttach();
         this.open(termWidget, { widgetOptions: options });
     }
 }

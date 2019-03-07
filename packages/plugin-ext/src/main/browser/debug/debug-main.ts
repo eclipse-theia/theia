@@ -37,7 +37,7 @@ import { ConnectionMainImpl } from '../connection-main';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
+import { TerminalService } from '@theia/terminal/lib/browser';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';

@@ -21,9 +21,10 @@ import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@thei
 import { Widget, Message, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { TerminalWidgetOptions, TerminalWidget, TerminalSize } from '@theia/terminal/lib/browser/terminal-widget';
-import { TerminalPreferences } from './terminal-preferences';
-import { TerminalClientFactory, TerminalClient, TerminalClientOptions } from '@theia/terminal/lib/browser';
+import {
+    TerminalClientFactory, TerminalClient, TerminalClientOptions, TerminalPreferences,
+    TerminalWidgetOptions, TerminalWidget, TerminalSize
+} from '@theia/terminal/lib/browser';
 
 interface TerminalCSSProperties {
     /* The text color, as a CSS color string.  */
@@ -37,7 +38,7 @@ interface TerminalCSSProperties {
 }
 
 @injectable()
-export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
+export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
     protected term: Xterm.Terminal;
@@ -172,7 +173,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     storeState(): object {
         this.closeOnDispose = false;
-        // don't store if terminalId is -1;
         return { terminalId: this.terminalClient.terminalId, titleLabel: this.title.label };
     }
 
@@ -310,7 +310,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     dispose(): void {
-        console.log('dispose terminal widget.');
         this._onTerminalDidClose.fire(this);
         this._onTerminalDidClose.dispose();
         super.dispose();
