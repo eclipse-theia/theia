@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
+import { IShellTerminalServerOptions } from '../../common/shell-terminal-protocol';
 import { Disposable } from '@theia/core';
 import { TerminalWidget } from './terminal-widget';
 

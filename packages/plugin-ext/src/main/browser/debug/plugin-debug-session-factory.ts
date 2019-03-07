@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { DefaultDebugSessionFactory, } from '@theia/debug/lib/browser/debug-session-contribution';
-import { TerminalService } from '@theia/terminal/lib/browser/terminal-service';
+import { TerminalService } from '@theia/terminal/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';

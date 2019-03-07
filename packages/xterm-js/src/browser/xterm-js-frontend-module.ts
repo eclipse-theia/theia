@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { XtermJsTerminalWidget } from './xterm-js-terminal-widget';
-import { TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
+import { TerminalWidget } from '@theia/terminal/lib/browser';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';

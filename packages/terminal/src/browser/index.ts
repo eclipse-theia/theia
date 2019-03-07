@@ -16,8 +16,8 @@
 
 export * from './terminal-frontend-module';
 export * from './terminal-frontend-contribution';
-export * from './terminal-widget';
-export * from './terminal-client';
+export * from './base/terminal-widget';
+export * from './base/terminal-client';
+export * from './base/terminal-service';
 export * from './terminal-keybinding-contexts';
 export * from './terminal-preferences';
-export * from './terminal-service';

@@ -21,12 +21,12 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
-import { TerminalService } from './terminal-service';
+import { TerminalService } from './base/terminal-service';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './terminal-client';
-import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './terminal-widget';
+import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './base/terminal-client';
+import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './base/terminal-widget';
 import { DefaultTerminalClient } from './default-terminal-client';
 import { bindTerminalPreferences } from './terminal-preferences';
 
