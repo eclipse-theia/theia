@@ -128,7 +128,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
 
         if (!IBaseTerminalServer.validateId(this.terminalId) && createNewTerminalOnFaill) {
             this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
-            this._terminalId = await this.createProcess();
+            this._terminalId = await this.spawnProcess();
         }
 
         this.connectWidgetToProcess();
@@ -136,8 +136,8 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         return this.terminalId;
     }
 
-    async create(): Promise<number> {
-        this._terminalId = await this.createProcess();
+    async createAndAttach(): Promise<number> {
+        this._terminalId = await this.spawnProcess();
 
         this.connectWidgetToProcess();
 
@@ -152,7 +152,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         this.toDispose.pushAll([this.onDidCloseDisposable, onResizeDisposable]);
     }
 
-    protected async createProcess(): Promise<number> {
+    protected async spawnProcess(): Promise<number> {
         let rootURI = this.options.rootURI;
         if (!rootURI) {
             const root = (await this.workspaceService.roots)[0];
@@ -171,6 +171,9 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         throw new Error('Error creating terminal widget, see the backend error log for more information.');
     }
 
+    /**
+     * Create connection to the process
+     */
      protected connectTerminalProcess(): void {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return;
@@ -197,12 +200,12 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         }, { reconnecting: false });
     }
 
-    resize(cols: number, rows: number): void {
+    async resize(cols: number, rows: number): Promise<void> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return;
         }
 
-        this.shellTerminalServer.resize(this.terminalId, cols, rows);
+        await this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
 
     async kill(): Promise<void> {

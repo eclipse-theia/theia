@@ -137,7 +137,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     async start(id?: number): Promise<number> { // todo depracte it ? make the same behavior like it was here...
-        const terminalId = await this.terminalClient.create();
+        const terminalId = await this.terminalClient.createAndAttach();
         this.onDidOpenEmitter.fire(undefined);
         return terminalId;
     }
@@ -147,7 +147,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     async createProcess(): Promise<number> {
-        const terminalId = await this.terminalClient.create();
+        const terminalId = await this.terminalClient.createAndAttach();
         this.onDidOpenEmitter.fire(undefined);
         return terminalId;
     }
@@ -182,7 +182,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
-            this.attach(state.terminalId);
+            // try to reatach by terminalId or create new one process otherwise(flag true).
+            this.attach(state.terminalId, true);
         }
     }
 

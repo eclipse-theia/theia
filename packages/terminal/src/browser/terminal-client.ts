@@ -16,8 +16,7 @@
 
 import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
 import { Disposable } from '@theia/core';
-
-import { TerminalWidget } from './';
+import { TerminalWidget } from './terminal-widget';
 
 export type TerminalClientFactory = (options: TerminalClientOptions, terminalWidget: TerminalWidget) => TerminalClient;
 export const TerminalClientFactory = Symbol('TerminalClientFactory');
@@ -35,34 +34,60 @@ export const TerminalClient = Symbol('TerminalClient');
 export interface TerminalClient extends Disposable {
 
     /**
-     * Terminal client options to setup server side terminal process
+     * Terminal client options to setup backend terminal process
      * and control terminal client configuration.
      */
     readonly options: TerminalClientOptions;
 
+    /**
+     * Terminal widget which is under TerminalClient control.
+     */
     readonly widget: TerminalWidget;
 
+    /**
+     * Return unique backend terminal process id(Notice: it's not a PID, it's backend id to count running processes).
+     */
     readonly terminalId: number;
 
+    /**
+     * Return unique process id(PID).
+     */
     readonly processId: Promise<number>
 
     /**
-     * Create connection with terminal backend and return connection id.
+     * Create new process and attach terminal widget to this process.
      */
-    create(): Promise<number>;
+    createAndAttach(): Promise<number>;
 
-    attach(connectionId: number, createNewTerminalOnFail?: boolean): Promise<number>;
+    /**
+     * Attach to already running process.
+     * @param terminalId - unique process backend id(it's not PID, it's backend id to count runnting processes).
+     * @param createNewTerminalOnFaill - spawn new process in case if
+     * target process was not found by terminalId or it's gone. NOTICE: False by default.
+     */
+    attach(terminalId: number, createNewTerminalOnFail?: boolean): Promise<number>;
 
-    resize(cols: number, rows: number): void;
+    /**
+     * Resize terminal process on the backend side.
+     * @param cols amount displayed colums.
+     * @param rows amount displayed rows.
+     */
+    resize(cols: number, rows: number): Promise<void>;
 
+    /**
+     * Kill backend process.
+     */
     kill(): Promise<void>;
 
+    /**
+     * Send input to the backend process.
+     * @param text - content to send.
+     */
     sendText(text: string): Promise<void>;
-
 }
 
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
 export interface TerminalClientOptions extends Partial<IShellTerminalServerOptions> {
+    // Kill backend process in case if user manually closed TerminalWidget. NOTICE: False by default.
     readonly closeOnDispose?: boolean;
-
 }
