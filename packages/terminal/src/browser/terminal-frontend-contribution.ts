@@ -397,7 +397,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
         const cwd = await this.selectTerminalCwd();
         const terminalWidget = await this.newTerminal({cwd});
-        terminalWidget.createProcess();
+        terminalWidget.createAndAttach();
 
         this.open(terminalWidget, { widgetOptions: options });
     }

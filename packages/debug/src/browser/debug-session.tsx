@@ -370,7 +370,7 @@ export class DebugSession implements CompositeTreeElement {
         const terminalWidget = await this.terminalServer.newTerminal({ title, cwd, shellPath: args[0], shellArgs: args.slice(1), env });
 
         this.terminalServer.open(terminalWidget);
-        const processId = await terminalWidget.createProcess();
+        const processId = await terminalWidget.createAndAttach();
 
         return { processId };
     }

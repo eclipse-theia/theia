@@ -79,7 +79,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
                 useServerTitle: false,
                 attributes: options.attributes
             });
-            terminal.createProcess();
+            terminal.createAndAttach();
             return terminal.id;
         } catch (error) {
             throw new Error('Failed to create terminal. Cause: ' + error);

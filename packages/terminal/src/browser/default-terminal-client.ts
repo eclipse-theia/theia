@@ -145,7 +145,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     }
 
     private connectWidgetToProcess() {
-        this.connectTerminalProcess();
+        this.createConnection();
         this.onDidCloseDisposable = this.widget.onTerminalDidClose(() => this.kill());
         const onResizeDisposable = this.widget.onTerminalResize(size => this.resize(size.cols, size.rows));
 
@@ -174,7 +174,7 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     /**
      * Create connection to the process
      */
-     protected connectTerminalProcess(): void {
+     protected createConnection(): void {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return;
         }

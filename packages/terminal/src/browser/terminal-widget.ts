@@ -27,19 +27,33 @@ export class TerminalSize {
 
 /**
  * Terminal UI widget.
+ * Terminal widget responsible to render backend output and catch user input.
  */
 export abstract class TerminalWidget extends BaseWidget {
 
+    /**
+     * Return unique process id(PID).
+     */
     abstract processId: Promise<number>;
 
     /**
      * Start terminal and return terminal id.
+     * @deprecated use createProcess() and attach(), please.
      * @param id - terminal id.
      */
     abstract start(id?: number): Promise<number>;
 
-    abstract createProcess(): Promise<number>;
+    /**
+     * Create new process and attach terminal widget to this process.
+     */
+    abstract createAndAttach(): Promise<number>;
 
+    /**
+     * Attach to already running process.
+     * @param terminalId - unique process backend id(it's not PID, it's backend id to count runnting processes).
+     * @param createNewTerminalOnFaill - spawn new process in case if
+     * target process was not found by terminalId or it's gone. NOTICE: False by default.
+     */
     abstract attach(processId: number, createNewProcessOnFail?: boolean): Promise<number>;
 
     /**
@@ -78,6 +92,9 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract clearOutput(): void;
 
+    /**
+     * Reset terminal to the initial state. Could be useful for reconnection.
+     */
     abstract reset(): void;
 }
 
@@ -139,5 +156,4 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
     created: string
 }
 
-// define factory method here?...
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';

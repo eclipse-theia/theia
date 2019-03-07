@@ -146,7 +146,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.terminalClient.processId;
     }
 
-    async createProcess(): Promise<number> {
+    async createAndAttach(): Promise<number> {
         const terminalId = await this.terminalClient.createAndAttach();
         this.onDidOpenEmitter.fire(undefined);
         return terminalId;
