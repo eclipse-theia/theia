@@ -1,57 +1,58 @@
 {
-  "name": "@theia/typescript",
-  "version": "0.4.0",
-  "description": "Theia - Typescript Extension",
-  "dependencies": {
-    "@theia/application-package": "^0.4.0",
-    "@theia/callhierarchy": "^0.4.0",
-    "@theia/core": "^0.4.0",
-    "@theia/editor": "^0.4.0",
-    "@theia/filesystem": "^0.4.0",
-    "@theia/languages": "^0.4.0",
-    "@theia/monaco": "^0.4.0",
-    "@theia/workspace": "^0.4.0",
-    "command-exists": "^1.2.8",
-    "typescript-language-server": "^0.3.7"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/typescript-frontend-module",
-      "backend": "lib/node/typescript-backend-module"
+    "name": "@theia/typescript",
+    "version": "0.4.0",
+    "description": "Theia - Typescript Extension",
+    "dependencies": {
+        "@theia/application-package": "^0.4.0",
+        "@theia/callhierarchy": "^0.4.0",
+        "@theia/core": "^0.4.0",
+        "@theia/editor": "^0.4.0",
+        "@theia/filesystem": "^0.4.0",
+        "@theia/languages": "^0.4.0",
+        "@theia/monaco": "^0.4.0",
+        "@theia/workspace": "^0.4.0",
+        "command-exists": "^1.2.8",
+        "typescript-language-server": "0.4.0-dev.acc1561"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "theiaExtensions": [
+        {
+            "frontend": "lib/browser/typescript-frontend-module",
+            "backend": "lib/node/typescript-backend-module"
+        }
+    ],
+    "keywords": [
+        "theia-extension"
+    ],
+    "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/theia-ide/theia.git"
+    },
+    "bugs": {
+        "url": "https://github.com/theia-ide/theia/issues"
+    },
+    "homepage": "https://github.com/theia-ide/theia",
+    "files": [
+        "lib",
+        "src",
+        "data"
+    ],
+    "scripts": {
+        "prepare": "yarn run clean && yarn run build",
+        "clean": "theiaext clean",
+        "build": "theiaext build",
+        "watch": "theiaext watch",
+        "test": "theiaext test",
+        "docs": "theiaext docs"
+    },
+    "devDependencies": {
+        "@theia/ext-scripts": "^0.4.0"
+    },
+    "nyc": {
+        "extends": "../../configs/nyc.json"
     }
-  ],
-  "keywords": [
-    "theia-extension"
-  ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/theia-ide/theia.git"
-  },
-  "bugs": {
-    "url": "https://github.com/theia-ide/theia/issues"
-  },
-  "homepage": "https://github.com/theia-ide/theia",
-  "files": [
-    "lib",
-    "src",
-    "data"
-  ],
-  "scripts": {
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theiaext clean",
-    "build": "theiaext build",
-    "watch": "theiaext watch",
-    "test": "theiaext test",
-    "docs": "theiaext docs"
-  },
-  "devDependencies": {
-    "@theia/ext-scripts": "^0.4.0"
-  },
-  "nyc": {
-    "extends": "../../configs/nyc.json"
-  }
 }
+
