@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.4.1
+- [plugin] `workspace.openTextDocument` API now respects the contributed `FileSystemProviders`
+
 ## v0.4.0
 - [application-manager] added support for pre-load HTML templates
 - [console] added support for console `when` contexts
