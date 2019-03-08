@@ -39,10 +39,9 @@ import { TerminalWidgetOptions, TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, Term
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { MAIN_MENU_BAR } from '@theia/core';
+import { MAIN_MENU_BAR, DisposableCollection } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DisposableCollection } from '@theia/core';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -324,16 +323,11 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
-        let widget;
-        try {
-            widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
-                created: new Date().toString(),
-                ...options
-            });
-            this.toDispose.push(widget);
-        } catch (e) {
-            throw new Error('Unable to create terminal widget. The reason is ' + e);
-        }
+        const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
+            created: new Date().toString(),
+            ...options
+        });
+        this.toDispose.push(widget);
         return widget;
     }
 
@@ -385,7 +379,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         const cwd = await this.selectTerminalCwd();
         const terminalWidget = await this.newTerminal({cwd});
         terminalWidget.createAndAttach();
-
         this.open(terminalWidget, { widgetOptions: options });
     }
 

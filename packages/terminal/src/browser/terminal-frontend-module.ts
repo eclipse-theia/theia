@@ -72,7 +72,7 @@ export default new ContainerModule(bind => {
 
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
     bind(TerminalService).toService(TerminalFrontendContribution);
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, FrontendApplicationContribution]) {
+    for (const identifier of [FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
         bind(identifier).toService(TerminalFrontendContribution);
     }
 

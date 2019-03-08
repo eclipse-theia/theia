@@ -38,7 +38,7 @@ export abstract class TerminalWidget extends BaseWidget {
 
     /**
      * Start terminal and return terminal id.
-     * @deprecated use createProcess() and attach(), please.
+     * @deprecated use createAndAttach() and attach() instead.
      * @param id - terminal id.
      */
     abstract start(id?: number): Promise<number>;
