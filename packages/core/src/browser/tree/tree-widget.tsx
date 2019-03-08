@@ -534,10 +534,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
         const style = (fontData: TreeDecoration.FontData | undefined) => this.applyFontStyles({}, fontData);
         return <React.Fragment>
-            {this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(decoration => {
+            {this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map((decoration, index) => {
                 const { fontData, data, tooltip } = decoration;
                 const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
-                return <div key={node.id + className} className={className} style={style(fontData)} title={tooltip}>
+                return <div key={node.id + className + index} className={className} style={style(fontData)} title={tooltip}>
                     {data}
                 </div>;
             })}
