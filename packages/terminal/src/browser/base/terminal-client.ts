@@ -23,8 +23,7 @@ export const TerminalClientFactory = Symbol('TerminalClientFactory');
 
 /**
  * TerminalClient contains connection logic between terminal server side and terminal widget.
- * So it's incupsulated connection specific logic in the separated code layer.
- * Terminal client is responcible:
+ * TerminalClient is responsible:
  * - create new terminal process;
  * - attach to the already running process on the backend(in case if backend support it);
  * - create connection with backend process;
@@ -72,8 +71,8 @@ export interface TerminalClient extends Disposable {
 
     /**
      * Resize terminal process on the backend side.
-     * @param cols amount displayed colums.
-     * @param rows amount displayed rows.
+     * @param cols - amount displayed columns in the output frame.
+     * @param rows - amount displayed rows in the output frame.
      */
     resize(cols: number, rows: number): Promise<void>;
 
@@ -94,6 +93,6 @@ export interface TerminalClient extends Disposable {
  */
 export const TerminalClientOptions = Symbol('TerminalClientOptions');
 export interface TerminalClientOptions extends Partial<IShellTerminalServerOptions> {
-    // Kill backend process in case if user manually closed TerminalWidget. NOTICE: False by default.
+    // Kill backend process in case if user closed TerminalWidget manually. NOTICE: False by default.
     readonly closeOnDispose?: boolean;
 }

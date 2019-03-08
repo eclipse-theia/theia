@@ -73,7 +73,7 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract onDidOpen: Event<void>;
 
     /*
-     * Send event on user type.
+     * Send event on user text typing.
      */
     abstract onUserInput: Event<string | undefined>;
 
@@ -103,6 +103,7 @@ export abstract class TerminalWidget extends BaseWidget {
  */
 export const TerminalWidgetOptions = Symbol('TerminalWidgetOptions');
 export interface TerminalWidgetOptions {
+
     /**
      * Human readable terminal representation on the UI.
      */

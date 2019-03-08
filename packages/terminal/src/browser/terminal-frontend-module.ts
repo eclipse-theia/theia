@@ -39,25 +39,6 @@ export default new ContainerModule(bind => {
     bind(DefaultTerminalClient).toSelf();
     bind(TerminalClient).toService(DefaultTerminalClient);
 
-    bind(ITerminalServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
-
-    bind(ShellTerminalServerProxy).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
-    bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
-
-    bind(TerminalFrontendContribution).toSelf().inSingletonScope();
-    bind(TerminalService).toService(TerminalFrontendContribution);
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, FrontendApplicationContribution]) {
-        bind(identifier).toService(TerminalFrontendContribution);
-    }
-
     bind(TerminalClientFactory).toFactory(ctx =>
         (options: TerminalClientOptions, terminalWidget: TerminalWidget) => {
             const child = new Container({ defaultScope: 'Singleton' });
@@ -89,6 +70,25 @@ export default new ContainerModule(bind => {
             return child.get(TerminalWidget);
         }
     }));
+
+    bind(TerminalFrontendContribution).toSelf().inSingletonScope();
+    bind(TerminalService).toService(TerminalFrontendContribution);
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, FrontendApplicationContribution]) {
+        bind(identifier).toService(TerminalFrontendContribution);
+    }
+
+    bind(ITerminalServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        const terminalWatcher = ctx.container.get(TerminalWatcher);
+        return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
+    }).inSingletonScope();
+
+    bind(ShellTerminalServerProxy).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        const terminalWatcher = ctx.container.get(TerminalWatcher);
+        return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
+    }).inSingletonScope();
+    bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
 
     createCommonBindings(bind);
 });

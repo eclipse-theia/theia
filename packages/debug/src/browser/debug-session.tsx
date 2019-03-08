@@ -367,10 +367,10 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
-        const terminalWidget = await this.terminalServer.newTerminal({ title, cwd, shellPath: args[0], shellArgs: args.slice(1), env });
+        const terminal = await this.terminalServer.newTerminal({ title, cwd, shellPath: args[0], shellArgs: args.slice(1), env });
 
-        this.terminalServer.open(terminalWidget);
-        const processId = await terminalWidget.createAndAttach();
+        this.terminalServer.open(terminal);
+        const processId = await terminal.createAndAttach();
 
         return { processId };
     }

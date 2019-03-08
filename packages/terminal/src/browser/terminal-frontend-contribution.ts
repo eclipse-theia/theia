@@ -198,11 +198,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         }));
     }
 
-    // @depracated in the interface TerminalService
-    activateTerminal(widget: TerminalWidget, widgetOptions?: ApplicationShell.WidgetOptions): void {
-        this.open(widget, { widgetOptions });
-    }
-
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(TerminalMenus.TERMINAL, 'Terminal');
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
@@ -340,6 +335,11 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             throw new Error('Unable to create terminal widget. The reason is ' + e);
         }
         return widget;
+    }
+
+    // @depracated in the interface TerminalService
+    activateTerminal(widget: TerminalWidget, widgetOptions?: ApplicationShell.WidgetOptions): void {
+        this.open(widget, { widgetOptions });
     }
 
     // TODO: reuse WidgetOpenHandler.open
