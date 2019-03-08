@@ -15,24 +15,23 @@
  ********************************************************************************/
 
 import { ContainerModule, Container } from 'inversify';
-import { WebSocketConnectionProvider, KeybindingContext, KeybindingContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext, FrontendApplicationContribution,  } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TerminalFrontendContribution } from './terminal-frontend-contribution';
+import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './base/terminal-widget';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
-import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
+import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './base/terminal-client';
-import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './base/terminal-widget';
-import { DefaultTerminalClient } from './default-terminal-client';
 import { bindTerminalPreferences } from './terminal-preferences';
+import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './base/terminal-client';
+import { DefaultTerminalClient } from './default-terminal-client';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
-
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
 
