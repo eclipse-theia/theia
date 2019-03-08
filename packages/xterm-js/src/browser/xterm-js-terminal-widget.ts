@@ -137,8 +137,9 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
         this.toDispose.push(this._onUserInput);
     }
 
-    async start(id?: number): Promise<number> { // todo depracte it ? make the same behavior like it was here...
-        const terminalId = await this.terminalClient.createAndAttach();
+    // Deprecated in the interface TerminalWidget
+    async start(id?: number): Promise<number> {
+        const terminalId = typeof id !== 'number' ? await this.terminalClient.createAndAttach() : await this.terminalClient.attach(id, true);
         this.onDidOpenEmitter.fire(undefined);
         return terminalId;
     }
@@ -157,10 +158,6 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
         const terminalId = await this.terminalClient.attach(processId, createNewProcessOnFail);
         this.onDidOpenEmitter.fire(undefined);
         return terminalId;
-    }
-
-    sendText(text: string): void {
-        this.terminalClient.sendText(text);
     }
 
     clearOutput(): void {
@@ -289,12 +286,17 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
             (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
         }
     }
+
     write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
         } else {
             this.initialData += data;
         }
+    }
+
+    sendText(text: string): void {
+        this.terminalClient.sendText(text);
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
