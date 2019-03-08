@@ -54,7 +54,8 @@ export class DocumentsMainImpl implements DocumentsMain {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
         }));
         this.toDispose.push(modelService.onModelWillSave(onWillSaveModelEvent => {
-            onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async resolve => {
+            onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
+                setTimeout(() => reject(new Error('Aborted onWillSaveTextDocument-event after 1750ms')), 1750);
                 const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason);
                 const transformedEdits = edits.map((edit): monaco.editor.IIdentifiedSingleEditOperation =>
                 ({

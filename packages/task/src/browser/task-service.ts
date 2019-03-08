@@ -26,6 +26,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskWatcher } from '../common/task-watcher';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
+import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -35,6 +36,11 @@ export class TaskService implements TaskConfigurationClient {
      * in the current workspace, and is being watched for changes.
      */
     protected configurationFileFound: boolean = false;
+
+    /**
+     * The last executed task.
+     */
+    protected lastTask: { source: string, taskLabel: string } | undefined = undefined;
 
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
@@ -63,12 +69,18 @@ export class TaskService implements TaskConfigurationClient {
     @inject(TaskConfigurations)
     protected readonly taskConfigurations: TaskConfigurations;
 
+    @inject(ProvidedTaskConfigurations)
+    protected readonly providedTaskConfigurations: ProvidedTaskConfigurations;
+
     @inject(VariableResolverService)
     protected readonly variableResolverService: VariableResolverService;
 
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
 
+    /**
+     * @deprecated To be removed in 0.5.0
+     */
     @inject(TaskProviderRegistry)
     protected readonly taskProviderRegistry: TaskProviderRegistry;
 
@@ -116,37 +128,46 @@ export class TaskService implements TaskConfigurationClient {
 
     /** Returns an array of the task configurations configured in tasks.json and provided by the extensions. */
     async getTasks(): Promise<TaskConfiguration[]> {
-        const configuredTasks = this.taskConfigurations.getTasks();
+        const configuredTasks = this.getConfiguredTasks();
         const providedTasks = await this.getProvidedTasks();
         return [...configuredTasks, ...providedTasks];
     }
 
+    /** Returns an array of the task configurations which are configured in tasks.json files */
+    getConfiguredTasks(): TaskConfiguration[] {
+        return this.taskConfigurations.getTasks();
+    }
+
     /** Returns an array of the task configurations which are provided by the extensions. */
-    async getProvidedTasks(): Promise<TaskConfiguration[]> {
-        const providedTasks: TaskConfiguration[] = [];
-        const providers = this.taskProviderRegistry.getProviders();
-        for (const provider of providers) {
-            providedTasks.push(...await provider.provideTasks());
-        }
-        return providedTasks;
+    getProvidedTasks(): Promise<TaskConfiguration[]> {
+        return this.providedTaskConfigurations.getTasks();
     }
 
     /**
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
-    async getProvidedTask(source: string, label: string): Promise<TaskConfiguration | undefined> {
-        const provider = this.taskProviderRegistry.getProvider(source);
-        if (provider) {
-            const tasks = await provider.provideTasks();
-            return tasks.find(t => t.label === label);
-        }
-        return undefined;
+    getProvidedTask(source: string, label: string): TaskConfiguration | undefined {
+        return this.providedTaskConfigurations.getTask(source, label);
     }
 
     /** Returns an array of running tasks 'TaskInfo' objects */
     getRunningTasks(): Promise<TaskInfo[]> {
         return this.taskServer.getTasks(this.getContext());
+    }
+
+    /** Returns an array of task types that are registered, including the default types */
+    getRegisteredTaskTypes(): Promise<string[]> {
+        return this.taskServer.getRegisteredTaskTypes();
+    }
+
+    /**
+     * Get the last executed task.
+     *
+     * @returns the last executed task or `undefined`.
+     */
+    getLastTask(): { source: string, taskLabel: string } | undefined {
+        return this.lastTask;
     }
 
     /**
@@ -163,11 +184,22 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
+     * Run the last executed task.
+     */
+    async runLastTask(): Promise<void> {
+        if (!this.lastTask) {
+            return;
+        }
+        const { source, taskLabel } = this.lastTask;
+        return this.run(source, taskLabel);
+    }
+
+    /**
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and provided tasks.
      */
     async run(source: string, taskLabel: string): Promise<void> {
-        let task = await this.getProvidedTask(source, taskLabel);
+        let task = this.getProvidedTask(source, taskLabel);
         if (!task) {
             task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
@@ -189,6 +221,7 @@ export class TaskService implements TaskConfigurationClient {
         let taskInfo: TaskInfo;
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
+            this.lastTask = { source, taskLabel };
         } catch (error) {
             const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
             this.logger.error(errorStr);

@@ -57,6 +57,8 @@ import { PluginDebugSessionContributionRegistry } from './debug/plugin-debug-ses
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugService } from '@theia/debug/lib/common/debug-service';
 import { PluginSharedStyle } from './plugin-shared-style';
+import { FSResourceResolver } from './file-system-main';
+import { SelectionProviderCommandContribution } from './selection-provider-command';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -67,6 +69,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
     bind(HostedPluginLogViewer).toSelf().inSingletonScope();
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
+    bind(SelectionProviderCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(SelectionProviderCommandContribution);
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
@@ -122,6 +126,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
+    bind(FSResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(FSResourceResolver);
     bindContributionProvider(bind, MainPluginApiProvider);
 
     bind(LanguageClientContributionProviderImpl).toSelf().inSingletonScope();

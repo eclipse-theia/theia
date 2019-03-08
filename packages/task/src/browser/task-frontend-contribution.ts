@@ -18,11 +18,15 @@ import { inject, injectable, named } from 'inversify';
 import { ILogger, ContributionProvider } from '@theia/core/lib/common';
 import { QuickOpenTask } from './quick-open-task';
 import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { FrontendApplication, FrontendApplicationContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
+import {
+    FrontendApplication, FrontendApplicationContribution, QuickOpenContribution,
+    QuickOpenHandlerRegistry, KeybindingRegistry, KeybindingContribution
+} from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TaskSchemaUpdater } from './task-schema-updater';
 
 export namespace TaskCommands {
     const TASK_CATEGORY = 'Task';
@@ -30,6 +34,12 @@ export namespace TaskCommands {
         id: 'task:run',
         category: TASK_CATEGORY,
         label: 'Run Task...'
+    };
+
+    export const TASK_RUN_LAST: Command = {
+        id: 'task:run:last',
+        category: TASK_CATEGORY,
+        label: 'Run Last Task'
     };
 
     export const TASK_ATTACH: Command = {
@@ -40,7 +50,7 @@ export namespace TaskCommands {
 }
 
 @injectable()
-export class TaskFrontendContribution implements CommandContribution, MenuContribution, FrontendApplicationContribution, QuickOpenContribution {
+export class TaskFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution, QuickOpenContribution {
     @inject(QuickOpenTask)
     protected readonly quickOpenTask: QuickOpenTask;
 
@@ -65,6 +75,9 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(TaskService)
     protected readonly taskService: TaskService;
 
+    @inject(TaskSchemaUpdater)
+    protected readonly schemaUpdater: TaskSchemaUpdater;
+
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib => {
             if (contrib.registerResolvers) {
@@ -74,6 +87,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 contrib.registerProviders(this.taskProviderRegistry);
             }
         });
+        this.schemaUpdater.update();
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -98,6 +112,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 execute: () => this.quickOpenTask.attach()
             }
         );
+        registry.registerCommand(
+            TaskCommands.TASK_RUN_LAST,
+            {
+                isEnabled: () => !!this.taskService.getLastTask(),
+                execute: () => this.taskService.runLastTask()
+            }
+        );
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -107,12 +128,25 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
-            commandId: TaskCommands.TASK_ATTACH.id,
+            commandId: TaskCommands.TASK_RUN_LAST.id,
             order: '1'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
+            commandId: TaskCommands.TASK_ATTACH.id,
+            order: '2'
         });
     }
 
     registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
         handlers.registerHandler(this.quickOpenTask);
     }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
+            command: TaskCommands.TASK_RUN_LAST.id,
+            keybinding: 'ctrlcmd+shift+k'
+        });
+    }
+
 }

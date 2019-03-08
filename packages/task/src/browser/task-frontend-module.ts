@@ -15,29 +15,32 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution, QuickOpenContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, QuickOpenContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { QuickOpenTask } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TaskConfigurations } from './task-configurations';
+import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskFrontendContribution } from './task-frontend-contribution';
 import { createCommonBindings } from '../common/task-common-module';
 import { TaskServer, taskPath } from '../common/task-protocol';
 import { TaskWatcher } from '../common/task-watcher';
 import { bindProcessTaskModule } from './process/process-task-frontend-module';
+import { TaskSchemaUpdater } from './task-schema-updater';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
     bind(TaskService).toSelf().inSingletonScope();
 
-    for (const identifier of [FrontendApplicationContribution, CommandContribution, MenuContribution, QuickOpenContribution]) {
+    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, QuickOpenContribution]) {
         bind(identifier).toService(TaskFrontendContribution);
     }
 
     bind(QuickOpenTask).toSelf().inSingletonScope();
     bind(TaskConfigurations).toSelf().inSingletonScope();
+    bind(ProvidedTaskConfigurations).toSelf().inSingletonScope();
 
     bind(TaskServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
@@ -50,6 +53,7 @@ export default new ContainerModule(bind => {
     bind(TaskProviderRegistry).toSelf().inSingletonScope();
     bind(TaskResolverRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, TaskContribution);
+    bind(TaskSchemaUpdater).toSelf().inSingletonScope();
 
     bindProcessTaskModule(bind);
 });

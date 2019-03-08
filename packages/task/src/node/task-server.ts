@@ -67,6 +67,10 @@ export class TaskServerImpl implements TaskServer {
         return taskInfo;
     }
 
+    async getRegisteredTaskTypes(): Promise<string[]> {
+        return this.runnerRegistry.getRunnerTypes();
+    }
+
     protected fireTaskExitedEvent(event: TaskExitedEvent) {
         this.logger.debug(log => log('task has exited:', event));
 

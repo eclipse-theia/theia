@@ -63,4 +63,8 @@ export class TaskRunnerRegistry {
         const runner = this.runners.get(type);
         return runner ? runner : this.defaultRunner;
     }
+
+    getRunnerTypes(): string[] {
+        return [...this.runners.keys()];
+    }
 }

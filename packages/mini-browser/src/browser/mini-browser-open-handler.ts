@@ -98,7 +98,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     canHandle(uri: URI): number {
         // It does not guard against directories. For instance, a folder with this name: `Hahahah.html`.
         // We could check with the FS, but then, this method would become async again.
-        const extension = uri.path.ext;
+        const extension = uri.toString().split('.').pop();
         if (extension) {
             return this.supportedExtensions.get(extension.toLocaleLowerCase()) || 0;
         }

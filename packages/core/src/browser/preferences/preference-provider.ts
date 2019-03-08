@@ -19,7 +19,7 @@
 import { injectable } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
 import { Deferred } from '../../common/promise-util';
-import { PreferenceScope } from './preference-service';
+import { PreferenceScope } from './preference-scope';
 
 export namespace PreferenceProviderPriority {
     export const NA = -1;

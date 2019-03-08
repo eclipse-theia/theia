@@ -16,11 +16,10 @@
 
 import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
-import { PYTHON_LANGUAGE_ID } from '../common';
 
 @injectable()
-export class PythonGrammarContribution implements LanguageGrammarDefinitionContribution {
-
+export class PythonContribution implements LanguageGrammarDefinitionContribution {
+    readonly id = 'python';
     readonly config: monaco.languages.LanguageConfiguration = {
         comments: {
             lineComment: '#'
@@ -60,13 +59,13 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
-            id: PYTHON_LANGUAGE_ID,
+            id: this.id,
             extensions: ['.py', '.rpy', '.pyw', '.cpy', '.gyp', '.gypi', '.snakefile', '.smk'],
             aliases: ['Python', 'py'],
             firstLine: '^#!\\s*/.*\\bpython[0-9.-]*\\b',
         });
 
-        monaco.languages.setLanguageConfiguration(PYTHON_LANGUAGE_ID, this.config);
+        monaco.languages.setLanguageConfiguration(this.id, this.config);
 
         const platformGrammar = require('../../data/MagicPython.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.python', {
@@ -87,6 +86,6 @@ export class PythonGrammarContribution implements LanguageGrammarDefinitionContr
                 };
             }
         });
-        registry.mapLanguageIdToTextmateGrammar(PYTHON_LANGUAGE_ID, 'source.python');
+        registry.mapLanguageIdToTextmateGrammar(this.id, 'source.python');
     }
 }

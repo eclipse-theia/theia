@@ -250,16 +250,19 @@ export interface PickOpenItem {
     picked?: boolean;
 }
 
+export enum MainMessageType {
+    Error,
+    Warning,
+    Info
+}
+
+export interface MainMessageOptions {
+    modal?: boolean
+    onCloseActionHandle?: number
+}
+
 export interface MessageRegistryMain {
-    $showInformationMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showWarningMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showErrorMessage(message: string,
-        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: string[]): PromiseLike<number | undefined>;
 }
 
 export interface StatusBarMessageRegistryMain {
@@ -828,6 +831,7 @@ export interface TaskDto {
     type: string;
     label: string;
     source?: string;
+    scope?: string;
     // tslint:disable-next-line:no-any
     [key: string]: any;
 }
@@ -987,6 +991,16 @@ export interface DebugMain {
     $customRequest(sessionId: string, command: string, args?: any): Promise<DebugProtocol.Response>;
 }
 
+export interface FileSystemExt {
+    $readFile(handle: number, resource: UriComponents, options?: { encoding?: string }): Promise<string>;
+    $writeFile(handle: number, resource: UriComponents, content: string, options?: { encoding?: string }): Promise<void>;
+}
+
+export interface FileSystemMain {
+    $registerFileSystemProvider(handle: number, scheme: string): void;
+    $unregisterProvider(handle: number): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -1008,7 +1022,8 @@ export const PLUGIN_RPC_CONTEXT = {
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     LANGUAGES_CONTRIBUTION_MAIN: createProxyIdentifier<LanguagesContributionMain>('LanguagesContributionMain'),
-    DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain')
+    DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
+    FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1030,7 +1045,8 @@ export const MAIN_RPC_CONTEXT = {
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
-    DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt')
+    DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
+    FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt')
 };
 
 export interface TasksExt {

@@ -21,7 +21,7 @@ import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
-import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager, PluginAPIFactory } from '../api/plugin-api';
+import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager, PluginAPIFactory, MainMessageType } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
@@ -97,7 +97,8 @@ import {
     ColorInformation,
     ColorPresentation,
     OperatingSystem,
-    WebviewPanelTargetArea
+    WebviewPanelTargetArea,
+    FileSystemError
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -121,6 +122,7 @@ import { ConnectionExtImpl } from './connection-ext';
 import { WebviewsExtImpl } from './webviews';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
+import { FileSystemExtImpl } from './file-system';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -150,6 +152,7 @@ export function createAPIFactory(
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
     const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
+    const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -195,6 +198,9 @@ export function createAPIFactory(
         };
 
         const { onDidChangeActiveTerminal, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
+        const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
+        const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
+        const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
             get activeTerminal() {
                 return terminalExt.activeTerminal;
@@ -268,24 +274,9 @@ export function createAPIFactory(
             showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
                 return workspaceExt.pickWorkspaceFolder(options);
             },
-            showInformationMessage(message: string,
-                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                // tslint:disable-next-line:no-any
-                ...items: any[]): PromiseLike<any> {
-                return messageRegistryExt.showInformationMessage(message, optionsOrFirstItem, items);
-            },
-            showWarningMessage(message: string,
-                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                // tslint:disable-next-line:no-any
-                ...items: any[]): PromiseLike<any> {
-                return messageRegistryExt.showWarningMessage(message, optionsOrFirstItem, items);
-            },
-            showErrorMessage(message: string,
-                optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                // tslint:disable-next-line:no-any
-                ...items: any[]): PromiseLike<any> {
-                return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
-            },
+            showInformationMessage,
+            showWarningMessage,
+            showErrorMessage,
             showOpenDialog(options: theia.OpenDialogOptions): PromiseLike<Uri[] | undefined> {
                 return dialogsExt.showOpenDialog(options);
             },
@@ -426,9 +417,8 @@ export function createAPIFactory(
             registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
-            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
-                // FIXME: to implement
-                return new Disposable(() => { });
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider): theia.Disposable {
+                return fileSystemExt.registerFileSystemProvider(scheme, provider);
             },
             getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
                 return workspaceExt.getWorkspaceFolder(uri);
@@ -717,7 +707,8 @@ export function createAPIFactory(
             FoldingRange,
             FoldingRangeKind,
             OperatingSystem,
-            WebviewPanelTargetArea
+            WebviewPanelTargetArea,
+            FileSystemError
         };
     };
 }

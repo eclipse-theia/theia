@@ -16,7 +16,7 @@
  ********************************************************************************/
 
 const fs = require('fs');
-const request = require('request');
+const request = require('requestretry');
 const unzip = require('unzip-stream');
 const path = require('path');
 const process = require('process');
@@ -45,13 +45,16 @@ for (const name in pck.adapters) {
     console.log(name + ': downloading from ' + adapterUrl);
     const download = request({
         ...pck.requestOptions,
-        url: adapterUrl
-    }, err => {
+        url: adapterUrl,
+        maxAttempts: 5,
+        retryDelay: 2000,
+        retryStrategy: request.RetryStrategies.HTTPOrNetworkError
+    }, (err, response) => {
         if (err) {
             console.error(name + ': failed to download', err)
             process.exitCode = 1;
         } else {
-            console.log(name + ': downloaded successfully');
+            console.log(name + ': downloaded successfully' + (response.attempts > 1 ? ` after ${response.attempts}  attempts` : ''));
         }
     });
 

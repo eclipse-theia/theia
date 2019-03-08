@@ -28,7 +28,11 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     }
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
-        return resolvedPlugin.isFile() && resolvedPlugin.path() !== null && resolvedPlugin.path().endsWith('.vsix');
+        if (!resolvedPlugin.isFile()) {
+            return false;
+        }
+        const pluginPath = resolvedPlugin.path();
+        return !!pluginPath && pluginPath.endsWith('.vsix') || pluginPath.endsWith('.tgz');
     }
 
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {

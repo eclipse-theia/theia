@@ -26,7 +26,7 @@ import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { MonacoEditor } from './monaco-editor';
-import { MonacoEditorModel } from './monaco-editor-model';
+import { MonacoEditorModel, WillSaveMonacoModelEvent } from './monaco-editor-model';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
@@ -149,14 +149,7 @@ export class MonacoEditorProvider {
             }
         }));
         toDispose.push(editor.onLanguageChanged(() => this.updateMonacoEditorOptions(editor)));
-        editor.document.onWillSaveModel(event => {
-            event.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async resolve => {
-                if (event.reason === TextDocumentSaveReason.Manual && this.editorPreferences['editor.formatOnSave']) {
-                    await this.commandServiceFactory().executeCommand('monaco.editor.action.formatDocument');
-                }
-                resolve([]);
-            }));
-        });
+        editor.document.onWillSaveModel(event => event.waitUntil(this.formatOnSave(editor, event)));
         return editor;
     }
     protected createMonacoEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
@@ -176,6 +169,24 @@ export class MonacoEditorProvider {
             delete options.model;
             editor.getControl().updateOptions(options);
         }
+    }
+
+    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
+        if (event.reason !== TextDocumentSaveReason.Manual) {
+            return [];
+        }
+        const overrideIdentifier = editor.document.languageId;
+        const uri = editor.uri.toString();
+        const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!;
+        if (!formatOnSave) {
+            return [];
+        }
+        const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
+        await Promise.race([
+            new Promise(reject => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
+            await editor.commandService.executeCommand('monaco.editor.action.formatDocument')
+        ]);
+        return [];
     }
 
     protected get diffPreferencePrefixes(): string[] {

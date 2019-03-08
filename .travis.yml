@@ -55,6 +55,7 @@ cache:
   - packages/terminal/node_modules
   - packages/textmate-grammars/node_modules
   - packages/tslint/node_modules
+  - packages/typehierarchy/node_modules
   - packages/typescript/node_modules
   - packages/userstorage/node_modules
   - packages/variable-resolver/node_modules

@@ -33,6 +33,7 @@ import URI from 'vscode-uri';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { normalize } from '../common/paths';
 import { relative } from '../common/paths-util';
+import { Schemes } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
@@ -156,7 +157,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
-        if (scheme === 'file' || scheme === 'untitled' || this.documentContentProviders.has(scheme)) {
+        // `file` and `untitled` schemas are reserved by `workspace.openTextDocument` API:
+        // `file`-scheme for opening a file
+        // `untitled`-scheme for opening a new file that should be saved
+        if (scheme === Schemes.FILE || scheme === Schemes.UNTITLED || this.documentContentProviders.has(scheme)) {
             throw new Error(`Text Content Document Provider for scheme '${scheme}' is already registered`);
         }
 
