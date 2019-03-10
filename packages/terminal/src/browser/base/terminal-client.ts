@@ -16,7 +16,7 @@
 
 import { IShellTerminalServerOptions } from '../../common/shell-terminal-protocol';
 import { Disposable } from '@theia/core';
-import { TerminalWidget } from './terminal-widget';
+import { TerminalWidget, TerminalSize } from './terminal-widget';
 
 export type TerminalClientFactory = (options: TerminalClientOptions, terminalWidget: TerminalWidget) => TerminalClient;
 export const TerminalClientFactory = Symbol('TerminalClientFactory');
@@ -74,7 +74,7 @@ export interface TerminalClient extends Disposable {
      * @param cols - amount displayed columns in the output frame.
      * @param rows - amount displayed rows in the output frame.
      */
-    resize(cols: number, rows: number): Promise<void>;
+    resize(size: TerminalSize): Promise<void>;
 
     /**
      * Kill backend process.

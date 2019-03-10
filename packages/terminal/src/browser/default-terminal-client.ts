@@ -25,7 +25,7 @@ import { terminalsPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core';
 import { TerminalClient, TerminalClientOptions } from './base/terminal-client';
-import { TerminalWidget } from './base/terminal-widget';
+import { TerminalWidget, TerminalSize } from './base/terminal-widget';
 
 /**
  * Default implementation Terminal Client.
@@ -89,7 +89,9 @@ export class DefaultTerminalClient implements TerminalClient {
             }
         }));
 
-       this.toDispose.push(this.widget);
+       this.toDispose.push(this.widget.onTerminalResize(size => this.resize(size)));
+       this.toDispose.push(this.widget.onTerminalDidClose(() => this.kill()));
+
        this.configureReconnection();
     }
 
@@ -134,6 +136,10 @@ export class DefaultTerminalClient implements TerminalClient {
     async createAndAttach(): Promise<number> {
         this._terminalId = await this.spawnProcess();
 
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
+            throw new Error('Error creating terminal widget, see the backend error log for more information.');
+        }
+
         this.connectWidgetToProcess();
 
         return this.terminalId;
@@ -141,10 +147,7 @@ export class DefaultTerminalClient implements TerminalClient {
 
     private connectWidgetToProcess() {
         this.createConnection();
-        this.onDidCloseDisposable = this.widget.onTerminalDidClose(() => this.kill());
-        const onResizeDisposable = this.widget.onTerminalResize(size => this.resize(size.cols, size.rows));
-
-        this.toDispose.pushAll([this.onDidCloseDisposable, onResizeDisposable]);
+        this.resize(this.widget.size);
     }
 
     protected async spawnProcess(): Promise<number> {
@@ -154,10 +157,12 @@ export class DefaultTerminalClient implements TerminalClient {
             rootURI = root && root.uri;
         }
 
+        const initialSize = this.widget.size;
+
         const terminalId = await this.shellTerminalServer.create({
             ... this.options,
-            cols: this.options.cols || 80,
-            rows: this.options.rows || 24,
+            cols: initialSize.cols || 80,
+            rows: initialSize.rows || 24,
         });
 
         if (IBaseTerminalServer.validateId(terminalId)) {
@@ -195,12 +200,12 @@ export class DefaultTerminalClient implements TerminalClient {
         }, { reconnecting: false });
     }
 
-    async resize(cols: number, rows: number): Promise<void> {
+    async resize(size: TerminalSize): Promise<void> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return;
         }
 
-        await this.shellTerminalServer.resize(this.terminalId, cols, rows);
+        await this.shellTerminalServer.resize(this.terminalId, size.cols, size.rows);
     }
 
     async kill(): Promise<void> {

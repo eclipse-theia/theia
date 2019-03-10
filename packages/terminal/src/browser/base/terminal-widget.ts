@@ -32,6 +32,11 @@ export class TerminalSize {
 export abstract class TerminalWidget extends BaseWidget {
 
     /**
+     * Return current terminal size.
+     */
+    abstract readonly size: TerminalSize;
+
+    /**
      * Return unique process id(PID).
      */
     abstract processId: Promise<number>;

@@ -307,6 +307,10 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
         return this._onTerminalResize.event;
     }
 
+    get size(): TerminalSize {
+        return {cols: this.term.cols, rows: this.term.rows};
+    }
+
     dispose(): void {
         super.dispose();
         this._onTerminalDidClose.fire(this);
