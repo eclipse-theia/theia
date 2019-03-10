@@ -24,13 +24,14 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { terminalsPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core';
-import { TerminalClient, TerminalWidget, TerminalClientOptions } from './';
+import { TerminalClient, TerminalClientOptions } from './base/terminal-client';
+import { TerminalWidget } from './base/terminal-widget';
 
 /**
  * Default implementation Terminal Client.
  */
 @injectable()
-export class DefaultTerminalClient implements TerminalClient, Disposable {
+export class DefaultTerminalClient implements TerminalClient {
 
     @inject(ShellTerminalServerProxy)
     protected readonly shellTerminalServer: ShellTerminalServerProxy;

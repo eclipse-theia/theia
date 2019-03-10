@@ -130,8 +130,7 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
         });
         this.term.on('data', data => this._onUserInput.fire(data));
 
-        this.toDispose.push(this.onDidOpenEmitter);
-        this.toDispose.push(this._onUserInput);
+        this.toDispose.pushAll([this.onDidOpenEmitter, this._onUserInput]);
     }
 
     get processId(): Promise<number> {
