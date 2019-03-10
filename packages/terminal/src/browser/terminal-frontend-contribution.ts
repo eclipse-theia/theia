@@ -28,8 +28,7 @@ import {
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions,
-    FrontendApplicationContribution,
+    KeyModifier, KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -39,7 +38,7 @@ import { TerminalWidgetOptions, TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, Term
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { MAIN_MENU_BAR, DisposableCollection } from '@theia/core';
+import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
@@ -80,7 +79,7 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution,
+export class TerminalFrontendContribution implements TerminalService, CommandContribution,
                                                      MenuContribution, KeybindingContribution, TabBarToolbarContribution  {
 
     constructor(
@@ -108,28 +107,20 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     protected readonly onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
     readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidCreateTerminalEmitter.event;
 
-    protected readonly toDispose = new DisposableCollection();
-
     @postConstruct()
     protected init(): void {
         this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
-        this.toDispose.push(this.widgetManager.onDidCreateWidget(({ widget }) => {
+        this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
                 this.onDidCreateTerminalEmitter.fire(widget);
             }
-        }));
+        });
 
         const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocus', false);
         const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
         updateFocusKey();
         this.shell.activeChanged.connect(updateFocusKey);
-
-        this.toDispose.pushAll([this.onDidCreateTerminalEmitter, this.onDidChangeCurrentTerminalEmitter]);
-    }
-
-    onStop(): void {
-        this.toDispose.dispose();
     }
 
     protected _currentTerminal: TerminalWidget | undefined;
@@ -327,7 +318,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             created: new Date().toString(),
             ...options
         });
-        this.toDispose.push(widget);
         return widget;
     }
 

@@ -78,13 +78,13 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
     protected init(): void {
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
-                this.disposeWidget(); // todo use despose() at all?
+                this.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
-                this.disposeWidget();
+                this.dispose();
             }
         }));
 
@@ -110,17 +110,11 @@ export class DefaultTerminalClient implements TerminalClient, Disposable {
         }
     }
 
-    private disposeWidget(): void {
-        if (this.onDidCloseDisposable) {
-            this.onDidCloseDisposable.dispose();
-        }
+    dispose(): void {
+        this.toDispose.dispose();
         if (this.options.closeOnDispose) {
             this.widget.dispose();
         }
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
     }
 
     async attach(id: number, createNewTerminalOnFaill?: boolean): Promise<number> {
