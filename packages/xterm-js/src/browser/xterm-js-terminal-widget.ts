@@ -17,7 +17,7 @@
 import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
+import { Disposable, Event, Emitter, ILogger } from '@theia/core';
 import { Widget, Message, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -60,8 +60,6 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
     protected readonly _onTerminalResize = new Emitter<TerminalSize>();
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
-
-    protected readonly toDispose = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
@@ -132,16 +130,8 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
         });
         this.term.on('data', data => this._onUserInput.fire(data));
 
-        this.toDispose.push(this._onTerminalDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this._onUserInput);
-    }
-
-    // Deprecated in the interface TerminalWidget
-    async start(id?: number): Promise<number> {
-        const terminalId = typeof id !== 'number' ? await this.terminalClient.createAndAttach() : await this.terminalClient.attach(id, true);
-        this.onDidOpenEmitter.fire(undefined);
-        return terminalId;
     }
 
     get processId(): Promise<number> {
@@ -222,6 +212,13 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
             background,
             selection
         };
+    }
+
+    // Deprecated in the interface TerminalWidget
+    async start(id?: number): Promise<number> {
+        const terminalId = typeof id !== 'number' ? await this.terminalClient.createAndAttach() : await this.terminalClient.attach(id, true);
+        this.onDidOpenEmitter.fire(undefined);
+        return terminalId;
     }
 
     processMessage(msg: Message): void {
@@ -312,9 +309,9 @@ export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWid
     }
 
     dispose(): void {
+        super.dispose();
         this._onTerminalDidClose.fire(this);
         this._onTerminalDidClose.dispose();
-        super.dispose();
     }
 
     protected resizeTerminal(): void {
