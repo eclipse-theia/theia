@@ -17,9 +17,9 @@
 import { interfaces } from 'inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { CliContribution } from '@theia/core/lib/node/cli';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { HostedInstanceManager, NodeHostedPluginRunner } from './hosted-instance-manager';
 import { HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MetadataScanner } from './metadata-scanner';
 import { HostedPluginServerImpl } from './plugin-service';
@@ -32,44 +32,49 @@ import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
+import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+
+const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
+    bind(HostedPluginProcess).toSelf().inSingletonScope();
+    bind(HostedPluginSupport).toSelf().inSingletonScope();
+
+    bind(HostedPluginsManagerImpl).toSelf().inSingletonScope();
+    bind(HostedPluginsManager).toService(HostedPluginsManagerImpl);
+
+    bindContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
+    bind(HostedPluginServerImpl).toSelf().inSingletonScope();
+    bind(HostedPluginServer).toService(HostedPluginServerImpl);
+    bindBackendService<HostedPluginServer, HostedPluginClient>(hostedServicePath, HostedPluginServer, (server, client) => {
+        server.setClient(client);
+        client.onDidCloseConnection(() => server.dispose());
+        return server;
+    });
+});
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(HostedPluginCliContribution);
 
-    bind(HostedPluginReader).toSelf().inSingletonScope();
-
-    bind(HostedPluginServerImpl).toSelf().inSingletonScope();
-    bind(HostedPluginServer).toService(HostedPluginServerImpl);
-    bind(PluginDeployerHandler).toService(HostedPluginServerImpl);
-
-    bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(MetadataScanner).toSelf().inSingletonScope();
-    bind(HostedPluginsManager).to(HostedPluginsManagerImpl).inSingletonScope();
-
-    bind(HostedPluginProcess).toSelf().inSingletonScope();
-
+    bind(HostedPluginReader).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(HostedPluginReader);
 
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<HostedPluginClient>(hostedServicePath, client => {
-            const server = ctx.container.get<HostedPluginServer>(HostedPluginServer);
-            server.setClient(client);
-            // FIXME: handle multiple remote connections
-            /*
-            client.onDidCloseConnection(() => server.dispose());*/
-            return server;
-        })
-    ).inSingletonScope();
+    bind(HostedPluginDeployerHandler).toSelf().inSingletonScope();
+    bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 
     bind(GrammarsReader).toSelf().inSingletonScope();
+
+    bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
 }
+
+const hostedBackendConnectionModule = ConnectionContainerModule.create(({ bind }) => {
+    bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
+    bind(HostedInstanceManager).to(NodeHostedPluginRunner).inSingletonScope();
+});
 
 export function bindHostedBackend(bind: interfaces.Bind): void {
     bindCommonHostedBackend(bind);
+    bind(ConnectionContainerModule).toConstantValue(hostedBackendConnectionModule);
 
-    bind(HostedInstanceManager).to(NodeHostedPluginRunner).inSingletonScope();
     bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
-    bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
-    bindContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
 }

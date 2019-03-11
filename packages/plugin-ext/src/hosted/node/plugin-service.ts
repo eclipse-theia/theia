@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, named } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry, DebugConfiguration, PluginDeployerHandler } from '../../common/plugin-protocol';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, DebugConfiguration } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { HostedPluginSupport } from './hosted-plugin';
@@ -23,27 +23,21 @@ import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core';
 import { ContributionProvider } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
+import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 
 @injectable()
-export class HostedPluginServerImpl implements HostedPluginServer, PluginDeployerHandler {
+export class HostedPluginServerImpl implements HostedPluginServer {
     @inject(ILogger)
     protected readonly logger: ILogger;
     @inject(HostedPluginsManager)
     protected readonly hostedPluginsManager: HostedPluginsManager;
 
+    @inject(HostedPluginDeployerHandler)
+    protected readonly deployerHandler: HostedPluginDeployerHandler;
+
     @inject(ContributionProvider)
     @named(Symbol.for(ExtPluginApiProvider))
     protected readonly extPluginAPIContributions: ContributionProvider<ExtPluginApiProvider>;
-
-    /**
-     * Managed plugin metadata backend entries.
-     */
-    private currentBackendPluginsMetadata: PluginMetadata[] = [];
-
-    /**
-     * Managed plugin metadata frontend entries.
-     */
-    private currentFrontendPluginsMetadata: PluginMetadata[] = [];
 
     constructor(
         @inject(HostedPluginReader) private readonly reader: HostedPluginReader,
@@ -66,13 +60,17 @@ export class HostedPluginServerImpl implements HostedPluginServer, PluginDeploye
     }
 
     getDeployedFrontendMetadata(): Promise<PluginMetadata[]> {
-        return Promise.resolve(this.currentFrontendPluginsMetadata);
+        return Promise.resolve(this.deployerHandler.getDeployedFrontendMetadata());
     }
 
     async getDeployedMetadata(): Promise<PluginMetadata[]> {
+        const backendMetadata = this.deployerHandler.getDeployedBackendMetadata();
+        if (backendMetadata.length > 0) {
+            this.hostedPlugin.runPluginServer();
+        }
         const allMetadata: PluginMetadata[] = [];
-        allMetadata.push(...this.currentFrontendPluginsMetadata);
-        allMetadata.push(...this.currentBackendPluginsMetadata);
+        allMetadata.push(...this.deployerHandler.getDeployedFrontendMetadata());
+        allMetadata.push(...backendMetadata);
 
         // ask remote as well
         const extraBackendPluginsMetadata = await this.hostedPlugin.getExtraPluginMetadata();
@@ -81,33 +79,8 @@ export class HostedPluginServerImpl implements HostedPluginServer, PluginDeploye
         return allMetadata;
     }
 
-    // need to run a new node instance with plugin-host for all plugins
-    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
-        for (const plugin of frontendPlugins) {
-            const metadata = await this.reader.getPluginMetadata(plugin.path());
-            if (metadata) {
-                this.currentFrontendPluginsMetadata.push(metadata);
-                this.logger.info(`Deploying frontend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.frontend || plugin.path()}"`);
-            }
-        }
-    }
-
     getDeployedBackendMetadata(): Promise<PluginMetadata[]> {
-        return Promise.resolve(this.currentBackendPluginsMetadata);
-    }
-
-    // need to run a new node instance with plugin-host for all plugins
-    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
-        if (backendPlugins.length > 0) {
-            this.hostedPlugin.runPluginServer();
-        }
-        for (const plugin of backendPlugins) {
-            const metadata = await this.reader.getPluginMetadata(plugin.path());
-            if (metadata) {
-                this.currentBackendPluginsMetadata.push(metadata);
-                this.logger.info(`Deploying backend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.backend || plugin.path()}"`);
-            }
-        }
+        return Promise.resolve(this.deployerHandler.getDeployedBackendMetadata());
     }
 
     onMessage(message: string): Promise<void> {
