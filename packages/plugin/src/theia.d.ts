@@ -3667,53 +3667,53 @@ declare module '@theia/plugin' {
 	 * This class has factory methods for common error-cases, like `EntryNotFound` when
 	 * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.EntryNotFound(someUri);`
 	 */
-	export class FileSystemError extends Error {
+    export class FileSystemError extends Error {
 
 		/**
 		 * Create an error to signal that a file or folder wasn't found.
 		 * @param messageOrUri Message or uri.
 		 */
-		static FileNotFound(messageOrUri?: string | Uri): FileSystemError;
+        static FileNotFound(messageOrUri?: string | Uri): FileSystemError;
 
 		/**
 		 * Create an error to signal that a file or folder already exists, e.g. when
 		 * creating but not overwriting a file.
 		 * @param messageOrUri Message or uri.
 		 */
-		static FileExists(messageOrUri?: string | Uri): FileSystemError;
+        static FileExists(messageOrUri?: string | Uri): FileSystemError;
 
 		/**
 		 * Create an error to signal that a file is not a folder.
 		 * @param messageOrUri Message or uri.
 		 */
-		static FileNotADirectory(messageOrUri?: string | Uri): FileSystemError;
+        static FileNotADirectory(messageOrUri?: string | Uri): FileSystemError;
 
 		/**
 		 * Create an error to signal that a file is a folder.
 		 * @param messageOrUri Message or uri.
 		 */
-		static FileIsADirectory(messageOrUri?: string | Uri): FileSystemError;
+        static FileIsADirectory(messageOrUri?: string | Uri): FileSystemError;
 
 		/**
 		 * Create an error to signal that an operation lacks required permissions.
 		 * @param messageOrUri Message or uri.
 		 */
-		static NoPermissions(messageOrUri?: string | Uri): FileSystemError;
+        static NoPermissions(messageOrUri?: string | Uri): FileSystemError;
 
 		/**
 		 * Create an error to signal that the file system is unavailable or too busy to
 		 * complete a request.
 		 * @param messageOrUri Message or uri.
 		 */
-		static Unavailable(messageOrUri?: string | Uri): FileSystemError;
+        static Unavailable(messageOrUri?: string | Uri): FileSystemError;
 
 		/**
 		 * Creates a new filesystem error.
 		 *
 		 * @param messageOrUri Message or uri.
 		 */
-		constructor(messageOrUri?: string | Uri);
-	}
+        constructor(messageOrUri?: string | Uri);
+    }
 
     /**
      * Enumeration of file change types.
@@ -4119,12 +4119,11 @@ declare module '@theia/plugin' {
         /**
          * Returns the [workspace folder](#WorkspaceFolder) that contains a given uri.
          * * returns `undefined` when the given uri doesn't match any workspace folder
-         * * returns the *input* when the given uri is a workspace folder itself
          *
          * @param uri An uri.
          * @return A workspace folder or `undefined`
          */
-        export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | Uri | undefined;
+        export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined;
 
         /**
          * Returns a path that is relative to the workspace folder or folders.
