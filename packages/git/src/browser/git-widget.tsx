@@ -111,6 +111,8 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                     this.updateView(gitEvent.status);
                 }
             }));
+        } else {
+            this.updateView(undefined);
         }
     }
 
