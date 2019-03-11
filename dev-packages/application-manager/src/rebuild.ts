@@ -21,7 +21,7 @@ import cp = require('child_process');
 export function rebuild(target: 'electron' | 'browser', modules: string[]) {
     const nodeModulesPath = path.join(process.cwd(), 'node_modules');
     const browserModulesPath = path.join(process.cwd(), '.browser_modules');
-    const modulesToProcess = modules || ['node-pty', 'vscode-nsfw', 'find-git-repositories'];
+    const modulesToProcess = modules || ['@theia/node-pty', 'vscode-nsfw', 'find-git-repositories'];
 
     if (target === 'electron' && !fs.existsSync(browserModulesPath)) {
         const dependencies: {
@@ -55,7 +55,7 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
             }, 100);
         }
     } else if (target === 'browser' && fs.existsSync(browserModulesPath)) {
-        for (const moduleName of fs.readdirSync(browserModulesPath)) {
+        for (const moduleName of collectModulePaths(browserModulesPath)) {
             console.log('Reverting ' + moduleName);
             const src = path.join(browserModulesPath, moduleName);
             const dest = path.join(nodeModulesPath, moduleName);
@@ -66,4 +66,16 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
     } else {
         console.log('native node modules are already rebuilt for ' + target);
     }
+}
+
+function collectModulePaths(root: string): string[] {
+    const moduleRelativePaths: string[] = [];
+    for (const dirName of fs.readdirSync(root)) {
+        if (fs.existsSync(path.join(root, dirName, 'package.json'))) {
+            moduleRelativePaths.push(dirName);
+        } else if (fs.lstatSync(path.join(root, dirName)).isDirectory()) {
+            moduleRelativePaths.push(...collectModulePaths(path.join(root, dirName)).map(p => path.join(dirName, p)));
+        }
+    }
+    return moduleRelativePaths;
 }
