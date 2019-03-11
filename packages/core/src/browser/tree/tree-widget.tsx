@@ -95,7 +95,7 @@ export interface NodeProps {
 }
 
 export const defaultTreeProps: TreeProps = {
-    leftPadding: 16
+    leftPadding: 8
 };
 
 export namespace TreeWidget {

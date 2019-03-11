@@ -19,10 +19,6 @@
     color: var(--theia-ui-font-color1);
 }
 
-.theia-marker-container .theia-ExpansionToggle {
-    min-width: 16px;
-}
-
 .theia-marker-container .noMarkers {
     padding: 5px;
 }
