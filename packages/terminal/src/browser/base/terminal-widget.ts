@@ -156,10 +156,3 @@ export interface TerminalWidgetOptions {
      */
     readonly attributes?: { [key: string]: string | null };
 }
-
-export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
-    /* a unique string per terminal */
-    created: string
-}
-
-export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';

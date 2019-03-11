@@ -22,9 +22,17 @@ import { Widget, Message, StatefulWidget, isFirefox, MessageLoop, KeyCode } from
 import { isOSX } from '@theia/core/lib/common';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import {
-    TerminalClientFactory, TerminalClient, TerminalClientOptions, TerminalPreferences,
     TerminalWidgetOptions, TerminalWidget, TerminalSize
-} from '@theia/terminal/lib/browser';
+} from './base/terminal-widget';
+import { TerminalClientFactory, TerminalClient, TerminalClientOptions } from './base/terminal-client';
+import { TerminalPreferences } from './terminal-preferences';
+
+export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
+
+export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
+    /* a unique string per terminal */
+    created: string
+}
 
 interface TerminalCSSProperties {
     /* The text color, as a CSS color string.  */
@@ -38,7 +46,7 @@ interface TerminalCSSProperties {
 }
 
 @injectable()
-export class XtermJsTerminalWidget extends TerminalWidget implements StatefulWidget {
+export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
     protected term: Xterm.Terminal;

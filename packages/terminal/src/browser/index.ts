@@ -21,3 +21,4 @@ export * from './base/terminal-client';
 export * from './base/terminal-service';
 export * from './terminal-keybinding-contexts';
 export * from './terminal-preferences';
+export * from './terminal-widget-impl';

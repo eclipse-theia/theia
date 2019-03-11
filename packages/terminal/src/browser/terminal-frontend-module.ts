@@ -19,7 +19,8 @@ import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { TerminalWidget, TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetOptions } from './base/terminal-widget';
+import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
+import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -30,9 +31,14 @@ import { bindTerminalPreferences } from './terminal-preferences';
 import { TerminalClient, TerminalClientOptions, TerminalClientFactory } from './base/terminal-client';
 import { DefaultTerminalClient } from './default-terminal-client';
 
+import '../../src/browser/terminal.css';
+import 'xterm/lib/xterm.css';
+
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
+
+    bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
 
     bind(DefaultTerminalClient).toSelf();

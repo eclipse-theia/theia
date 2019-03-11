@@ -20,7 +20,6 @@
     "@theia/task": "^0.4.0",
     "@theia/workspace": "^0.4.0",
     "@theia/terminal": "^0.4.0",
-    "@theia/xterm.js": "^0.4.0",
     "decompress": "^4.2.0",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
