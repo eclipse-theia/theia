@@ -22,6 +22,7 @@ import {
 } from '../../common';
 import { PreferenceService, KeybindingRegistry, Keybinding, KeyCode, Key } from '../../browser';
 import { ContextKeyService } from '../../browser/context-key-service';
+import { Anchor } from '../../browser/context-menu-renderer';
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -57,14 +58,17 @@ export class ElectronMainMenuFactory {
         return menu;
     }
 
-    createContextMenu(menuPath: MenuPath): Electron.Menu {
+    createContextMenu(menuPath: MenuPath, anchor?: Anchor): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(menuPath);
-        const template = this.fillMenuTemplate([], menuModel);
+        const template = this.fillMenuTemplate([], menuModel, anchor);
 
         return electron.remote.Menu.buildFromTemplate(template);
     }
 
-    protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[], menuModel: CompositeMenuNode): Electron.MenuItemConstructorOptions[] {
+    protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[],
+        menuModel: CompositeMenuNode,
+        anchor?: Anchor
+    ): Electron.MenuItemConstructorOptions[] {
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 if (menu.children.length > 0) {
@@ -72,7 +76,7 @@ export class ElectronMainMenuFactory {
 
                     if (menu.isSubmenu) { // submenu node
 
-                        const submenu = this.fillMenuTemplate([], menu);
+                        const submenu = this.fillMenuTemplate([], menu, anchor);
                         if (submenu.length === 0) {
                             continue;
                         }
@@ -85,7 +89,7 @@ export class ElectronMainMenuFactory {
                     } else { // group node
 
                         // process children
-                        const submenu = this.fillMenuTemplate([], menu);
+                        const submenu = this.fillMenuTemplate([], menu, anchor);
                         if (submenu.length === 0) {
                             continue;
                         }
@@ -110,8 +114,9 @@ export class ElectronMainMenuFactory {
                     throw new Error(`Unknown command with ID: ${commandId}.`);
                 }
 
-                if (!this.commandRegistry.isVisible(commandId)
-                    || (!!menu.action.when && !this.contextKeyService.match(menu.action.when))) {
+                const args = anchor ? [anchor] : [];
+                if (!this.commandRegistry.isVisible(commandId, ...args)
+                    || (!!menu.action.when && !this.contextKeyService.match(menu.action.when))) {
                     continue;
                 }
 
@@ -132,7 +137,7 @@ export class ElectronMainMenuFactory {
                     checked: this.commandRegistry.isToggled(commandId),
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
-                    click: () => this.execute(commandId),
+                    click: () => this.execute(commandId, anchor),
                     accelerator
                 });
                 if (this.commandRegistry.getToggledHandler(commandId)) {
@@ -205,14 +210,15 @@ export class ElectronMainMenuFactory {
         return result;
     }
 
-    protected async execute(command: string): Promise<void> {
+    protected async execute(command: string, anchor?: Anchor): Promise<void> {
         try {
+            const args = anchor ? [anchor] : [];
             // This is workaround for https://github.com/theia-ide/theia/issues/446.
             // Electron menus do not update based on the `isEnabled`, `isVisible` property of the command.
             // We need to check if we can execute it.
-            if (this.commandRegistry.isEnabled(command)) {
-                await this.commandRegistry.executeCommand(command);
-                if (this.commandRegistry.isVisible(command)) {
+            if (this.commandRegistry.isEnabled(command, ...args)) {
+                await this.commandRegistry.executeCommand(command, ...args);
+                if (this.commandRegistry.isVisible(command, ...args)) {
                     this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command);
                     electron.remote.getCurrentWindow().setMenu(this._menu);
                 }

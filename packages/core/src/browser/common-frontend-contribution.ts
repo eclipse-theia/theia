@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
+import { TabBar, Widget, Title } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplicationContribution } from './frontend-application';
@@ -348,57 +349,51 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.shell.activatePreviousTab()
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
-            isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => {
-                const tabBar = this.shell.currentTabBar!;
-                const currentTitle = tabBar.currentTitle;
+            isEnabled: (event?: Event) => this.findTabBar(event) !== undefined,
+            execute: (event?: Event) => {
+                const tabBar = this.findTabBar(event)!;
+                const currentTitle = this.findTitle(tabBar, event);
                 this.shell.closeTabs(tabBar, (title, index) => title === currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
-            isEnabled: () => {
-                const tabBar = this.shell.currentTabBar;
-                if (tabBar) {
-                    return tabBar.titles.length > 1;
-                }
-                return false;
+            isEnabled: (event?: Event) => {
+                const tabBar = this.findTabBar(event);
+                return tabBar !== undefined && tabBar.titles.length > 1;
             },
-            execute: () => {
-                const tabBar = this.shell.currentTabBar!;
-                const currentTitle = tabBar.currentTitle;
-                this.shell.closeTabs(this.shell.currentTabArea!, (title, index) => title !== currentTitle);
+            execute: (event?: Event) => {
+                const tabBar = this.findTabBar(event)!;
+                const currentTitle = this.findTitle(tabBar, event);
+                const area = this.shell.getAreaFor(tabBar)!;
+                this.shell.closeTabs(area, (title, index) => title !== currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
-            isEnabled: () => {
-                const tabBar = this.shell.currentTabBar;
-                if (tabBar) {
-                    return tabBar.currentIndex < tabBar.titles.length - 1;
-                }
-                return false;
+            isEnabled: (event?: Event) => {
+                const tabBar = this.findTabBar(event);
+                return tabBar !== undefined && tabBar.currentIndex < tabBar.titles.length - 1;
             },
-            isVisible: () => {
-                const area = this.shell.currentTabArea;
-                return area !== 'left' && area !== 'right';
+            isVisible: (event?: Event) => {
+                const area = this.findTabArea(event);
+                return area !== undefined && area !== 'left' && area !== 'right';
             },
-            execute: () => {
-                const tabBar = this.shell.currentTabBar!;
+            execute: (event?: Event) => {
+                const tabBar = this.findTabBar(event)!;
                 const currentIndex = tabBar.currentIndex;
                 this.shell.closeTabs(tabBar, (title, index) => index > currentIndex);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
-            isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.closeTabs(this.shell.currentTabArea!)
+            isEnabled: (event?: Event) => this.findTabBar(event) !== undefined,
+            execute: (event?: Event) => {
+                this.shell.closeTabs(this.findTabArea(event)!);
+            }
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
-            isEnabled: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
-            isVisible: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
-            execute: () => {
-                const currentArea = this.shell.currentTabArea;
-                if (ApplicationShell.isSideArea(currentArea)) {
-                    this.shell.collapsePanel(currentArea);
-                }
+            isEnabled: (event?: Event) => ApplicationShell.isSideArea(this.findTabArea(event)),
+            isVisible: (event?: Event) => ApplicationShell.isSideArea(this.findTabArea(event)),
+            execute: (event?: Event) => {
+                this.shell.collapsePanel(this.findTabArea(event)!);
             }
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
@@ -428,6 +423,40 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.ABOUT_COMMAND, {
             execute: () => this.openAbout()
         });
+    }
+
+    private findTabBar(event?: Event): TabBar<Widget> | undefined {
+        if (event && event.target) {
+            const tabBar = this.shell.findWidgetForElement(event.target as HTMLElement);
+            if (tabBar instanceof TabBar) {
+                return tabBar;
+            }
+        }
+        return this.shell.currentTabBar;
+    }
+
+    private findTabArea(event?: Event): ApplicationShell.Area | undefined {
+        const tabBar = this.findTabBar(event);
+        if (tabBar) {
+            return this.shell.getAreaFor(tabBar);
+        }
+        return this.shell.currentTabArea;
+    }
+
+    private findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
+        if (event && event.target) {
+            let tabNode: HTMLElement | null = event.target as HTMLElement;
+            while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
+                tabNode = tabNode.parentElement;
+            }
+            if (tabNode && tabNode.title) {
+                const title = tabBar.titles.find(t => t.label === tabNode!.title);
+                if (title) {
+                    return title;
+                }
+            }
+        }
+        return tabBar.currentTitle || undefined;
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
