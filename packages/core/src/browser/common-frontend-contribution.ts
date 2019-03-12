@@ -30,6 +30,8 @@ import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKeyService } from './context-key-service';
 import { OS } from '../common/os';
+import { ResourceContextKey } from './resource-context-key';
+import { UriSelection } from '../common/selection';
 
 export namespace CommonMenus {
 
@@ -203,11 +205,25 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(ResourceContextKey)
+    protected readonly resourceContextKey: ResourceContextKey;
+
     @postConstruct()
     protected init(): void {
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
+
+        this.initResourceContextKeys();
+    }
+
+    protected initResourceContextKeys(): void {
+        const updateContextKeys = () => {
+            const resourceUri = UriSelection.getUri(this.selectionService.selection);
+            this.resourceContextKey.set(resourceUri);
+        };
+        updateContextKeys();
+        this.selectionService.onSelectionChanged(updateContextKeys);
     }
 
     registerMenus(registry: MenuModelRegistry): void {

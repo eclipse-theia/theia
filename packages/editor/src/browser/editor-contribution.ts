@@ -36,29 +36,16 @@ export class EditorContribution implements FrontendApplicationContribution {
     protected readonly contextKeyService: ContextKeyService;
 
     onStart(): void {
-        this.initResourceContextKeys();
         this.initEditorContextKeys();
 
         this.updateStatusBar();
         this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
     }
 
+    /** @deprecated since 0.5.0 - will be removed in farther releases */
     protected initResourceContextKeys(): void {
-        const resourceSchemeKey = this.contextKeyService.createKey<string>('resourceScheme', undefined);
-        const resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);
-        const resourceExtname = this.contextKeyService.createKey<string>('resourceExtname', undefined);
-        const resourceLangId = this.contextKeyService.createKey<string>('resourceLangId', undefined);
-        const updateContextKeys = () => {
-            const editor = this.editorManager.currentEditor;
-            const resourceUri = editor && editor.getResourceUri();
-            resourceSchemeKey.set(resourceUri && resourceUri.scheme);
-            resourceFileName.set(resourceUri && resourceUri.path.base);
-            resourceExtname.set(resourceUri && resourceUri.path.ext);
-            resourceLangId.set(this.getLanguageId(resourceUri));
-        };
-        updateContextKeys();
-        this.editorManager.onCurrentEditorChanged(updateContextKeys);
     }
+    /** @deprecated since 0.5.0 - will be removed in farther releases */
     protected getLanguageId(uri: URI | undefined): string | undefined {
         const { languages } = this.languages;
         if (uri && languages) {

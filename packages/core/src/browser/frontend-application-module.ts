@@ -68,6 +68,7 @@ import { bindCorePreferences } from './core-preferences';
 import { QuickPickServiceImpl } from './quick-open/quick-pick-service-impl';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { ContextKeyService } from './context-key-service';
+import { ResourceContextKey } from './resource-context-key';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -152,6 +153,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         return messages;
     });
 
+    bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
     [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(CommonFrontendContribution)
