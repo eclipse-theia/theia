@@ -18,12 +18,13 @@ import { inject, injectable } from 'inversify';
 import { ExecuteCommandRequest } from 'monaco-languageclient/lib';
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { EditorCommands, EDITOR_CONTEXT_MENU, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingRegistry, PreferenceService, OpenerService } from '@theia/core/lib/browser';
 import { WorkspaceEdit, Workspace } from '@theia/languages/lib/browser';
 import { JAVA_LANGUAGE_ID } from '../common';
 import { JavaClientContribution } from './java-client-contribution';
 import { JavaKeybindingContexts } from './java-keybinding-contexts';
 import { CompileWorkspaceRequest, CompileWorkspaceStatus } from './java-protocol';
+import URI from '@theia/core/lib/common/uri';
 
 /**
  * Show Java references
@@ -52,6 +53,14 @@ export const JAVA_COMPILE_WORKSPACE: Command = {
     id: 'java.workspace.compile'
 };
 
+export const JAVA_IGNORE_INCOMPLETE_CLASSPATH: Command = {
+    id: 'java.ignoreIncompleteClasspath'
+};
+
+export const JAVA_IGNORE_INCOMPLETE_CLASSPATH_HELP: Command = {
+    id: 'java.ignoreIncompleteClasspath.help'
+};
+
 @injectable()
 export class JavaCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
@@ -63,6 +72,12 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
 
     @inject(JavaClientContribution)
     protected readonly javaClientContribution: JavaClientContribution;
+
+    @inject(PreferenceService)
+    protected readonly preferencesService: PreferenceService;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SHOW_JAVA_REFERENCES, {
@@ -106,6 +121,18 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                 throw new Error('Failed to build');
             },
             isEnabled: () => this.javaClientContribution.running
+        });
+        commands.registerCommand(JAVA_IGNORE_INCOMPLETE_CLASSPATH, {
+            execute: async () => {
+                await this.preferencesService.set('java.errors.incompleteClasspath.severity', 'ignore');
+            }
+        });
+        commands.registerCommand(JAVA_IGNORE_INCOMPLETE_CLASSPATH_HELP, {
+            execute: async () => {
+                const uri = new URI('https://github.com/redhat-developer/vscode-java/wiki/%22Classpath-is-incomplete%22-warning');
+                const opener = await this.openerService.getOpener(uri);
+                await opener.open(uri);
+            }
         });
     }
 
