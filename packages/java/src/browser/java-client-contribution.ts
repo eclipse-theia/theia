@@ -96,7 +96,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         this.statusBarTimeout = window.setTimeout(() => {
             this.statusBar.removeElement(this.statusNotificationName);
             this.statusBarTimeout = undefined;
-        }, 5000);
+        }, 500);
     }
 
     protected showActionableMessage(message: ActionableMessage): void {
