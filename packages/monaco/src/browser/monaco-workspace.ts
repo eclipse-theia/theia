@@ -40,6 +40,13 @@ export interface MonacoTextDocumentWillSaveEvent extends TextDocumentWillSaveEve
     readonly textDocument: MonacoEditorModel;
 }
 
+interface EditsByEditor {
+    uri: string
+    version: number | undefined
+    editor?: MonacoEditor | undefined
+    textEdits: monaco.languages.TextEdit[]
+}
+
 @injectable()
 export class MonacoWorkspace implements lang.Workspace {
 
@@ -262,17 +269,17 @@ export class MonacoWorkspace implements lang.Workspace {
     }
 
     async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): monaco.Promise<monaco.editor.IBulkEditResult> {
-        let totalEdits = 0;
-        let totalFiles = 0;
-        const uri2Edits = this.groupEdits(workspaceEdit);
-        for (const uri of uri2Edits.keys()) {
-            const editorWidget = await this.editorManager.open(new URI(uri), options);
-            const editor = MonacoEditor.get(editorWidget);
-            if (editor) {
-                const model = editor.document.textEditorModel;
-                const currentSelections = editor.getControl().getSelections();
-                const edits = uri2Edits.get(uri)!;
-                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = edits.map(edit => ({
+        try {
+            const unresolvedEditorEdits = this.groupEdits(workspaceEdit);
+            const editorEdits = await this.openEditors(unresolvedEditorEdits, options);
+            this.checkVersions(editorEdits);
+            let totalEdits = 0;
+            let totalFiles = 0;
+            editorEdits.forEach(editorEdit => {
+                const editor = editorEdit.editor!;
+                const model = editor!.document.textEditorModel;
+                const currentSelections = editor!.getControl().getSelections();
+                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = editorEdit.textEdits.map(edit => ({
                     identifier: undefined!,
                     forceMoveMarkers: false,
                     range: new monaco.Range(edit.range.startLineNumber, edit.range.startColumn, edit.range.endLineNumber, edit.range.endColumn),
@@ -285,10 +292,32 @@ export class MonacoWorkspace implements lang.Workspace {
                 model.pushStackElement();
                 totalFiles += 1;
                 totalEdits += editOperations.length;
-            }
+            });
+            const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
+            return { ariaSummary };
+        } catch (e) {
+            return { ariaSummary: `Error applying workspace edits: ${e.toString()}` };
         }
-        const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
-        return { ariaSummary };
+    }
+
+    protected async openEditors(editorEdits: EditsByEditor[], options?: EditorOpenerOptions): Promise<EditsByEditor[]> {
+        for (const editorEdit of editorEdits) {
+            const editorWidget = await this.editorManager.open(new URI(editorEdit.uri), options);
+            editorEdit.editor = MonacoEditor.get(editorWidget);
+        }
+        return editorEdits;
+    }
+
+    protected checkVersions(editorEdits: EditsByEditor[]) {
+        editorEdits.forEach(editorEdit => {
+            if (!editorEdit.editor) {
+                throw Error(`Could not open editor for ${editorEdit.uri}`);
+            }
+            const model = editorEdit.editor.document.textEditorModel;
+            if (editorEdit.version !== undefined && model.getVersionId() !== editorEdit.version) {
+                throw Error(`Version conflict for editor ${editorEdit.uri}`);
+            }
+        });
     }
 
     protected getAriaSummary(totalEdits: number, totalFiles: number): string {
@@ -302,13 +331,25 @@ export class MonacoWorkspace implements lang.Workspace {
     }
 
     protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit) {
-        const result = new Map<string, monaco.languages.TextEdit[]>();
+        const map = new Map<string, EditsByEditor>();
+        const result: EditsByEditor[] = [];
         for (const edit of workspaceEdit.edits) {
             const resourceTextEdit = edit as monaco.languages.ResourceTextEdit;
             const uri = resourceTextEdit.resource.toString();
-            const edits = result.get(uri) || [];
-            edits.push(...resourceTextEdit.edits);
-            result.set(uri, edits);
+            const version = resourceTextEdit.modelVersionId;
+            let editorEdit = map.get(uri);
+            if (!editorEdit) {
+                editorEdit = {
+                    uri, version, textEdits: []
+                };
+                map.set(uri, editorEdit);
+                result.push(editorEdit);
+            } else {
+                if (editorEdit.version !== version) {
+                    throw Error(`Multiple versions for the same uri '${uri}' within the same workspace edit`);
+                }
+            }
+            editorEdit.textEdits.push(...resourceTextEdit.edits);
         }
         return result;
     }
