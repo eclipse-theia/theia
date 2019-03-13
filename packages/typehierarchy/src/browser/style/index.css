@@ -19,11 +19,11 @@
     color: var(--theia-ui-font-color1);
 }
 
-.theia-caption-suffix {
+.theia-type-hierarchy-tree .theia-caption-suffix {
     padding-left: 10px !important;
 }
 
-.theia-caption-prefix {
+.theia-type-hierarchy-tree .theia-caption-prefix {
     padding-right: 5px !important;
     padding-left: 1px !important;
 }
