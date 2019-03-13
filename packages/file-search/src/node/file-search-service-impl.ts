@@ -17,6 +17,7 @@
 import * as readline from 'readline';
 import * as fuzzy from 'fuzzy';
 import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
 import { RawProcessFactory } from '@theia/process/lib/node';
 import { rgPath } from 'vscode-ripgrep';
@@ -47,7 +48,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         try {
             const results = await Promise.all([
                 this.doGlobSearch(searchPattern, args.slice(), opts.limit, cancellationToken),
-                this.doStringSearch(searchPattern, args.slice(), opts.limit, opts.fuzzyMatch, cancellationToken)
+                this.doStringSearch(searchPattern, args.slice(), opts, cancellationToken)
             ]);
             const matches = Array.from(new Set([...results[0], ...results[1].exactMatches])).sort().slice(0, opts.limit);
             if (matches.length === opts.limit) {
@@ -104,7 +105,7 @@ export class FileSearchServiceImpl implements FileSearchService {
     }
 
     private doStringSearch(
-        stringPattern: string, searchArgs: string[], limit: number, allowFuzzySearch: boolean, cancellationToken?: CancellationToken
+        stringPattern: string, searchArgs: string[], options: Required<Pick<FileSearchService.Options, 'limit' | 'fuzzyMatch' | 'rootUris'>>, cancellationToken?: CancellationToken
     ): Promise<{ exactMatches: string[], fuzzyMatches: string[] }> {
         const resultDeferred = new Deferred<{ exactMatches: string[], fuzzyMatches: string[] }>();
         const process = this.rawProcessFactory({
@@ -116,6 +117,7 @@ export class FileSearchServiceImpl implements FileSearchService {
             process.kill();
             resultDeferred.resolve({ exactMatches: [], fuzzyMatches: [] });
         }, cancellationToken);
+        const rootUris = options.rootUris.map(uri => new URI(uri));
         const lineReader = readline.createInterface({
             input: process.output,
             output: process.input
@@ -123,19 +125,27 @@ export class FileSearchServiceImpl implements FileSearchService {
         const exactMatches: string[] = [];
         const fuzzyMatches: string[] = [];
         lineReader.on('line', line => {
-            if (exactMatches.length >= limit) {
+            if (exactMatches.length >= options.limit) {
                 process.kill();
             } else {
-                const fileUriStr = FileUri.create(line).toString();
-                if (line.toLocaleLowerCase().indexOf(stringPattern.toLocaleLowerCase()) !== -1) {
-                    exactMatches.push(fileUriStr);
-                } else if (allowFuzzySearch && fuzzy.test(stringPattern, line)) {
-                    fuzzyMatches.push(fileUriStr);
+                const fileUri = FileUri.create(line);
+                for (const rootUri of rootUris) {
+                    const relativeUri = rootUri.relative(fileUri);
+                    if (relativeUri) {
+                        const relativeUriStr = relativeUri.toString();
+                        if (relativeUriStr.toLocaleLowerCase().indexOf(stringPattern.toLocaleLowerCase()) !== -1) {
+                            exactMatches.push(fileUri.toString());
+                            return;
+                        } else if (options.fuzzyMatch && fuzzy.test(stringPattern, relativeUriStr)) {
+                            fuzzyMatches.push(fileUri.toString());
+                            return;
+                        }
+                    }
                 }
             }
         });
         process.output.on('close', () => {
-            const fuzzyResult = fuzzyMatches.slice(0, limit - exactMatches.length);
+            const fuzzyResult = fuzzyMatches.slice(0, options.limit - exactMatches.length);
             resultDeferred.resolve({ exactMatches, fuzzyMatches: fuzzyResult });
         });
         process.onError(e => {

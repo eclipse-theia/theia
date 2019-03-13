@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import * as assert from 'assert';
 import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
@@ -22,6 +23,7 @@ import { Container, ContainerModule } from 'inversify';
 import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
+import URI from '@theia/core/lib/common/uri';
 
 // tslint:disable:no-unused-expression
 
@@ -118,4 +120,35 @@ describe('search-service', function () {
             expect(matches.length).to.eq(0);
         });
     });
+
+    describe('irrelevant absolute results', () => {
+        const rootUri = FileUri.create(path.resolve(__dirname, '../../../../..'));
+
+        it('not fuzzy', async () => {
+            const matches = await service.find('theia', { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            for (const match of matches) {
+                const relativUri = rootUri.relative(new URI(match));
+                if (relativUri) {
+                    const relativMatch = relativUri.toString();
+                    assert.notEqual(relativMatch.indexOf('theia'), -1, relativMatch);
+                }
+            }
+        });
+
+        it('fuzzy', async () => {
+            const matches = await service.find('shell', { rootUris: [rootUri.toString()], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+            for (const match of matches) {
+                const relativUri = rootUri.relative(new URI(match));
+                if (relativUri) {
+                    const relativMatch = relativUri.toString();
+                    let position = 0;
+                    for (const ch of 'shell') {
+                        position = relativMatch.indexOf(ch, position);
+                        assert.notEqual(position, -1, relativMatch);
+                    }
+                }
+            }
+        });
+    });
+
 });
