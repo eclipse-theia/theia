@@ -117,11 +117,13 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number,
         token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
         let includePattern: string;
+        let includeFolderUri: string | undefined;
         if (include) {
             if (typeof include === 'string') {
                 includePattern = include;
             } else {
                 includePattern = include.pattern;
+                includeFolderUri = URI.file(include.base).toString();
             }
         } else {
             includePattern = '';
@@ -144,7 +146,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             return Promise.resolve([]);
         }
 
-        return this.proxy.$startFileSearch(includePattern, excludePatternOrDisregardExcludes, maxResults, token)
+        return this.proxy.$startFileSearch(includePattern, includeFolderUri, excludePatternOrDisregardExcludes, maxResults, token)
             .then(data => Array.isArray(data) ? data.map(URI.revive) : []);
     }
 
