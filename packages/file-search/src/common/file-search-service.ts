@@ -40,5 +40,6 @@ export namespace FileSearchService {
         useGitIgnore?: boolean
         /** when `undefined`, no excludes will apply, when empty array, default excludes will apply */
         defaultIgnorePatterns?: string[]
+        includePatterns?: string[]
     }
 }

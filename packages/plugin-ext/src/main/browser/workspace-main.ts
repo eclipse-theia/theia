@@ -152,22 +152,24 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         });
     }
 
-    async $startFileSearch(includePattern: string, excludePatternOrDisregardExcludes?: string | false,
-        maxResults?: number, token?: theia.CancellationToken): Promise<UriComponents[]> {
-        const opts: FileSearchService.Options = { rootUris: this.roots.map(r => r.uri) };
+    async $startFileSearch(includePattern: string, includeFolderUri: string | undefined, excludePatternOrDisregardExcludes?: string | false,
+        maxResults?: number): Promise<UriComponents[]> {
+        const rootUris = includeFolderUri ? [includeFolderUri] : this.roots.map(r => r.uri);
+        const opts: FileSearchService.Options = { rootUris };
+        if (includePattern) {
+            opts.includePatterns = [includePattern];
+        }
         if (typeof excludePatternOrDisregardExcludes === 'string') {
             if (excludePatternOrDisregardExcludes === '') { // default excludes
                 opts.defaultIgnorePatterns = [];
             } else {
                 opts.defaultIgnorePatterns = [excludePatternOrDisregardExcludes];
             }
-        } else {
-            opts.defaultIgnorePatterns = undefined; // no excludes
         }
         if (typeof maxResults === 'number') {
             opts.limit = maxResults;
         }
-        const uriStrs = await this.fileSearchService.find(includePattern, opts);
+        const uriStrs = await this.fileSearchService.find('', opts);
         return uriStrs.map(uriStr => Uri.parse(uriStr));
     }
 

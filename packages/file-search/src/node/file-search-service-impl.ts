@@ -14,16 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as readline from 'readline';
 import * as fuzzy from 'fuzzy';
+import * as readline from 'readline';
+import { rgPath } from 'vscode-ripgrep';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileSearchService } from '../common/file-search-service';
-import { RawProcessFactory } from '@theia/process/lib/node';
-import { rgPath } from 'vscode-ripgrep';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { CancellationToken, ILogger } from '@theia/core';
+import { CancellationTokenSource, CancellationToken, ILogger } from '@theia/core';
+import { RawProcessFactory } from '@theia/process/lib/node';
+import { FileSearchService } from '../common/file-search-service';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -32,7 +31,13 @@ export class FileSearchServiceImpl implements FileSearchService {
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory) { }
 
-    async find(searchPattern: string, options: FileSearchService.Options, cancellationToken?: CancellationToken): Promise<string[]> {
+    async find(searchPattern: string, options: FileSearchService.Options, clientToken?: CancellationToken): Promise<string[]> {
+        const cancellationSource = new CancellationTokenSource();
+        if (clientToken) {
+            clientToken.onCancellationRequested(() => cancellationSource.cancel());
+        }
+        const token = cancellationSource.token;
+
         if (options.defaultIgnorePatterns && options.defaultIgnorePatterns.length === 0) { // default excludes
             options.defaultIgnorePatterns.push('.git');
         }
@@ -42,122 +47,79 @@ export class FileSearchServiceImpl implements FileSearchService {
             useGitIgnore: true,
             ...options
         };
-        const args: string[] = this.getSearchArgs(opts);
-
-        const resultDeferred = new Deferred<string[]>();
-        try {
-            const results = await Promise.all([
-                this.doGlobSearch(searchPattern, args.slice(), opts.limit, cancellationToken),
-                this.doStringSearch(searchPattern, args.slice(), opts, cancellationToken)
-            ]);
-            const matches = Array.from(new Set([...results[0], ...results[1].exactMatches])).sort().slice(0, opts.limit);
-            if (matches.length === opts.limit) {
-                resultDeferred.resolve(matches);
-            } else {
-                resultDeferred.resolve([...matches, ...results[1].fuzzyMatches].slice(0, opts.limit));
-            }
-        } catch (e) {
-            resultDeferred.reject(e);
-        }
-        return resultDeferred.promise;
-    }
-
-    private doGlobSearch(globPattern: string, searchArgs: string[], limit: number, cancellationToken?: CancellationToken): Promise<string[]> {
-        const resultDeferred = new Deferred<string[]>();
-        let glob = globPattern;
-        if (!glob.endsWith('*')) {
-            glob = `${glob}*`;
-        }
-        if (!glob.startsWith('*')) {
-            glob = `*${glob}`;
-        }
-        searchArgs.unshift(glob);
-        searchArgs.unshift('--glob');
-        const process = this.rawProcessFactory({
-            command: rgPath,
-            args: searchArgs
-        });
-        this.setupCancellation(() => {
-            this.logger.debug('Search cancelled');
-            process.kill();
-            resultDeferred.resolve([]);
-        }, cancellationToken);
-        const lineReader = readline.createInterface({
-            input: process.output,
-            output: process.input
-        });
-        const result: string[] = [];
-        lineReader.on('line', line => {
-            if (result.length >= limit) {
-                process.kill();
-            } else {
-                const fileUriStr = FileUri.create(line).toString();
-                result.push(fileUriStr);
-            }
-        });
-        process.output.on('close', () => {
-            resultDeferred.resolve(result);
-        });
-        process.onError(e => {
-            resultDeferred.reject(e);
-        });
-        return resultDeferred.promise;
-    }
-
-    private doStringSearch(
-        stringPattern: string, searchArgs: string[], options: Required<Pick<FileSearchService.Options, 'limit' | 'fuzzyMatch' | 'rootUris'>>, cancellationToken?: CancellationToken
-    ): Promise<{ exactMatches: string[], fuzzyMatches: string[] }> {
-        const resultDeferred = new Deferred<{ exactMatches: string[], fuzzyMatches: string[] }>();
-        const process = this.rawProcessFactory({
-            command: rgPath,
-            args: searchArgs
-        });
-        this.setupCancellation(() => {
-            this.logger.debug('Search cancelled');
-            process.kill();
-            resultDeferred.resolve({ exactMatches: [], fuzzyMatches: [] });
-        }, cancellationToken);
-        const rootUris = options.rootUris.map(uri => new URI(uri));
-        const lineReader = readline.createInterface({
-            input: process.output,
-            output: process.input
-        });
-        const exactMatches: string[] = [];
-        const fuzzyMatches: string[] = [];
-        lineReader.on('line', line => {
-            if (exactMatches.length >= options.limit) {
-                process.kill();
-            } else {
-                const fileUri = FileUri.create(line);
-                for (const rootUri of rootUris) {
-                    const relativeUri = rootUri.relative(fileUri);
-                    if (relativeUri) {
-                        const relativeUriStr = relativeUri.toString();
-                        if (relativeUriStr.toLocaleLowerCase().indexOf(stringPattern.toLocaleLowerCase()) !== -1) {
-                            exactMatches.push(fileUri.toString());
-                            return;
-                        } else if (options.fuzzyMatch && fuzzy.test(stringPattern, relativeUriStr)) {
-                            fuzzyMatches.push(fileUri.toString());
-                            return;
-                        }
+        const exactMatches = new Set<string>();
+        const fuzzyMatches = new Set<string>();
+        const stringPattern = searchPattern.toLocaleLowerCase();
+        await Promise.all(options.rootUris.map(async root => {
+            try {
+                const rootUri = new URI(root);
+                await this.doFind(rootUri, searchPattern, opts, candidate => {
+                    const fileUri = rootUri.resolve(candidate).toString();
+                    if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
+                        return;
                     }
-                }
+                    if (!searchPattern || searchPattern === '*' || candidate.toLocaleLowerCase().indexOf(stringPattern) !== -1) {
+                        exactMatches.add(fileUri);
+                    } else if (opts.fuzzyMatch && fuzzy.test(searchPattern, candidate)) {
+                        fuzzyMatches.add(fileUri);
+                    }
+                    if (exactMatches.size + fuzzyMatches.size === opts.limit) {
+                        cancellationSource.cancel();
+                    }
+                }, token);
+            } catch (e) {
+                console.error('Failed to search:', root, e);
+            }
+        }));
+        if (clientToken && clientToken.isCancellationRequested) {
+            return [];
+        }
+        return [...exactMatches, ...fuzzyMatches];
+    }
+
+    private doFind(rootUri: URI, searchPattern: string, options: FileSearchService.Options,
+        accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
+        return new Promise((resolve, reject) => {
+            try {
+                const cwd = FileUri.fsPath(rootUri);
+                const args = this.getSearchArgs(options);
+                // TODO: why not just child_process.spawn, theia process are supposed to be used for user processes like tasks and terminals, not internal
+                const process = this.rawProcessFactory({ command: rgPath, args, options: { cwd } });
+                process.onError(reject);
+                process.output.on('close', resolve);
+                token.onCancellationRequested(() => process.kill());
+
+                const lineReader = readline.createInterface({
+                    input: process.output,
+                    output: process.input
+                });
+                lineReader.on('line', line => {
+                    if (token.isCancellationRequested) {
+                        process.kill();
+                    } else {
+                        accept(line);
+                    }
+                });
+            } catch (e) {
+                reject(e);
             }
         });
-        process.output.on('close', () => {
-            const fuzzyResult = fuzzyMatches.slice(0, options.limit - exactMatches.length);
-            resultDeferred.resolve({ exactMatches, fuzzyMatches: fuzzyResult });
-        });
-        process.onError(e => {
-            resultDeferred.reject(e);
-        });
-        return resultDeferred.promise;
     }
 
     private getSearchArgs(options: FileSearchService.Options): string[] {
-        const args: string[] = [
-            '--files'
-        ];
+        const args = ['--files', '--case-sensitive'];
+        if (options.includePatterns) {
+            for (const includePattern of options.includePatterns) {
+                let includeGlob = includePattern;
+                if (!includeGlob.endsWith('*')) {
+                    includeGlob = `${includeGlob}*`;
+                }
+                if (!includeGlob.startsWith('*')) {
+                    includeGlob = `*${includeGlob}`;
+                }
+                args.push('--glob', includeGlob);
+            }
+        }
         if (!options.useGitIgnore) {
             args.push('-uu');
         }
@@ -176,18 +138,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                     args.push(ignore);
                 });
         }
-        args.push(...options.rootUris.map(r => FileUri.fsPath(r)));
         return args;
-    }
-
-    private setupCancellation(onCancel: () => void, cancellationToken?: CancellationToken) {
-        if (cancellationToken) {
-            if (cancellationToken.isCancellationRequested) {
-                onCancel();
-            } else {
-                cancellationToken.onCancellationRequested(onCancel);
-            }
-        }
     }
 
 }
