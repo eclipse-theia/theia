@@ -244,9 +244,10 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         if (this.options.skipPrefix) {
             lookFor = lookFor.substr(this.options.skipPrefix);
         }
-        const labelHighlights = this.options.fuzzyMatchLabel ? this.matchesFuzzy(lookFor, item.getLabel()) : item.getLabelHighlights();
-        const descriptionHighlights = this.options.fuzzyMatchDescription ? this.matchesFuzzy(lookFor, item.getDescription()) : item.getDescriptionHighlights();
-        const detailHighlights = this.options.fuzzyMatchDetail ? this.matchesFuzzy(lookFor, item.getDetail()) : item.getDetailHighlights();
+        const { fuzzyMatchLabel, fuzzyMatchDescription, fuzzyMatchDetail } = this.options;
+        const labelHighlights = fuzzyMatchLabel ? this.matchesFuzzy(lookFor, item.getLabel(), fuzzyMatchLabel) : item.getLabelHighlights();
+        const descriptionHighlights = fuzzyMatchDescription ? this.matchesFuzzy(lookFor, item.getDescription(), fuzzyMatchDescription) : item.getDescriptionHighlights();
+        const detailHighlights = fuzzyMatchDetail ? this.matchesFuzzy(lookFor, item.getDetail(), fuzzyMatchDetail) : item.getDetailHighlights();
         if ((lookFor && !labelHighlights && !descriptionHighlights && !detailHighlights)
             && !this.options.showItemsWithoutHighlight) {
             return undefined;
@@ -256,11 +257,12 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         return entry;
     }
 
-    protected matchesFuzzy(lookFor: string, value: string | undefined): monaco.quickOpen.IHighlight[] | undefined {
+    protected matchesFuzzy(lookFor: string, value: string | undefined, options?: QuickOpenOptions.FuzzyMatchOptions | boolean): monaco.quickOpen.IHighlight[] | undefined {
         if (!lookFor || !value) {
             return undefined;
         }
-        return monaco.filters.matchesFuzzy(lookFor, value, true);
+        const enableSeparateSubstringMatching = typeof options === 'object' && options.enableSeparateSubstringMatching;
+        return monaco.filters.matchesFuzzy(lookFor, value, enableSeparateSubstringMatching);
     }
 
     getAutoFocus(lookFor: string): monaco.quickOpen.IAutoFocus {

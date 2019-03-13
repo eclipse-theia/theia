@@ -91,8 +91,12 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         }
         return {
             placeholder,
-            fuzzyMatchLabel: true,
-            fuzzyMatchDescription: true,
+            fuzzyMatchLabel: {
+                enableSeparateSubstringMatching: true
+            },
+            fuzzyMatchDescription: {
+                enableSeparateSubstringMatching: true
+            },
             showItemsWithoutHighlight: true,
             onClose: () => {
                 this.isOpen = false;
