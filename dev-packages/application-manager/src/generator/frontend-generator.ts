@@ -154,8 +154,8 @@ if (isMaster) {
             const y = Math.floor(bounds.y + (bounds.height - height) / 2);
             const x = Math.floor(bounds.x + (bounds.width - width) / 2);
 
-            const windowStateName = 'windowstate';
-            const windowState = electronStore.get(windowStateName, {
+            const WINDOW_STATE = 'windowstate';
+            const windowState = electronStore.get(WINDOW_STATE, {
                 width, height, x, y
             });
 
@@ -165,15 +165,15 @@ if (isMaster) {
                 width: windowState.width,
                 height: windowState.height,
                 x: windowState.x,
-                y: windowState.y
+                y: windowState.y,
+                isMaximized: windowState.isMaximized
             };
-            if (windowState.isMaximized) {
-                windowOptions.isMaximized = true;
-            }
 
             // Always hide the window, we will show the window when it is ready to be shown in any case.
             const newWindow = new BrowserWindow(windowOptions);
-            windowOptions.isMaximized && newWindow.maximize();
+            if (windowOptions.isMaximized) {
+                newWindow.maximize();
+            }
             newWindow.on('ready-to-show', () => newWindow.show());
 
             // Prevent calls to "window.open" from opening an ElectronBrowser window,
@@ -183,19 +183,36 @@ if (isMaster) {
                 shell.openExternal(url);
             });
 
-            const saveState = () => {
-                const bounds = newWindow.getBounds();
-                electronStore.set(windowStateName, {
-                    isMaximized: newWindow.isMaximized(),
-                    width: bounds.width,
-                    height: bounds.height,
-                    x: bounds.x,
-                    y: bounds.y
-                })
-            }
-            newWindow.on('close', saveState);
-            newWindow.on('resize', saveState);
-            newWindow.on('move', saveState);
+            // Save the window geometry state on every change
+            const saveWindowState = () => {
+                try {
+                    let bounds;
+                    if (newWindow.isMaximized()) {
+                        bounds = electronStore.get(WINDOW_STATE, {});
+                    } else {
+                        bounds = newWindow.getBounds();
+                    }
+                    electronStore.set(WINDOW_STATE, {
+                        isMaximized: newWindow.isMaximized(),
+                        width: bounds.width,
+                        height: bounds.height,
+                        x: bounds.x,
+                        y: bounds.y
+                    });
+                } catch (e) {
+                    console.error("Error while saving window state.", e);
+                }
+            };
+            let delayedSaveTimeout;
+            const saveWindowStateDelayed = () => {
+                if (delayedSaveTimeout) {
+                    clearTimeout(delayedSaveTimeout);
+                }
+                delayedSaveTimeout = setTimeout(saveWindowState, 1000);
+            };
+            newWindow.on('close', saveWindowState);
+            newWindow.on('resize', saveWindowStateDelayed);
+            newWindow.on('move', saveWindowStateDelayed);
 
             if (!!theUrl) {
                 newWindow.loadURL(theUrl);
