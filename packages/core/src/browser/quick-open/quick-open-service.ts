@@ -20,14 +20,20 @@ import { MessageType } from '../../common/message-service-protocol';
 
 export type QuickOpenOptions = Partial<QuickOpenOptions.Resolved>;
 export namespace QuickOpenOptions {
+    export interface FuzzyMatchOptions {
+        /**
+         * Default: `false`
+         */
+        enableSeparateSubstringMatching?: boolean
+    }
     export interface Resolved {
         readonly prefix: string;
         readonly placeholder: string;
         readonly ignoreFocusOut: boolean;
 
-        readonly fuzzyMatchLabel: boolean;
-        readonly fuzzyMatchDetail: boolean;
-        readonly fuzzyMatchDescription: boolean;
+        readonly fuzzyMatchLabel: boolean | FuzzyMatchOptions;
+        readonly fuzzyMatchDetail: boolean | FuzzyMatchOptions;
+        readonly fuzzyMatchDescription: boolean | FuzzyMatchOptions;
         readonly fuzzySort: boolean;
 
         /** The amount of first symbols to be ignored by quick open widget (e.g. don't affect matching). */
