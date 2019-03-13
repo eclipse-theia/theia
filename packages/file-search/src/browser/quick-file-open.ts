@@ -141,16 +141,16 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     private cancelIndicator = new CancellationTokenSource();
 
     public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+        this.cancelIndicator.cancel();
+        this.cancelIndicator = new CancellationTokenSource();
+        const token = this.cancelIndicator.token;
+
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length === 0) {
             return;
         }
 
         this.currentLookFor = lookFor;
-        this.cancelIndicator.cancel();
-        this.cancelIndicator = new CancellationTokenSource();
-
-        const token = this.cancelIndicator.token;
         const alreadyCollected = new Set<string>();
         const recentlyUsedItems: QuickOpenItem[] = [];
 
@@ -158,35 +158,47 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         for (const location of locations) {
             const uriString = location.uri.toString();
             if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(lookFor, uriString)) {
-                recentlyUsedItems.push(await this.toItem(location.uri, { groupLabel: recentlyUsedItems.length === 0 ? 'recently opened' : undefined, showBorder: false }));
+                const item = await this.toItem(location.uri, { groupLabel: recentlyUsedItems.length === 0 ? 'recently opened' : undefined, showBorder: false });
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                recentlyUsedItems.push(item);
                 alreadyCollected.add(uriString);
             }
         }
         if (lookFor.length > 0) {
             const handler = async (results: string[]) => {
-                if (!token.isCancellationRequested) {
-                    const fileSearchResultItems: QuickOpenItem[] = [];
-                    for (const fileUri of results) {
-                        if (!alreadyCollected.has(fileUri)) {
-                            fileSearchResultItems.push(await this.toItem(fileUri));
-                            alreadyCollected.add(fileUri);
-                        }
-                    }
-
-                    // Create a copy of the file search results and sort.
-                    const sortedResults = fileSearchResultItems.slice();
-                    sortedResults.sort((a, b) => this.compareItems(a, b));
-
-                    // Extract the first element, and re-add it to the array with the group label.
-                    const first = sortedResults[0];
-                    sortedResults.shift();
-                    if (first) {
-                        sortedResults.unshift(await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: true }));
-                    }
-
-                    // Return the recently used items, followed by the search results.
-                    acceptor([...recentlyUsedItems, ...sortedResults]);
+                if (token.isCancellationRequested) {
+                    return;
                 }
+                const fileSearchResultItems: QuickOpenItem[] = [];
+                for (const fileUri of results) {
+                    if (!alreadyCollected.has(fileUri)) {
+                        const item = await this.toItem(fileUri);
+                        if (token.isCancellationRequested) {
+                            return;
+                        }
+                        fileSearchResultItems.push(item);
+                        alreadyCollected.add(fileUri);
+                    }
+                }
+
+                // Create a copy of the file search results and sort.
+                const sortedResults = fileSearchResultItems.slice();
+                sortedResults.sort((a, b) => this.compareItems(a, b));
+
+                // Extract the first element, and re-add it to the array with the group label.
+                const first = sortedResults[0];
+                sortedResults.shift();
+                if (first) {
+                    const item = await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: true });
+                    if (token.isCancellationRequested) {
+                        return;
+                    }
+                    sortedResults.unshift(item);
+                }
+                // Return the recently used items, followed by the search results.
+                acceptor([...recentlyUsedItems, ...sortedResults]);
             };
             this.fileSearchService.find(lookFor, {
                 rootUris: roots.map(r => r.uri),
