@@ -148,7 +148,7 @@ export class HostedPluginSupport {
                 Object.keys(pluginsPerHost).forEach(hostKey => {
                     const plugins: PluginMetadata[] = pluginsPerHost[hostKey];
                     let pluginID = hostKey;
-                    if (plugins.length === 1) {
+                    if (plugins.length >= 1) {
                         pluginID = getPluginId(plugins[0].model);
                     }
                     const rpc = this.createServerRpc(pluginID, hostKey);
