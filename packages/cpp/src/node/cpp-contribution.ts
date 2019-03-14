@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2017-2019 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -42,7 +42,34 @@ export class CppContribution extends BaseLanguageServerContribution {
             || undefined
         );
 
+        const clangTidy = parameters && parameters.clangTidy;
+        const clangTidyChecks = parameters && parameters.clangTidyChecks;
+
+        if (clangTidy) {
+            const supportsClangTidy = await this.testSupportsClangTidy(command);
+            if (supportsClangTidy) {
+                args.push('-clang-tidy');
+                if (typeof clangTidyChecks === 'string' && clangTidyChecks.length > 0) {
+                    args.push(`-clang-tidy-checks=${clangTidyChecks}`);
+                }
+            }
+        }
         const serverConnection = await this.createProcessStreamConnectionAsync(command, args);
         this.forward(clientConnection, serverConnection);
+    }
+
+    protected async testSupportsClangTidy(command: string): Promise<boolean> {
+        // clangd should fail if -clang-tidy flag is not supported
+        // but if it is supported, it will run forever until killed/stopped.
+        // to avoid that, we pass -version flag which makes it exit early.
+        const process = await super.spawnProcessAsync(command, ['-clang-tidy', '-version']);
+        return new Promise<boolean>(resolve => {
+            process.errorOutput.on('data', (data: string) => {
+                if (data.includes('-clang-tidy')) {
+                    resolve(false);
+                }
+            });
+            process.errorOutput.once('close', () => resolve(true));
+        });
     }
 }

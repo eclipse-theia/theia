@@ -61,6 +61,16 @@ export const cppPreferencesSchema: PreferenceSchema = {
             description: 'Specify the arguments to pass to clangd when starting the language server.',
             default: '',
             type: 'string'
+        },
+        'cpp.clangTidy': {
+            description: 'Enable/disable C/C++ linting.',
+            default: false,
+            type: 'boolean'
+        },
+        'cpp.clangTidyChecks': {
+            description: 'Specify comma separated arguments to pass to clang-tidy. Activated only if cpp.clang-tidy is enabled',
+            default: '',
+            type: 'string'
         }
     }
 };
@@ -70,6 +80,8 @@ export class CppConfiguration {
     'cpp.experimentalCommands': boolean;
     'cpp.clangdExecutable': string;
     'cpp.clangdArgs': string;
+    'cpp.clangTidy': boolean;
+    'cpp.clangTidyChecks': string;
 }
 
 export const CppPreferences = Symbol('CppPreferences');
