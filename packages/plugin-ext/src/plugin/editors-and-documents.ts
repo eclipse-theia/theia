@@ -125,7 +125,7 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
             this._onDidAddDocuments.fire(addedDocuments);
         }
 
-        if (delta.removedDocuments || delta.addedDocuments) {
+        if ((delta.removedEditors && delta.removedEditors.length > 0) || (delta.addedEditors && delta.addedEditors.length > 0)) {
             this._onDidChangeVisibleTextEditors.fire(this.allEditors());
         }
 
