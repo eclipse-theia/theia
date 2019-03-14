@@ -400,9 +400,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
-            isEnabled: (event?: Event) => this.findTabBar(event) !== undefined,
+            isEnabled: (event?: Event) => {
+                if (event) {
+                    return this.findTabBar(event) !== undefined;
+                } else {
+                    return this.shell.mainAreaTabBars.find(tb => tb.titles.length > 0) !== undefined;
+                }
+            },
             execute: (event?: Event) => {
-                this.shell.closeTabs(this.findTabArea(event)!);
+                if (event) {
+                    this.shell.closeTabs(this.findTabArea(event)!);
+                } else {
+                    this.shell.closeTabs('main');
+                }
             }
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
