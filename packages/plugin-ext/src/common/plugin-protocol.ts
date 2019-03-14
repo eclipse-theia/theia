@@ -621,6 +621,7 @@ export interface ServerPluginRunner {
     onMessage(jsonMessage: any): void;
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;
+    clientClosed(): void;
 
     /**
      * Provides additional metadata.
