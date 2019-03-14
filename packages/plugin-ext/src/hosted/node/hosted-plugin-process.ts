@@ -53,6 +53,10 @@ export class HostedPluginProcess implements ServerPluginRunner {
         this.client = client;
     }
 
+    public clientClosed(): void {
+
+    }
+
     public setDefault(defaultRunner: ServerPluginRunner): void {
 
     }
