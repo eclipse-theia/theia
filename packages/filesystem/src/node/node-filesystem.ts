@@ -18,6 +18,7 @@ import * as mv from 'mv';
 import * as trash from 'trash';
 import * as paths from 'path';
 import * as fs from 'fs-extra';
+import { v4 } from 'uuid';
 import * as os from 'os';
 import * as touch from 'touch';
 import * as drivelist from 'drivelist';
@@ -306,7 +307,24 @@ export class FileSystemNode implements FileSystem {
         if (moveToTrash) {
             return trash([FileUri.fsPath(_uri)]);
         } else {
-            return fs.remove(FileUri.fsPath(_uri));
+            const filePath = FileUri.fsPath(_uri);
+            const outputRootPath = paths.join(os.tmpdir(), v4());
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    fs.rename(filePath, outputRootPath, async error => {
+                        if (error) {
+                            return reject(error);
+                        }
+                        resolve();
+                    });
+                });
+                // There is no reason for the promise returned by this function not to resolve
+                // as soon as the move is complete.  Clearing up the temporary files can be
+                // done in the background.
+                fs.remove(FileUri.fsPath(outputRootPath));
+            } catch (error) {
+                return fs.remove(filePath);
+            }
         }
     }
 
