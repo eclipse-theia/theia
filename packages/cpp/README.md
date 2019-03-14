@@ -79,6 +79,30 @@ To get this working, you need to enable clangd's global index using the
             "cpp.clangdArgs": "--background-index"
         }
 
+## Using the clang-tidy linter
+
+Note: This functionality is available when using clangd 9 and later.
+
+You can set the preference 'cpp.clangTidy' to enable the clang-tidy linter included in clangd. When the preference is set, there are two ways to chose which of its built-in checks clang-tidy will use:
+
+- using the preferences:  'cpp.clangTidyChecks'
+- using the file '.clang-tidy' . The file is located in the same folder of the files or a parent folder.
+
+Note: using the preference checks will supersede the value found in the .clang-tidy file.
+
+The syntax used to fill the checks can be found at http://clang.llvm.org/extra/clang-tidy/
+
+clang-tidy has its own checks and can also run Clang static analyzer checks. Each check has a name ([see link above for full list](http://clang.llvm.org/extra/clang-tidy/)). Clang-tidy takes as input the checks that should run, in the form of a comma-separated list of positive and negative (prefixed with -) globs. Positive globs add subsets of checks, negative globs remove them.
+
+There are two ways to configure clang-tidy's checks: through a Theia preference or using a .clang-tidy config file. Here are examples for both:"
+
+    - for the preferences: "cpp.clangTidyChecks": "*,-readability-*"
+        - Meaning: enables all list-checks and disable all readability-* checks
+
+    - for the .clang-tidy file: Checks: "-*,readability-*"
+        - Meaning: disable all list-checks and enable all readability-* checks
+
 ## License
+
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)

@@ -27,4 +27,6 @@ export const CLANGD_EXECUTABLE_DEFAULT = 'clangd';
 export interface CppStartParameters {
     clangdExecutable: string;
     clangdArgs: string;
+    clangTidy?: boolean;
+    clangTidyChecks?: string;
 }
