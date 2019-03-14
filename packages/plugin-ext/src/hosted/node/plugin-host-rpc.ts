@@ -30,7 +30,7 @@ import { WorkspaceExtImpl } from '../../plugin/workspace';
  */
 export class PluginHostRPC {
 
-    private static apiFactory: PluginAPIFactory;
+    private apiFactory: PluginAPIFactory;
 
     private pluginManager: PluginManagerExtImpl;
 
@@ -50,7 +50,7 @@ export class PluginHostRPC {
         this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
 
-        PluginHostRPC.apiFactory = createAPIFactory(
+        this.apiFactory = createAPIFactory(
             this.rpc,
             this.pluginManager,
             envExt,
@@ -62,23 +62,33 @@ export class PluginHostRPC {
     }
 
     // tslint:disable-next-line:no-any
-    static initialize(contextPath: string, plugin: Plugin): any {
+    initContext(contextPath: string, plugin: Plugin): any {
         console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + contextPath + ')');
         try {
             const backendInit = require(contextPath);
-            backendInit.doInitialization(PluginHostRPC.apiFactory, plugin);
+            backendInit.doInitialization(this.apiFactory, plugin);
         } catch (e) {
             console.error(e);
         }
     }
 
+    /*
+     * Stop the given context by calling the plug-in manager.
+     * note: stopPlugin can also be invoked through RPC proxy.
+     */
+    stopContext(): PromiseLike<void> {
+        return this.pluginManager.$stopPlugin('');
+    }
+
     // tslint:disable-next-line:no-any
     createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
         const { extensionTestsPath } = process.env;
+        const self = this;
         const pluginManager = new PluginManagerExtImpl({
             loadPlugin(plugin: Plugin): void {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 try {
+                    delete require.cache[require.resolve(plugin.pluginPath)];
                     return require(plugin.pluginPath);
                 } catch (e) {
                     console.error(e);
@@ -107,7 +117,7 @@ export class PluginHostRPC {
                             rawModel: plg.source
                         };
 
-                        PluginHostRPC.initialize(backendInitPath, plugin);
+                        self.initContext(backendInitPath, plugin);
 
                         result.push(plugin);
                     } else {
