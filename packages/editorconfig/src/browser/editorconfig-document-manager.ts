@@ -98,6 +98,7 @@ export class EditorconfigDocumentManager {
             const uri = editor.uri.toString();
             this.editorconfigServer.getConfig(uri).then(properties => {
                 this.properties[uri] = properties;
+                this.applyProperties(properties, editor);
             });
         }
     }
