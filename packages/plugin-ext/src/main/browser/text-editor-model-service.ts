@@ -18,6 +18,7 @@ import { MonacoEditorModel, WillSaveMonacoModelEvent } from '@theia/monaco/lib/b
 import { injectable, inject } from 'inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import { Schemes } from '../../common/uri-components';
 
 export const EditorModelService = Symbol('EditorModelService');
 export interface EditorModelService {
@@ -30,6 +31,7 @@ export interface EditorModelService {
     onModelSaved: Event<MonacoEditorModel>;
 
     getModels(): MonacoEditorModel[];
+    saveAll(includeUntitled?: boolean): Promise<boolean>;
 }
 
 @injectable()
@@ -84,6 +86,26 @@ export class EditorModelServiceImpl implements EditorModelService {
 
     getModels(): MonacoEditorModel[] {
         return this.monacoModelService.models;
+    }
+
+    async saveAll(includeUntitled?: boolean): Promise<boolean> {
+        const saves = [];
+        for (const model of this.monacoModelService.models) {
+            const { uri } = model.textEditorModel;
+            if (model.dirty && (includeUntitled || uri.scheme !== Schemes.UNTITLED)) {
+                saves.push((async () => {
+                    try {
+                        await model.save();
+                        return true;
+                    } catch (e) {
+                        console.error('Failed to save ', uri.toString(), e);
+                        return false;
+                    }
+                })());
+            }
+        }
+        const results = await Promise.all(saves);
+        return results.reduce((a, b) => a && b, true);
     }
 
 }

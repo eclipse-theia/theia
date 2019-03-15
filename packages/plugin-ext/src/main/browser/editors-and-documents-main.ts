@@ -37,6 +37,8 @@ export class EditorsAndDocumentsMain {
     private proxy: EditorsAndDocumentsExt;
     private textEditors = new Map<string, TextEditorMain>();
 
+    private readonly modelService: EditorModelService;
+
     private onTextEditorAddEmitter = new Emitter<TextEditorMain[]>();
     private onTextEditorRemoveEmitter = new Emitter<string[]>();
     private onDocumentAddEmitter = new Emitter<MonacoEditorModel[]>();
@@ -51,18 +53,18 @@ export class EditorsAndDocumentsMain {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT);
 
         const editorService = container.get<TextEditorService>(TextEditorService);
-        const modelService = container.get<EditorModelService>(EditorModelService);
+        this.modelService = container.get<EditorModelService>(EditorModelService);
         const editorManager = container.get<EditorManager>(EditorManager);
         const openerService = container.get<OpenerService>(OpenerService);
         const bulkEditService = container.get<MonacoBulkEditService>(MonacoBulkEditService);
 
-        const documentsMain = new DocumentsMainImpl(this, modelService, rpc, editorManager, openerService);
+        const documentsMain = new DocumentsMainImpl(this, this.modelService, rpc, editorManager, openerService);
         rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
         const editorsMain = new TextEditorsMainImpl(this, rpc, bulkEditService);
         rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
 
-        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), editorService, modelService);
+        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), editorService, this.modelService);
         this.toDispose.push(documentsMain);
         this.toDispose.push(editorsMain);
         this.toDispose.push(this.stateComputer);
@@ -157,6 +159,10 @@ export class EditorsAndDocumentsMain {
 
     getEditor(id: string): TextEditorMain | undefined {
         return this.textEditors.get(id);
+    }
+
+    saveAll(includeUntitled?: boolean): Promise<boolean> {
+        return this.modelService.saveAll(includeUntitled);
     }
 }
 

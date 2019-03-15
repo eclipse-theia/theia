@@ -4085,6 +4085,14 @@ declare module '@theia/plugin' {
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
         /**
+         * Save all dirty files.
+         *
+         * @param includeUntitled Also save files that have been created during this session.
+         * @return A thenable that resolves when the files have been saved.
+         */
+        export function saveAll(includeUntitled?: boolean): PromiseLike<boolean>;
+
+        /**
          * Make changes to one or many resources or create, delete, and rename resources as defined by the given
          * [workspace edit](#WorkspaceEdit).
          *

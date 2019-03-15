@@ -145,4 +145,8 @@ export class TextEditorsMainImpl implements TextEditorsMain {
         return Promise.resolve();
     }
 
+    $saveAll(includeUntitled?: boolean): Promise<boolean> {
+        return this.editorsAndDocuments.saveAll(includeUntitled);
+    }
+
 }
