@@ -411,6 +411,9 @@ export function createAPIFactory(
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
+            saveAll(includeUntitled?: boolean): PromiseLike<boolean> {
+                return editors.saveAll(includeUntitled);
+            },
             applyEdit(edit: theia.WorkspaceEdit): PromiseLike<boolean> {
                 return editors.applyWorkspaceEdit(edit);
             },

@@ -124,6 +124,10 @@ export class TextEditorsExtImpl implements TextEditorsExt {
         return this.proxy.$tryApplyWorkspaceEdit(dto);
     }
 
+    saveAll(includeUntitled?: boolean): PromiseLike<boolean> {
+        return this.proxy.$saveAll(includeUntitled);
+    }
+
 }
 
 export class TextEditorDecorationType implements theia.TextEditorDecorationType {
