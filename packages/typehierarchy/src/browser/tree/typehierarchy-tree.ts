@@ -131,6 +131,10 @@ export namespace TypeHierarchyTree {
 
         export function create(item: TypeHierarchyItem, direction: TypeHierarchyDirection, resolved: boolean = true): Node {
             const items = TypeHierarchyDirection.Children === direction ? item.children : item.parents;
+            if (items && items.length > 0) {
+                // If the server sent more levels than requested, use them.
+                resolved = true;
+            }
             const node = {
                 id: v4(),
                 name: item.name,
