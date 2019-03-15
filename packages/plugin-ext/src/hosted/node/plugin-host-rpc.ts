@@ -88,7 +88,13 @@ export class PluginHostRPC {
             loadPlugin(plugin: Plugin): void {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 try {
-                    delete require.cache[require.resolve(plugin.pluginPath)];
+                    // cleaning the cache for all files of that plug-in.
+                    Object.keys(require.cache).forEach(key => {
+                        if (key.startsWith(plugin.pluginFolder)) {
+                            // delete entry
+                            delete require.cache[key];
+                        }
+                    });
                     return require(plugin.pluginPath);
                 } catch (e) {
                     console.error(e);
