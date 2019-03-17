@@ -47,6 +47,12 @@ export namespace TaskCommands {
         category: TASK_CATEGORY,
         label: 'Attach Task...'
     };
+
+    export const TASK_RUN_TEXT: Command = {
+        id: 'task:run:text',
+        category: TASK_CATEGORY,
+        label: 'Run Selected Text'
+    };
 }
 
 @injectable()
@@ -119,6 +125,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 execute: () => this.taskService.runLastTask()
             }
         );
+        registry.registerCommand(
+            TaskCommands.TASK_RUN_TEXT,
+            {
+                isEnabled: () => true,
+                execute: () => this.taskService.runSelectedText()
+            }
+        );
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -135,6 +148,11 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
             commandId: TaskCommands.TASK_ATTACH.id,
             order: '2'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
+            commandId: TaskCommands.TASK_RUN_TEXT.id,
+            order: '3'
         });
     }
 
