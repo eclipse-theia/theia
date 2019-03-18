@@ -21,7 +21,7 @@
 
 .t-siw-search-container {
     color: var(--theia-ui-font-color1);
-    padding: 5px;
+    padding: 1px 5px;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -59,16 +59,16 @@
     margin-bottom: 5px;
 }
 
-.t-siw-search-container .searchHeader .controls .refresh {
-    background: var(--theia-icon-refresh);
+.p-TabBar-toolbar .item .refresh {
+    background: var(--theia-icon-refresh) no-repeat;
 }
 
-.t-siw-search-container .searchHeader .controls .collapse-all {
-    background: var(--theia-icon-collapse-all);
+.p-TabBar-toolbar .item .collapse-all {
+    background: var(--theia-icon-collapse-all) no-repeat;
 }
 
-.t-siw-search-container .searchHeader .controls .clear-all {
-    background: var(--theia-icon-clear);
+.p-TabBar-toolbar .item .clear-all {
+    background: var(--theia-icon-clear) no-repeat;
 }
 
 .t-siw-search-container .searchHeader .search-field-container {
@@ -181,25 +181,9 @@
     justify-content: center;
 }
 
-.t-siw-search-container .searchHeader .controls .btn{
-    margin-left: 3px;
-    opacity: 0.25;
-    width: 18px
-}
-
-.t-siw-search-container .searchHeader .controls .btn.enabled{
-    opacity: 0.7;
-    cursor: pointer;
-}
-
-.t-siw-search-container .searchHeader .controls .btn.enabled:hover{
-    opacity: 1;
-}
-
 .t-siw-search-container .searchHeader .search-details .button-container {
     height: 5px;
 }
-
 
 .t-siw-search-container .searchHeader .search-details .button-container .btn{
     cursor: pointer;
@@ -388,8 +372,9 @@
     opacity: 0.5;
 }
 
-.search-in-workspace-tab-icon::before {
-    content: "\f002"
+.search-in-workspace-tab-icon {
+    -webkit-mask: url('search.svg');
+    mask: url('search.svg');
 }
 
 .highlighted-count-container {

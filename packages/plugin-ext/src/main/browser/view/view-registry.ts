@@ -49,6 +49,7 @@ export class ViewRegistry {
         if (this.containerWidgets.has(viewsContainer.id)) {
             return;
         }
+
         const containerWidget = new ViewsContainerWidget(viewsContainer, containerViews);
         this.containerWidgets.set(viewsContainer.id, containerWidget);
 

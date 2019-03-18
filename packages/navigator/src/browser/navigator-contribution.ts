@@ -91,7 +91,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
-            widgetName: 'Files',
+            widgetName: 'Explorer',
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 100

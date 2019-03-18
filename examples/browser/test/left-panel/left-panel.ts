@@ -31,7 +31,7 @@ export class LeftPanel {
     }
 
     openCloseTab(tabName: string) {
-        this.driver.element('.p-TabBar.theia-app-left .p-TabBar-content').click(`div=${tabName}`);
+        this.driver.element('.p-TabBar.theia-app-left .p-TabBar-content').element(`div=${tabName}`).click('..');
         // Wait for animations to finish
         this.driver.pause(300);
     }

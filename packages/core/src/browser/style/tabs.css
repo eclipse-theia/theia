@@ -90,10 +90,29 @@
 }
 
 .p-TabBar .p-TabBar-tabIcon {
-  width: 15px;
-  line-height: 1.7;
+    width: 15px;
+    line-height: 1.7;
+    font-size: 12px;
+    text-align: center;
+    background-repeat: no-repeat;
 }
 
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon {
+    background-size: 13px;
+    background-position-y: 3px;
+    background-color: var(--theia-tab-icon-color);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 13px;
+    -webkit-mask-position-y: 4px;
+    mask-repeat: no-repeat;
+    mask-size: 13px;
+    mask-position: 4px 0;
+}
+
+.p-TabBar .file-icon.p-TabBar-tabIcon,
+.p-TabBar .fa.p-TabBar-tabIcon {
+    background: none;
+}
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
   padding-top: 6px;
@@ -207,8 +226,17 @@
   display: flex;
   align-items: center;
   margin-left: 8px; /* `padding` + `margin-right` from the container toolbar */
+  opacity: 0.25;
+  cursor: default;
 }
 
-.p-TabBar-toolbar .item:hover {
-  cursor: pointer;
+.p-TabBar-toolbar .item.enabled {
+    opacity: 1.0;
+    cursor: pointer;
+}
+
+.p-TabBar-toolbar .item > div{
+    height: 18px;
+    width: 18px;
+    background-repeat: no-repeat;
 }

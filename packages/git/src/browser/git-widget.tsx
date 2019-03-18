@@ -80,7 +80,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
         this.title.caption = 'Git';
-        this.title.iconClass = 'fa git-tab-icon';
+        this.title.iconClass = 'git-tab-icon';
         this.scrollContainer = GitWidget.Styles.CHANGES_CONTAINER;
         this.addClass('theia-git');
         this.node.tabIndex = 0;

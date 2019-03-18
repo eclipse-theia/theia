@@ -8,6 +8,8 @@ Breaking changes:
 - [plugin] support multiple windows per a backend [#4509](https://github.com/theia-ide/theia/issues/4509)
   - Some plugin bindings are scoped per a connection now. Clients, who contribute/rebind these bindings, will need to scope them per a connection as well.
 - [quick-open] disable separate fuzzy matching by default [#4549](https://github.com/theia-ide/theia/pull/4549)
+- [shell] support toolbars in side bars [#4600](https://github.com/theia-ide/theia/pull/4600)
+  - In side bars a widget title is rendered as an icon.
 
 ## v0.4.0
 - [application-manager] added support for pre-load HTML templates

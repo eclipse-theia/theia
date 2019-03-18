@@ -20,7 +20,7 @@ import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Disposable } from '@theia/core/lib/common';
+import { Event, Emitter, Disposable } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 
@@ -72,6 +72,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected searchFormContainer: HTMLElement;
     protected resultContainer: HTMLElement;
 
+    protected readonly onDidUpdateEmitter = new Emitter<void>();
+    readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
+
     @inject(SearchInWorkspaceResultTreeWidget) protected readonly resultTreeWidget: SearchInWorkspaceResultTreeWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
@@ -83,7 +86,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.id = SearchInWorkspaceWidget.ID;
         this.title.label = SearchInWorkspaceWidget.LABEL;
         this.title.caption = SearchInWorkspaceWidget.LABEL;
-        this.title.iconClass = 'fa search-in-workspace-tab-icon';
+        this.title.iconClass = 'search-in-workspace-tab-icon';
 
         this.contentNode = document.createElement('div');
         this.contentNode.classList.add('t-siw-search-container');
@@ -180,6 +183,47 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
+    hasResultList(): boolean {
+        return this.hasResults;
+    }
+
+    hasSearchTerm(): boolean {
+        return this.searchTerm !== '';
+    }
+
+    refresh(): void {
+        this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
+        this.update();
+    }
+
+    collapseAll(): void {
+        this.resultTreeWidget.collapseAll();
+        this.update();
+    }
+
+    clear(): void {
+        this.searchTerm = '';
+        this.replaceTerm = '';
+        this.searchInWorkspaceOptions.include = [];
+        this.searchInWorkspaceOptions.exclude = [];
+        this.includeIgnoredState.enabled = false;
+        this.matchCaseState.enabled = false;
+        this.wholeWordState.enabled = false;
+        this.regExpState.enabled = false;
+        const search = document.getElementById('search-input-field');
+        const replace = document.getElementById('replace-input-field');
+        const include = document.getElementById('include-glob-field');
+        const exclude = document.getElementById('exclude-glob-field');
+        if (search && replace && include && exclude) {
+            (search as HTMLInputElement).value = '';
+            (replace as HTMLInputElement).value = '';
+            (include as HTMLInputElement).value = '';
+            (exclude as HTMLInputElement).value = '';
+        }
+        this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
+        this.update();
+    }
+
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
@@ -192,6 +236,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
+        this.onDidUpdateEmitter.fire(undefined);
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -224,55 +269,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderSearchHeader(): React.ReactNode {
-        const controlButtons = this.renderControlButtons();
         const searchAndReplaceContainer = this.renderSearchAndReplace();
         const searchDetails = this.renderSearchDetails();
-        return <div>{controlButtons}{searchAndReplaceContainer}{searchDetails}</div>;
-    }
-
-    protected refresh = () => {
-        this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
-        this.update();
-    }
-
-    protected collapseAll = () => {
-        this.resultTreeWidget.collapseAll();
-        this.update();
-    }
-
-    protected clear = () => {
-        this.searchTerm = '';
-        this.replaceTerm = '';
-        this.searchInWorkspaceOptions.include = [];
-        this.searchInWorkspaceOptions.exclude = [];
-        this.includeIgnoredState.enabled = false;
-        this.matchCaseState.enabled = false;
-        this.wholeWordState.enabled = false;
-        this.regExpState.enabled = false;
-        const search = document.getElementById('search-input-field');
-        const replace = document.getElementById('replace-input-field');
-        const include = document.getElementById('include-glob-field');
-        const exclude = document.getElementById('exclude-glob-field');
-        if (search && replace && include && exclude) {
-            (search as HTMLInputElement).value = '';
-            (replace as HTMLInputElement).value = '';
-            (include as HTMLInputElement).value = '';
-            (exclude as HTMLInputElement).value = '';
-        }
-        this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
-        this.update();
-    }
-
-    protected renderControlButtons(): React.ReactNode {
-        const refreshButton = this.renderControlButton(`refresh${(this.hasResults || this.searchTerm !== '') && this.workspaceService.tryGetRoots().length > 0
-            ? ' enabled' : ''}`, 'Refresh', this.refresh);
-        const collapseAllButton = this.renderControlButton(`collapse-all${this.hasResults ? ' enabled' : ''}`, 'Collapse All', this.collapseAll);
-        const clearButton = this.renderControlButton(`clear-all${this.hasResults ? ' enabled' : ''}`, 'Clear', this.clear);
-        return <div className='controls button-container'>{refreshButton}{collapseAllButton}{clearButton}</div>;
-    }
-
-    protected renderControlButton(btnClass: string, title: string, clickHandler: () => void): React.ReactNode {
-        return <span className={`btn ${btnClass}`} title={title} onClick={clickHandler}></span>;
+        return <div>{searchAndReplaceContainer}{searchDetails}</div>;
     }
 
     protected renderSearchAndReplace(): React.ReactNode {

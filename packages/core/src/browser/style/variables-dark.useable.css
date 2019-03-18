@@ -78,6 +78,10 @@ is not optimized for dense, information rich UIs.
   --theia-terminal-font-family: monospace;
   --theia-ui-padding: 6px;
 
+  /* Tab Colors */
+  --theia-tab-icon-color: rgb(255, 255, 255);
+  --theia-tab-font-color: #FFF;
+
   /* Main layout colors (dark to bright)
     ------------------------------------ */
 

@@ -18,12 +18,14 @@ import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenu
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from 'inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
+import { Widget } from '@theia/core/lib/browser/widgets';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -41,10 +43,28 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Find in Folder'
     };
+    export const REFRESH_RESULTS: Command = {
+        id: 'search-in-workspace.refresh',
+        category: SEARCH_CATEGORY,
+        label: 'Refresh',
+        iconClass: 'refresh'
+    };
+    export const COLLAPSE_ALL: Command = {
+        id: 'search-in-workspace.collapse-all',
+        category: SEARCH_CATEGORY,
+        label: 'Collapse All',
+        iconClass: 'collapse-all'
+    };
+    export const CLEAR_ALL: Command = {
+        id: 'search-in-workspace.clear-all',
+        category: SEARCH_CATEGORY,
+        label: 'Clear All',
+        iconClass: 'clear-all'
+    };
 }
 
 @injectable()
-export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution {
+export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -78,7 +98,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         await this.openView({ activate: false });
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    async registerCommands(commands: CommandRegistry): Promise<void> {
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
             isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
@@ -104,10 +124,33 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                         }
                     }
                 });
-                const widget: SearchInWorkspaceWidget = await this.openView({ activate: true });
+                const widget = await this.openView({ activate: true });
                 widget.findInFolder(resources);
             }
         }));
+
+        commands.registerCommand(SearchInWorkspaceCommands.REFRESH_RESULTS, {
+            execute: w => this.withWidget(w, widget => widget.refresh()),
+            isEnabled: w => this.withWidget(w, widget => (widget.hasResultList() || widget.hasSearchTerm()) && this.workspaceService.tryGetRoots().length > 0),
+            isVisible: w => this.withWidget(w, () => true)
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.COLLAPSE_ALL, {
+            execute: w => this.withWidget(w, widget => widget.collapseAll()),
+            isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
+            isVisible: w => this.withWidget(w, () => true)
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.CLEAR_ALL, {
+            execute: w => this.withWidget(w, widget => widget.clear()),
+            isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
+            isVisible: w => this.withWidget(w, () => true)
+        });
+    }
+
+    protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: SearchInWorkspaceWidget) => T): T | false {
+        if (widget instanceof SearchInWorkspaceWidget && widget.id === SearchInWorkspaceWidget.ID) {
+            return fn(widget);
+        }
+        return false;
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -125,6 +168,29 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id
+        });
+    }
+
+    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+        const widget = await this.widget;
+        const onDidChange = widget.onDidUpdate;
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
+            command: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
+            priority: 0,
+            onDidChange
+        });
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.CLEAR_ALL.id,
+            command: SearchInWorkspaceCommands.CLEAR_ALL.id,
+            priority: 1,
+            onDidChange
+        });
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
+            command: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
+            priority: 2,
+            onDidChange
         });
     }
 

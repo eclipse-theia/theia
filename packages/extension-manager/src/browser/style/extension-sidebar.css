@@ -94,6 +94,7 @@
     flex: 3;
 }
 
-.extensions-tab-icon::before {
-    content: "\f12e"
+.extensions-tab-icon {
+    -webkit-mask: url('extensions.svg');
+    mask: url('extensions.svg');
 }
