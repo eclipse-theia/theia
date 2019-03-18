@@ -24,9 +24,11 @@ import { Languages, Workspace } from '@theia/languages/lib/browser';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS, CppStartParameters } from '../common';
-import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
+import { CppBuildConfigurationManager } from './cpp-build-configurations';
 import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
+import { CppBuildConfiguration } from '../common/cpp-build-configuration-protocol';
 import { CppPreferences } from './cpp-preferences';
+import URI from '@theia/core/lib/common/uri';
 
 /**
  * Clangd extension to set clangd-specific "initializationOptions" in the
@@ -35,6 +37,14 @@ import { CppPreferences } from './cpp-preferences';
  */
 interface ClangdConfigurationParamsChange {
     compilationDatabasePath?: string;
+
+    /**
+     * Experimental field.
+     */
+    compilationDatabaseMap?: Array<{
+        sourceDir: string;
+        dbPath: string;
+    }>;
 }
 
 @injectable()
@@ -68,7 +78,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     @postConstruct()
     protected init() {
-        this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
+        this.cppBuildConfigurations.onActiveConfigChange2(() => this.onActiveBuildConfigChanged());
         this.cppPreferences.onPreferenceChanged(e => {
             if (this.running) {
                 this.restart();
@@ -83,22 +93,52 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         this.cppBuildConfigurationsStatusBarElement.show();
     }
 
-    private createClangdConfigurationParams(config: CppBuildConfiguration | undefined): ClangdConfigurationParamsChange {
-        const clangdParams: ClangdConfigurationParamsChange = {};
+    protected async createCompilationDatabaseMap(): Promise<Map<string, string>> {
+        const activeConfigurations = new Map<string, CppBuildConfiguration>();
+        const databaseMap = new Map<string, string>();
 
-        if (config) {
-            clangdParams.compilationDatabasePath = config.directory;
+        for (const [source, config] of this.cppBuildConfigurations.getAllActiveConfigs!().entries()) {
+            if (config) {
+                activeConfigurations.set(source, config);
+                databaseMap.set(source, config.directory);
+            }
         }
 
-        return clangdParams;
+        if (activeConfigurations.size > 1 && !this.cppPreferences['cpp.experimentalCompilationDatabaseMap']) {
+            databaseMap.clear(); // Use only one configuration.
+            const configs = [...activeConfigurations.values()];
+            try {
+                const mergedDatabaseUri = new URI(await this.cppBuildConfigurations.getMergedCompilationDatabase!({
+                    directories: configs.map(config => config.directory),
+                }));
+                databaseMap.set('undefined', mergedDatabaseUri.parent.path.toString());
+            } catch (error) {
+                this.logger.error(error);
+                databaseMap.set('undefined', configs[0].directory);
+            }
+        }
+
+        return databaseMap;
     }
 
-    async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
-        // Override the initializationOptions to put the new path to the build,
-        // then restart clangd.
+    private async updateInitializationOptions(): Promise<void> {
+        const clangdParams: ClangdConfigurationParamsChange = {};
+        const configs = await this.createCompilationDatabaseMap();
+
+        if (configs.size === 1) {
+            clangdParams.compilationDatabasePath = [...configs.values()][0];
+
+        } else if (configs.size > 1 && this.cppPreferences['cpp.experimentalCompilationDatabaseMap']) {
+            clangdParams.compilationDatabaseMap = [...configs.entries()].map(
+                ([sourceDir, dbPath]) => ({ sourceDir, dbPath, }));
+        }
+
+        const lc = await this.languageClient;
+        lc.clientOptions.initializationOptions = clangdParams;
+    }
+
+    protected onActiveBuildConfigChanged() {
         if (this.running) {
-            const lc = await this.languageClient;
-            lc.clientOptions.initializationOptions = this.createClangdConfigurationParams(config);
             this.restart();
         }
     }
@@ -124,8 +164,6 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
 
     protected createOptions(): LanguageClientOptions {
         const clientOptions = super.createOptions();
-        clientOptions.initializationOptions = this.createClangdConfigurationParams(this.cppBuildConfigurations.getActiveConfig());
-
         clientOptions.initializationFailedHandler = () => {
             const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
             const ERROR_MESSAGE = 'Error starting C/C++ language server. ' +
@@ -142,7 +180,13 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         return clientOptions;
     }
 
-    protected getStartParameters(): CppStartParameters {
+    protected async getStartParameters(): Promise<CppStartParameters> {
+
+        // getStartParameters is one of the only async steps in the LC
+        // initialization sequence, so we will update asynchronously the
+        // options here
+        await this.updateInitializationOptions();
+
         return {
             clangdExecutable: this.cppPreferences['cpp.clangdExecutable'],
             clangdArgs: this.cppPreferences['cpp.clangdArgs'],

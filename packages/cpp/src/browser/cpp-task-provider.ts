@@ -18,7 +18,8 @@ import parseArgv = require('string-argv');
 import { inject, injectable } from 'inversify';
 import { ProcessTaskConfiguration } from '@theia/task/lib/common/process/task-protocol';
 import { TaskContribution, TaskProvider, TaskProviderRegistry, TaskResolver, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
-import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
+import { CppBuildConfiguration } from '../common/cpp-build-configuration-protocol';
+import { CppBuildConfigurationManager } from './cpp-build-configurations';
 import { TaskConfiguration } from '@theia/task/lib/common/task-protocol';
 
 /**

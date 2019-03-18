@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
+ * Copyright (C) 2018-2019 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,19 +14,33 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+
 import { ContainerModule, Container } from 'inversify';
 import { expect } from 'chai';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { MockStorageService } from '@theia/core/lib/browser/test/mock-storage-service';
 import sinon = require('sinon');
-import { CppBuildConfigurationManager, CppBuildConfiguration, CppBuildConfigurationManagerImpl } from './cpp-build-configurations';
+import { CppBuildConfigurationManager, CppBuildConfigurationManagerImpl } from './cpp-build-configurations';
 import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { bindCppPreferences } from './cpp-preferences';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { MockPreferenceService } from '@theia/core/lib/browser/preferences/test/mock-preference-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { CppBuildConfiguration, CppBuildConfigurationServer, MockCppBuildConfigurationServer } from '../common/cpp-build-configuration-protocol';
 
 let container: Container;
+
+disableJSDOM();
+
+before(() => {
+    disableJSDOM = enableJSDOM();
+});
+after(() => {
+    disableJSDOM();
+});
 
 beforeEach(function () {
     const m = new ContainerModule(bind => {
@@ -35,17 +49,26 @@ beforeEach(function () {
         bind(FileSystem).to(FileSystemNode).inSingletonScope();
         bindCppPreferences(bind);
         bind(PreferenceService).to(MockPreferenceService).inSingletonScope();
+        bind(CppBuildConfigurationServer).to(MockCppBuildConfigurationServer).inSingletonScope();
     });
 
     container = new Container();
+    container.bind(WorkspaceService).toConstantValue(sinon.createStubInstance(WorkspaceService));
     container.load(m);
 });
+
+/**
+ * Get an instance of the `CppBuildConfigurationManager`.
+ */
+function getManager(): CppBuildConfigurationManager {
+    return container.get<CppBuildConfigurationManager>(CppBuildConfigurationManager);
+}
 
 /**
  * Create the .theia/builds.json file with `buildsJsonContent` as its content
  * and create/return an instance of the build configuration service.  If
  * `buildsJsonContent` is undefined, don't create .theia/builds.json.
- * If `activeBuildConfigName` is not undefined, also create an entrty in the
+ * If `activeBuildConfigName` is not undefined, also create an entry in the
  * storage service representing the saved active build config.
  */
 async function initializeTest(buildConfigurations: CppBuildConfiguration[] | undefined,
@@ -66,8 +89,14 @@ async function initializeTest(buildConfigurations: CppBuildConfiguration[] | und
     // Save active build config
     if (activeBuildConfigName !== undefined) {
         const storage = container.get<StorageService>(StorageService);
-        storage.setData('cpp.active-build-configuration', {
-            configName: activeBuildConfigName,
+        storage.setData('cpp.active-build-configurations-map', {
+            configs: [[
+                '/tmp',
+                {
+                    name: 'Release',
+                    directory: '/tmp/builds/release',
+                }
+            ]],
         });
     }
 
@@ -81,7 +110,7 @@ describe('build-configurations', function () {
         const cppBuildConfigurations = await initializeTest(undefined, undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
-        const active = cppBuildConfigurations.getActiveConfig();
+        const active = cppBuildConfigurations.getActiveConfig('/tmp');
 
         expect(active).eq(undefined);
         expect(configs).lengthOf(0);
@@ -91,7 +120,7 @@ describe('build-configurations', function () {
         const cppBuildConfigurations = await initializeTest([], undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
-        const active = cppBuildConfigurations.getActiveConfig();
+        const active = cppBuildConfigurations.getActiveConfig('/tmp');
 
         expect(active).eq(undefined);
         expect(configs).lengthOf(0);
@@ -108,7 +137,7 @@ describe('build-configurations', function () {
         const cppBuildConfigurations = await initializeTest(builds, undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
-        const active = cppBuildConfigurations.getActiveConfig();
+        const active = cppBuildConfigurations.getActiveConfig('/tmp');
 
         expect(active).eq(undefined);
         expect(configs).to.be.an('array').of.lengthOf(2);
@@ -125,8 +154,11 @@ describe('build-configurations', function () {
         }];
         const cppBuildConfigurations = await initializeTest(builds, 'Debug');
 
+        const manager = getManager();
+        manager.setActiveConfig(builds[1], '/tmp');
+
         const configs = cppBuildConfigurations.getConfigs();
-        const active = cppBuildConfigurations.getActiveConfig();
+        const active = cppBuildConfigurations.getActiveConfig('/tmp');
 
         expect(active).to.be.deep.eq(builds[1]);
         expect(configs).to.be.an('array').of.lengthOf(2);
@@ -143,8 +175,11 @@ describe('build-configurations', function () {
         }];
         const cppBuildConfigurations = await initializeTest(builds, 'foobar');
 
+        const manager = getManager();
+        manager.setActiveConfig(undefined, '/tmp');
+
         const configs = cppBuildConfigurations.getConfigs();
-        const active = cppBuildConfigurations.getActiveConfig();
+        const active = cppBuildConfigurations.getActiveConfig('/tmp');
 
         expect(active).to.be.eq(undefined);
         expect(configs).to.be.an('array').of.lengthOf(2);
