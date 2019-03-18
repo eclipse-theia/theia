@@ -110,14 +110,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         const args = ['--files', '--case-sensitive'];
         if (options.includePatterns) {
             for (const includePattern of options.includePatterns) {
-                let includeGlob = includePattern;
-                if (!includeGlob.endsWith('*')) {
-                    includeGlob = `${includeGlob}*`;
-                }
-                if (!includeGlob.startsWith('*')) {
-                    includeGlob = `*${includeGlob}`;
-                }
-                args.push('--glob', includeGlob);
+                args.push('--glob', includePattern);
             }
         }
         if (!options.useGitIgnore) {
