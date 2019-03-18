@@ -256,8 +256,12 @@ export class TaskService implements TaskConfigurationClient {
         const endLine = this.editorManager.currentEditor.editor.selection.end.line;
         const selectedRange: Range = Range.create(startLine, 0, endLine + 1, 0);
         const selectedText = this.editorManager.currentEditor.editor.document.getText(selectedRange);
-        const terminal = this.terminalService.currentTerminal;
-        if (!terminal) { return; }
+        let terminal = this.terminalService.currentTerminal;
+        if (!terminal) {
+            terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: new Date().toString() });
+            await terminal.start();
+            this.terminalService.activateTerminal(terminal);
+        }
         terminal.sendText(selectedText);
     }
 
