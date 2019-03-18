@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Tree } from './tree';
+import { Tree, TreeNode } from './tree';
 import { DepthFirstTreeIterator } from './tree-iterator';
 import { TreeSelection, SelectableTreeNode } from './tree-selection';
 
@@ -74,26 +74,29 @@ export class TreeSelectionState {
 
     selection(): ReadonlyArray<SelectableTreeNode> {
         const copy = this.checkNoDefaultSelection(this.selectionStack);
-        const nodes = new Set();
+        const nodeIds = new Set<string>();
         for (let i = 0; i < copy.length; i++) {
             const { node, type } = copy[i];
             if (TreeSelection.isRange(type)) {
                 const selection = copy[i];
-                this.selectionRange(selection).forEach(n => nodes.add(n));
+                for (const id of this.selectionRange(selection).map(n => n.id)) {
+                    nodeIds.add(id);
+                }
             } else if (TreeSelection.isToggle(type)) {
-                if (nodes.has(node)) {
-                    nodes.delete(node);
+                if (nodeIds.has(node.id)) {
+                    nodeIds.delete(node.id);
                 } else {
-                    nodes.add(node);
+                    nodeIds.add(node.id);
                 }
             }
         }
-        return Array.from(nodes.keys()).reverse();
+        return Array.from(nodeIds.keys()).map(id => this.tree.getNode(id)).filter(SelectableTreeNode.is).reverse();
     }
 
     get focus(): SelectableTreeNode | undefined {
         const copy = this.checkNoDefaultSelection(this.selectionStack);
-        return copy[copy.length - 1].focus;
+        const candidate = copy[copy.length - 1].focus;
+        return this.toSelectableTreeNode(candidate);
     }
 
     protected handleDefault(state: TreeSelectionState, node: Readonly<SelectableTreeNode>): TreeSelectionState {
@@ -139,7 +142,7 @@ export class TreeSelectionState {
         // Drop the previous range when we are trying to modify that.
         if (TreeSelection.isRange(copy[copy.length - 1])) {
             const range = this.selectionRange(copy.pop()!);
-            // And we drop all preceeding individual nodes that were contained in the range we are dropping.
+            // And we drop all preceding individual nodes that were contained in the range we are dropping.
             // That means, anytime we cover individual nodes with a range, they will belong to the range so we need to drop them now.
             for (let i = copy.length - 1; i >= 0; i--) {
                 if (range.indexOf(copy[i].node) !== -1) {
@@ -206,6 +209,22 @@ export class TreeSelectionState {
             range.reverse();
         }
         return range.filter(SelectableTreeNode.is);
+    }
+
+    protected toSelectableTreeNode(node: TreeNode | undefined): SelectableTreeNode | undefined {
+        if (!!node) {
+            const candidate = this.tree.getNode(node.id);
+            if (!!candidate) {
+                if (SelectableTreeNode.is(candidate)) {
+                    return candidate;
+                } else {
+                    console.warn(`Could not map to a selectable tree node. Node with ID: ${node.id} is not a selectable node.`);
+                }
+            } else {
+                console.warn(`Could not map to a selectable tree node. Node does not exist with ID: ${node.id}.`);
+            }
+        }
+        return undefined;
     }
 
     /**
