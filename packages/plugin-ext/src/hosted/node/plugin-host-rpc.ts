@@ -24,6 +24,7 @@ import { ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { DebugExtImpl } from '../../plugin/node/debug/debug';
 import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
+import { MessageRegistryExt } from '../../plugin/message-registry';
 
 /**
  * Handle the RPC calls.
@@ -42,7 +43,8 @@ export class PluginHostRPC {
         const envExt = new EnvExtImpl(this.rpc);
         const debugExt = new DebugExtImpl(this.rpc);
         const editorsAndDocumentsExt = new EditorsAndDocumentsExtImpl(this.rpc);
-        const workspaceExt = new WorkspaceExtImpl(this.rpc, editorsAndDocumentsExt);
+        const messageRegistryExt = new MessageRegistryExt(this.rpc);
+        const workspaceExt = new WorkspaceExtImpl(this.rpc, editorsAndDocumentsExt, messageRegistryExt);
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc, workspaceExt);
         this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
@@ -57,7 +59,8 @@ export class PluginHostRPC {
             debugExt,
             preferenceRegistryExt,
             editorsAndDocumentsExt,
-            workspaceExt
+            workspaceExt,
+            messageRegistryExt
         );
     }
 

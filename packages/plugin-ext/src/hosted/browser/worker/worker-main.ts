@@ -27,6 +27,7 @@ import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 import { createDebugExtStub } from './debug-stub';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
+import { MessageRegistryExt } from '../../../plugin/message-registry';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -50,7 +51,8 @@ function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
 }
 const envExt = new EnvExtImpl(rpc);
 const editorsAndDocuments = new EditorsAndDocumentsExtImpl(rpc);
-const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments);
+const messageRegistryExt = new MessageRegistryExt(rpc);
+const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments, messageRegistryExt);
 const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
 
@@ -130,7 +132,8 @@ const apiFactory = createAPIFactory(
     debugExt,
     preferenceRegistryExt,
     editorsAndDocuments,
-    workspaceExt
+    workspaceExt,
+    messageRegistryExt
 );
 let defaultApi: typeof theia;
 
