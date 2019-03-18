@@ -89,16 +89,16 @@ describe('search-service', function () {
             expect(matches.length).to.eq(1);
         });
 
-        it('should support file searches with globs without the prefixed or trailing star (*)', async () => {
+        it('should NOT support file searches with globs without the prefixed or trailing star (*)', async () => {
             const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
             const trailingMatches = await service.find('', { rootUris: [rootUri], includePatterns: ['*oo'] });
             expect(trailingMatches).to.be.not.undefined;
-            expect(trailingMatches.length).to.eq(1);
+            expect(trailingMatches.length).to.eq(0);
 
             const prefixedMatches = await service.find('', { rootUris: [rootUri], includePatterns: ['oo*'] });
             expect(prefixedMatches).to.be.not.undefined;
-            expect(prefixedMatches.length).to.eq(1);
+            expect(prefixedMatches.length).to.eq(0);
         });
     });
 
