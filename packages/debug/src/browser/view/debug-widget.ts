@@ -55,7 +55,7 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
         this.title.label = DebugWidget.LABEL;
         this.title.caption = DebugWidget.LABEL;
         this.title.closable = true;
-        this.title.iconClass = 'fa debug-tab-icon';
+        this.title.iconClass = 'debug-tab-icon';
         this.addClass('theia-debug-container');
         this.toDispose.pushAll([
             this.toolbar,

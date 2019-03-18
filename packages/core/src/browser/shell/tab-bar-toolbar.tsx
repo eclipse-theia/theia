@@ -23,6 +23,9 @@ import { FrontendApplicationContribution } from '../frontend-application';
 import { CommandRegistry, CommandService } from '../../common/command';
 import { Disposable } from '../../common/disposable';
 import { ContextKeyService } from '../context-key-service';
+import { Event, Emitter } from '../../common/event';
+
+import debounce = require('lodash.debounce');
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -80,13 +83,19 @@ export class TabBarToolbar extends ReactWidget {
             }
         }
         const command = this.commands.getCommand(item.command);
-        const iconClass = command && command.iconClass;
-        if (iconClass) {
-            classNames.push(iconClass);
+        if (command) {
+            const iconClass = command.iconClass;
+            if (iconClass) {
+                classNames.push(iconClass);
+            }
         }
-        return <div key={item.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM} >
+        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`} >
             <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={item.tooltip}>{innerText}</div>
         </div>;
+    }
+
+    protected commandIsEnabled(command: string): boolean {
+        return this.commands.isEnabled(command, this.current);
     }
 
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
@@ -174,6 +183,8 @@ export interface TabBarToolbarItem {
      */
     readonly when?: string;
 
+    readonly onDidChange?: Event<void>;
+
 }
 
 export namespace TabBarToolbarItem {
@@ -227,6 +238,11 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     @named(TabBarToolbarContribution)
     protected readonly contributionProvider: ContributionProvider<TabBarToolbarContribution>;
 
+    protected readonly onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
+    // debounce in order to avoid to fire more than once in the same tick
+    protected fireOnDidChange = debounce(() => this.onDidChangeEmitter.fire(undefined), 0);
+
     onStart(): void {
         const contributions = this.contributionProvider.getContributions();
         for (const contribution of contributions) {
@@ -245,6 +261,10 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             throw new Error(`A toolbar item is already registered with the '${id}' ID.`);
         }
         this.items.set(id, item);
+        this.fireOnDidChange();
+        if (item.onDidChange) {
+            item.onDidChange(() => this.fireOnDidChange());
+        }
     }
 
     /**

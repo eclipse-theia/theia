@@ -35,7 +35,7 @@ import * as React from 'react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 
 export const FILE_NAVIGATOR_ID = 'files';
-export const LABEL = 'Files';
+export const LABEL = 'Explorer';
 export const CLASS = 'theia-Files';
 
 @injectable()
@@ -60,7 +60,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.title.caption = LABEL;
-        this.title.iconClass = 'fa navigator-tab-icon';
+        this.title.iconClass = 'navigator-tab-icon';
         this.addClass(CLASS);
         this.initialize();
     }

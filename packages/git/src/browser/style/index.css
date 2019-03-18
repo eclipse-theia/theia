@@ -326,8 +326,9 @@
     outline: none;
  }
 
-.git-tab-icon::before {
-    content: "\f126"
+.git-tab-icon {
+    -webkit-mask: url('git.svg');
+    mask: url('git.svg');
 }
 
 .git-change-count {

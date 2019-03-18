@@ -41,7 +41,7 @@ export class TopPanel {
 
     toggleFilesView() {
         this.clickMenuTab('View');
-        this.clickSubMenu('Files');
+        this.clickSubMenu('Explorer');
     }
 
     toggleGitView() {

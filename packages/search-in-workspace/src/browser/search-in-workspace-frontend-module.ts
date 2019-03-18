@@ -26,6 +26,7 @@ import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-
 import { SearchInWorkspaceFrontendContribution } from './search-in-workspace-frontend-contribution';
 import { InMemoryTextResourceResolver } from './in-memory-text-resource';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceContextKeyService).toSelf().inSingletonScope();
@@ -39,6 +40,7 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, SearchInWorkspaceFrontendContribution);
     bind(FrontendApplicationContribution).toService(SearchInWorkspaceFrontendContribution);
+    bind(TabBarToolbarContribution).toService(SearchInWorkspaceFrontendContribution);
 
     // The object that gets notified of search results.
     bind(SearchInWorkspaceClientImpl).toSelf().inSingletonScope();

@@ -19,7 +19,8 @@
 |----------------------------------------------------------------------------*/
 
 :root {
-  --theia-private-sidebar-tab-width: 32px;
+  --theia-private-sidebar-tab-width: 50px;
+  --theia-private-sidebar-tab-height: 32px;
   --theia-private-sidebar-scrollbar-rail-width: 7px;
   --theia-private-sidebar-scrollbar-width: 5px;
 }
@@ -31,10 +32,10 @@
 
 .p-TabBar.theia-app-sides {
   display: block;
-  color: var(--theia-ui-font-color1);
+  color: var(--theia-tab-font-color);
   background: var(--theia-layout-color2);
   font-size: var(--theia-ui-font-size1);
-  min-width: var(--theia-private-sidebar-tab-width); 
+  min-width: var(--theia-private-sidebar-tab-width);
   max-width: var(--theia-private-sidebar-tab-width);
 }
 
@@ -44,9 +45,13 @@
 
 .p-TabBar.theia-app-sides .p-TabBar-tab {
   position: relative;
-  padding: 12px 8px;
+  padding: 11px 10px;
   background: var(--theia-layout-color2);
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: var(--theia-private-sidebar-tab-height);
+  cursor: pointer;
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
@@ -58,8 +63,12 @@
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
-  color: var(--theia-ui-font-color0);
-  background: var(--theia-layout-color0);
+  color: var(--theia-tab-font-color);
+  opacity: 1.0;
+  background: none;
+  min-height: var(--theia-private-sidebar-tab-height);
+  height: var(--theia-private-sidebar-tab-height);
+  border-top: none;
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current.theia-mod-active {
@@ -72,25 +81,42 @@
   border-top-color: transparent;
 }
 
-.p-TabBar.theia-app-sides .p-TabBar-tab:hover {
-  background: var(--theia-accent-color3);
-}
-
-.p-TabBar.theia-app-sides .p-TabBar-tabIcon,
+.p-TabBar.theia-app-sides .p-TabBar-tabLabel,
 .p-TabBar.theia-app-sides .p-TabBar-tabCloseIcon {
   display: none;
 }
 
-.p-TabBar.theia-app-sides .p-TabBar-tabLabel {
-  position: absolute;
-  min-height: var(--theia-private-sidebar-tab-width);
-  max-height: var(--theia-private-sidebar-tab-width);
-  align-items: flex-start;
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon {
+  width: 30px;
+  height: 28px;
+  background-color: var(--theia-tab-icon-color);
+  opacity: 0.6;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
 }
 
-.p-TabBar.theia-app-sides .p-TabBar-tabIcon {
-  transform: scale(1.5);
-  max-height: 15px;
+.p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon:hover,
+.p-TabBar.theia-app-sides .p-mod-current .file-icon.p-TabBar-tabIcon,
+.p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon:hover,
+.p-TabBar.theia-app-sides .p-mod-current .fa.p-TabBar-tabIcon {
+  opacity: 1.0;
+  background: none;
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon:hover,
+.p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon {
+  opacity: 1.0;
+}
+
+.p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  opacity: 0.6;
+  text-align: center;
+  background: none;
+  color: var(--theia-tab-icon-color);
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tabLabel {
@@ -172,4 +198,41 @@
 
 .p-TabBar.theia-app-right > .theia-TabBar-hidden-content .p-TabBar-tabLabel {
   transform: none;
+}
+
+/*-----------------------------------------------------------------------------
+| Sidepanel Toolbar
+|----------------------------------------------------------------------------*/
+
+.theia-sidepanel-toolbar {
+    min-height: 30px;
+    display: flex;
+    padding-left: 5px;
+    align-items: center;
+}
+
+.theia-sidepanel-toolbar.theia-left-side-panel {
+    border-right: var(--theia-panel-border-width) solid var(--theia-border-color1);
+}
+
+.theia-sidepanel-toolbar.theia-right-side-panel {
+    border-left: var(--theia-panel-border-width) solid var(--theia-border-color1);
+}
+
+.theia-sidepanel-toolbar .theia-sidepanel-title {
+    color: var(--theia-ui-font-color1);
+    flex: 1;
+    margin-left: 14px;
+    text-transform: uppercase;
+    font-size: var(--theia-ui-font-size0);
+}
+
+.theia-sidepanel-toolbar .p-TabBar-toolbar .item {
+    color: var(--theia-ui-font-color1);
+}
+
+.theia-sidepanel-toolbar .p-TabBar-toolbar .item > div{
+    height: 18px;
+    width: 18px;
+    background-repeat: no-repeat;
 }

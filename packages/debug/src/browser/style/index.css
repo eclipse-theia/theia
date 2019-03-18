@@ -152,8 +152,9 @@
     opacity: 1;
 }
 
-.debug-tab-icon::before {
-    content: "\f188"
+.debug-tab-icon {
+    -webkit-mask: url('debug-dark.svg') 50%;
+    mask: url('debug-dark.svg') 50%;
 }
 
 /** Console */

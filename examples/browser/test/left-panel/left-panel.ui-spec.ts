@@ -33,20 +33,20 @@ before(() => {
 });
 
 describe('theia left panel', () => {
-    it("should show 'Files' and 'Git'", () => {
-        expect(leftPanel.doesTabExist('Files')).to.be.true;
+    it("should show 'Explorer' and 'Git'", () => {
+        expect(leftPanel.doesTabExist('Explorer')).to.be.true;
         expect(leftPanel.doesTabExist('Git')).to.be.true;
     });
 
     describe('files tab', () => {
         it('should open/close the files tab', () => {
-            leftPanel.openCloseTab('Files');
+            leftPanel.openCloseTab('Explorer');
             expect(leftPanel.isFileTreeVisible()).to.be.true;
-            expect(leftPanel.isTabActive('Files')).to.be.true;
+            expect(leftPanel.isTabActive('Explorer')).to.be.true;
 
-            leftPanel.openCloseTab('Files');
+            leftPanel.openCloseTab('Explorer');
             expect(leftPanel.isFileTreeVisible()).to.be.false;
-            expect(leftPanel.isTabActive('Files')).to.be.false;
+            expect(leftPanel.isTabActive('Explorer')).to.be.false;
         });
     });
 

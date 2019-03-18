@@ -45,6 +45,7 @@
     width: calc(100% - var(--theia-ui-padding)*4);
 }
 
-.navigator-tab-icon::before {
-    content: "\f0c5"
+.navigator-tab-icon {
+    -webkit-mask: url('files.svg');
+    mask: url('files.svg');
 }
