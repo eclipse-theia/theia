@@ -129,24 +129,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      * Return selected text by Range or all text by default
      */
     getText(range?: Range): string {
-        if (!range) { return this.model.getValue(); }
-        let text: string = '';
-        const startLine = range.start.line + 1;
-        const endLine = range.end.line + 1;
-        // single line selection can occur in two cases
-        if (startLine === endLine) { return this.getLineContent(startLine).slice(range.start.character, range.end.character); }
-        if (startLine === endLine - 1 && range.end.character === 0) { return this.getLineContent(startLine).slice(range.start.character) + '\n'; }
-        // multi-line selection
-        for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
-            if (lineNum === startLine) {
-                text += this.getLineContent(lineNum).slice(range.start.character) + '\n';
-            } else if (lineNum === endLine) {
-                text += this.getLineContent(lineNum).slice(0, range.end.character);
-            } else {
-                text += this.getLineContent(lineNum) + '\n';
-            }
+        if (!range) {
+            return this.model.getValue();
+        } else {
+            return this.model.getValueInRange(this.p2m.asRange(range));
         }
-        return text;
     }
 
     positionAt(offset: number): Position {
