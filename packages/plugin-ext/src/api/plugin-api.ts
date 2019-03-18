@@ -384,6 +384,7 @@ export interface WorkspaceMain {
     $onTextDocumentContentChange(uri: string, content: string): void;
     $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string>;
     $unregisterFileSystemWatcher(watcherId: string): Promise<void>;
+    $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
 }
 
 export interface WorkspaceExt {

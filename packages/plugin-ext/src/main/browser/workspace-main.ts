@@ -194,6 +194,10 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         this.resourceResolver.onContentChange(uri, content);
     }
 
+    async $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void> {
+        await this.workspaceService.spliceRoots(start, deleteCount, ...rootsToAdd.map(root => new URI(root)));
+    }
+
 }
 
 /**

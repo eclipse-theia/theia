@@ -13,6 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/services/workspace/node/workspaceEditingService.ts
 
 import * as paths from 'path';
 import * as theia from '@theia/plugin';
@@ -22,7 +27,8 @@ import {
     WorkspaceExt,
     WorkspaceFolderPickOptionsMain,
     WorkspaceMain,
-    PLUGIN_RPC_CONTEXT as Ext
+    PLUGIN_RPC_CONTEXT as Ext,
+    MainMessageType
 } from '../api/plugin-api';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../api/rpc-protocol';
@@ -35,6 +41,7 @@ import { normalize } from '../common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';
+import { MessageRegistryExt } from './message-registry';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
@@ -47,7 +54,9 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     private folders: theia.WorkspaceFolder[] | undefined;
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
 
-    constructor(rpc: RPCProtocol, private editorsAndDocuments: EditorsAndDocumentsExtImpl) {
+    constructor(rpc: RPCProtocol,
+        private editorsAndDocuments: EditorsAndDocumentsExtImpl,
+        private messageService: MessageRegistryExt) {
         this.proxy = rpc.getProxy(Ext.WORKSPACE_MAIN);
         this.fileSystemWatcherManager = new InPluginFileSystemWatcherProxy(this.proxy);
     }
@@ -72,15 +81,20 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
         const newRoots = event.roots || [];
         const newFolders = newRoots.map((root, index) => this.toWorkspaceFolder(root, index));
-        const added = this.foldersDiff(newFolders, this.folders);
-        const removed = this.foldersDiff(this.folders, newFolders);
+        const delta = this.deltaFolders(this.folders, newFolders);
 
         this.folders = newFolders;
 
-        this.workspaceFoldersChangedEmitter.fire({
-            added: added,
-            removed: removed
-        });
+        this.workspaceFoldersChangedEmitter.fire(delta);
+    }
+
+    private deltaFolders(currentFolders: theia.WorkspaceFolder[] = [], newFolders: theia.WorkspaceFolder[] = []): {
+        added: theia.WorkspaceFolder[]
+        removed: theia.WorkspaceFolder[]
+    } {
+        const added = this.foldersDiff(newFolders, currentFolders);
+        const removed = this.foldersDiff(currentFolders, newFolders);
+        return { added, removed };
     }
 
     private foldersDiff(folder1: theia.WorkspaceFolder[] = [], folder2: theia.WorkspaceFolder[] = []): theia.WorkspaceFolder[] {
@@ -280,6 +294,54 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             result = `${folder.name}/${result}`;
         }
         return normalize(result, true);
+    }
+
+    updateWorkspaceFolders(start: number, deleteCount: number, ...workspaceFoldersToAdd: { uri: theia.Uri, name?: string }[]): boolean {
+        const rootsToAdd = new Set<string>();
+        if (Array.isArray(workspaceFoldersToAdd)) {
+            workspaceFoldersToAdd.forEach(folderToAdd => {
+                const uri = URI.isUri(folderToAdd.uri) && folderToAdd.uri.toString();
+                if (uri && !rootsToAdd.has(uri)) {
+                    rootsToAdd.add(uri);
+                }
+            });
+        }
+
+        if ([start, deleteCount].some(i => typeof i !== 'number' || i < 0)) {
+            return false; // validate numbers
+        }
+
+        if (deleteCount === 0 && rootsToAdd.size === 0) {
+            return false; // nothing to delete or add
+        }
+
+        const currentWorkspaceFolders = this.workspaceFolders || [];
+        if (start + deleteCount > currentWorkspaceFolders.length) {
+            return false; // cannot delete more than we have
+        }
+
+        // Simulate the updateWorkspaceFolders method on our data to do more validation
+        const newWorkspaceFolders = currentWorkspaceFolders.slice(0);
+        newWorkspaceFolders.splice(start, deleteCount, ...[...rootsToAdd].map(uri => ({ uri: URI.parse(uri), name: undefined!, index: undefined! })));
+
+        for (let i = 0; i < newWorkspaceFolders.length; i++) {
+            const folder = newWorkspaceFolders[i];
+            if (newWorkspaceFolders.some((otherFolder, index) => index !== i && folder.uri.toString() === otherFolder.uri.toString())) {
+                return false; // cannot add the same folder multiple times
+            }
+        }
+
+        const { added, removed } = this.deltaFolders(currentWorkspaceFolders, newWorkspaceFolders);
+        if (added.length === 0 && removed.length === 0) {
+            return false; // nothing actually changed
+        }
+
+        // Trigger on main side
+        this.proxy.$updateWorkspaceFolders(start, deleteCount, ...rootsToAdd).then(undefined, error =>
+            this.messageService.showMessage(MainMessageType.Error, `Failed to update workspace folders: ${error}`)
+        );
+
+        return true;
     }
 
     // Experimental API https://github.com/theia-ide/theia/issues/4167

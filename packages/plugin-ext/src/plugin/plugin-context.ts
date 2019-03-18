@@ -131,13 +131,13 @@ export function createAPIFactory(
     debugExt: DebugExtImpl,
     preferenceRegistryExt: PreferenceRegistryExtImpl,
     editorsAndDocumentsExt: EditorsAndDocumentsExtImpl,
-    workspaceExt: WorkspaceExtImpl
+    workspaceExt: WorkspaceExtImpl,
+    messageRegistryExt: MessageRegistryExt
 ): PluginAPIFactory {
 
     const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
-    const messageRegistryExt = new MessageRegistryExt(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
     const notificationExt = rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, new NotificationExtImpl(rpc));
     const statusBarExt = new StatusBarExtImpl(rpc);
@@ -429,6 +429,9 @@ export function createAPIFactory(
             asRelativePath(pathOrUri: theia.Uri | string, includeWorkspace?: boolean): string | undefined {
                 return workspaceExt.getRelativePath(pathOrUri, includeWorkspace);
             },
+            updateWorkspaceFolders: (index, deleteCount, ...workspaceFoldersToAdd) =>
+                workspaceExt.updateWorkspaceFolders(index, deleteCount || 0, ...workspaceFoldersToAdd)
+            ,
             registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
                 return tasks.registerTaskProvider(type, provider);
             },
