@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution } from '@theia/core/lib/common';
-import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingContext, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { CppCommandContribution } from './cpp-commands';
 
 import { LanguageClientContribution } from '@theia/languages/lib/browser';
@@ -28,6 +28,7 @@ import { CppBuildConfigurationManager, CppBuildConfigurationManagerImpl } from '
 import { CppBuildConfigurationsStatusBarElement } from './cpp-build-configurations-statusbar-element';
 import { CppTaskProvider } from './cpp-task-provider';
 import { TaskContribution } from '@theia/task/lib/browser/task-contribution';
+import { CppBuildConfigurationServer, cppBuildConfigurationServerPath } from '../common/cpp-build-configuration-protocol';
 
 export default new ContainerModule(bind => {
     bind(CommandContribution).to(CppCommandContribution).inSingletonScope();
@@ -47,6 +48,10 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(CppBuildConfigurationsContributions);
 
     bind(CppBuildConfigurationsStatusBarElement).toSelf().inSingletonScope();
+
+    bind(CppBuildConfigurationServer).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy<CppBuildConfigurationServer>(ctx.container, cppBuildConfigurationServerPath)
+    ).inSingletonScope();
 
     bindCppPreferences(bind);
 });

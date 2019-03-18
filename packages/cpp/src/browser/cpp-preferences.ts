@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
 import { interfaces } from 'inversify';
-import { CppBuildConfiguration } from './cpp-build-configurations';
+import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
+import { CppBuildConfiguration } from '../common/cpp-build-configuration-protocol';
 import { CLANGD_EXECUTABLE_DEFAULT } from '../common';
 
 export const cppPreferencesSchema: PreferenceSchema = {
@@ -45,7 +45,13 @@ export const cppPreferencesSchema: PreferenceSchema = {
                 },
                 required: ['name', 'directory'],
             },
+            scope: 'resource',
             default: [],
+        },
+        'cpp.experimentalCompilationDatabaseMap': {
+            description: 'Enable experimental support for multiple compilation databases.',
+            default: false,
+            type: 'boolean'
         },
         'cpp.experimentalCommands': {
             description: 'Enable experimental commands mostly intended for Clangd developers.',
@@ -77,6 +83,7 @@ export const cppPreferencesSchema: PreferenceSchema = {
 
 export class CppConfiguration {
     'cpp.buildConfigurations': CppBuildConfiguration[];
+    'cpp.experimentalCompilationDatabaseMap': boolean;
     'cpp.experimentalCommands': boolean;
     'cpp.clangdExecutable': string;
     'cpp.clangdArgs': string;
