@@ -95,6 +95,10 @@ export class FileNavigatorWidget extends FileTreeWidget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.selectionService.selection = this.model.selectedNodes;
+    }
+
+    protected async initialize(): Promise<void> {
+        await this.model.updateRoot();
         const root = this.model.root;
         if (CompositeTreeNode.is(root) && root.children.length === 1) {
             const child = root.children[0];
@@ -103,10 +107,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 this.model.expandNode(child);
             }
         }
-    }
-
-    protected async initialize(): Promise<void> {
-        await this.model.updateRoot();
     }
 
     protected enableDndOnMainPanel(): void {
