@@ -301,27 +301,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * @param uri URI of the root folder being added
      */
     async addRoot(uri: URI): Promise<void> {
-        await this.roots;
-
-        if (!this.opened) {
-            throw new Error('Folder cannot be added as there is no active workspace or opened folder.');
-        }
-        const valid = await this.toValidRoot(uri);
-        if (!valid) {
-            throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${uri.toString()}.`);
-        }
-
-        if (this._workspace && !this._roots.find(r => r.uri === valid.uri)) {
-            if (this._workspace.isDirectory) { // save the workspace data in a temporary file
-                const tempFile = await this.getTemporaryWorkspaceFile();
-                if (tempFile) {
-                    await this.save(tempFile);
-                }
-            }
-            const workspaceData = await this.getWorkspaceDataFromFile();
-            this._workspace = await this.writeWorkspaceFile(this._workspace,
-                WorkspaceData.buildWorkspaceData([...this._roots, valid], workspaceData ? workspaceData.settings : undefined));
-        }
+        await this.spliceRoots(this._roots.length, 0, uri);
     }
 
     /**
@@ -342,6 +322,41 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
+    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
+        if (!this._workspace) {
+            throw new Error('There is not active workspace');
+        }
+        const dedup = new Set<string>();
+        const roots = this._roots.map(root => (dedup.add(root.uri), root.uri));
+        const toAdd: string[] = [];
+        for (const root of rootsToAdd) {
+            const uri = root.toString();
+            if (!dedup.has(uri)) {
+                dedup.add(uri);
+                toAdd.push(uri);
+            }
+        }
+        const toRemove = roots.splice(start, deleteCount || 0, ...toAdd);
+        if (!toRemove.length && !toAdd.length) {
+            return [];
+        }
+        if (this._workspace.isDirectory) {
+            const utitledWorkspace = await this.getUntitledWorkspace();
+            if (utitledWorkspace) {
+                await this.save(utitledWorkspace);
+            }
+        }
+        const currentData = await this.getWorkspaceDataFromFile();
+        const newData = WorkspaceData.buildWorkspaceData(roots, currentData && currentData.settings);
+        await this.writeWorkspaceFile(this._workspace, newData);
+        return toRemove.map(root => new URI(root));
+    }
+
+    protected async getUntitledWorkspace(): Promise<URI | undefined> {
+        const home = await this.fileSystem.getCurrentUserHome();
+        return home && getTemporaryWorkspaceFileUri(new URI(home.uri));
+    }
+
     private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
         if (workspaceFile) {
             const data = JSON.stringify(WorkspaceData.transformToRelative(workspaceData, workspaceFile));
@@ -349,17 +364,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
             const result = jsoncparser.applyEdits(data, edits);
             const stat = await this.fileSystem.setContent(workspaceFile, result);
             return stat;
-        }
-    }
-
-    private async getTemporaryWorkspaceFile(): Promise<FileStat | undefined> {
-        const home = await this.fileSystem.getCurrentUserHome();
-        if (home) {
-            const tempWorkspaceUri = getTemporaryWorkspaceFileUri(new URI(home.uri));
-            if (!await this.fileSystem.exists(tempWorkspaceUri.toString())) {
-                return this.fileSystem.createFile(tempWorkspaceUri.toString());
-            }
-            return this.toFileStat(tempWorkspaceUri);
         }
     }
 
