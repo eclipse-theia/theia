@@ -182,6 +182,13 @@ is not optimized for dense, information rich UIs.
   --theia-icon-replace-all: url(../icons/replace-all.svg);
   --theia-icon-open-file: url(../icons/open-file-bright.svg);
 
+  /* Sidebar Icons */
+  --theia-icon-debug: url(../icons/debug-dark.svg);
+  --theia-icon-extensions: url(../icons/extensions-dark.svg);
+  --theia-icon-files: url(../icons/files-dark.svg);
+  --theia-icon-scm: url(../icons/scm-dark.svg);
+  --theia-icon-search: url(../icons/search-dark.svg);
+
   /* Scrollbars */
   --theia-scrollbar-width: 6px;
   --theia-scrollbar-rail-width: 10px;

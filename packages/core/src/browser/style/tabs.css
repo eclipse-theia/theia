@@ -90,8 +90,16 @@
 }
 
 .p-TabBar .p-TabBar-tabIcon {
-  width: 15px;
-  line-height: 1.7;
+    width: 15px;
+    line-height: 1.7;
+    font-size: 12px;
+    text-align: center;
+    background-repeat: no-repeat;
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon {
+    background-size: 13px;
+    background-position-y: 3px;
 }
 
 
@@ -207,8 +215,17 @@
   display: flex;
   align-items: center;
   margin-left: 8px; /* `padding` + `margin-right` from the container toolbar */
+  opacity: 0.25;
+  cursor: default;
 }
 
-.p-TabBar-toolbar .item:hover {
-  cursor: pointer;
+.p-TabBar-toolbar .item.enabled {
+    opacity: 1.0;
+    cursor: pointer;
+}
+
+.p-TabBar-toolbar .item > div{
+    height: 18px;
+    width: 18px;
+    background-repeat: no-repeat;
 }

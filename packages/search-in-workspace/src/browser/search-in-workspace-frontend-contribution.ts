@@ -24,6 +24,7 @@ import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -41,10 +42,25 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Find in Folder'
     };
+    export const REFRESH_RESULTS: Command = {
+        id: 'search-in-workspace.refresh',
+        label: 'Refresh',
+        iconClass: 'refresh'
+    };
+    export const COLLAPSE_ALL: Command = {
+        id: 'search-in-workspace.collapse-all',
+        label: 'Collapse All',
+        iconClass: 'collapse-all'
+    };
+    export const CLEAR_ALL: Command = {
+        id: 'search-in-workspace.clear-all',
+        label: 'Clear All',
+        iconClass: 'clear-all'
+    };
 }
 
 @injectable()
-export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution {
+export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -53,6 +69,8 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     @inject(SearchInWorkspaceContextKeyService)
     protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
+
+    protected searchInWorkspaceWidget: SearchInWorkspaceWidget;
 
     constructor() {
         super({
@@ -72,6 +90,10 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             this.contextKeyService.searchViewletFocus.set(this.shell.activeWidget instanceof SearchInWorkspaceWidget);
         updateFocusContextKey();
         this.shell.activeChanged.connect(updateFocusContextKey);
+        this.widget.then(w => {
+            this.searchInWorkspaceWidget = w;
+            w.update();
+        });
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
@@ -108,6 +130,24 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 widget.findInFolder(resources);
             }
         }));
+
+        commands.registerCommand(SearchInWorkspaceCommands.REFRESH_RESULTS, {
+            execute: async () => this.searchInWorkspaceWidget && this.searchInWorkspaceWidget.refresh(),
+            isEnabled: () => this.searchInWorkspaceWidget &&
+                (this.searchInWorkspaceWidget.hasResultList() || this.searchInWorkspaceWidget.hasSearchTerm()) &&
+                this.workspaceService.tryGetRoots().length > 0,
+            isVisible: (widget: SearchInWorkspaceWidget) => SearchInWorkspaceWidget.ID === widget.id
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.COLLAPSE_ALL, {
+            execute: () => this.searchInWorkspaceWidget && this.searchInWorkspaceWidget.collapseAll(),
+            isEnabled: () => this.searchInWorkspaceWidget && this.searchInWorkspaceWidget.hasResultList(),
+            isVisible: (widget: SearchInWorkspaceWidget) => SearchInWorkspaceWidget.ID === widget.id
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.CLEAR_ALL, {
+            execute: () => this.searchInWorkspaceWidget && this.searchInWorkspaceWidget.clear(),
+            isEnabled: () => this.searchInWorkspaceWidget && this.searchInWorkspaceWidget.hasResultList(),
+            isVisible: (widget: SearchInWorkspaceWidget) => SearchInWorkspaceWidget.ID === widget.id
+        });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -125,6 +165,22 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id
+        });
+    }
+
+    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry) {
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
+            command: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
+            onDidChange: (handler: () => void) => { this.searchInWorkspaceWidget.onDidUpdate(handler); }
+        });
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
+            command: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
+        });
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.CLEAR_ALL.id,
+            command: SearchInWorkspaceCommands.CLEAR_ALL.id,
         });
     }
 

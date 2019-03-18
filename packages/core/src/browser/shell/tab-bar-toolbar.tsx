@@ -80,13 +80,19 @@ export class TabBarToolbar extends ReactWidget {
             }
         }
         const command = this.commands.getCommand(item.command);
-        const iconClass = command && command.iconClass;
-        if (iconClass) {
-            classNames.push(iconClass);
+        if (command) {
+            const iconClass = command.iconClass;
+            if (iconClass) {
+                classNames.push(iconClass);
+            }
         }
-        return <div key={item.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM} >
+        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`} >
             <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={item.tooltip}>{innerText}</div>
         </div>;
+    }
+
+    protected commandIsEnabled(command: string) {
+        return this.commands.isEnabled(command, this.current);
     }
 
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
@@ -173,6 +179,8 @@ export interface TabBarToolbarItem {
      * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
      */
     readonly when?: string;
+
+    onDidChange?: (handler: () => void) => void;
 
 }
 

@@ -326,8 +326,8 @@
     outline: none;
  }
 
-.git-tab-icon::before {
-    content: "\f126"
+.git-tab-icon {
+    background: var(--theia-icon-scm);
 }
 
 .git-change-count {

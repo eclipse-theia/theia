@@ -152,8 +152,8 @@
     opacity: 1;
 }
 
-.debug-tab-icon::before {
-    content: "\f188"
+.debug-tab-icon {
+    background: var(--theia-icon-debug) 50%;
 }
 
 /** Console */

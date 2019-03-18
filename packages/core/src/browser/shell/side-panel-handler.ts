@@ -24,6 +24,8 @@ import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideT
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TheiaDockPanel } from './theia-dock-panel';
+import { SidePanelToolbar } from './side-panel-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -57,6 +59,10 @@ export class SidePanelHandler {
      */
     tabBar: SideTabBar;
     /**
+     * A tool bar, which displays a title and widget specific command buttons.
+     */
+    toolBar: SidePanelToolbar;
+    /**
      * The widget container is a dock panel in `single-document` mode, which means that the panel
      * cannot be split.
      */
@@ -85,6 +91,8 @@ export class SidePanelHandler {
      */
     protected options: SidePanel.Options;
 
+    @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
+    @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
@@ -96,6 +104,7 @@ export class SidePanelHandler {
         this.side = side;
         this.options = options;
         this.tabBar = this.createSideBar();
+        this.toolBar = this.createToolbar();
         this.dockPanel = this.createSidePanel();
         this.container = this.createContainer();
 
@@ -152,7 +161,19 @@ export class SidePanelHandler {
         return sidePanel;
     }
 
+    protected createToolbar(): SidePanelToolbar {
+        const toolbar = new SidePanelToolbar(this.tabBarToolBarRegistry, this.tabBarToolBarFactory, this.side);
+        return toolbar;
+    }
+
     protected createContainer(): Panel {
+        const contentBox = new BoxLayout({ direction: 'top-to-bottom', spacing: 0 });
+        BoxPanel.setStretch(this.toolBar, 0);
+        contentBox.addWidget(this.toolBar);
+        BoxPanel.setStretch(this.dockPanel, 1);
+        contentBox.addWidget(this.dockPanel);
+        const contentPanel = new BoxPanel({layout: contentBox});
+
         const side = this.side;
         let direction: BoxLayout.Direction;
         switch (side) {
@@ -165,12 +186,12 @@ export class SidePanelHandler {
             default:
                 throw new Error('Illegal argument: ' + side);
         }
-        const boxLayout = new BoxLayout({ direction, spacing: 0 });
+        const containerLayout = new BoxLayout({ direction, spacing: 0 });
         BoxPanel.setStretch(this.tabBar, 0);
-        boxLayout.addWidget(this.tabBar);
-        BoxPanel.setStretch(this.dockPanel, 1);
-        boxLayout.addWidget(this.dockPanel);
-        const boxPanel = new BoxPanel({ layout: boxLayout });
+        containerLayout.addWidget(this.tabBar);
+        BoxPanel.setStretch(contentPanel, 1);
+        containerLayout.addWidget(contentPanel);
+        const boxPanel = new BoxPanel({ layout: containerLayout });
         boxPanel.id = 'theia-' + side + '-content-panel';
         return boxPanel;
     }
@@ -326,6 +347,8 @@ export class SidePanelHandler {
         const currentTitle = tabBar.currentTitle;
         const hideDockPanel = currentTitle === null;
         let relativeSizes: number[] | undefined;
+
+        this.toolBar.toolbarTitle = currentTitle || undefined;
 
         if (hideDockPanel) {
             container.addClass(COLLAPSED_CLASS);

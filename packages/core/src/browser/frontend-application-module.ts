@@ -44,7 +44,9 @@ import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
-    TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory, SplitPositionHandler, DockPanelRendererFactory
+    TabBarRendererFactory, ShellLayoutRestorer,
+    SidePanelHandler, SidePanelHandlerFactory,
+    SplitPositionHandler, DockPanelRendererFactory
 } from './shell';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
