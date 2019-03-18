@@ -17,16 +17,18 @@
 import { Command, CommandContribution, CommandRegistry, CommandService } from '@theia/core';
 import { injectable, inject } from 'inversify';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode, } from '@theia/core/lib/browser/quick-open/quick-open-model';
-import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
+import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope, PreferenceService } from '@theia/preferences/lib/browser';
-import { CppBuildConfigurationManager, CppBuildConfiguration, CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY } from './cpp-build-configurations';
+import { CppBuildConfigurationManager, CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY, isCppBuildConfiguration, equals } from './cpp-build-configurations';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { CommonCommands, LabelProvider } from '@theia/core/lib/browser';
+import { QuickPickService, QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { CppBuildConfiguration } from '../common/cpp-build-configuration-protocol';
 
 @injectable()
-export class CppBuildConfigurationChanger implements QuickOpenModel {
+export class CppBuildConfigurationChanger {
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
@@ -40,89 +42,119 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(QuickPickService)
+    protected readonly quickPick: QuickPickService;
+
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    readonly createItem: QuickOpenItem = new QuickOpenItem({
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    /**
+     * Item used to trigger creation of a new build configuration.
+     */
+    protected readonly createItem: QuickPickItem<'createNew'> = ({
         label: 'Create New',
-        iconClass: 'fa fa-plus',
+        value: 'createNew',
         description: 'Create a new build configuration',
-        run: (mode: QuickOpenMode): boolean => {
-            if (mode !== QuickOpenMode.OPEN) {
-                return false;
-            }
-            this.commandService.executeCommand(CPP_CREATE_NEW_BUILD_CONFIGURATION.id);
-            return true;
-        },
+        iconClass: 'fa fa-plus'
     });
 
-    readonly resetItem: QuickOpenItem = new QuickOpenItem({
+    /**
+     * Item used to trigger reset of the active build configuration.
+     */
+    protected readonly resetItem: QuickPickItem<'reset'> = ({
         label: 'None',
-        iconClass: 'fa fa-times',
-        description: 'Reset active build configuration',
-        run: (mode: QuickOpenMode): boolean => {
-            if (mode !== QuickOpenMode.OPEN) {
-                return false;
-            }
-            this.commandService.executeCommand(CPP_RESET_BUILD_CONFIGURATION.id);
-            return true;
-        },
+        value: 'reset',
+        description: 'Reset the active build configuration',
+        iconClass: 'fa fa-times'
     });
 
-    async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        const items: QuickOpenItem[] = [];
-        const active: CppBuildConfiguration | undefined = this.cppBuildConfigurations.getActiveConfig();
-        const configurations = this.cppBuildConfigurations.getValidConfigs();
+    /**
+     * Change the build configuration for a given root.
+     * If multiple roots are available, prompt users a first time to select their desired root.
+     * Once a root is determined, prompt users to select an active build configuration if applicable.
+     */
+    async change(): Promise<void> {
 
-        const homeStat = await this.fileSystem.getCurrentUserHome();
-        const home = (homeStat) ? new URI(homeStat.uri).path.toString() : undefined;
-
-        // Item to create a new build configuration
-        items.push(this.createItem);
-
-        // Only return 'Create New' when no build configurations present
-        if (!configurations.length) {
-            acceptor(items);
+        // Prompt users to determine working root.
+        const root = await this.selectWorkspaceRoot();
+        if (!root) {
             return;
         }
 
-        // Item to de-select any active build config
-        if (active) {
-            items.push(this.resetItem);
+        // Prompt users to determine action (set active config, reset active config, create new config).
+        const action = await this.selectCppAction(root);
+        if (!action) {
+            return;
         }
 
-        // Add one item per build config
-        configurations.forEach(config => {
-            const uri = new URI(config.directory);
-            items.push(new QuickOpenItem({
-                label: config.name,
-                // add an icon for active build config, and an empty placeholder for all others
-                iconClass: (config === active) ? 'fa fa-check' : 'fa fa-empty-item',
-                description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
-                run: (mode: QuickOpenMode): boolean => {
-                    if (mode !== QuickOpenMode.OPEN) {
-                        return false;
-                    }
-
-                    this.cppBuildConfigurations.setActiveConfig(config);
-                    return true;
-                },
-            }));
-        });
-
-        acceptor(items);
+        // Perform desired action.
+        if (action === 'createNew') {
+            this.commandService.executeCommand(CPP_CREATE_NEW_BUILD_CONFIGURATION.id);
+        }
+        if (action === 'reset') {
+            this.cppBuildConfigurations.setActiveConfig(undefined, root);
+        }
+        if (action && isCppBuildConfiguration(action)) {
+            this.cppBuildConfigurations.setActiveConfig(action, root);
+        }
     }
 
-    open(): void {
-        const configs = this.cppBuildConfigurations.getValidConfigs();
-        this.quickOpenService.open(this, {
-            placeholder: (configs.length) ? 'Choose a build configuration...' : 'No build configurations present',
-            fuzzyMatchLabel: true,
-            fuzzyMatchDescription: true,
+    /**
+     * Pick a workspace root using the quick open menu.
+     */
+    protected async selectWorkspaceRoot(): Promise<string | undefined> {
+        const roots = this.workspaceService.tryGetRoots();
+        return this.quickPick.show(roots.map(({ uri: root }) => {
+            const active = this.cppBuildConfigurations.getActiveConfig(root);
+            return {
+                // See: WorkspaceUriLabelProviderContribution
+                // It will transform the path to a prettier display (adding a ~, etc).
+                label: this.labelProvider.getName(new URI(root).withScheme('file')),
+                description: active ? active.name : 'undefined',
+                value: root,
+            };
+        }), { placeholder: 'Select workspace root' });
+    }
+
+    /**
+     * Lists the different options for a given root if specified, first else.
+     * In this case, the options are to set/unset/create a build configuration.
+     *
+     * @param root
+     */
+    protected async selectCppAction(root: string | undefined): Promise<string | CppBuildConfiguration | undefined> {
+        const items: QuickPickItem<'createNew' | 'reset' | CppBuildConfiguration>[] = [];
+        // Add the 'Create New' item at all times.
+        items.push(this.createItem);
+        // Add the 'Reset' item if there currently is an active config.
+        if (this.cppBuildConfigurations.getActiveConfig(root)) {
+            items.push(this.resetItem);
+        }
+        // Display all valid configurations for a given root.
+        const configs = this.cppBuildConfigurations.getValidConfigs(root);
+        const active = this.cppBuildConfigurations.getActiveConfig(root);
+        configs.map(config => {
+            items.push({
+                label: config.name,
+                description: config.directory,
+                iconClass: active && equals(config, active) ? 'fa fa-check' : 'fa fa-empty-item',
+                value: {
+                    name: config.name,
+                    directory: config.directory,
+                    commands: config.commands
+                },
+            });
         });
+        return this.quickPick.show(items, { placeholder: 'Select action' });
     }
 
     /** Create a new build configuration with placeholder values.  */
@@ -132,7 +164,6 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         configs.push({ name: '', directory: '' });
         await this.preferenceService.set(CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY, configs, PreferenceScope.Workspace);
     }
-
 }
 
 export const CPP_CATEGORY = 'C/C++';
@@ -184,7 +215,7 @@ export class CppBuildConfigurationsContributions implements CommandContribution 
             execute: () => this.cppChangeBuildConfiguration.createConfig()
         });
         commands.registerCommand(CPP_CHANGE_BUILD_CONFIGURATION, {
-            execute: () => this.cppChangeBuildConfiguration.open()
+            execute: () => this.cppChangeBuildConfiguration.change()
         });
     }
 }
