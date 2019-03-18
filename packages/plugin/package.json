@@ -24,7 +24,7 @@
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "docs": "rimraf docs && typedoc --module commonjs --target es6 --mode file --hideGenerator --name 'Theia Plug-in API' --readme API.md --excludeExternals --includeDeclarations --out ./docs/api  src/theia.d.ts"
+    "docs": "rimraf docs && typedoc --module commonjs --target es6 --mode file --hideGenerator --name 'Theia Plug-in API' --excludeExternals --includeDeclarations --out ./docs/api  src/theia.d.ts"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.4.0"
