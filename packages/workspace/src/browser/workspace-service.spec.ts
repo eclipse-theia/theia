@@ -33,6 +33,7 @@ import { createMockPreferenceProxy } from '@theia/core/lib/browser/preferences/t
 import * as jsoncparser from 'jsonc-parser';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
+import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 const expect = chai.expect;
 
@@ -483,43 +484,6 @@ describe('WorkspaceService', () => {
             await wsService.addRoot(new URI(folderB.uri));
             expect(spyWriteFile.calledWith(workspaceFileStat, { folders: [{ path: folderA.uri }, { path: folderB.uri }] })).to.be.true;
         });
-
-        [true, false].forEach(existTemporaryWorkspaceFile => {
-            it('should write workspace data into a temporary file when theia currently uses a folder as the workspace ' +
-                `and the temporary file ${existTemporaryWorkspaceFile ? 'exists' : 'does not exist'}`, async () => {
-                    const stubSave = sinon.stub(wsService, 'save').callsFake(() => { });
-                    const stubWriteWorkspaceFile = sinon.stub(wsService, <any>'writeWorkspaceFile').callsFake(() => { });
-                    toRestore.push(...[stubSave, stubWriteWorkspaceFile]);
-                    wsService['_workspace'] = folderA;
-                    wsService['_roots'] = [folderA];
-                    const homeStat = <FileStat>{
-                        uri: 'file:///home/user',
-                        lastModification: 0,
-                        isDirectory: true
-                    };
-                    const untitledStat = <FileStat>{
-                        uri: 'file:///home/user/.theia/Untitled.theia-workspace',
-                        lastModification: 0,
-                        isDirectory: true
-                    };
-                    (<sinon.SinonStub>mockFilesystem.getCurrentUserHome).resolves(homeStat);
-                    const stubGetFileStat = <sinon.SinonStub>mockFilesystem.getFileStat;
-                    stubGetFileStat.onCall(0).resolves(folderB);
-                    (<sinon.SinonStub>mockFilesystem.exists).resolves(existTemporaryWorkspaceFile);
-                    const stubCreateFile = <sinon.SinonStub>mockFilesystem.createFile;
-                    stubCreateFile.resolves(untitledStat);
-                    if (existTemporaryWorkspaceFile) {
-                        stubGetFileStat.onCall(1).resolves(untitledStat);
-                    }
-                    wsService['_workspace'] = folderA;
-                    wsService['_roots'] = [folderA];
-
-                    await wsService.addRoot(new URI(folderB.uri));
-                    expect(stubCreateFile.calledWith(untitledStat.uri)).to.eq(!existTemporaryWorkspaceFile);
-                    expect(stubSave.calledWith(untitledStat)).to.be.true;
-                    expect(stubWriteWorkspaceFile.called).to.be.true;
-                });
-        });
     });
 
     describe('save() function', () => {
@@ -722,6 +686,59 @@ describe('WorkspaceService', () => {
 
             await wsService.removeRoots([new URI(folderB.uri)]);
             expect(stubSetContent.calledWith(file, getFormattedJson(JSON.stringify({ folders: [{ path: 'folderA' }] })))).to.be.true;
+        });
+    });
+
+    describe('spliceRoots', () => {
+        const workspace = <FileStat>{ uri: 'file:///workspace.theia-workspace', isDirectory: false };
+        const fooDir = <FileStat>{ uri: 'file:///foo', isDirectory: true };
+        const workspaceService: WorkspaceService = new WorkspaceService();
+        workspaceService['getUntitledWorkspace'] = async () => new URI('file:///untitled.theia-workspace');
+        workspaceService['save'] = async () => { };
+        workspaceService['getWorkspaceDataFromFile'] = async () => ({ folders: [] });
+        workspaceService['writeWorkspaceFile'] = async (_, data) => {
+            workspaceService['_roots'] = data.folders.map(({ path }) => <FileStat>{ uri: path });
+            return undefined;
+        };
+        const assertRemoved = (removed: URI[], ...roots: string[]) =>
+            assert.deepEqual(removed.map(uri => uri.toString()), roots);
+        const assertRoots = (...roots: string[]) =>
+            assert.deepEqual(workspaceService['_roots'].map(root => root.uri), roots);
+
+        beforeEach(() => {
+            workspaceService['_workspace'] = workspace;
+            workspaceService['_roots'] = [fooDir];
+        });
+
+        it('skip', async () => {
+            assertRemoved(await workspaceService.spliceRoots(0, 0));
+            assertRoots('file:///foo');
+        });
+
+        it('add', async () => {
+            assertRemoved(await workspaceService.spliceRoots(1, 0, new URI('file:///bar')));
+            assertRoots('file:///foo', 'file:///bar');
+        });
+
+        it('add dups', async () => {
+            assertRemoved(await workspaceService.spliceRoots(1, 0, new URI('file:///bar'), new URI('file:///baz'), new URI('file:///bar')));
+            assertRoots('file:///foo', 'file:///bar', 'file:///baz');
+        });
+
+        it('remove', async () => {
+            assertRemoved(await workspaceService.spliceRoots(0, 1), 'file:///foo');
+            assertRoots();
+        });
+
+        it('update', async () => {
+            assertRemoved(await workspaceService.spliceRoots(0, 1, new URI('file:///bar')), 'file:///foo');
+            assertRoots('file:///bar');
+        });
+
+        it('add untitled', async () => {
+            workspaceService['_workspace'] = fooDir;
+            assertRemoved(await workspaceService.spliceRoots(1, 0, new URI('file:///bar')));
+            assertRoots('file:///foo', 'file:///bar');
         });
     });
 
