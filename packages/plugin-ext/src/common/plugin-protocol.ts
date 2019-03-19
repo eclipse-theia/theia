@@ -453,7 +453,7 @@ export interface FoldingRules {
 export interface ViewContainer {
     id: string;
     title: string;
-    icon: string;
+    iconUrl: string;
 }
 
 /**
