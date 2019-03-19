@@ -118,8 +118,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     // tslint:disable-next-line:no-any
     protected async getParsedContent(content: string): Promise<{ [key: string]: any }> {
-        const strippedContent = jsoncparser.stripComments(content);
-        const jsonData = jsoncparser.parse(strippedContent);
+        const jsonData = this.parse(content);
         // tslint:disable-next-line:no-any
         const preferences: { [key: string]: any } = {};
         if (typeof jsonData !== 'object') {
@@ -144,6 +143,12 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             }
         }
         return preferences;
+    }
+
+    // tslint:disable-next-line:no-any
+    protected parse(content: string): any {
+        const strippedContent = jsoncparser.stripComments(content);
+        return jsoncparser.parse(strippedContent);
     }
 
     // tslint:disable-next-line:no-any
