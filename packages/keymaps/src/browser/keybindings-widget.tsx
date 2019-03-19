@@ -61,7 +61,7 @@ export class KeybindingWidget extends ReactWidget {
     protected query: string = '';
 
     protected readonly regexp = /<match>(.*?)<\/match>/g;
-    protected readonly keybindingSeperator = /<match>\+<\/match>/g;
+    protected readonly keybindingSeparator = /<match>\+<\/match>/g;
 
     protected readonly fuzzyOptions = {
         pre: '<match>',
@@ -131,7 +131,7 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
-        return <div>
+        return <div id='kb-main-container'>
             {this.renderSearch()}
             {(this.items.length > 0) ? this.renderTable() : this.renderMessage()}
         </div>;
@@ -158,7 +158,7 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected renderTable(): React.ReactNode {
-        return <div>
+        return <div id='kb-table-container'>
             <div className='kb'>
                 <table>
                     <thead>
@@ -214,7 +214,7 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected renderKeybinding(keybinding: string): React.ReactNode {
-        const regex = new RegExp(this.keybindingSeperator);
+        const regex = new RegExp(this.keybindingSeparator);
         keybinding = keybinding.replace(regex, '+');
         const keys = keybinding.split('+');
 
@@ -227,7 +227,7 @@ export class KeybindingWidget extends ReactWidget {
                         </span>;
                     } else {
                         return <React.Fragment key={index}>
-                            <span className='monco-keybinding-seperator'>+</span>
+                            <span className='monaco-keybinding-separator'>+</span>
                             <span className='monaco-keybinding-key'>{this.renderKeybinding(key)}</span>
                         </React.Fragment>;
                     }
