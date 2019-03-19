@@ -62,16 +62,14 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
     }
 
     // tslint:disable-next-line:no-any
-    protected async getParsedContent(content: string): Promise<{ [key: string]: any }> {
-        const data = await super.getParsedContent(content);
+    protected parse(content: string): any {
+        const data = super.parse(content);
         if (this.workspaceService.saved) {
             if (WorkspaceData.is(data)) {
                 return data.settings || {};
             }
-        } else {
-            return data || {};
         }
-        return {};
+        return data;
     }
 
     protected getPath(preferenceName: string): string[] {
