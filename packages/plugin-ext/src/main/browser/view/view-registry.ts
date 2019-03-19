@@ -23,6 +23,7 @@ import {
 } from '@theia/core/lib/browser/frontend-application-state';
 import { ViewsContainerWidget } from './views-container-widget';
 import { TreeViewWidget } from './tree-views-main';
+import { PluginSharedStyle } from '../plugin-shared-style';
 
 const READY: FrontendApplicationState = 'ready';
 const DEFAULT_LOCATION: ApplicationShell.Area = 'left';
@@ -35,6 +36,9 @@ export class ViewRegistry {
 
     @inject(FrontendApplicationStateService)
     protected applicationStateService: FrontendApplicationStateService;
+
+    @inject(PluginSharedStyle)
+    protected readonly style: PluginSharedStyle;
 
     private treeViewWidgets: Map<string, TreeViewWidget> = new Map();
     private containerWidgets: Map<string, ViewsContainerWidget> = new Map();
@@ -49,7 +53,14 @@ export class ViewRegistry {
         if (this.containerWidgets.has(viewsContainer.id)) {
             return;
         }
+        const iconClass = 'plugin-view-container-icon-' + viewsContainer.id;
+        this.style.insertRule('.' + iconClass, () => `
+            -mask: : url('${viewsContainer.iconUrl}') no-repeat 50% 50%;
+            -webkit-mask: url('${viewsContainer.iconUrl}') no-repeat 50% 50%;
+        `);
+
         const containerWidget = new ViewsContainerWidget(viewsContainer, containerViews);
+        containerWidget.title.iconClass = iconClass;
         this.containerWidgets.set(viewsContainer.id, containerWidget);
 
         // add to the promise chain
