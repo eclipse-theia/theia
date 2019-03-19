@@ -31,8 +31,6 @@ export class ViewsContainerWidget extends Widget {
     private sections: Map<string, ViewContainerSection> = new Map<string, ViewContainerSection>();
     private childrenId: string[] = [];
 
-    sectionTitle: HTMLElement;
-
     constructor(protected viewContainer: ViewContainer, protected views: View[]) {
         super();
 
@@ -41,11 +39,6 @@ export class ViewsContainerWidget extends Widget {
         this.title.caption = this.title.label = viewContainer.title;
 
         this.addClass('theia-views-container');
-
-        // create container title
-        this.sectionTitle = createElement('theia-views-container-title');
-        this.sectionTitle.innerText = viewContainer.title;
-        this.node.appendChild(this.sectionTitle);
 
         views.forEach((view: View) => {
             if (this.hasView(view.id)) {
@@ -80,7 +73,6 @@ export class ViewsContainerWidget extends Widget {
     public updateDimensions() {
         let visibleSections = 0;
         let availableHeight = this.node.offsetHeight;
-        availableHeight -= this.sectionTitle.offsetHeight;
         // Determine available space for sections and how much sections are opened
         this.sections.forEach((section: ViewContainerSection) => {
             availableHeight -= section.header.offsetHeight;
