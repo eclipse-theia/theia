@@ -36,11 +36,16 @@ const FORK_TEST_FILE = path.join(__dirname, '../../src/node/test/process-fork-te
 
 describe('RawProcess', function () {
 
-    this.timeout(5000);
+    this.timeout(20_000);
+
     let rawProcessFactory: RawProcessFactory;
 
     beforeEach(() => {
         rawProcessFactory = createProcessTestContainer().get<RawProcessFactory>(RawProcessFactory);
+    });
+
+    after(() => {
+        track.cleanupSync();
     });
 
     it('test error on non-existent path', async function () {
@@ -48,6 +53,7 @@ describe('RawProcess', function () {
             const proc = rawProcessFactory({ command: '/non-existent' });
             proc.onStart(reject);
             proc.onError(resolve);
+            proc.onExit(reject);
         });
 
         expect(error.code).eq('ENOENT');
@@ -71,6 +77,7 @@ describe('RawProcess', function () {
             const proc = rawProcessFactory({ command: f.path });
             proc.onStart(reject);
             proc.onError(resolve);
+            proc.onExit(reject);
         });
 
         // On Windows, we get 'UNKNOWN'.
@@ -85,6 +92,7 @@ describe('RawProcess', function () {
             const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
             rawProcess.onStart(resolve);
             rawProcess.onError(reject);
+            rawProcess.onExit(reject);
         });
     });
 
@@ -116,7 +124,7 @@ describe('RawProcess', function () {
             const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
             rawProcess.onError(reject);
 
-            rawProcess.output.pipe(outStream);
+            rawProcess.outputStream.pipe(outStream);
 
             let buf = '';
             outStream.on('data', data => {
@@ -137,7 +145,7 @@ describe('RawProcess', function () {
             const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
             rawProcess.onError(reject);
 
-            rawProcess.errorOutput.pipe(outStream);
+            rawProcess.errorStream.pipe(outStream);
 
             let buf = '';
             outStream.on('data', data => {
@@ -167,7 +175,7 @@ describe('RawProcess', function () {
             });
         });
 
-        rawProcess.output.pipe(outStream);
+        rawProcess.outputStream.pipe(outStream);
 
         expect(await p).to.be.equal('1.0.0');
     });
@@ -187,7 +195,7 @@ describe('RawProcess', function () {
             });
         });
 
-        rawProcess.errorOutput.pipe(outStream);
+        rawProcess.errorStream.pipe(outStream);
 
         expect(await p).to.have.string('Error');
     });

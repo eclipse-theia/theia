@@ -17,6 +17,7 @@
 import { injectable, unmanaged } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
+import { Readable, Writable } from 'stream';
 
 export interface IProcessExitEvent {
     // Exactly one of code and signal will be set.
@@ -51,10 +52,13 @@ export enum ProcessType {
  *
  *   https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
  */
-export interface ProcessOptions {
+export interface ProcessOptions<T = string> {
     readonly command: string,
-    args?: string[],
-    options?: object
+    args?: T[],
+    options?: {
+        // tslint:disable-next-line:no-any
+        [key: string]: any
+    }
 }
 
 /**
@@ -78,8 +82,27 @@ export abstract class Process {
     protected readonly startEmitter: Emitter<IProcessStartEvent> = new Emitter<IProcessStartEvent>();
     protected readonly exitEmitter: Emitter<IProcessExitEvent> = new Emitter<IProcessExitEvent>();
     protected readonly errorEmitter: Emitter<ProcessErrorEvent> = new Emitter<ProcessErrorEvent>();
-    abstract readonly pid: number;
     protected _killed = false;
+
+    /**
+     * The OS process id.
+     */
+    abstract readonly pid: number;
+
+    /**
+     * The stdout stream.
+     */
+    abstract readonly outputStream: Readable;
+
+    /**
+     * The stderr stream.
+     */
+    abstract readonly errorStream: Readable;
+
+    /**
+     * The stdin stream.
+     */
+    abstract readonly inputStream: Writable;
 
     constructor(
         protected readonly processManager: ProcessManager,
@@ -134,6 +157,10 @@ export abstract class Process {
     protected emitOnError(err: ProcessErrorEvent) {
         this.handleOnError(err);
         this.errorEmitter.fire(err);
+    }
+
+    protected async emitOnErrorAsync(error: ProcessErrorEvent) {
+        process.nextTick(this.emitOnError.bind(this), error);
     }
 
     protected handleOnError(error: ProcessErrorEvent) {

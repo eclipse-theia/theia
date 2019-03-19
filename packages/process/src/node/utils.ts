@@ -62,5 +62,18 @@ export function signame(sig: number): string {
     }
 
     // Don't know this signal?  Return the number as a string.
-    return sig.toString();
+    return sig.toString(10);
+}
+
+/**
+ * Convert a code number to its short name
+ */
+export function codename(code: number): string {
+    for (const entry of objectEntries(os.constants.errno)) {
+        if (entry[1] === code) {
+            return entry[0];
+        }
+    }
+    // Return the number as string if we did not find a name for it.
+    return code.toString(10);
 }

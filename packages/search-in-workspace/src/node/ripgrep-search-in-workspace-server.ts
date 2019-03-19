@@ -133,10 +133,12 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             command: this.rgPath,
             args: [...args, what].concat(rootUris.map(root => FileUri.fsPath(root)))
         };
-        const process: RawProcess = this.rawProcessFactory(processOptions);
-        this.ongoingSearches.set(searchId, process);
 
-        process.onError(error => {
+        // TODO: Use child_process directly instead of rawProcessFactory?
+        const rgProcess: RawProcess = this.rawProcessFactory(processOptions);
+        this.ongoingSearches.set(searchId, rgProcess);
+
+        rgProcess.onError(error => {
             // tslint:disable-next-line:no-any
             let errorCode = (error as any).code;
 
@@ -157,7 +159,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // Buffer to accumulate incoming output.
         let databuf: string = '';
 
-        process.output.on('data', (chunk: string) => {
+        rgProcess.outputStream.on('data', (chunk: string) => {
             // We might have already reached the max number of
             // results, sent a TERM signal to rg, but we still get
             // the data that was already output in the mean time.
@@ -215,7 +217,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
                         // Did we reach the maximum number of results?
                         if (opts && opts.maxResults && numResults >= opts.maxResults) {
-                            process.kill();
+                            rgProcess.kill();
                             this.wrapUpSearch(searchId);
                             break;
                         }
@@ -224,7 +226,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             }
         });
 
-        process.output.on('end', () => {
+        rgProcess.outputStream.on('end', () => {
             // If we reached maxResults, we should have already
             // wrapped up the search.  Returning early avoids
             // logging a warning message in wrapUpSearch.

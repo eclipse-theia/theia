@@ -108,12 +108,12 @@ export class FileSearchServiceImpl implements FileSearchService {
                 // TODO: why not just child_process.spawn, theia process are supposed to be used for user processes like tasks and terminals, not internal
                 const process = this.rawProcessFactory({ command: rgPath, args, options: { cwd } });
                 process.onError(reject);
-                process.output.on('close', resolve);
+                process.outputStream.on('close', resolve);
                 token.onCancellationRequested(() => process.kill());
 
                 const lineReader = readline.createInterface({
-                    input: process.output,
-                    output: process.input
+                    input: process.outputStream,
+                    output: process.inputStream
                 });
                 lineReader.on('line', line => {
                     if (token.isCancellationRequested) {
