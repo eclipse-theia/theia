@@ -73,7 +73,7 @@ export class RawProcess extends Process {
     readonly input: stream.Writable;
     readonly output: stream.Readable;
     readonly errorOutput: stream.Readable;
-    readonly process: ChildProcess;
+    readonly process: ChildProcess | undefined;
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions | RawForkOptions,
@@ -124,9 +124,7 @@ export class RawProcess extends Process {
             this.errorOutput = this.process.stderr;
 
             if (this.process.pid !== undefined) {
-                process.nextTick(() => {
-                    this.emitOnStarted();
-                });
+                process.nextTick(this.emitOnStarted.bind(this));
             }
         } catch (error) {
             /* When an error is thrown, set up some fake streams, so the client
@@ -134,20 +132,19 @@ export class RawProcess extends Process {
             this.output = new DevNullStream();
             this.input = new DevNullStream();
             this.errorOutput = new DevNullStream();
-
-            /* Call the client error handler, but first give them a chance to register it.  */
-            process.nextTick(() => {
-                this.errorEmitter.fire(error);
-            });
+            this.emitOnErrorAsync(error);
         }
     }
 
     get pid() {
+        if (!this.process) {
+            throw new Error('process did not start correctly');
+        }
         return this.process.pid;
     }
 
     kill(signal?: string) {
-        if (this.killed === false) {
+        if (this.process && this.killed === false) {
             this.process.kill(signal);
         }
     }

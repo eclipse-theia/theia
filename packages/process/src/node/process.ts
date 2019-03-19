@@ -136,6 +136,10 @@ export abstract class Process {
         this.errorEmitter.fire(err);
     }
 
+    protected async emitOnErrorAsync(error: ProcessErrorEvent) {
+        process.nextTick(this.emitOnError.bind(this), error);
+    }
+
     protected handleOnError(error: ProcessErrorEvent) {
         this._killed = true;
         this.logger.error(error);
