@@ -24,6 +24,7 @@ import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
 import URI from '@theia/core/lib/common/uri';
+import { FileSearchService } from '../common/file-search-service';
 
 // tslint:disable:no-unused-expression
 
@@ -103,21 +104,57 @@ describe('search-service', function () {
     });
 
     describe('search with ignored patterns', () => {
-        it('should ignore strings passed through the search options', async () => {
+        it('should NOT ignore strings passed through the search options', async () => {
             const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
 
-            const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'], defaultIgnorePatterns: ['foo'] });
+            const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'], excludePatterns: ['foo'] });
             expect(matches).to.be.not.undefined;
-            expect(matches.length).to.eq(0);
+            expect(matches.length).to.eq(1);
         });
 
-        it('should ignore globs passed through the search options', async () => {
-            const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+        const ignoreGlobsUri = FileUri.create(path.resolve(__dirname, '../../test-resources/subdir1/sub2')).toString();
+        it('should ignore globs passed through the search options #1', () => assertIgnoreGlobs({
+            rootUris: [ignoreGlobsUri],
+            includePatterns: ['**/*oo.*'],
+            excludePatterns: ['*fo*']
+        }));
+        it('should ignore globs passed through the search options #2', () => assertIgnoreGlobs({
+            rootOptions: {
+                [ignoreGlobsUri]: {
+                    includePatterns: ['**/*oo.*'],
+                    excludePatterns: ['*fo*']
+                }
+            }
+        }));
+        it('should ignore globs passed through the search options #3', () => assertIgnoreGlobs({
+            rootOptions: {
+                [ignoreGlobsUri]: {
+                    includePatterns: ['**/*oo.*']
+                }
+            },
+            excludePatterns: ['*fo*']
+        }));
+        it('should ignore globs passed through the search options #4', () => assertIgnoreGlobs({
+            rootOptions: {
+                [ignoreGlobsUri]: {
+                    excludePatterns: ['*fo*']
+                }
+            },
+            includePatterns: ['**/*oo.*']
+        }));
+        it('should ignore globs passed through the search options #5', () => assertIgnoreGlobs({
+            rootOptions: {
+                [ignoreGlobsUri]: {}
+            },
+            excludePatterns: ['*fo*'],
+            includePatterns: ['**/*oo.*']
+        }));
 
-            const matches = await service.find('', { rootUris: [rootUri], includePatterns: ['**/*oo.*'], defaultIgnorePatterns: ['*fo*'] });
+        async function assertIgnoreGlobs(options: FileSearchService.Options): Promise<void> {
+            const matches = await service.find('', options);
             expect(matches).to.be.not.undefined;
             expect(matches.length).to.eq(0);
-        });
+        }
     });
 
     describe('irrelevant absolute results', () => {
