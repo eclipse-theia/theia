@@ -401,7 +401,7 @@ export class GitDiffListContainer extends React.Component<GitDiffListContainer.P
 
     render() {
         const { id, files } = this.props;
-        return <div ref={ref => this.listContainer = ref || undefined} className='listContainer' id={id} tabIndex={0}>{...files}</div>;
+        return <div ref={ref => this.listContainer = ref || undefined} className='listContainer filesChanged' id={id} tabIndex={0}>{...files}</div>;
     }
 
     componentDidMount() {

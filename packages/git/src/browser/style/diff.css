@@ -36,7 +36,7 @@
 
 .theia-git .header-row {
     display: flex;
-    flex-direction: row; 
+    flex-direction: row;
 }
 
 .theia-git .header-value {
@@ -63,4 +63,9 @@
     display: inline-block;
     margin-left: 10px;
     cursor: pointer;
+}
+
+.theia-git .listContainer.filesChanged {
+    flex: 1;
+    overflow: auto;
 }
