@@ -111,6 +111,15 @@
       ],
       "@theia/getting-started/lib/*": [
         "packages/getting-started/src/*"
+      ],
+      "@theia/file-search/lib/*": [
+        "packages/file-search/src/*"
+      ],
+      "@theia/plugin-ext/lib/*": [
+        "packages/plugin-ext/src/*"
+      ],
+      "@theia/plugin-ext-vscode/lib/*": [
+        "packages/plugin-ext-vscode/src/*"
       ]
     },
     "plugins": [

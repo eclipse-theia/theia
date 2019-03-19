@@ -205,6 +205,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 fuzzyMatch: true,
                 limit: 200,
                 useGitIgnore: this.hideIgnoredFiles,
+                excludePatterns: ['*.git*']
             }, token).then(handler);
         } else {
             acceptor(recentlyUsedItems);

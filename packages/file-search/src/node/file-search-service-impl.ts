@@ -37,23 +37,45 @@ export class FileSearchServiceImpl implements FileSearchService {
             clientToken.onCancellationRequested(() => cancellationSource.cancel());
         }
         const token = cancellationSource.token;
-
-        if (options.defaultIgnorePatterns && options.defaultIgnorePatterns.length === 0) { // default excludes
-            options.defaultIgnorePatterns.push('.git');
-        }
         const opts = {
             fuzzyMatch: true,
             limit: Number.MAX_SAFE_INTEGER,
             useGitIgnore: true,
             ...options
         };
+
+        const roots: FileSearchService.RootOptions = options.rootOptions || {};
+        if (options.rootUris) {
+            for (const rootUri of options.rootUris) {
+                if (!roots[rootUri]) {
+                    roots[rootUri] = {};
+                }
+            }
+        }
+        // tslint:disable-next-line:forin
+        for (const rootUri in roots) {
+            const rootOptions = roots[rootUri];
+            if (opts.includePatterns) {
+                const includePatterns = rootOptions.includePatterns || [];
+                rootOptions.includePatterns = [...includePatterns, ...opts.includePatterns];
+            }
+            if (opts.excludePatterns) {
+                const excludePatterns = rootOptions.excludePatterns || [];
+                rootOptions.excludePatterns = [...excludePatterns, ...opts.excludePatterns];
+            }
+            if (rootOptions.useGitIgnore === undefined) {
+                rootOptions.useGitIgnore = opts.useGitIgnore;
+            }
+        }
+
         const exactMatches = new Set<string>();
         const fuzzyMatches = new Set<string>();
         const stringPattern = searchPattern.toLocaleLowerCase();
-        await Promise.all(options.rootUris.map(async root => {
+        await Promise.all(Object.keys(roots).map(async root => {
             try {
                 const rootUri = new URI(root);
-                await this.doFind(rootUri, searchPattern, opts, candidate => {
+                const rootOptions = roots[root];
+                await this.doFind(rootUri, rootOptions, candidate => {
                     const fileUri = rootUri.resolve(candidate).toString();
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
                         return;
@@ -77,7 +99,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         return [...exactMatches, ...fuzzyMatches];
     }
 
-    private doFind(rootUri: URI, searchPattern: string, options: FileSearchService.Options,
+    private doFind(rootUri: URI, options: FileSearchService.BaseOptions,
         accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
@@ -106,30 +128,24 @@ export class FileSearchServiceImpl implements FileSearchService {
         });
     }
 
-    private getSearchArgs(options: FileSearchService.Options): string[] {
+    private getSearchArgs(options: FileSearchService.BaseOptions): string[] {
         const args = ['--files', '--case-sensitive'];
         if (options.includePatterns) {
             for (const includePattern of options.includePatterns) {
-                args.push('--glob', includePattern);
+                if (includePattern) {
+                    args.push('--glob', includePattern);
+                }
+            }
+        }
+        if (options.excludePatterns) {
+            for (const excludePattern of options.excludePatterns) {
+                if (excludePattern) {
+                    args.push('--glob', `!${excludePattern}`);
+                }
             }
         }
         if (!options.useGitIgnore) {
             args.push('-uu');
-        }
-        if (options && options.defaultIgnorePatterns) {
-            options.defaultIgnorePatterns.filter(p => p !== '')
-                .forEach(ignore => {
-                    if (!ignore.endsWith('*')) {
-                        ignore = `${ignore}*`;
-                    }
-                    if (!ignore.startsWith('*')) {
-                        ignore = `!*${ignore}`;
-                    } else {
-                        ignore = `!${ignore}`;
-                    }
-                    args.push('--glob');
-                    args.push(ignore);
-                });
         }
         return args;
     }
