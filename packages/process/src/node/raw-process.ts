@@ -21,6 +21,10 @@ import { Process, ProcessType, ProcessOptions, ForkOptions, ProcessErrorEvent } 
 import { ChildProcess, spawn, fork } from 'child_process';
 import * as stream from 'stream';
 
+// The class was here before, exporting to not break anything.
+export { DevNullStream } from './dev-null-stream';
+import { DevNullStream } from './dev-null-stream';
+
 export const RawProcessOptions = Symbol('RawProcessOptions');
 
 /**
@@ -50,30 +54,32 @@ export interface RawProcessFactory {
     (options: RawProcessOptions | RawForkOptions): RawProcess;
 }
 
-/**
- * A Node stream like `/dev/null`.
- *
- * Writing goes to a black hole, reading returns `EOF`.
- */
-class DevNullStream extends stream.Duplex {
-    // tslint:disable-next-line:no-any
-    _write(chunk: any, encoding: string, callback: (err?: Error) => void): void {
-        callback();
-    }
-
-    _read(size: number): void {
-        // tslint:disable-next-line:no-null-keyword
-        this.push(null);
-    }
-}
-
 @injectable()
 export class RawProcess extends Process {
 
-    readonly input: stream.Writable;
-    readonly output: stream.Readable;
-    readonly errorOutput: stream.Readable;
-    readonly process: ChildProcess;
+    /**
+     * @deprecated use `inputStream` instead.
+     */
+    get input(): stream.Writable { return this.inputStream; }
+
+    /**
+     * @deprecated use `outputStream` instead.
+     */
+    get output(): stream.Readable { return this.outputStream; }
+
+    /**
+     * @deprecated use `errorStream` instead.
+     */
+    get errorOutput(): stream.Readable { return this.errorStream; }
+
+    /**
+     * If the process fails to launch, it will be undefined.
+     */
+    readonly process: ChildProcess | undefined;
+
+    readonly outputStream: stream.Readable;
+    readonly errorStream: stream.Readable;
+    readonly inputStream: stream.Writable;
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions | RawForkOptions,
@@ -118,35 +124,34 @@ export class RawProcess extends Process {
                 );
             });
 
-            this.output = this.process.stdout || new DevNullStream();
-            this.input = this.process.stdin || new DevNullStream();
-            this.errorOutput = this.process.stderr || new DevNullStream();
+            this.outputStream = this.process.stdout || new DevNullStream();
+            this.inputStream = this.process.stdin || new DevNullStream();
+            this.errorStream = this.process.stderr || new DevNullStream();
 
             if (this.process.pid !== undefined) {
-                process.nextTick(() => {
-                    this.emitOnStarted();
-                });
+                process.nextTick(this.emitOnStarted.bind(this));
             }
         } catch (error) {
             /* When an error is thrown, set up some fake streams, so the client
                code doesn't break because these field are undefined.  */
-            this.output = new DevNullStream();
-            this.input = new DevNullStream();
-            this.errorOutput = new DevNullStream();
+            this.outputStream = new DevNullStream();
+            this.inputStream = new DevNullStream();
+            this.errorStream = new DevNullStream();
 
             /* Call the client error handler, but first give them a chance to register it.  */
-            process.nextTick(() => {
-                this.errorEmitter.fire(error);
-            });
+            this.emitOnErrorAsync(error);
         }
     }
 
     get pid() {
+        if (!this.process) {
+            throw new Error('process did not start correctly');
+        }
         return this.process.pid;
     }
 
     kill(signal?: string) {
-        if (this.killed === false) {
+        if (this.process && this.killed === false) {
             this.process.kill(signal);
         }
     }

@@ -55,8 +55,8 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 
         // FIXME: propagate onError + onExit
         return {
-            input: process.input,
-            output: process.output,
+            input: process.inputStream,
+            output: process.outputStream,
             dispose: () => process.kill()
         };
     }

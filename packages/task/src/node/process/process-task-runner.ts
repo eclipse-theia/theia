@@ -18,20 +18,19 @@ import { injectable, inject, named } from 'inversify';
 import { isWindows, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import {
-    TerminalProcess,
-    RawProcess,
     TerminalProcessOptions,
-    RawProcessOptions,
     RawProcessFactory,
     TerminalProcessFactory,
     ProcessErrorEvent,
+    Process,
+    QuotedString,
 } from '@theia/process/lib/node';
 import { TaskFactory } from './process-task';
 import { TaskRunner } from '../task-runner';
 import { Task } from '../task';
 import { TaskConfiguration } from '../../common/task-protocol';
-import * as fs from 'fs';
 import { ProcessTaskError } from '../../common/process/task-protocol';
+import * as fs from 'fs';
 
 /**
  * Task runner that runs a task as a process or a command inside a shell.
@@ -60,9 +59,10 @@ export class ProcessTaskRunner implements TaskRunner {
             throw new Error("Process task config must have 'command' property specified");
         }
 
-        let command;
-        let args;
-        let options;
+        let command: string | undefined;
+        let args: Array<string | QuotedString> | undefined;
+        let options: any; // tslint:disable-line:no-any
+
         // on windows, prefer windows-specific options, if available
         if (isWindows && taskConfig.windows !== undefined) {
             command = taskConfig.windows.command;
@@ -89,23 +89,29 @@ export class ProcessTaskRunner implements TaskRunner {
         };
 
         try {
-            // use terminal or raw process
-            let proc: TerminalProcess | RawProcess;
             const processType = taskConfig.type === 'process' ? 'process' : 'shell';
+            let proc: Process;
+
+            // Always spawn a task in a pty, the only difference between shell/process tasks is the
+            // way the command is passed:
+            // - process: directly look for an executable and pass a specific set of arguments/options.
+            // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
             if (processType === 'process') {
-                this.logger.debug('Task: creating underlying raw process');
-                proc = this.rawProcessFactory(<RawProcessOptions>{
-                    command: command,
-                    args: args,
-                    options: options
+                this.logger.debug(`Task: spawning process: ${command} with ${args}`);
+                proc = this.terminalProcessFactory(<TerminalProcessOptions>{
+                    command, args, options: {
+                        ...options,
+                        shell: false,
+                    }
                 });
             } else {
                 // all Task types without specific TaskRunner will be run as a shell process e.g.: npm, gulp, etc.
-                this.logger.debug('Task: creating underlying terminal process');
+                this.logger.debug(`Task: executing command through a shell: ${command}`);
                 proc = this.terminalProcessFactory(<TerminalProcessOptions>{
-                    command: command,
-                    args: args,
-                    options: options
+                    command, args, options: {
+                        ...options,
+                        shell: options.shell || true,
+                    },
                 });
             }
 
@@ -137,6 +143,8 @@ export class ProcessTaskRunner implements TaskRunner {
     }
 
     /**
+     * @deprecated
+     *
      * Remove ProcessTaskRunner.findCommand, introduce process "started" event
      * Checks for the existence of a file, at the provided path, and make sure that
      * it's readable and executable.

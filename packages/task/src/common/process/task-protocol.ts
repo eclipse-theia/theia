@@ -19,20 +19,20 @@ import { ApplicationError } from '@theia/core/lib/common/application-error';
 
 export type ProcessType = 'shell' | 'process';
 
-export interface CommandProperties {
+export interface CommandProperties<T = string> {
     readonly command: string;
-    readonly args?: string[];
+    readonly args?: T[];
     readonly options?: object;
 }
 
 /** Configuration of a Task that may be run as a process or a command inside a shell. */
-export interface ProcessTaskConfiguration extends TaskConfiguration, CommandProperties {
+export interface ProcessTaskConfiguration<T = string> extends TaskConfiguration, CommandProperties<T> {
     readonly type: ProcessType;
 
     /**
      * Windows version of CommandProperties. Used in preference on Windows, if defined.
      */
-    readonly windows?: CommandProperties;
+    readonly windows?: CommandProperties<T>;
 
     /**
      * The 'current working directory' the task will run in. Can be a uri-as-string
