@@ -135,7 +135,7 @@ export class TheiaPluginScanner implements PluginScanner {
             contributions.viewsContainers = {};
 
             Object.keys(rawPlugin.contributes.viewsContainers!).forEach(location => {
-                const containers = this.readViewsContainers(rawPlugin.contributes!.viewsContainers![location], rawPlugin.packagePath);
+                const containers = this.readViewsContainers(rawPlugin.contributes!.viewsContainers![location], rawPlugin);
                 if (location === 'activitybar') {
                     location = 'left';
                 }
@@ -254,18 +254,16 @@ export class TheiaPluginScanner implements PluginScanner {
         };
     }
 
-    private readViewsContainers(rawViewsContainers: PluginPackageViewContainer[], pluginPath: string): ViewContainer[] {
-        return rawViewsContainers.map(rawViewContainer => this.readViewContainer(rawViewContainer, pluginPath));
+    private readViewsContainers(rawViewsContainers: PluginPackageViewContainer[], pck: PluginPackage): ViewContainer[] {
+        return rawViewsContainers.map(rawViewContainer => this.readViewContainer(rawViewContainer, pck));
     }
 
-    private readViewContainer(rawViewContainer: PluginPackageViewContainer, pluginPath: string): ViewContainer {
-        const result: ViewContainer = {
+    private readViewContainer(rawViewContainer: PluginPackageViewContainer, pck: PluginPackage): ViewContainer {
+        return {
             id: rawViewContainer.id,
             title: rawViewContainer.title,
-            icon: rawViewContainer.icon
+            iconUrl: this.toPluginUrl(pck, rawViewContainer.icon)
         };
-
-        return result;
     }
 
     private readViews(rawViews: PluginPackageView[]): View[] {
