@@ -23,6 +23,10 @@
     padding: 5px;
 }
 
+.theia-side-panel .theia-marker-container .noMarkers {
+    padding-left: 19px;
+}
+
 .theia-marker-container .markerNode,
 .theia-marker-container .markerFileNode {
     display: flex;

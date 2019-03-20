@@ -52,7 +52,9 @@
 
 .theia-ExpansionToggle {
     padding-right: var(--theia-ui-padding);
-    min-width: 8px;
+    min-width: 10px;
+    display: flex;
+    justify-content: center;
 }
 
 .theia-ExpansionToggle:hover {

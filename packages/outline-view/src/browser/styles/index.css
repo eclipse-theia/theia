@@ -23,3 +23,7 @@
     padding: 10px;
     text-align: left;
 }
+
+.theia-side-panel .no-outline {
+    margin-left: 9px;
+}

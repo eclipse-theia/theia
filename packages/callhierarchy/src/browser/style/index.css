@@ -24,11 +24,12 @@
 }
 
 .theia-CallHierarchyTree .theia-ExpansionToggle {
-    min-width: 16px;
+    min-width: 9px;
+    padding-right: 4px;
 }
 
 .theia-CallHierarchyTree .noCallers {
-    margin: 5px;
+    margin: 5px 19px;
 }
 
 .theia-CallHierarchyTree .definitionNode {

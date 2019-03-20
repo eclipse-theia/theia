@@ -26,6 +26,10 @@
     box-sizing: border-box;
 }
 
+.theia-side-panel #outputView #outputContents {
+    margin-left: 14px;
+}
+
 #outputView #outputOverlay {
     position: absolute;
     right: 24px;
