@@ -185,6 +185,8 @@ is not optimized for dense, information rich UIs.
   --theia-icon-replace: url(../icons/replace-inverse.svg);
   --theia-icon-replace-all: url(../icons/replace-all-inverse.svg);
   --theia-icon-open-file: url(../icons/open-file-dark.svg);
+  --theia-icon-open-change: url(../icons/open-change-dark.svg);
+  --theia-icon-preview: url(../icons/preview-dark.svg);
 
   /* Scrollbars */
   --theia-scrollbar-width: 6px;

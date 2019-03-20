@@ -36,10 +36,12 @@ export namespace PreviewCommands {
      */
     export const OPEN: Command = {
         id: 'preview:open',
-        label: 'Open Preview'
+        label: 'Open Preview',
+        iconClass: 'theia-open-preview-icon'
     };
     export const OPEN_SOURCE: Command = {
-        id: 'preview.open.source'
+        id: 'preview.open.source',
+        iconClass: 'theia-open-file-icon'
     };
 }
 
@@ -196,13 +198,11 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
             command: PreviewCommands.OPEN.id,
-            text: '$(eye)',
             tooltip: 'Open Preview to the Side'
         });
         registry.registerItem({
             id: PreviewCommands.OPEN_SOURCE.id,
             command: PreviewCommands.OPEN_SOURCE.id,
-            text: '$(file-o)',
             tooltip: 'Open Source'
         });
     }
