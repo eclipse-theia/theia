@@ -248,14 +248,20 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Run the selected text lines in active terminal.
+     * Run selected text in the last active terminal.
      */
     async runSelectedText(): Promise<void> {
         if (!this.editorManager.currentEditor) { return; }
         const startLine = this.editorManager.currentEditor.editor.selection.start.line;
+        const startCharacter = this.editorManager.currentEditor.editor.selection.start.character;
         const endLine = this.editorManager.currentEditor.editor.selection.end.line;
-        const selectedRange: Range = Range.create(startLine, 0, endLine + 1, 0);
-        const selectedText = this.editorManager.currentEditor.editor.document.getText(selectedRange);
+        const endCharacter = this.editorManager.currentEditor.editor.selection.end.character;
+        let selectedRange: Range = Range.create(startLine, startCharacter, endLine, endCharacter);
+        // if no text is selected, default to selecting entire line
+        if (startLine === endLine && startCharacter === endCharacter) {
+            selectedRange = Range.create(startLine, 0, endLine + 1, 0);
+        }
+        const selectedText: string = this.editorManager.currentEditor.editor.document.getText(selectedRange).trimRight() + '\n';
         let terminal = this.terminalService.currentTerminal;
         if (!terminal) {
             terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: new Date().toString() });
