@@ -24,6 +24,9 @@
 .theia-navigator-container .open-workspace-button-container {
     margin: auto;
     margin-top: 5px;
+    display: flex;
+    justify-content: center;
+    align-self: center;
 }
 
 .theia-navigator-container .center {
