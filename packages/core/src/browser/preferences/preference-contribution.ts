@@ -20,6 +20,11 @@ import { ContributionProvider, bindContributionProvider, escapeRegExpCharacters,
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderPriority, PreferenceProviderDataChange } from './preference-provider';
 
+import {
+    PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType
+} from '../../common/preferences/preference-schema';
+export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
+
 // tslint:disable:no-any
 // tslint:disable:forin
 
@@ -27,73 +32,6 @@ export const PreferenceContribution = Symbol('PreferenceContribution');
 export interface PreferenceContribution {
     readonly schema: PreferenceSchema;
 }
-
-export interface PreferenceSchema {
-    [name: string]: any,
-    scope?: 'application' | 'window' | 'resource' | PreferenceScope,
-    overridable?: boolean;
-    properties: PreferenceSchemaProperties
-}
-export namespace PreferenceSchema {
-    export function getDefaultScope(schema: PreferenceSchema): PreferenceScope {
-        let defaultScope: PreferenceScope = PreferenceScope.Workspace;
-        if (!PreferenceScope.is(schema.scope)) {
-            defaultScope = PreferenceScope.fromString(<string>schema.scope) || PreferenceScope.Workspace;
-        } else {
-            defaultScope = schema.scope;
-        }
-        return defaultScope;
-    }
-}
-
-export interface PreferenceSchemaProperties {
-    [name: string]: PreferenceSchemaProperty
-}
-
-export interface PreferenceDataSchema {
-    [name: string]: any,
-    scope?: PreferenceScope,
-    properties: {
-        [name: string]: PreferenceDataProperty
-    }
-    patternProperties: {
-        [name: string]: PreferenceDataProperty
-    };
-}
-
-export interface PreferenceItem {
-    type?: JsonType | JsonType[];
-    minimum?: number;
-    default?: any;
-    enum?: string[];
-    items?: PreferenceItem;
-    properties?: { [name: string]: PreferenceItem };
-    additionalProperties?: object;
-    [name: string]: any;
-    overridable?: boolean;
-}
-
-export interface PreferenceSchemaProperty extends PreferenceItem {
-    description?: string;
-    scope?: 'application' | 'window' | 'resource' | PreferenceScope;
-}
-
-export interface PreferenceDataProperty extends PreferenceItem {
-    description?: string;
-    scope?: PreferenceScope;
-}
-export namespace PreferenceDataProperty {
-    export function fromPreferenceSchemaProperty(schemaProps: PreferenceSchemaProperty, defaultScope: PreferenceScope = PreferenceScope.Workspace): PreferenceDataProperty {
-        if (!schemaProps.scope) {
-            schemaProps.scope = defaultScope;
-        } else if (typeof schemaProps.scope === 'string') {
-            return Object.assign(schemaProps, { scope: PreferenceScope.fromString(schemaProps.scope) || defaultScope });
-        }
-        return <PreferenceDataProperty>schemaProps;
-    }
-}
-
-export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
 
 export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     bind(PreferenceSchemaProvider).toSelf().inSingletonScope();
