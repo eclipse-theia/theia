@@ -27,6 +27,10 @@
     flex-shrink: 0;
 }
 
+.theia-side-panel #extensionSearchContainer {
+    padding-left: 20px;
+}
+
 #extensionSearchFieldContainer {
     flex: 1;
 }
@@ -54,6 +58,10 @@
     padding: 3px 15px;
     font-size: var(--theia-ui-font-size0);
     background: var(--theia-layout-color0);
+}
+
+.theia-side-panel .theia-extensions .extensionHeaderContainer {
+    padding-left: 20px;
 }
 
 .theia-extensions .extensionHeaderContainer:hover {

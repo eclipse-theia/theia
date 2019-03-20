@@ -28,6 +28,11 @@
     box-sizing: border-box;
 }
 
+.t-siw-search-container .theia-ExpansionToggle {
+    padding-right: 4px;
+    min-width: 6px;
+}
+
 .t-siw-search-container input[type="text"] {
     flex: 1;
     line-height: var(--theia-content-line-height);
@@ -208,6 +213,7 @@
 
 .t-siw-search-container .resultContainer {
     height: 100%;
+    margin-left: 13px;
 }
 
 .t-siw-search-container .result {
@@ -326,6 +332,11 @@
     justify-content: center;
     margin-right: 2px;
     box-sizing: border-box;
+}
+
+.theia-side-panel .replace-toggle {
+    width: 13px;
+    min-width: 13px;
 }
 
 .replace-toggle:hover {

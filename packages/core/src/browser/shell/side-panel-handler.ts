@@ -152,6 +152,7 @@ export class SidePanelHandler {
             mode: 'single-document'
         });
         sidePanel.id = 'theia-' + this.side + '-side-panel';
+        sidePanel.addClass('theia-side-panel');
 
         sidePanel.widgetActivated.connect((sender, widget) => {
             this.tabBar.currentTitle = widget.title;

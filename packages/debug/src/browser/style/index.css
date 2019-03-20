@@ -23,6 +23,11 @@
     color: var(--theia-ui-font-color1);
 }
 
+.theia-side-panel .theia-debug-container .theia-ExpansionToggle {
+    padding-right: 4px;
+    min-width: 10px;
+}
+
 #theia-bottom-content-panel .theia-session-container .theia-view-container {
     flex-direction: row;
 }
@@ -116,6 +121,10 @@
     padding-bottom: var(--theia-ui-padding);
     margin-right: var(--theia-ui-padding);
     margin-left: var(--theia-ui-padding);
+}
+
+.theia-side-panel .debug-toolbar {
+    padding-left: 3px;
 }
 
 .theia-session-container > .debug-toolbar {

@@ -18,11 +18,7 @@
     margin: 3px 0;
 }
 
-.theia-git .commitListElement {
-    border-top: 1px solid var(--theia-layout-color4);
-}
-
-.theia-git .commitListElement.first {
+.theia-git .commitListElement.first .containerHead{
     border: none;
 }
 
@@ -31,6 +27,7 @@
     height: 50px;
     display: flex;
     align-items: center;
+    border-top: 1px solid var(--theia-layout-color4);
 }
 
 .theia-git .commitListElement .containerHead:hover {
