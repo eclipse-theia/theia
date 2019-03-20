@@ -187,7 +187,7 @@ is not optimized for dense, information rich UIs.
   --theia-icon-open-file: url(../icons/open-file-dark.svg);
 
   /* Scrollbars */
-  --theia-scrollbar-width: 6px;
+  --theia-scrollbar-width: 10px;
   --theia-scrollbar-rail-width: 10px;
   --theia-scrollbar-thumb-color: hsla(0,0%,39%,.4);
   --theia-scrollbar-rail-color: transparent;
