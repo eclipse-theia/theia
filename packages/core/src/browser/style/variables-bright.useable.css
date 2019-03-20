@@ -189,7 +189,7 @@ is not optimized for dense, information rich UIs.
   --theia-icon-preview: url(../icons/preview-bright.svg);
 
   /* Scrollbars */
-  --theia-scrollbar-width: 6px;
+  --theia-scrollbar-width: 10px;
   --theia-scrollbar-rail-width: 10px;
   --theia-scrollbar-thumb-color: hsla(0,0%,61%,.4);
   --theia-scrollbar-rail-color: transparent;

@@ -158,18 +158,18 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x  > .ps__thumb-x {
-  height: var(--theia-private-horizontal-tab-scrollbar-height);
+  height: var(--theia-private-horizontal-tab-scrollbar-height) !important;
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
 
 .p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:hover,
 .p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:focus {
-  height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
+  height: var(--theia-private-horizontal-tab-scrollbar-rail-height) !important;
 }
 
 .p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:hover > .ps__thumb-x,
 .p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:focus > .ps__thumb-x {
-  height: var(--theia-private-horizontal-tab-scrollbar-height);
+  height: calc(var(--theia-private-horizontal-tab-scrollbar-height) / 2) !important;
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
 
