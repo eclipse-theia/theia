@@ -133,7 +133,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     ) {
         super();
         this.scrollOptions = {
-            suppressScrollX: true
+            suppressScrollX: true,
+            minScrollbarLength: 35
         };
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
