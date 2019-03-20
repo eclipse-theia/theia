@@ -15,8 +15,21 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import { TreeNode, CompositeTreeNode } from './tree';
+import { TreeNode, CompositeTreeNode, TreeImpl, Tree } from './tree';
+import { TreeModel, TreeModelImpl } from './tree-model';
+import { MockTreeModel } from './test/mock-tree-model';
+import { expect } from 'chai';
+import { Container } from 'inversify';
+import { TreeSelectionServiceImpl } from './tree-selection-impl';
+import { TreeSelectionService } from './tree-selection';
+import { TreeExpansionServiceImpl, TreeExpansionService } from './tree-expansion';
+import { TreeNavigationService } from './tree-navigation';
+import { TreeSearch } from './tree-search';
+import { FuzzySearch } from './fuzzy-search';
+import { MockLogger } from '../../common/test/mock-logger';
+import { ILogger } from '../../common';
 
+// tslint:disable:no-unused-expression
 describe('Tree', () => {
 
   it('addChildren', () => {
@@ -116,6 +129,84 @@ describe('Tree', () => {
 }`, node);
   });
 
+  let model: TreeModel;
+  beforeEach(() => {
+    model = createTreeModel();
+    model.root = MockTreeModel.HIERARCHICAL_MOCK_ROOT();
+  });
+  describe('getNode', () => {
+    it('returns undefined for undefined nodes', done => {
+      expect(model.getNode(undefined)).to.be.undefined;
+      done();
+    });
+
+    it('returns undefined for a non-existing id', done => {
+      expect(model.getNode('10')).to.be.undefined;
+      done();
+    });
+
+    it('returns a valid node for existing an id', done => {
+      expect(model.getNode('1.1')).not.to.be.undefined;
+      done();
+    });
+  });
+
+  describe('validateNode', () => {
+    it('returns undefined for undefined nodes', done => {
+      expect(model.validateNode(undefined)).to.be.undefined;
+      done();
+    });
+
+    it('returns undefined for non-existing nodes', done => {
+      expect(model.validateNode(MockTreeModel.Node.toTreeNode({ 'id': '10' }))).to.be.undefined;
+      done();
+    });
+
+    it('returns a valid node for an existing node', done => {
+      expect(model.validateNode(retrieveNode<TreeNode>('1.1'))).not.to.be.undefined;
+      done();
+    });
+  });
+
+  describe('refresh', () => {
+    it('refreshes all composite nodes starting with the root', done => {
+      let result: Boolean = true;
+      const expectedRefreshedNodes = new Set([
+        retrieveNode<CompositeTreeNode>('1'),
+        retrieveNode<CompositeTreeNode>('1.1'),
+        retrieveNode<CompositeTreeNode>('1.2'),
+        retrieveNode<CompositeTreeNode>('1.2.1')]);
+      model.onNodeRefreshed((e: Readonly<CompositeTreeNode>) => {
+        result = result && expectedRefreshedNodes.has(e);
+        expectedRefreshedNodes.delete(e);
+      });
+      model.refresh().then(() => {
+        expect(result).to.be.true;
+        expect(expectedRefreshedNodes.size).to.be.equal(0);
+        done();
+      });
+    });
+  });
+
+  describe('refresh(parent: Readonly<CompositeTreeNode>)', () => {
+    it('refreshes all composite nodes starting with the provided node', done => {
+      let result: Boolean = true;
+      const expectedRefreshedNodes = new Set([
+        retrieveNode<CompositeTreeNode>('1.2'),
+        retrieveNode<CompositeTreeNode>('1.2.1')
+      ]);
+      model.onNodeRefreshed((e: Readonly<CompositeTreeNode>) => {
+        result = result && expectedRefreshedNodes.has(e);
+        expectedRefreshedNodes.delete(e);
+      });
+      model.refresh(retrieveNode<CompositeTreeNode>('1.2')).then(() => {
+        expect(result).to.be.true;
+        expect(expectedRefreshedNodes.size).to.be.equal(0);
+        done();
+      });
+    });
+  });
+
   function getNode(): CompositeTreeNode {
     return CompositeTreeNode.addChildren({
       id: 'parent',
@@ -145,6 +236,28 @@ describe('Tree', () => {
       }
       return value;
     }, 2));
+  }
+
+  function createTreeModel(): TreeModel {
+    const container = new Container({ defaultScope: 'Singleton' });
+    container.bind(TreeImpl).toSelf();
+    container.bind(Tree).toService(TreeImpl);
+    container.bind(TreeSelectionServiceImpl).toSelf();
+    container.bind(TreeSelectionService).toService(TreeSelectionServiceImpl);
+    container.bind(TreeExpansionServiceImpl).toSelf();
+    container.bind(TreeExpansionService).toService(TreeExpansionServiceImpl);
+    container.bind(TreeNavigationService).toSelf();
+    container.bind(TreeModelImpl).toSelf();
+    container.bind(TreeModel).toService(TreeModelImpl);
+    container.bind(TreeSearch).toSelf();
+    container.bind(FuzzySearch).toSelf();
+    container.bind(MockLogger).toSelf();
+    container.bind(ILogger).to(MockLogger).inSingletonScope();
+    return container.get(TreeModel);
+  }
+  function retrieveNode<T extends TreeNode>(id: string): Readonly<T> {
+    const readonlyNode: Readonly<T> = model.getNode(id) as T;
+    return readonlyNode;
   }
 
 });
