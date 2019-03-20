@@ -80,12 +80,14 @@ export namespace GIT_COMMANDS {
     export const OPEN_FILE: Command = {
         id: 'git.open.file',
         category: 'Git',
-        label: 'Open File'
+        label: 'Open File',
+        iconClass: 'theia-open-file-icon'
     };
     export const OPEN_CHANGES: Command = {
         id: 'git.open.changes',
         category: 'Git',
-        label: 'Open Changes'
+        label: 'Open Changes',
+        iconClass: 'theia-open-change-icon'
     };
     export const SYNC = {
         id: 'git.sync',
@@ -411,13 +413,11 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
         registry.registerItem({
             id: GIT_COMMANDS.OPEN_FILE.id,
             command: GIT_COMMANDS.OPEN_FILE.id,
-            text: '$(file-o)',
             tooltip: GIT_COMMANDS.OPEN_FILE.label
         });
         registry.registerItem({
             id: GIT_COMMANDS.OPEN_CHANGES.id,
             command: GIT_COMMANDS.OPEN_CHANGES.id,
-            text: '$(files-o)',
             tooltip: GIT_COMMANDS.OPEN_CHANGES.label
         });
     }

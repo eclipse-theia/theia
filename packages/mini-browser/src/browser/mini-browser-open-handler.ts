@@ -35,10 +35,12 @@ import { LocationMapperService } from './location-mapper-service';
 export namespace MiniBrowserCommands {
     export const PREVIEW: Command = {
         id: 'mini-browser.preview',
-        label: 'Open Preview'
+        label: 'Open Preview',
+        iconClass: 'theia-open-preview-icon'
     };
     export const OPEN_SOURCE: Command = {
-        id: 'mini-browser.open.source'
+        id: 'mini-browser.open.source',
+        iconClass: 'theia-open-file-icon'
     };
     export const OPEN_URL: Command = {
         id: 'mini-browser.openUrl',
@@ -191,13 +193,11 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         toolbar.registerItem({
             id: MiniBrowserCommands.PREVIEW.id,
             command: MiniBrowserCommands.PREVIEW.id,
-            text: '$(eye)',
             tooltip: 'Open Preview to the Side'
         });
         toolbar.registerItem({
             id: MiniBrowserCommands.OPEN_SOURCE.id,
             command: MiniBrowserCommands.OPEN_SOURCE.id,
-            text: '$(file-o)',
             tooltip: 'Open Source'
         });
     }
