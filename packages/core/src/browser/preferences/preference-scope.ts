@@ -14,52 +14,5 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
-
-export enum PreferenceScope {
-    Default,
-    User,
-    Workspace,
-    Folder
-}
-
-export namespace PreferenceScope {
-    export function is(scope: any): scope is PreferenceScope {
-        return typeof scope === 'number' && getScopes().findIndex(s => s === scope) >= 0;
-    }
-
-    export function getScopes(): PreferenceScope[] {
-        return Object.keys(PreferenceScope)
-            .filter(k => typeof PreferenceScope[k as any] === 'string')
-            .map(v => <PreferenceScope>Number(v));
-    }
-
-    export function getReversedScopes(): PreferenceScope[] {
-        return getScopes().reverse();
-    }
-
-    export function getScopeNames(scope?: PreferenceScope): string[] {
-        const names: string[] = [];
-        const allNames = Object.keys(PreferenceScope)
-            .filter(k => typeof PreferenceScope[k as any] === 'number');
-        if (scope) {
-            for (const name of allNames) {
-                if ((<any>PreferenceScope)[name] <= scope) {
-                    names.push(name);
-                }
-            }
-        }
-        return names;
-    }
-
-    export function fromString(strScope: string): PreferenceScope | undefined {
-        switch (strScope) {
-            case 'application':
-                return PreferenceScope.User;
-            case 'window':
-                return PreferenceScope.Workspace;
-            case 'resource':
-                return PreferenceScope.Folder;
-        }
-    }
-}
+import { PreferenceScope } from '../../common/preferences/preference-scope';
+export { PreferenceScope };

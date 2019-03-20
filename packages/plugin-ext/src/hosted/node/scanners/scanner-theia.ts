@@ -54,6 +54,8 @@ import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
+import { RecursivePartial } from '@theia/core/lib/common/types';
 
 namespace nls {
     export function localize(key: string, _default: string) {
@@ -115,11 +117,12 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         const contributions: PluginContribution = {};
-        if (rawPlugin.contributes!.configuration) {
-            const config = this.readConfiguration(rawPlugin.contributes.configuration!, rawPlugin.packagePath);
+        if (rawPlugin.contributes.configuration) {
+            const config = this.readConfiguration(rawPlugin.contributes.configuration, rawPlugin.packagePath);
             contributions.configuration = config;
         }
-        contributions.configurationDefaults = rawPlugin.contributes.configurationDefaults;
+        const configurationDefaults = rawPlugin.contributes.configurationDefaults;
+        contributions.configurationDefaults = PreferenceSchemaProperties.is(configurationDefaults) ? configurationDefaults : undefined;
 
         if (rawPlugin.contributes!.languages) {
             const languages = this.readLanguages(rawPlugin.contributes.languages!, rawPlugin.packagePath);
@@ -235,12 +238,8 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     // tslint:disable-next-line:no-any
-    private readConfiguration(rawConfiguration: any, pluginPath: string): any {
-        return {
-            type: rawConfiguration.type,
-            title: rawConfiguration.title,
-            properties: rawConfiguration.properties
-        };
+    private readConfiguration(rawConfiguration: RecursivePartial<PreferenceSchema>, pluginPath: string): PreferenceSchema | undefined {
+        return PreferenceSchema.is(rawConfiguration) ? rawConfiguration : undefined;
     }
 
     private readKeybinding(rawKeybinding: PluginPackageKeybinding): Keybinding {
