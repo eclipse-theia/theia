@@ -1679,17 +1679,16 @@ export class Task {
     }
 
     private updateDefinitionBasedOnExecution(): void {
-        this.taskDefinition = undefined;
         if (this.taskExecution instanceof ProcessExecution) {
-            this.taskDefinition = {
+            Object.assign(this.taskDefinition, {
                 type: 'process',
                 id: this.taskExecution.computeId()
-            };
+            });
         } else if (this.taskExecution instanceof ShellExecution) {
-            this.taskDefinition = {
+            Object.assign(this.taskDefinition, {
                 type: 'shell',
                 id: this.taskExecution.computeId()
-            };
+            });
         }
     }
 }
