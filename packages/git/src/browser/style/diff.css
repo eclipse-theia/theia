@@ -18,6 +18,11 @@
     color: var(--theia-ui-font-color1);
 }
 
+.theia-git-diff-icon {
+    -webkit-mask: url('git-diff.svg');
+    mask: url('git-diff.svg');
+}
+
 .theia-git .git-diff-container {
     display: flex;
     flex-direction: column;
