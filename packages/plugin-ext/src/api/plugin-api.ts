@@ -424,6 +424,8 @@ export class TreeViewItem {
 
     collapsibleState?: TreeViewItemCollapsibleState;
 
+    metadata?: any;
+
 }
 
 /**

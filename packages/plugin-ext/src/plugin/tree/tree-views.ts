@@ -215,7 +215,8 @@ class TreeViewExtImpl<T> extends Disposable {
                     label: label,
                     icon,
                     tooltip: treeItem.tooltip,
-                    collapsibleState: treeItem.collapsibleState
+                    collapsibleState: treeItem.collapsibleState,
+                    metadata: value
                 } as TreeViewItem;
 
                 treeItems.push(treeViewItem);

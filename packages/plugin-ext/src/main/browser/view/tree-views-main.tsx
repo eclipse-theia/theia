@@ -40,6 +40,7 @@ import { MenuPath } from '@theia/core/lib/common/menu';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { Disposable, SelectionService } from '@theia/core/lib/common';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -140,10 +141,15 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
 }
 
-export interface TreeViewFolderNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode {
+export interface DescriptiveMetadata {
+    // tslint:disable-next-line:no-any
+    readonly metadata?: any
 }
 
-export interface TreeViewFileNode extends SelectableTreeNode {
+export interface TreeViewFolderNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, DescriptiveMetadata {
+}
+
+export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadata {
 }
 
 export class TreeViewDataProviderMain {
@@ -166,7 +172,8 @@ export class TreeViewDataProviderMain {
             visible: true,
             selected: false,
             expanded,
-            children: []
+            children: [],
+            metadata: item.metadata
         };
     }
 
@@ -179,6 +186,7 @@ export class TreeViewDataProviderMain {
             parent: undefined,
             visible: true,
             selected: false,
+            metadata: item.metadata
         };
     }
 
@@ -218,9 +226,23 @@ export class TreeViewWidget extends TreeWidget {
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(TreeViewDataProviderMain) readonly dataProvider: TreeViewDataProviderMain) {
+        @inject(TreeViewDataProviderMain) readonly dataProvider: TreeViewDataProviderMain,
+        @inject(SelectionService) readonly selectionService: SelectionService) {
 
         super(treeProps, model, contextMenuRenderer);
+
+        this.toDispose.pushAll([
+            this.model.onSelectionChanged(selection => {
+                if (this.node.contains(document.activeElement)) {
+                    this.selectionService.selection = selection;
+                }
+            }),
+            Disposable.create(() => {
+                if (this.selectionService.selection === this.model.selectedNodes) {
+                    this.selectionService.selection = undefined;
+                }
+            })
+        ]);
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -240,6 +262,11 @@ export class TreeViewWidget extends TreeWidget {
 
             this.model.root = node;
         });
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.selectionService.selection = this.model.selectedNodes;
     }
 
     public updateWidget() {

@@ -27,6 +27,7 @@ import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
 import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
+import { MetadataSelection } from '../metadata-selection';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -115,6 +116,12 @@ export class MenusContributionPointHandler {
         const command: Command = { id: commandId };
         const selectedResource = () => {
             const selection = this.selectionService.selection;
+
+            const metadata = MetadataSelection.getMetadata(selection);
+            if (metadata) {
+                return metadata;
+            }
+
             const uri = UriSelection.getUri(selection);
             return uri ? uri['codeUri'] : (typeof selection !== 'object' && typeof selection !== 'function') ? selection : undefined;
         };
