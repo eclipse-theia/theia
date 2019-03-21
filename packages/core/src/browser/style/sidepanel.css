@@ -23,6 +23,7 @@
   --theia-private-sidebar-tab-height: 32px;
   --theia-private-sidebar-scrollbar-rail-width: 7px;
   --theia-private-sidebar-scrollbar-width: 5px;
+  --theia-private-sidebar-icon-size: 28px;
 }
 
 
@@ -56,10 +57,12 @@
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
   border-left: var(--theia-panel-border-width) solid var(--theia-layout-color2);
+  margin-right: var(--theia-panel-border-width);
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab {
   border-right: var(--theia-panel-border-width) solid var(--theia-layout-color2);
+  margin-left: var(--theia-panel-border-width);
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
@@ -87,14 +90,14 @@
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon {
-  width: 30px;
-  height: 28px;
+  width: var(--theia-private-sidebar-icon-size);
+  height: var(--theia-private-sidebar-icon-size);
   background-color: var(--theia-tab-icon-color);
   opacity: 0.6;
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
-  mask-size: 28px;
-  -webkit-mask-size: 28px;
+  mask-size: var(--theia-private-sidebar-icon-size);
+  -webkit-mask-size: var(--theia-private-sidebar-icon-size);
 }
 
 .p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon:hover,
