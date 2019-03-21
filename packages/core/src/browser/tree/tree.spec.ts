@@ -93,7 +93,7 @@ describe('Tree', () => {
 }`, node);
   });
 
-  it('removeChild - thrid', () => {
+  it('removeChild - third', () => {
     const node = getNode();
     CompositeTreeNode.removeChild(node, node.children[2]);
     assertTreeNode(`{
