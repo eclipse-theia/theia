@@ -134,13 +134,29 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                 if (schemaProps.overridable) {
                     this.overridePatternProperties.properties[preferenceName] = schemaProps;
                 }
-                const newValue = schemaProps.default = this.getDefaultValue(schemaProps);
                 this.combinedSchema.properties[preferenceName] = schemaProps;
-                this.preferences[preferenceName] = newValue;
-                changes.push({ preferenceName, newValue, scope, domain });
+
+                const value = schemaProps.default = this.getDefaultValue(schemaProps);
+                if (this.testOverrideValue(preferenceName, value)) {
+                    for (const overridenPreferenceName in value) {
+                        const overrideValue = value[overridenPreferenceName];
+                        const overridePreferenceName = `${preferenceName}.${overridenPreferenceName}`;
+                        changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                    }
+                } else {
+                    changes.push(this.doSetPreferenceValue(preferenceName, value, { scope, domain }));
+                }
             }
         }
         return changes;
+    }
+    protected doSetPreferenceValue(preferenceName: string, newValue: any, { scope, domain }: {
+        scope: PreferenceScope,
+        domain: string[]
+    }): PreferenceProviderDataChange {
+        const oldValue = this.preferences[preferenceName];
+        this.preferences[preferenceName] = newValue;
+        return { preferenceName, oldValue, newValue, scope, domain };
     }
 
     protected getDefaultValue(property: PreferenceItem): any {
@@ -243,7 +259,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return { preferenceName, overrideIdentifier };
     }
 
-    testOverrideValue(name: string, value: any): boolean {
-        return typeof value === 'object' && OVERRIDE_PROPERTY_PATTERN.test(name);
+    testOverrideValue(name: string, value: any): value is PreferenceSchemaProperties {
+        return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
     }
 }
