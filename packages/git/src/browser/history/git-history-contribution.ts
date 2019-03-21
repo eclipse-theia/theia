@@ -61,7 +61,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
             widgetName: GIT_HISTORY_LABEL,
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 400
+                rank: 500
             },
             toggleCommandId: GitHistoryCommands.OPEN_BRANCH_HISTORY.id,
             toggleKeybinding: GIT_HISTORY_TOGGLE_KEYBINDING

@@ -29,7 +29,7 @@ export class PluginFrontendViewContribution extends AbstractViewContribution<Plu
             widgetName: 'Plugins',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 300
+                rank: 400
             },
             toggleCommandId: 'pluginsView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+l'

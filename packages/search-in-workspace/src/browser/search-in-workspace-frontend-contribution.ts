@@ -80,7 +80,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             widgetName: SearchInWorkspaceWidget.LABEL,
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 300
+                rank: 200
             },
             toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
         });
