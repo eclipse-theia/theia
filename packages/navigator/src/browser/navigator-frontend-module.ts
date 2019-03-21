@@ -26,6 +26,7 @@ import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindFileNavigatorPreferences } from './navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
@@ -35,6 +36,7 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, FileNavigatorContribution);
     bind(FrontendApplicationContribution).toService(FileNavigatorContribution);
+    bind(TabBarToolbarContribution).toService(FileNavigatorContribution);
 
     bind(KeybindingContext).to(NavigatorActiveContext).inSingletonScope();
 
