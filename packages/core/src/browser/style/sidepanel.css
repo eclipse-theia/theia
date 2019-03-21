@@ -93,6 +93,8 @@
   opacity: 0.6;
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
+  mask-size: 28px;
+  -webkit-mask-size: 28px;
 }
 
 .p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon:hover,
