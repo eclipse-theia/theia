@@ -162,7 +162,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
             widgetName: 'Git',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 200
+                rank: 300
             },
             toggleCommandId: 'gitView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+g'

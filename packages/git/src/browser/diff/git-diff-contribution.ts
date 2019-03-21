@@ -56,7 +56,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
             widgetName: 'Git diff',
             defaultWidgetOptions: {
                 area: 'left',
-                rank: 400
+                rank: 500
             }
         });
     }
