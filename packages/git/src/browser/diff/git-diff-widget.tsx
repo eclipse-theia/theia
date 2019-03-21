@@ -32,6 +32,8 @@ export const GIT_DIFF = 'git-diff';
 @injectable()
 export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
 
+    protected readonly GIT_DIFF_TITLE = 'Diff';
+
     protected fileChangeNodes: GitFileChangeNode[] = [];
     protected options: Git.Options.Diff;
 
@@ -48,7 +50,9 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         super();
         this.id = GIT_DIFF;
         this.scrollContainer = 'git-diff-list-container';
-        this.title.label = 'Diff';
+        this.title.label = this.GIT_DIFF_TITLE;
+        this.title.caption = this.GIT_DIFF_TITLE;
+
         this.title.iconClass = 'theia-git-diff-icon';
 
         this.addClass('theia-git');
