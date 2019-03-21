@@ -41,7 +41,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     static options: ConsoleOptions = {
         id: 'debug-console',
         title: {
-            label: 'Debug Console'
+            label: 'Debug Console',
+            iconClass: 'theia-debug-console-icon'
         },
         input: {
             uri: DebugConsoleSession.uri,

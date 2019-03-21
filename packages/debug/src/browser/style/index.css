@@ -157,6 +157,11 @@
     mask: url('debug-dark.svg') 50%;
 }
 
+.theia-debug-console-icon {
+    -webkit-mask: url('repl.svg');
+    mask: url('repl.svg');
+}
+
 /** Console */
 
 .theia-debug-console-unavailable {
