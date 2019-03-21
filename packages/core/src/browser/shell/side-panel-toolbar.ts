@@ -71,6 +71,7 @@ export class SidePanelToolbar extends Widget {
     protected init(): void {
         this.titleContainer = document.createElement('div');
         this.titleContainer.classList.add('theia-sidepanel-title');
+        this.titleContainer.classList.add('noWrapInfo');
         this.node.appendChild(this.titleContainer);
         this.node.classList.add('theia-sidepanel-toolbar');
         this.node.classList.add(`theia-${this.side}-side-panel`);
