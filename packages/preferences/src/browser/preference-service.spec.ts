@@ -29,7 +29,7 @@ import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
     PreferenceService, PreferenceScope, PreferenceProviderDataChanges,
-    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider, PreferenceChange
+    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider, PreferenceChange, PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -623,14 +623,59 @@ describe('Preference Service', () => {
             })));
         });
 
-        function prepareServices() {
+        it('defaultOverrides [go].editor.formatOnSave', () => {
+            const { preferences, schema } = prepareServices({
+                schema: {
+                    properties: {
+                        'editor.insertSpaces': {
+                            type: 'boolean',
+                            default: true,
+                            overridable: true
+                        },
+                        'editor.formatOnSave': {
+                            type: 'boolean',
+                            default: false,
+                            overridable: true
+                        }
+                    }
+                }
+            });
+
+            assert.equal(true, preferences.get('editor.insertSpaces'));
+            assert.equal(undefined, preferences.get('[go].editor.insertSpaces'));
+            assert.equal(false, preferences.get('editor.formatOnSave'));
+            assert.equal(undefined, preferences.get('[go].editor.formatOnSave'));
+
+            schema.registerOverrideIdentifier('go');
+            schema.setSchema({
+                id: 'defaultOverrides',
+                title: 'Default Configuration Overrides',
+                properties: {
+                    '[go]': {
+                        type: 'object',
+                        default: {
+                            'editor.insertSpaces': false,
+                            'editor.formatOnSave': true
+                        },
+                        description: 'Configure editor settings to be overridden for go language.'
+                    }
+                }
+            });
+
+            assert.equal(true, preferences.get('editor.insertSpaces'));
+            assert.equal(false, preferences.get('[go].editor.insertSpaces'));
+            assert.equal(false, preferences.get('editor.formatOnSave'));
+            assert.equal(true, preferences.get('[go].editor.formatOnSave'));
+        });
+
+        function prepareServices(options?: { schema: PreferenceSchema }) {
             const container = new Container();
             bindPreferenceSchemaProvider(container.bind.bind(container));
             container.bind(PreferenceProviderProvider).toFactory(() => () => new MockPreferenceProvider());
             container.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
             const schema = container.get(PreferenceSchemaProvider);
-            schema.setSchema({
+            schema.setSchema(options && options.schema || {
                 properties: {
                     'editor.tabSize': {
                         type: 'number',
