@@ -20,3 +20,4 @@ package-backup.json
 .Trash-*
 packages/plugin/typedoc
 plugins
+gh-pages
