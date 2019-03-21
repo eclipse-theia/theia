@@ -118,9 +118,16 @@ jobs:
     before_deploy:
       - printf "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}\n" >> ~/.npmrc
       - yarn
+      - yarn run docs-modules
     deploy:
-      provider: script
-      script: yarn run publish:next
-      on:
-        branch: master
-      skip_cleanup: true
+      - provider: script
+        script: yarn run publish:next
+        on:
+          branch: master
+        skip_cleanup: true
+      - provider: pages
+        skip-cleanup: true
+        github-token: $GITHUB_TOKEN
+        local-dir: gh-pages
+        on:
+          branch: master
