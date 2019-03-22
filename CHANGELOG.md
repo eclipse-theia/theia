@@ -4,6 +4,7 @@
 
 - [cpp] added new clang-tidy and clang-tidy-checks preferences to lint cpp program when clangd v9+ is used.
 - [plugin] `workspace.openTextDocument` API now respects the contributed `FileSystemProviders`
+- [search-in-workspace] added a new preference `search.lineNumbers` to control whether to show line numbers for search results.
 
 Breaking changes:
 
