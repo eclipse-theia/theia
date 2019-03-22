@@ -139,12 +139,8 @@
   max-width: var(--theia-private-sidebar-tab-width);
 }
 
-#theia-left-side-panel {
-  border-right: var(--theia-panel-border-width) solid var(--theia-border-color1);
-}
-
-#theia-right-side-panel {
-  border-left: var(--theia-panel-border-width) solid var(--theia-border-color1);
+.theia-side-panel {
+  background-color: var(--theia-layout-color1);
 }
 
 
@@ -210,18 +206,11 @@
 |----------------------------------------------------------------------------*/
 
 .theia-sidepanel-toolbar {
-    min-height: 30px;
+    min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
     display: flex;
     padding-left: 5px;
     align-items: center;
-}
-
-.theia-sidepanel-toolbar.theia-left-side-panel {
-    border-right: var(--theia-panel-border-width) solid var(--theia-border-color1);
-}
-
-.theia-sidepanel-toolbar.theia-right-side-panel {
-    border-left: var(--theia-panel-border-width) solid var(--theia-border-color1);
+    background-color: var(--theia-layout-color1);
 }
 
 .theia-sidepanel-toolbar .theia-sidepanel-title {
