@@ -115,7 +115,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         };
         updateFocusContextKeys();
         this.shell.activeChanged.connect(updateFocusContextKeys);
-
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
@@ -137,10 +136,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isVisible: () => true
         });
         registry.registerCommand(FileNavigatorCommands.COLLAPSE_ALL, {
-            execute: () => this.collapseFileNavigatorTree(),
-            isEnabled: () => this.workspaceService.opened,
-            isVisible: () => this.workspaceService.opened
+            execute: widget => this.withWidget(widget, () => this.collapseFileNavigatorTree()),
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: wodget => this.withWidget(wodget, () => this.workspaceService.opened)
         });
+    }
+
+    protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (navigator: FileNavigatorWidget) => T): T | false {
+        if (widget instanceof FileNavigatorWidget && widget.id === FILE_NAVIGATOR_ID) {
+            return cb(widget);
+        }
+        return false;
     }
 
     registerMenus(registry: MenuModelRegistry): void {
