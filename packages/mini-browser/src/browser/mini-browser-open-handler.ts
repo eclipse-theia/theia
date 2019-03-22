@@ -274,7 +274,8 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             widgetOptions: {
                 area: 'right'
             },
-            resetBackground
+            resetBackground,
+            iconClass: 'theia-mini-browser-icon'
         };
     }
 
