@@ -235,7 +235,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         });
                         dialog.open().then(name => {
                             if (name) {
-                                this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString());
+                                this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString(), { overwrite: true });
                             }
                         });
                     }
