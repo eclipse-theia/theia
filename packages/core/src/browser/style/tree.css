@@ -17,7 +17,6 @@
 .theia-Tree {
     overflow: hidden;
     color: var(--theia-ui-font-color1);
-    background: var(--theia-layout-color0);
     font-size: var(--theia-ui-font-size1);
     max-height: calc(100% - var(--theia-border-width));
     position: relative;
@@ -35,7 +34,7 @@
 }
 
 .theia-TreeNode {
-    line-height: var(--theia-private-horizontal-tab-height);
+    line-height: 22px;
     display: flex;
 }
 
@@ -70,7 +69,8 @@
 .theia-ExpansionToggle:not(.theia-mod-collapsed)::before {
     font-family: FontAwesome;
     font-size: calc(var(--theia-content-font-size) * 0.8);
-    content: "\f0d7";
+    content: "\f0da";
+    transform: rotate(45deg);
 }
 
 .theia-Tree:focus .theia-TreeNode.theia-mod-selected,

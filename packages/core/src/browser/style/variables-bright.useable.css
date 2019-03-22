@@ -86,10 +86,10 @@ is not optimized for dense, information rich UIs.
     ------------------------------------ */
 
   --theia-layout-color0: #ffffff;
-  --theia-layout-color1: var(--md-grey-100);
-  --theia-layout-color2: var(--md-grey-200);
-  --theia-layout-color3: var(--md-grey-300);
-  --theia-layout-color4: var(--md-grey-400);
+  --theia-layout-color1: #f3f3f3;
+  --theia-layout-color2: #ececec;
+  --theia-layout-color3: #dcdcdc;
+  --theia-layout-color4: #dcdcdc;
 
   /* Brand colors */
 
@@ -197,7 +197,7 @@ is not optimized for dense, information rich UIs.
   --theia-scrollbar-active-rail-color: transparent;
 
   /* Menu */
-  --theia-menu-color0: var(--theia-layout-color2);
+  --theia-menu-color0: var(--theia-layout-color3);
   --theia-menu-color1: var(--theia-layout-color0);
   --theia-menu-color2: var(--theia-layout-color3);
 

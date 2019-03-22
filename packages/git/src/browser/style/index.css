@@ -18,7 +18,6 @@
     color: var(--theia-ui-font-color1);
     padding: 5px;
     box-sizing: border-box;
-    background: var(--theia-layout-color0);
 }
 
 .theia-side-panel .theia-git {
