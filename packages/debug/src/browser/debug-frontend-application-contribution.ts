@@ -40,6 +40,7 @@ import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
 import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
+import { DebugPreferences } from './debug-preferences';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -346,6 +347,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(DebugSchemaUpdater)
     protected readonly schemaUpdater: DebugSchemaUpdater;
 
+    @inject(DebugPreferences)
+    protected readonly preference: DebugPreferences;
+
     constructor() {
         super({
             widgetId: DebugWidget.ID,
@@ -372,7 +376,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     async onStart(): Promise<void> {
         this.manager.onDidCreateDebugSession(session => this.openSession(session, { reveal: false }));
         this.manager.onDidStartDebugSession(session => {
-            const { noDebug, openDebug, internalConsoleOptions } = session.configuration;
+            const { noDebug } = session.configuration;
+            const openDebug = session.configuration.openDebug || this.preference['debug.openDebug'];
+            const internalConsoleOptions = session.configuration.internalConsoleOptions || this.preference['debug.internalConsoleOptions'];
             if (internalConsoleOptions === 'openOnSessionStart' ||
                 (internalConsoleOptions === 'openOnFirstSessionStart' && this.firstSessionStart)) {
                 this.console.openView({
@@ -878,7 +884,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
     ): Promise<DebugWidget | DebugSessionWidget> {
         const { debugViewLocation, reveal } = {
-            debugViewLocation: session.configuration.debugViewLocation,
+            debugViewLocation: session.configuration.debugViewLocation || this.preference['debug.debugViewLocation'],
             reveal: true,
             ...options
         };

@@ -24,12 +24,30 @@ export const debugPreferencesSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             description: 'Enable/disable tracing communications with debug adapters'
+        },
+        'debug.debugViewLocation': {
+            enum: ['default', 'left', 'right', 'bottom'],
+            default: 'default',
+            description: 'Controls the location of the debug view.'
+        },
+        'debug.openDebug': {
+            enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
+            default: 'openOnSessionStart',
+            description: 'Controls when the debug view should open.'
+        },
+        'debug.internalConsoleOptions': {
+            enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
+            default: 'openOnFirstSessionStart',
+            description: 'Controls when the internal debug console should open.'
         }
     }
 };
 
 export class DebugConfiguration {
     'debug.trace': boolean;
+    'debug.debugViewLocation': 'default' | 'left' | 'right' | 'bottom';
+    'debug.openDebug': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
+    'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
 }
 
 export const DebugPreferences = Symbol('DebugPreferences');

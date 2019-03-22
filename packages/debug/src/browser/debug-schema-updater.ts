@@ -20,6 +20,7 @@ import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { DebugService } from '../common/debug-service';
+import { debugPreferencesSchema } from './debug-preferences';
 
 @injectable()
 export class DebugSchemaUpdater {
@@ -37,24 +38,11 @@ export class DebugSchemaUpdater {
         const attributePromises = types.map(type => this.debug.getSchemaAttributes(type));
         for (const attributes of await Promise.all(attributePromises)) {
             for (const attribute of attributes) {
-                attribute.properties = {
-                    'debugViewLocation': {
-                        enum: ['default', 'left', 'right', 'bottom'],
-                        default: 'default',
-                        description: 'Controls the location of the debug view.'
-                    },
-                    'openDebug': {
-                        enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
-                        default: 'openOnSessionStart',
-                        description: 'Controls when the debug view should open.'
-                    },
-                    'internalConsoleOptions': {
-                        enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
-                        default: 'openOnFirstSessionStart',
-                        description: 'Controls when the internal debug console should open.'
-                    },
-                    ...attribute.properties
-                };
+                const properties: typeof attribute['properties'] = {};
+                for (const key of ['debugViewLocation', 'openDebug', 'internalConsoleOptions']) {
+                    properties[key] = debugPreferencesSchema.properties[`debug.${key}`];
+                }
+                attribute.properties = Object.assign(properties, attribute.properties);
                 items.oneOf!.push(attribute);
             }
         }
