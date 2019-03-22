@@ -177,18 +177,21 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         toolbarRegistry.registerItem({
             id: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
             command: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
+            tooltip: SearchInWorkspaceCommands.REFRESH_RESULTS.label,
             priority: 0,
             onDidChange
         });
         toolbarRegistry.registerItem({
             id: SearchInWorkspaceCommands.CLEAR_ALL.id,
             command: SearchInWorkspaceCommands.CLEAR_ALL.id,
+            tooltip: SearchInWorkspaceCommands.CLEAR_ALL.label,
             priority: 1,
             onDidChange
         });
         toolbarRegistry.registerItem({
             id: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
             command: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
+            tooltip: SearchInWorkspaceCommands.COLLAPSE_ALL.label,
             priority: 2,
             onDidChange
         });
