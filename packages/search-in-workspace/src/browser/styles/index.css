@@ -397,3 +397,8 @@
     color: var(--theia-ui-font-color2);
     margin-left: 17px;
 }
+
+.theia-siw-lineNumber {
+    color:  var(--theia-ui-font-color2);
+    padding-right: 4px;
+}

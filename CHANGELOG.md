@@ -2,6 +2,7 @@
 
 ## v0.5.0
 - [plugin] `workspace.openTextDocument` API now respects the contributed `FileSystemProviders`
+- [search-in-workspace] added a new preference `search.lineNumbers` to control whether to show line numbers for search results.
 
 Breaking changes:
 - [editor] computation of resource context keys moved to core [#4531](https://github.com/theia-ide/theia/pull/4531)
