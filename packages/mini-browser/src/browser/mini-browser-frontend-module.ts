@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
@@ -37,8 +39,6 @@ import {
     LocationMapper,
     LocationWithoutSchemeMapper,
 } from './location-mapper-service';
-
-import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserMouseClickTracker).toSelf().inSingletonScope();
