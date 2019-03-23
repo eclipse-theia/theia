@@ -1444,19 +1444,19 @@ export namespace ApplicationShell {
         bottomPanel: Object.freeze(<BottomPanelOptions>{
             emptySize: 140,
             expandThreshold: 160,
-            expandDuration: 150,
+            expandDuration: 0,
             initialSizeRatio: 0.382
         }),
         leftPanel: Object.freeze(<SidePanel.Options>{
             emptySize: 140,
             expandThreshold: 140,
-            expandDuration: 150,
+            expandDuration: 0,
             initialSizeRatio: 0.191
         }),
         rightPanel: Object.freeze(<SidePanel.Options>{
             emptySize: 140,
             expandThreshold: 140,
-            expandDuration: 150,
+            expandDuration: 0,
             initialSizeRatio: 0.191
         })
     });
