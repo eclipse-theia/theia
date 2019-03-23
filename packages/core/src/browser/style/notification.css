@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+:root {
+    --theia-notification-count-height: 15.5px;
+}
+
 .notification-count-container {
     align-self: center;
     background-color: var(--theia-ui-font-color3);
@@ -22,7 +26,7 @@
     display: flex;
     font-size: calc(var(--theia-ui-font-size0) * 0.8);
     font-weight: 500;
-    height: calc(var(--theia-private-horizontal-tab-height) * 0.7);
+    height: var(--theia-notification-count-height);
     justify-content: center;
     min-width: 6px;
     padding: 0 5px;
