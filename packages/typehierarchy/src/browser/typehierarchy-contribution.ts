@@ -44,7 +44,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
                 area: 'bottom'
             },
             toggleCommandId: TypeHierarchyCommands.TOGGLE_VIEW.id,
-            toggleKeybinding: 'ctrlcmd+alt+a'
+            toggleKeybinding: 'ctrlcmd+shift+h'
         });
     }
 
