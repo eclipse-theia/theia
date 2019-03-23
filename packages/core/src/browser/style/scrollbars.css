@@ -68,7 +68,7 @@
 #theia-app-shell .ps__rail-x:focus > .ps__thumb-x,
 #theia-app-shell .ps__rail-x.ps--clicking .ps__thumb-x,
 #theia-dialog-shell .ps__rail-x:hover > .ps__thumb-x,
-#ttheia-dialog-shell .ps__rail-x:focus > .ps__thumb-x,
+#theia-dialog-shell .ps__rail-x:focus > .ps__thumb-x,
 #theia-dialog-shell .ps__rail-x.ps--clicking .ps__thumb-x  {
     height: var(--theia-scrollbar-width);
 }
