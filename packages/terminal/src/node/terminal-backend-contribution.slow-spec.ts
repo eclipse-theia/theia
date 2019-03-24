@@ -47,7 +47,7 @@ describe('Terminal Backend Contribution', function () {
         await new Promise((resolve, reject) => {
             const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
             channel.onError(reject);
-            channel.onClose((code, reason) => reject(`channel is closed with '${code}' code and '${reason}' reason`));
+            channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
             channel.onOpen(() => {
                 resolve();
                 channel.close();

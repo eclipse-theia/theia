@@ -53,7 +53,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
             const extracted = /^github:(.*)\/(.*)\/(.*)$/gm.exec(pluginResolverContext.getOriginId());
 
             if (!extracted || extracted === null || extracted.length !== 4) {
-                reject('Invalid extension' + pluginResolverContext.getOriginId());
+                reject(new Error('Invalid extension' + pluginResolverContext.getOriginId()));
                 return;
             }
 
@@ -87,14 +87,14 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
                     if (response.statusCode === 302) {
                         const redirectLocation = response.headers.location;
                         if (!redirectLocation) {
-                            reject('Invalid github link with latest not being found');
+                            reject(new Error('Invalid github link with latest not being found'));
                             return;
                         }
 
                         // parse redirect link
                         const taggedValueArray = /^https:\/\/.*tag\/(.*)/gm.exec(redirectLocation);
                         if (!taggedValueArray || taggedValueArray.length !== 2) {
-                            reject('The redirect link for latest is invalid ' + redirectLocation);
+                            reject(new Error('The redirect link for latest is invalid ' + redirectLocation));
                             return;
                         }
 

@@ -168,7 +168,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     open(): Promise<T | undefined> {
         if (this.resolve) {
-            return Promise.reject('The dialog is already opened.');
+            return Promise.reject(new Error('The dialog is already opened.'));
         }
         this.activeElement = window.document.activeElement as HTMLElement;
         return new Promise<T | undefined>((resolve, reject) => {

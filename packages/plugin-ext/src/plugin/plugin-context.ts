@@ -396,7 +396,7 @@ export function createAPIFactory(
                     uri = await documents.createDocumentData(options);
 
                 } else {
-                    return Promise.reject('illegal argument - uriOrFileNameOrOptions');
+                    return Promise.reject(new Error('illegal argument - uriOrFileNameOrOptions'));
                 }
 
                 const data = await documents.openDocument(uri);

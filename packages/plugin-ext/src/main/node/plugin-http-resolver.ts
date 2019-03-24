@@ -52,7 +52,7 @@ export class HttpPluginDeployerResolver implements PluginDeployerResolver {
             const urlPath = pluginResolverContext.getOriginId();
             const link = url.parse(urlPath);
             if (!link.pathname) {
-                reject('invalid link URI' + urlPath);
+                reject(new Error('invalid link URI' + urlPath));
                 return;
             }
 
