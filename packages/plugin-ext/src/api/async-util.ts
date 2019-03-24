@@ -18,7 +18,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export function hookCancellationToken<T>(token: CancellationToken, promise: Promise<T>): PromiseLike<T> {
     return new Promise<T>((resolve, reject) => {
-        const sub = token.onCancellationRequested(() => reject('This promise is cancelled'));
+        const sub = token.onCancellationRequested(() => reject(new Error('This promise is cancelled')));
         promise.then(value => {
             sub.dispose();
             resolve(value);

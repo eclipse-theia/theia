@@ -95,7 +95,7 @@ export class DefaultOpenerService implements OpenerService {
         if (handlers.length >= 1) {
             return handlers[0];
         }
-        return Promise.reject(`There is no opener for ${uri}.`);
+        return Promise.reject(new Error(`There is no opener for ${uri}.`));
     }
 
     async getOpeners(uri?: URI, options?: OpenerOptions): Promise<OpenHandler[]> {

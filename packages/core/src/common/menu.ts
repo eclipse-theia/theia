@@ -142,7 +142,7 @@ export class MenuModelRegistry {
             return sub;
         }
         if (sub) {
-            throw Error(`'${menuId}' is not a menu group.`);
+            throw new Error(`'${menuId}' is not a menu group.`);
         }
         const newSub = new CompositeMenuNode(menuId);
         current.addNode(newSub);

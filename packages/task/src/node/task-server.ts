@@ -95,7 +95,7 @@ export class TaskServerImpl implements TaskServer {
             return taskToKill.kill();
         } else {
             this.logger.info(`Could not find task to kill, task id ${id}. Already terminated?`);
-            return Promise.reject(`Could not find task to kill, task id ${id}. Already terminated?`);
+            return Promise.reject(new Error(`Could not find task to kill, task id ${id}. Already terminated?`));
         }
     }
 

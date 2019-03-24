@@ -57,7 +57,7 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
             const extracted = /^vscode:extension\/(.*)/gm.exec(pluginResolverContext.getOriginId());
 
             if (!extracted || extracted === null) {
-                reject('Invalid extension' + pluginResolverContext.getOriginId());
+                reject(new Error('Invalid extension' + pluginResolverContext.getOriginId()));
                 return;
             }
             const extensionName = extracted[1];
@@ -84,7 +84,7 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
                 } else if (response.statusCode === 200) {
                     const extension = body.results[0].extensions[0];
                     if (!extension) {
-                        reject('No extension');
+                        reject(new Error('No extension'));
                     }
                     let asset;
                     if (wantedExtensionVersion !== undefined) {

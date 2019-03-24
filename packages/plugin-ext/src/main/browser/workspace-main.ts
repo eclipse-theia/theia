@@ -293,7 +293,7 @@ export class TextContentResource implements Resource {
             }
         }
 
-        return Promise.reject(`Unable to get content for '${this.uri.toString()}'`);
+        return Promise.reject(new Error(`Unable to get content for '${this.uri.toString()}'`));
     }
 
     dispose() {

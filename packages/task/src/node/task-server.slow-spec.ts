@@ -87,14 +87,14 @@ describe('Task server / back-end', function () {
         await new Promise((resolve, reject) => {
             const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
             channel.onError(reject);
-            channel.onClose((code, reason) => reject(`channel is closed with '${code}' code and '${reason}' reason`));
+            channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
             channel.onMessage(msg => {
                 // check output of task on terminal is what we expect
                 const expected = `tasking... ${someString}`;
                 if (msg.toString().indexOf(expected) !== -1) {
                     resolve();
                 } else {
-                    reject(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual: "${msg.toString()}"`);
+                    reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual: "${msg.toString()}"`));
                 }
                 channel.close();
             });
@@ -114,7 +114,7 @@ describe('Task server / back-end', function () {
                     if (taskInfo.terminalId === undefined) {
                         resolve();
                     } else {
-                        reject(`terminal id was expected to be undefined, actual: ${taskInfo.terminalId}`);
+                        reject(new Error(`terminal id was expected to be undefined, actual: ${taskInfo.terminalId}`));
                     }
                     toDispose.dispose();
                 }
@@ -272,14 +272,14 @@ describe('Task server / back-end', function () {
                     if (runningTasksAll.length === 6) {
                         resolve();
                     } else {
-                        reject(`Error: unexpected total number of running tasks for all contexts:  expected: 6, actual: ${runningTasksCtx1.length}`);
+                        reject(new Error(`Error: unexpected total number of running tasks for all contexts:  expected: 6, actual: ${runningTasksCtx1.length}`));
                     }
                 } else {
-                    reject(`Error: unexpected number of running tasks for context 2: expected: 2, actual: ${runningTasksCtx1.length}`);
+                    reject(new Error(`Error: unexpected number of running tasks for context 2: expected: 2, actual: ${runningTasksCtx1.length}`));
                 }
 
             } else {
-                reject(`Error: unexpected number of running tasks for context 1: expected: 4, actual: ${runningTasksCtx1.length}`);
+                reject(new Error(`Error: unexpected number of running tasks for context 1: expected: 4, actual: ${runningTasksCtx1.length}`));
             }
         });
 
@@ -320,11 +320,11 @@ describe('Task server / back-end', function () {
                 if (numRunningTasksAfterKilled.length === 0) {
                     resolve();
                 } else {
-                    reject(`Error: remaining running tasks, after all killed: expected: 0, actual: ${numRunningTasksAfterKilled.length}`);
+                    reject(new Error(`Error: remaining running tasks, after all killed: expected: 0, actual: ${numRunningTasksAfterKilled.length}`));
                 }
 
             } else {
-                reject(`Error: unexpected number of running tasks: expected: ${numTasks}, actual: ${numRunningTasksAfterCreated.length}`);
+                reject(new Error(`Error: unexpected number of running tasks: expected: ${numTasks}, actual: ${numRunningTasksAfterCreated.length}`));
             }
         });
 

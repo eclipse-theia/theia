@@ -68,7 +68,7 @@ export class BunyanLoggerServer implements ILoggerServer {
      * documentation.  */
     child(name: string): Promise<void> {
         if (name.length === 0) {
-            return Promise.reject("Can't create a logger with an empty name.");
+            return Promise.reject(new Error("Can't create a logger with an empty name."));
         }
 
         if (this.loggers.has(name)) {

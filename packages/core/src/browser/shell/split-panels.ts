@@ -52,11 +52,11 @@ export class SplitPositionHandler {
      */
     setSidePanelSize(sidePanel: Widget, targetSize: number, options: SplitPositionOptions): Promise<number> {
         if (targetSize < 0) {
-            return Promise.reject('Cannot resize to negative value.');
+            return Promise.reject(new Error('Cannot resize to negative value.'));
         }
         const parent = sidePanel.parent;
         if (!(parent instanceof SplitPanel)) {
-            return Promise.reject('Widget must be contained in a SplitPanel.');
+            return Promise.reject(new Error('Widget must be contained in a SplitPanel.'));
         }
         let index = parent.widgets.indexOf(sidePanel);
         if (index > 0 && (options.side === 'right' || options.side === 'bottom')) {

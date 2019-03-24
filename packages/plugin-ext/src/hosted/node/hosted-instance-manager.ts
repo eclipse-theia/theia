@@ -313,7 +313,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 if (!started) {
                     this.terminate();
                     this.isPluginRunnig = false;
-                    reject('Timeout.');
+                    reject(new Error('Timeout.'));
                 }
             }, HOSTED_INSTANCE_START_TIMEOUT_MS);
         });

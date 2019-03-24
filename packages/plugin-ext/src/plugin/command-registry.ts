@@ -75,7 +75,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
         } else {
-            return Promise.reject(`Command: ${id} does not exist.`);
+            return Promise.reject(new Error(`Command: ${id} does not exist.`));
         }
     }
 

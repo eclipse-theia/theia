@@ -42,7 +42,7 @@ class TestServer {
     }
 
     fails2(arg: string, otherArg: string): Promise<string> {
-        return Promise.reject('fails2 failed');
+        return Promise.reject(new Error('fails2 failed'));
     }
 }
 
