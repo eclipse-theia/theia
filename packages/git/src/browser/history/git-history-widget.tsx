@@ -76,6 +76,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.title.label = GIT_HISTORY_LABEL;
         this.title.caption = GIT_HISTORY_LABEL;
         this.title.iconClass = 'fa git-history-tab-icon';
+        this.title.closable = true;
         this.addClass('theia-git');
         this.resetState();
         this.cancelIndicator = new CancellationTokenSource();

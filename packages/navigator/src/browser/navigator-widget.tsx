@@ -60,6 +60,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.title.caption = LABEL;
+        this.title.closable = true;
         this.title.iconClass = 'navigator-tab-icon';
         this.addClass(CLASS);
         this.initialize();
