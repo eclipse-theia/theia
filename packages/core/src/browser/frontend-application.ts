@@ -171,7 +171,7 @@ export class FrontendApplication {
         document.addEventListener('keydown', event => this.keybindings.run(event), true);
         // Prevent forward/back navigation by scrolling in OS X
         if (isOSX) {
-            document.body.addEventListener('wheel', preventNavigation);
+            document.body.addEventListener('wheel', preventNavigation, { passive: false });
         }
     }
 
