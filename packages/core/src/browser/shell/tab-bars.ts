@@ -337,9 +337,6 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     }
 
     protected onBeforeDetach(msg: Message): void {
-        if (this.contentContainer) {
-            this.node.removeChild(this.contentContainer);
-        }
         if (this.toolbar && this.toolbar.isAttached) {
             Widget.detach(this.toolbar);
         }
