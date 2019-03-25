@@ -599,16 +599,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             this.shouldPreventClose = isCtrlCmd(event) || event.code === 'KeyW';
         });
 
-        window.document.addEventListener('keyup', event => {
-            if (isCtrlCmd(event) || event.code === 'KeyW') {
-                this.shouldPreventClose = false;
-            }
+        window.document.addEventListener('keyup', () => {
+            this.shouldPreventClose = false;
         });
     }
 
     onWillStop() {
-        if (this.shouldPreventClose || this.shell.canSaveAll()) {
-            return true;
+        try {
+            if (this.shouldPreventClose || this.shell.canSaveAll()) {
+                return true;
+            }
+        } finally {
+            this.shouldPreventClose = false;
         }
     }
 }
