@@ -28,8 +28,15 @@ import * as fs from 'fs-extra';
 import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
-    PreferenceService, PreferenceScope, PreferenceProviderDataChanges,
-    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider, PreferenceChange, PreferenceSchema
+    PreferenceService,
+    PreferenceScope,
+    PreferenceProviderDataChanges,
+    PreferenceSchemaProvider,
+    PreferenceProviderProvider,
+    PreferenceServiceImpl,
+    bindPreferenceSchemaProvider,
+    PreferenceChange,
+    PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -65,6 +72,7 @@ const tempPath = temp.track().openSync().path;
 const mockUserPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 const mockWorkspacePreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 const mockFolderPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
+let mockOnDidUserPreferencesChanged: sinon.SinonStub;
 
 function testContainerSetup() {
     testContainer = new Container();
@@ -89,7 +97,7 @@ function testContainerSetup() {
         switch (scope) {
             case PreferenceScope.User:
                 const userProvider = ctx.container.get(UserPreferenceProvider);
-                sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
+                mockOnDidUserPreferencesChanged = sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
                     mockUserPreferenceEmitter.event
                 );
                 return userProvider;
@@ -690,6 +698,111 @@ describe('Preference Service', () => {
             preferences.initialize();
             return { preferences, schema };
         }
+
+    });
+
+    describe('user preference provider', () => {
+        const userConfigStr = `{
+    "myProp": "property value",
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "node",
+                "request": "attach",
+                "name": "User scope: Debug (Attach)",
+                "processId": ""
+            }
+        ]
+    }
+}
+`;
+        const userConfig = JSON.parse(userConfigStr);
+
+        let userProvider: UserPreferenceProvider;
+        beforeEach(async () => {
+            userProvider = testContainer.get(UserPreferenceProvider);
+            await userProvider.ready;
+        });
+
+        afterEach(() => {
+            testContainer.rebind(UserPreferenceProvider).toSelf().inSingletonScope();
+        });
+
+        describe('when schema for `launch` property has not been set yet', () => {
+
+            beforeEach(() => {
+                stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+                stubs.push(sinon.stub(prefSchema, 'validate').callsFake(prefName => {
+                    if (prefName === 'myProp') {
+                        return true;
+                    }
+                    return false;
+                }));
+            });
+
+            it('should fire "onDidLaunchChanged" event with correct argument', async () => {
+                const spy = sinon.spy();
+                userProvider.onDidNotValidPreferencesRead(spy);
+
+                fs.writeFileSync(tempPath, userConfigStr);
+                await (<any>userProvider).readPreferences();
+
+                expect(spy.calledWith({ launch: userConfig.launch })).to.be.true;
+            });
+
+            it('should fire "onDidPreferencesChanged" with correct argument', async () => {
+
+                const spy = sinon.spy();
+                mockOnDidUserPreferencesChanged.restore();
+                userProvider.onDidPreferencesChanged(spy);
+
+                fs.writeFileSync(tempPath, userConfigStr);
+                await (<any>userProvider).readPreferences();
+
+                expect(spy.called, 'spy should be called').to.be.true;
+
+                const firstCallArgs = spy.args[0];
+                expect(firstCallArgs[0], 'argument should have property "myProp"').to.have.property('myProp');
+                expect(firstCallArgs[0], 'argument shouldn\'t have property "launch"').not.to.have.property('launch');
+            });
+
+        });
+
+        describe('when schema for `launch` property has been already set', () => {
+
+            beforeEach(() => {
+                stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
+                stubs.push(sinon.stub(prefSchema, 'validate').returns(true));
+            });
+
+            it('should not fire "onDidLaunchChanged"', async () => {
+                const spy = sinon.spy();
+                userProvider.onDidNotValidPreferencesRead(spy);
+
+                fs.writeFileSync(tempPath, userConfigStr);
+                await (<any>userProvider).readPreferences();
+
+                expect(spy.notCalled).to.be.true;
+            });
+
+            it('should fire "onDidPreferencesChanged" with correct argument', async () => {
+                const spy = sinon.spy();
+                mockOnDidUserPreferencesChanged.restore();
+                userProvider.onDidPreferencesChanged(spy);
+
+                fs.writeFileSync(tempPath, userConfigStr);
+                await (<any>userProvider).readPreferences();
+
+                expect(spy.called, 'spy should be called').to.be.true;
+
+                const firstCallArgs = spy.args[0];
+                expect(firstCallArgs[0], 'argument should have property "myProp"').to.have.property('myProp');
+                expect(firstCallArgs[0], 'argument should have property "launch"').to.have.property('launch');
+                expect(firstCallArgs[0].launch.newValue, 'property "launch" should have correct "newValue"').to.deep.equal(userConfig.launch);
+            });
+
+        });
 
     });
 
