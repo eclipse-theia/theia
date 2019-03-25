@@ -53,7 +53,7 @@
     mask: url('files.svg');
 }
 
-.theia-FileTree > div > div > div > div:first-child {
+#files > div > div > div > div:first-child {
     background-color: var(--theia-layout-color4);
     text-transform: uppercase;
     font-size: 80%;
