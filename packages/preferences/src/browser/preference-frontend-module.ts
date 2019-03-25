@@ -24,8 +24,9 @@ import { createPreferencesTreeWidget } from './preference-tree-container';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
 import { PreferencesFrontendApplicationContribution } from './preferences-frontend-application-contribution';
 import { PreferencesContainer, PreferencesTreeWidget, PreferencesEditorsContainer } from './preferences-tree-widget';
-import { FoldersPreferencesProvider } from './folders-preferences-provider';
+import { FoldersPreferencesProvider, SETTINGS_FILE_NAME } from './folders-preferences-provider';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
+import { FolderLaunchPreferenceProvider } from './folder-launch-preference-provider';
 
 import './preferences-monaco-contribution';
 
@@ -36,12 +37,17 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferenceProvider).to(WorkspacePreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProvider).to(FoldersPreferencesProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
     bind(FolderPreferenceProvider).toSelf().inTransientScope();
+    bind(FolderLaunchPreferenceProvider).toSelf().inTransientScope();
     bind(FolderPreferenceProviderFactory).toFactory(ctx =>
         (options: FolderPreferenceProviderOptions) => {
             const child = new Container({ defaultScope: 'Transient' });
             child.parent = ctx.container;
             child.bind(FolderPreferenceProviderOptions).toConstantValue(options);
-            return child.get(FolderPreferenceProvider);
+            if (options.fileName === SETTINGS_FILE_NAME) {
+                return child.get(FolderPreferenceProvider);
+            } else {
+                return child.get(FolderLaunchPreferenceProvider);
+            }
         }
     );
 
