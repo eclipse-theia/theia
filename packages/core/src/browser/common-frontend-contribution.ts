@@ -30,7 +30,7 @@ import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKeyService } from './context-key-service';
-import { OS } from '../common/os';
+import { OS, isOSX } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 
@@ -216,6 +216,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
 
         this.initResourceContextKeys();
+        this.registerCtrlWHandling();
     }
 
     protected initResourceContextKeys(): void {
@@ -580,11 +581,33 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.aboutDialog.open();
     }
 
+    protected shouldPreventClose = false;
+
+    /**
+     * registers event listener which make sure that
+     * window doesn't get closed if CMD/CTRL W is pressed.
+     * Too many users have that in their muscle memory.
+     * Chrome doesn't let us rebind or prevent default the keybinding, so this
+     * at least doesn't close the window immediately.
+     */
+    protected registerCtrlWHandling() {
+        function isCtrlCmd(event: KeyboardEvent) {
+            return (isOSX && event.metaKey) || (!isOSX && event.ctrlKey);
+        }
+
+        window.document.addEventListener('keydown', event => {
+            this.shouldPreventClose = isCtrlCmd(event) || event.code === 'KeyW';
+        });
+
+        window.document.addEventListener('keyup', event => {
+            if (isCtrlCmd(event) || event.code === 'KeyW') {
+                this.shouldPreventClose = false;
+            }
+        });
+    }
+
     onWillStop() {
-        if (this.shell.canSaveAll()) {
-            setTimeout(() => {
-                this.messageService.info('Some documents should be saved, data will be lost otherwise.');
-            });
+        if (this.shouldPreventClose || this.shell.canSaveAll()) {
             return true;
         }
     }
