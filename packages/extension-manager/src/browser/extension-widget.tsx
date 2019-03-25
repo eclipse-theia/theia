@@ -42,6 +42,7 @@ export class ExtensionWidget extends ReactWidget {
         this.title.label = 'Extensions';
         this.title.caption = 'Extensions';
         this.title.iconClass = 'extensions-tab-icon';
+        this.title.closable = true;
         this.addClass('theia-extensions');
 
         this.update();

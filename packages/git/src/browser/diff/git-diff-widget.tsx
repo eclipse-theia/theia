@@ -52,7 +52,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         this.scrollContainer = 'git-diff-list-container';
         this.title.label = this.GIT_DIFF_TITLE;
         this.title.caption = this.GIT_DIFF_TITLE;
-
+        this.title.closable = true;
         this.title.iconClass = 'theia-git-diff-icon';
 
         this.addClass('theia-git');
