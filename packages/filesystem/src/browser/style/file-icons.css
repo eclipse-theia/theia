@@ -15,7 +15,6 @@
  ********************************************************************************/
 
  .file-icon {
-    max-height: calc(var(--theia-content-font-size) * 0.8);
     /*
     Here, the `line-height` ensures that FontAwesome and `file-icons-js` container has the same height.
     Ideally, it would be 1 em, but since we set the max height above (and other places too) with 0.8
