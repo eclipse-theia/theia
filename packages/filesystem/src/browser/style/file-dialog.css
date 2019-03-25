@@ -25,6 +25,7 @@
 
 .dialogContent .theia-FileDialog {
     height: 500px;
+    background-color: var(--theia-layout-color0);
 }
 
 .dialogContent .theia-SaveFileDialog {
