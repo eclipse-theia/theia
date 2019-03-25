@@ -28,12 +28,13 @@ export interface FolderPreferenceProviderFactory {
 export const FolderPreferenceProviderOptions = Symbol('FolderPreferenceProviderOptions');
 export interface FolderPreferenceProviderOptions {
     folder: FileStat;
+    fileName: string;
 }
 
 @injectable()
 export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider {
 
-    private folderUri: URI | undefined;
+    protected folderUri: URI | undefined;
 
     constructor(
         @inject(FolderPreferenceProviderOptions) protected readonly options: FolderPreferenceProviderOptions,
