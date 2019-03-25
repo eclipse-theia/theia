@@ -21,6 +21,10 @@ import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './fol
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 
+export const SETTINGS_FILE_NAME = 'settings.json';
+export const LAUNCH_FILE_NAME = 'launch.json';
+export const LAUNCH_PROPERTY_NAME = 'launch';
+
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
 
@@ -28,69 +32,86 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(FolderPreferenceProviderFactory) protected readonly folderPreferenceProviderFactory: FolderPreferenceProviderFactory;
 
-    private providers: FolderPreferenceProvider[] = [];
+    private providers: { [fileName: string]: FolderPreferenceProvider[] } = {};
 
     @postConstruct()
     protected async init(): Promise<void> {
+        [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => this.providers[fileName] = []);
+
         await this.workspaceService.roots;
-        if (this.workspaceService.saved) {
-            for (const root of this.workspaceService.tryGetRoots()) {
-                if (await this.fileSystem.exists(root.uri)) {
-                    const provider = this.createFolderPreferenceProvider(root);
-                    this.providers.push(provider);
-                }
+        const readyPromises: Promise<void>[] = [];
+        for (const root of this.workspaceService.tryGetRoots()) {
+            if (await this.fileSystem.exists(root.uri)) {
+                [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => {
+                    const provider = this.createFolderPreferenceProvider(root, fileName);
+                    this.providers[fileName].push(provider);
+                    readyPromises.push(provider.ready);
+                });
             }
         }
 
         // Try to read the initial content of the preferences.  The provider
         // becomes ready even if we fail reading the preferences, so we don't
         // hang the preference service.
-        Promise.all(this.providers.map(p => p.ready))
+        Promise.all(readyPromises)
             .then(() => this._ready.resolve())
             .catch(() => this._ready.resolve());
 
         this.workspaceService.onWorkspaceChanged(roots => {
             for (const root of roots) {
-                if (!this.existsProvider(root.uri)) {
-                    const provider = this.createFolderPreferenceProvider(root);
-                    if (!this.existsProvider(root.uri)) {
-                        this.providers.push(provider);
-                    } else {
+                [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => {
+                    if (!this.existsProvider(root.uri, fileName)) {
+                        const provider = this.createFolderPreferenceProvider(root, fileName);
+                        this.providers[fileName].push(provider);
+                    }
+                });
+            }
+
+            [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => {
+                if (!this.providers[fileName]) {
+                    return;
+                }
+                const numProviders = this.providers[fileName].length;
+                for (let i = numProviders - 1; i >= 0; i--) {
+                    const provider = this.providers[fileName][i];
+                    if (!this.existsRoot(roots, provider)) {
+                        this.providers[fileName].splice(i, 1);
                         provider.dispose();
                     }
                 }
-            }
-
-            const numProviders = this.providers.length;
-            for (let ind = numProviders - 1; ind >= 0; ind--) {
-                const provider = this.providers[ind];
-                if (roots.findIndex(r => !!provider.uri && r.uri === provider.uri.toString()) < 0) {
-                    this.providers.splice(ind, 1);
-                    provider.dispose();
-                }
-            }
+            });
         });
     }
 
-    private existsProvider(folderUri: string): boolean {
-        return this.providers.findIndex(p => !!p.uri && p.uri.toString() === folderUri) >= 0;
+    private existsProvider(folderUri: string, fileName: string): boolean {
+        return this.providers[fileName] && this.providers[fileName].some(p => !!p.uri && p.uri.toString() === folderUri);
+    }
+
+    private existsRoot(roots: FileStat[], provider: FolderPreferenceProvider): boolean {
+        return roots.some(r => !!provider.uri && r.uri === provider.uri.toString());
     }
 
     // tslint:disable-next-line:no-any
     getPreferences(resourceUri?: string): { [p: string]: any } {
-        const numProviders = this.providers.length;
-        if (resourceUri && numProviders > 0) {
-            const provider = this.getProvider(resourceUri);
-            if (provider) {
-                return provider.getPreferences();
-            }
+        if (!resourceUri) {
+            return {};
         }
-        return {};
+
+        const prefProvider = this.getProvider(resourceUri, SETTINGS_FILE_NAME);
+        const prefs = prefProvider ? prefProvider.getPreferences() : {};
+
+        const launchProvider = this.getProvider(resourceUri, LAUNCH_FILE_NAME);
+        const launch = launchProvider ? launchProvider.getPreferences() : {};
+
+        const result = Object.assign({}, prefs, launch);
+
+        return result;
     }
 
     canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
-        if (resourceUri && this.providers.length > 0) {
-            const provider = this.getProvider(resourceUri);
+        if (resourceUri) {
+            const resourceName = preferenceName === LAUNCH_PROPERTY_NAME ? LAUNCH_FILE_NAME : SETTINGS_FILE_NAME;
+            const provider = this.getProvider(resourceUri, resourceName);
             if (provider) {
                 return { priority: provider.canProvide(preferenceName, resourceUri).priority, provider };
             }
@@ -98,10 +119,15 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return super.canProvide(preferenceName, resourceUri);
     }
 
-    protected getProvider(resourceUri: string): PreferenceProvider | undefined {
+    protected getProvider(resourceUri: string, fileName: string): PreferenceProvider | undefined {
+        const providers = this.providers[fileName];
+        if (providers.length === 0) {
+            return;
+        }
+
         let provider: PreferenceProvider | undefined;
         let relativity = Number.MAX_SAFE_INTEGER;
-        for (const p of this.providers) {
+        for (const p of providers) {
             if (p.uri) {
                 const providerRelativity = p.uri.path.relativity(new URI(resourceUri).path);
                 if (providerRelativity >= 0 && providerRelativity <= relativity) {
@@ -113,17 +139,19 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return provider;
     }
 
-    protected createFolderPreferenceProvider(folder: FileStat): FolderPreferenceProvider {
-        const provider = this.folderPreferenceProviderFactory({ folder });
+    protected createFolderPreferenceProvider(folder: FileStat, fileName: string): FolderPreferenceProvider {
+        const provider = this.folderPreferenceProviderFactory({ folder, fileName });
         this.toDispose.push(provider);
         this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
+        this.toDispose.push(provider.onDidNotValidPreferencesRead(prefs => this.onDidNotValidPreferencesReadEmitter.fire(prefs)));
         return provider;
     }
 
     // tslint:disable-next-line:no-any
     async setPreference(key: string, value: any, resourceUri?: string): Promise<void> {
         if (resourceUri) {
-            for (const provider of this.providers) {
+            const resourceName = key === LAUNCH_PROPERTY_NAME ? LAUNCH_FILE_NAME : SETTINGS_FILE_NAME;
+            for (const provider of this.providers[resourceName]) {
                 const providerResourceUri = await provider.getUri();
                 if (providerResourceUri && providerResourceUri.toString() === resourceUri) {
                     return provider.setPreference(key, value);
