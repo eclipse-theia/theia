@@ -26,6 +26,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     // tslint:disable-next-line:no-any
     protected preferences: { [key: string]: any } = {};
+    // tslint:disable-next-line:no-any
+    protected notValidPreferences: { [key: string]: any } = {};
     protected resource: Promise<Resource>;
     protected toDisposeOnWorkspaceLocationChanged: DisposableCollection = new DisposableCollection();
 
@@ -59,6 +61,10 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             this.toDisposeOnWorkspaceLocationChanged.pushAll([onDidResourceChanged, (await this.resource)]);
             this.toDispose.push(onDidResourceChanged);
         }
+
+        this.schemaProvider.onDidPreferenceSchemaChanged(() => {
+            this.handleNotValidPreferences();
+        });
     }
 
     abstract getUri(root?: URI): MaybePromise<URI | undefined>;
@@ -103,8 +109,13 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     protected async readPreferences(): Promise<void> {
         const newContent = await this.readContents();
-        const newPrefs = await this.getParsedContent(newContent);
-        await this.handlePreferenceChanges(newPrefs);
+        const parsedData = this.parse(newContent);
+        const newPrefs = await this.getValidatedPreferences(parsedData);
+        await this.handlePreferenceChanges(newPrefs.valid);
+        this.notValidPreferences = newPrefs.notValid;
+        if (this.notValidPreferences && Object.keys(this.notValidPreferences).length > 0) {
+            this.onDidNotValidPreferencesReadEmitter.fire(this.notValidPreferences);
+        }
     }
 
     protected async readContents(): Promise<string> {
@@ -117,29 +128,33 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     // tslint:disable-next-line:no-any
-    protected async getParsedContent(content: string): Promise<{ [key: string]: any }> {
-        const jsonData = this.parse(content);
+    protected async getValidatedPreferences(jsonData: { [key: string]: any }): Promise<{ valid: any, notValid: any }> {
         // tslint:disable-next-line:no-any
-        const preferences: { [key: string]: any } = {};
+        const preferences: { valid: any, notValid: any } = {
+            valid: {},
+            notValid: {}
+        };
         if (typeof jsonData !== 'object') {
             return preferences;
         }
         const uri = (await this.resource).uri.toString();
+        this.notValidPreferences = {};
         // tslint:disable-next-line:forin
         for (const preferenceName in jsonData) {
             const preferenceValue = jsonData[preferenceName];
-            if (preferenceValue !== undefined && !this.schemaProvider.validate(preferenceName, preferenceValue)) {
+            if (this.isNotValid(preferenceName, preferenceValue)) {
                 console.warn(`Preference ${preferenceName} in ${uri} is invalid.`);
+                preferences.notValid[preferenceName] = preferenceValue;
                 continue;
             }
             if (this.schemaProvider.testOverrideValue(preferenceName, preferenceValue)) {
                 // tslint:disable-next-line:forin
                 for (const overriddenPreferenceName in preferenceValue) {
                     const overriddeValue = preferenceValue[overriddenPreferenceName];
-                    preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddeValue;
+                    preferences.valid[`${preferenceName}.${overriddenPreferenceName}`] = overriddeValue;
                 }
             } else {
-                preferences[preferenceName] = preferenceValue;
+                preferences.valid[preferenceName] = preferenceValue;
             }
         }
         return preferences;
@@ -149,6 +164,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected parse(content: string): any {
         const strippedContent = jsoncparser.stripComments(content);
         return jsoncparser.parse(strippedContent);
+    }
+
+    // tslint:disable-next-line:no-any
+    protected isNotValid(preferenceName: string, preferenceValue: any): boolean {
+        return (preferenceValue !== undefined && !this.schemaProvider.validate(preferenceName, preferenceValue));
     }
 
     // tslint:disable-next-line:no-any
@@ -182,6 +202,24 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (prefChanges.length > 0) { // do not emit the change event if the pref value is not changed
             this.emitPreferencesChangedEvent(prefChanges);
         }
+    }
+
+    protected async handleNotValidPreferences(): Promise<void> {
+        const notValidPreferencesKeys = Object.keys(this.notValidPreferences);
+        if (notValidPreferencesKeys.length === 0) {
+            return;
+        }
+
+        const validPrefs = Object.assign({}, this.preferences);
+        const newPrefs = notValidPreferencesKeys
+            .filter(prefName => !this.isNotValid(prefName, this.notValidPreferences[prefName]))
+            .reduce((prefs, prefName) => {
+                prefs[prefName] = this.notValidPreferences[prefName];
+                delete this.notValidPreferences[prefName];
+                return prefs;
+            }, validPrefs);
+
+        return this.handlePreferenceChanges(newPrefs);
     }
 
     dispose(): void {
