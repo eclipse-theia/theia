@@ -37,7 +37,7 @@ export class PluginDeployerImpl implements PluginDeployer {
     protected readonly logger: ILogger;
 
     @inject(PluginDeployerHandler)
-    protected readonly hostedPluginServer: PluginDeployerHandler;
+    protected readonly pluginDeployerHandler: PluginDeployerHandler;
 
     @inject(PluginCliContribution)
     protected readonly cliContribution: PluginCliContribution;
@@ -112,9 +112,7 @@ export class PluginDeployerImpl implements PluginDeployer {
     }
 
     public async deploy(pluginEntry: string): Promise<void> {
-        const entries: string[] = [];
-        entries.push(pluginEntry);
-        await this.deployMultipleEntries(entries);
+        await this.deployMultipleEntries([pluginEntry]);
         return Promise.resolve();
     }
 
@@ -156,8 +154,8 @@ export class PluginDeployerImpl implements PluginDeployer {
 
         await Promise.all([
             // start the backend plugins
-            this.hostedPluginServer.deployBackendPlugins(acceptedBackendPlugins),
-            this.hostedPluginServer.deployFrontendPlugins(acceptedFrontendPlugins)
+            this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins),
+            this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins)
         ]);
     }
 
