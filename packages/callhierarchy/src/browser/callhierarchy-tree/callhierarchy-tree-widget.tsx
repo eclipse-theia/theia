@@ -102,11 +102,13 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         const container = (containerName) ? containerName + ' — ' + location : location;
         return <div className='definitionNode'>
             <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
-            <div className='symbol'>
-                {symbol}
-            </div>
-            <div className='container'>
-                {container}
+            <div className='definitionNode-content'>
+                <span className='symbol'>
+                    {symbol}
+                </span>
+                <span className='container'>
+                    {container}
+                </span>
             </div>
         </div>;
     }
@@ -120,14 +122,16 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         const container = (containerName) ? containerName + ' — ' + location : location;
         return <div className='definitionNode'>
             <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
-            <div className='symbol'>
-                {symbol}
-            </div>
-            <div className='referenceCount'>
-                {(referenceCount > 1) ? `[${referenceCount}]` : ''}
-            </div>
-            <div className='container'>
-                {container}
+            <div className='definitionNode-content'>
+                <span className='symbol'>
+                    {symbol}
+                </span>
+                <span className='referenceCount'>
+                    {(referenceCount > 1) ? `[${referenceCount}]` : ''}
+                </span>
+                <span className='container'>
+                    {container}
+                </span>
             </div>
         </div>;
     }
