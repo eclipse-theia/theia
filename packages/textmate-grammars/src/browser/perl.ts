@@ -22,6 +22,32 @@ export class PerlContribution implements LanguageGrammarDefinitionContribution {
 
     readonly id = 'perl';
     readonly scopeName = 'source.perl';
+    readonly config: monaco.languages.LanguageConfiguration = {
+        comments: {
+            lineComment: '#'
+        },
+        brackets: [
+            ['{', '}'],
+            ['[', ']'],
+            ['(', ')']
+        ],
+        autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: '\'', close: '\'' },
+            { open: '`', close: '`' }
+        ],
+        surroundingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: '\'', close: '\'' },
+            { open: '`', close: '`' }
+        ]
+    };
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
@@ -30,6 +56,9 @@ export class PerlContribution implements LanguageGrammarDefinitionContribution {
             extensions: ['.pl', '.pm', '.pod', '.t', '.PL', '.psgi'],
             firstLine: '^#!.*\\bperl\\b'
         });
+
+        monaco.languages.setLanguageConfiguration(this.id, this.config);
+
         const grammar = require('../../data/perl.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
             async getGrammarDefinition() {
