@@ -53,14 +53,14 @@ export class DebugConfiguration {
 export const DebugPreferences = Symbol('DebugPreferences');
 export type DebugPreferences = PreferenceProxy<DebugConfiguration>;
 
-export function createDebugreferences(preferences: PreferenceService): DebugPreferences {
+export function createDebugPreferences(preferences: PreferenceService): DebugPreferences {
     return createPreferenceProxy(preferences, debugPreferencesSchema);
 }
 
 export function bindDebugPreferences(bind: interfaces.Bind): void {
     bind(DebugPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createDebugreferences(preferences);
+        return createDebugPreferences(preferences);
     }).inSingletonScope();
 
     bind(PreferenceContribution).toConstantValue({ schema: debugPreferencesSchema });
