@@ -43,7 +43,13 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             'default': { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
             'description': 'Configure glob patterns for excluding files and folders.',
             'scope': 'resource'
-        }
+        },
+        'files.associations': {
+            'description': 'Configure file associations to languages (e.g. "*.extension": "html"). \
+These have precedence over the default associations of the languages installed',
+            'type': 'object',
+            'default': {}
+        },
     }
 };
 
