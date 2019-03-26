@@ -19,3 +19,4 @@ package-backup.json
 .history
 .Trash-*
 packages/plugin/typedoc
+plugins
