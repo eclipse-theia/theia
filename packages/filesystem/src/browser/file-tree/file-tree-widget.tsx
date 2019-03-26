@@ -119,6 +119,19 @@ export class FileTreeWidget extends TreeWidget {
             }
         }, 500);
         this.toCancelNodeExpansion.push(Disposable.create(() => clearTimeout(timer)));
+        const files = document.getElementById('files');
+        if (!files) {
+            return;
+        }
+        let offset: number = 0;
+        if (event.clientY <= 100) {
+            offset = -20;
+        }
+
+        if (event.clientY >= files.clientHeight) {
+            offset = 20;
+        }
+        this.node.scrollTop = this.node.scrollTop + offset;
     }
 
     protected handleDragLeaveEvent(node: TreeNode | undefined, event: React.DragEvent): void {
@@ -150,5 +163,4 @@ export class FileTreeWidget extends TreeWidget {
         const id = data.getData('tree-node');
         return this.model.getNode(id);
     }
-
 }
