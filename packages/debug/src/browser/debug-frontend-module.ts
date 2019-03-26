@@ -20,7 +20,7 @@ import { ContainerModule, interfaces } from 'inversify';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
-import { WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution, bindViewContribution, KeybindingContext } from '@theia/core/lib/browser';
+import { WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution, bindViewContribution, KeybindingContext, PreferenceScope } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
 import {
@@ -44,6 +44,10 @@ import './debug-monaco-contribution';
 import { bindDebugPreferences } from './debug-preferences';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
+import { LaunchProviderProvider, LaunchPreferenceProvider } from './abstract-launch-preference-provider';
+import { WorkspaceLaunchProvider } from './workspace-launch-provider';
+import { UserLaunchProvider } from './user-launch-provider';
+import { FoldersLaunchProvider } from './folders-launch-provider';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -84,6 +88,12 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugSessionContributionRegistryImpl).toSelf().inSingletonScope();
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);
+
+    bind(LaunchPreferenceProvider).to(UserLaunchProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
+    bind(LaunchPreferenceProvider).to(WorkspaceLaunchProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
+    bind(LaunchPreferenceProvider).to(FoldersLaunchProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
+    bind(LaunchProviderProvider).toFactory(ctx => (scope: PreferenceScope) =>
+        ctx.container.getNamed(LaunchPreferenceProvider, scope));
 
     bindDebugPreferences(bind);
 });

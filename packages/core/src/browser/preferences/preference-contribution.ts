@@ -19,6 +19,7 @@ import { inject, injectable, interfaces, named, postConstruct } from 'inversify'
 import { ContributionProvider, bindContributionProvider, escapeRegExpCharacters, Emitter, Event } from '../../common';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderPriority, PreferenceProviderDataChange } from './preference-provider';
+import { IJSONSchema } from '../../common/json-schema';
 
 import {
     PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType
@@ -66,6 +67,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
     protected readonly preferences: { [name: string]: any } = {};
     protected readonly combinedSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
+    private remoteSchemas: IJSONSchema[] = [];
 
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
@@ -202,7 +204,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     protected updateValidate(): void {
-        this.validateFunction = new Ajv().compile(this.combinedSchema);
+        this.validateFunction = new Ajv({ schemas: this.remoteSchemas }).compile(this.combinedSchema);
     }
 
     validate(name: string, value: any): boolean {
@@ -213,10 +215,28 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return this.combinedSchema;
     }
 
-    setSchema(schema: PreferenceSchema): void {
+    setSchema(schema: PreferenceSchema, remoteSchema?: IJSONSchema): void {
         const changes = this.doSetSchema(schema);
+        if (remoteSchema) {
+            this.doSetRemoteSchema(remoteSchema);
+        }
         this.fireDidPreferenceSchemaChanged();
         this.emitPreferencesChangedEvent(changes);
+    }
+
+    protected doSetRemoteSchema(schema: IJSONSchema): void {
+        // remove existing remote schema if any
+        const existingSchemaIndex = this.remoteSchemas.findIndex(s => !!s.$id && !!s.$id && s.$id !== s.$id);
+        if (existingSchemaIndex) {
+            this.remoteSchemas.splice(existingSchemaIndex, 1);
+        }
+
+        this.remoteSchemas.push(schema);
+    }
+
+    setRemoteSchema(schema: IJSONSchema): void {
+        this.doSetRemoteSchema(schema);
+        this.fireDidPreferenceSchemaChanged();
     }
 
     getPreferences(): { [name: string]: any } {
