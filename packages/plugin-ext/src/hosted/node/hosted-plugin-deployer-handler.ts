@@ -50,6 +50,10 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         for (const plugin of frontendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
+                if (this.getDeployedFrontendMetadata().some(value => value.model.id === metadata.model.id)) {
+                    continue;
+                }
+
                 this.currentFrontendPluginsMetadata.push(metadata);
                 this.logger.info(`Deploying frontend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.frontend || plugin.path()}"`);
             }
@@ -60,6 +64,10 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         for (const plugin of backendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
+                if (this.getDeployedBackendMetadata().some(value => value.model.id === metadata.model.id)) {
+                    continue;
+                }
+
                 this.currentBackendPluginsMetadata.push(metadata);
                 this.logger.info(`Deploying backend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.backend || plugin.path()}"`);
             }

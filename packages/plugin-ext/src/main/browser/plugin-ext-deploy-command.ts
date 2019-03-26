@@ -87,7 +87,7 @@ export class DeployQuickOpenItem extends QuickOpenItem {
         protected readonly pluginServer: PluginServer,
         protected readonly hostedPluginSupport: HostedPluginSupport,
         protected readonly pluginWidget: PluginWidget,
-        protected readonly description?: string,
+        protected readonly description?: string
     ) {
         super();
     }
