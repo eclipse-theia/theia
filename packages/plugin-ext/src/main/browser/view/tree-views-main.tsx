@@ -40,7 +40,7 @@ import { MenuPath } from '@theia/core/lib/common/menu';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
-import { Disposable, SelectionService } from '@theia/core/lib/common';
+import { SelectionService } from '@theia/core/lib/common';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -105,7 +105,8 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
     createTreeViewContainer(dataProvider: TreeViewDataProviderMain): Container {
         const child = createTreeContainer(this.container, {
-            contextMenuPath: VIEW_ITEM_CONTEXT_MENU
+            contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
+            globalSelection: true
         });
 
         child.bind(TreeViewDataProviderMain).toConstantValue(dataProvider);
@@ -228,21 +229,7 @@ export class TreeViewWidget extends TreeWidget {
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(TreeViewDataProviderMain) readonly dataProvider: TreeViewDataProviderMain,
         @inject(SelectionService) readonly selectionService: SelectionService) {
-
         super(treeProps, model, contextMenuRenderer);
-
-        this.toDispose.pushAll([
-            this.model.onSelectionChanged(selection => {
-                if (this.node.contains(document.activeElement)) {
-                    this.selectionService.selection = selection;
-                }
-            }),
-            Disposable.create(() => {
-                if (this.selectionService.selection === this.model.selectedNodes) {
-                    this.selectionService.selection = undefined;
-                }
-            })
-        ]);
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -262,11 +249,6 @@ export class TreeViewWidget extends TreeWidget {
 
             this.model.root = node;
         });
-    }
-
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.selectionService.selection = this.model.selectedNodes;
     }
 
     public updateWidget() {

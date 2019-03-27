@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService, SelectionService, Disposable } from '@theia/core/lib/common';
+import { CommandService, SelectionService } from '@theia/core/lib/common';
 import { CommonCommands, CorePreferences } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
@@ -71,12 +71,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super.init();
         this.updateSelectionContextKeys();
         this.toDispose.pushAll([
-            this.model.onSelectionChanged(selection => {
-                if (this.shell.activeWidget === this) {
-                    this.selectionService.selection = selection;
-                }
-                this.updateSelectionContextKeys();
-            }),
+            this.model.onSelectionChanged(() =>
+                this.updateSelectionContextKeys()
+            ),
             this.model.onExpansionChanged(node => {
                 if (node.expanded && node.children.length === 1) {
                     const child = node.children[0];
@@ -84,18 +81,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
                         this.model.expandNode(child);
                     }
                 }
-            }),
-            Disposable.create(() => {
-                if (this.selectionService.selection === this) {
-                    this.selectionService.selection = undefined;
-                }
+
             })
         ]);
-    }
-
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.selectionService.selection = this.model.selectedNodes;
     }
 
     protected async initialize(): Promise<void> {

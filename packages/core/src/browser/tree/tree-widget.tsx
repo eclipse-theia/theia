@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { Disposable, MenuPath } from '../../common';
+import { Disposable, MenuPath, SelectionService } from '../../common';
 import { Key, KeyCode, KeyModifier } from '../keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
@@ -35,6 +35,7 @@ import { TopDownTreeIterator } from './tree-iterator';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
 import { ElementExt } from '@phosphor/domutils';
+import { TreeWidgetSelection } from './tree-widget-selection';
 
 const debounce = require('lodash.debounce');
 
@@ -83,6 +84,11 @@ export interface TreeProps {
      * 'true' if the selected node should be auto scrolled only if the widget is active. Otherwise, `false`. Defaults to `false`.
      */
     readonly scrollIfActive?: boolean
+
+    /**
+     * `true` if a tree widget contributes to the global selection. Defaults to `false`.
+     */
+    readonly globalSelection?: boolean;
 }
 
 export interface NodeProps {
@@ -125,6 +131,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected readonly searchBoxFactory: SearchBoxFactory;
 
     protected decorations: Map<string, TreeDecoration.Data[]> = new Map();
+
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -179,6 +188,25 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.updateRows();
             this.updateDecorations();
         });
+        if (this.props.globalSelection) {
+            this.toDispose.pushAll([
+                this.model.onSelectionChanged(() => {
+                    if (this.node.contains(document.activeElement)) {
+                        this.updateGlobalSelection();
+                    }
+                }),
+                Disposable.create(() => {
+                    const selection = this.selectionService.selection;
+                    if (TreeWidgetSelection.isSource(selection, this)) {
+                        this.selectionService.selection = undefined;
+                    }
+                })
+            ]);
+        }
+    }
+
+    protected updateGlobalSelection(): void {
+        this.selectionService.selection = TreeWidgetSelection.create(this);
     }
 
     protected rows = new Map<string, TreeWidget.NodeRow>();
@@ -244,6 +272,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        if (this.props.globalSelection) {
+            this.updateGlobalSelection();
+        }
         this.node.focus();
         if (this.model.selectedNodes.length === 0) {
             const root = this.model.root;
