@@ -3439,10 +3439,10 @@ electron-window@^0.8.0:
   dependencies:
     is-electron-renderer "^2.0.0"
 
-electron@^3.0.10:
-  version "3.0.10"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-3.0.10.tgz#7d412856e8cf0d3041a612a32dd09e2af2d50f50"
-  integrity sha512-I39IeQP3NOlbjKzTDK8uK2JdiHDfhV5SruCS2Gttkn2MaKCY+yIzQ6Wr4DyBXLeTEkL1sbZxbqQVhCavAliv5w==
+electron@^3.1.7:
+  version "3.1.7"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-3.1.7.tgz#2041031db272e88f167b2e5fe2de9eecabcf4632"
+  integrity sha512-rvmucnAsB4hQVdD0fOd1ad7+5u/BX1ak6emcSyPsLUk6rTqvVfOMk5ryC19h7Yd/5X8NWvCGkgYzSyQbgAJngA==
   dependencies:
     "@types/node" "^8.0.24"
     electron-download "^4.1.0"
