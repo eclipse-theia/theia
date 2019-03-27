@@ -35,6 +35,11 @@ export class FileNavigatorModel extends FileTreeModel {
                 this.updateRoot();
             })
         );
+        this.toDispose.push(
+            this.workspaceService.onWorkspaceLocationChanged(() => {
+                this.updateRoot();
+            })
+        );
         super.init();
     }
 
@@ -71,7 +76,11 @@ export class FileNavigatorModel extends FileTreeModel {
 
     protected async createRoot(): Promise<TreeNode | undefined> {
         if (this.workspaceService.opened) {
-            const workspaceNode = WorkspaceNode.createRoot();
+            const stat = this.workspaceService.workspace;
+            const isMulti = (stat) ? !stat.isDirectory : false;
+            const workspaceNode = isMulti
+                ? this.createMultipleRootNode()
+                : WorkspaceNode.createRoot();
             const roots = await this.workspaceService.roots;
             for (const root of roots) {
                 workspaceNode.children.push(
@@ -80,6 +89,20 @@ export class FileNavigatorModel extends FileTreeModel {
             }
             return workspaceNode;
         }
+    }
+
+    /**
+     * Create multiple root node used to display
+     * the multiple root workspace name.
+     *
+     * @returns `WorkspaceNode`
+     */
+    protected createMultipleRootNode(): WorkspaceNode {
+        const workspace = this.workspaceService.workspace;
+        const name = (workspace)
+            ? new URI(workspace.uri).path.name
+            : 'untitled';
+        return WorkspaceNode.createRoot(name);
     }
 
     /**
