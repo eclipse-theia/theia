@@ -65,15 +65,15 @@ export interface ExpandableTreeNode extends CompositeTreeNode {
 }
 
 export namespace ExpandableTreeNode {
-    export function is(node: TreeNode | undefined): node is ExpandableTreeNode {
+    export function is(node: Object | undefined): node is ExpandableTreeNode {
         return !!node && CompositeTreeNode.is(node) && 'expanded' in node;
     }
 
-    export function isExpanded(node: TreeNode | undefined): node is ExpandableTreeNode {
+    export function isExpanded(node: Object | undefined): node is ExpandableTreeNode {
         return ExpandableTreeNode.is(node) && node.expanded;
     }
 
-    export function isCollapsed(node: TreeNode | undefined): node is ExpandableTreeNode {
+    export function isCollapsed(node: Object | undefined): node is ExpandableTreeNode {
         return ExpandableTreeNode.is(node) && !node.expanded;
     }
 }

@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.6.0
+
+- [filesystem] added the menu item `Upload Files...` to easily upload files into a workspace
+
 ## v0.5.0
 
 - Added `scope` to task configurations to differentiate 3 things: task type, task source, and where to run tasks
