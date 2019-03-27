@@ -80,6 +80,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     init(data: PreferenceData): void {
+        data[PreferenceScope.Default]['files.associations'] = {};
         this._preferences = this.parse(data);
     }
 
