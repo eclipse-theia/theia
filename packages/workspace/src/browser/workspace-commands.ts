@@ -32,6 +32,7 @@ import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
+import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -135,6 +136,15 @@ export class FileMenuContribution implements MenuContribution {
         });
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: WorkspaceCommands.NEW_FOLDER.id
+        });
+        const downloadUploadMenu = [...CommonMenus.FILE, '4_downloadupload'];
+        registry.registerMenuAction(downloadUploadMenu, {
+            commandId: FileDownloadCommands.UPLOAD.id,
+            order: 'a'
+        });
+        registry.registerMenuAction(downloadUploadMenu, {
+            commandId: FileDownloadCommands.DOWNLOAD.id,
+            order: 'b'
         });
     }
 
