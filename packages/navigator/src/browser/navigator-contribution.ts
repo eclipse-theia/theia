@@ -192,10 +192,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: WorkspaceCommands.FILE_DUPLICATE.id
         });
-        registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
+
+        const downloadUploadMenu = [...NAVIGATOR_CONTEXT_MENU, '6_downloadupload'];
+        registry.registerMenuAction(downloadUploadMenu, {
+            commandId: FileDownloadCommands.UPLOAD.id,
+            order: 'a'
+        });
+        registry.registerMenuAction(downloadUploadMenu, {
             commandId: FileDownloadCommands.DOWNLOAD.id,
-            label: 'Download',
-            order: 'z1' // Should be the last item in the "move" menu group.
+            order: 'b'
         });
 
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {

@@ -20,6 +20,7 @@ import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, Tr
 import { FileSystem, FileStat } from '../../common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { UriSelection } from '@theia/core/lib/common/selection';
+import { FileSelection } from '../file-selection';
 
 @injectable()
 export class FileTree extends TreeImpl {
@@ -91,8 +92,7 @@ export class FileTree extends TreeImpl {
     }
 }
 
-export interface FileStatNode extends SelectableTreeNode, UriSelection {
-    fileStat: FileStat;
+export interface FileStatNode extends SelectableTreeNode, UriSelection, FileSelection {
 }
 export namespace FileStatNode {
     export function is(node: object | undefined): node is FileStatNode {

@@ -272,9 +272,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        if (this.props.globalSelection) {
-            this.updateGlobalSelection();
-        }
         this.node.focus();
         if (this.model.selectedNodes.length === 0) {
             const root = this.model.root;
@@ -286,6 +283,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     this.model.selectNode(firstChild);
                 }
             }
+        }
+        // it has to be called after nodes are selected
+        if (this.props.globalSelection) {
+            this.updateGlobalSelection();
         }
         this.forceUpdate();
     }
