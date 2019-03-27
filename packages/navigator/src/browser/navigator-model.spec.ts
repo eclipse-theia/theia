@@ -129,6 +129,7 @@ describe('FileNavigatorModel', () => {
     let mockPreferences: CorePreferences;
 
     const mockWorkspaceServiceEmitter: Emitter<FileStat[]> = new Emitter();
+    const mockWorkspaceOnLocationChangeEmitter: Emitter<FileStat | undefined> = new Emitter();
     const mockFileChangeEmitter: Emitter<FileChange[]> = new Emitter();
     const mockFileMoveEmitter: Emitter<FileMoveEvent> = new Emitter();
     const mockTreeChangeEmitter: Emitter<void> = new Emitter();
@@ -175,6 +176,7 @@ describe('FileNavigatorModel', () => {
         testContainer.bind(CorePreferences).toConstantValue(mockPreferences);
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockWorkspaceServiceEmitter.event);
+        sinon.stub(mockWorkspaceService, 'onWorkspaceLocationChanged').value(mockWorkspaceOnLocationChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onDidMove').value(mockFileMoveEmitter.event);
         sinon.stub(mockFileNavigatorTree, 'onChanged').value(mockTreeChangeEmitter.event);
