@@ -187,7 +187,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         if (commit.expanded) {
             this.removeFileChangeNodes(commit, id);
         } else {
-            this.addFileChangeNodes(commit, id);
+            await this.addFileChangeNodes(commit, id);
         }
         commit.expanded = !commit.expanded;
         this.update();
@@ -341,7 +341,6 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 e => {
                     if (commit.selected && !this.singleFileMode) {
                         this.addOrRemoveFileChangeNodes(commit);
-                        this.update();
                     } else {
                         this.selectNode(commit);
                     }
