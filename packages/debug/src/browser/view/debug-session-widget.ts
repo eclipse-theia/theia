@@ -23,6 +23,7 @@ import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel, DebugViewOptions } from './debug-view-model';
 import { ViewContainer } from '@theia/core/lib/browser/view-container';
+import { BOTTOM_AREA_ID, MAIN_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 
 export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
@@ -117,7 +118,7 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
     onAfterAttach(msg: Message): void {
         const parentId = this.node.parentElement!.parentElement!.getAttribute('id');
         this.container.orientation =
-            parentId === 'theia-bottom-content-panel' || parentId === 'theia-main-content-panel'
+            parentId === BOTTOM_AREA_ID || parentId === MAIN_AREA_ID
                 ? 'horizontal'
                 : 'vertical';
         super.onAfterAttach(msg);
