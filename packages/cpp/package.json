@@ -1,16 +1,16 @@
 {
   "name": "@theia/cpp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Theia - Cpp Extension",
   "dependencies": {
-    "@theia/core": "^0.4.0",
-    "@theia/editor": "^0.4.0",
-    "@theia/filesystem": "^0.4.0",
-    "@theia/languages": "^0.4.0",
-    "@theia/monaco": "^0.4.0",
-    "@theia/preferences": "^0.4.0",
-    "@theia/process": "^0.4.0",
-    "@theia/task": "^0.4.0",
+    "@theia/core": "^0.5.0",
+    "@theia/editor": "^0.5.0",
+    "@theia/filesystem": "^0.5.0",
+    "@theia/languages": "^0.5.0",
+    "@theia/monaco": "^0.5.0",
+    "@theia/preferences": "^0.5.0",
+    "@theia/process": "^0.5.0",
+    "@theia/task": "^0.5.0",
     "string-argv": "^0.1.1"
   },
   "publishConfig": {
@@ -48,7 +48,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.4.0"
+    "@theia/ext-scripts": "^0.5.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

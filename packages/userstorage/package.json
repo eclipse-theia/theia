@@ -1,10 +1,10 @@
 {
   "name": "@theia/userstorage",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Theia - User Storage Extension",
   "dependencies": {
-    "@theia/core": "^0.4.0",
-    "@theia/filesystem": "^0.4.0"
+    "@theia/core": "^0.5.0",
+    "@theia/filesystem": "^0.5.0"
   },
   "publishConfig": {
     "access": "public"
@@ -39,7 +39,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.4.0"
+    "@theia/ext-scripts": "^0.5.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
