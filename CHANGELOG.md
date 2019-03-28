@@ -1,5 +1,13 @@
 # Change Log
 
+## v0.6.0
+
+- [electron] upgraded version of electron used to version 3.
+
+Breaking changes:
+
+- [node] moved to using Node.js version 10, dropping support for Node.js version 8.
+
 ## v0.5.0
 
 - [cpp] added new clang-tidy and clang-tidy-checks preferences to lint cpp program when clangd v9+ is used.
