@@ -111,17 +111,17 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         let watcher: nsfw.NSFW | undefined = await nsfw(fs.realpathSync(basePath), (events: nsfw.ChangeEvent[]) => {
             for (const event of events) {
                 if (event.action === nsfw.actions.CREATED) {
-                    this.pushAdded(watcherId, paths.join(event.directory, event.file!));
+                    this.pushAdded(watcherId, this.resolvePath(event.directory, event.file!));
                 }
                 if (event.action === nsfw.actions.DELETED) {
-                    this.pushDeleted(watcherId, paths.join(event.directory, event.file!));
+                    this.pushDeleted(watcherId, this.resolvePath(event.directory, event.file!));
                 }
                 if (event.action === nsfw.actions.MODIFIED) {
-                    this.pushUpdated(watcherId, paths.join(event.directory, event.file!));
+                    this.pushUpdated(watcherId, this.resolvePath(event.directory, event.file!));
                 }
                 if (event.action === nsfw.actions.RENAMED) {
-                    this.pushDeleted(watcherId, paths.join(event.directory, event.oldFile!));
-                    this.pushAdded(watcherId, paths.join(event.directory, event.newFile!));
+                    this.pushDeleted(watcherId, this.resolvePath(event.directory, event.oldFile!));
+                    this.pushAdded(watcherId, this.resolvePath(event.directory, event.newFile!));
                 }
             }
         });
@@ -190,6 +190,21 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         this.changes.push({ uri, type });
 
         this.fireDidFilesChanged();
+    }
+
+    protected resolvePath(directory: string, file: string): string {
+        const path = paths.join(directory, file);
+        try {
+            return fs.realpathSync(path);
+        } catch {
+            try {
+                // file does not exist try to resolve directory
+                return paths.join(fs.realpathSync(directory), file);
+            } catch {
+                // directory does not exist fall back to symlink
+                return path;
+            }
+        }
     }
 
     /**
