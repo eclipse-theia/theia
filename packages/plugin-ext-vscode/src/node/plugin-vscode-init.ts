@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc.
+ * Copyright (C) 2018-2019 Red Hat, Inc.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -72,7 +72,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     };
 
     // override the version for vscode to be a VSCode version
-    (<any>vscode).version = '1.27.2';
+    (<any>vscode).version = '1.32.3';
 
     pluginsApiImpl.set(plugin.model.id, vscode);
     plugins.push(plugin);
