@@ -2,9 +2,56 @@
 
 ## v0.5.0
 
-- [cpp] added new clang-tidy and clang-tidy-checks preferences to lint cpp program when clangd v9+ is used.
+- Added `scope` to task configurations to differentiate 3 things: task type, task source, and where to run tasks
+- [core] added implementation for toolbar support for sidepanels and changed sidepanel tabs
+- [core] added new keybinding <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>w</kbd> to close all main area tabs
+- [core] added the ability to make sidebar widgets closable
+- [core] fixed `ToolbarAwareTabBar` detachment errors
+- [core] fixed broken wheel listener
+- [core] improved scrollbar styling
+- [core] updated tabbar toolbar to use VSCode icons
+- [core] updated the UI with numerous improvements including sidepanel icons, better alignment, tabbar and menu size
+- [cpp] added new `cpp.clangTidy `and `cpp.clangTidyChecks` preferences to lint cpp program when clangd v9+ is used
+- [cpp] fixed properly restarting clangd language server when changing cpp build configurations
+- [debug] added new debug preferences to control `view`, `console`, and `location` appearance
+- [editorconfig] added support to apply properties to monaco editor when opening/switching editors
+- [file-search] improved ordering and consistency of file search results
+- [filesystem] added `files.associations` property
+- [filesystem] improved the performance when deleting large directories
+- [filesystem] upgraded `nsfw` file-watching dependency from `vscode-nsfw` to `Axosoft/nsfw` which fixes memory leaks as well as fixes issues where files are not being properly watched outside the main watched directory
+- [git] fixed issue where Theia did not refresh the git view after deleting the only repository
+- [git] improved the git diff navigation header to be static
+- [java] improved handling of incomplete classpath commands
+- [keybindings] improved the keybindings widget search and table header to be static
+- [mini-browser] improved error handling of iframe errors
+- [navigator] added `Collapse All` toolbar item
+- [navigator] updated the navigator to handle multi-root workspaces better
+- [plugin-ext] added `workspace.onDidRenameFile ` Plug-in API
+- [plugin-ext] added `workspace.onWillRenameFile ` Plug-in API
+- [plugin-ext] added `workspace.registerFileSystemProvider` Plug-in API
+- [plugin-ext] added `workspace.saveAll` Plug-in API
+- [plugin-ext] added `workspace.updateWorkspaceFolders` Plug-in API
+- [plugin-ext] added ability to proceed `runInTerminal` requests in sidecar containers
+- [plugin-ext] added the ability to get selection context after executing a command
+- [plugin-ext] fixed VSCode Plug-in API incompatibilities for the `onDidChangeActiveTextEditor` event
+- [plugin-ext] fixed firing the `onWillSaveTextDocument` event
+- [plugin-ext] fixed issue of re-deploying already initialized plugins
 - [plugin] `workspace.openTextDocument` API now respects the contributed `FileSystemProviders`
-- [search-in-workspace] added a new preference `search.lineNumbers` to control whether to show line numbers for search results.
+- [plugin] added support for multiple windows per backend
+- [plugin] fixed progress creation
+- [plugin] improved the view container to use the native toolbar
+- [preferences] fixed content assist when editing `settings.json`
+- [preferences] fixed parsing of settings from workspace files
+- [preferences] improved overriding of default configurations
+- [preview] fixed issue when opening images
+- [search-in-workspace] added a new preference `search.lineNumbers` to control whether to show line numbers for search results
+- [task] added ability to `Run Selected Text`
+- [task] added new command to re-run the last task
+- [task] added schema support for `tasks.json`
+- [typehierarchy] added the new type hierarchy extension
+- [typehierarchy] improved `typehierarchy` to use all levels the language server sends if available
+- [workspace] added new `package.json` properties `newFIleName` and `newFileExtension` to specify default file name and extension when creating a new file
+- [workspace] improved performance of the file rename action for large directories
 
 Breaking changes:
 
