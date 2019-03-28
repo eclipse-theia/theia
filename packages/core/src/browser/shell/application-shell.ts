@@ -26,7 +26,7 @@ import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, MaybePromise, Event as CommonEvent } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
-import { TheiaDockPanel } from './theia-dock-panel';
+import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
@@ -407,7 +407,7 @@ export class ApplicationShell extends Widget {
             renderer,
             spacing: 0
         });
-        dockPanel.id = 'theia-main-content-panel';
+        dockPanel.id = MAIN_AREA_ID;
         return dockPanel;
     }
 
@@ -423,7 +423,7 @@ export class ApplicationShell extends Widget {
             renderer,
             spacing: 0
         });
-        dockPanel.id = 'theia-bottom-content-panel';
+        dockPanel.id = BOTTOM_AREA_ID;
         dockPanel.widgetAdded.connect((sender, widget) => {
             this.refreshBottomPanelToggleButton();
         });
@@ -1403,6 +1403,18 @@ export class ApplicationShell extends Widget {
      */
     get widgets(): ReadonlyArray<Widget> {
         return [...this.tracker.widgets];
+    }
+
+    canToggleMaximized(): boolean {
+        const area = this.currentWidget && this.getAreaFor(this.currentWidget);
+        return area === 'main' || area === 'bottom';
+    }
+
+    toggleMaximized(): void {
+        const area = this.currentWidget && this.getAreaPanelFor(this.currentWidget);
+        if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
+            area.toggleMaximized();
+        }
     }
 
 }
