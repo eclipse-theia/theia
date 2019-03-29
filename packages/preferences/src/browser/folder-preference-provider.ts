@@ -19,6 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope, PreferenceProvider, PreferenceProviderPriority } from '@theia/core/lib/browser';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { ResourceKind } from './folders-preferences-provider';
 
 export const FolderPreferenceProviderFactory = Symbol('FolderPreferenceProviderFactory');
 export interface FolderPreferenceProviderFactory {
@@ -28,7 +29,7 @@ export interface FolderPreferenceProviderFactory {
 export const FolderPreferenceProviderOptions = Symbol('FolderPreferenceProviderOptions');
 export interface FolderPreferenceProviderOptions {
     folder: FileStat;
-    fileName: string;
+    kind: ResourceKind;
 }
 
 @injectable()
