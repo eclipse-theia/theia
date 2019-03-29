@@ -19,7 +19,6 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as rimraf from 'rimraf';
 import { v4 } from 'uuid';
-import { lookup } from 'mime-types';
 import { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
 import { OK, BAD_REQUEST, METHOD_NOT_ALLOWED, NOT_FOUND, INTERNAL_SERVER_ERROR } from 'http-status-codes';
@@ -47,13 +46,6 @@ export abstract class FileDownloadHandler {
 
     protected async download(filePath: string, request: Request, response: Response): Promise<void> {
         const name = path.basename(filePath);
-        const mimeType = lookup(filePath);
-        if (mimeType) {
-            response.contentType(mimeType);
-        } else {
-            this.logger.debug(`Cannot determine the content-type for file: ${filePath}. Skipping the 'Content-type' header from the HTTP response.`);
-        }
-        response.setHeader('Content-Disposition', `attachment; filename=${name}`);
         try {
             await fs.access(filePath, fs.constants.R_OK);
             fs.readFile(filePath, (error, data) => {
@@ -61,7 +53,7 @@ export abstract class FileDownloadHandler {
                     this.handleError(response, error, INTERNAL_SERVER_ERROR);
                     return;
                 }
-                response.status(OK).send(data).end();
+                response.attachment(name).status(OK).send(data).end();
             });
         } catch (e) {
             this.handleError(response, e, INTERNAL_SERVER_ERROR);

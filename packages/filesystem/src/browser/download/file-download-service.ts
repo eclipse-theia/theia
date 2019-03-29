@@ -198,16 +198,40 @@ export class FileDownloadService {
             }
             this.anchor.href = url;
             this.anchor.download = title;
+            document.body.appendChild(this.anchor);
             this.anchor.click();
         } finally {
+            // make sure anchor is removed from parent
+            if (this.anchor && this.anchor.parentNode) {
+                this.anchor.parentNode.removeChild(this.anchor);
+            }
             if (url) {
                 URL.revokeObjectURL(url);
             }
         }
     }
+    protected parseDisposition(value: string): string {
+        if (!value) {
+            return '';
+        }
+        const dispositionRegex = /;[\x09\x20]*([!#$%&'*+.0-9A-Z^_`a-z|~-]+)[\x09\x20]*=[\x09\x20]*("(?:[\x20!\x23-\x5b\x5d-\x7e\x80-\xff]|\\[\x20-\x7e])*"|[!#$%&'*+.0-9A-Z^_`a-z|~-]+)[\x09\x20]*/g; // tslint:disable-line:max-line-length
+        let match;
+        let title: string = '';
+        while ((match = dispositionRegex.exec(value))) {
+            title = match[2];
+            if (match[1].indexOf('*') + 1 === match[1].length) {
+                title = decodeURIComponent(title.substr(title.lastIndexOf('\'\'') + 2, title.length));
+            }
+            if (title[0] === '"') {
+                title = title.substr(1, title.length - 2)
+                    .replace(/\\([\u0000-\u007f])/g, '$1');
+            }
+        }
+        return title;
+    }
 
     protected async title(response: Response, uris: URI[]): Promise<string> {
-        let title = (response.headers.get('Content-Disposition') || '').split('attachment; filename=').pop();
+        let title = this.parseDisposition(response.headers.get('Content-Disposition') || '');
         if (title) {
             return title;
         }
