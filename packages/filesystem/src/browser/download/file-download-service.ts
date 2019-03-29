@@ -168,7 +168,7 @@ export class FileDownloadService {
             const title = await this.title(response, uris);
             const { status, statusText } = response;
             if (status === 200) {
-                await this.forceDownload(response, title);
+                await this.forceDownload(response, decodeURIComponent(title));
             } else {
                 throw new Error(`Received unexpected status code: ${status}. [${statusText}]`);
             }
@@ -194,12 +194,17 @@ export class FileDownloadService {
             url = URL.createObjectURL(blob);
             if (this.anchor === undefined) {
                 this.anchor = document.createElement('a');
-                this.anchor.style.display = 'none';
             }
             this.anchor.href = url;
+            this.anchor.style.display = 'none';
             this.anchor.download = title;
+            document.body.appendChild(this.anchor);
             this.anchor.click();
         } finally {
+            // make sure anchor is removed from parent
+            if (this.anchor && this.anchor.parentNode) {
+                this.anchor.parentNode.removeChild(this.anchor);
+            }
             if (url) {
                 URL.revokeObjectURL(url);
             }
