@@ -94,7 +94,7 @@ export abstract class AbstractLaunchPreferenceProvider implements LaunchPreferen
 
         this.toDispose.push(this.onDidLaunchChangedEmitter);
         this.toDispose.push(
-            this.preferenceProvider.onDidNotValidPreferencesRead(prefs => {
+            this.preferenceProvider.onDidInvalidPreferencesRead(prefs => {
                 if (!prefs || !GlobalLaunchConfig.is(prefs.launch)) {
                     return;
                 }

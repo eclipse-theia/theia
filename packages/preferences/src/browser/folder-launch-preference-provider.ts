@@ -32,7 +32,7 @@ export class FolderLaunchPreferenceProvider extends FolderPreferenceProvider {
     // tslint:disable-next-line:no-any
     protected parse(content: string): any {
         const parsedData = super.parse(content);
-        if (Object.keys(parsedData).length > 0) {
+        if (!!parsedData && Object.keys(parsedData).length > 0) {
             return { launch: parsedData };
         }
         return parsedData;

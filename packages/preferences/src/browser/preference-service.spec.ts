@@ -743,7 +743,7 @@ describe('Preference Service', () => {
 
             it('should fire "onDidLaunchChanged" event with correct argument', async () => {
                 const spy = sinon.spy();
-                userProvider.onDidNotValidPreferencesRead(spy);
+                userProvider.onDidInvalidPreferencesRead(spy);
 
                 fs.writeFileSync(tempPath, userConfigStr);
                 await (<any>userProvider).readPreferences();
@@ -778,7 +778,7 @@ describe('Preference Service', () => {
 
             it('should not fire "onDidLaunchChanged"', async () => {
                 const spy = sinon.spy();
-                userProvider.onDidNotValidPreferencesRead(spy);
+                userProvider.onDidInvalidPreferencesRead(spy);
 
                 fs.writeFileSync(tempPath, userConfigStr);
                 await (<any>userProvider).readPreferences();

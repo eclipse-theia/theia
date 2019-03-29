@@ -21,9 +21,8 @@ import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './fol
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
 
-export const SETTINGS_FILE_NAME = 'settings.json';
-export const LAUNCH_FILE_NAME = 'launch.json';
 export const LAUNCH_PROPERTY_NAME = 'launch';
+export type ResourceKind = 'settings' | 'launch';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
@@ -32,19 +31,18 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(FolderPreferenceProviderFactory) protected readonly folderPreferenceProviderFactory: FolderPreferenceProviderFactory;
 
-    private providers: { [fileName: string]: FolderPreferenceProvider[] } = {};
+    private providersByKind: Map<ResourceKind, FolderPreferenceProvider[]> = new Map();
+    private resourceKinds: ResourceKind[] = ['launch', 'settings'];
 
     @postConstruct()
     protected async init(): Promise<void> {
-        [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => this.providers[fileName] = []);
-
         await this.workspaceService.roots;
         const readyPromises: Promise<void>[] = [];
         for (const root of this.workspaceService.tryGetRoots()) {
             if (await this.fileSystem.exists(root.uri)) {
-                [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => {
-                    const provider = this.createFolderPreferenceProvider(root, fileName);
-                    this.providers[fileName].push(provider);
+                this.resourceKinds.forEach(kind => {
+                    const provider = this.createFolderPreferenceProvider(root, kind);
+                    this.setProvider(provider, kind);
                     readyPromises.push(provider.ready);
                 });
             }
@@ -59,23 +57,24 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
 
         this.workspaceService.onWorkspaceChanged(roots => {
             for (const root of roots) {
-                [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => {
-                    if (!this.existsProvider(root.uri, fileName)) {
-                        const provider = this.createFolderPreferenceProvider(root, fileName);
-                        this.providers[fileName].push(provider);
+                this.resourceKinds.forEach(kind => {
+                    if (!this.existsProvider(root.uri, kind)) {
+                        const provider = this.createFolderPreferenceProvider(root, kind);
+                        this.setProvider(provider, kind);
                     }
                 });
             }
 
-            [SETTINGS_FILE_NAME, LAUNCH_FILE_NAME].forEach(fileName => {
-                if (!this.providers[fileName]) {
+            this.resourceKinds.forEach(kind => {
+                const providers = this.providersByKind.get(kind);
+                if (!providers || providers.length === 0) {
                     return;
                 }
-                const numProviders = this.providers[fileName].length;
+                const numProviders = providers.length;
                 for (let i = numProviders - 1; i >= 0; i--) {
-                    const provider = this.providers[fileName][i];
+                    const provider = providers[i];
                     if (!this.existsRoot(roots, provider)) {
-                        this.providers[fileName].splice(i, 1);
+                        providers.splice(i, 1);
                         provider.dispose();
                     }
                 }
@@ -83,8 +82,9 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         });
     }
 
-    private existsProvider(folderUri: string, fileName: string): boolean {
-        return this.providers[fileName] && this.providers[fileName].some(p => !!p.uri && p.uri.toString() === folderUri);
+    private existsProvider(folderUri: string, kind: ResourceKind): boolean {
+        const providers = this.providersByKind.get(kind);
+        return !!providers && providers.some(p => !!p.uri && p.uri.toString() === folderUri);
     }
 
     private existsRoot(roots: FileStat[], provider: FolderPreferenceProvider): boolean {
@@ -97,10 +97,10 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
             return {};
         }
 
-        const prefProvider = this.getProvider(resourceUri, SETTINGS_FILE_NAME);
+        const prefProvider = this.getProvider(resourceUri, 'settings');
         const prefs = prefProvider ? prefProvider.getPreferences() : {};
 
-        const launchProvider = this.getProvider(resourceUri, LAUNCH_FILE_NAME);
+        const launchProvider = this.getProvider(resourceUri, 'launch');
         const launch = launchProvider ? launchProvider.getPreferences() : {};
 
         const result = Object.assign({}, prefs, launch);
@@ -110,8 +110,8 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
 
     canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
         if (resourceUri) {
-            const resourceName = preferenceName === LAUNCH_PROPERTY_NAME ? LAUNCH_FILE_NAME : SETTINGS_FILE_NAME;
-            const provider = this.getProvider(resourceUri, resourceName);
+            const resourceKind = preferenceName === LAUNCH_PROPERTY_NAME ? 'launch' : 'settings';
+            const provider = this.getProvider(resourceUri, resourceKind);
             if (provider) {
                 return { priority: provider.canProvide(preferenceName, resourceUri).priority, provider };
             }
@@ -119,9 +119,9 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return super.canProvide(preferenceName, resourceUri);
     }
 
-    protected getProvider(resourceUri: string, fileName: string): PreferenceProvider | undefined {
-        const providers = this.providers[fileName];
-        if (providers.length === 0) {
+    protected getProvider(resourceUri: string, kind: ResourceKind): PreferenceProvider | undefined {
+        const providers = this.providersByKind.get(kind);
+        if (!providers || providers.length === 0) {
             return;
         }
 
@@ -139,22 +139,34 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return provider;
     }
 
-    protected createFolderPreferenceProvider(folder: FileStat, fileName: string): FolderPreferenceProvider {
-        const provider = this.folderPreferenceProviderFactory({ folder, fileName });
+    protected setProvider(provider: FolderPreferenceProvider, kind: ResourceKind): void {
+        const providers = this.providersByKind.get(kind);
+        if (providers && Array.isArray(providers)) {
+            providers.push(provider);
+        } else {
+            this.providersByKind.set(kind, [provider]);
+        }
+    }
+
+    protected createFolderPreferenceProvider(folder: FileStat, kind: ResourceKind): FolderPreferenceProvider {
+        const provider = this.folderPreferenceProviderFactory({ folder, kind });
         this.toDispose.push(provider);
         this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
-        this.toDispose.push(provider.onDidNotValidPreferencesRead(prefs => this.onDidNotValidPreferencesReadEmitter.fire(prefs)));
+        this.toDispose.push(provider.onDidInvalidPreferencesRead(prefs => this.onDidInvalidPreferencesReadEmitter.fire(prefs)));
         return provider;
     }
 
     // tslint:disable-next-line:no-any
     async setPreference(key: string, value: any, resourceUri?: string): Promise<void> {
         if (resourceUri) {
-            const resourceName = key === LAUNCH_PROPERTY_NAME ? LAUNCH_FILE_NAME : SETTINGS_FILE_NAME;
-            for (const provider of this.providers[resourceName]) {
-                const providerResourceUri = await provider.getUri();
-                if (providerResourceUri && providerResourceUri.toString() === resourceUri) {
-                    return provider.setPreference(key, value);
+            const resourceKind = key === LAUNCH_PROPERTY_NAME ? 'launch' : 'settings';
+            const providers = this.providersByKind.get(resourceKind);
+            if (providers && providers.length) {
+                for (const provider of providers) {
+                    const providerResourceUri = await provider.getUri();
+                    if (providerResourceUri && providerResourceUri.toString() === resourceUri) {
+                        return provider.setPreference(key, value);
+                    }
                 }
             }
             console.error(`FoldersPreferencesProvider did not find the provider for ${resourceUri} to update the preference ${key}`);

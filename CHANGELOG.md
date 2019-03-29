@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.7.0
+
+Breaking changes:
+
+- [preferences] refactored to integrate launch configurations as preferences
+
 ## v0.6.0
 
 - Allowed the creation of sub-files and/or sub-folders if name has `/`
