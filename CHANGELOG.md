@@ -3,6 +3,7 @@
 ## v0.6.0
 
 - [filesystem] added the menu item `Upload Files...` to easily upload files into a workspace
+- [preferences] changed signature for methods `getProvider`, `setProvider` and `createFolderPreferenceProvider` of `FoldersPreferenceProvider`.
 
 ## v0.5.0
 

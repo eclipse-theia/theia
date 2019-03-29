@@ -24,7 +24,7 @@ import { createPreferencesTreeWidget } from './preference-tree-container';
 import { PreferencesMenuFactory } from './preferences-menu-factory';
 import { PreferencesFrontendApplicationContribution } from './preferences-frontend-application-contribution';
 import { PreferencesContainer, PreferencesTreeWidget, PreferencesEditorsContainer } from './preferences-tree-widget';
-import { FoldersPreferencesProvider, SETTINGS_FILE_NAME } from './folders-preferences-provider';
+import { FoldersPreferencesProvider } from './folders-preferences-provider';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
 import { FolderLaunchPreferenceProvider } from './folder-launch-preference-provider';
 
@@ -43,7 +43,7 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
             const child = new Container({ defaultScope: 'Transient' });
             child.parent = ctx.container;
             child.bind(FolderPreferenceProviderOptions).toConstantValue(options);
-            if (options.fileName === SETTINGS_FILE_NAME) {
+            if (options.kind === 'settings') {
                 return child.get(FolderPreferenceProvider);
             } else {
                 return child.get(FolderLaunchPreferenceProvider);
