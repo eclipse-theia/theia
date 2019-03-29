@@ -42,7 +42,21 @@ export class ProvidedTaskConfigurations {
     }
 
     /** returns the task configuration for a given source and label or undefined if none */
-    getTask(source: string, taskLabel: string): TaskConfiguration | undefined {
+    async getTask(source: string, taskLabel: string): Promise<TaskConfiguration | undefined> {
+        const task = this.getCachedTask(source, taskLabel);
+        if (task) {
+            return task;
+        } else {
+            const provider = this.taskProviderRegistry.getProvider(source);
+            if (provider) {
+                const tasks = await provider.provideTasks();
+                this.cacheTasks(tasks);
+                return this.getCachedTask(source, taskLabel);
+            }
+        }
+    }
+
+    protected getCachedTask(source: string, taskLabel: string): TaskConfiguration | undefined {
         const labelConfigMap = this.tasksMap.get(source);
         if (labelConfigMap) {
             return labelConfigMap.get(taskLabel);

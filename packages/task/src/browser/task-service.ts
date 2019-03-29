@@ -157,7 +157,7 @@ export class TaskService implements TaskConfigurationClient {
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
-    getProvidedTask(source: string, label: string): TaskConfiguration | undefined {
+    async getProvidedTask(source: string, label: string): Promise<TaskConfiguration | undefined> {
         return this.providedTaskConfigurations.getTask(source, label);
     }
 
@@ -209,7 +209,7 @@ export class TaskService implements TaskConfigurationClient {
      * It looks for configured and provided tasks.
      */
     async run(source: string, taskLabel: string): Promise<void> {
-        let task = this.getProvidedTask(source, taskLabel);
+        let task = await this.getProvidedTask(source, taskLabel);
         if (!task) {
             task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
