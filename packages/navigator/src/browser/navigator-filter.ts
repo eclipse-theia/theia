@@ -22,8 +22,6 @@ import { PreferenceChangeEvent } from '@theia/core/lib/browser/preferences';
 import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileNavigatorPreferences, FileNavigatorConfiguration } from './navigator-preferences';
 
-const FILES_EXCLUDE_PREFERENCE: keyof FileSystemConfiguration = 'files.exclude';
-
 /**
  * Filter for omitting elements from the navigator. For more details on the exclusion patterns,
  * one should check either the manual with `man 5 gitignore` or just [here](https://git-scm.com/docs/gitignore).
@@ -44,7 +42,7 @@ export class FileNavigatorFilter {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this.filterPredicate = this.createFilterPredicate(this.filesPreferences[FILES_EXCLUDE_PREFERENCE]);
+        this.filterPredicate = this.createFilterPredicate(this.filesPreferences['files.exclude']);
         this.filesPreferences.onPreferenceChanged(event => this.onFilesPreferenceChanged(event));
         this.preferences.onPreferenceChanged(event => this.onPreferenceChanged(event));
     }
@@ -67,7 +65,7 @@ export class FileNavigatorFilter {
 
     protected onFilesPreferenceChanged(event: PreferenceChangeEvent<FileSystemConfiguration>): void {
         const { preferenceName, newValue } = event;
-        if (preferenceName === FILES_EXCLUDE_PREFERENCE) {
+        if (preferenceName === 'files.exclude') {
             this.filterPredicate = this.createFilterPredicate(newValue as FileNavigatorFilter.Exclusions | undefined || {});
             this.fireFilterChanged();
         }
@@ -82,7 +80,7 @@ export class FileNavigatorFilter {
 
     toggleHiddenFiles(): void {
         this.showHiddenFiles = !this.showHiddenFiles;
-        const filesExcludes = this.filesPreferences[FILES_EXCLUDE_PREFERENCE];
+        const filesExcludes = this.filesPreferences['files.exclude'];
 
         this.filterPredicate = this.createFilterPredicate(filesExcludes || {});
         this.fireFilterChanged();

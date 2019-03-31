@@ -43,6 +43,11 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             'default': { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
             'description': 'Configure glob patterns for excluding files and folders.',
             'scope': 'resource'
+        },
+        'files.enableTrash': {
+            'type': 'boolean',
+            'default': true,
+            'description': 'Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.'
         }
     }
 };
@@ -50,6 +55,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
 export interface FileSystemConfiguration {
     'files.watcherExclude': { [globPattern: string]: boolean };
     'files.exclude': { [key: string]: boolean };
+    'files.enableTrash': boolean;
 }
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
