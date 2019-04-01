@@ -98,7 +98,15 @@ export class WebviewsMainImpl implements WebviewsMain {
         }
     }
     $reveal(handle: string, showOptions: WebviewPanelShowOptions): void {
-        throw new Error('Method not implemented.');
+        console.log('>>>>>>> reveal');
+        const webview = this.getWebview(handle);
+        if (webview.isDisposed) {
+            console.log('>>>>>>> reveal widget disposed');
+            return;
+        }
+        console.log('>>>>>>> reveal widget found');
+        this.shell.revealWidget(webview.id);
+        console.log('>>>>>>> ' + webview.id);
     }
     $setTitle(handle: string, value: string): void {
         const webview = this.getWebview(handle);
