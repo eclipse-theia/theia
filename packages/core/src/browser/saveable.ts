@@ -17,7 +17,7 @@
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { Event, MaybePromise } from '../common';
-import { Key } from './keys';
+import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 
 export interface Saveable {

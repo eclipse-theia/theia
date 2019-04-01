@@ -18,7 +18,7 @@ import { injectable, decorate, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { Disposable, DisposableCollection, MaybePromise } from '../../common';
-import { KeyCode, KeysOrKeyCodes } from '../keys';
+import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
 

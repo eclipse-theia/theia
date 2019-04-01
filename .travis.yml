@@ -72,12 +72,15 @@ env:
     - NODE_OPTIONS="--max_old_space_size=4096"
 addons:
   apt:
+    update: true
     sources:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
     - oracle-java9-set-default
     - libsecret-1-dev
+    - libx11-dev
+    - libxkbfile-dev
     chrome: stable
 before_script:
   - export DISPLAY=:99.0; sh -e /etc/init.d/xvfb start ;

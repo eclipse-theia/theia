@@ -13,24 +13,27 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { enableJSDOM } from '../browser/test/jsdom';
 
+import { enableJSDOM } from '../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
+import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/layout-provider';
 import { ILogger } from '../common/logger';
 import { KeybindingRegistry, KeybindingContext, Keybinding, KeybindingContribution, KeybindingScope } from './keybinding';
-import { KeyCode, Key, KeyModifier, KeySequence, EasyKey } from './keys';
+import { KeyCode, Key, KeyModifier, KeySequence } from './keyboard/keys';
+import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { FrontendApplicationStateService } from './frontend-application-state';
+import { ContextKeyService } from './context-key-service';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { ContextKeyService } from './context-key-service';
+import { Emitter } from '../common/event';
 
 disableJSDOM();
 
@@ -48,6 +51,12 @@ before(async () => {
 
         /* Mock logger binding*/
         bind(ILogger).to(MockLogger);
+
+        bind(KeyboardLayoutService).toSelf().inSingletonScope();
+        bind(MockKeyboardLayoutProvider).toSelf().inSingletonScope();
+        bind(KeyboardLayoutProvider).toService(MockKeyboardLayoutProvider);
+        bind(MockKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
+        bind(KeyboardLayoutChangeNotifier).toService(MockKeyboardLayoutChangeNotifier);
 
         bindContributionProvider(bind, KeybindingContext);
 
@@ -96,10 +105,10 @@ describe('keybindings', () => {
         disableJSDOM();
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         stub = sinon.stub(os, 'isOSX').value(false);
         keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
-        keybindingRegistry.onStart();
+        await keybindingRegistry.onStart();
     });
 
     afterEach(() => {
@@ -321,211 +330,6 @@ describe('keybindings', () => {
     });
 });
 
-describe('keys api', () => {
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
-
-    it('should parse a string to a KeyCode correctly', () => {
-
-        const keycode = KeyCode.parse('ctrl+b');
-        expect(keycode.ctrl).to.be.true;
-        expect(keycode.key).is.equal(Key.KEY_B);
-
-        // Invalid keystroke string
-        expect(() => KeyCode.parse('ctl+b')).to.throw(Error);
-
-    });
-
-    it('should parse a string containing special modifiers to a KeyCode correctly', () => {
-        const stub = sinon.stub(os, 'isOSX').value(false);
-        const keycode = KeyCode.parse('ctrl+b');
-        expect(keycode.ctrl).to.be.true;
-        expect(keycode.key).is.equal(Key.KEY_B);
-
-        const keycodeOption = KeyCode.parse('option+b');
-        expect(keycodeOption.alt).to.be.true;
-        expect(keycodeOption.key).is.equal(Key.KEY_B);
-
-        expect(() => KeyCode.parse('cmd+b')).to.throw(/OSX only/);
-
-        const keycodeCtrlOrCommand = KeyCode.parse('ctrlcmd+b');
-        expect(keycodeCtrlOrCommand.meta).to.be.false;
-        expect(keycodeCtrlOrCommand.ctrl).to.be.true;
-        expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
-        stub.restore();
-    });
-
-    it('should parse a string containing special modifiers to a KeyCode correctly (macOS)', () => {
-        KeyCode.resetKeyBindings();
-        const stub = sinon.stub(os, 'isOSX').value(true);
-        const keycode = KeyCode.parse('ctrl+b');
-        expect(keycode.ctrl).to.be.true;
-        expect(keycode.key).is.equal(Key.KEY_B);
-
-        const keycodeOption = KeyCode.parse('option+b');
-        expect(keycodeOption.alt).to.be.true;
-        expect(keycodeOption.key).is.equal(Key.KEY_B);
-
-        const keycodeCommand = KeyCode.parse('cmd+b');
-        expect(keycodeCommand.meta).to.be.true;
-        expect(keycodeCommand.key).is.equal(Key.KEY_B);
-
-        const keycodeCtrlOrCommand = KeyCode.parse('ctrlcmd+b');
-        expect(keycodeCtrlOrCommand.meta).to.be.true;
-        expect(keycodeCtrlOrCommand.ctrl).to.be.false;
-        expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
-
-        stub.restore();
-    });
-
-    it('it should serialize a keycode properly with BACKQUOTE + M1', () => {
-        const stub = sinon.stub(os, 'isOSX').value(true);
-        let keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
-        let keyCodeString = keyCode.toString();
-        expect(keyCodeString).to.be.equal('meta+`');
-        let parsedKeyCode = KeyCode.parse(keyCodeString);
-        expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
-
-        sinon.stub(os, 'isOSX').value(false);
-        keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
-        keyCodeString = keyCode.toString();
-        expect(keyCodeString).to.be.equal('ctrl+`');
-        parsedKeyCode = KeyCode.parse(keyCodeString);
-        expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
-
-        stub.restore();
-    });
-
-    it('it should serialize a keycode properly with a + M2 + M3', () => {
-        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] });
-        const keyCodeString = keyCode.toString();
-        expect(keyCodeString).to.be.equal('shift+alt+a');
-        const parsedKeyCode = KeyCode.parse(keyCodeString);
-        expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
-    });
-
-    it('the order of the modifiers should not matter when parsing the key code', () => {
-        const left = KeySequence.parse('shift+alt+a');
-        const right = KeySequence.parse('alt+shift+a');
-        expect(KeySequence.compare(left, right)).to.be.equal(KeySequence.CompareResult.FULL);
-
-        expect(KeySequence.compare(
-            [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Alt, KeyModifier.Shift] })], right)).to.be.equal(
-                KeySequence.CompareResult.FULL);
-        expect(KeySequence.compare(
-            left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Alt, KeyModifier.Shift] })])).to.be.equal(
-                KeySequence.CompareResult.FULL);
-
-        expect(KeySequence.compare(
-            [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] })], right)).to.be.equal(
-                KeySequence.CompareResult.FULL);
-        expect(KeySequence.compare(
-            left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] })])).to.be.equal(
-                KeySequence.CompareResult.FULL);
-    });
-
-    it('it should parse ctrl key properly on both OS X and other platforms', () => {
-        const event = new KeyboardEvent('keydown', {
-            key: EasyKey.BACKQUOTE.easyString,
-            code: Key.BACKQUOTE.code,
-            ctrlKey: true,
-        });
-        const stub = sinon.stub(os, 'isOSX').value(true);
-        expect(KeyCode.createKeyCode(event).keystroke).to.be.equal('Backquote+M4');
-        sinon.stub(os, 'isOSX').value(false);
-        expect(KeyCode.createKeyCode(event).keystroke).to.be.equal('Backquote+M1');
-        stub.restore();
-    });
-
-    it('it should serialize a keycode properly with a + M4', () => {
-        const stub = sinon.stub(os, 'isOSX').value(true);
-        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.MacCtrl] });
-        const keyCodeString = keyCode.toString();
-        expect(keyCodeString).to.be.equal('ctrl+a');
-        const parsedKeyCode = KeyCode.parse(keyCodeString);
-        expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
-        stub.restore();
-    });
-
-    it('it should parse a multi keycode keybinding', () => {
-        const validKeyCodes = [];
-        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] }));
-        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd, KeyModifier.Shift] }));
-
-        const parsedKeyCodes = KeySequence.parse('ctrlcmd+a ctrlcmd+shift+c');
-        expect(parsedKeyCodes).to.deep.equal(validKeyCodes);
-    });
-
-    it('it should parse a multi keycode keybinding with no modifiers', () => {
-        const validKeyCodes = [];
-        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] }));
-        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C }));
-
-        const parsedKeyCodes = KeySequence.parse('ctrlcmd+a c');
-        expect(parsedKeyCodes).to.deep.equal(validKeyCodes);
-    });
-
-    it('it should compare keysequences properly', () => {
-        let a = KeySequence.parse('ctrlcmd+a');
-        let b = KeySequence.parse('ctrlcmd+a t');
-
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.PARTIAL);
-
-        a = KeySequence.parse('ctrlcmd+a t');
-        b = KeySequence.parse('ctrlcmd+a');
-
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.SHADOW);
-
-        a = KeySequence.parse('ctrlcmd+a t');
-        b = KeySequence.parse('ctrlcmd+a b c');
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.NONE);
-
-        a = KeySequence.parse('ctrlcmd+a t');
-        b = KeySequence.parse('ctrlcmd+a a');
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.NONE);
-
-        a = KeySequence.parse('ctrlcmd+a t');
-        b = KeySequence.parse('ctrlcmd+a t');
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.FULL);
-
-        a = KeySequence.parse('ctrlcmd+a t b');
-        b = KeySequence.parse('ctrlcmd+a t b');
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.FULL);
-    });
-
-    it('it should be a modifier only', () => {
-        const keyCode = KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd] });
-        expect(keyCode).to.be.deep.equal(KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd] }));
-        expect(keyCode.isModifierOnly()).to.be.true;
-    });
-
-    it('it should be multiple modifiers only', () => {
-        const keyCode = KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd, KeyModifier.Alt] });
-        expect(keyCode).to.be.deep.equal(KeyCode.createKeyCode({ modifiers: [KeyModifier.CtrlCmd, KeyModifier.Alt] }));
-        expect(keyCode.isModifierOnly()).to.be.true;
-    });
-
-    it('it should translate non US layout chords properly', () => {
-        // mimic a german layout, i.e. the '/' is on the 'Shift+7'.
-        const keyCode = new KeyCode(KeyCode.parse('ctrlcmd+shift+7').keystroke, '/');
-        const normalized = keyCode.normalizeToUsLayout();
-        expect(normalized).to.be.deep.equal(KeyCode.parse('ctrlcmd+/'));
-    });
-
-    it('parse bogus keybinding', () => {
-        const [first, second] = KeySequence.parse('  Ctrl+sHiFt+F10     b ');
-        expect(first.ctrl).to.be.true;
-        expect(first.shift).to.be.true;
-        expect(first.key).is.equal(Key.F10);
-        expect(second.key).is.equal(Key.KEY_B);
-    });
-});
-
 const TEST_COMMAND: Command = {
     id: 'test.command'
 };
@@ -539,7 +343,25 @@ const TEST_COMMAND_SHADOW: Command = {
 };
 
 @injectable()
-export class TestContribution implements CommandContribution, KeybindingContribution {
+class MockKeyboardLayoutProvider implements KeyboardLayoutProvider {
+    getNativeLayout(): Promise<NativeKeyboardLayout> {
+        return Promise.resolve({
+            info: { id: 'mock', lang: 'en' },
+            mapping: {}
+        });
+    }
+}
+
+@injectable()
+class MockKeyboardLayoutChangeNotifier implements KeyboardLayoutChangeNotifier {
+    private emitter = new Emitter<NativeKeyboardLayout>();
+    get onNativeLayoutChanged() {
+        return this.emitter.event;
+    }
+}
+
+@injectable()
+class TestContribution implements CommandContribution, KeybindingContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TEST_COMMAND);

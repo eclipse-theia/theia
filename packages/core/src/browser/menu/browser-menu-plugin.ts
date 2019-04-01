@@ -21,7 +21,7 @@ import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath, ILogger
 } from '../../common';
-import { KeybindingRegistry, Keybinding } from '../keybinding';
+import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
 import { Anchor } from '../context-menu-renderer';
@@ -44,6 +44,16 @@ export class BrowserMainMenuFactory {
     createMenuBar(): MenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
+        this.fillMenuBar(menuBar);
+        const listener = this.keybindingRegistry.onKeybindingsChanged(() => {
+            menuBar.clearMenus();
+            this.fillMenuBar(menuBar);
+        });
+        menuBar.disposed.connect(() => listener.dispose());
+        return menuBar;
+    }
+
+    protected fillMenuBar(menuBar: MenuBarWidget): void {
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosphorCommands(menuModel);
         // for the main menu we want all items to be visible.
@@ -55,7 +65,6 @@ export class BrowserMainMenuFactory {
                 menuBar.addMenu(menuWidget);
             }
         }
-        return menuBar;
     }
 
     createContextMenu(path: MenuPath, anchor?: Anchor): MenuWidget {
@@ -106,7 +115,7 @@ export class BrowserMainMenuFactory {
         /* Only consider the first keybinding. */
         if (bindings.length > 0) {
             const binding = bindings[0];
-            const keys = Keybinding.acceleratorFor(binding);
+            const keys = this.keybindingRegistry.acceleratorFor(binding);
             commands.addKeyBinding({
                 command: command.id,
                 keys,
