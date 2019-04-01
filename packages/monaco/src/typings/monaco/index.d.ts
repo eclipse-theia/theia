@@ -403,24 +403,89 @@ declare module monaco.keybindings {
 
         constructor(ctrlKey: boolean, shiftKey: boolean, altKey: boolean, metaKey: boolean, kbLabel: string, kbAriaLabel: string);
     }
+
     export abstract class ResolvedKeybinding {
+        /**
+         * This prints the binding in a format suitable for displaying in the UI.
+         */
+        public abstract getLabel(): string;
         /**
          * This prints the binding in a format suitable for ARIA.
          */
         public abstract getAriaLabel(): string;
         /**
+         * This prints the binding in a format suitable for electron's accelerators.
+         * See https://github.com/electron/electron/blob/master/docs/api/accelerator.md
+         */
+        public abstract getElectronAccelerator(): string;
+        /**
+         * This prints the binding in a format suitable for user settings.
+         */
+        public abstract getUserSettingsLabel(): string;
+        /**
+         * Is the user settings label reflecting the label?
+         */
+        public abstract isWYSIWYG(): boolean;
+        /**
+         * Is the binding a chord?
+         */
+        public abstract isChord(): boolean;
+        /**
+         * Returns the firstPart, chordPart that should be used for dispatching.
+         */
+        public abstract getDispatchParts(): [string | null, string | null];
+        /**
          * Returns the firstPart, chordPart of the keybinding.
          * For simple keybindings, the second element will be null.
          */
-        public abstract getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart | undefined];
+        public abstract getParts(): [ResolvedKeybindingPart | null, ResolvedKeybindingPart | null];
     }
 
     export class USLayoutResolvedKeybinding extends ResolvedKeybinding {
         constructor(actual: Keybinding, OS: monaco.platform.OperatingSystem);
 
+        public getLabel(): string;
         public getAriaLabel(): string;
-        public getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart | undefined];
+        public getElectronAccelerator(): string;
+        public getUserSettingsLabel(): string;
+        public isWYSIWYG(): boolean;
+        public isChord(): boolean;
+        public getDispatchParts(): [string, string];
+        public getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart];
+
+        public static getDispatchStr(keybinding: SimpleKeybinding): string;
     }
+
+    export interface Modifiers {
+        readonly ctrlKey: boolean;
+        readonly shiftKey: boolean;
+        readonly altKey: boolean;
+        readonly metaKey: boolean;
+    }
+
+    export interface ModifierLabels {
+        readonly ctrlKey: string;
+        readonly shiftKey: string;
+        readonly altKey: string;
+        readonly metaKey: string;
+        readonly separator: string;
+    }
+
+    export class ModifierLabelProvider {
+
+        public readonly modifierLabels: ModifierLabels[];
+
+        constructor(mac: ModifierLabels, windows: ModifierLabels, linux?: ModifierLabels);
+
+        public toLabel(firstPartMod: Modifiers | null, firstPartKey: string | null,
+            chordPartMod: Modifiers | null, chordPartKey: string | null,
+            OS: monaco.platform.OperatingSystem): string;
+    }
+
+    export const UILabelProvider: ModifierLabelProvider;
+    export const AriaLabelProvider: ModifierLabelProvider;
+    export const ElectronAcceleratorLabelProvider: ModifierLabelProvider;
+    export const UserSettingsLabelProvider: ModifierLabelProvider;
 
 }
 

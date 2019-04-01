@@ -296,7 +296,7 @@ export class FrontendApplication {
          * - consider treat commands, keybindings and menus as frontend application contributions
          */
         this.commands.onStart();
-        this.keybindings.onStart();
+        await this.keybindings.onStart();
         this.menus.onStart();
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStart) {

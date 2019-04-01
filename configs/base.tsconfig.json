@@ -11,6 +11,7 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "downlevelIteration": true,
+        "resolveJsonModule": true,
         "module": "commonjs",
         "moduleResolution": "node",
         "target": "es5",

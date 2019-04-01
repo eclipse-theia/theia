@@ -14,8 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// Reexporting here for backwards compatibility.
-// Please import from '@theia/core/lib/browser' or '@theia/core/lib/browser/keyboard' instead of this module.
-// This module might be removed in future releases.
-import { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes } from './keyboard/keys';
-export { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes };
+import { ContainerModule } from 'inversify';
+import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/layout-provider';
+import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
+import { ElectronKeyboardLayoutChangeNotifier } from './change-notifier';
+
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(KeyboardLayoutProvider).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy<KeyboardLayoutProvider>(ctx.container, keyboardPath)
+    ).inSingletonScope();
+    bind(ElectronKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
+    bind(KeyboardLayoutChangeNotifier).toService(ElectronKeyboardLayoutChangeNotifier);
+});

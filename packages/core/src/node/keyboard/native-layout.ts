@@ -14,8 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// Reexporting here for backwards compatibility.
-// Please import from '@theia/core/lib/browser' or '@theia/core/lib/browser/keyboard' instead of this module.
-// This module might be removed in future releases.
-import { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes } from './keyboard/keys';
-export { KeySequence, Keystroke, KeyCode, KeyModifier, Key, SpecialCases, KeysOrKeyCodes };
+import * as nativeKeymap from 'native-keymap';
+import { injectable } from 'inversify';
+import { KeyboardLayoutProvider, NativeKeyboardLayout } from '../../common/keyboard/layout-provider';
+
+@injectable()
+export class NativeKeyboardLayoutProvider implements KeyboardLayoutProvider {
+
+    getNativeLayout(): Promise<NativeKeyboardLayout> {
+        return Promise.resolve(this.getNativeLayoutSync());
+    }
+
+    protected getNativeLayoutSync(): NativeKeyboardLayout {
+        return {
+            info: nativeKeymap.getCurrentKeyboardLayout(),
+            mapping: nativeKeymap.getKeyMap()
+        };
+    }
+
+}
