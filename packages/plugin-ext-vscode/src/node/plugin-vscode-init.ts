@@ -19,6 +19,8 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 
+export const VSCODE_DEFAULT_API_VERSION = '1.32.3';
+
 /** Set up en as a default locale for VS Code extensions using vscode-nls */
 process.env['VSCODE_NLS_CONFIG'] = JSON.stringify({ locale: 'en', availableLanguages: {} });
 process.env['VSCODE_PID'] = process.env['THEIA_PARENT_PID'];
@@ -72,7 +74,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     };
 
     // override the version for vscode to be a VSCode version
-    (<any>vscode).version = '1.32.3';
+    (<any>vscode).version = process.env['VSCODE_API_VERSION'] || VSCODE_DEFAULT_API_VERSION;
 
     pluginsApiImpl.set(plugin.model.id, vscode);
     plugins.push(plugin);
