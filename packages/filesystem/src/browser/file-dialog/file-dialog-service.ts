@@ -76,11 +76,9 @@ export class DefaultFileDialogService {
         if (folder) {
             const rootUri = new URI(folder.uri).parent;
             const name = this.labelProvider.getName(rootUri);
-            const [rootStat, label] = await Promise.all([
-                this.fileSystem.getFileStat(rootUri.toString()),
-                this.labelProvider.getIcon(folder)
-            ]);
+            const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
             if (rootStat) {
+                const label = await this.labelProvider.getIcon(rootStat);
                 return DirNode.createRoot(rootStat, name, label);
             }
         }

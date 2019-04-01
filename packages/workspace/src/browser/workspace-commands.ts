@@ -125,6 +125,11 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Save Workspace As...'
     };
+    export const SAVE_AS: Command = {
+        id: 'file.saveAs',
+        category: 'File',
+        label: 'Save As...',
+    };
 }
 
 @injectable()
