@@ -82,7 +82,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected async canReadWrite(uris: MaybeArray<URI>): Promise<boolean> {
-        for (const uri of uris) {
+        for (const uri of Array.isArray(uris) ? uris : [uris]) {
             if (!(await this.fileSystem.access(uri.toString(), FileAccess.Constants.R_OK | FileAccess.Constants.W_OK))) {
                 this.messageService.error(`Cannot access resource at ${uri.path}.`);
                 return false;
@@ -109,7 +109,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected toSaveDialogOptions(uri: URI, props: SaveFileDialogProps): SaveDialogOptions {
         const buttonLabel = props.saveLabel;
-        return { ...this.toDialogOptions(uri, props, 'Save'), buttonLabel };
+        const defaultPath = props.inputValue;
+        return { ...this.toDialogOptions(uri, props, 'Save'), buttonLabel, defaultPath };
     }
 
 }

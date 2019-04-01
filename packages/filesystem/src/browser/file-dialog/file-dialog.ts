@@ -104,6 +104,11 @@ export class SaveFileDialogProps extends FileDialogProps {
      */
     saveLabel?: string;
 
+    /**
+     * A human-readable value for the input.
+     */
+    inputValue?: string;
+
 }
 
 export abstract class FileDialog<T> extends AbstractDialog<T> {
@@ -343,6 +348,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         this.fileNameField = document.createElement('input');
         this.fileNameField.type = 'text';
         this.fileNameField.classList.add(FILENAME_TEXTFIELD_CLASS);
+        this.fileNameField.value = this.props.inputValue || '';
         fileNamePanel.appendChild(this.fileNameField);
 
         this.fileNameField.onkeyup = () => this.validate();
