@@ -628,3 +628,8 @@ export interface ServerPluginRunner {
      */
     getExtraPluginMetadata(): Promise<PluginMetadata[]>;
 }
+
+export const PluginHostEnvironmentVariable = Symbol('PluginHostEnvironmentVariable');
+export interface PluginHostEnvironmentVariable {
+    process(env: NodeJS.ProcessEnv): void;
+}

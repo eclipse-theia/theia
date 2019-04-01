@@ -27,7 +27,7 @@ import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
 import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
-import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler } from '../../common/plugin-protocol';
+import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler, PluginHostEnvironmentVariable } from '../../common/plugin-protocol';
 import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
@@ -42,6 +42,8 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
     bind(HostedPluginsManager).toService(HostedPluginsManagerImpl);
 
     bindContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
+    bindContributionProvider(bind, PluginHostEnvironmentVariable);
+
     bind(HostedPluginServerImpl).toSelf().inSingletonScope();
     bind(HostedPluginServer).toService(HostedPluginServerImpl);
     bindBackendService<HostedPluginServer, HostedPluginClient>(hostedServicePath, HostedPluginServer, (server, client) => {
