@@ -164,6 +164,8 @@ if (isMaster) {
                 title: applicationName,
                 width: windowState.width,
                 height: windowState.height,
+                minWidth: 200,
+                minHeight: 120,
                 x: windowState.x,
                 y: windowState.y,
                 isMaximized: windowState.isMaximized
