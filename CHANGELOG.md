@@ -9,6 +9,25 @@ Breaking changes:
 
 - [dialog] `validate` and `accept` methods are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
 
+Breaking changes:
+- [editor] turn off autoSave by default to align with VS Code [#4777](https://github.com/theia-ide/theia/pull/4777)
+  - default settings can be overriden in application package.json:
+  ```json
+  {
+    "private": true,
+    "name": "myapp",
+    "theia": {
+      "frontend": {
+        "config": {
+          "preferences": {
+            "editor.autoSave": "on"
+          }
+        }
+      }
+    }
+  }
+  ```
+
 ## v0.5.0
 
 - Added `scope` to task configurations to differentiate 3 things: task type, task source, and where to run tasks
