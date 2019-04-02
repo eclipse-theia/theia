@@ -116,7 +116,7 @@ export class FileResource implements Resource {
     }
 
     protected async getFileStat(): Promise<FileStat | undefined> {
-        if (!this.fileSystem.exists(this.uriString)) {
+        if (!await this.fileSystem.exists(this.uriString)) {
             return undefined;
         }
         try {

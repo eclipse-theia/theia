@@ -3,6 +3,11 @@
 ## v0.6.0
 
 - [filesystem] added the menu item `Upload Files...` to easily upload files into a workspace
+- [workspace] allow creation of files and folders using recursive paths
+
+Breaking changes:
+
+- [dialog] `validate` and `accept` methods are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
 
 ## v0.5.0
 
