@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { Disposable } from '../common';
+import { Disposable, MaybePromise, CancellationTokenSource } from '../common';
 import { Key } from './keys';
 import { Widget, BaseWidget, Message } from './widgets';
 
@@ -194,31 +194,45 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.activeElement = undefined;
         super.close();
     }
-
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.validate();
     }
 
-    protected validate(): void {
+    protected validateCancellationSource = new CancellationTokenSource();
+    protected async validate(): Promise<void> {
         if (!this.resolve) {
             return;
         }
+        this.validateCancellationSource.cancel();
+        this.validateCancellationSource = new CancellationTokenSource();
+        const token = this.validateCancellationSource.token;
         const value = this.value;
-        const error = this.isValid(value, 'preview');
+        const error = await this.isValid(value, 'preview');
+        if (token.isCancellationRequested) {
+            return;
+        }
         this.setErrorMessage(error);
     }
 
-    protected accept(): void {
-        if (this.resolve) {
-            const value = this.value;
-            const error = this.isValid(value, 'open');
-            if (!DialogError.getResult(error)) {
-                this.setErrorMessage(error);
-            } else {
-                this.resolve(value);
-                Widget.detach(this);
-            }
+    protected acceptCancellationSource = new CancellationTokenSource();
+    protected async accept(): Promise<void> {
+        if (!this.resolve) {
+            return;
+        }
+        this.acceptCancellationSource.cancel();
+        this.acceptCancellationSource = new CancellationTokenSource();
+        const token = this.acceptCancellationSource.token;
+        const value = this.value;
+        const error = await this.isValid(value, 'open');
+        if (token.isCancellationRequested) {
+            return;
+        }
+        if (!DialogError.getResult(error)) {
+            this.setErrorMessage(error);
+        } else {
+            this.resolve(value);
+            Widget.detach(this);
         }
     }
 
@@ -227,7 +241,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     /**
      * Return a string of zero-length or true if valid.
      */
-    protected isValid(value: T, mode: DialogMode): DialogError {
+    protected isValid(value: T, mode: DialogMode): MaybePromise<DialogError> {
         return '';
     }
 
@@ -299,7 +313,7 @@ export class SingleTextInputDialogProps extends DialogProps {
         end: number
         direction?: 'forward' | 'backward' | 'none'
     };
-    readonly validate?: (input: string, mode: DialogMode) => DialogError;
+    readonly validate?: (input: string, mode: DialogMode) => MaybePromise<DialogError>;
 }
 
 export class SingleTextInputDialog extends AbstractDialog<string> {
@@ -333,7 +347,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return this.inputField.value;
     }
 
-    protected isValid(value: string, mode: DialogMode): DialogError {
+    protected isValid(value: string, mode: DialogMode): MaybePromise<DialogError> {
         if (this.props.validate) {
             return this.props.validate(value, mode);
         }
