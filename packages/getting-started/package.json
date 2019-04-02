@@ -38,8 +38,7 @@
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "test:watch": "theiaext test:watch",
-    "docs": "theiaext docs"
+    "test:watch": "theiaext test:watch"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.5.0"

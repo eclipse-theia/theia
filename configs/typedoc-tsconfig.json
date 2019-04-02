@@ -1,9 +1,6 @@
-// This file could be removed when
-// https://github.com/TypeStrong/typedoc/issues/844
-// will be integrated in a new typedocs release (should be 0.14.0)
 {
-  "extends": "./base.tsconfig",
+  "extends": "../tsconfig",
   "compilerOptions": {
-    "declarationMap": false
+    "skipLibCheck": true
   }
 }
