@@ -23,6 +23,8 @@ import { PreferenceProvider, PreferenceProviderPriority, PreferenceProviderDataC
 import {
     PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType
 } from '../../common/preferences/preference-schema';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
+import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
 
 // tslint:disable:no-any
@@ -47,6 +49,17 @@ const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
 export const OVERRIDE_PROPERTY_PATTERN = new RegExp(OVERRIDE_PROPERTY);
 
 const OVERRIDE_PATTERN_WITH_SUBSTITUTION = '\\[(${0})\\]$';
+
+export interface FrontendApplicationPreferenceConfig extends FrontendApplicationConfig {
+    preferences: {
+        [preferenceName: string]: any
+    }
+}
+export namespace FrontendApplicationPreferenceConfig {
+    export function is(config: FrontendApplicationConfig): config is FrontendApplicationPreferenceConfig {
+        return 'preferences' in config && typeof config['preferences'] === 'object';
+    }
+}
 
 @injectable()
 export class PreferenceSchemaProvider extends PreferenceProvider {
@@ -136,7 +149,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                 }
                 this.combinedSchema.properties[preferenceName] = schemaProps;
 
-                const value = schemaProps.default = this.getDefaultValue(schemaProps);
+                const value = schemaProps.default = this.getDefaultValue(schemaProps, preferenceName);
                 if (this.testOverrideValue(preferenceName, value)) {
                     for (const overridenPreferenceName in value) {
                         const overrideValue = value[overridenPreferenceName];
@@ -159,7 +172,14 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return { preferenceName, oldValue, newValue, scope, domain };
     }
 
-    protected getDefaultValue(property: PreferenceItem): any {
+    /** @deprecated since 0.6.0 pass preferenceName as the second arg */
+    protected getDefaultValue(property: PreferenceItem): any;
+    protected getDefaultValue(property: PreferenceItem, preferenceName: string): any;
+    protected getDefaultValue(property: PreferenceItem, preferenceName?: string): any {
+        const config = FrontendApplicationConfigProvider.get();
+        if (preferenceName && FrontendApplicationPreferenceConfig.is(config) && preferenceName in config.preferences) {
+            return config.preferences[preferenceName];
+        }
         if (property.default) {
             return property.default;
         }

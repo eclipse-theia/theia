@@ -6,7 +6,10 @@
   "theia": {
     "frontend": {
       "config": {
-        "applicationName": "Theia Browser Example"
+        "applicationName": "Theia Browser Example",
+        "preferences": {
+          "files.enableTrash": false
+        }
       }
     }
   },
