@@ -89,7 +89,7 @@ export abstract class FileDownloadHandler {
 
     protected async handleError(response: Response, reason: string | Error, status: number = INTERNAL_SERVER_ERROR): Promise<void> {
         this.logger.error(reason);
-        response.status(status).send(reason).end();
+        response.status(status).send('Unable to download file.').end();
     }
 
 }
