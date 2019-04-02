@@ -1,7 +1,17 @@
 {
   "ignoreCompilerErrors": true,
-  "mode": "file",
-  "out": "docs/api",
+  "mode": "modules",
+  "out": "gh-pages/docs/next",
   "excludeExternals": true,
-  "includeDeclarations": true
+  "includeDeclarations": true,
+  "readme": "README.md",
+  "module": "commonjs",
+  "target": "es6",
+  "hideGenerator": true,
+  "external-modulemap": ".*\/packages\/([\\w\\-_]+)\/",
+  "name": "Theia TypeDoc",
+  "exclude": [
+    "**/+(dev-packages|examples|typings)/**/*.ts",
+    "**/*spec.ts"
+  ]
 }

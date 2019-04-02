@@ -118,7 +118,7 @@ jobs:
     before_deploy:
       - printf "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}\n" >> ~/.npmrc
       - yarn
-      - yarn run docs-modules
+      - yarn run docs
     deploy:
       - provider: script
         script: yarn run publish:next

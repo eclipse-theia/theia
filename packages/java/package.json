@@ -24,7 +24,6 @@
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
-    "docs": "theiaext docs",
     "dev-server": "node ./scripts/get-dev-server.js"
   },
   "publishConfig": {

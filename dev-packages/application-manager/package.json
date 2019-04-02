@@ -25,8 +25,7 @@
     "clean": "theiaext clean",
     "build": "theiaext build",
     "watch": "theiaext watch",
-    "test": "theiaext test",
-    "docs": "theiaext docs"
+    "test": "theiaext test"
   },
   "dependencies": {
     "@theia/application-package": "^0.5.0",

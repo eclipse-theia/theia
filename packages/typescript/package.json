@@ -45,8 +45,7 @@
     "clean": "theiaext clean",
     "build": "theiaext build",
     "watch": "theiaext watch",
-    "test": "theiaext test",
-    "docs": "theiaext docs"
+    "test": "theiaext test"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.5.0"

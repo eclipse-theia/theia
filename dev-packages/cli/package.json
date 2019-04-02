@@ -27,8 +27,7 @@
     "clean": "rimraf lib",
     "build": "tsc -p compile.tsconfig.json",
     "watch": "yarn build -w",
-    "test": "echo 'skip'",
-    "docs": "echo 'skip'"
+    "test": "echo 'skip'"
   },
   "dependencies": {
     "@theia/application-manager": "^0.5.0"
