@@ -950,6 +950,10 @@ export class CodeActionKind {
     public contains(other: CodeActionKind): boolean {
         return this.value === other.value || startsWithIgnoreCase(other.value, this.value + CodeActionKind.sep);
     }
+
+    public intersects(other: CodeActionKind): boolean {
+        return this.contains(other) || other.contains(this);
+    }
 }
 
 export enum TextDocumentSaveReason {

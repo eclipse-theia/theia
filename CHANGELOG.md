@@ -3,6 +3,7 @@
 ## v0.6.0
 
 - [filesystem] added the menu item `Upload Files...` to easily upload files into a workspace
+- [plugin] added `CodeActionKind` `intersects` Plug-in API
 - [task] added support to configure tasks
 - [workspace] allow creation of files and folders using recursive paths
 
