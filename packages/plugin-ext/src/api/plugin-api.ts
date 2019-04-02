@@ -913,7 +913,7 @@ export interface LanguagesMain {
     $registerImplementationProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerTypeDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
-    $registeReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void;
     $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDocumentHighlightProvider(handle: number, selector: SerializedDocumentFilter[]): void;
