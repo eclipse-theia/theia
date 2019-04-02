@@ -98,15 +98,14 @@ export class WebviewsMainImpl implements WebviewsMain {
         }
     }
     $reveal(handle: string, showOptions: WebviewPanelShowOptions): void {
-        console.log('>>>>>>> reveal');
         const webview = this.getWebview(handle);
         if (webview.isDisposed) {
-            console.log('>>>>>>> reveal widget disposed');
             return;
         }
-        console.log('>>>>>>> reveal widget found');
         this.shell.revealWidget(webview.id);
-        console.log('>>>>>>> ' + webview.id);
+        if (showOptions.preserveFocus) {
+            webview.focus();
+        }
     }
     $setTitle(handle: string, value: string): void {
         const webview = this.getWebview(handle);
