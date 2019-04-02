@@ -96,8 +96,8 @@ export const editorPreferenceSchema: PreferenceSchema = {
                 'on',
                 'off'
             ],
-            'default': 'on',
-            'description': 'Configure whether the editor should be auto saved.',
+            'default': 'off',
+            'description': 'Controls auto save of dirty files.',
             overridable: false
         },
         'editor.autoSaveDelay': {
