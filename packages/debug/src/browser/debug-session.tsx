@@ -258,7 +258,7 @@ export class DebugSession implements CompositeTreeElement {
             supportsVariablePaging: false,
             supportsRunInTerminalRequest: true
         });
-        this._capabilities = response.body || {};
+        this.updateCapabilities(response.body || {});
     }
     protected async launchOrAttach(): Promise<void> {
         try {
