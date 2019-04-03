@@ -33,6 +33,8 @@ export interface WindowService {
      */
     openNewWindow(url: string, options?: NewWindowOptions): Window | undefined;
 
+    preventClosing(event: BeforeUnloadEvent): string | void;
+
 }
 
 @injectable()
@@ -44,6 +46,12 @@ export class DefaultWindowService implements WindowService {
             throw new Error('Cannot open a new window for URL: ' + url);
         }
         return newWindow;
+    }
+
+    preventClosing(event: BeforeUnloadEvent): string {
+        event.returnValue = '';
+        event.preventDefault();
+        return '';
     }
 
 }

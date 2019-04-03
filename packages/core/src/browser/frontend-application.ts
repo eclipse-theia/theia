@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, ILogger, isOSX } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, ILogger, isOSX, environment } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -24,6 +24,7 @@ import { ShellLayoutRestorer } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime } from './browser';
 import { CorePreferences } from './core-preferences';
+import { WindowService } from './window/window-service';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -88,6 +89,9 @@ export class FrontendApplication {
 
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
@@ -156,10 +160,9 @@ export class FrontendApplication {
      */
     protected registerEventListeners(): void {
         window.addEventListener('beforeunload', event => {
+            console.log('beforeUnload called!');
             if (this.preventStop()) {
-                event.returnValue = '';
-                event.preventDefault();
-                return '';
+                return this.windowService.preventClosing(event);
             }
         });
         window.addEventListener('unload', () => {

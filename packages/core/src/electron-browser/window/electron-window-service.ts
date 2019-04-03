@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, dialog, remote } from 'electron';
 import { WindowService, NewWindowOptions } from '../../browser/window/window-service';
 
 @injectable()
@@ -28,6 +28,20 @@ export class ElectronWindowService implements WindowService {
             ipcRenderer.send('create-new-window', url);
         }
         return undefined;
+    }
+
+    preventClosing(): string | void {
+        console.log('electron closed called!');
+        const choice = dialog.showMessageBox(
+            remote.getCurrentWindow(),
+            {
+                type: 'question',
+                buttons: ['Yes', 'No'],
+                title: 'Confirm',
+                message: 'Are you sure you want to quit?'
+            }
+        );
+        return choice === 0 ? '' : undefined;
     }
 
 }
