@@ -29,8 +29,8 @@ export class DialogsExtImpl {
         const optionsMain = {
             openLabel: options.openLabel,
             defaultUri: options.defaultUri ? options.defaultUri.path : undefined,
-            canSelectFiles: options.canSelectFiles,
-            canSelectFolders: options.canSelectFolders,
+            canSelectFiles: options.canSelectFiles ? options.canSelectFiles : true,
+            canSelectFolders: options.canSelectFolders ? options.canSelectFolders : false,
             canSelectMany: options.canSelectMany,
             filters: options.filters
         } as OpenDialogOptionsMain;

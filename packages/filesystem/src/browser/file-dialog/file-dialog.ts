@@ -262,8 +262,11 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
     }
 
     protected async accept(): Promise<void> {
-        if (this.props.canSelectFolders === false && !Array.isArray(this.value)) {
-            this.widget.model.openNode(this.value);
+        const selection = this.value;
+        if (!this.props.canSelectFolders
+            && !Array.isArray(selection)
+            && selection.fileStat.isDirectory) {
+            this.widget.model.openNode(selection);
             return;
         }
         super.accept();
