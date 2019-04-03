@@ -743,8 +743,28 @@ declare module monaco.quickOpen {
         setShowBorder(showBorder: boolean): void;
         getEntry(): QuickOpenEntry | undefined;
     }
+
+    export interface IAction extends IDisposable {
+        id: string;
+        label: string;
+        tooltip: string;
+        class: string | undefined;
+        enabled: boolean;
+        checked: boolean;
+        radio: boolean;
+        run(event?: any): PromiseLike<any>;
+    }
+
+    export interface IActionProvider {
+        hasActions(element: any, item: any): boolean;
+        getActions(element: any, item: any): monaco.Promise<IAction[]>;
+        hasSecondaryActions(element: any, item: any): boolean;
+        getSecondaryActions(element: any, item: any): monaco.Promise<IAction[]>;
+        getActionItem(element: any, item: any, action: IAction): any;
+    }
+
     export class QuickOpenModel implements IModel<QuickOpenEntry>, IDataSource<QuickOpenEntry>, IFilter<QuickOpenEntry>, IRunner<QuickOpenEntry> {
-        constructor(entries?: QuickOpenEntry[] /*, actionProvider?: IActionProvider */);
+        constructor(entries?: QuickOpenEntry[], actionProvider?: IActionProvider);
         addEntries(entries: QuickOpenEntry[]): void;
         entries: QuickOpenEntry[];
         dataSource: IDataSource<QuickOpenEntry>;

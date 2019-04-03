@@ -53,6 +53,12 @@ export namespace TaskCommands {
         category: TASK_CATEGORY,
         label: 'Run Selected Text'
     };
+
+    export const TASK_CONFIGURE: Command = {
+        id: 'task:configure',
+        category: TASK_CATEGORY,
+        label: 'Configure Tasks...'
+    };
 }
 
 @injectable()
@@ -132,6 +138,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 execute: () => this.taskService.runSelectedText()
             }
         );
+
+        registry.registerCommand(
+            TaskCommands.TASK_CONFIGURE,
+            {
+                execute: () => this.quickOpenTask.configure()
+            }
+        );
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -153,6 +166,11 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
             commandId: TaskCommands.TASK_RUN_TEXT.id,
             order: '3'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
+            commandId: TaskCommands.TASK_CONFIGURE.id,
+            order: '4'
         });
     }
 
