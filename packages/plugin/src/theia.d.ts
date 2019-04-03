@@ -1878,6 +1878,11 @@ declare module '@theia/plugin' {
          * not implemented yet
          */
         picked?: boolean;
+
+        /**
+         * Always show this item.
+         */
+        alwaysShow?: boolean;
     }
 
     /**

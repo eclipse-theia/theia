@@ -71,17 +71,19 @@ export class QuickOpenExtImpl implements QuickOpenExt {
                     let description: string | undefined;
                     let detail: string | undefined;
                     let picked: boolean | undefined;
+                    let alwaysShow: boolean | undefined;
                     if (typeof item === 'string') {
                         label = item;
                     } else {
-                        ({ label, description, detail, picked } = item);
+                        ({ label, description, detail, picked, alwaysShow } = item);
                     }
                     pickItems.push({
                         label,
                         description,
                         handle,
                         detail,
-                        picked
+                        picked,
+                        alwaysShow
                     });
                 }
 

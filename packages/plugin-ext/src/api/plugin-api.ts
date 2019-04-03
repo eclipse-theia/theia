@@ -250,6 +250,7 @@ export interface PickOpenItem {
     description?: string;
     detail?: string;
     picked?: boolean;
+    alwaysShow?: boolean;
 }
 
 export enum MainMessageType {
