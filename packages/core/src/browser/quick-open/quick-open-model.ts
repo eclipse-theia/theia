@@ -16,6 +16,7 @@
 
 import URI from '../../common/uri';
 import { Keybinding } from '../keybinding';
+import { QuickOpenActionProvider } from './quick-open-action-provider';
 
 export interface Highlight {
     start: number
@@ -105,5 +106,5 @@ export class QuickOpenGroupItem<T extends QuickOpenGroupItemOptions = QuickOpenG
 }
 
 export interface QuickOpenModel {
-    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void;
+    onType(lookFor: string, acceptor: (items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider) => void): void;
 }

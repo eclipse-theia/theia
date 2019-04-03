@@ -17,8 +17,8 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
-    QuickOpenService, QuickOpenModel, QuickOpenOptions,
-    QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
+    QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem,
+    QuickOpenGroupItem, QuickOpenMode, KeySequence, QuickOpenActionProvider, QuickOpenAction
 } from '@theia/core/lib/browser';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -215,7 +215,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         this.options.onClose(cancelled);
     }
 
-    private toOpenModel(lookFor: string, items: QuickOpenItem[]): monaco.quickOpen.QuickOpenModel {
+    private toOpenModel(lookFor: string, items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider): monaco.quickOpen.QuickOpenModel {
         const entries: monaco.quickOpen.QuickOpenEntry[] = [];
         for (const item of items) {
             const entry = this.createEntry(item, lookFor);
@@ -226,7 +226,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         if (this.options.fuzzySort) {
             entries.sort((a, b) => monaco.quickOpen.compareEntries(a, b, lookFor));
         }
-        return new monaco.quickOpen.QuickOpenModel(entries);
+        return new monaco.quickOpen.QuickOpenModel(entries, actionProvider ? new MonacoQuickOpenActionProvider(actionProvider) : undefined);
     }
 
     getModel(lookFor: string): monaco.quickOpen.QuickOpenModel {
@@ -234,8 +234,8 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
     }
 
     onType(lookFor: string, acceptor: (model: monaco.quickOpen.QuickOpenModel) => void): void {
-        this.model.onType(lookFor, items => {
-            const result = this.toOpenModel(lookFor, items);
+        this.model.onType(lookFor, (items, actionProvider) => {
+            const result = this.toOpenModel(lookFor, items, actionProvider);
             acceptor(result);
         });
     }
@@ -407,4 +407,73 @@ export class QuickOpenEntryGroup extends monaco.quickOpen.QuickOpenEntryGroup {
         return this.item.showBorder();
     }
 
+}
+
+export class MonacoQuickOpenAction implements monaco.quickOpen.IAction {
+    constructor(public readonly action: QuickOpenAction) { }
+
+    get id(): string {
+        return this.action.id;
+    }
+
+    get label(): string {
+        return this.action.label || '';
+    }
+
+    get tooltip(): string {
+        return this.action.tooltip || '';
+    }
+
+    get class(): string | undefined {
+        return this.action.class;
+    }
+
+    get enabled(): boolean {
+        return this.action.enabled || true;
+    }
+
+    get checked(): boolean {
+        return this.action.checked || false;
+    }
+
+    get radio(): boolean {
+        return this.action.radio || false;
+    }
+
+    // tslint:disable-next-line:no-any
+    run(entry: QuickOpenEntry | QuickOpenEntryGroup): PromiseLike<any> {
+        return this.action.run(entry.item);
+    }
+
+    dispose(): void {
+        this.action.dispose();
+    }
+}
+
+export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionProvider {
+    constructor(public readonly provider: QuickOpenActionProvider) { }
+
+    // tslint:disable-next-line:no-any
+    hasActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): boolean {
+        return this.provider.hasActions(entry.item);
+    }
+
+    // tslint:disable-next-line:no-any
+    async getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): monaco.Promise<monaco.quickOpen.IAction[]> {
+        const actions = await this.provider.getActions(entry.item);
+        const monacoActions = actions.map(action => new MonacoQuickOpenAction(action));
+        return monaco.Promise.wrap(monacoActions);
+    }
+
+    hasSecondaryActions(): boolean {
+        return false;
+    }
+
+    getSecondaryActions(): monaco.Promise<monaco.quickOpen.IAction[]> {
+        return monaco.Promise.wrap([]);
+    }
+
+    getActionItem() {
+        return undefined;
+    }
 }

@@ -52,7 +52,8 @@ export class TaskProviderAdapter {
             return Promise.resolve(undefined);
         }
         const id = ObjectIdentifier.of(task);
-        const item = this.cache.get(id);
+        const cached = this.cache.get(id);
+        const item = cached ? cached : Converter.toTask(task);
         if (!item) {
             return Promise.resolve(undefined);
         }
