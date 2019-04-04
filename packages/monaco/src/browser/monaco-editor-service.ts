@@ -17,7 +17,7 @@
 import { injectable, inject, decorate } from 'inversify';
 import { MonacoToProtocolConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
-import { OpenerService, open, WidgetOpenMode, ApplicationShell } from '@theia/core/lib/browser';
+import { OpenerService, open, WidgetOpenMode, ApplicationShell, PreferenceService } from '@theia/core/lib/browser';
 import { EditorWidget, EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 
@@ -30,6 +30,8 @@ decorate(injectable(), monaco.services.CodeEditorServiceImpl);
 @injectable()
 export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
 
+    public static readonly ENABLE_PREVIEW_PREFERENCE: string = 'editor.enablePreview';
+
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
@@ -41,6 +43,9 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
 
     @inject(EditorManager)
     protected readonly editors: EditorManager;
+
+    @inject(PreferenceService)
+    protected readonly preferencesService: PreferenceService;
 
     constructor() {
         super(monaco.services.StaticServices.standaloneThemeService.get());
@@ -66,7 +71,8 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         const mode = this.getEditorOpenMode(input);
         const selection = input.options && this.m2p.asRange(input.options.selection);
         const widgetOptions = this.getWidgetOptions(source, sideBySide);
-        return { mode, selection, widgetOptions };
+        const preview = !!this.preferencesService.get<boolean>(MonacoEditorService.ENABLE_PREVIEW_PREFERENCE, false);
+        return { mode, selection, widgetOptions, preview };
     }
     protected getEditorOpenMode(input: IResourceInput): WidgetOpenMode {
         const options = {
