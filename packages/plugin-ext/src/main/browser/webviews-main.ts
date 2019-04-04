@@ -102,9 +102,10 @@ export class WebviewsMainImpl implements WebviewsMain {
         if (webview.isDisposed) {
             return;
         }
-        this.shell.revealWidget(webview.id);
         if (showOptions.preserveFocus) {
-            webview.focus();
+            this.shell.revealWidget(webview.id);
+        } else {
+            this.shell.activateWidget(webview.id);
         }
     }
     $setTitle(handle: string, value: string): void {

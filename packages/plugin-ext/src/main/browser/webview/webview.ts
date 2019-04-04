@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
 import { Disposable, DisposableCollection } from '@theia/core';
 
@@ -141,6 +141,11 @@ export class WebviewWidget extends BaseWidget {
 
     focus() {
       this.iframe.contentWindow!.focus();
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.node.focus();
     }
 
     private reloadFrame() {
