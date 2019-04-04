@@ -1550,13 +1550,51 @@ export class Task {
     private taskSource: string;
     private taskGroup: TaskGroup | undefined;
     private taskPresentationOptions: theia.TaskPresentationOptions | undefined;
-
-    constructor(taskDefinition: theia.TaskDefinition,
+    constructor(
+        taskDefinition: theia.TaskDefinition,
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
         name: string,
         source: string,
         execution?: ProcessExecution | ShellExecution,
-        problemMatchers?: string | string[]) {
+        problemMatchers?: string | string[]
+    );
+
+    // Deprecated constructor used by Jake vscode built-in
+    constructor(
+        taskDefinition: theia.TaskDefinition,
+        name: string,
+        source: string,
+        execution?: ProcessExecution | ShellExecution,
+        problemMatchers?: string | string[],
+    );
+
+    // tslint:disable-next-line:no-any
+    constructor(...args: any[]) {
+        let taskDefinition: theia.TaskDefinition;
+        let scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace | undefined;
+        let name: string;
+        let source: string;
+        let execution: ProcessExecution | ShellExecution | undefined;
+        let problemMatchers: string | string[] | undefined;
+
+        if (typeof args[1] === 'string') {
+            [
+                taskDefinition,
+                name,
+                source,
+                execution,
+                problemMatchers,
+            ] = args;
+        } else {
+            [
+                taskDefinition,
+                scope,
+                name,
+                source,
+                execution,
+                problemMatchers,
+            ] = args;
+        }
 
         this.definition = taskDefinition;
         this.scope = scope;
@@ -1593,6 +1631,9 @@ export class Task {
     }
 
     set scope(value: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined) {
+        if (value === null) {
+            value = undefined;
+        }
         this.taskScope = value;
     }
 
