@@ -231,6 +231,9 @@ export class FileSystemNode implements FileSystem {
         if (targetStat && !overwrite) {
             throw FileSystemError.FileExists(targetUri, "Did you set the 'overwrite' flag to true?");
         }
+        if (targetStat && targetStat.uri === sourceStat.uri) {
+            throw FileSystemError.FileExists(targetUri, 'Cannot perform copy, source and destination are the same.');
+        }
         await fs.copy(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { overwrite, recursive });
         const newStat = await this.doGetStat(_targetUri, 1);
         if (newStat) {
