@@ -304,7 +304,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 }
                 exist = await this.fileSystem.exists(selected.toString());
                 if (exist) {
-                    overwrite = await this.confirmOverwrite(selected); // TODO this should be handled differently in Electron.
+                    // Prompt users for confirmation before overwriting.
+                    // Electron handles this case itself, so do not prompt again.
+                    overwrite = this.isElectron() ? true : await this.confirmOverwrite(selected);
                 }
             }
         } while (selected && exist && !overwrite);
