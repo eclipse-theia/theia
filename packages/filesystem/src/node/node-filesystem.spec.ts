@@ -446,6 +446,14 @@ describe('NodeFileSystem', function () {
             await expectThrowsAsync(fileSystem.copy(sourceUri.toString(), targetUri.toString()), Error);
         });
 
+        it('Copy a file to existing location with the same file name. Should be rejected with an error.', async () => {
+            const sourceUri = root.resolve('foo');
+            fs.mkdirSync(FileUri.fsPath(sourceUri));
+            expect(fs.statSync(FileUri.fsPath(sourceUri)).isDirectory()).to.be.true;
+
+            await expectThrowsAsync(fileSystem.copy(sourceUri.toString(), sourceUri.toString()), Error);
+        });
+
         it('Copy an empty directory to a non-existing location. Should return with the file stat representing the new file at the target location.', async () => {
             const sourceUri = root.resolve('foo');
             const targetUri = root.resolve('bar');
