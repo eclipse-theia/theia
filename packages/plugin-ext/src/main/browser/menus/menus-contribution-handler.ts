@@ -28,6 +28,11 @@ import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { MetadataSelection } from '../metadata-selection';
+import { ScmTitleCommandRegistry } from '@theia/scm/lib/browser/scm-title-command-registry';
+import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmGroupCommandRegistry } from '@theia/scm/lib/browser/scm-group-command-registry';
+import { ScmResourceCommandRegistry } from '@theia/scm/lib/browser/scm-resource-command-registry';
+import PATH = ScmWidget.ContextMenu.PATH;
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -50,6 +55,14 @@ export class MenusContributionPointHandler {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
+    @inject(ScmTitleCommandRegistry)
+    protected readonly scmTitleCommandRegistry: ScmTitleCommandRegistry;
+
+    @inject(ScmGroupCommandRegistry)
+    protected readonly scmGroupCommandRegistry: ScmGroupCommandRegistry;
+    @inject(ScmResourceCommandRegistry)
+    protected readonly scmResourceCommandRegistry: ScmResourceCommandRegistry;
+
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
         if (!allMenus) {
@@ -66,6 +79,18 @@ export class MenusContributionPointHandler {
                 for (const action of allMenus[location]) {
                     this.registerEditorTitleAction(action);
                 }
+            } else if (location === 'scm/title') {
+                for (const action of allMenus[location]) {
+                    this.registerScmTitleAction(action);
+                }
+            } else if (location === 'scm/resourceGroup/context') {
+                for (const action of allMenus[location]) {
+                    this.registerScmResourceGroupAction(action);
+                }
+            } else if (location === 'scm/resourceState/context') {
+                for (const action of allMenus[location]) {
+                    this.registerScmResourceAction(action);
+                }
             } else if (allMenus.hasOwnProperty(location)) {
                 const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
                 if (!menuPaths.length) {
@@ -80,6 +105,81 @@ export class MenusContributionPointHandler {
                 });
             }
         }
+    }
+
+    protected registerScmTitleAction(menuAction: Menu): void {
+        const id = this.createSyntheticCommandId(menuAction, { prefix: '__plugin.scm.title.action.' });
+        const command: Command = { id };
+        this.commands.registerCommand(command, {
+            execute: () => this.commands.executeCommand(menuAction.command)
+        });
+
+        this.scmTitleCommandRegistry.registerCommand({ command: id, when: menuAction.when });
+
+        if (menuAction.group && menuAction.group !== 'navigation') {
+            const action: MenuAction = { commandId: id };
+            this.menuRegistry.registerMenuAction([...PATH, menuAction.group], action);
+        }
+
+        this.onDidRegisterCommand(menuAction.command, pluginCommand => {
+            command.iconClass = pluginCommand.iconClass;
+            command.category = menuAction.group;
+            command.label = pluginCommand.label;
+        });
+    }
+
+    protected registerScmResourceGroupAction(action: Menu): void {
+        const id = this.createSyntheticCommandId(action, { prefix: '__plugin.scm.resource.group.action.' });
+        const command: Command = { id };
+        this.commands.registerCommand(command, {
+            execute: arg => this.commands.executeCommand(action.command, arg)
+        });
+
+        const condition = action.when;
+        if (condition) {
+            let group = condition.substring(condition.indexOf('scmResourceGroup == ') + 20);
+            if (group.indexOf(' &&') > 0) {
+                group = group.substring(0, group.indexOf(' &&'));
+            }
+            if (action.group !== 'inline') {
+                this.menuRegistry.registerMenuAction(['scm-group-context-menu_' + group], { commandId: id });
+            } else {
+                this.scmGroupCommandRegistry.registerCommand(group, id);
+            }
+        }
+
+        this.onDidRegisterCommand(action.command, pluginCommand => {
+            command.iconClass = pluginCommand.iconClass;
+            command.category = action.group;
+            command.label = pluginCommand.label;
+        });
+    }
+
+    protected registerScmResourceAction(action: Menu): void {
+        const id = this.createSyntheticCommandId(action, { prefix: '__plugin.scm.resource.action.' });
+        const command: Command = { id };
+        this.commands.registerCommand(command, {
+            execute: arg => this.commands.executeCommand(action.command, arg)
+        });
+
+        const condition = action.when;
+        if (condition) {
+            let group = condition.substring(condition.indexOf('scmResourceGroup == ') + 20);
+            if (group.indexOf(' &&') > 0) {
+                group = group.substring(0, group.indexOf(' &&'));
+            }
+            if (action.group && action.group.startsWith('inline')) {
+                this.scmResourceCommandRegistry.registerCommand(group, id);
+            } else {
+                this.menuRegistry.registerMenuAction(['scm-resource-context-menu_' + group], { commandId: id });
+            }
+        }
+
+        this.onDidRegisterCommand(action.command, pluginCommand => {
+            command.iconClass = pluginCommand.iconClass;
+            command.category = action.group;
+            command.label = pluginCommand.label;
+        });
     }
 
     protected registerEditorTitleAction(action: Menu): void {

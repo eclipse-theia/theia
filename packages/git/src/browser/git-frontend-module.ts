@@ -15,15 +15,19 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { ResourceResolver } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, WidgetFactory, bindViewContribution, LabelProviderContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution, ResourceResolver } from '@theia/core/lib/common';
+import {
+    WebSocketConnectionProvider,
+    LabelProviderContribution,
+    FrontendApplicationContribution,
+} from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
 import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';
-import { GitViewContribution, GIT_WIDGET_FACTORY_ID } from './git-view-contribution';
+import { GitContribution } from './git-contribution';
 import { bindGitDiffModule } from './diff/git-diff-frontend-module';
 import { bindGitHistoryModule } from './history/git-history-frontend-module';
-import { GitWidget } from './git-widget';
+import { GitCommands } from './git-commands';
 import { GitResourceResolver } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
@@ -38,6 +42,9 @@ import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
 
 import '../../src/browser/style/index.css';
+import { ScmTitleCommandsContribution } from '@theia/scm/lib/browser/scm-title-command-registry';
+import { ScmResourceCommandContribution } from '@theia/scm/lib/browser/scm-resource-command-registry';
+import { ScmGroupCommandContribution } from '@theia/scm/lib/browser/scm-group-command-registry';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -51,15 +58,16 @@ export default new ContainerModule(bind => {
     bind(GitWatcher).toSelf().inSingletonScope();
     bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
 
-    bindViewContribution(bind, GitViewContribution);
-    bind(FrontendApplicationContribution).toService(GitViewContribution);
-    bind(TabBarToolbarContribution).toService(GitViewContribution);
+    bind(GitContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(GitContribution);
+    bind(MenuContribution).toService(GitContribution);
+    bind(FrontendApplicationContribution).toService(GitContribution);
+    bind(TabBarToolbarContribution).toService(GitContribution);
+    bind(ScmTitleCommandsContribution).toService(GitContribution);
+    bind(ScmResourceCommandContribution).toService(GitContribution);
+    bind(ScmGroupCommandContribution).toService(GitContribution);
 
-    bind(GitWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: GIT_WIDGET_FACTORY_ID,
-        createWidget: () => context.container.get<GitWidget>(GitWidget)
-    })).inSingletonScope();
+    bind(GitCommands).toSelf();
 
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(GitResourceResolver);

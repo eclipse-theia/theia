@@ -32,6 +32,18 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import {
+    ScmTitleCommandRegistry,
+    ScmTitleCommandsContribution
+} from '@theia/scm/lib/browser/scm-title-command-registry';
+import {
+    ScmResourceCommandContribution,
+    ScmResourceCommandRegistry
+} from '@theia/scm/lib/browser/scm-resource-command-registry';
+import {
+    ScmGroupCommandContribution,
+    ScmGroupCommandRegistry
+} from '@theia/scm/lib/browser/scm-group-command-registry';
 
 disableJSDOM();
 
@@ -53,7 +65,13 @@ before(() => {
         bind(MessageClient).toSelf().inSingletonScope();
         bind(MessageService).toSelf().inSingletonScope();
         bind(MenuModelRegistry).toConstantValue(new MockMenuModelRegistry());
+        bind(ScmTitleCommandRegistry).toSelf().inSingletonScope();
+        bind(ScmResourceCommandRegistry).toSelf().inSingletonScope();
+        bind(ScmGroupCommandRegistry).toSelf().inSingletonScope();
         bindContributionProvider(bind, CommandContribution);
+        bindContributionProvider(bind, ScmTitleCommandsContribution);
+        bindContributionProvider(bind, ScmGroupCommandContribution);
+        bindContributionProvider(bind, ScmResourceCommandContribution);
         bind(CommandRegistry).toSelf().inSingletonScope();
         bind(ContextKeyService).toSelf().inSingletonScope();
         bind(MenusContributionPointHandler).toSelf();

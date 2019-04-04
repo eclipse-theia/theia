@@ -144,19 +144,19 @@ describe('theia top panel (menubar)', () => {
         });
     });
 
-    describe('git view UI', () => {
+    describe('scm view UI', () => {
         // re-enable if/when we reset workbench layout between tests
-        // it('should start with git view not visible', () => {
-        //     expect(leftPanel.isGitContainerVisible()).to.be.false;
+        // it('should start with scm view not visible', () => {
+        //     expect(leftPanel.isScmContainerVisible()).to.be.false;
         // });
-        it('git view should toggle-on then toggle-off', () => {
-            if (!leftPanel.isGitContainerVisible()) {
-                topPanel.toggleGitView();
-                leftPanel.waitForGitViewVisible();
+        it('scm view should toggle-on then toggle-off', () => {
+            if (!leftPanel.isScmContainerVisible()) {
+                topPanel.toggleScmView();
+                leftPanel.waitForScmViewVisible();
             }
-            expect(leftPanel.isGitContainerVisible()).to.be.true;
-            topPanel.toggleGitView();
-            expect(leftPanel.isGitContainerVisible()).to.be.false;
+            expect(leftPanel.isScmContainerVisible()).to.be.true;
+            topPanel.toggleScmView();
+            expect(leftPanel.isScmContainerVisible()).to.be.false;
         });
     });
 

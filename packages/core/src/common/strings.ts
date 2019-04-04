@@ -38,3 +38,19 @@ export function unescapeInvisibleChars(value: string): string {
 export function escapeRegExpCharacters(value: string): string {
     return value.replace(/[\-\\\{\}\*\+\?\|\^\$\.\[\]\(\)\#]/g, '\\$&');
 }
+
+/**
+ * Format string by replacing the '{n}' pattern with given string(s).
+ * @param value string to format
+ * @param args strings for replacements
+ */
+// tslint:disable-next-line:no-any
+export function format(value: string, ...args: string[]): string {
+    if (args.length !== 0) {
+        return value.replace(/{(\d+)}/g, (found, n) => {
+            const i = parseInt(n);
+            return isNaN(i) || i < 0 || i >= args.length ? found : args[i];
+        });
+    }
+    return value;
+}

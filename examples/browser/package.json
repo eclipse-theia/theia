@@ -48,6 +48,7 @@
     "@theia/preview": "^0.5.0",
     "@theia/process": "^0.5.0",
     "@theia/python": "^0.5.0",
+    "@theia/scm": "^0.5.0",
     "@theia/search-in-workspace": "^0.5.0",
     "@theia/task": "^0.5.0",
     "@theia/terminal": "^0.5.0",

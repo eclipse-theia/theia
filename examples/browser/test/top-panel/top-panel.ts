@@ -44,9 +44,9 @@ export class TopPanel {
         this.clickSubMenu('Explorer');
     }
 
-    toggleGitView() {
+    toggleScmView() {
         this.clickMenuTab('View');
-        this.clickSubMenu('Git');
+        this.clickSubMenu('Scm');
     }
 
     toggleGitHistoryView() {
