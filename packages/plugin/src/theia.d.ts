@@ -157,7 +157,6 @@ declare module '@theia/plugin' {
         export let all: Plugin<any>[];
     }
 
-
     /**
  * A command is a unique identifier of a function
  * which can be executed by a user via a keyboard shortcut,
@@ -3672,7 +3671,7 @@ declare module '@theia/plugin' {
         size: number;
     }
 
-	/**
+    /**
 	 * A type that filesystem providers should use to signal errors.
 	 *
 	 * This class has factory methods for common error-cases, like `EntryNotFound` when
@@ -3680,45 +3679,45 @@ declare module '@theia/plugin' {
 	 */
     export class FileSystemError extends Error {
 
-		/**
+        /**
          * Create an error to signal that a file or folder wasn't found.
          * @param messageOrUri Message or uri.
          */
         static FileNotFound(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
+        /**
          * Create an error to signal that a file or folder already exists, e.g. when
          * creating but not overwriting a file.
          * @param messageOrUri Message or uri.
          */
         static FileExists(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
+        /**
          * Create an error to signal that a file is not a folder.
          * @param messageOrUri Message or uri.
          */
         static FileNotADirectory(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
+        /**
          * Create an error to signal that a file is a folder.
          * @param messageOrUri Message or uri.
          */
         static FileIsADirectory(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
+        /**
          * Create an error to signal that an operation lacks required permissions.
          * @param messageOrUri Message or uri.
          */
         static NoPermissions(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
+        /**
          * Create an error to signal that the file system is unavailable or too busy to
          * complete a request.
          * @param messageOrUri Message or uri.
          */
         static Unavailable(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
+        /**
          * Creates a new filesystem error.
          *
          * @param messageOrUri Message or uri.
@@ -4120,7 +4119,6 @@ declare module '@theia/plugin' {
          * @return A thenable that resolves when the edit could be applied.
          */
         export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
-
 
         /**
          * Register a filesystem provider for a given scheme, e.g. `ftp`.
@@ -5060,7 +5058,6 @@ declare module '@theia/plugin' {
         constructor(range: Range, newText: string);
     }
 
-
     /**
      * Completion item kinds.
      */
@@ -5773,9 +5770,9 @@ declare module '@theia/plugin' {
 
         /**
          * Check if this code action kind intersects `other`.
-         * The kind "refactor.extract" for example intersects refactor, "refactor.extract" and 
+         * The kind "refactor.extract" for example intersects refactor, "refactor.extract" and
          * `"refactor.extract.function", but not "unicorn.refactor.extract", or "refactor.extractAll".
-         * 
+         *
          * @param other Kind to check.
          */
         intersects(other: CodeActionKind): boolean;
@@ -6049,7 +6046,6 @@ declare module '@theia/plugin' {
          */
         resolveDocumentLink?(link: DocumentLink, token: CancellationToken | undefined): ProviderResult<DocumentLink>;
     }
-
 
     /**
     * The rename provider interface defines the contract between extensions and
@@ -7160,10 +7156,31 @@ declare module '@theia/plugin' {
          *  or '$eslint'. Problem matchers can be contributed by an extension using
          *  the `problemMatchers` extension point.
          */
-        constructor(taskDefinition: TaskDefinition,
+        constructor(
+            taskDefinition: TaskDefinition,
             scope: WorkspaceFolder | TaskScope.Global | TaskScope.Workspace,
             name: string,
             source?: string,
+            execution?: ProcessExecution | ShellExecution,
+            problemMatchers?: string | string[]);
+
+        /**
+         * ~~Creates a new task.~~
+         *
+         * @deprecated Use the new constructors that allow specifying a scope for the task.
+         *
+         * @param definition The task definition as defined in the taskDefinitions extension point.
+         * @param name The task's name. Is presented in the user interface.
+         * @param source The task's source (e.g. 'gulp', 'npm', ...). Is presented in the user interface.
+         * @param execution The process or shell execution.
+         * @param problemMatchers the names of problem matchers to use, like '$tsc'
+         *  or '$eslint'. Problem matchers can be contributed by an extension using
+         *  the `problemMatchers` extension point.
+         */
+        constructor(
+            taskDefinition: TaskDefinition,
+            name: string,
+            source: string,
             execution?: ProcessExecution | ShellExecution,
             problemMatchers?: string | string[]);
 

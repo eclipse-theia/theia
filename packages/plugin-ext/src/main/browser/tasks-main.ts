@@ -75,7 +75,7 @@ export class TasksMainImpl implements TasksMain {
         const taskResolver = this.createTaskResolver(handle);
 
         const disposable = new DisposableCollection();
-        disposable.push(this.taskProviderRegistry.register(type, taskProvider));
+        disposable.push(this.taskProviderRegistry.register(type, taskProvider, handle));
         disposable.push(this.taskResolverRegistry.register(type, taskResolver));
         this.disposables.set(handle, disposable);
     }

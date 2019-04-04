@@ -70,10 +70,11 @@ export class TaskProviderRegistry {
     }
 
     /** Registers the given Task Provider to return Task Configurations of the specified type. */
-    register(type: string, provider: TaskProvider): Disposable {
-        this.providers.set(type, provider);
+    register(type: string, provider: TaskProvider, handle?: number): Disposable {
+        const key = handle === undefined ? type : `${type}::${handle}`;
+        this.providers.set(key, provider);
         return {
-            dispose: () => this.providers.delete(type)
+            dispose: () => this.providers.delete(key)
         };
     }
 
