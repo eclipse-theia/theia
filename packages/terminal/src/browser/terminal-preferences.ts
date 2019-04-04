@@ -39,6 +39,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         'terminal.integrated.fontSize': {
             type: 'number',
             description: 'Controls the font size in pixels of the terminal.',
+            minimum: 6,
             default: EDITOR_FONT_DEFAULTS.fontSize
         },
         'terminal.integrated.fontWeight': {
@@ -61,6 +62,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         'terminal.integrated.lineHeight': {
             description: 'Controls the line height of the terminal, this number is multiplied by the terminal font size to get the actual line-height in pixels.',
             type: 'number',
+            minimum: 1,
             default: 1
         },
     }
