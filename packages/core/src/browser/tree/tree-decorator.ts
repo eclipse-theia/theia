@@ -233,16 +233,53 @@ export namespace TreeDecoration {
 
     }
 
-    /**
-     * Unlike caption suffixes, tail decorations appears right-aligned after the caption and the caption suffixes (is any).
-     */
-    export interface TailDecoration extends CaptionAffix {
+    export interface BaseTailDecoration {
 
         /**
          * Optional tooltip for the tail decoration.
          */
         readonly tooltip?: string;
+    }
 
+    /**
+     * Unlike caption suffixes, tail decorations appears right-aligned after the caption and the caption suffixes (is any).
+     */
+    export interface TailDecoration extends BaseTailDecoration {
+        /**
+         * The text content of the tail decoration.
+         */
+        readonly data: string;
+
+        /**
+         * Font data for customizing the content.
+         */
+        readonly fontData?: FontData;
+    }
+
+    export interface TailDecorationIcon extends BaseTailDecoration {
+        /**
+         * This should be the name of the Font Awesome icon with out the `fa fa-` prefix, just the name, for instance `paw`.
+         * For the existing icons, see here: https://fontawesome.com/v4.7.0/icons/.
+         */
+        readonly icon: string;
+
+        /**
+         * The color of the icon.
+         */
+        readonly color?: Color;
+    }
+
+    export interface TailDecorationIconClass extends BaseTailDecoration {
+        /**
+         * This should be the entire Font Awesome class array, for instance ['fa', 'fa-paw']
+         * For the existing icons, see here: https://fontawesome.com/v4.7.0/icons/.
+         */
+        readonly iconClass: string[];
+
+        /**
+         * The color of the icon.
+         */
+        readonly color?: Color;
     }
 
     /**
@@ -307,18 +344,12 @@ export namespace TreeDecoration {
     /**
      * Has not effect if the tree node being decorated has no associated icon.
      */
-    export interface IconOverlay {
+    export interface BaseOverlay {
 
         /**
          * The position where the decoration will be placed on the top of the original icon.
          */
         readonly position: IconOverlayPosition;
-
-        /**
-         * This should be the name of the Font Awesome icon with out the `fa fa-` prefix, just the name, for instance `paw`.
-         * For the existing icons, see here: https://fontawesome.com/v4.7.0/icons/.
-         */
-        readonly icon: string;
 
         /**
          * The color of the overlaying icon. If not specified, then the default icon color will be used.
@@ -330,6 +361,22 @@ export namespace TreeDecoration {
          */
         readonly background?: IconOverlayBackground;
 
+    }
+
+    export interface IconOverlay extends BaseOverlay {
+        /**
+         * This should be the name of the Font Awesome icon with out the `fa fa-` prefix, just the name, for instance `paw`.
+         * For the existing icons, see here: https://fontawesome.com/v4.7.0/icons/.
+         */
+        readonly icon: string;
+    }
+
+    export interface IconClassOverlay extends BaseOverlay {
+        /**
+         * This should be the entire Font Awesome class array, for instance ['fa', 'fa-paw']
+         * For the existing icons, see here: https://fontawesome.com/v4.7.0/icons/.
+         */
+        readonly iconClass: string[];
     }
 
     /**
@@ -468,7 +515,7 @@ export namespace TreeDecoration {
         /**
          * Optional right-aligned decorations that appear after the node caption and after the caption suffixes (is any).
          */
-        readonly tailDecorations?: TailDecoration[];
+        readonly tailDecorations?: Array<TailDecoration | TailDecorationIcon | TailDecorationIconClass>;
 
         /**
          * Custom tooltip for the decorated item. Tooltip will be appended to the original tooltip, if any.
@@ -483,7 +530,7 @@ export namespace TreeDecoration {
         /**
          * Has not effect if given, but the tree node does not have an associated image.
          */
-        readonly iconOverlay?: IconOverlay;
+        readonly iconOverlay?: IconOverlay | IconClassOverlay;
 
         /**
          * An array of ranges to highlight the caption.
