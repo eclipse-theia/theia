@@ -2664,6 +2664,17 @@ declare module '@theia/plugin' {
         readonly onDidDispose: Event<void>;
 
         /**
+         * Show the webview panel in a given column.
+         *
+         * A webview panel may only show in a single column at a time. If it is already showing, this
+         * method moves it to a new column.
+         *
+         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         * @param preserveFocus When `true`, the webview will not take focus.
+         */
+        reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
+
+        /**
          * Show the webview panel according to a given options.
          *
          * A webview panel may only show in a single column at a time. If it is already showing, this
