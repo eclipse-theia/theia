@@ -52,15 +52,17 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
             return undefined;
         }
 
+        const isAllFilePositionDefined = this.fileDialogOptions !== undefined && this.fileDialogOptions.allFilesPosition !== undefined;
+        const allFilesPosition = isAllFilePositionDefined ? this.fileDialogOptions!.allFilesPosition : FileDialogTreeAllFilesPosition.FIRST;
         const allFilesElement = 'All Files';
         const fileTypes: string[] = [];
-        if (this.fileDialogOptions === undefined || this.fileDialogOptions.allFilesPosition === FileDialogTreeAllFilesPosition.FIRST) {
+        if (allFilesPosition === FileDialogTreeAllFilesPosition.FIRST) {
             fileTypes.push(allFilesElement);
         }
         Object.keys(this.filters).forEach(element => {
             fileTypes.push(element);
         });
-        if (this.fileDialogOptions !== undefined && this.fileDialogOptions.allFilesPosition === FileDialogTreeAllFilesPosition.LAST) {
+        if (allFilesPosition === FileDialogTreeAllFilesPosition.LAST) {
             fileTypes.push(allFilesElement);
         }
 
