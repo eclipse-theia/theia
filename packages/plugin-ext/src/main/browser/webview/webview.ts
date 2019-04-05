@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
 import { Disposable, DisposableCollection } from '@theia/core';
 
@@ -38,6 +38,7 @@ export class WebviewWidget extends BaseWidget {
 
     constructor(title: string, private options: WebviewWidgetOptions, private eventDelegate: WebviewEvents) {
         super();
+        this.node.tabIndex = 0;
         this.id = WebviewWidget.ID.nextId();
         this.title.closable = true;
         this.title.label = title;
@@ -132,15 +133,16 @@ export class WebviewWidget extends BaseWidget {
                 this.loadTimeout = undefined;
                 onLoad(e.target, newFrame.contentWindow);
             }
-        });
+        }, { once: true });
         newFrame.contentDocument!.write(newDocument!.documentElement!.innerHTML);
         newFrame.contentDocument!.close();
 
         this.updateSandboxAttribute(newFrame);
     }
 
-    focus() {
-      this.iframe.contentWindow!.focus();
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.node.focus();
     }
 
     private reloadFrame() {

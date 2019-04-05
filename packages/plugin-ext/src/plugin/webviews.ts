@@ -298,12 +298,28 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         this._visible = value;
     }
 
-    reveal(area?: WebviewPanelTargetArea, viewColumn?: theia.ViewColumn, preserveFocus?: boolean): void {
+    reveal(arg0?: theia.ViewColumn | WebviewPanelTargetArea, arg1?: theia.ViewColumn | boolean, arg2?: boolean): void {
+        let area: WebviewPanelTargetArea | undefined = undefined;
+        let viewColumn: theia.ViewColumn | undefined = undefined;
+        let preserveFocus: boolean | undefined = undefined;
+        if (typeof arg0 === 'number') {
+            viewColumn = arg0;
+        } else {
+            area = arg0;
+        }
+        if (typeof arg1 === 'number') {
+            viewColumn = arg1;
+        } else {
+            preserveFocus = arg1;
+        }
+        if (typeof arg2 === 'boolean') {
+            preserveFocus = arg2;
+        }
         this.checkIsDisposed();
         this.proxy.$reveal(this.viewId, {
-            area: area,
+            area,
             viewColumn: viewColumn ? fromViewColumn(viewColumn) : undefined,
-            preserveFocus: !!preserveFocus
+            preserveFocus
         });
     }
 

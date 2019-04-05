@@ -85,10 +85,19 @@ export class WebviewsMainImpl implements WebviewsMain {
             this.onCloseView(viewId);
         });
         this.views.set(viewId, view);
-        this.shell.addWidget(view, { area: showOptions.area ? showOptions.area : 'main' });
-        this.shell.activateWidget(view.id);
+        const widgetOptions: ApplicationShell.WidgetOptions = { area: showOptions.area ? showOptions.area : 'main' };
+        // FIXME translate all view columns properly
+        if (showOptions.viewColumn === -2) {
+            const ref = this.shell.currentWidget;
+            if (ref && this.shell.getAreaFor(ref) === widgetOptions.area) {
+                Object.assign(widgetOptions, { ref, mode: 'open-to-right' });
+            }
+        }
+        this.shell.addWidget(view, widgetOptions);
         if (showOptions.preserveFocus) {
-            view.focus();
+            this.shell.revealWidget(view.id);
+        } else {
+            this.shell.activateWidget(view.id);
         }
     }
     $disposeWebview(handle: string): void {
@@ -98,7 +107,16 @@ export class WebviewsMainImpl implements WebviewsMain {
         }
     }
     $reveal(handle: string, showOptions: WebviewPanelShowOptions): void {
-        throw new Error('Method not implemented.');
+        const webview = this.getWebview(handle);
+        if (webview.isDisposed) {
+            return;
+        }
+        // FIXME handle view column here too!
+        if (showOptions.preserveFocus) {
+            this.shell.revealWidget(webview.id);
+        } else {
+            this.shell.activateWidget(webview.id);
+        }
     }
     $setTitle(handle: string, value: string): void {
         const webview = this.getWebview(handle);
