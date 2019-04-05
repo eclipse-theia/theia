@@ -169,7 +169,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
     protected createFileTreeFiltersRenderer(): FileDialogTreeFiltersRenderer | undefined {
         if (this.props.filters) {
-            return new FileDialogTreeFiltersRenderer(this.props.filters, this.props.allFilesPosition, this.widget.model.tree);
+            return new FileDialogTreeFiltersRenderer(this.props.filters, this.widget.model.tree, this.props);
         }
 
         return undefined;

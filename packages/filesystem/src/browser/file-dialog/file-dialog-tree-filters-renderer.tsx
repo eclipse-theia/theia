@@ -17,7 +17,7 @@
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { FileDialogTree } from './file-dialog-tree';
 import * as React from 'react';
-import { FileDialogTreeAllFilesPosition } from './file-dialog';
+import { FileDialogTreeAllFilesPosition, FileDialogProps } from './file-dialog';
 
 export const FILE_TREE_FILTERS_LIST_CLASS = 'theia-FileTreeFiltersList';
 
@@ -39,8 +39,8 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
     constructor(
         readonly filters: FileDialogTreeFilters,
-        readonly allFilesPosition: FileDialogTreeAllFilesPosition | undefined,
-        readonly fileDialogTree: FileDialogTree
+        readonly fileDialogTree: FileDialogTree,
+        readonly fileDialogOptions?: FileDialogProps
     ) {
         super();
     }
@@ -54,13 +54,13 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
         const allFilesElement = 'All Files';
         const fileTypes: string[] = [];
-        if (this.allFilesPosition === undefined || this.allFilesPosition === FileDialogTreeAllFilesPosition.FIRST) {
+        if (this.fileDialogOptions === undefined || this.fileDialogOptions.allFilesPosition === FileDialogTreeAllFilesPosition.FIRST) {
             fileTypes.push(allFilesElement);
         }
         Object.keys(this.filters).forEach(element => {
             fileTypes.push(element);
         });
-        if (this.allFilesPosition === FileDialogTreeAllFilesPosition.LAST) {
+        if (this.fileDialogOptions !== undefined && this.fileDialogOptions.allFilesPosition === FileDialogTreeAllFilesPosition.LAST) {
             fileTypes.push(allFilesElement);
         }
 
