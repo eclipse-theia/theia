@@ -14,27 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Worker } from 'cluster';
-import { Message } from 'vscode-jsonrpc';
-import { AbstractMessageWriter, MessageWriter } from 'vscode-jsonrpc/lib/messageWriter';
+import { checkParentAlive } from './messaging/ipc-protocol';
 
-export class WorkerMessageWriter extends AbstractMessageWriter implements MessageWriter {
+checkParentAlive();
 
-    protected errorCount = 0;
+process.on('unhandledRejection', (reason, promise) => {
+    throw reason;
+});
 
-    constructor(
-        protected readonly worker: Worker
-    ) {
-        super();
-    }
-
-    write(msg: Message): void {
-        try {
-            this.worker.send(msg);
-        } catch (e) {
-            this.errorCount++;
-            this.fireError(e, msg, this.errorCount);
-        }
-    }
-
+export interface Address {
+    port: number;
+    address: string;
 }
+
+export async function start(serverPath: string): Promise<Address> {
+    const server = await require(serverPath)();
+    return server.address();
+}
+export default start;
