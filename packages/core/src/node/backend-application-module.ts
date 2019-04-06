@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces, decorate, injectable } from 'inversify';
+import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
@@ -22,7 +22,6 @@ import {
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
-import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFactory } from './cluster';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
@@ -32,12 +31,6 @@ import { ConnectionContainerModule } from './messaging/connection-container-modu
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 
 decorate(injectable(), ApplicationPackage);
-
-export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMasterProcessFactory): void {
-    bind(RemoteMasterProcessFactory).toConstantValue(masterFactory);
-    bind(ServerProcess).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(ServerProcess);
-}
 
 const commandConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
     bindFrontendService(commandServicePath, CommandService);
@@ -65,8 +58,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
-
-    bindServerProcess(bind, clusterRemoteMasterProcessFactory);
 
     bind(IPCConnectionProvider).toSelf().inSingletonScope();
 

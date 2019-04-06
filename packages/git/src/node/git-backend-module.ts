@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as cluster from 'cluster';
 import { ContainerModule, Container, interfaces } from 'inversify';
 import { Git, GitPath } from '../common/git';
 import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
@@ -31,6 +30,8 @@ import { GitPromptServer, GitPromptClient, GitPrompt } from '../common/git-promp
 import { DugiteGitPromptServer } from './dugite-git-prompt';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { DefaultGitInit, GitInit } from './init/git-init';
+
+const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
 
 export interface GitBindingOptions {
     readonly bindManager: (binding: interfaces.BindingToSyntax<{}>) => interfaces.BindingWhenOnSyntax<{}>;
@@ -53,7 +54,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
         child.bind(GitRepositoryWatcherOptions).toConstantValue(options);
         return child.get(GitRepositoryWatcher);
     });
-    if (cluster.isMaster) {
+    if (SINGLE_THREADED) {
         bind(GitLocator).toDynamicValue(ctx => {
             const logger = ctx.container.get<ILogger>(ILogger);
             return new GitLocatorImpl({

@@ -24,7 +24,7 @@ import {
     Disposable, DisposableCollection, Event, Emitter, ILogger,
     CancellationTokenSource, CancellationToken, isCancelled, checkCancelled
 } from '@theia/core';
-import { FileUri, ServerProcess } from '@theia/core/lib/node';
+import { FileUri } from '@theia/core/lib/node';
 import { FileSystemWatcherServer, DidFilesChangedParams } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { InstallationResult, InstallationParam } from '../common/extension-protocol';
 import { NpmClient } from './npm-client';
@@ -50,7 +50,6 @@ export class ApplicationProject implements Disposable {
         @inject(FileSystemWatcherServer) protected readonly fileSystemWatcher: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(NpmClient) protected readonly npmClient: NpmClient,
-        @inject(ServerProcess) protected readonly serverProcess: ServerProcess
     ) {
         logger.debug('AppProjectOptions', options);
         this.registry = new NpmRegistry({
@@ -146,8 +145,6 @@ export class ApplicationProject implements Disposable {
                 reverting,
                 failed: false
             });
-
-            this.serverProcess.kill();
         } catch (error) {
             if (isCancelled(error)) {
                 this.logger.info('The app installation is cancelled');
@@ -164,7 +161,7 @@ export class ApplicationProject implements Disposable {
 
     protected restart(token?: CancellationToken): Promise<void> {
         checkCancelled(token);
-        return this.serverProcess.restart();
+        return Promise.resolve();
     }
 
     protected async build(token?: CancellationToken): Promise<void> {

@@ -12,6 +12,7 @@
 Breaking changes:
 
 - [node] moved to using Node.js version 10, dropping support for Node.js version 8.
+- [electron] removed cluster mode and startup timeout setting
 - [dialog] `validate` and `accept` methods are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
 - [editor] turn off autoSave by default to align with VS Code [#4777](https://github.com/theia-ide/theia/pull/4777)
   - default settings can be overriden in application package.json:
