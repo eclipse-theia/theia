@@ -82,6 +82,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         super();
         delete this.scrollOptions;
         this.id = 'theia-statusBar';
+        this.addClass('noselect');
     }
 
     protected get ready(): Promise<void> {
