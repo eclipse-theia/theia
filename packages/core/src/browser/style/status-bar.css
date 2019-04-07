@@ -61,3 +61,14 @@
 #theia-statusBar .area.right .element {
     margin-left: var(--theia-ui-padding);
 }
+
+#theia-statusBar .element {
+    /* https://css-tricks.com/os-specific-fonts-css/#article-header-id-0 */
+    /* https://github.com/Microsoft/vscode/blob/5dbdc8d19c8cf6dd10d558eabcc48bba962ea45f/src/vs/workbench/browser/media/style.css#L8-L24 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif;
+    font-size: 12px;
+    text-rendering: auto;
+    text-decoration: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
