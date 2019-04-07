@@ -502,7 +502,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget>
         const { upstreamBranch, aheadBehind } = status;
         if (upstreamBranch) {
             return {
-                text: '$(refresh)' + (aheadBehind ? ` ${aheadBehind.behind} $(arrow-down) ${aheadBehind.ahead} $(arrow-up)` : ''),
+                text: '$(refresh)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
                 tooltip: 'Synchronize Changes'
             };
