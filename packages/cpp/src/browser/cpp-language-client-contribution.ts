@@ -15,12 +15,14 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
+import { MessageConnection } from 'vscode-jsonrpc';
 import {
     BaseLanguageClientContribution, LanguageClientFactory,
     LanguageClientOptions,
     ILanguageClient
 } from '@theia/languages/lib/browser';
 import { Languages, Workspace } from '@theia/languages/lib/browser';
+import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS, CppStartParameters } from '../common';
@@ -72,6 +74,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
+        @inject(SemanticHighlightingService) protected readonly semanticHighlightingService: SemanticHighlightingService,
     ) {
         super(workspace, languages, languageClientFactory);
     }
@@ -119,6 +122,12 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         }
 
         return databaseMap;
+    }
+
+    protected createLanguageClient(connection: MessageConnection): ILanguageClient {
+        const client: ILanguageClient & Readonly<{ languageId: string }> = Object.assign(super.createLanguageClient(connection), { languageId: this.id });
+        client.registerFeature(SemanticHighlightingService.createNewFeature(this.semanticHighlightingService, client));
+        return client;
     }
 
     private async updateInitializationOptions(): Promise<void> {
