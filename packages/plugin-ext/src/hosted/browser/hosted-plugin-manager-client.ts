@@ -247,7 +247,10 @@ export class HostedPluginManagerClient {
 
         const dialog = this.openFileDialogFactory({
             title: HostedPluginCommands.SELECT_PATH.label!,
-            canSelectFiles: false
+            openLabel: 'Select',
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false
         });
         dialog.model.navigateTo(rootNode);
         const result = await dialog.open();
