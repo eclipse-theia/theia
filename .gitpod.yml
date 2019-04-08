@@ -1,8 +1,8 @@
 ports:
 - port: 3000
 tasks:
-- init: yarn install
-  command: cd examples/browser && yarn start --hostname 0.0.0.0 ../..
+- init: nvm install 10 && nvm use 10 && yarn
+  command: yarn --cwd examples/browser start ../..
 github:
   prebuilds:
     pullRequestsFromForks: true
