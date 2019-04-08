@@ -67,7 +67,7 @@ export default new ContainerModule(bind => {
     bind(ScmResourceCommandContribution).toService(GitContribution);
     bind(ScmGroupCommandContribution).toService(GitContribution);
 
-    bind(GitCommands).toSelf();
+    bind(GitCommands).toSelf().inSingletonScope();
 
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(GitResourceResolver);
