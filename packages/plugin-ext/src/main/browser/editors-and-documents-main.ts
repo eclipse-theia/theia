@@ -58,7 +58,7 @@ export class EditorsAndDocumentsMain {
         const editorManager = container.get<EditorManager>(EditorManager);
         const openerService = container.get<OpenerService>(OpenerService);
         const bulkEditService = container.get<MonacoBulkEditService>(MonacoBulkEditService);
-        const monacoEditorService = container.get<MonacoEditorService>(MonacoEditorService);
+        const monacoEditorService = container.get(MonacoEditorService);
 
         const documentsMain = new DocumentsMainImpl(this, this.modelService, rpc, editorManager, openerService);
         rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);

@@ -47,7 +47,7 @@ export class TextEditorsMainImpl implements TextEditorsMain {
     constructor(private readonly editorsAndDocuments: EditorsAndDocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
-        private monacoEditorService: MonacoEditorService) {
+        private readonly monacoEditorService: MonacoEditorService) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
         this.toDispose.push(editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
         this.toDispose.push(editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
