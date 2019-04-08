@@ -8,6 +8,8 @@
 - [plugin] fixed auto detection of new languages [#5753](https://github.com/theia-ide/theia/issues/5753)
 - [vscode] unzip node_modules for built-in extensions [#5756](https://github.com/theia-ide/theia/pull/5756)
 - [core] prevent the IDE from scrolling along with the text on mobile (e.g. on iPad) [#5742](https://github.com/theia-ide/theia/pull/5742)
+- [core] added command to manually choose a keyboard layout
+- [electron] use inversify to allow for contributions to the electron main process
 
 Breaking changes:
 
