@@ -429,7 +429,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
         const callId = this.addNewAdapter(new ReferenceAdapter(provider, this.documents));
-        this.proxy.$registeReferenceProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerReferenceProvider(callId, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Code Reference Provider end

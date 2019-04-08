@@ -112,7 +112,7 @@ export class LanguagesMainImpl implements LanguagesMain {
         this.disposables.set(handle, disposable);
     }
 
-    $registeReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+    $registerReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const referenceProvider = this.createReferenceProvider(handle, languageSelector);
         const disposable = new DisposableCollection();
