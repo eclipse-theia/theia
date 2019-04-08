@@ -243,7 +243,7 @@ export interface PluginDeployerResolverContext {
 
 export interface PluginDeployer {
 
-    start(): void;
+    start(): Promise<void>;
 
 }
 

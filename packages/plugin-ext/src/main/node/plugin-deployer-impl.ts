@@ -65,9 +65,9 @@ export class PluginDeployerImpl implements PluginDeployer {
     @optional() @multiInject(PluginDeployerDirectoryHandler)
     private pluginDeployerDirectoryHandlers: PluginDeployerDirectoryHandler[];
 
-    public start(): void {
+    public async start(): Promise<void> {
         this.logger.debug('Starting the deployer with the list of resolvers', this.pluginResolvers);
-        this.doStart();
+        await this.doStart();
     }
 
     public async initResolvers(): Promise<Array<void>> {
