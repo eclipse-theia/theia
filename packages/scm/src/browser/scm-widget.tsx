@@ -25,7 +25,7 @@ import {
     ScmResourceGroup,
     ScmService
 } from './scm-service';
-import { CommandRegistry, format, MenuPath } from '@theia/core';
+import { CommandRegistry, MenuPath } from '@theia/core';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmTitleCommandRegistry, ScmTitleItem } from './scm-title-command-registry';
 import { ScmResourceCommandRegistry } from './scm-resource-command-registry';
@@ -153,6 +153,16 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         const validationStatus = this.inputCommandMessageValidationResult ? this.inputCommandMessageValidationResult.type : 'idle';
         const validationMessage = this.inputCommandMessageValidationResult ? this.inputCommandMessageValidationResult.message : '';
         const keyBinding = navigator.appVersion.indexOf('Mac') !== -1 ? 'Cmd+Enter' : 'Ctrl+Enter';
+        // tslint:disable-next-line:no-any
+        const format = (value: string, ...args: string[]): string => {
+            if (args.length !== 0) {
+                return value.replace(/{(\d+)}/g, (found, n) => {
+                    const i = parseInt(n);
+                    return isNaN(i) || i < 0 || i >= args.length ? found : args[i];
+                });
+            }
+            return value;
+        };
         const message = format(input.placeholder, keyBinding);
         const handleHotKey = (event: KeyboardEvent) => {
             if (event.key === 'Enter' && event.ctrlKey) {
