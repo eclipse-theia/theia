@@ -22,6 +22,20 @@ export const TaskServer = Symbol('TaskServer');
 export const TaskClient = Symbol('TaskClient');
 
 export interface TaskConfiguration {
+    /** A label that uniquely identifies a task configuration per source */
+    readonly label: string;
+    readonly type: string;
+    /** Additional task type specific properties. */
+    // tslint:disable-next-line:no-any
+    readonly [key: string]: any;
+}
+export namespace TaskConfiguration {
+    export function equals(one: TaskConfiguration, other: TaskConfiguration): boolean {
+        return one.label === other.label && one._source === other._source;
+    }
+}
+
+export interface ContributedTaskConfiguration extends TaskConfiguration {
     /**
      * Source of the task configuration.
      * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
@@ -33,12 +47,11 @@ export interface TaskConfiguration {
      * This field is not supposed to be used in `tasks.json`
      */
     readonly _scope: string | undefined;
-    /** A label that uniquely identifies a task configuration per source */
-    readonly label: string;
-    readonly type: string;
-    /** Additional task type specific properties. */
-    // tslint:disable-next-line:no-any
-    readonly [key: string]: any;
+}
+export namespace ContributedTaskConfiguration {
+    export function is(config: TaskConfiguration | undefined): config is ContributedTaskConfiguration {
+        return !!config && '_source' in config && '_scope' in config;
+    }
 }
 
 /** Runtime information about Task. */
