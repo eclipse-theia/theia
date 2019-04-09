@@ -214,16 +214,16 @@ export class ScmService {
 
 class ScmRepositoryImpl implements ScmRepository {
 
-    private _onDidFocus = new Emitter<void>();
-    readonly onDidFocus: Event<void> = this._onDidFocus.event;
+    private onDidFocusEmitter = new Emitter<void>();
+    readonly onDidFocus: Event<void> = this.onDidFocusEmitter.event;
 
     private _selected = false;
     get selected(): boolean {
         return this._selected;
     }
 
-    private _onDidChangeSelection = new Emitter<boolean>();
-    readonly onDidChangeSelection: Event<boolean> = this._onDidChangeSelection.event;
+    private onDidChangeSelectionEmitter = new Emitter<boolean>();
+    readonly onDidChangeSelection: Event<boolean> = this.onDidChangeSelectionEmitter.event;
 
     readonly input: ScmInput = new ScmInputImpl();
 
@@ -233,12 +233,12 @@ class ScmRepositoryImpl implements ScmRepository {
     ) { }
 
     focus(): void {
-        this._onDidFocus.fire(undefined);
+        this.onDidFocusEmitter.fire(undefined);
     }
 
     setSelected(selected: boolean): void {
         this._selected = selected;
-        this._onDidChangeSelection.fire(selected);
+        this.onDidChangeSelectionEmitter.fire(selected);
     }
 
     dispose(): void {
@@ -250,6 +250,13 @@ class ScmRepositoryImpl implements ScmRepository {
 class ScmInputImpl implements ScmInput {
 
     private _value = '';
+    private _placeholder = '';
+    private _visible = true;
+    private _validateInput: InputValidator = () => Promise.resolve(undefined);
+    private onDidChangePlaceholderEmitter = new Emitter<string>();
+    private onDidChangeVisibilityEmitter = new Emitter<boolean>();
+    private onDidChangeValidateInputEmitter = new Emitter<void>();
+    private onDidChangeEmitter = new Emitter<string>();
 
     get value(): string {
         return this._value;
@@ -260,13 +267,12 @@ class ScmInputImpl implements ScmInput {
             return;
         }
         this._value = value;
-        this._onDidChange.fire(value);
+        this.onDidChangeEmitter.fire(value);
     }
 
-    private _onDidChange = new Emitter<string>();
-    get onDidChange(): Event<string> { return this._onDidChange.event; }
-
-    private _placeholder = '';
+    get onDidChange(): Event<string> {
+        return this.onDidChangeEmitter.event;
+    }
 
     get placeholder(): string {
         return this._placeholder;
@@ -274,13 +280,12 @@ class ScmInputImpl implements ScmInput {
 
     set placeholder(placeholder: string) {
         this._placeholder = placeholder;
-        this._onDidChangePlaceholder.fire(placeholder);
+        this.onDidChangePlaceholderEmitter.fire(placeholder);
     }
 
-    private _onDidChangePlaceholder = new Emitter<string>();
-    get onDidChangePlaceholder(): Event<string> { return this._onDidChangePlaceholder.event; }
-
-    private _visible = true;
+    get onDidChangePlaceholder(): Event<string> {
+        return this.onDidChangePlaceholderEmitter.event;
+    }
 
     get visible(): boolean {
         return this._visible;
@@ -288,13 +293,12 @@ class ScmInputImpl implements ScmInput {
 
     set visible(visible: boolean) {
         this._visible = visible;
-        this._onDidChangeVisibility.fire(visible);
+        this.onDidChangeVisibilityEmitter.fire(visible);
     }
 
-    private _onDidChangeVisibility = new Emitter<boolean>();
-    get onDidChangeVisibility(): Event<boolean> { return this._onDidChangeVisibility.event; }
-
-    private _validateInput: InputValidator = () => Promise.resolve(undefined);
+    get onDidChangeVisibility(): Event<boolean> {
+        return this.onDidChangeVisibilityEmitter.event;
+    }
 
     get validateInput(): InputValidator {
         return this._validateInput;
@@ -302,9 +306,10 @@ class ScmInputImpl implements ScmInput {
 
     set validateInput(validateInput: InputValidator) {
         this._validateInput = validateInput;
-        this._onDidChangeValidateInput.fire(undefined);
+        this.onDidChangeValidateInputEmitter.fire(undefined);
     }
 
-    private _onDidChangeValidateInput = new Emitter<void>();
-    get onDidChangeValidateInput(): Event<void> { return this._onDidChangeValidateInput.event; }
+    get onDidChangeValidateInput(): Event<void> {
+        return this.onDidChangeValidateInputEmitter.event;
+    }
 }

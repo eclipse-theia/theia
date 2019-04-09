@@ -95,9 +95,9 @@ export class ScmExtImpl implements ScmExt {
         console.log(sourceControl);
         if (sourceControl && sourceControl.quickDiffProvider && sourceControl.quickDiffProvider.provideOriginalResource) {
             // tslint:disable-next-line:no-any
-            const _uri: any = new URI(uri);
-            _uri.fsPath = uri;
-            return sourceControl.quickDiffProvider.provideOriginalResource(_uri, token);
+            const newUri: any = new URI(uri);
+            newUri.fsPath = uri;
+            return sourceControl.quickDiffProvider.provideOriginalResource(newUri, token);
         }
     }
 
@@ -136,9 +136,9 @@ class InputBoxImpl implements theia.SourceControlInputBox {
 }
 
 class SourceControlImpl implements theia.SourceControl {
-    private static _handle: number = 0;
-    private static _resourceGroupHandle: number = 0;
-    private handle = SourceControlImpl._handle ++;
+    private static handle: number = 0;
+    private static resourceGroupHandle: number = 0;
+    private handle = SourceControlImpl.handle ++;
 
     private readonly resourceGroupsMap: Map<number, theia.SourceControlResourceGroup> = new Map();
 
@@ -174,7 +174,7 @@ class SourceControlImpl implements theia.SourceControl {
 
     createResourceGroup(id: string, label: string): theia.SourceControlResourceGroup {
         const sourceControlResourceGroup = new SourceControlResourceGroupImpl(this.proxy, this.commands, this.handle, id, label);
-        this.resourceGroupsMap.set(SourceControlImpl._resourceGroupHandle ++, sourceControlResourceGroup);
+        this.resourceGroupsMap.set(SourceControlImpl.resourceGroupHandle ++, sourceControlResourceGroup);
         return sourceControlResourceGroup;
     }
 
@@ -257,9 +257,9 @@ class SourceControlImpl implements theia.SourceControl {
 
 class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup {
 
-    private static _handle: number = 0;
-    private static _resourceHandle: number = 0;
-    private handle = SourceControlResourceGroupImpl._handle ++;
+    private static handle: number = 0;
+    private static resourceHandle: number = 0;
+    private handle = SourceControlResourceGroupImpl.handle ++;
     private _hideWhenEmpty: boolean | undefined = undefined;
     private _resourceStates: theia.SourceControlResourceState[] = [];
     private resourceStatesMap: Map<number, theia.SourceControlResourceState> = new Map();
@@ -304,7 +304,7 @@ class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup
         this._resourceStates = resources;
         this.resourceStatesMap.clear();
         this.proxy.$updateResourceState(this.sourceControlHandle, this.handle, resources.map(resourceState => {
-            const handle = SourceControlResourceGroupImpl._resourceHandle ++;
+            const handle = SourceControlResourceGroupImpl.resourceHandle ++;
             let command;
             let decorations;
             if (resourceState.command) {

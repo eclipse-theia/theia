@@ -33,11 +33,11 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private proxy: CommandRegistryMain;
     private readonly commands = new Set<string>();
     private readonly handlers = new Map<string, Handler>();
-    private readonly _argumentProcessors: ArgumentProcessor[];
+    private readonly argumentProcessors: ArgumentProcessor[];
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
-        this._argumentProcessors = [];
+        this.argumentProcessors = [];
     }
 
     // tslint:disable-next-line:no-any
@@ -105,7 +105,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         const handler = this.handlers.get(id);
         if (handler) {
-            args = args.map(arg => this._argumentProcessors.reduce((r, p) => p.processArgument(r), arg));
+            args = args.map(arg => this.argumentProcessors.reduce((r, p) => p.processArgument(r), arg));
             return Promise.resolve(handler(...args));
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
@@ -121,6 +121,6 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     registerArgumentProcessor(processor: ArgumentProcessor): void {
-        this._argumentProcessors.push(processor);
+        this.argumentProcessors.push(processor);
     }
 }
