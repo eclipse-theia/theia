@@ -17,19 +17,6 @@ import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/li
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 
-export const ScmService = Symbol('ScmService');
-export interface ScmService extends Disposable {
-
-    readonly onDidAddRepository: Event<ScmRepository>;
-    readonly onDidRemoveRepository: Event<ScmRepository>;
-
-    readonly repositories: ScmRepository[];
-    selectedRepository: ScmRepository | undefined;
-    readonly onDidChangeSelectedRepositories: Event<ScmRepository>;
-
-    registerScmProvider(provider: ScmProvider): ScmRepository;
-}
-
 export interface ScmProvider extends Disposable {
     readonly label: string;
     readonly id: string;
@@ -150,7 +137,7 @@ export interface ScmRepository extends Disposable {
 }
 
 @injectable()
-export class ScmServiceImpl implements ScmService {
+export class ScmService {
     private providerIds = new Set<string>();
     private _repositories: ScmRepository[] = [];
     private _selectedRepository: ScmRepository | undefined;

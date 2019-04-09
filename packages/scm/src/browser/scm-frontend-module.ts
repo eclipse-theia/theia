@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution } from './scm-contribution';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
-import { ScmService, ScmServiceImpl } from './scm-service';
+import { ScmService } from './scm-service';
 import { bindContributionProvider } from '@theia/core';
 
 import { ScmWidget } from './scm-widget';
@@ -35,7 +35,7 @@ import { ScmNavigatorDecorator } from './decorations/scm-navigator-decorator';
 import { ScmDecorationsService } from './decorations/scm-decorations-service';
 
 export default new ContainerModule(bind => {
-    bind(ScmService).to(ScmServiceImpl).inSingletonScope();
+    bind(ScmService).toSelf().inSingletonScope();
 
     bind(ScmWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(ctx => ({
