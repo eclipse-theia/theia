@@ -47,7 +47,7 @@ export abstract class ScmNavigableListWidget<T extends { group: ScmResourceGroup
         return this._scrollContainer;
     }
 
-    protected addScmListNavigationKeyListeners(container: HTMLElement) {
+    protected addScmListNavigationKeyListeners(container: HTMLElement): void {
         this.addKeyListener(container, Key.ARROW_LEFT, () => this.navigateLeft());
         this.addKeyListener(container, Key.ARROW_RIGHT, () => this.navigateRight());
         this.addKeyListener(container, Key.ARROW_UP, () => this.navigateUp());
@@ -79,7 +79,7 @@ export abstract class ScmNavigableListWidget<T extends { group: ScmResourceGroup
         return this.scmNodes ? this.scmNodes.find(c => c.selected || false) : undefined;
     }
 
-    protected selectNode(node: T) {
+    protected selectNode(node: T): void {
         const n = this.getSelected();
         if (n) {
             n.selected = false;
@@ -95,7 +95,7 @@ export abstract class ScmNavigableListWidget<T extends { group: ScmResourceGroup
         this.update();
     }
 
-    protected selectNextNode() {
+    protected selectNextNode(): void {
         const idx = this.indexOfSelected;
         if (idx >= 0 && idx < this.scmNodes.length - 1) {
             this.selectNode(this.scmNodes[idx + 1]);
@@ -104,7 +104,7 @@ export abstract class ScmNavigableListWidget<T extends { group: ScmResourceGroup
         }
     }
 
-    protected selectPreviousNode() {
+    protected selectPreviousNode(): void {
         const idx = this.indexOfSelected;
         if (idx > 0) {
             this.selectNode(this.scmNodes[idx - 1]);

@@ -94,7 +94,7 @@ export class GitCommands implements Disposable {
         }
     }
 
-    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message) {
+    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message): Promise<void> {
         if (repository) {
             this.commitMessageValidationResult = undefined;
             if (message.trim().length === 0) {
@@ -133,7 +133,7 @@ export class GitCommands implements Disposable {
     }
 
     readonly openFile = (uri: URI) => this.doOpenFile(uri);
-    protected doOpenFile(uri: URI) {
+    protected doOpenFile(uri: URI): void {
         this.editorManager.open(uri, { mode: 'reveal' });
     }
 
@@ -156,7 +156,7 @@ export class GitCommands implements Disposable {
     }
 
     protected readonly showMoreToolButtons = (event: React.MouseEvent<HTMLElement>) => this.doShowMoreToolButtons(event);
-    protected doShowMoreToolButtons(event: React.MouseEvent<HTMLElement>) {
+    protected doShowMoreToolButtons(event: React.MouseEvent<HTMLElement>): void {
         const el = (event.target as HTMLElement).parentElement;
         if (el) {
             this.contextMenuRenderer.render(ScmWidget.ContextMenu.PATH, {

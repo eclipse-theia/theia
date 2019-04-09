@@ -337,7 +337,7 @@ class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup
         }
     }
 
-    getResourceState(handle: number) {
+    getResourceState(handle: number): theia.SourceControlResourceState | undefined {
         return this.resourceStatesMap.get(handle);
     }
 

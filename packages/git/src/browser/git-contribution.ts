@@ -387,7 +387,7 @@ export class GitContribution implements
     }
 
     /** Detect and handle added or removed repositories. */
-    private checkNewOrRemovedRepositories() {
+    private checkNewOrRemovedRepositories(): void {
         const added =
             this.repositoryProvider
                 .allRepositories
