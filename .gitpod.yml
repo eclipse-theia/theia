@@ -1,8 +1,16 @@
+image:
+  file: .gitpod.dockerfile
 ports:
 - port: 3000
+- port: 6080
+  onOpen: ignore
+- port: 5900
+  onOpen: ignore
 tasks:
-- init: nvm install 10 && nvm use 10 && yarn
-  command: yarn --cwd examples/browser start ../..
+- init: yarn
+  command: >
+    jwm &
+    yarn --cwd examples/browser start ../..
 github:
   prebuilds:
     pullRequestsFromForks: true
