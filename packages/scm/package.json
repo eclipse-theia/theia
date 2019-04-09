@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.5.0",
     "@theia/editor": "^0.5.0",
+    "@theia/filesystem": "^0.5.0",
     "@theia/plugin-ext": "^0.5.0"
   },
   "publishConfig": {

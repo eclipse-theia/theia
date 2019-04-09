@@ -25,7 +25,7 @@ import { DecorationData, ScmDecorationsService } from './scm-decorations-service
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
-export class NavigatorDecorator implements TreeDecorator {
+export class ScmNavigatorDecorator implements TreeDecorator {
 
     readonly id = 'theia-scm-decorator';
     private decorationsMap: Map<string, DecorationData> | undefined;
@@ -63,7 +63,7 @@ export class NavigatorDecorator implements TreeDecorator {
                 {
                     data: change.letter ? change.letter : '',
                     fontData: {
-                        color: change.color ? NavigatorDecorator.getDecorationColor(change.color.id) : '',
+                        color: change.color ? ScmNavigatorDecorator.getDecorationColor(change.color.id) : '',
                     },
                     tooltip: change.title ? change.title : ''
                 }
