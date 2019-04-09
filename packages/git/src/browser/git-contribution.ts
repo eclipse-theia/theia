@@ -264,7 +264,13 @@ export class GitContribution implements
         this.repositoryProvider.allRepositories.forEach(repository => this.registerScmProvider(repository));
         this.dirtyRepositories = this.repositoryProvider.allRepositories;
         this.scmService.onDidChangeSelectedRepositories(scmRepository => {
-            const repository = this.repositoryProvider.allRepositories.find(repo => repo.localUri === scmRepository.provider.rootUri);
+            const repository = this.repositoryProvider.allRepositories.find(repo => {
+                if (scmRepository) {
+                    return repo.localUri === scmRepository.provider.rootUri;
+                } else {
+                    return false;
+                }
+            });
             if (repository) {
                 this.repositoryProvider.selectedRepository = repository;
             } else {

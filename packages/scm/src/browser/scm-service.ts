@@ -143,11 +143,11 @@ export class ScmService {
     private _selectedRepository: ScmRepository | undefined;
 
     private disposableCollection: DisposableCollection = new DisposableCollection();
-    private onDidChangeSelectedRepositoriesEmitter = new Emitter<ScmRepository>();
+    private onDidChangeSelectedRepositoriesEmitter = new Emitter<ScmRepository | undefined>();
     private onDidAddProviderEmitter = new Emitter<ScmRepository>();
     private onDidRemoveProviderEmitter = new Emitter<ScmRepository>();
 
-    readonly onDidChangeSelectedRepositories: Event<ScmRepository> = this.onDidChangeSelectedRepositoriesEmitter.event;
+    readonly onDidChangeSelectedRepositories: Event<ScmRepository | undefined> = this.onDidChangeSelectedRepositoriesEmitter.event;
 
     constructor() {
         this.disposableCollection.push(this.onDidChangeSelectedRepositoriesEmitter);
@@ -165,9 +165,7 @@ export class ScmService {
 
     set selectedRepository(repository: ScmRepository | undefined) {
         this._selectedRepository = repository;
-        if (repository) {
-            this.onDidChangeSelectedRepositoriesEmitter.fire(repository);
-        }
+        this.onDidChangeSelectedRepositoriesEmitter.fire(repository);
     }
 
     get onDidAddRepository(): Event<ScmRepository> {

@@ -19,7 +19,6 @@ import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/br
 import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { ScmRepository } from './scm-service';
 import { ScmService } from './';
@@ -30,7 +29,6 @@ export class ScmQuickOpenService {
     constructor(
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
         @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ScmService) protected readonly scmService: ScmService,
     ) { }

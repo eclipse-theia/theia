@@ -92,8 +92,12 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
             });
         });
         this.scmService.onDidChangeSelectedRepositories(repository => {
-            this.selectedRepoUri = repository.provider.rootUri;
-            this.update();
+            if (repository) {
+                this.selectedRepoUri = repository.provider.rootUri;
+                this.update();
+            } else {
+                this.selectedRepoUri = undefined;
+            }
         });
     }
 
