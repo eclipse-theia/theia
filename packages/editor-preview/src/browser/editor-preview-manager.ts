@@ -62,11 +62,13 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget 
         });
 
         this.preferences.onPreferenceChanged(change => {
-            this.currentEditorPreview.then(editorPreview => {
-                if (!change.newValue && editorPreview) {
-                    editorPreview.pinEditorWidget();
-                }
-            });
+            if (this.currentEditorPreview) {
+                this.currentEditorPreview.then(editorPreview => {
+                    if (!change.newValue && editorPreview) {
+                        editorPreview.pinEditorWidget();
+                    }
+                });
+            }
         });
     }
 
