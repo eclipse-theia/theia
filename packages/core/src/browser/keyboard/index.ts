@@ -16,4 +16,4 @@
 
 export * from './keys';
 export * from './keyboard-layout-service';
-export * from './keyboard-browser';
+export * from './browser-keyboard-layout-provider';

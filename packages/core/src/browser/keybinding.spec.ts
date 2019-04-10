@@ -19,7 +19,7 @@ let disableJSDOM = enableJSDOM();
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/layout-provider';
+import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
 import { ILogger } from '../common/logger';
 import { KeybindingRegistry, KeybindingContext, Keybinding, KeybindingContribution, KeybindingScope } from './keybinding';
 import { KeyCode, Key, KeyModifier, KeySequence } from './keyboard/keys';
@@ -355,7 +355,7 @@ class MockKeyboardLayoutProvider implements KeyboardLayoutProvider {
 @injectable()
 class MockKeyboardLayoutChangeNotifier implements KeyboardLayoutChangeNotifier {
     private emitter = new Emitter<NativeKeyboardLayout>();
-    get onNativeLayoutChanged() {
+    get onDidChangeNativeLayout() {
         return this.emitter.event;
     }
 }
