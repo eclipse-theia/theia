@@ -11,6 +11,7 @@
 
 Breaking changes:
 
+- [core] support native keyboard layouts [#4724](https://github.com/theia-ide/theia/pull/4724)
 - [node] moved to using Node.js version 10, dropping support for Node.js version 8.
 - [electron] removed cluster mode and startup timeout setting
 - [dialog] `validate` and `accept` methods are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
