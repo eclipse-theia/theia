@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/layout-provider';
-import { BrowserKeyboardLayoutProvider } from './keyboard-browser';
+import { KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
+import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(BrowserKeyboardLayoutProvider).toSelf().inSingletonScope();

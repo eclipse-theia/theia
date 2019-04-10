@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { IWindowsKeyMapping } from 'native-keymap';
 import { isWindows } from '../../common/os';
-import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/layout-provider';
+import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter } from '../../common/event';
 import { KeyCode, Key } from './keys';
 
@@ -59,7 +59,7 @@ export class KeyboardLayoutService {
     }
 
     async initialize(): Promise<void> {
-        this.layoutChangeNotifier.onNativeLayoutChanged(newLayout => this.updateLayout(newLayout));
+        this.layoutChangeNotifier.onDidChangeNativeLayout(newLayout => this.updateLayout(newLayout));
         const initialLayout = await this.layoutProvider.getNativeLayout();
         this.updateLayout(initialLayout);
     }

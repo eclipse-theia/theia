@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/layout-provider';
+import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
-import { ElectronKeyboardLayoutChangeNotifier } from './change-notifier';
+import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeyboardLayoutProvider).toDynamicValue(ctx =>

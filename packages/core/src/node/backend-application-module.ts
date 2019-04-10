@@ -29,8 +29,8 @@ import { EnvVariablesServer, envVariablesPath } from './../common/env-variables'
 import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
-import { KeyboardLayoutProvider, keyboardPath } from '../common/keyboard/layout-provider';
-import { NativeKeyboardLayoutProvider } from './keyboard/native-layout';
+import { KeyboardLayoutProvider, keyboardPath } from '../common/keyboard/keyboard-layout-provider';
+import { NativeKeyboardLayoutProvider } from './keyboard/native-keyboard-layout-provider';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -90,5 +90,5 @@ export const backendApplicationModule = new ContainerModule(bind => {
         new JsonRpcConnectionHandler(keyboardPath, () =>
             ctx.container.get(KeyboardLayoutProvider)
         )
-    );
+    ).inSingletonScope();
 });

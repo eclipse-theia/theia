@@ -14,22 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as nativeKeymap from 'native-keymap';
-import { injectable } from 'inversify';
-import { KeyboardLayoutProvider, NativeKeyboardLayout } from '../../common/keyboard/layout-provider';
+import { IKeyboardLayoutInfo, IKeyboardMapping } from 'native-keymap';
+import { Event } from '../event';
 
-@injectable()
-export class NativeKeyboardLayoutProvider implements KeyboardLayoutProvider {
+export const keyboardPath = '/services/keyboard';
 
-    getNativeLayout(): Promise<NativeKeyboardLayout> {
-        return Promise.resolve(this.getNativeLayoutSync());
-    }
+export const KeyboardLayoutProvider = Symbol('KeyboardLayoutProvider');
 
-    protected getNativeLayoutSync(): NativeKeyboardLayout {
-        return {
-            info: nativeKeymap.getCurrentKeyboardLayout(),
-            mapping: nativeKeymap.getKeyMap()
-        };
-    }
+export interface KeyboardLayoutProvider {
+    getNativeLayout(): Promise<NativeKeyboardLayout>;
+}
 
+export const KeyboardLayoutChangeNotifier = Symbol('KeyboardLayoutChangeNotifier');
+
+export interface KeyboardLayoutChangeNotifier {
+    onDidChangeNativeLayout: Event<NativeKeyboardLayout>;
+}
+
+export interface NativeKeyboardLayout {
+    info: IKeyboardLayoutInfo;
+    mapping: IKeyboardMapping;
 }

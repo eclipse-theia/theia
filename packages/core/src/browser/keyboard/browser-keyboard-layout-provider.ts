@@ -17,7 +17,7 @@
 import { injectable, postConstruct } from 'inversify';
 import { isOSX, isWindows } from '../../common/os';
 import { Emitter } from '../../common/event';
-import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/layout-provider';
+import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 
 @injectable()
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier {
@@ -37,14 +37,14 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
         ];
     }
 
-    protected nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();
+    protected readonly nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();
 
-    get onNativeLayoutChanged() {
+    get onDidChangeNativeLayout() {
         return this.nativeLayoutChanged.event;
     }
 
     @postConstruct()
-    protected initialize() {
+    protected initialize(): void {
         const keyboard = (navigator as NavigatorExtension).keyboard;
         if (keyboard && keyboard.addEventListener) {
             keyboard.addEventListener('layoutchange', async () => {

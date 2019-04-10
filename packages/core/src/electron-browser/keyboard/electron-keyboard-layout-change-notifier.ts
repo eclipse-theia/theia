@@ -16,7 +16,7 @@
 
 import { postConstruct, injectable } from 'inversify';
 import { ipcRenderer } from 'electron';
-import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/layout-provider';
+import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter } from '../../common/event';
 
 /**
@@ -26,14 +26,14 @@ import { Emitter } from '../../common/event';
 @injectable()
 export class ElectronKeyboardLayoutChangeNotifier implements KeyboardLayoutChangeNotifier {
 
-    protected nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();
+    protected readonly nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();
 
-    get onNativeLayoutChanged() {
+    get onDidChangeNativeLayout() {
         return this.nativeLayoutChanged.event;
     }
 
     @postConstruct()
-    protected initialize() {
+    protected initialize(): void {
         ipcRenderer.on('keyboardLayoutChanged', (event: Event, newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
     }
 
