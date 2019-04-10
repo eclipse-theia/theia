@@ -6,7 +6,7 @@
 	],
 	"version": "https://github.com/Microsoft/TypeScript-TmLanguage/commit/88217b1c7d36ed5d35adc3099ba7978aabe2531b",
 	"name": "JavaScript (with React support)",
-	"scopeName": "source.js.jsx",
+	"scopeName": "source.jsx",
 	"patterns": [
 		{
 			"include": "#directives"
