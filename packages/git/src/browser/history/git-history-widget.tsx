@@ -19,7 +19,7 @@ import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@phosphor/messaging';
-import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams } from 'react-virtualized';
+import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from 'react-virtualized';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_HISTORY_ID, GIT_HISTORY_MAX_COUNT, GIT_HISTORY_LABEL } from './git-history-contribution';
@@ -501,10 +501,6 @@ export namespace GitHistoryList {
 export class GitHistoryList extends React.Component<GitHistoryList.Props> {
     list: List | undefined;
 
-    protected commitHeight: number = 50;
-    protected fileChangeHeight: number = 21;
-    protected lastFileChangeHeight: number = 31;
-
     protected readonly checkIfRowIsLoaded = (opts: { index: number }) => this.doCheckIfRowIsLoaded(opts);
     protected doCheckIfRowIsLoaded(opts: { index: number }) {
         const row = this.props.rows[opts.index];
@@ -531,8 +527,8 @@ export class GitHistoryList extends React.Component<GitHistoryList.Props> {
                                 width={width}
                                 height={height}
                                 onRowsRendered={onRowsRendered}
-                                rowRenderer={this.renderRow}
-                                rowHeight={this.calcRowHeight}
+                                rowRenderer={this.measureRowRenderer}
+                                rowHeight={this.measureCache.rowHeight}
                                 rowCount={this.props.hasMoreRows ? this.props.rows.length + 1 : this.props.rows.length}
                                 tabIndex={-1}
                                 onScroll={this.props.handleScroll}
@@ -549,10 +545,25 @@ export class GitHistoryList extends React.Component<GitHistoryList.Props> {
         </InfiniteLoader>;
     }
 
-    componentDidUpdate(): void {
-        if (this.list) {
-            this.list.recomputeRowHeights(this.props.indexOfSelected);
-        }
+    componentWillUpdate(): void {
+        this.measureCache.clearAll();
+    }
+
+    protected measureCache = new CellMeasurerCache();
+
+    protected measureRowRenderer: ListRowRenderer = (params: ListRowProps) => {
+        const { index, key, parent } = params;
+        return (
+            <CellMeasurer
+                cache={this.measureCache}
+                columnIndex={0}
+                key={key}
+                rowIndex={index}
+                parent={parent}
+            >
+                {() => this.renderRow(params)}
+            </CellMeasurer>
+        );
     }
 
     protected renderRow: ListRowRenderer = ({ index, key, style }) => {
@@ -573,14 +584,5 @@ export class GitHistoryList extends React.Component<GitHistoryList.Props> {
                 <span className='fa fa-spinner fa-pulse fa-fw'></span>
             </div>;
         }
-    }
-
-    protected readonly calcRowHeight = (options: ListRowProps) => {
-        const row = this.props.rows[options.index];
-        if (GitFileChangeNode.is(row)) {
-            const nextIsCommit = GitCommitNode.is(this.props.rows[options.index + 1]);
-            return nextIsCommit ? this.lastFileChangeHeight : this.fileChangeHeight;
-        }
-        return this.commitHeight;
     }
 }
