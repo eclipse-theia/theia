@@ -40,7 +40,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
-        const rootNode = await this.getRootNode(folder);
+        const rootNode = await this.getDirNode(folder);
         if (rootNode) {
             return new Promise<MaybeArray<URI> | undefined>(resolve => {
                 remote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props), (filePaths: string[] | undefined) => {
@@ -61,7 +61,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
-        const rootNode = await this.getRootNode(folder);
+        const rootNode = await this.getDirNode(folder);
         if (rootNode) {
             return new Promise<URI | undefined>(resolve => {
                 remote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props), (filename: string | undefined) => {
