@@ -334,12 +334,10 @@
     mask: url('git.svg');
 }
 
-.git-change-count {
-    float: right;
-}
-
 .git-theia-header {
     padding: 5px;
+    display: flex;
+    justify-content: space-between;
 }
 
 .git-theia-header:hover {
@@ -347,24 +345,26 @@
     cursor: pointer;
 }
 
-.git-theia-header:hover > .git-change-list-buttons-container {
-    visibility: visible;
- }
-
-.git-change-list-buttons-container {
-    align-self: center;
-    float: right;
-    justify-content: center;
-    visibility: hidden;
+#theia-gitContainer .git-change-list-buttons-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 3px;
 }
 
-.git-change-list-buttons-container .toolbar-button {
-    cursor: pointer;
+#theia-gitContainer .git-change-list-buttons-container .buttons {
+    display: none;
+    margin: 0 3px;
+}
+
+#theia-gitContainer .git-theia-header:hover .git-change-list-buttons-container .buttons {
+    display: flex;
+ }
+
+ #theia-gitContainer .git-change-list-buttons-container .buttons .toolbar-button {
     font-size: var(--theia-ui-font-size1);
-    margin: 0 2px;
     padding: 0 3px;
 }
 
-.git-change-list-buttons-container .toolbar-button:hover {
+#theia-gitContainer .git-change-list-buttons-container .buttons .toolbar-button:hover {
     background: var(--theia-content-font-color3);
 }
