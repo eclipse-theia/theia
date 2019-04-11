@@ -882,9 +882,11 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
         if (this.props.mergeChanges.length > 0) {
             return <div id='mergeChanges' className='changesContainer'>
                 <div className='theia-header git-theia-header'>
-                    Merged Changes
-                    {this.renderChangeCount(this.props.mergeChanges.length)}
-                    {this.renderChangeListButtons([GitBatchAction.STAGE_ALL])}
+                    <div className='noWrapInfo'>Merged Changes</div>
+                    <div className='git-change-list-buttons-container'>
+                        {this.renderChangeListButtons([GitBatchAction.STAGE_ALL])}
+                        {this.renderChangeCount(this.props.mergeChanges.length)}
+                    </div>
                 </div>
                 {this.props.mergeChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
@@ -897,9 +899,11 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
         if (this.props.stagedChanges.length > 0) {
             return <div id='stagedChanges' className='changesContainer'>
                 <div className='theia-header git-theia-header'>
-                    Staged Changes
-                    {this.renderChangeCount(this.props.stagedChanges.length)}
-                    {this.renderChangeListButtons([GitBatchAction.UNSTAGE_ALL])}
+                    <div className='noWrapInfo'>Staged Changes</div>
+                    <div className='git-change-list-buttons-container'>
+                        {this.renderChangeListButtons([GitBatchAction.UNSTAGE_ALL])}
+                        {this.renderChangeCount(this.props.stagedChanges.length)}
+                    </div>
                 </div>
                 {this.props.stagedChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
@@ -912,9 +916,11 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
         if (this.props.unstagedChanges.length > 0) {
             return <div id='unstagedChanges' className='changesContainer'>
                 <div className='theia-header git-theia-header'>
-                    Changes
-                    {this.renderChangeCount(this.props.unstagedChanges.length)}
-                    {this.renderChangeListButtons([GitBatchAction.STAGE_ALL, GitBatchAction.DISCARD_ALL])}
+                    <div className='noWrapInfo'>Changes</div>
+                    <div className='git-change-list-buttons-container'>
+                        {this.renderChangeListButtons([GitBatchAction.STAGE_ALL, GitBatchAction.DISCARD_ALL])}
+                        {this.renderChangeCount(this.props.unstagedChanges.length)}
+                    </div>
                 </div>
                 {this.props.unstagedChanges.map(change => this.renderGitItem(change, repository))}
             </div>;
@@ -923,7 +929,7 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
     }
 
     protected renderChangeCount(changes: number): React.ReactNode {
-        return <div className='notification-count-container git-change-count'>
+        return <div className='notification-count-container'>
             <span className='notification-count'>{changes}</span>
         </div>;
     }
@@ -935,7 +941,7 @@ export class GitChangesListContainer extends React.Component<GitChangesListConta
             ? <a className='toolbar-button' title='Unstage All Changes' onClick={this.doUnstageAll}><i className='fa fa-minus' /></a> : '';
         const discardAll = (actions.some(a => a === GitBatchAction.DISCARD_ALL))
             ? <a className='toolbar-button' title='Discard All Changes' onClick={this.doDiscardAll}><i className='fa fa-undo' /></a> : '';
-        return <div className='git-change-list-buttons-container'>{discardAll}{unstageAll}{stageAll}</div>;
+        return <div className='buttons'>{discardAll}{unstageAll}{stageAll}</div>;
     }
 }
 
