@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "@theia/application-package": "^0.5.0",
-    "@theia/electron": "^0.5.0",
     "@types/fs-extra": "^4.0.2",
     "bunyan": "^1.8.10",
     "circular-dependency-plugin": "^5.0.0",

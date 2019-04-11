@@ -51,9 +51,9 @@ export class ApplicationPackage {
         if (this.isElectron()) {
             const { version } = require('../package.json');
             try {
-                require('@theia/electron/package.json');
+                require.resolve('@theia/electron/package.json', { paths: [this.projectPath] });
             } catch {
-                console.warn(`please install @theia/electorn@${version} as a runtime dependency`);
+                console.warn(`please install @theia/electron@${version} as a runtime dependency`);
             }
         }
     }
