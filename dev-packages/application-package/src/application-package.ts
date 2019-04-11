@@ -53,7 +53,7 @@ export class ApplicationPackage {
             try {
                 require('@theia/electron/package.json');
             } catch {
-                console.warn(`please install @theia/electorn@${version} as a runtime dependency`);
+                console.warn(`please install @theia/electron@${version} as a runtime dependency`);
             }
         }
     }

@@ -22,5 +22,8 @@
     "electron-store": "^2.0.0",
     "fix-path": "^2.1.0",
     "native-keymap": "^1.2.5"
+  },
+  "scripts": {
+    "generate-layout": "electron ./scripts/generate-layout"
   }
 }
