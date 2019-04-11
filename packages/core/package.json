@@ -56,7 +56,8 @@
     },
     {
       "frontend": "lib/browser/keyboard/browser-keyboard-module",
-      "frontendElectron": "lib/electron-browser/keyboard/electron-keyboard-module"
+      "frontendElectron": "lib/electron-browser/keyboard/electron-keyboard-module",
+      "backendElectron": "lib/electron-main/keyboard/electron-backend-keyboard-module"
     }
   ],
   "keywords": [

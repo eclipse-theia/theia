@@ -14,22 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as nativeKeymap from 'native-keymap';
-import { injectable } from 'inversify';
-import { KeyboardLayoutProvider, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
+import { ContainerModule } from 'inversify';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '../../common/messaging';
+import { KeyboardLayoutProvider, keyboardPath } from '../../common/keyboard/keyboard-layout-provider';
+import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider';
 
-@injectable()
-export class NativeKeyboardLayoutProvider implements KeyboardLayoutProvider {
-
-    getNativeLayout(): Promise<NativeKeyboardLayout> {
-        return Promise.resolve(this.getNativeLayoutSync());
-    }
-
-    protected getNativeLayoutSync(): NativeKeyboardLayout {
-        return {
-            info: nativeKeymap.getCurrentKeyboardLayout(),
-            mapping: nativeKeymap.getKeyMap()
-        };
-    }
-
-}
+export default new ContainerModule(bind => {
+    bind(ElectronKeyboardLayoutProvider).toSelf().inSingletonScope();
+    bind(KeyboardLayoutProvider).toService(ElectronKeyboardLayoutProvider);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(keyboardPath, () =>
+            ctx.container.get(KeyboardLayoutProvider)
+        )
+    ).inSingletonScope();
+});
