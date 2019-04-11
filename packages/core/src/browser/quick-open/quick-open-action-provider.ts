@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Disposable } from '../../common/disposable';
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 import { QuickOpenItem } from './quick-open-model';
 
 export interface QuickOpenActionProvider {
@@ -39,8 +39,9 @@ export interface QuickOpenAction extends QuickOpenActionOptions, Disposable {
 
 @injectable()
 export abstract class QuickOpenBaseAction implements QuickOpenAction {
-    constructor(protected options: QuickOpenActionOptions) {
-    }
+    constructor(
+        @unmanaged() protected options: QuickOpenActionOptions
+    ) { }
 
     get id(): string {
         return this.options.id;
