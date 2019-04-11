@@ -11,6 +11,7 @@ cache:
 # start_cache_directories
   - dev-packages/application-manager/node_modules
   - dev-packages/application-package/node_modules
+  - dev-packages/electron/node_modules
   - examples/browser/node_modules
   - examples/electron/node_modules
   - node_modules
