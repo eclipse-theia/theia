@@ -33,6 +33,7 @@ Breaking changes:
     }
   }
   ```
+- [extension-manager] deprecated [#4876](https://github.com/theia-ide/theia/pull/4876)
 
 ## v0.5.0
 

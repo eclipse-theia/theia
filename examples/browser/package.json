@@ -23,7 +23,6 @@
     "@theia/editor": "^0.5.0",
     "@theia/editor-preview": "^0.5.0",
     "@theia/editorconfig": "^0.5.0",
-    "@theia/extension-manager": "^0.5.0",
     "@theia/file-search": "^0.5.0",
     "@theia/filesystem": "^0.5.0",
     "@theia/getting-started": "^0.5.0",
