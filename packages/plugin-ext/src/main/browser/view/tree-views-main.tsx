@@ -131,7 +131,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
                 const treeItemId = event[0].id;
                 const [, contextValue = ''] = treeItemId.split('/');
 
-                this.proxy.$setSelection(treeViewId, treeItemId);
+                this.proxy.$setSelection(treeViewId, treeItemId, treeViewWidget.contextSelection);
                 this.viewItemCtxKey.set(contextValue);
             } else {
                 this.viewItemCtxKey.set('');
@@ -140,6 +140,11 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         });
     }
 
+}
+
+export interface SelectionEventHandler {
+    readonly node: SelectableTreeNode;
+    readonly contextSelection: boolean;
 }
 
 export interface DescriptiveMetadata {
@@ -223,6 +228,8 @@ export class TreeViewDataProviderMain {
 @injectable()
 export class TreeViewWidget extends TreeWidget {
 
+    protected _contextSelection = false;
+
     constructor(
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
@@ -249,6 +256,19 @@ export class TreeViewWidget extends TreeWidget {
 
             this.model.root = node;
         });
+    }
+
+    get contextSelection(): boolean {
+        return this._contextSelection;
+    }
+
+    protected handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        try {
+            this._contextSelection = true;
+            super.handleContextMenuEvent(node, event);
+        } finally {
+            this._contextSelection = false;
+        }
     }
 
     public updateWidget() {
