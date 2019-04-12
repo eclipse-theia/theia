@@ -45,7 +45,7 @@ export class DefaultFileDialogService {
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const title = props.title || 'Open';
-        const rootNode = await this.getDirNode(folder);
+        const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const dialog = this.openFileDialogFactory(Object.assign(props, { title }));
             await dialog.model.navigateTo(rootNode);
@@ -62,7 +62,7 @@ export class DefaultFileDialogService {
 
     async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const title = props.title || 'Save';
-        const rootNode = await this.getDirNode(folder);
+        const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const dialog = this.saveFileDialogFactory(Object.assign(props, { title }));
             await dialog.model.navigateTo(rootNode);
@@ -71,10 +71,11 @@ export class DefaultFileDialogService {
         return undefined;
     }
 
-    protected async getDirNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
+    protected async getRootNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
         const folder = folderToOpen || await this.fileSystem.getCurrentUserHome();
         if (folder) {
-            const rootUri = new URI(folder.uri);
+            const folderUri = new URI(folder.uri);
+            const rootUri = folder.isDirectory ? folderUri : folderUri.parent;
             const name = this.labelProvider.getName(rootUri);
             const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
             if (rootStat) {
