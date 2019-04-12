@@ -1,7 +1,10 @@
 {
   "private": true,
-  "name": "@theia/example-electron",
+  "name": "example-electron",
   "version": "0.5.0",
+  "main": "src-gen/frontend/electron-main.js",
+  "homepage": "https://www.theia-ide.org",
+  "author": "Theia IDE <theia@typefox.io>",
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "theia": {
     "target": "electron",
@@ -21,6 +24,7 @@
     "@theia/editor": "^0.5.0",
     "@theia/editor-preview": "^0.5.0",
     "@theia/editorconfig": "^0.5.0",
+    "@theia/electron": "^0.5.0",
     "@theia/extension-manager": "^0.5.0",
     "@theia/file-search": "^0.5.0",
     "@theia/filesystem": "^0.5.0",

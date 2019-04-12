@@ -21,3 +21,4 @@ package-backup.json
 packages/plugin/typedoc
 plugins
 gh-pages
+*.tgz
