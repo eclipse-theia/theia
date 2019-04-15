@@ -151,7 +151,7 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
         if (candidate && versions.some(version => TypescriptVersion.equals(candidate, version))) {
             return candidate;
         }
-        return versions[0];
+        return versions.find(version => version.qualifier === 'Workspace') || versions[0];
     }
     async getVersions(): Promise<TypescriptVersion[]> {
         await Promise.all([this.preferences.ready, this.workspace.ready]);
