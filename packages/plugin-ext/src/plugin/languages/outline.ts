@@ -18,7 +18,6 @@ import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
-import { createToken } from '../token-provider';
 import { DocumentSymbol, Range } from '../../api/model';
 import * as types from '../types-impl';
 
@@ -30,7 +29,7 @@ export class OutlineAdapter {
         private readonly provider: theia.DocumentSymbolProvider
     ) { }
 
-    provideDocumentSymbols(resource: URI): Promise<DocumentSymbol[] | undefined> {
+    provideDocumentSymbols(resource: URI, token: theia.CancellationToken): Promise<DocumentSymbol[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -38,7 +37,7 @@ export class OutlineAdapter {
 
         const doc = document.document;
 
-        return Promise.resolve(this.provider.provideDocumentSymbols(doc, createToken())).then(value => {
+        return Promise.resolve(this.provider.provideDocumentSymbols(doc, token)).then(value => {
             if (!value || value.length === 0) {
                 return undefined;
             }

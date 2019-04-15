@@ -20,7 +20,6 @@ import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
 import { FormattingOptions, SingleEditOperation } from '../../api/model';
 import { Position } from '../../api/plugin-api';
-import { createToken } from '../token-provider';
 
 export class OnTypeFormattingAdapter {
 
@@ -29,7 +28,8 @@ export class OnTypeFormattingAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideOnTypeFormattingEdits(resource: URI, position: Position, ch: string, options: FormattingOptions): Promise<SingleEditOperation[] | undefined> {
+    provideOnTypeFormattingEdits(resource: URI, position: Position, ch: string,
+        options: FormattingOptions, token: theia.CancellationToken): Promise<SingleEditOperation[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -39,7 +39,7 @@ export class OnTypeFormattingAdapter {
         const pos = Converter.toPosition(position);
 
         // tslint:disable-next-line:no-any
-        return Promise.resolve(this.provider.provideOnTypeFormattingEdits(doc, pos, ch, <any>options, createToken())).then(value => {
+        return Promise.resolve(this.provider.provideOnTypeFormattingEdits(doc, pos, ch, <any>options, token)).then(value => {
             if (Array.isArray(value)) {
                 return value.map(Converter.fromTextEdit);
             }

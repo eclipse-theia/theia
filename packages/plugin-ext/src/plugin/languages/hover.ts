@@ -22,7 +22,6 @@ import { Hover } from '../../api/model';
 import * as Converter from '../type-converters';
 import { Range } from '../types-impl';
 import { Position } from '../../api/plugin-api';
-import { createToken } from '../token-provider';
 
 export class HoverAdapter {
 
@@ -31,7 +30,7 @@ export class HoverAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    public provideHover(resource: URI, position: Position): Promise<Hover | undefined> {
+    public provideHover(resource: URI, position: Position, token: theia.CancellationToken): Promise<Hover | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -40,7 +39,7 @@ export class HoverAdapter {
         const doc = document.document;
         const pos = Converter.toPosition(position);
 
-        return Promise.resolve(this.provider.provideHover(doc, pos, createToken())).then(value => {
+        return Promise.resolve(this.provider.provideHover(doc, pos, token)).then(value => {
             /* tslint:disable-next-line:no-any */
             if (!value || !Array.isArray(value.contents) || (value.contents as Array<any>).length === 0) {
                 return undefined;
