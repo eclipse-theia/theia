@@ -60,6 +60,12 @@ export namespace TaskCommands {
         category: TASK_CATEGORY,
         label: 'Configure Tasks...'
     };
+
+    export const TASK_CLEAR_HISTORY: Command = {
+        id: 'task:clear-history',
+        category: TASK_CATEGORY,
+        label: 'Clear History'
+    };
 }
 
 const TASKS_STORAGE_KEY = 'tasks';
@@ -157,6 +163,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_CONFIGURE,
             {
                 execute: () => this.quickOpenTask.configure()
+            }
+        );
+
+        registry.registerCommand(
+            TaskCommands.TASK_CLEAR_HISTORY,
+            {
+                execute: () => this.taskService.clearRecentTasks()
             }
         );
     }

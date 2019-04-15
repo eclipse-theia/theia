@@ -170,6 +170,13 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
+     * Clears the list of recently used tasks.
+     */
+    clearRecentTasks(): void {
+        this.recentTasks = [];
+    }
+
+    /**
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
