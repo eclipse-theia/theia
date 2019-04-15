@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import {
     QuickOpenService, QuickOpenModel, QuickOpenItem,
-    QuickOpenGroupItem, QuickOpenMode, QuickOpenHandler, QuickOpenOptions, QuickOpenActionProvider
+    QuickOpenGroupItem, QuickOpenMode, QuickOpenHandler, QuickOpenOptions, QuickOpenActionProvider, QuickOpenGroupItemOptions
 } from '@theia/core/lib/browser/quick-open/';
 import { TaskService } from './task-service';
 import { ContributedTaskConfiguration, TaskInfo, TaskConfiguration } from '../common/task-protocol';
@@ -25,6 +25,7 @@ import { TaskConfigurations } from './task-configurations';
 import URI from '@theia/core/lib/common/uri';
 import { TaskActionProvider } from './task-action-provider';
 import { LabelProvider } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
 export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
@@ -48,6 +49,9 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     /**
      * @deprecated To be removed in 0.5.0
      */
@@ -61,11 +65,33 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         const providedTasks = await this.taskService.getProvidedTasks();
 
         const { filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks(recentTasks, configuredTasks, providedTasks);
+        const stat = await this.workspaceService.workspace;
+        const isMulti = stat ? !stat.isDirectory : false;
         this.items = [];
         this.items.push(
-            ...filteredRecentTasks.map((t, ind) => new TaskRunQuickOpenItem(t, this.taskService, ind === 0 ? 'recently used tasks' : undefined)),
-            ...filteredConfiguredTasks.map((t, ind) => new TaskRunQuickOpenItem(t, this.taskService, ind === 0 ? 'configured tasks' : undefined)),
-            ...filteredProvidedTasks.map((t, ind) => new TaskRunQuickOpenItem(t, this.taskService, ind === 0 ? 'detected tasks' : undefined))
+            ...filteredRecentTasks.map((task, index) =>
+                new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
+                    groupLabel: index === 0 ? 'recently used tasks' : undefined,
+                    showBorder: false
+                })),
+            ...filteredConfiguredTasks.map((task, index) =>
+                new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
+                    groupLabel: index === 0 ? 'configured tasks' : undefined,
+                    showBorder: (
+                        filteredRecentTasks.length <= 0
+                            ? false
+                            : index === 0 ? true : false
+                    )
+                })),
+            ...filteredProvidedTasks.map((task, index) =>
+                new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
+                    groupLabel: index === 0 ? 'detected tasks' : undefined,
+                    showBorder: (
+                        filteredRecentTasks.length <= 0 && filteredConfiguredTasks.length <= 0
+                            ? false
+                            : index === 0 ? true : false
+                    )
+                }))
         );
 
         this.actionProvider = this.items.length ? this.taskActionProvider : undefined;
@@ -198,9 +224,10 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     constructor(
         protected readonly task: TaskConfiguration,
         protected taskService: TaskService,
-        protected readonly groupLabel: string | undefined
+        protected isMulti: boolean,
+        protected readonly options: QuickOpenGroupItemOptions,
     ) {
-        super();
+        super(options);
     }
 
     getTask(): TaskConfiguration {
@@ -215,10 +242,13 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getGroupLabel(): string {
-        return this.groupLabel || '';
+        return this.options.groupLabel || '';
     }
 
     getDescription(): string {
+        if (!this.isMulti) {
+            return '';
+        }
         if (ContributedTaskConfiguration.is(this.task)) {
             if (this.task._scope) {
                 return new URI(this.task._scope).path.toString();

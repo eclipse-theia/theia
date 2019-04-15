@@ -23,6 +23,10 @@
     color: var(--theia-ui-font-color1) !important;
 }
 
+.quick-open-entry-keybinding {
+    padding-right: 15px;
+}
+
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */
@@ -45,10 +49,6 @@
 .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
     background-image: none;
     margin-right: 0px;
-}
-
-.monaco-tree-row  {
-    padding-right: 11px;
 }
 
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .monaco-highlighted-label .highlight {
