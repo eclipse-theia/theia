@@ -20,6 +20,7 @@ import { QuickOpenService, QuickOpenOptions } from './quick-open-service';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ILogger } from '../../common/logger';
 import { MaybePromise } from '../../common/types';
+import { QuickOpenActionProvider } from './quick-open-action-provider';
 
 export const QuickOpenContribution = Symbol('QuickOpenContribution');
 /**
@@ -192,7 +193,7 @@ export class PrefixQuickOpenService {
         }, options);
     }
 
-    protected onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+    protected onType(lookFor: string, acceptor: (items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider | undefined) => void): void {
         const handler = this.handlers.getHandlerOrDefault(lookFor);
         if (handler === undefined) {
             const items: QuickOpenItem[] = [];
@@ -205,7 +206,7 @@ export class PrefixQuickOpenService {
         } else {
             const handlerModel = handler.getModel();
             const searchValue = this.handlers.isDefaultHandler(handler) ? lookFor : lookFor.substr(handler.prefix.length);
-            handlerModel.onType(searchValue, items => acceptor(items));
+            handlerModel.onType(searchValue, (items, actionProvider) => acceptor(items, actionProvider));
         }
     }
 
