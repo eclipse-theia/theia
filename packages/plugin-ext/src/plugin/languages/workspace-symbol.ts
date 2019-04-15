@@ -17,7 +17,6 @@
 import { SymbolInformation } from 'vscode-languageserver-types';
 import * as theia from '@theia/plugin';
 import * as Converter from '../type-converters';
-import { createToken } from '../token-provider';
 
 export class WorkspaceSymbolAdapter {
 
@@ -25,8 +24,8 @@ export class WorkspaceSymbolAdapter {
         private readonly provider: theia.WorkspaceSymbolProvider
     ) { }
 
-    provideWorkspaceSymbols(query: string): Promise<SymbolInformation[]> {
-        return Promise.resolve(this.provider.provideWorkspaceSymbols(query, createToken())).then(workspaceSymbols => {
+    provideWorkspaceSymbols(query: string, token: theia.CancellationToken): Promise<SymbolInformation[]> {
+        return Promise.resolve(this.provider.provideWorkspaceSymbols(query, token)).then(workspaceSymbols => {
             if (!workspaceSymbols) {
                 return [];
             }
@@ -42,13 +41,13 @@ export class WorkspaceSymbolAdapter {
         });
     }
 
-    resolveWorkspaceSymbol(symbol: SymbolInformation): Promise<SymbolInformation> {
+    resolveWorkspaceSymbol(symbol: SymbolInformation, token: theia.CancellationToken): Promise<SymbolInformation> {
         if (this.provider.resolveWorkspaceSymbol && typeof this.provider.resolveWorkspaceSymbol === 'function') {
             const theiaSymbol = Converter.toSymbolInformation(symbol);
             if (!theiaSymbol) {
                 return Promise.resolve(symbol);
             } else {
-                return Promise.resolve(this.provider.resolveWorkspaceSymbol(theiaSymbol, undefined)).then(workspaceSymbol => {
+                return Promise.resolve(this.provider.resolveWorkspaceSymbol(theiaSymbol, token)).then(workspaceSymbol => {
                     if (!workspaceSymbol) {
                         return symbol;
                     }

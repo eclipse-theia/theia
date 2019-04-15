@@ -26,6 +26,7 @@ import { Event } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import VSCodeURI from 'vscode-uri';
 import URI from '@theia/core/lib/common/uri';
+import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver-protocol';
 
 export interface MessageConnection {
     send(msg: {}): void;
@@ -64,6 +65,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly proxies: { [id: string]: any; };
     private lastMessageId: number;
     private readonly invokedHandlers: { [req: string]: Promise<any>; };
+    private readonly cancellationTokenSources: { [req: string]: CancellationTokenSource } = {};
     private readonly pendingRPCReplies: { [msgId: string]: Deferred<any>; };
     private readonly multiplexor: RPCMultiplexer;
     private messageToSendHostId: string | undefined;
@@ -110,9 +112,19 @@ export class RPCProtocolImpl implements RPCProtocol {
         if (this.isDisposed) {
             return Promise.reject(canceled());
         }
+        const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
+        if (cancellationToken && cancellationToken.isCancellationRequested) {
+            return Promise.reject(canceled());
+        }
 
         const callId = String(++this.lastMessageId);
         const result = new Deferred();
+
+        if (cancellationToken) {
+            cancellationToken.onCancellationRequested(() =>
+                this.multiplexor.send(MessageFactory.cancel(callId, this.messageToSendHostId))
+            );
+        }
 
         this.pendingRPCReplies[callId] = result;
         this.multiplexor.send(MessageFactory.request(callId, proxyId, methodName, args, this.messageToSendHostId));
@@ -147,6 +159,16 @@ export class RPCProtocolImpl implements RPCProtocol {
             case MessageType.ReplyErr:
                 this.receiveReplyErr(msg);
                 break;
+            case MessageType.Cancel:
+                this.receiveCancel(msg);
+                break;
+        }
+    }
+
+    private receiveCancel(msg: CancelMessage): void {
+        const cancellationTokenSource = this.cancellationTokenSources[msg.id];
+        if (cancellationTokenSource) {
+            cancellationTokenSource.cancel();
         }
     }
 
@@ -154,13 +176,18 @@ export class RPCProtocolImpl implements RPCProtocol {
         const callId = msg.id;
         const proxyId = msg.proxyId;
 
+        const tokenSource = new CancellationTokenSource();
+        this.cancellationTokenSources[callId] = tokenSource;
+        msg.args.push(tokenSource.token);
         this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, msg.args);
 
         this.invokedHandlers[callId].then(r => {
             delete this.invokedHandlers[callId];
+            delete this.cancellationTokenSources[callId];
             this.multiplexor.send(MessageFactory.replyOK(callId, r, this.messageToSendHostId));
         }, err => {
             delete this.invokedHandlers[callId];
+            delete this.cancellationTokenSources[callId];
             this.multiplexor.send(MessageFactory.replyErr(callId, err, this.messageToSendHostId));
         });
     }
@@ -272,6 +299,14 @@ class RPCMultiplexer {
 
 class MessageFactory {
 
+    static cancel(req: string, messageToSendHostId?: string): string {
+        let prefix = '';
+        if (messageToSendHostId) {
+            prefix = `"hostID":"${messageToSendHostId}",`;
+        }
+        return `{${prefix}"type":${MessageType.Cancel},"id":"${req}"}`;
+    }
+
     public static request(req: string, rpcId: string, method: string, args: any[], messageToSendHostId?: string): string {
         let prefix = '';
         if (messageToSendHostId) {
@@ -368,7 +403,13 @@ function isSerializedObject(obj: any): obj is SerializedObject {
 const enum MessageType {
     Request = 1,
     Reply = 2,
-    ReplyErr = 3
+    ReplyErr = 3,
+    Cancel = 4
+}
+
+class CancelMessage {
+    type: MessageType.Cancel;
+    id: string;
 }
 
 class RequestMessage {
@@ -391,7 +432,7 @@ class ReplyErrMessage {
     err: SerializedError;
 }
 
-type RPCMessage = RequestMessage | ReplyMessage | ReplyErrMessage;
+type RPCMessage = RequestMessage | ReplyMessage | ReplyErrMessage | CancelMessage;
 
 export interface SerializedError {
     readonly $isError: true;

@@ -20,7 +20,6 @@ import { DocumentsExtImpl } from '../documents';
 import { DocumentLink } from '../../api/model';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
-import { createToken } from '../token-provider';
 
 export class LinkProviderAdapter {
     private cacheId = 0;
@@ -31,7 +30,7 @@ export class LinkProviderAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideLinks(resource: URI): Promise<DocumentLink[] | undefined> {
+    provideLinks(resource: URI, token: theia.CancellationToken): Promise<DocumentLink[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -39,7 +38,7 @@ export class LinkProviderAdapter {
 
         const doc = document.document;
 
-        return Promise.resolve(this.provider.provideDocumentLinks(doc, createToken())).then(links => {
+        return Promise.resolve(this.provider.provideDocumentLinks(doc, token)).then(links => {
             if (!Array.isArray(links)) {
                 return undefined;
             }
@@ -55,7 +54,7 @@ export class LinkProviderAdapter {
         });
     }
 
-    resolveLink(link: DocumentLink): Promise<DocumentLink | undefined> {
+    resolveLink(link: DocumentLink, token: theia.CancellationToken): Promise<DocumentLink | undefined> {
         if (typeof this.provider.resolveDocumentLink !== 'function') {
             return Promise.resolve(undefined);
         }
@@ -64,7 +63,7 @@ export class LinkProviderAdapter {
         if (!item) {
             return Promise.resolve(undefined);
         }
-        return Promise.resolve(this.provider.resolveDocumentLink(item, undefined)).then(value => {
+        return Promise.resolve(this.provider.resolveDocumentLink(item, token)).then(value => {
             if (value) {
                 return Converter.fromDocumentLink(value);
             }

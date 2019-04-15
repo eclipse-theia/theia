@@ -19,7 +19,6 @@ import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
 import { FormattingOptions, SingleEditOperation, Range } from '../../api/model';
-import { createToken } from '../token-provider';
 
 export class RangeFormattingAdapter {
 
@@ -28,7 +27,7 @@ export class RangeFormattingAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideDocumentRangeFormattingEdits(resource: URI, range: Range, options: FormattingOptions): Promise<SingleEditOperation[] | undefined> {
+    provideDocumentRangeFormattingEdits(resource: URI, range: Range, options: FormattingOptions, token: theia.CancellationToken): Promise<SingleEditOperation[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -38,7 +37,7 @@ export class RangeFormattingAdapter {
         const ran = Converter.toRange(range);
 
         // tslint:disable-next-line:no-any
-        return Promise.resolve(this.provider.provideDocumentRangeFormattingEdits(doc, ran, <any>options, createToken())).then(value => {
+        return Promise.resolve(this.provider.provideDocumentRangeFormattingEdits(doc, ran, <any>options, token)).then(value => {
             if (Array.isArray(value)) {
                 return value.map(Converter.fromTextEdit);
             }

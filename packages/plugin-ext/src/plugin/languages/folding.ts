@@ -19,7 +19,6 @@ import { DocumentsExtImpl } from '@theia/plugin-ext/src/plugin/documents';
 import URI from 'vscode-uri/lib/umd';
 import * as Converter from '../type-converters';
 import * as model from '../../api/model';
-import { createToken } from '../token-provider';
 
 export class FoldingProviderAdapter {
 
@@ -28,7 +27,7 @@ export class FoldingProviderAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideFoldingRanges(resource: URI, context: model.FoldingContext): Promise<model.FoldingRange[] | undefined> {
+    provideFoldingRanges(resource: URI, context: model.FoldingContext, token: theia.CancellationToken): Promise<model.FoldingRange[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -36,7 +35,7 @@ export class FoldingProviderAdapter {
 
         const doc = document.document;
 
-        return Promise.resolve(this.provider.provideFoldingRanges(doc, context, createToken())).then(ranges => {
+        return Promise.resolve(this.provider.provideFoldingRanges(doc, context, token)).then(ranges => {
             if (!Array.isArray(ranges)) {
                 return undefined;
             }
