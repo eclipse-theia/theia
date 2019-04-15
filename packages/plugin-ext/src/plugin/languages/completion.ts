@@ -86,7 +86,7 @@ export class CompletionAdapter {
             return Promise.resolve(completion);
         }
 
-        return Promise.resolve(this.delegate.resolveCompletionItem(item, undefined)).then(resolvedItem => {
+        return Promise.resolve(this.delegate.resolveCompletionItem(item, createToken())).then(resolvedItem => {
 
             if (!resolvedItem) {
                 return completion;
