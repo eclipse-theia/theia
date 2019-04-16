@@ -26,7 +26,7 @@ import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watc
 import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { FileChange } from '@theia/filesystem/lib/browser';
 import { Emitter } from '@theia/core';
-import { LocalStorageService } from '@theia/core/lib/browser';
+import { LocalStorageService, StorageService } from '@theia/core/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
@@ -63,7 +63,7 @@ describe('GitRepositoryProvider', () => {
     let mockWorkspaceService: WorkspaceService;
     let mockFilesystem: FileSystem;
     let mockFileSystemWatcher: FileSystemWatcher;
-    let mockStorageService: LocalStorageService;
+    let mockStorageService: StorageService;
 
     let gitRepositoryProvider: GitRepositoryProvider;
     const mockRootChangeEmitter: Emitter<FileStat[]> = new Emitter();
@@ -89,7 +89,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         testContainer.bind(FileSystem).toConstantValue(mockFilesystem);
         testContainer.bind(FileSystemWatcher).toConstantValue(mockFileSystemWatcher);
-        testContainer.bind(LocalStorageService).toConstantValue(mockStorageService);
+        testContainer.bind(StorageService).toConstantValue(mockStorageService);
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockRootChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
