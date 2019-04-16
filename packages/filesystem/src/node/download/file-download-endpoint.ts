@@ -43,9 +43,14 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
     @named(FileDownloadHandler.MULTI)
     protected readonly multiFileDownloadHandler: FileDownloadHandler;
 
+    @inject(FileDownloadHandler)
+    @named(FileDownloadHandler.DOWNLOAD_LINK)
+    protected readonly downloadLinkHandler: FileDownloadHandler;
+
     configure(app: Application): void {
         const upload = this.upload.bind(this);
         const router = Router();
+        router.get('/download', (request, response) => this.downloadLinkHandler.handle(request, response));
         router.get('/', (request, response) => this.singleFileDownloadHandler.handle(request, response));
         router.put('/', (request, response) => this.multiFileDownloadHandler.handle(request, response));
         router.post('/', upload);
