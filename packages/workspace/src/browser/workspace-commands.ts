@@ -152,6 +152,7 @@ export class FileMenuContribution implements MenuContribution {
             commandId: FileDownloadCommands.DOWNLOAD.id,
             order: 'b'
         });
+
     }
 
 }
