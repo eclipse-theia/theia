@@ -60,16 +60,16 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     getDeployedFrontendMetadata(): Promise<PluginMetadata[]> {
-        return Promise.resolve(this.deployerHandler.getDeployedFrontendMetadata());
+        return this.deployerHandler.getDeployedFrontendMetadata();
     }
 
     async getDeployedMetadata(): Promise<PluginMetadata[]> {
-        const backendMetadata = this.deployerHandler.getDeployedBackendMetadata();
+        const backendMetadata = await this.deployerHandler.getDeployedBackendMetadata();
         if (backendMetadata.length > 0) {
             this.hostedPlugin.runPluginServer();
         }
         const allMetadata: PluginMetadata[] = [];
-        allMetadata.push(...this.deployerHandler.getDeployedFrontendMetadata());
+        allMetadata.push(...await this.deployerHandler.getDeployedFrontendMetadata());
         allMetadata.push(...backendMetadata);
 
         // ask remote as well
