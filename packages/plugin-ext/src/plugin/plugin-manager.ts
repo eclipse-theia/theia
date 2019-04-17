@@ -85,6 +85,12 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                 dispose(pluginContext.subscriptions);
             }
         });
+
+        // clean map
+        this.activatedPlugins.clear();
+        this.pluginActivationPromises.clear();
+        this.pluginContextsMap.clear();
+
         return Promise.resolve();
     }
 
