@@ -17,7 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions, ForkOptions } from './process';
+import { Process, ProcessType, ProcessOptions, ForkOptions, ProcessErrorEvent } from './process';
 import { ChildProcess, spawn, fork } from 'child_process';
 import * as stream from 'stream';
 
@@ -106,9 +106,8 @@ export class RawProcess extends Process {
             }
 
             this.process.on('error', (error: NodeJS.ErrnoException) => {
-                this.emitOnError({
-                    code: error.code || 'Unknown error',
-                });
+                error.code = error.code || 'Unknown error';
+                this.emitOnError(error as ProcessErrorEvent);
             });
             this.process.on('exit', (exitCode: number, signal: string) => {
                 // node's child_process exit sets the unused parameter to null,
