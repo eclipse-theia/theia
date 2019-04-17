@@ -124,7 +124,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         });
     }
 
-    protected onDidFailSpawnProcess(error: ProcessErrorEvent): void {
+    protected onDidFailSpawnProcess(error: Error | ProcessErrorEvent): void {
         console.error(error);
     }
 
