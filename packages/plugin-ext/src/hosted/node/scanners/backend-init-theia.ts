@@ -30,11 +30,11 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     pluginsApiImpl.set(plugin.model.id, apiImpl);
 
     plugins.push(plugin);
+    pluginApiFactory = apiFactory;
 
     if (!isLoadOverride) {
         overrideInternalLoad();
         isLoadOverride = true;
-        pluginApiFactory = apiFactory;
     }
 
 };
