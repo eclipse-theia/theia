@@ -33,6 +33,7 @@ import { ContextKeyService } from './context-key-service';
 import { OS, isOSX } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
+import { StorageService } from './storage-service';
 
 export namespace CommonMenus {
 
@@ -192,6 +193,8 @@ export const supportCopy = browser.isNative || document.queryCommandSupported('c
 // privileges to actually perform the action
 export const supportPaste = browser.isNative || (!browser.isChrome && document.queryCommandSupported('paste'));
 
+export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
+
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution {
 
@@ -209,6 +212,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(ResourceContextKey)
     protected readonly resourceContextKey: ResourceContextKey;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
+
     @postConstruct()
     protected init(): void {
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
@@ -217,6 +226,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         this.initResourceContextKeys();
         this.registerCtrlWHandling();
+    }
+
+    onStart() {
+        this.storageService.getData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent: [] })
+            .then(tasks => this.commandRegistry.recent = tasks.recent);
+    }
+
+    onStop() {
+        const recent = this.commandRegistry.recent;
+        this.storageService.setData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent });
     }
 
     protected initResourceContextKeys(): void {

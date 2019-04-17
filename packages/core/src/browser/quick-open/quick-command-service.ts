@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { Command, CommandRegistry } from '../../common';
 import { Keybinding, KeybindingRegistry } from '../keybinding';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions } from './quick-open-model';
 import { QuickOpenOptions } from './quick-open-service';
 import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
 import { ContextKeyService } from '../context-key-service';
@@ -51,15 +51,31 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     init(): void {
         // let's compute the items here to do it in the context of the currently activeElement
         this.items = [];
-        const filteredAndSortedCommands = this.commands.commands.filter(a => a.label).sort((a, b) => Command.compareCommands(a, b));
-        for (const command of filteredAndSortedCommands) {
-            if (command.label) {
-                const contexts = this.contexts.get(command.id);
-                if (!contexts || contexts.some(when => this.contextKeyService.match(when))) {
-                    this.items.push(new CommandQuickOpenItem(command, this.commands, this.keybindings));
-                }
-            }
-        }
+        const { recent, other } = this.getCommands();
+        this.items.push(
+            ...recent.map((command, index) =>
+                new CommandQuickOpenItem(
+                    command,
+                    this.commands,
+                    this.keybindings,
+                    {
+                        groupLabel: index === 0 ? 'recently used' : '',
+                        showBorder: false,
+                    }
+                )
+            ),
+            ...other.map((command, index) =>
+                new CommandQuickOpenItem(
+                    command,
+                    this.commands,
+                    this.keybindings,
+                    {
+                        groupLabel: recent.length <= 0 ? '' : index === 0 ? 'other commands' : '',
+                        showBorder: recent.length <= 0 ? false : index === 0 ? true : false,
+                    }
+                )
+            ),
+        );
     }
 
     public onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
@@ -74,9 +90,89 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
         return { fuzzyMatchLabel: true };
     }
 
+    /**
+     * Get the list of recently used and other commands.
+     *
+     * @returns the list of recently used commands and other commands.
+     */
+    private getCommands(): { recent: Command[], other: Command[] } {
+
+        // Get the list of recent commands.
+        const recentCommands: Command[] = this.commands.recent;
+
+        // Get the list of all valid commands.
+        const allCommands: Command[] = this.getValidCommands(this.commands.commands);
+
+        // Build the list of recent commands.
+        const rCommands: Command[] = [];
+        recentCommands.forEach((r: Command) => {
+            const exists = allCommands.some((c: Command) => Command.equals(r, c));
+            // Add the recently used item to the list.
+            if (exists) { rCommands.push(r); }
+        });
+
+        // Build the list of other commands.
+        const oCommands: Command[] = [];
+        allCommands.forEach((a: Command) => {
+            const exists = rCommands.some((c: Command) => Command.equals(a, c));
+            // If the command does not exist in the recently used list, add it to the other list.
+            if (!exists) { oCommands.push(a); }
+        });
+
+        // Normalize the list of recent commands.
+        const recent: Command[] = this.normalize(rCommands);
+
+        // Normalize, and sort the list of other commands.
+        const other: Command[] = this.sort(
+            this.normalize(oCommands)
+        );
+
+        return { recent, other };
+    }
+
+    /**
+     * Normalizes a list of commands.
+     * Normalization includes obtaining commands that have labels and are visible.
+     *
+     * @param commands the list of commands.
+     * @returns the list of normalized commands.
+     */
+    private normalize(commands: Command[]): Command[] {
+        return commands.filter((a: Command) => a.label && this.commands.isVisible(a.id));
+    }
+
+    /**
+     * Sorts a list of commands alphabetically.
+     *
+     * @param commands the list of commands.
+     * @returns the list of sorted commands.
+     */
+    private sort(commands: Command[]): Command[] {
+        return commands.sort((a: Command, b: Command) => Command.compareCommands(a, b));
+    }
+
+    /**
+     * Get the list of valid commands.
+     *
+     * @param commands the list of raw commands.
+     * @returns the list of valid commands.
+     */
+    private getValidCommands(raw: Command[]): Command[] {
+        const valid: Command[] = [];
+        raw.forEach((command: Command) => {
+            if (command.label) {
+                const contexts = this.contexts.get(command.id);
+                if (!contexts || contexts.some(when => this.contextKeyService.match(when))) {
+                    valid.push(command);
+                }
+            }
+        });
+        return valid;
+    }
+
 }
 
-export class CommandQuickOpenItem extends QuickOpenItem {
+export class CommandQuickOpenItem extends QuickOpenGroupItem {
 
     private activeElement: HTMLElement;
     private hidden: boolean;
@@ -84,9 +180,10 @@ export class CommandQuickOpenItem extends QuickOpenItem {
     constructor(
         protected readonly command: Command,
         protected readonly commands: CommandRegistry,
-        protected readonly keybindings: KeybindingRegistry
+        protected readonly keybindings: KeybindingRegistry,
+        protected readonly commandOptions?: QuickOpenGroupItemOptions,
     ) {
-        super();
+        super(commandOptions);
         this.activeElement = window.document.activeElement as HTMLElement;
         this.hidden = !this.commands.getActiveHandler(this.command.id);
     }

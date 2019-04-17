@@ -59,6 +59,21 @@ export namespace Command {
             return 0;
         }
     }
+
+    /**
+     * Determine if two commands are equal.
+     *
+     * @param a the first command for comparison.
+     * @param b the second command for comparison.
+     */
+    export function equals(a: Command, b: Command): boolean {
+        return (
+            a.id === b.id &&
+            a.label === b.label &&
+            a.iconClass === b.iconClass &&
+            a.category === b.category
+        );
+    }
 }
 
 /**
@@ -125,6 +140,9 @@ export class CommandRegistry implements CommandService {
 
     protected readonly _commands: { [id: string]: Command } = {};
     protected readonly _handlers: { [id: string]: CommandHandler[] } = {};
+
+    // List of recently used commands.
+    protected _recent: Command[] = [];
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
@@ -235,14 +253,18 @@ export class CommandRegistry implements CommandService {
      * Reject if a command cannot be executed.
      */
     // tslint:disable-next-line:no-any
-    async executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
-        const handler = this.getActiveHandler(command, ...args);
+    async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
+        const handler = this.getActiveHandler(commandId, ...args);
         if (handler) {
             const result = await handler.execute(...args);
+            const command = this.getCommand(commandId);
+            if (command) {
+                this.addRecentCommand(command);
+            }
             return result;
         }
         const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
-        throw new Error(`The command '${command}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
+        throw new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
     }
 
     /**
@@ -319,4 +341,39 @@ export class CommandRegistry implements CommandService {
     get commandIds(): string[] {
         return Object.keys(this._commands);
     }
+
+    /**
+     * Get the list of recently used commands.
+     */
+    get recent(): Command[] {
+        return this._recent;
+    }
+
+    /**
+     * Set the list of recently used commands.
+     * @param commands the list of recently used commands.
+     */
+    set recent(commands: Command[]) {
+        this._recent = commands;
+    }
+
+    /**
+     * Adds a command to recently used list.
+     * Prioritizes commands that were recently executed to be most recent.
+     *
+     * @param recent a recent command, or array of recent commands.
+     */
+    addRecentCommand(recent: Command | Command[]): void {
+        if (Array.isArray(recent)) {
+            recent.forEach((command: Command) => this.addRecentCommand(command));
+        } else {
+            // Determine if the command currently exists in the recently used list.
+            const index = this._recent.findIndex((command: Command) => Command.equals(recent, command));
+            // If the command exists, remove it from the array so it can later be placed at the top.
+            if (index >= 0) { this._recent.splice(index, 1); }
+            // Add the recent command to the beginning of the array (most recent).
+            this._recent.unshift(recent);
+        }
+    }
+
 }
