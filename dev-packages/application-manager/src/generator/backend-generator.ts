@@ -54,9 +54,8 @@ function start(port, host, argv) {
     const cliManager = container.get(CliManager);
     return cliManager.initializeCli(argv).then(function () {
         const application = container.get(BackendApplication);
-        application.use(express.static(path.join(__dirname, '../../lib'), {
-            index: 'index.html'
-        }));
+        application.use(express.static(path.join(__dirname, '../../lib')));
+        application.use(express.static(path.join(__dirname, '../../lib/index.html')));
         return application.start(port, host);
     });
 }
