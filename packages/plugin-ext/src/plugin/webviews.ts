@@ -113,7 +113,10 @@ export class WebviewsExtImpl implements WebviewsExt {
     }
 
     private getWebviewPanel(viewId: string): WebviewPanelImpl | undefined {
-        return this.webviewPanels.get(viewId);
+        if (this.webviewPanels.has(viewId)) {
+            return this.webviewPanels.get(viewId);
+        }
+        return undefined;
     }
 }
 
@@ -164,7 +167,8 @@ export class WebviewImpl implements theia.Webview {
         return this._html;
     }
 
-    set html(newHtml: string) {
+    set html(html: string) {
+        const newHtml = html.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
         this.checkIsDisposed();
         if (this._html !== newHtml) {
             this._html = newHtml;
