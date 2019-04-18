@@ -1,3 +1,4 @@
+> [Submit a session proposal](https://docs.google.com/forms/d/1EpFRHG1duzmQ4I9TbB6hSzYpSBq03FXt3EOKBzmwXwA/edit) for Theia Developer Conference June 2019 in Stockholm, Sweden ([learn more](https://github.com/theia-ide/theia/wiki/Theia-Developer-Conference-2019))
 
 <br/>
 <div id="theia-logo" align="center">
