@@ -41,13 +41,9 @@ export class ProcessTaskResolver implements TaskResolver {
         const options = { context: new URI(taskConfig._source).withScheme('file') };
         const processTaskConfig = taskConfig as ProcessTaskConfiguration;
         const result: ProcessTaskConfiguration = {
-            type: processTaskConfig.type,
-            _source: processTaskConfig._source,
-            _scope: processTaskConfig._scope,
-            label: processTaskConfig.label,
+            ...processTaskConfig,
             command: await this.variableResolverService.resolve(processTaskConfig.command, options),
             args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, options) : undefined,
-            options: processTaskConfig.options,
             windows: processTaskConfig.windows ? {
                 command: await this.variableResolverService.resolve(processTaskConfig.windows.command, options),
                 args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args, options) : undefined,

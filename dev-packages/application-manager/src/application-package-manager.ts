@@ -78,7 +78,8 @@ export class ApplicationPackageManager {
     }
 
     async startElectron(args: string[]): Promise<void> {
-        this.__process.spawnBin('electron', [this.pck.frontend('electron-main.js'), ...args],
+        const electronCli = require.resolve('electron/cli.js', { paths: [this.pck.projectPath] });
+        this.process.spawn(electronCli, [this.pck.frontend('electron-main.js'), ...args],
             { stdio: [0, 1, 2] });
     }
 

@@ -34,11 +34,6 @@ export class TopPanel {
         this.clickSubMenu('Call Hierarchy');
     }
 
-    toggleExtensionsView() {
-        this.clickMenuTab('View');
-        this.clickSubMenu('Extensions');
-    }
-
     toggleFilesView() {
         this.clickMenuTab('View');
         this.clickSubMenu('Explorer');

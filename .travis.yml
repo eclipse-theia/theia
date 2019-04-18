@@ -1,6 +1,6 @@
 sudo: required
 language: node_js
-node_js: '8'
+node_js: '10'
 git:
   depth: 1
 cache:
@@ -11,6 +11,7 @@ cache:
 # start_cache_directories
   - dev-packages/application-manager/node_modules
   - dev-packages/application-package/node_modules
+  - dev-packages/electron/node_modules
   - examples/browser/node_modules
   - examples/electron/node_modules
   - node_modules
@@ -73,12 +74,15 @@ env:
     - NODE_OPTIONS="--max_old_space_size=4096"
 addons:
   apt:
+    update: true
     sources:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
     - oracle-java9-set-default
     - libsecret-1-dev
+    - libx11-dev
+    - libxkbfile-dev
     chrome: stable
 before_script:
   - export DISPLAY=:99.0; sh -e /etc/init.d/xvfb start ;

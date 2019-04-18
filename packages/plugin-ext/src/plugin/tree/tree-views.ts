@@ -95,13 +95,13 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         }
     }
 
-    async $setSelection(treeViewId: string, treeItemId: string): Promise<any> {
+    async $setSelection(treeViewId: string, treeItemId: string, contextSelection: boolean): Promise<any> {
         const treeView = this.treeViews.get(treeViewId);
         if (!treeView) {
             throw new Error('No tree view with id' + treeViewId);
         }
 
-        treeView.onSelectionChanged(treeItemId);
+        treeView.onSelectionChanged(treeItemId, contextSelection);
     }
 
 }
@@ -253,7 +253,7 @@ class TreeViewExtImpl<T> extends Disposable {
         }
     }
 
-    async onSelectionChanged(treeItemId: string): Promise<any> {
+    async onSelectionChanged(treeItemId: string, contextSelection: boolean): Promise<any> {
         // get element from a cache
         const cachedElement: T | undefined = this.cache.get(treeItemId);
 
@@ -263,7 +263,7 @@ class TreeViewExtImpl<T> extends Disposable {
             // Ask data provider for a tree item for the value
             const treeItem = await this.treeDataProvider.getTreeItem(cachedElement);
 
-            if (treeItem.command) {
+            if (!contextSelection && treeItem.command) {
                 this.commandRegistry.executeCommand((treeItem.command.command || treeItem.command.id)!, ...(treeItem.command.arguments || []));
             }
         }

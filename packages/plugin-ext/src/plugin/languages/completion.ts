@@ -22,7 +22,6 @@ import * as Converter from '../type-converters';
 import { mixin } from '../../common/types';
 import { Position } from '../../api/plugin-api';
 import { CompletionContext, CompletionResultDto, Completion, CompletionDto } from '../../api/model';
-import { createToken } from '../token-provider';
 
 export class CompletionAdapter {
     private cacheId = 0;
@@ -33,7 +32,7 @@ export class CompletionAdapter {
 
     }
 
-    provideCompletionItems(resource: URI, position: Position, context: CompletionContext): Promise<CompletionResultDto | undefined> {
+    provideCompletionItems(resource: URI, position: Position, context: CompletionContext, token: theia.CancellationToken): Promise<CompletionResultDto | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for  ${resource}`));
@@ -42,7 +41,7 @@ export class CompletionAdapter {
         const doc = document.document;
 
         const pos = Converter.toPosition(position);
-        return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, createToken(), context)).then(value => {
+        return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, token, context)).then(value => {
             const id = this.cacheId++;
             const result: CompletionResultDto = {
                 id,
@@ -74,8 +73,7 @@ export class CompletionAdapter {
         });
     }
 
-    resolveCompletionItem(resource: URI, position: Position, completion: Completion): Promise<Completion> {
-
+    resolveCompletionItem(resource: URI, position: Position, completion: Completion, token: theia.CancellationToken): Promise<Completion> {
         if (typeof this.delegate.resolveCompletionItem !== 'function') {
             return Promise.resolve(completion);
         }
@@ -86,7 +84,7 @@ export class CompletionAdapter {
             return Promise.resolve(completion);
         }
 
-        return Promise.resolve(this.delegate.resolveCompletionItem(item, undefined)).then(resolvedItem => {
+        return Promise.resolve(this.delegate.resolveCompletionItem(item, token)).then(resolvedItem => {
 
             if (!resolvedItem) {
                 return completion;

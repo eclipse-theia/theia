@@ -36,6 +36,7 @@ import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
 import { reviveWorkspaceEditDto } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
+import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 
 export class TextEditorsMainImpl implements TextEditorsMain {
 
@@ -44,8 +45,9 @@ export class TextEditorsMainImpl implements TextEditorsMain {
     private editorsToDispose = new Map<string, DisposableCollection>();
 
     constructor(private readonly editorsAndDocuments: EditorsAndDocumentsMain,
-                rpc: RPCProtocol,
-                private readonly bulkEditService:  MonacoBulkEditService) {
+        rpc: RPCProtocol,
+        private readonly bulkEditService: MonacoBulkEditService,
+        private readonly monacoEditorService: MonacoEditorService) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
         this.toDispose.push(editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
         this.toDispose.push(editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
@@ -108,9 +110,9 @@ export class TextEditorsMainImpl implements TextEditorsMain {
     }
 
     $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
-        const edits  = reviveWorkspaceEditDto(dto);
+        const edits = reviveWorkspaceEditDto(dto);
         return new Promise(resolve => {
-            this.bulkEditService.apply( edits).then(() => resolve(true), err => resolve(false));
+            this.bulkEditService.apply(edits).then(() => resolve(true), err => resolve(false));
         });
     }
 
@@ -122,11 +124,11 @@ export class TextEditorsMainImpl implements TextEditorsMain {
     }
 
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
-        monaco.services.StaticServices.codeEditorService.get().registerDecorationType(key, options);
+        this.monacoEditorService.registerDecorationType(key, options);
     }
 
     $removeTextEditorDecorationType(key: string): void {
-        monaco.services.StaticServices.codeEditorService.get().removeDecorationType(key);
+        this.monacoEditorService.removeDecorationType(key);
     }
 
     $trySetDecorations(id: string, key: string, ranges: DecorationOptions[]): Promise<void> {

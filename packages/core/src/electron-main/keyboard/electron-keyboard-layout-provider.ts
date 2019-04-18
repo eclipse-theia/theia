@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Worker } from 'cluster';
-import { WorkerMessageWriter } from './worker-writer';
-import { WorkerMessageReader } from './worker-reader';
-import { createMessageConnection, MessageConnection, Logger } from 'vscode-jsonrpc';
+import * as nativeKeymap from 'native-keymap';
+import { injectable } from 'inversify';
+import { KeyboardLayoutProvider, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
 
-export function createWorkerConnection(worker: Worker, logger: Logger): MessageConnection {
-    const messageReader = new WorkerMessageReader(worker);
-    const messageWriter = new WorkerMessageWriter(worker);
-    const connection = createMessageConnection(messageReader, messageWriter, logger);
-    connection.onClose(() => connection.dispose());
-    return connection;
+@injectable()
+export class ElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {
+
+    getNativeLayout(): Promise<NativeKeyboardLayout> {
+        return Promise.resolve(this.getNativeLayoutSync());
+    }
+
+    protected getNativeLayoutSync(): NativeKeyboardLayout {
+        return {
+            info: nativeKeymap.getCurrentKeyboardLayout(),
+            mapping: nativeKeymap.getKeyMap()
+        };
+    }
+
 }

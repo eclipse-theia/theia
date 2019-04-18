@@ -34,8 +34,8 @@ export class WorkspaceStorageService implements StorageService {
 
     @postConstruct()
     protected init() {
-        this.initialized = this.workspaceService.roots.then(roots => {
-            this.prefix = this.getPrefix(roots[0]);
+        this.initialized = this.workspaceService.roots.then(() => {
+            this.prefix = this.getPrefix(this.workspaceService.workspace);
         });
     }
 
@@ -57,7 +57,7 @@ export class WorkspaceStorageService implements StorageService {
         return `${this.prefix}:${originalKey}`;
     }
 
-    protected getPrefix(rootStat: FileStat | undefined): string {
-        return rootStat ? rootStat.uri : '_global_';
+    protected getPrefix(workspaceStat: FileStat | undefined): string {
+        return workspaceStat ? workspaceStat.uri : '_global_';
     }
 }

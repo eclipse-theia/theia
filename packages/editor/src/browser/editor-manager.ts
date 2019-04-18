@@ -25,6 +25,7 @@ import { TextEditor } from './editor';
 
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
+    preview?: boolean;
 }
 
 @injectable()

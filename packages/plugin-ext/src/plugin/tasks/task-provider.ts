@@ -17,7 +17,6 @@
 import * as theia from '@theia/plugin';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
-import { createToken } from '../token-provider';
 import { TaskDto } from '../../common';
 
 export class TaskProviderAdapter {
@@ -26,8 +25,8 @@ export class TaskProviderAdapter {
 
     constructor(private readonly provider: theia.TaskProvider) { }
 
-    provideTasks(): Promise<TaskDto[] | undefined> {
-        return Promise.resolve(this.provider.provideTasks(createToken())).then(tasks => {
+    provideTasks(token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
+        return Promise.resolve(this.provider.provideTasks(token)).then(tasks => {
             if (!Array.isArray(tasks)) {
                 return undefined;
             }
@@ -47,7 +46,7 @@ export class TaskProviderAdapter {
         });
     }
 
-    resolveTask(task: TaskDto): Promise<TaskDto | undefined> {
+    resolveTask(task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
         if (typeof this.provider.resolveTask !== 'function') {
             return Promise.resolve(undefined);
         }
@@ -58,7 +57,7 @@ export class TaskProviderAdapter {
             return Promise.resolve(undefined);
         }
 
-        return Promise.resolve(this.provider.resolveTask(item, createToken())).then(value => {
+        return Promise.resolve(this.provider.resolveTask(item, token)).then(value => {
             if (value) {
                 return Converter.fromTask(value);
             }

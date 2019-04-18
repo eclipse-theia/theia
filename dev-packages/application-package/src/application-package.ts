@@ -23,6 +23,8 @@ import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
 import { environment } from './environment';
 
+// tslint:disable:no-implicit-dependencies
+
 // tslint:disable-next-line:no-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
 export class ApplicationPackageOptions {
@@ -46,6 +48,14 @@ export class ApplicationPackage {
         this.projectPath = options.projectPath;
         this.log = options.log || console.log.bind(console);
         this.error = options.error || console.error.bind(console);
+        if (this.isElectron()) {
+            const { version } = require('../package.json');
+            try {
+                require.resolve('@theia/electron/package.json', { paths: [this.projectPath] });
+            } catch {
+                console.warn(`please install @theia/electron@${version} as a runtime dependency`);
+            }
+        }
     }
 
     protected _registry: NpmRegistry | undefined;

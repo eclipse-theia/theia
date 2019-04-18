@@ -17,12 +17,11 @@
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ILogger } from '@theia/core/lib/common';
-import { FrontendApplication, ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
 import { TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -45,6 +44,7 @@ export class TaskService implements TaskConfigurationClient {
      * The last executed task.
      */
     protected lastTask: { source: string, taskLabel: string } | undefined = undefined;
+    protected recentTasks: TaskConfiguration[] = [];
 
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
@@ -153,6 +153,29 @@ export class TaskService implements TaskConfigurationClient {
         return this.providedTaskConfigurations.getTasks();
     }
 
+    addRecentTasks(tasks: TaskConfiguration | TaskConfiguration[]): void {
+        if (Array.isArray(tasks)) {
+            tasks.forEach(task => this.addRecentTasks(task));
+        } else {
+            const ind = this.recentTasks.findIndex(recent => TaskConfiguration.equals(recent, tasks));
+            if (ind >= 0) {
+                this.recentTasks.splice(ind, 1);
+            }
+            this.recentTasks.unshift(tasks);
+        }
+    }
+
+    getRecentTasks(): TaskConfiguration[] {
+        return this.recentTasks;
+    }
+
+    /**
+     * Clears the list of recently used tasks.
+     */
+    clearRecentTasks(): void {
+        this.recentTasks = [];
+    }
+
     /**
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
@@ -230,6 +253,7 @@ export class TaskService implements TaskConfigurationClient {
         let resolvedTask: TaskConfiguration;
         try {
             resolvedTask = resolver ? await resolver.resolveTask(task) : task;
+            this.addRecentTasks(task);
         } catch (error) {
             this.logger.error(`Error resolving task '${taskLabel}': ${error}`);
             this.messageService.error(`Error resolving task '${taskLabel}': ${error}`);

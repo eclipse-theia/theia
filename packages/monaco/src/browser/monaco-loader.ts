@@ -51,6 +51,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/keybinding/common/keybindingsRegistry',
                 'vs/platform/keybinding/common/keybindingResolver',
                 'vs/platform/keybinding/common/usLayoutResolvedKeybinding',
+                'vs/base/common/keybindingLabels',
                 'vs/base/common/keyCodes',
                 'vs/editor/browser/editorExtensions',
                 'vs/editor/standalone/browser/simpleServices',
@@ -74,7 +75,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/contextkey/common/contextkey',
                 'vs/platform/contextkey/browser/contextKeyService'
             ], (css: any, html: any, commands: any, actions: any,
-                keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any,
+                keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
                 keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, platform: any, modes: any, suggest: any, suggestController: any, findController: any, rename: any, snippetParser: any,
                 configuration: any, configurationModels: any,
@@ -83,7 +84,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
-                    global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keyCodes);
+                    global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
                     global.monaco.services = Object.assign({}, simpleServices, standaloneServices, configuration, configurationModels, codeEditorService, codeEditorServiceImpl);
                     global.monaco.quickOpen = Object.assign({}, quickOpen, quickOpenWidget, quickOpenModel);
                     global.monaco.filters = filters;

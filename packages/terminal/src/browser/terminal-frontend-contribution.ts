@@ -28,7 +28,7 @@ import {
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -225,7 +225,8 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_CLEAR.id,
-            keybinding: 'ctrlcmd+k'
+            keybinding: 'ctrlcmd+k',
+            context: TerminalKeybindingContexts.terminalActive
         });
 
         /* Register passthrough keybindings for combinations recognized by
@@ -235,20 +236,20 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
         /* Register ctrl + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
-        const regCtrl = (k: Key) => {
+        const regCtrl = (k: { keyCode: number, code: string }) => {
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.CTRL] }).toString(),
+                keybinding: KeyCode.createKeyCode({ key: k, ctrl: true }).toString(),
                 context: TerminalKeybindingContexts.terminalActive,
             });
         };
 
         /* Register alt + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
-        const regAlt = (k: Key) => {
+        const regAlt = (k: { keyCode: number, code: string }) => {
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.Alt] }).toString(),
+                keybinding: KeyCode.createKeyCode({ key: k, alt: true }).toString(),
                 context: TerminalKeybindingContexts.terminalActive
             });
         };

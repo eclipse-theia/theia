@@ -17,7 +17,6 @@
 import * as theia from '@theia/plugin';
 import URI from 'vscode-uri/lib/umd';
 import { DocumentsExtImpl } from '@theia/plugin-ext/src/plugin/documents';
-import { createToken } from '../token-provider';
 import * as Converter from '../type-converters';
 import { RawColorInfo } from '@theia/plugin-ext/src/api/plugin-api';
 import { ColorPresentation } from '../../api/model';
@@ -29,7 +28,7 @@ export class ColorProviderAdapter {
         private provider: theia.DocumentColorProvider
     ) { }
 
-    provideColors(resource: URI): Promise<RawColorInfo[]> {
+    provideColors(resource: URI, token: theia.CancellationToken): Promise<RawColorInfo[]> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -38,7 +37,7 @@ export class ColorProviderAdapter {
         const doc = document.document;
 
         return Promise.resolve(
-            this.provider.provideDocumentColors(doc, createToken())
+            this.provider.provideDocumentColors(doc, token)
         ).then(colors => {
             if (!Array.isArray(colors)) {
                 return [];
@@ -53,7 +52,7 @@ export class ColorProviderAdapter {
         });
     }
 
-    provideColorPresentations(resource: URI, raw: RawColorInfo): Promise<ColorPresentation[]> {
+    provideColorPresentations(resource: URI, raw: RawColorInfo, token: theia.CancellationToken): Promise<ColorPresentation[]> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -63,7 +62,7 @@ export class ColorProviderAdapter {
         const range = Converter.toRange(raw.range);
         const color = Converter.toColor(raw.color);
         return Promise.resolve(
-            this.provider.provideColorPresentations(color, { document: doc, range: range }, createToken())
+            this.provider.provideColorPresentations(color, { document: doc, range: range }, token)
         ).then(value => {
             if (!Array.isArray(value)) {
                 return [];

@@ -61,7 +61,7 @@
     "clean": "theiaext clean",
     "build": "theiaext build",
     "watch": "theiaext watch",
-    "test": "theiaext test",
+    "test": "theiaext test --no-cluster",
     "test:watch": "theiaext test:watch"
   },
   "devDependencies": {

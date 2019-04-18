@@ -89,16 +89,6 @@ export class LeftPanel {
         this.driver.pause(300);
     }
 
-    isExtensionsContainerVisible(): boolean {
-        return this.driver.isExisting('#extensions') && (this.driver.element('#extensions').getAttribute('class').split(' ').indexOf('theia-extensions') !== -1);
-    }
-
-    waitForExtensionsViewVisible(): void {
-        this.driver.waitForVisible('#extensions');
-        // Wait for animations to finish
-        this.driver.pause(300);
-    }
-
     isGitHistoryContainerVisible(): boolean {
         return (this.driver.isExisting('#git-history') && this.driver.element('#git-history').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
             && this.isPanelVisible());

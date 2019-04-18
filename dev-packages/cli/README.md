@@ -36,9 +36,14 @@ The target can be configured in package.json via `theia/target` property, e.g:
 {
     "theia": {
         "target": "electron"
+    },
+    "dependencies": {
+        "@theia/electron": "latest"
     }
 }
 ```
+
+For `electron` target make sure to install required Electron runtime dependenices. The easiest way is to install `@theia/electron` package.
 
 ### Using latest builds
 

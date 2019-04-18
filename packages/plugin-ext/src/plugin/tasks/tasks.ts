@@ -80,19 +80,19 @@ export class TasksExtImpl implements TasksExt {
         return this.createDisposable(callId);
     }
 
-    $provideTasks(handle: number): Promise<TaskDto[] | undefined> {
+    $provideTasks(handle: number, token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
-            return adapter.provideTasks();
+            return adapter.provideTasks(token);
         } else {
             return Promise.reject(new Error('No adapter found to provide tasks'));
         }
     }
 
-    $resolveTask(handle: number, task: TaskDto): Promise<TaskDto | undefined> {
+    $resolveTask(handle: number, task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
-            return adapter.resolveTask(task);
+            return adapter.resolveTask(task, token);
         } else {
             return Promise.reject(new Error('No adapter found to resolve task'));
         }

@@ -17,7 +17,6 @@
 import { injectable, inject } from 'inversify';
 import { PluginContribution, Keybinding as PluginKeybinding } from '../../../common';
 import { Keybinding, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
-import { KeySequence } from '@theia/core/lib/browser';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { OS } from '@theia/core/lib/common/os';
 
@@ -39,7 +38,8 @@ export class KeybindingsContributionPointHandler {
             const keybinding = this.toKeybinding(raw);
             if (keybinding) {
                 try {
-                    const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(KeySequence.parse(keybinding.keybinding));
+                    const bindingKeySequence = this.keybindingRegistry.resolveKeybinding(keybinding);
+                    const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(bindingKeySequence);
                     this.handleShadingKeybindings(keybinding, keybindingResult.shadow);
                     this.handlePartialKeybindings(keybinding, keybindingResult.partial);
                     keybindings.push(keybinding);

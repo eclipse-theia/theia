@@ -20,7 +20,6 @@ import { DocumentsExtImpl } from '../documents';
 import { CodeLensSymbol } from '../../api/model';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
-import { createToken } from '../token-provider';
 
 /** Adapts the calls from main to extension thread for providing/resolving the code lenses. */
 export class CodeLensAdapter {
@@ -35,7 +34,7 @@ export class CodeLensAdapter {
         private readonly documents: DocumentsExtImpl,
     ) { }
 
-    provideCodeLenses(resource: URI): Promise<CodeLensSymbol[] | undefined> {
+    provideCodeLenses(resource: URI, token: theia.CancellationToken): Promise<CodeLensSymbol[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -43,7 +42,7 @@ export class CodeLensAdapter {
 
         const doc = document.document;
 
-        return Promise.resolve(this.provider.provideCodeLenses(doc, createToken())).then(lenses => {
+        return Promise.resolve(this.provider.provideCodeLenses(doc, token)).then(lenses => {
             if (Array.isArray(lenses)) {
                 return lenses.map(lens => {
                     const id = this.cacheId++;
@@ -59,7 +58,7 @@ export class CodeLensAdapter {
         });
     }
 
-    resolveCodeLens(resource: URI, symbol: CodeLensSymbol): Promise<CodeLensSymbol | undefined> {
+    resolveCodeLens(resource: URI, symbol: CodeLensSymbol, token: theia.CancellationToken): Promise<CodeLensSymbol | undefined> {
         const lens = this.cache.get(ObjectIdentifier.of(symbol));
         if (!lens) {
             return Promise.resolve(undefined);
@@ -69,7 +68,7 @@ export class CodeLensAdapter {
         if (typeof this.provider.resolveCodeLens !== 'function' || lens.isResolved) {
             resolve = Promise.resolve(lens);
         } else {
-            resolve = Promise.resolve(this.provider.resolveCodeLens(lens, createToken()));
+            resolve = Promise.resolve(this.provider.resolveCodeLens(lens, token));
         }
 
         return resolve.then(newLens => {

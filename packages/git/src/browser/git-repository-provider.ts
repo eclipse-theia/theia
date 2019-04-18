@@ -19,7 +19,7 @@ import { injectable, inject } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { DisposableCollection, Event, Emitter } from '@theia/core';
-import { LocalStorageService } from '@theia/core/lib/browser';
+import { StorageService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 
@@ -43,7 +43,7 @@ export class GitRepositoryProvider {
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(LocalStorageService) protected readonly storageService: LocalStorageService
+        @inject(StorageService) protected readonly storageService: StorageService
     ) {
         this.initialize();
     }

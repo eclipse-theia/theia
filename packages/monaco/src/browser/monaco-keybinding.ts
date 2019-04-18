@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, KeyModifier } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, KeyModifier, KeySequence } from '@theia/core/lib/browser';
 import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
@@ -43,26 +43,14 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             const command = this.commands.validate(item.command);
             if (command) {
                 const raw = item.keybinding;
-                if (raw.type === monaco.keybindings.KeybindingType.Simple) {
-                    let keybinding = raw as monaco.keybindings.SimpleKeybinding;
-                    // TODO: remove this temporary workaround after updating to monaco including the fix for https://github.com/Microsoft/vscode/issues/49225
-                    if (command === 'monaco.editor.action.refactor' && !isOSX) {
-                        keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
-                    }
-                    // TODO: remove this temporary workaround with a holistic solution.
-                    if (command === 'monaco.editor.action.commentLine' && isOSX) {
-                        keybinding = { ...keybinding, ctrlKey: true, metaKey: false };
-                    }
-                    const isInDiffEditor = item.when && /(^|[^!])\bisInDiffEditor\b/gm.test(item.when.serialize());
-                    registry.registerKeybinding({
-                        command,
-                        keybinding: this.keyCode(keybinding).toString(),
-                        context: isInDiffEditor ? EditorKeybindingContexts.diffEditorTextFocus : EditorKeybindingContexts.strictEditorTextFocus
-
-                    });
-                } else {
-                    // FIXME support chord keybindings properly, KeyCode does not allow it right now
-                }
+                const keybinding = raw.type === monaco.keybindings.KeybindingType.Simple
+                    ? this.keyCode(raw as monaco.keybindings.SimpleKeybinding).toString()
+                    : this.keySequence(raw as monaco.keybindings.ChordKeybinding).join(' ');
+                const isInDiffEditor = item.when && /(^|[^!])\bisInDiffEditor\b/gm.test(item.when.serialize());
+                const context = isInDiffEditor
+                    ? EditorKeybindingContexts.diffEditorTextFocus
+                    : EditorKeybindingContexts.strictEditorTextFocus;
+                registry.registerKeybinding({ command, keybinding, context });
             }
         }
 
@@ -80,7 +68,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     protected keyCode(keybinding: monaco.keybindings.SimpleKeybinding): KeyCode {
         const keyCode = keybinding.keyCode;
         const sequence: Keystroke = {
-            first: Key.getKey(monaco2BrowserKeyCode(keyCode & 255)),
+            first: Key.getKey(monaco2BrowserKeyCode(keyCode & 0xff)),
             modifiers: []
         };
         if (keybinding.ctrlKey) {
@@ -100,5 +88,12 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             sequence.modifiers!.push(KeyModifier.CtrlCmd);
         }
         return KeyCode.createKeyCode(sequence);
+    }
+
+    protected keySequence(keybinding: monaco.keybindings.ChordKeybinding): KeySequence {
+        return [
+            this.keyCode(keybinding.firstPart),
+            this.keyCode(keybinding.chordPart)
+        ];
     }
 }

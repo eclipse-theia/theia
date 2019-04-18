@@ -11,10 +11,6 @@
       }
     }
   },
-  "//": [
-    "`@theia/plugin-ext` and `@theia/plugin-ext-vscode` are missing due to https://github.com/theia-ide/theia/issues/3723",
-    "`@theia/debug`, `@theia/debug-nodejs` and `@theia/java-debug` are removed due to https://github.com/theia-ide/theia/issues/3716"
-  ],
   "dependencies": {
     "@theia/callhierarchy": "^0.5.0",
     "@theia/console": "^0.5.0",
@@ -25,7 +21,6 @@
     "@theia/editor": "^0.5.0",
     "@theia/editor-preview": "^0.5.0",
     "@theia/editorconfig": "^0.5.0",
-    "@theia/extension-manager": "^0.5.0",
     "@theia/file-search": "^0.5.0",
     "@theia/filesystem": "^0.5.0",
     "@theia/getting-started": "^0.5.0",
@@ -44,6 +39,8 @@
     "@theia/navigator": "^0.5.0",
     "@theia/outline-view": "^0.5.0",
     "@theia/output": "^0.5.0",
+    "@theia/plugin": "^0.5.0",
+    "@theia/plugin-ext-vscode": "^0.5.0",
     "@theia/preferences": "^0.5.0",
     "@theia/preview": "^0.5.0",
     "@theia/process": "^0.5.0",
@@ -64,7 +61,7 @@
     "clean": "theia clean",
     "build": "theiaext compile && theia build --mode development",
     "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
-    "start": "theia start",
+    "start": "theia start --plugins=local-dir:../../plugins",
     "start:debug": "yarn start --log-level=debug",
     "test": "electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\"",
     "test:ui": "wdio wdio.conf.js"

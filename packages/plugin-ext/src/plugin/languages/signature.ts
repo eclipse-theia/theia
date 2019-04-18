@@ -20,7 +20,6 @@ import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import { Position } from '../../api/plugin-api';
 import { SignatureHelp } from '../../api/model';
-import { createToken } from '../token-provider';
 
 export class SignatureHelpAdapter {
 
@@ -30,7 +29,7 @@ export class SignatureHelpAdapter {
 
     }
 
-    provideSignatureHelp(resource: URI, position: Position): Promise<SignatureHelp | undefined> {
+    provideSignatureHelp(resource: URI, position: Position, token: theia.CancellationToken): Promise<SignatureHelp | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There are no document for  ${resource}`));
@@ -39,7 +38,7 @@ export class SignatureHelpAdapter {
         const document = documentData.document;
         const zeroBasedPosition = Converter.toPosition(position);
 
-        return Promise.resolve(this.delegate.provideSignatureHelp(document, zeroBasedPosition, createToken()));
+        return Promise.resolve(this.delegate.provideSignatureHelp(document, zeroBasedPosition, token));
     }
 
 }

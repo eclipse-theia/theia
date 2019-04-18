@@ -114,21 +114,6 @@ describe('theia top panel (menubar)', () => {
         });
     });
 
-    describe('extensions view UI', () => {
-        it('should start with extensions view not visible', () => {
-            expect(leftPanel.isExtensionsContainerVisible()).to.be.false;
-        });
-        it('extensions view should toggle-on then toggle-off', () => {
-            if (!leftPanel.isExtensionsContainerVisible()) {
-                topPanel.toggleExtensionsView();
-                leftPanel.waitForExtensionsViewVisible();
-            }
-            expect(leftPanel.isExtensionsContainerVisible()).to.be.true;
-            topPanel.toggleExtensionsView();
-            expect(leftPanel.isExtensionsContainerVisible()).to.be.false;
-        });
-    });
-
     describe('files view UI', () => {
         it('should start with files view not visible', () => {
             expect(leftPanel.isFileTreeVisible()).to.be.false;

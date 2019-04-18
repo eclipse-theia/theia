@@ -19,7 +19,6 @@ import URI from 'vscode-uri/lib/umd';
 import { Selection } from '../../api/plugin-api';
 import { Range } from '../../api/model';
 import * as Converter from '../type-converters';
-import { createToken } from '../token-provider';
 import { DocumentsExtImpl } from '../documents';
 import { Diagnostics } from './diagnostics';
 import { CodeActionKind } from '../types-impl';
@@ -33,7 +32,8 @@ export class CodeActionAdapter {
         private readonly pluginId: string
     ) { }
 
-    provideCodeAction(resource: URI, rangeOrSelection: Range | Selection, context: monaco.languages.CodeActionContext): Promise<monaco.languages.CodeAction[]> {
+    provideCodeAction(resource: URI, rangeOrSelection: Range | Selection,
+        context: monaco.languages.CodeActionContext, token: theia.CancellationToken): Promise<monaco.languages.CodeAction[]> {
         const document = this.document.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));
@@ -56,7 +56,7 @@ export class CodeActionAdapter {
             only: context.only ? new CodeActionKind(context.only) : undefined
         };
 
-        return Promise.resolve(this.provider.provideCodeActions(doc, ran, codeActionContext, createToken())).then(commandsOrActions => {
+        return Promise.resolve(this.provider.provideCodeActions(doc, ran, codeActionContext, token)).then(commandsOrActions => {
             if (!Array.isArray(commandsOrActions) || commandsOrActions.length === 0) {
                 return undefined!;
             }

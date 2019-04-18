@@ -21,7 +21,6 @@ import * as model from '../../api/model';
 import { DocumentsExtImpl } from '@theia/plugin-ext/src/plugin/documents';
 import { WorkspaceEditDto } from '@theia/plugin-ext/src/common';
 import { Position } from '../../api/plugin-api';
-import { createToken } from '../token-provider';
 import { Range } from '../types-impl';
 import { isObject } from '../../common/types';
 
@@ -36,7 +35,7 @@ export class RenameAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideRenameEdits(resource: URI, position: Position, newName: string): Promise<WorkspaceEditDto | undefined> {
+    provideRenameEdits(resource: URI, position: Position, newName: string, token: theia.CancellationToken): Promise<WorkspaceEditDto | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -46,7 +45,7 @@ export class RenameAdapter {
         const pos = Converter.toPosition(position);
 
         return Promise.resolve(
-            this.provider.provideRenameEdits(doc, pos, newName, createToken())
+            this.provider.provideRenameEdits(doc, pos, newName, token)
         ).then(value => {
             if (!value) {
                 return undefined;
@@ -66,7 +65,7 @@ export class RenameAdapter {
         });
     }
 
-    resolveRenameLocation(resource: URI, position: Position): Promise<model.RenameLocation & model.Rejection | undefined> {
+    resolveRenameLocation(resource: URI, position: Position, token: theia.CancellationToken): Promise<model.RenameLocation & model.Rejection | undefined> {
         if (typeof this.provider.prepareRename !== 'function') {
             return Promise.resolve(undefined);
         }
@@ -80,7 +79,7 @@ export class RenameAdapter {
         const pos = Converter.toPosition(position);
 
         return Promise.resolve(
-            this.provider.prepareRename(doc, pos, createToken())
+            this.provider.prepareRename(doc, pos, token)
         ).then(rangeOrLocation => {
 
             let range: theia.Range | undefined;

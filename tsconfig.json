@@ -16,9 +16,6 @@
       "@theia/core/lib/*": [
         "packages/core/src/*"
       ],
-      "@theia/extension-manager/lib/*": [
-        "packages/extension-manager/src/*"
-      ],
       "@theia/filesystem/lib/*": [
         "packages/filesystem/src/*"
       ],

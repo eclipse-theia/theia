@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,27 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Worker } from 'cluster';
-import { Message } from 'vscode-jsonrpc';
-import { AbstractMessageWriter, MessageWriter } from 'vscode-jsonrpc/lib/messageWriter';
+import { ContainerModule } from 'inversify';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '../../common/messaging';
+import { KeyboardLayoutProvider, keyboardPath } from '../../common/keyboard/keyboard-layout-provider';
+import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider';
 
-export class WorkerMessageWriter extends AbstractMessageWriter implements MessageWriter {
-
-    protected errorCount = 0;
-
-    constructor(
-        protected readonly worker: Worker
-    ) {
-        super();
-    }
-
-    write(msg: Message): void {
-        try {
-            this.worker.send(msg);
-        } catch (e) {
-            this.errorCount++;
-            this.fireError(e, msg, this.errorCount);
-        }
-    }
-
-}
+export default new ContainerModule(bind => {
+    bind(ElectronKeyboardLayoutProvider).toSelf().inSingletonScope();
+    bind(KeyboardLayoutProvider).toService(ElectronKeyboardLayoutProvider);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(keyboardPath, () =>
+            ctx.container.get(KeyboardLayoutProvider)
+        )
+    ).inSingletonScope();
+});

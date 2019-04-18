@@ -174,8 +174,7 @@ describe('Tree', () => {
       const expectedRefreshedNodes = new Set([
         retrieveNode<CompositeTreeNode>('1'),
         retrieveNode<CompositeTreeNode>('1.1'),
-        retrieveNode<CompositeTreeNode>('1.2'),
-        retrieveNode<CompositeTreeNode>('1.2.1')]);
+        retrieveNode<CompositeTreeNode>('1.2')]);
       model.onNodeRefreshed((e: Readonly<CompositeTreeNode>) => {
         result = result && expectedRefreshedNodes.has(e);
         expectedRefreshedNodes.delete(e);

@@ -124,167 +124,173 @@ process.env.LC_NUMERIC = 'C';
 
 const electron = require('electron');
 const { join, resolve } = require('path');
-const { isMaster } = require('cluster');
 const { fork } = require('child_process');
 const { app, shell, BrowserWindow, ipcMain, Menu } = electron;
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 
-if (isMaster) {
+const nativeKeymap = require('native-keymap');
+const Storage = require('electron-store');
+const electronStore = new Storage();
 
-    const Storage = require('electron-store');
-    const electronStore = new Storage();
+app.on('ready', () => {
+    const { screen } = electron;
 
-    app.on('ready', () => {
-        const { screen } = electron;
+    // Remove the default electron menus, waiting for the application to set its own.
+    Menu.setApplicationMenu(Menu.buildFromTemplate([{
+        role: 'help', submenu: [{ role: 'toggledevtools'}]
+    }]));
 
-        // Remove the default electron menus, waiting for the application to set its own.
-        Menu.setApplicationMenu(Menu.buildFromTemplate([{
-            role: 'help', submenu: [{ role: 'toggledevtools'}]
-        }]));
+    function createNewWindow(theUrl) {
 
-        function createNewWindow(theUrl) {
+        // We must center by hand because \`browserWindow.center()\` fails on multi-screen setups
+        // See: https://github.com/electron/electron/issues/3490
+        const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+        const height = Math.floor(bounds.height * (2/3));
+        const width = Math.floor(bounds.width * (2/3));
 
-            // We must center by hand because \`browserWindow.center()\` fails on multi-screen setups
-            // See: https://github.com/electron/electron/issues/3490
-            const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-            const height = Math.floor(bounds.height * (2/3));
-            const width = Math.floor(bounds.width * (2/3));
+        const y = Math.floor(bounds.y + (bounds.height - height) / 2);
+        const x = Math.floor(bounds.x + (bounds.width - width) / 2);
 
-            const y = Math.floor(bounds.y + (bounds.height - height) / 2);
-            const x = Math.floor(bounds.x + (bounds.width - width) / 2);
+        const WINDOW_STATE = 'windowstate';
+        const windowState = electronStore.get(WINDOW_STATE, {
+            width, height, x, y
+        });
 
-            const WINDOW_STATE = 'windowstate';
-            const windowState = electronStore.get(WINDOW_STATE, {
-                width, height, x, y
-            });
+        let windowOptions = {
+            show: false,
+            title: applicationName,
+            width: windowState.width,
+            height: windowState.height,
+            minWidth: 200,
+            minHeight: 120,
+            x: windowState.x,
+            y: windowState.y,
+            isMaximized: windowState.isMaximized
+        };
 
-            let windowOptions = {
-                show: false,
-                title: applicationName,
-                width: windowState.width,
-                height: windowState.height,
-                minWidth: 200,
-                minHeight: 120,
-                x: windowState.x,
-                y: windowState.y,
-                isMaximized: windowState.isMaximized
-            };
-
-            // Always hide the window, we will show the window when it is ready to be shown in any case.
-            const newWindow = new BrowserWindow(windowOptions);
-            if (windowOptions.isMaximized) {
-                newWindow.maximize();
-            }
-            newWindow.on('ready-to-show', () => newWindow.show());
-
-            // Prevent calls to "window.open" from opening an ElectronBrowser window,
-            // and rather open in the OS default web browser.
-            newWindow.webContents.on('new-window', (event, url) => {
-                event.preventDefault();
-                shell.openExternal(url);
-            });
-
-            // Save the window geometry state on every change
-            const saveWindowState = () => {
-                try {
-                    let bounds;
-                    if (newWindow.isMaximized()) {
-                        bounds = electronStore.get(WINDOW_STATE, {});
-                    } else {
-                        bounds = newWindow.getBounds();
-                    }
-                    electronStore.set(WINDOW_STATE, {
-                        isMaximized: newWindow.isMaximized(),
-                        width: bounds.width,
-                        height: bounds.height,
-                        x: bounds.x,
-                        y: bounds.y
-                    });
-                } catch (e) {
-                    console.error("Error while saving window state.", e);
-                }
-            };
-            let delayedSaveTimeout;
-            const saveWindowStateDelayed = () => {
-                if (delayedSaveTimeout) {
-                    clearTimeout(delayedSaveTimeout);
-                }
-                delayedSaveTimeout = setTimeout(saveWindowState, 1000);
-            };
-            newWindow.on('close', saveWindowState);
-            newWindow.on('resize', saveWindowStateDelayed);
-            newWindow.on('move', saveWindowStateDelayed);
-
-            if (!!theUrl) {
-                newWindow.loadURL(theUrl);
-            }
-            return newWindow;
+        // Always hide the window, we will show the window when it is ready to be shown in any case.
+        const newWindow = new BrowserWindow(windowOptions);
+        if (windowOptions.isMaximized) {
+            newWindow.maximize();
         }
+        newWindow.on('ready-to-show', () => newWindow.show());
 
-        app.on('window-all-closed', () => {
-            app.quit();
-        });
-        ipcMain.on('create-new-window', (event, url) => {
-            createNewWindow(url);
-        });
-        ipcMain.on('open-external', (event, url) => {
+        // Prevent calls to "window.open" from opening an ElectronBrowser window,
+        // and rather open in the OS default web browser.
+        newWindow.webContents.on('new-window', (event, url) => {
+            event.preventDefault();
             shell.openExternal(url);
         });
 
-        // Check whether we are in bundled application or development mode.
-        // @ts-ignore
-        const devMode = process.defaultApp || /node_modules[\/]electron[\/]/.test(process.execPath);
-        const mainWindow = createNewWindow();
-        const loadMainWindow = (port) => {
-            if (!mainWindow.isDestroyed()) {
-                mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
+        // Save the window geometry state on every change
+        const saveWindowState = () => {
+            try {
+                let bounds;
+                if (newWindow.isMaximized()) {
+                    bounds = electronStore.get(WINDOW_STATE, {});
+                } else {
+                    bounds = newWindow.getBounds();
+                }
+                electronStore.set(WINDOW_STATE, {
+                    isMaximized: newWindow.isMaximized(),
+                    width: bounds.width,
+                    height: bounds.height,
+                    x: bounds.x,
+                    y: bounds.y
+                });
+            } catch (e) {
+                console.error("Error while saving window state.", e);
             }
         };
+        let delayedSaveTimeout;
+        const saveWindowStateDelayed = () => {
+            if (delayedSaveTimeout) {
+                clearTimeout(delayedSaveTimeout);
+            }
+            delayedSaveTimeout = setTimeout(saveWindowState, 1000);
+        };
+        newWindow.on('close', saveWindowState);
+        newWindow.on('resize', saveWindowStateDelayed);
+        newWindow.on('move', saveWindowStateDelayed);
 
-        // We cannot use the \`process.cwd()\` as the application project path (the location of the \`package.json\` in other words)
-        // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
-        // https://github.com/theia-ide/theia/issues/3297#issuecomment-439172274
-        process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
+        // Notify the renderer process on keyboard layout change
+        nativeKeymap.onDidChangeKeyboardLayout(() => {
+            if (!newWindow.isDestroyed()) {
+                const newLayout = {
+                    info: nativeKeymap.getCurrentKeyboardLayout(),
+                    mapping: nativeKeymap.getKeyMap()
+                };
+                newWindow.webContents.send('keyboardLayoutChanged', newLayout);
+            }
+        });
 
-        // Set the electron version for both the dev and the production mode. (https://github.com/theia-ide/theia/issues/3254)
-        // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
-        const { versions } = process;
-        // @ts-ignore
-        if (versions && typeof versions.electron !== 'undefined') {
-            // @ts-ignore
-            process.env.THEIA_ELECTRON_VERSION = versions.electron;
+        if (!!theUrl) {
+            newWindow.loadURL(theUrl);
         }
+        return newWindow;
+    }
 
-        const mainPath = join(__dirname, '..', 'backend', 'main');
-        // We need to distinguish between bundled application and development mode when starting the clusters.
-        // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
-        if (devMode) {
-            require(mainPath).then(address => {
-                loadMainWindow(address.port);
-            }).catch((error) => {
-                console.error(error);
-                app.exit(1);
-            });
-        } else {
-            const cp = fork(mainPath, [], { env: Object.assign({}, process.env) });
-            cp.on('message', (message) => {
-                loadMainWindow(message);
-            });
-            cp.on('error', (error) => {
-                console.error(error);
-                app.exit(1);
-            });
-            app.on('quit', () => {
-                // If we forked the process for the clusters, we need to manually terminate it.
-                // See: https://github.com/theia-ide/theia/issues/835
-                process.kill(cp.pid);
-            });
-        }
+    app.on('window-all-closed', () => {
+        app.quit();
     });
-} else {
-    require('../backend/main');
-}
+    ipcMain.on('create-new-window', (event, url) => {
+        createNewWindow(url);
+    });
+    ipcMain.on('open-external', (event, url) => {
+        shell.openExternal(url);
+    });
+
+    // Check whether we are in bundled application or development mode.
+    // @ts-ignore
+    const devMode = process.defaultApp || /node_modules[\/]electron[\/]/.test(process.execPath);
+    const mainWindow = createNewWindow();
+    const loadMainWindow = (port) => {
+        if (!mainWindow.isDestroyed()) {
+            mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
+        }
+    };
+
+    // We cannot use the \`process.cwd()\` as the application project path (the location of the \`package.json\` in other words)
+    // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
+    // https://github.com/theia-ide/theia/issues/3297#issuecomment-439172274
+    process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
+
+    // Set the electron version for both the dev and the production mode. (https://github.com/theia-ide/theia/issues/3254)
+    // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
+    const { versions } = process;
+    // @ts-ignore
+    if (versions && typeof versions.electron !== 'undefined') {
+        // @ts-ignore
+        process.env.THEIA_ELECTRON_VERSION = versions.electron;
+    }
+
+    const mainPath = join(__dirname, '..', 'backend', 'main');
+    // We need to distinguish between bundled application and development mode when starting the clusters.
+    // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
+    if (devMode) {
+        require(mainPath).then(address => {
+            loadMainWindow(address.port);
+        }).catch((error) => {
+            console.error(error);
+            app.exit(1);
+        });
+    } else {
+        const cp = fork(mainPath, [], { env: Object.assign({}, process.env) });
+        cp.on('message', (message) => {
+            loadMainWindow(message);
+        });
+        cp.on('error', (error) => {
+            console.error(error);
+            app.exit(1);
+        });
+        app.on('quit', () => {
+            // If we forked the process for the clusters, we need to manually terminate it.
+            // See: https://github.com/theia-ide/theia/issues/835
+            process.kill(cp.pid);
+        });
+    }
+});
 `;
     }
 

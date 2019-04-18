@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { ILogger } from '@theia/core';
 import { PluginDeployerHandler, PluginDeployerEntry, PluginMetadata } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class HostedPluginDeployerHandler implements PluginDeployerHandler {
@@ -31,18 +32,28 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     /**
      * Managed plugin metadata backend entries.
      */
-    private readonly currentBackendPluginsMetadata: PluginMetadata[] = [];
+    private currentBackendPluginsMetadata: PluginMetadata[] = [];
 
     /**
      * Managed plugin metadata frontend entries.
      */
-    private readonly currentFrontendPluginsMetadata: PluginMetadata[] = [];
+    private currentFrontendPluginsMetadata: PluginMetadata[] = [];
 
-    getDeployedFrontendMetadata(): PluginMetadata[] {
+    private backendPluginsMetadataDeferred = new Deferred<void>();
+
+    private frontendPluginsMetadataDeferred = new Deferred<void>();
+
+    async getDeployedFrontendMetadata(): Promise<PluginMetadata[]> {
+        // await first deploy
+        await this.frontendPluginsMetadataDeferred.promise;
+        // fetch the last deployed state
         return this.currentFrontendPluginsMetadata;
     }
 
-    getDeployedBackendMetadata(): PluginMetadata[] {
+    async getDeployedBackendMetadata(): Promise<PluginMetadata[]> {
+        // await first deploy
+        await this.backendPluginsMetadataDeferred.promise;
+        // fetch the last deployed state
         return this.currentBackendPluginsMetadata;
     }
 
@@ -50,7 +61,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         for (const plugin of frontendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
-                if (this.getDeployedFrontendMetadata().some(value => value.model.id === metadata.model.id)) {
+                if (this.currentFrontendPluginsMetadata.some(value => value.model.id === metadata.model.id)) {
                     continue;
                 }
 
@@ -58,13 +69,16 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
                 this.logger.info(`Deploying frontend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.frontend || plugin.path()}"`);
             }
         }
+
+        // resolve on first deploy
+        this.frontendPluginsMetadataDeferred.resolve(undefined);
     }
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
         for (const plugin of backendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
-                if (this.getDeployedBackendMetadata().some(value => value.model.id === metadata.model.id)) {
+                if (this.currentBackendPluginsMetadata.some(value => value.model.id === metadata.model.id)) {
                     continue;
                 }
 
@@ -72,6 +86,9 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
                 this.logger.info(`Deploying backend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.backend || plugin.path()}"`);
             }
         }
+
+        // resolve on first deploy
+        this.backendPluginsMetadataDeferred.resolve(undefined);
     }
 
 }

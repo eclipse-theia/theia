@@ -21,8 +21,7 @@ import * as types from '../types-impl';
 import * as Converter from '../type-converters';
 import { Position } from '../../api/plugin-api';
 import { Definition, DefinitionLink, Location } from '../../api/model';
-import { createToken } from '../token-provider';
-import { isDefinitionLinkArray, isLocationArray} from './util';
+import { isDefinitionLinkArray, isLocationArray } from './util';
 
 export class ImplementationAdapter {
 
@@ -31,7 +30,7 @@ export class ImplementationAdapter {
         private readonly documents: DocumentsExtImpl) {
     }
 
-    provideImplementation(resource: URI, position: Position): Promise<Definition | DefinitionLink[] | undefined> {
+    provideImplementation(resource: URI, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -40,7 +39,7 @@ export class ImplementationAdapter {
         const document = documentData.document;
         const zeroBasedPosition = Converter.toPosition(position);
 
-        return Promise.resolve(this.provider.provideImplementation(document, zeroBasedPosition, createToken())).then(definition => {
+        return Promise.resolve(this.provider.provideImplementation(document, zeroBasedPosition, token)).then(definition => {
             if (!definition) {
                 return undefined;
             }
