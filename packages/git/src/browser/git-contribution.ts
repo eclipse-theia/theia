@@ -18,7 +18,7 @@ import URI from '@theia/core/lib/common/uri';
 import {
     Command,
     CommandContribution,
-    CommandRegistry,
+    CommandRegistry, Disposable,
     DisposableCollection,
     Emitter,
     Event, MenuContribution,
@@ -357,11 +357,11 @@ export class GitContribution implements
             handle: 0,
             sourceControlHandle: 0,
             label,
-            hideWhenEmpty: false,
             id: label,
             provider,
             onDidChange: provider.onDidChange,
-            resources: []
+            resources: [],
+            dispose: () => {}
         };
         const scmResources: ScmResource[] = await Promise.all(changes.map(async change => {
             const icon = await this.labelProvider.getIcon(new URI(change.uri));
@@ -420,14 +420,14 @@ export class GitContribution implements
 
     private registerScmProvider(repository: Repository): ScmRepository {
         const uri = repository.localUri;
-        const disposableCollection = new DisposableCollection();
+        const disposableCollection: Disposable[] = [];
         const onDidChangeResourcesEmitter = new Emitter<void>();
         const onDidChangeRepositoryEmitter = new Emitter<void>();
         disposableCollection.push(onDidChangeRepositoryEmitter);
         disposableCollection.push(onDidChangeResourcesEmitter);
         const provider = new ScmProviderImpl('Git', uri.substring(uri.lastIndexOf('/') + 1), uri);
         this.scmProviders.push(provider);
-        const repo =  this.scmService.registerScmProvider(provider);
+        const repo =  this.scmService.registerScmProvider(provider, disposableCollection);
         repo.input.placeholder = 'Commit Message';
         repo.input.validateInput = async input => {
             const validate = await this.commitMessageValidator.validate(input);

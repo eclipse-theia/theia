@@ -18,6 +18,7 @@ import { ContextMenuRenderer, SELECTED_CLASS, StatefulWidget } from '@theia/core
 import * as React from 'react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import {
+    InputValidation,
     InputValidator,
     ScmInput,
     ScmRepository,
@@ -40,7 +41,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     protected message: string = '';
     protected messageBoxHeight: number = ScmWidget.MESSAGE_BOX_MIN_HEIGHT;
     protected inputCommandMessageValidator: InputValidator | undefined;
-    protected inputCommandMessageValidationResult: InputValidator.Result | undefined;
+    protected inputCommandMessageValidation: InputValidation | undefined;
     protected listContainer: ScmResourceGroupsContainer | undefined;
 
     private selectedRepoUri: string | undefined;
@@ -69,8 +70,8 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     constructor() {
         super();
         this.id = 'theia-scmContainer';
-        this.title.label = 'Scm';
-        this.title.caption = 'Scm';
+        this.title.label = 'Source Control';
+        this.title.caption = 'SCM';
         this.title.closable = true;
         this.title.iconClass = 'scm-tab-icon';
         this.addClass('theia-scm');
@@ -84,10 +85,12 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         this.scmService.onDidAddRepository(repository => {
             repository.provider.onDidChangeResources(() => {
                 if (this.selectedRepoUri === repository.provider.rootUri) {
+                    this.title.label = 'sdgsgd';
                     this.update();
                 }
             });
             repository.provider.onDidChange(() => {
+                this.title.label = 'sdgsgd';
                 this.update();
             });
         });
@@ -154,8 +157,8 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     }
 
     protected renderInput(input: ScmInput, repository: ScmRepository): React.ReactNode {
-        const validationStatus = this.inputCommandMessageValidationResult ? this.inputCommandMessageValidationResult.type : 'idle';
-        const validationMessage = this.inputCommandMessageValidationResult ? this.inputCommandMessageValidationResult.message : '';
+        const validationStatus = this.inputCommandMessageValidation ? this.inputCommandMessageValidation.type : 'idle';
+        const validationMessage = this.inputCommandMessageValidation ? this.inputCommandMessageValidation.message : '';
         const keyBinding = navigator.appVersion.indexOf('Mac') !== -1 ? 'Cmd+Enter' : 'Ctrl+Enter';
         // tslint:disable-next-line:no-any
         const format = (value: string, ...args: string[]): string => {
@@ -198,7 +201,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
                 }
                 style={
                     {
-                        display: !!this.inputCommandMessageValidationResult ? 'block' : 'none'
+                        display: !!this.inputCommandMessageValidation ? 'block' : 'none'
                     }
                 }>{validationMessage}</div>
         </div>;
@@ -207,17 +210,23 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     protected onInputMessageChange(e: Event): void {
         const {target} = e;
         if (target instanceof HTMLTextAreaElement) {
-            const {value} = target;
+            const { value } = target;
             this.message = value;
             const repository = this.scmService.selectedRepository;
+            const equal = (left: InputValidation | undefined, right: InputValidation | undefined): boolean => {
+                if (left && right) {
+                    return left.message === right.message && left.type === right.type;
+                }
+                return left === right;
+            };
             if (repository) {
                 repository.input.value = value;
             }
             this.resize(target);
             if (this.inputCommandMessageValidator) {
                 this.inputCommandMessageValidator(value).then(result => {
-                    if (!InputValidator.Result.equal(this.inputCommandMessageValidationResult, result)) {
-                        this.inputCommandMessageValidationResult = result;
+                    if (!equal(this.inputCommandMessageValidation, result)) {
+                        this.inputCommandMessageValidation = result;
                         this.update();
                     }
                 });
@@ -264,13 +273,16 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
                 }
             }
         }
-        if (command && command.category === 'navigation') {
-            const execute = () => {
-                this.commandRegistry.executeCommand(item.command);
-            };
-            return <a className='toolbar-button' key={command.id}>
-                <i className={command.iconClass} title={command.label} onClick={execute}/>
-            </a>;
+        if (command && command.props) {
+            const props = command.props;
+            if (props && props['group'] === 'navigation') {
+                const execute = () => {
+                    this.commandRegistry.executeCommand(item.command);
+                };
+                return <a className='toolbar-button' key={command.id}>
+                    <i className={command.iconClass} title={command.label} onClick={execute}/>
+                </a>;
+            }
         }
     }
 
@@ -289,14 +301,14 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     }
 
     private executeInputCommand(commandId: string, providerId: number): void {
-        this.inputCommandMessageValidationResult = undefined;
+        this.inputCommandMessageValidation = undefined;
         if (this.message.trim().length === 0) {
-            this.inputCommandMessageValidationResult = {
+            this.inputCommandMessageValidation = {
                 type: 'error',
                 message: 'Please provide an input'
             };
         }
-        if (this.inputCommandMessageValidationResult === undefined) {
+        if (this.inputCommandMessageValidation === undefined) {
             this.commandRegistry.executeCommand(commandId, providerId);
             this.resetInputMessages();
             this.update();
@@ -521,11 +533,11 @@ class ScmResourceGroupContainer extends React.Component<ScmResourceGroupContaine
             event.preventDefault();
             this.props.renderContextMenu(event, ['scm-group-context-menu_' + group.id]);
         };
-        return <div key={`${group.id}`}>
+        return <div className={'changesContainer'} key={`${group.id}`}>
             <div className='theia-header scm-theia-header' onContextMenu={renderContextMenu}>
-                {`${group.label}`}
-                {this.renderChangeCount(group.resources.length)}
+                <div className='noWrapInfo'>{`${group.label}`}</div>
                 {this.renderGroupButtons()}
+                {this.renderChangeCount(group.resources.length)}
             </div>
             <div>{group.resources.map(resource => this.renderScmResourceItem(this.props.scmNodes, resource, group.provider.rootUri))}</div>
         </div>;
@@ -550,19 +562,22 @@ class ScmResourceGroupContainer extends React.Component<ScmResourceGroupContaine
 
     protected renderGroupButton(commandId: string): React.ReactNode {
         const command = this.props.commandRegistry.getCommand(commandId);
-        if (command && command.category === 'inline') {
-            const execute = () => {
-                const group = this.props.group;
-                const arg = {
-                    id: 2,
-                    groupHandle: group.handle,
-                    sourceControlHandle: group.sourceControlHandle
+        if (command && command.props) {
+            const props = command.props;
+            if (props && props['group'] === 'inline') {
+                const execute = () => {
+                    const group = this.props.group;
+                    const arg = {
+                        id: 2,
+                        groupHandle: group.handle,
+                        sourceControlHandle: group.sourceControlHandle
+                    };
+                    this.props.commandRegistry.executeCommand(commandId, arg);
                 };
-                this.props.commandRegistry.executeCommand(commandId, arg);
-            };
-            return <a className='toolbar-button' key={command.id}>
-                <i className={command.iconClass} title={command.label} onClick={execute}/>
-            </a>;
+                return <a className='toolbar-button' key={command.id}>
+                    <i className={command.iconClass} title={command.label} onClick={execute}/>
+                </a>;
+            }
         }
     }
 

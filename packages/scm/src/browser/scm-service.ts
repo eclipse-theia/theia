@@ -28,25 +28,19 @@ export interface ScmProvider extends Disposable {
     readonly onDidChangeResources: Event<void>;
 
     readonly rootUri?: string;
-    readonly count?: number;
-    readonly commitTemplate?: string;
     readonly onDidChangeCommitTemplate?: Event<string>;
     readonly onDidChangeStatusBarCommands?: Event<ScmCommand[]>;
     readonly acceptInputCommand?: ScmCommand;
-    readonly statusBarCommands?: ScmCommand[];
     readonly onDidChange: Event<void>;
-
-    getOriginalResource(uri: URI): Promise<URI | undefined>;
 }
 
-export interface ScmResourceGroup {
+export interface ScmResourceGroup extends Disposable {
     readonly handle: number,
     readonly sourceControlHandle: number,
     readonly resources: ScmResource[];
     readonly provider: ScmProvider;
     readonly label: string;
     readonly id: string;
-    readonly hideWhenEmpty: boolean | undefined;
     readonly onDidChange: Event<void>;
 }
 
@@ -65,9 +59,6 @@ export interface ScmResource {
 export interface ScmResourceDecorations {
     icon?: string;
     tooltip?: string;
-    strikeThrough?: boolean;
-    faded?: boolean;
-
     source?: string;
     letter?: string;
     color?: string;
@@ -89,51 +80,12 @@ export interface InputValidator {
     (value: string): Promise<InputValidation | undefined>;
 }
 
-export namespace InputValidator {
-    /**
-     * Type for the validation result with a status and a corresponding message.
-     */
-    export type Result = Readonly<{ message: string, type: 'info' | 'success' | 'warning' | 'error' }>;
-
-    export namespace Result {
-
-        /**
-         * `true` if the `message` and the `status` properties are the same on both `left` and `right`. Or both arguments are `undefined`. Otherwise, `false`.
-         */
-        export function equal(left: Result | undefined, right: Result | undefined): boolean {
-            if (left && right) {
-                return left.message === right.message && left.type === right.type;
-            }
-            return left === right;
-        }
-
-    }
-}
-
-export interface ScmInput {
+export interface ScmInput extends Disposable {
     value: string;
-    readonly onDidChange: Event<string>;
-
     placeholder: string;
-    readonly onDidChangePlaceholder: Event<string>;
-
     validateInput: InputValidator;
-    readonly onDidChangeValidateInput: Event<void>;
 
-    visible: boolean;
-    readonly onDidChangeVisibility: Event<boolean>;
-}
-
-export interface ScmRepository extends Disposable {
-    readonly onDidFocus: Event<void>;
-    readonly selected: boolean;
-    readonly onDidChangeSelection: Event<boolean>;
-    readonly provider: ScmProvider;
-    readonly input: ScmInput;
-
-    focus(): void;
-
-    setSelected(selected: boolean): void;
+    readonly onDidChange: Event<string>;
 }
 
 @injectable()
@@ -176,7 +128,7 @@ export class ScmService {
         return this.onDidRemoveProviderEmitter.event;
     }
 
-    registerScmProvider(provider: ScmProvider): ScmRepository {
+    registerScmProvider(provider: ScmProvider, disposables?: Disposable[]): ScmRepository {
 
         if (this.providerIds.has(provider.id)) {
             throw new Error(`SCM Provider ${provider.id} already exists.`);
@@ -194,12 +146,15 @@ export class ScmService {
             this.onDidRemoveProviderEmitter.fire(repository);
         });
 
-        const repository = new ScmRepositoryImpl(provider, disposable);
+        const disposableCollection: DisposableCollection = new DisposableCollection(disposable);
+        if (disposables) {
+            disposableCollection.pushAll(disposables);
+        }
+        const repository = new ScmRepository(provider, disposableCollection);
 
         this._repositories.push(repository);
         this.onDidAddProviderEmitter.fire(repository);
 
-        // automatically select the first repository
         if (this._repositories.length === 1) {
             this.selectedRepository = repository;
         }
@@ -212,51 +167,59 @@ export class ScmService {
     }
 }
 
-class ScmRepositoryImpl implements ScmRepository {
+export class ScmRepository implements Disposable {
 
     private onDidFocusEmitter = new Emitter<void>();
     readonly onDidFocus: Event<void> = this.onDidFocusEmitter.event;
 
-    private _selected = false;
-    get selected(): boolean {
-        return this._selected;
-    }
-
     private onDidChangeSelectionEmitter = new Emitter<boolean>();
     readonly onDidChangeSelection: Event<boolean> = this.onDidChangeSelectionEmitter.event;
+
+    private readonly disposables: DisposableCollection = new DisposableCollection();
 
     readonly input: ScmInput = new ScmInputImpl();
 
     constructor(
         public readonly provider: ScmProvider,
-        private disposable: Disposable
-    ) { }
+        private disposable: DisposableCollection
+    ) {
+        this.disposables.push(this.disposable);
+        this.disposables.push(this.onDidChangeSelectionEmitter);
+        this.disposables.push(this.input);
+    }
 
     focus(): void {
         this.onDidFocusEmitter.fire(undefined);
     }
 
-    setSelected(selected: boolean): void {
-        this._selected = selected;
-        this.onDidChangeSelectionEmitter.fire(selected);
-    }
-
     dispose(): void {
-        this.disposable.dispose();
+        this.disposables.dispose();
         this.provider.dispose();
     }
 }
 
 class ScmInputImpl implements ScmInput {
 
-    private _value = '';
-    private _placeholder = '';
-    private _visible = true;
-    private _validateInput: InputValidator = () => Promise.resolve(undefined);
-    private onDidChangePlaceholderEmitter = new Emitter<string>();
-    private onDidChangeVisibilityEmitter = new Emitter<boolean>();
-    private onDidChangeValidateInputEmitter = new Emitter<void>();
-    private onDidChangeEmitter = new Emitter<string>();
+    private _value: string;
+    private _placeholder: string;
+    private _validateInput: InputValidator;
+    private readonly disposables: DisposableCollection;
+    private readonly onDidChangePlaceholderEmitter: Emitter<string>;
+    private readonly onDidChangeValidateInputEmitter: Emitter<void>;
+    private readonly onDidChangeEmitter: Emitter<string>;
+
+    constructor() {
+        this._value = '';
+        this._placeholder = '';
+        this._validateInput = () => Promise.resolve(undefined);
+        this.onDidChangePlaceholderEmitter = new Emitter();
+        this.onDidChangeValidateInputEmitter = new Emitter();
+        this.onDidChangeEmitter = new Emitter();
+        this.disposables = new DisposableCollection();
+        this.disposables.push(this.onDidChangePlaceholderEmitter);
+        this.disposables.push(this.onDidChangeValidateInputEmitter);
+        this.disposables.push(this.onDidChangeEmitter);
+    }
 
     get value(): string {
         return this._value;
@@ -283,23 +246,6 @@ class ScmInputImpl implements ScmInput {
         this.onDidChangePlaceholderEmitter.fire(placeholder);
     }
 
-    get onDidChangePlaceholder(): Event<string> {
-        return this.onDidChangePlaceholderEmitter.event;
-    }
-
-    get visible(): boolean {
-        return this._visible;
-    }
-
-    set visible(visible: boolean) {
-        this._visible = visible;
-        this.onDidChangeVisibilityEmitter.fire(visible);
-    }
-
-    get onDidChangeVisibility(): Event<boolean> {
-        return this.onDidChangeVisibilityEmitter.event;
-    }
-
     get validateInput(): InputValidator {
         return this._validateInput;
     }
@@ -309,7 +255,7 @@ class ScmInputImpl implements ScmInput {
         this.onDidChangeValidateInputEmitter.fire(undefined);
     }
 
-    get onDidChangeValidateInput(): Event<void> {
-        return this.onDidChangeValidateInputEmitter.event;
+    dispose(): void {
+        this.disposables.dispose();
     }
 }

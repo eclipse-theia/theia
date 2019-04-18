@@ -40,6 +40,9 @@ export interface Command {
      * A category of this command.
      */
     category?: string;
+
+    // tslint:disable-next-line:no-any
+    props?: { [key: string]: any }
 }
 
 export namespace Command {

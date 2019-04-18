@@ -123,8 +123,9 @@ export class MenusContributionPointHandler {
 
         this.onDidRegisterCommand(menuAction.command, pluginCommand => {
             command.iconClass = pluginCommand.iconClass;
-            command.category = menuAction.group;
+            command.category = pluginCommand.category;
             command.label = pluginCommand.label;
+            command.props = { ['group']: menuAction.group };
         });
     }
 
@@ -150,8 +151,9 @@ export class MenusContributionPointHandler {
 
         this.onDidRegisterCommand(action.command, pluginCommand => {
             command.iconClass = pluginCommand.iconClass;
-            command.category = action.group;
+            command.category = pluginCommand.category;
             command.label = pluginCommand.label;
+            command.props = { ['group']: action.group };
         });
     }
 
@@ -177,8 +179,9 @@ export class MenusContributionPointHandler {
 
         this.onDidRegisterCommand(action.command, pluginCommand => {
             command.iconClass = pluginCommand.iconClass;
-            command.category = action.group;
+            command.category = pluginCommand.category;
             command.label = pluginCommand.label;
+            command.props = { ['group']: action.group };
         });
     }
 

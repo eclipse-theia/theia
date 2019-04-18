@@ -17,7 +17,6 @@
     color: var(--theia-ui-font-color1);
     padding: 5px;
     box-sizing: border-box;
-    background: var(--theia-layout-color0);
 }
 
 .theia-side-panel .theia-scm {
@@ -31,10 +30,12 @@
 }
 
 .theia-scm .noWrapInfo {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     width: 100%;
+    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
+    align-items: center;
+    text-overflow: ellipsis;
 }
 
 .theia-scm .space-between {
@@ -259,6 +260,7 @@
 
 .scm-theia-header {
     padding: 5px;
+    display: flex;
 }
 
 .scm-theia-header:hover {
@@ -272,9 +274,7 @@
 
 .scm-change-list-buttons-container {
     display: flex;
-    align-self: center;
-    float: right;
-    justify-content: center;
+    margin: 0 3px;
     visibility: hidden;
 }
 

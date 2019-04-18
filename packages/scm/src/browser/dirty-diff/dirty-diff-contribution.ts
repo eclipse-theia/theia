@@ -26,7 +26,6 @@ export class DirtyDiffContribution implements FrontendApplicationContribution {
     ) { }
 
     onStart(app: FrontendApplication): void {
-        // this.dirtyDiffManager.onDirtyDiffUpdate(update => this.dirtyDiffDecorator.applyDecorations(update));
     }
 
 }

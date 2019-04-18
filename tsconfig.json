@@ -106,7 +106,7 @@
       "@theia/console/lib/*": [
         "packages/console/src/*"
       ],
-      "@theia/console/lib/*": [
+      "@theia/scm/lib/*": [
         "packages/scm/src/*"
       ],
       "@theia/getting-started/lib/*": [

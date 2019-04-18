@@ -262,7 +262,11 @@ class ScmProviderImpl implements ScmProvider {
     }
 
     unregisterGroup(groupHandle: number): void {
-        this.groupsMap.delete(groupHandle);
+        const group = this.groupsMap.get(groupHandle);
+        if (group) {
+            group.dispose();
+            this.groupsMap.delete(groupHandle);
+        }
     }
 
     updateGroup(groupHandle: number, features: SourceControlGroupFeatures): void {
@@ -290,8 +294,6 @@ class ScmProviderImpl implements ScmProvider {
                     scmDecorations = {
                         icon,
                         tooltip: decorations.tooltip,
-                        strikeThrough: decorations.strikeThrough,
-                        faded: decorations.faded,
                         letter: resource.letter,
                         color: ScmNavigatorDecorator.getDecorationColor(resource.colorId)
                     };
@@ -353,6 +355,10 @@ class ResourceGroup implements ScmResourceGroup {
     updateResources(resources: ScmResource[]) {
         this._resources = resources;
         this.onDidChangeEmitter.fire(undefined);
+    }
+
+    dispose(): void {
+        this.onDidChangeEmitter.dispose();
     }
 }
 

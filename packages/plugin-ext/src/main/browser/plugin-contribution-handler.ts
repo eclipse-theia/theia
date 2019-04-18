@@ -168,6 +168,7 @@ export class PluginContributionHandler {
                     width: 16px;
                     height: 16px;
                     background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                    background-position: 2px;
                 `);
             }
             this.commands.registerCommand({
