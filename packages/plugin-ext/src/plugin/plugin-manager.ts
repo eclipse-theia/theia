@@ -123,6 +123,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
         // run plugins
         for (const plugin of plugins) {
+            if (!plugin.pluginPath) {
+                continue;
+            }
             const pluginMain = this.host.loadPlugin(plugin);
             // able to load the plug-in ?
             if (pluginMain !== undefined) {
