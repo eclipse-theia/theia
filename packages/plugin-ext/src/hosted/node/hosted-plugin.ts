@@ -67,7 +67,7 @@ export class HostedPluginSupport {
     }
 
     runPlugin(plugin: PluginModel): void {
-        if (plugin.entryPoint.backend) {
+        if (!plugin.entryPoint.frontend) {
             this.runPluginServer();
         }
     }
