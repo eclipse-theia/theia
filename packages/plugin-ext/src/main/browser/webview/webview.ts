@@ -33,7 +33,7 @@ export class WebviewWidget extends BaseWidget {
     private static readonly ID = new IdGenerator('webview-widget-');
     protected readonly toDispose = new DisposableCollection();
     private iframe: HTMLIFrameElement;
-    private state: string | undefined = undefined;
+    private state: { [key: string]: any } | undefined = undefined;
     private loadTimeout: number | undefined;
 
     constructor(title: string, private options: WebviewWidgetOptions, private eventDelegate: WebviewEvents) {
@@ -73,7 +73,6 @@ export class WebviewWidget extends BaseWidget {
     }
 
     setHTML(html: string) {
-        html = html.replace(/theia-resource:/g, '/webview/');
         const newDocument = new DOMParser().parseFromString(html, 'text/html');
         if (!newDocument || !newDocument.body) {
             return;

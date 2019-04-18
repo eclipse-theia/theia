@@ -59,6 +59,7 @@ import { DebugService } from '@theia/debug/lib/common/debug-service';
 import { PluginSharedStyle } from './plugin-shared-style';
 import { FSResourceResolver } from './file-system-main';
 import { SelectionProviderCommandContribution } from './selection-provider-command';
+import { ViewColumnService } from './view-column-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -139,4 +140,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(DebugService).toService(PluginDebugService);
     bind(PluginDebugSessionContributionRegistry).toSelf().inSingletonScope();
     rebind(DebugSessionContributionRegistry).toService(PluginDebugSessionContributionRegistry);
+
+    bind(ViewColumnService).toSelf().inSingletonScope();
 });
