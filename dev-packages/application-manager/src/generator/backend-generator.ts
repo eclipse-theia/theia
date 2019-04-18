@@ -29,8 +29,7 @@ export class BackendGenerator extends AbstractGenerator {
 require('reflect-metadata');
 const path = require('path');
 const express = require('express');
-const { Container, injectable } = require('inversify');
-
+const { Container } = require('inversify');
 const { BackendApplication, CliManager } = require('@theia/core/lib/node');
 const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
 const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
@@ -75,10 +74,11 @@ module.exports = (port, host, argv) => Promise.resolve()${this.compileBackendMod
     protected compileMain(backendModules: Map<string, string>): string {
         return `// @ts-check
 const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
+const main = require('@theia/core/lib/node/main');
 BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
 
-const serverPath = require('path').resolve(__dirname, 'server');
-const address = require('@theia/core/lib/node/main').default(serverPath);
+const serverModule = require('./server');
+const address = main.start(serverModule());
 address.then(function (address) {
     if (process && process.send) {
         process.send(address.port.toString());
