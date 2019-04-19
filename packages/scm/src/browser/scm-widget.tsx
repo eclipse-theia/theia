@@ -85,12 +85,10 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         this.scmService.onDidAddRepository(repository => {
             repository.provider.onDidChangeResources(() => {
                 if (this.selectedRepoUri === repository.provider.rootUri) {
-                    this.title.label = 'sdgsgd';
                     this.update();
                 }
             });
             repository.provider.onDidChange(() => {
-                this.title.label = 'sdgsgd';
                 this.update();
             });
         });
