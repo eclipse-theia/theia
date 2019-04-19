@@ -179,10 +179,18 @@
 }
 
 .amendedCommitsOuterContainer {
-    overflow-y: auto;
     border-top: 1px dotted var(--theia-layout-color4);
     width: 100%;
-    min-height: 15px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;  /* must be zero to keep this at the bottom */
+    flex-shrink: 0;
+}
+
+.withMinHeight {
+    flex-shrink: 1;
+    min-height: 150px; /* height of three commits */
 }
 
 #theia-gitContainer .warn {
@@ -266,6 +274,11 @@
     max-height: 400px;
 }
 
+.no-grow-or-shrink {
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
 .flex-container-center {
     display: flex;
     align-items: center;
@@ -275,18 +288,6 @@
     position: relative;
     width: 100%;
     overflow: hidden;
-
-    margin-top: 0;
-    margin-bottom: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-top: 0;
-    border-bottom: 0;
-}
-
-.stationary-part {
-    position: relative;
-    width: 100%;
 
     margin-top: 0;
     margin-bottom: 0;

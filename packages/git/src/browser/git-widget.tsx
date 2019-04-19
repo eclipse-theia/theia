@@ -53,8 +53,11 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     protected lastCommit: { commit: CommitWithChanges, avatar: string } | undefined;
 
     /**
-     * This is used for transitioning only. It may be cleared when the transition is
-     * finished.
+     * This is used for transitioning.  When setting up a transition, we first set to render
+     * the elements in their starting positions.  This includes creating the elements to be
+     * transitioned in, even though those controls will not be visible when state is 'start'.
+     * On the next frame after 'start', we render elements with their final positions and with
+     * the transition properties.
      */
     protected transition: {
         state: 'none'
@@ -578,24 +581,28 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     }
 
     protected renderAmendingCommits(): React.ReactNode {
-        return <div id='amendedCommits' className='amendedCommitsOuterContainer'>
+        const neverShrink = this.amendingCommits.length <= 3;
+
+        const classNames = neverShrink
+            ? 'amendedCommitsOuterContainer'
+            : 'amendedCommitsOuterContainer withMinHeight';
+
+        return <div id='amendedCommits' className={classNames}>
             <div className='theia-header git-theia-header'>
                 Commits being Amended
                 {this.renderCommitCount(this.amendingCommits.length)}
                 {this.renderAmendCommitListButtons()}
             </div>
-            {this.amendingCommits.map((commitData, index, map) =>
-                this.renderCommitBeingAmended(commitData, index === map.length - 1)
-            )}
-            {
-                this.lastCommit && this.transition.state !== 'none' && this.transition.direction === 'down'
-                    ? <div style={this.styleExitAmend(this.transition.state)} key={this.lastCommit.commit.sha}>
-                        <div className='fixed-height-commit-container'>
-                            {this.renderCommitAvatarAndDetail(this.lastCommit)}
-                        </div>
-                    </div>
-                    : ''
-            }
+            <div style={this.styleAmendedCommits()}>
+                {this.amendingCommits.map((commitData, index, map) =>
+                    this.renderCommitBeingAmended(commitData, index === map.length - 1)
+                )}
+                {
+                    this.lastCommit && this.transition.state !== 'none' && this.transition.direction === 'down'
+                        ? this.renderCommitBeingAmended(this.lastCommit, false)
+                        : ''
+                }
+            </div>
         </div>;
     }
 
@@ -605,12 +612,6 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 <i className='fa fa-minus' />
             </a>
         </div>;
-    }
-
-    commitRefCallback = (instance: HTMLDivElement) => {
-        if (instance) {
-            instance.setAttribute('style', `height:${this.lastCommitHeight}px`);
-        }
     }
 
     protected renderLastCommit(): React.ReactNode {
@@ -632,31 +633,21 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         switch (this.transition.state) {
             case 'none':
                 return <div ref={this.lastCommitScrollRef} className='scolling-container'>
-                    <div className='stationary-part' key={lastCommit.commit.sha}>
-                        {this.renderCommitAvatarAndDetail(lastCommit)}
-                    </div>
+                    {this.renderCommitAvatarAndDetail(lastCommit)}
                 </div>;
 
             case 'start':
             case 'transitioning':
                 switch (this.transition.direction) {
                     case 'up':
-                        return <div className='scolling-container' ref={this.commitRefCallback}>
-                            <div style={this.styleLastCommitOnTopMovingUp(this.transition.state)} key={this.transition.previousLastCommit.commit.sha}>
-                                {this.renderCommitAvatarAndDetail(this.transition.previousLastCommit)}
-                            </div>
-                            <div style={this.styleLastCommitOnBottomMovingUp(this.transition.state)} key={lastCommit.commit.sha}>
-                                {this.renderCommitAvatarAndDetail(lastCommit)}
-                            </div>
+                        return <div style={this.styleLastCommitMovingUp(this.transition.state)}>
+                            {this.renderCommitAvatarAndDetail(this.transition.previousLastCommit)}
+                            {this.renderCommitAvatarAndDetail(lastCommit)}
                         </div>;
                     case 'down':
-                        return <div className='scolling-container' ref={this.commitRefCallback}>
-                            <div style={this.styleLastCommitOnTopMovingDown(this.transition.state)} key={lastCommit.commit.sha}>
-                                {this.renderCommitAvatarAndDetail(lastCommit)}
-                            </div>
-                            <div style={this.styleLastCommitOnBottomMovingDown(this.transition.state)} key={this.transition.previousLastCommit.commit.sha}>
-                                {this.renderCommitAvatarAndDetail(this.transition.previousLastCommit)}
-                            </div>
+                        return <div style={this.styleLastCommitMovingDown(this.transition.state)}>
+                            {this.renderCommitAvatarAndDetail(lastCommit)}
+                            {this.renderCommitAvatarAndDetail(this.transition.previousLastCommit)}
                         </div>;
                 }
         }
@@ -694,13 +685,13 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     protected renderCommitBeingAmended(commitData: { commit: CommitWithChanges, avatar: string }, isOldestAmendCommit: boolean) {
         if (isOldestAmendCommit && this.transition.state !== 'none' && this.transition.direction === 'up') {
-            return <div style={this.styleIntoAmend(this.transition.state)} key={commitData.commit.sha}>
+            return <div className='theia-git-last-commit-avatar-and-text no-grow-or-shrink' key={commitData.commit.sha}>
                 <div className='fixed-height-commit-container'>
                     {this.renderCommitAvatarAndDetail(commitData)}
-                </div>;
+                </div>
             </div>;
         } else {
-            return <div className={GitWidget.Styles.LAST_COMMIT_AVATAR_AND_TEXT} key={commitData.commit.sha}>
+            return <div className='theia-git-last-commit-avatar-and-text no-grow-or-shrink' key={commitData.commit.sha}>
                 {this.renderCommitAvatarAndDetail(commitData)}
                 {
                     isOldestAmendCommit
@@ -715,98 +706,108 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         }
     }
 
-    protected styleIntoAmend(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+    /*
+     * The style for the <div> containing the list of commits being amended.
+     * This div is scrollable.
+     */
+    protected styleAmendedCommits(): React.CSSProperties {
         const base = {
             display: 'flex',
             whitespace: 'nowrap',
-            overflow: 'hidden',
             width: '100%',
-            paddingTop: '2px'
+            minHeight: 0,
+            flexShrink: 1,
+            paddingTop: '2px',
         };
 
-        switch (transitionState) {
+        switch (this.transition.state) {
+            case 'none':
+                return {
+                    ...base,
+                    flexDirection: 'column',
+                    overflowY: 'auto',
+                    marginBottom: '0',
+                };
             case 'start':
-                return {
-                    ...base,
-                    height: 0,
-                };
             case 'transitioning':
-                return {
-                    ...base,
-                    height: 32,
-                    transitionProperty: 'height',
-                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
-                    transitionTimingFunction: 'linear'
-                };
+                let startingMargin: number = 0;
+                let endingMargin: number = 0;
+                switch (this.transition.direction) {
+                    case 'down':
+                        startingMargin = 0;
+                        endingMargin = -32;
+                        break;
+                    case 'up':
+                        startingMargin = -32;
+                        endingMargin = 0;
+                        break;
+                }
+
+                switch (this.transition.state) {
+                    case 'start':
+                        return {
+                            ...base,
+                            flexDirection: 'column',
+                            overflowY: 'hidden',
+                            marginBottom: `${startingMargin}px`,
+                        };
+                    case 'transitioning':
+                        return {
+                            ...base,
+                            flexDirection: 'column',
+                            overflowY: 'hidden',
+                            marginBottom: `${endingMargin}px`,
+                            transitionProperty: 'margin-bottom',
+                            transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
+                            transitionTimingFunction: 'linear'
+                        };
+                }
         }
+
+        return base;  // should never happen
     }
 
-    protected styleExitAmend(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+    protected styleLastCommitMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        return this.styleLastCommit(transitionState, 0, -28);
+    }
+
+    protected styleLastCommitMovingDown(transitionState: 'start' | 'transitioning'): React.CSSProperties {
+        return this.styleLastCommit(transitionState, -28, 0);
+    }
+
+    protected styleLastCommit(transitionState: 'start' | 'transitioning', startingMarginTop: number, startingMarginBottom: number): React.CSSProperties {
         const base = {
             display: 'flex',
-            whitespace: 'nowrap',
-            overflow: 'hidden',
             width: '100%',
-            paddingTop: '2px'
-        };
-
-        switch (transitionState) {
-            case 'start':
-                return {
-                    ...base,
-                    height: 32,
-                };
-            case 'transitioning':
-                return {
-                    ...base,
-                    height: 0,
-                    transitionProperty: 'height',
-                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
-                    transitionTimingFunction: 'linear'
-                };
-        }
-    }
-
-    protected styleLastCommitOnTopMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {
-        return this.styleLastCommitOnTop(transitionState, -5, -40);
-    }
-
-    protected styleLastCommitOnTopMovingDown(transitionState: 'start' | 'transitioning'): React.CSSProperties {
-        return this.styleLastCommitOnTop(transitionState, -40, -5);
-    }
-
-    protected styleLastCommitOnBottomMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {
-        return this.styleLastCommitOnBottom(transitionState, -40, -5);
-    }
-
-    protected styleLastCommitOnBottomMovingDown(transitionState: 'start' | 'transitioning'): React.CSSProperties {
-        return this.styleLastCommitOnBottom(transitionState, -5, -40);
-    }
-
-    protected styleLastCommitOnTop(transitionState: 'start' | 'transitioning', startingTop: number, endingTop: number): React.CSSProperties {
-        const base = {
-            display: 'flex',
-            marginTop: 0,
-            marginBottom: 0,
+            overflow: 'hidden',
             paddingTop: 0,
             paddingBottom: 0,
             borderTop: 0,
-            borderBottom: 0
+            borderBottom: 0,
+            height: 60 // this.lastCommitHeight
         };
+
+        // We end with top and bottom margins switched
+        const endingMarginTop = startingMarginBottom;
+        const endingMarginBottom = startingMarginTop;
 
         switch (transitionState) {
             case 'start':
                 return {
                     ...base,
-                    position: 'absolute',
-                    top: startingTop,
+                    position: 'relative',
+                    flexDirection: 'column',
+                    marginTop: startingMarginTop,
+                    marginBottom: startingMarginBottom,
                 };
             case 'transitioning':
                 return {
                     ...base,
-                    position: 'absolute',
-                    top: endingTop,
-                    transitionProperty: 'top',
+                    position: 'relative',
+                    flexDirection: 'column',
+                    marginTop: endingMarginTop,
+                    marginBottom: endingMarginBottom,
+                    transitionProperty: 'margin-top margin-bottom',
                     transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
                     transitionTimingFunction: 'linear'
                 };
@@ -824,23 +825,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
             borderBottom: 0
         };
 
-        switch (transitionState) {
-            case 'start':
-                return {
-                    ...base,
-                    position: 'absolute',
-                    bottom: startingBottom,
-                };
-            case 'transitioning':
-                return {
-                    ...base,
-                    position: 'absolute',
-                    bottom: endingBottom,
-                    transitionProperty: 'bottom',
-                    transitionDuration: `${GitWidget.TRANSITION_TIME_MS}ms`,
-                    transitionTimingFunction: 'linear'
-                };
-        }
+        return base;
     }
 
     protected readonly refresh = () => this.doRefresh();
