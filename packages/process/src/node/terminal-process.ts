@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions } from './process';
+import { Process, ProcessType, ProcessOptions, ProcessErrorEvent } from './process';
 import { ProcessManager } from './process-manager';
 import { IPty, spawn } from '@theia/node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
@@ -56,7 +56,9 @@ export class TerminalProcess extends Process {
                 if (reason === undefined) {
                     this.emitOnStarted();
                 } else {
-                    this.emitOnError({ code: reason });
+                    const error = new Error(reason) as ProcessErrorEvent;
+                    error.code = reason;
+                    this.emitOnError(error);
                 }
             });
 

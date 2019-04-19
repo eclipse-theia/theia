@@ -33,7 +33,7 @@ export interface IProcessStartEvent {
 /**
  * Data emitted when a process has failed to start.
  */
-export interface ProcessErrorEvent {
+export interface ProcessErrorEvent extends Error {
     /** An errno-like error string (e.g. ENOENT).  */
     code: string;
 }
