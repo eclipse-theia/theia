@@ -529,9 +529,9 @@ export class ThemeColor {
 
 export class ThemeIcon {
 
-    static readonly File: ThemeIcon;
+    static readonly File: ThemeIcon = new ThemeIcon('file');
 
-    static readonly Folder: ThemeIcon;
+    static readonly Folder: ThemeIcon = new ThemeIcon('folder');
 
     private constructor(public id: string) {
     }
@@ -938,6 +938,7 @@ export class CodeActionKind {
     public static readonly RefactorRewrite = CodeActionKind.Refactor.append('rewrite');
     public static readonly Source = CodeActionKind.Empty.append('source');
     public static readonly SourceOrganizeImports = CodeActionKind.Source.append('organizeImports');
+    public static readonly SourceFixAll = CodeActionKind.Source.append('fixAll');
 
     constructor(
         public readonly value: string
