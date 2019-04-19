@@ -5191,6 +5191,18 @@ declare module '@theia/plugin' {
         command?: Command;
 
         /**
+         * @deprecated Use `CompletionItem.insertText` and `CompletionItem.range` instead.
+         *
+         * ~~An [edit](#TextEdit) which is applied to a document when selecting
+         * this completion. When an edit is provided the value of
+         * [insertText](#CompletionItem.insertText) is ignored.~~
+         *
+         * ~~The [range](#Range) of the edit must be single-line and on the same
+         * line completions were [requested](#CompletionItemProvider.provideCompletionItems) at.~~
+         */
+        textEdit?: TextEdit;
+
+        /**
          * Creates a new completion item.
          *
          * Completion items must have at least a [label](#CompletionItem.label) which then
