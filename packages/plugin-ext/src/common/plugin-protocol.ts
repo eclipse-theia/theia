@@ -462,6 +462,7 @@ export interface ViewContainer {
 export interface View {
     id: string;
     name: string;
+    urlBase: string;
 }
 
 export interface PluginCommand {

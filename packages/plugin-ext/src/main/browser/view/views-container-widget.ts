@@ -59,6 +59,10 @@ export class ViewsContainerWidget extends Widget {
     public addWidget(viewId: string, viewWidget: TreeViewWidget) {
         const section = this.sections.get(viewId);
         if (section && this.childrenId.indexOf(viewId) === -1) {
+            const view = this.views.find(val => val.id === viewId);
+            if (view) {
+                viewWidget.setViewMetadata(view);
+            }
             section.addViewWidget(viewWidget);
             this.childrenId.push(viewId);
             this.updateDimensions();

@@ -19,6 +19,9 @@ import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt } from '../../../api/plug
 import { RPCProtocol } from '@theia/plugin-ext/src/api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
 import { Message } from '@phosphor/messaging';
+import { MenuModelRegistry, CompositeMenuNode, ActionMenuNode } from '@theia/core/lib/common/menu';
+import * as path from 'path';
+import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import {
     TreeWidget,
     ContextMenuRenderer,
@@ -35,13 +38,16 @@ import {
     TREE_NODE_SEGMENT_CLASS,
     TREE_NODE_SEGMENT_GROW_CLASS
 } from '@theia/core/lib/browser';
+
+import { TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
 import { MenuPath } from '@theia/core/lib/common/menu';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { SelectionService } from '@theia/core/lib/common';
-
+import { View } from '../../../common/plugin-protocol';
+import { CommandRegistry } from '@theia/core';
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
 
@@ -61,18 +67,22 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
     protected viewCtxKey: ContextKey<string>;
     protected viewItemCtxKey: ContextKey<string>;
+    protected contextKeyService: ContextKeyService;
+    protected menuRegistry: MenuModelRegistry;
 
     constructor(rpc: RPCProtocol, private container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT);
         this.viewRegistry = container.get(ViewRegistry);
 
-        const contextKeyService = this.container.get<ContextKeyService>(ContextKeyService);
-        this.viewCtxKey = contextKeyService.createKey('view', '');
-        this.viewItemCtxKey = contextKeyService.createKey('viewItem', '');
+        this.contextKeyService = this.container.get<ContextKeyService>(ContextKeyService);
+        this.menuRegistry = this.container.get<MenuModelRegistry>(MenuModelRegistry);
+        this.viewCtxKey = this.contextKeyService.createKey('view', '');
+        this.viewItemCtxKey = this.contextKeyService.createKey('viewItem', '');
     }
 
     $registerTreeDataProvider(treeViewId: string): void {
-        const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy);
+        const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy,
+            this.menuRegistry, this.contextKeyService);
         this.dataProviders.set(treeViewId, dataProvider);
 
         const treeViewContainer = this.createTreeViewContainer(dataProvider);
@@ -109,8 +119,9 @@ export class TreeViewsMainImpl implements TreeViewsMain {
             globalSelection: true
         });
 
-        child.bind(TreeViewDataProviderMain).toConstantValue(dataProvider);
+        child.bind(ContextKeyService).toSelf();
 
+        child.bind(TreeViewDataProviderMain).toConstantValue(dataProvider);
         child.unbind(TreeImpl);
         child.bind(PluginTree).toSelf();
         child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(PluginTree));
@@ -155,12 +166,44 @@ export interface DescriptiveMetadata {
 export interface TreeViewFolderNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, DescriptiveMetadata {
 }
 
-export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadata {
+export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadata, TreeDecoration.DecoratedTreeNode {
 }
 
+@injectable()
 export class TreeViewDataProviderMain {
+    //menuRegistry: MenuModelRegistry;
 
-    constructor(private treeViewId: string, private proxy: TreeViewsExt) {
+    executeInlineCommand: (cmdID: string, nodeID: string) => void;
+
+    constructor(private treeViewId: string, private proxy: TreeViewsExt,
+        private menuRegistry: MenuModelRegistry,
+        private contextKeyService: ContextKeyService) {
+        if (!this._inlineActions && this.menuRegistry) {
+            this._inlineActions = [];
+            const menus = this.menuRegistry.getMenu(VIEW_ITEM_CONTEXT_MENU);
+            const inlineNodes = menus.children.filter(menu => {
+                if (menu instanceof CompositeMenuNode) {
+                    return menu.id === 'inline';
+                }
+                return false;
+            });
+
+            for (const n of inlineNodes) {
+                if (n instanceof CompositeMenuNode) {
+                    for (const c of n.children) {
+                        if (c instanceof ActionMenuNode) {
+                            this._inlineActions.push(c);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    _inlineActions?: ActionMenuNode[];
+
+    setInlineCommandExecutor(handler: (cmdID: string, nodeID: string) => void) {
+        this.executeInlineCommand = handler;
     }
 
     createFolderNode(item: TreeViewItem): TreeViewFolderNode {
@@ -183,6 +226,37 @@ export class TreeViewDataProviderMain {
         };
     }
 
+    getDecorationData(item: TreeViewItem): TreeDecoration.Data {
+        if (this._inlineActions && this._inlineActions.length > 0) {
+            const inlineActionInCtx = this._inlineActions.filter(action => {
+                if (action.action.when && this.contextKeyService.match(action.action.when) ||
+                    action.action!.when) {
+                    return true;
+                }
+                return false;
+            })
+            if (inlineActionInCtx.length > 0) {
+                const actionMenu = inlineActionInCtx[0];
+                if (actionMenu.icon) {
+                    return {
+                        tailDecorations: [{
+                            iconClass: actionMenu.icon,
+                            tooltip: actionMenu.label,
+                            onClick: (event: React.MouseEvent<HTMLElement>) => {
+                                event.stopPropagation();
+                                const nodeID = event.currentTarget.getAttribute('data-node-id');
+                                if (nodeID) {
+                                    this.executeInlineCommand(actionMenu.id, nodeID);
+                                }
+                            }
+                        } as TreeDecoration.TailDecorationCommand]
+                    };
+                }
+            }
+        }
+        return {};
+    }
+
     createFileNode(item: TreeViewItem): TreeViewFileNode {
         return {
             id: item.id,
@@ -192,7 +266,8 @@ export class TreeViewDataProviderMain {
             parent: undefined,
             visible: true,
             selected: false,
-            metadata: item.metadata
+            metadata: item.metadata,
+            decorationData: this.getDecorationData(item)
         };
     }
 
@@ -229,14 +304,29 @@ export class TreeViewDataProviderMain {
 export class TreeViewWidget extends TreeWidget {
 
     protected _contextSelection = false;
+    protected metadata: View;
+    @inject(CommandRegistry) commandRegistry: CommandRegistry;
 
     constructor(
+        @inject(ThemeService) themeService: ThemeService,
+
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(TreeViewDataProviderMain) readonly dataProvider: TreeViewDataProviderMain,
         @inject(SelectionService) readonly selectionService: SelectionService) {
         super(treeProps, model, contextMenuRenderer);
+
+        this.executeNodeInlineCommand = this.executeNodeInlineCommand.bind(this);
+        dataProvider.setInlineCommandExecutor(this.executeNodeInlineCommand);
+    }
+
+    protected executeNodeInlineCommand(commandID: string, nodeID: string): void {
+        const node = this.model.getNode(nodeID);
+        if (node as SelectableTreeNode) {
+            this.model.selectNode(node as SelectableTreeNode);
+            this.commandRegistry.executeCommand(commandID);
+        }
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -271,6 +361,30 @@ export class TreeViewWidget extends TreeWidget {
         }
     }
 
+    getIconPath(icon: string | { light: string; dark: string }): string {
+        let iconPath: string;
+        if (typeof icon === 'string') {
+            iconPath = icon;
+        } else {
+            if (this.themeService.getCurrentTheme().id === BuiltinThemeProvider.darkTheme.id) {
+                iconPath = icon.dark;
+            } else {
+                iconPath = icon.light;
+            }
+        }
+
+        const pos = iconPath.indexOf('/extension/');
+        if (pos > 0 && this.metadata) {
+            // add baseUrl of the extension with the suffix after the extension
+            iconPath = path.join(this.metadata.urlBase, iconPath.substr(pos + 11));
+        }
+        return iconPath;
+    }
+
+    public setViewMetadata(viewMetaData: View) {
+        this.metadata = viewMetaData;
+    }
+
     public updateWidget() {
         this.updateRows();
 
@@ -281,11 +395,19 @@ export class TreeViewWidget extends TreeWidget {
     }
 
     renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+
         if (node.icon) {
             return <div className={'fa ' + node.icon + ' tree-view-icon'}></div>;
+        } else {
+            const nodeDMD = node as DescriptiveMetadata;
+            if (nodeDMD && nodeDMD.metadata) {
+                const iconPath = nodeDMD.metadata.iconPath;
+                if (iconPath) {
+                    return <img className={'tree-view-icon'} src={this.getIconPath(iconPath)}></img>;
+                }
+            }
         }
-
-        return undefined;
+        return '';
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

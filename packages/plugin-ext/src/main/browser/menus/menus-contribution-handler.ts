@@ -126,7 +126,8 @@ export class MenusContributionPointHandler {
             return uri ? uri['codeUri'] : (typeof selection !== 'object' && typeof selection !== 'function') ? selection : undefined;
         };
         this.commands.registerCommand(command, {
-            execute: () => this.commands.executeCommand(menu.command, selectedResource()),
+            // tslint:disable-next-line:no-any
+            execute: (args: any[]) => this.commands.executeCommand(menu.command, selectedResource()),
             isEnabled: () => this.commands.isEnabled(menu.command, selectedResource()),
             isVisible: () => this.commands.isVisible(menu.command, selectedResource())
         });

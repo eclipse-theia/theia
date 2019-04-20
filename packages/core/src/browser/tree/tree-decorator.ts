@@ -282,6 +282,19 @@ export namespace TreeDecoration {
         readonly color?: Color;
     }
 
+    export interface TailDecorationCommand extends BaseTailDecoration {
+        /**
+         * icon class
+         */
+        readonly iconClass: string;
+
+        /**
+         * Optional event handler for click on the tail decorator
+         */
+        // tslint:disable-next-line:no-any
+        readonly onClick: any;
+    }
+
     /**
      * Enumeration for the quadrant to overlay the image on.
      */
@@ -515,7 +528,7 @@ export namespace TreeDecoration {
         /**
          * Optional right-aligned decorations that appear after the node caption and after the caption suffixes (is any).
          */
-        readonly tailDecorations?: Array<TailDecoration | TailDecorationIcon | TailDecorationIconClass>;
+        readonly tailDecorations?: Array<TailDecoration | TailDecorationIcon | TailDecorationIconClass | TailDecorationCommand>;
 
         /**
          * Custom tooltip for the decorated item. Tooltip will be appended to the original tooltip, if any.

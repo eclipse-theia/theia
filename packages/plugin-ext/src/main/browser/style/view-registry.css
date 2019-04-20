@@ -102,7 +102,7 @@
 }
 
 .theia-views-container-section-content .tree-view-icon {
-    max-height: calc(var(--theia-content-font-size) * 0.8);
+    max-height: calc(var(--theia-content-font-size) * 0.85);
     line-height: 0.8em;
 
 }

@@ -155,7 +155,7 @@ export class TheiaPluginScanner implements PluginScanner {
             contributions.views = {};
 
             Object.keys(rawPlugin.contributes.views!).forEach(location => {
-                const views = this.readViews(rawPlugin.contributes!.views![location]);
+                const views = this.readViews(rawPlugin.contributes!.views![location], rawPlugin);
                 contributions.views![location] = views;
             });
         }
@@ -265,14 +265,15 @@ export class TheiaPluginScanner implements PluginScanner {
         };
     }
 
-    private readViews(rawViews: PluginPackageView[]): View[] {
-        return rawViews.map(rawView => this.readView(rawView));
+    private readViews(rawViews: PluginPackageView[], pck: PluginPackage): View[] {
+        return rawViews.map(rawView => this.readView(rawView, pck));
     }
 
-    private readView(rawView: PluginPackageView): View {
+    private readView(rawView: PluginPackageView, pck: PluginPackage): View {
         const result: View = {
             id: rawView.id,
-            name: rawView.name
+            name: rawView.name,
+            urlBase: this.toPluginUrl(pck, '/')
         };
 
         return result;
