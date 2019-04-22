@@ -192,9 +192,7 @@ export class HostedPluginSupport {
         for (const plugin of pluginsMetadata) {
             if (plugin.model.entryPoint.frontend) {
                 result[0] = true;
-            }
-
-            if (plugin.model.entryPoint.backend) {
+            } else {
                 result[1] = true;
             }
 

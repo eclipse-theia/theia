@@ -133,8 +133,16 @@ export class PluginHostRPC {
                 for (const plg of raw) {
                     const pluginModel = plg.model;
                     const pluginLifecycle = plg.lifecycle;
-                    if (pluginModel.entryPoint!.backend) {
 
+                    if (pluginModel.entryPoint!.frontend) {
+                        foreign.push({
+                            pluginPath: pluginModel.entryPoint.frontend!,
+                            pluginFolder: plg.source.packagePath,
+                            model: pluginModel,
+                            lifecycle: pluginLifecycle,
+                            rawModel: plg.source
+                        });
+                    } else {
                         let backendInitPath = pluginLifecycle.backendInitPath;
                         // if no init path, try to init as regular Theia plugin
                         if (!backendInitPath) {
@@ -152,14 +160,6 @@ export class PluginHostRPC {
                         self.initContext(backendInitPath, plugin);
 
                         result.push(plugin);
-                    } else {
-                        foreign.push({
-                            pluginPath: pluginModel.entryPoint.frontend!,
-                            pluginFolder: plg.source.packagePath,
-                            model: pluginModel,
-                            lifecycle: pluginLifecycle,
-                            rawModel: plg.source
-                        });
                     }
                 }
                 return [result, foreign];
