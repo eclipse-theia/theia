@@ -60,12 +60,12 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
     /** Initialize this quick open model with the tasks. */
     async init(): Promise<void> {
-        const recentTasks = this.taskService.getRecentTasks();
+        const recentTasks = this.taskService.recentTasks;
         const configuredTasks = this.taskService.getConfiguredTasks();
         const providedTasks = await this.taskService.getProvidedTasks();
 
         const { filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks(recentTasks, configuredTasks, providedTasks);
-        const stat = await this.workspaceService.workspace;
+        const stat = this.workspaceService.workspace;
         const isMulti = stat ? !stat.isDirectory : false;
         this.items = [];
         this.items.push(

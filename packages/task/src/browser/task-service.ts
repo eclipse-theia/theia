@@ -44,7 +44,7 @@ export class TaskService implements TaskConfigurationClient {
      * The last executed task.
      */
     protected lastTask: { source: string, taskLabel: string } | undefined = undefined;
-    protected recentTasks: TaskConfiguration[] = [];
+    protected cachedRecentTasks: TaskConfiguration[] = [];
 
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
@@ -157,23 +157,27 @@ export class TaskService implements TaskConfigurationClient {
         if (Array.isArray(tasks)) {
             tasks.forEach(task => this.addRecentTasks(task));
         } else {
-            const ind = this.recentTasks.findIndex(recent => TaskConfiguration.equals(recent, tasks));
+            const ind = this.cachedRecentTasks.findIndex(recent => TaskConfiguration.equals(recent, tasks));
             if (ind >= 0) {
-                this.recentTasks.splice(ind, 1);
+                this.cachedRecentTasks.splice(ind, 1);
             }
-            this.recentTasks.unshift(tasks);
+            this.cachedRecentTasks.unshift(tasks);
         }
     }
 
-    getRecentTasks(): TaskConfiguration[] {
-        return this.recentTasks;
+    get recentTasks(): TaskConfiguration[] {
+        return this.cachedRecentTasks;
+    }
+
+    set recentTasks(recent: TaskConfiguration[]) {
+        this.cachedRecentTasks = recent;
     }
 
     /**
      * Clears the list of recently used tasks.
      */
     clearRecentTasks(): void {
-        this.recentTasks = [];
+        this.cachedRecentTasks = [];
     }
 
     /**
