@@ -171,8 +171,6 @@ export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadat
 
 @injectable()
 export class TreeViewDataProviderMain {
-    //menuRegistry: MenuModelRegistry;
-
     executeInlineCommand: (cmdID: string, nodeID: string) => void;
 
     constructor(private treeViewId: string, private proxy: TreeViewsExt,
@@ -234,7 +232,8 @@ export class TreeViewDataProviderMain {
                     return true;
                 }
                 return false;
-            })
+            });
+
             if (inlineActionInCtx.length > 0) {
                 const actionMenu = inlineActionInCtx[0];
                 if (actionMenu.icon) {
