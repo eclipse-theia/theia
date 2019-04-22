@@ -161,7 +161,7 @@ export class MenusContributionPointHandler {
         const id = this.createSyntheticCommandId(action, { prefix: '__plugin.scm.resource.action.' });
         const command: Command = { id };
         this.commands.registerCommand(command, {
-            execute: arg => this.commands.executeCommand(action.command, arg)
+            execute: (...arg) => this.commands.executeCommand(action.command, ...arg)
         });
 
         const condition = action.when;

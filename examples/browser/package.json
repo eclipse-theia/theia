@@ -27,7 +27,6 @@
     "@theia/file-search": "^0.5.0",
     "@theia/filesystem": "^0.5.0",
     "@theia/getting-started": "^0.5.0",
-    "@theia/git": "^0.5.0",
     "@theia/java": "^0.5.0",
     "@theia/java-debug": "^0.5.0",
     "@theia/json": "^0.5.0",
