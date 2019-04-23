@@ -82,7 +82,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
 
     @postConstruct()
     protected init() {
-        this.scmService.onDidAddRepository(repository => {
+        const changeHandler = (repository: ScmRepository) => {
             repository.provider.onDidChangeResources(() => {
                 if (this.selectedRepoUri === repository.provider.rootUri) {
                     this.update();
@@ -91,6 +91,12 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
             repository.provider.onDidChange(() => {
                 this.update();
             });
+        };
+        this.scmService.repositories.forEach(repository => {
+            changeHandler(repository);
+        });
+        this.scmService.onDidAddRepository(repository => {
+            changeHandler(repository);
         });
         this.scmService.onDidChangeSelectedRepositories(repository => {
             if (repository) {
