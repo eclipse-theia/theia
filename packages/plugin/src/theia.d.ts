@@ -4232,6 +4232,38 @@ declare module '@theia/plugin' {
          * Returns all query parameters of current IDE.
          */
         export function getQueryParameters(): { [key: string]: string | string[] } | undefined;
+
+		/**
+		 * The application name of the editor, like 'Eclipse Theia'.
+		 */
+        export const appName: string;
+
+		/**
+		 * The application root folder from which the editor is running.
+		 */
+        export const appRoot: string;
+
+		/**
+		 * The custom uri scheme the editor registers to in the operating system.
+		 */
+        export const uriScheme: string;
+
+		/**
+		 * Represents the preferred user-language, like `de-CH`, `fr`, or `en-US`.
+		 */
+        export const language: string;
+
+		/**
+		 * A unique identifier for the computer.
+		 */
+        export const machineId: string;
+
+		/**
+		 * A unique identifier for the current session.
+		 * Changes each time the editor is started.
+		 */
+        export const sessionId: string;
+
     }
 
     /**

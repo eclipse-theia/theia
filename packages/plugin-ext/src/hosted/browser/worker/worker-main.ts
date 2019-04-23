@@ -21,13 +21,13 @@ import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../api/plugin-api';
 import { createAPIFactory } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';
-import { EnvExtImpl } from '../../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 import { createDebugExtStub } from './debug-stub';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
+import { WorkerEnvExtImpl } from './worker-env-ext';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -49,7 +49,7 @@ addEventListener('message', (message: any) => {
 function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
     ctx.importScripts('/context/' + contextPath);
 }
-const envExt = new EnvExtImpl(rpc);
+const envExt = new WorkerEnvExtImpl(rpc);
 const editorsAndDocuments = new EditorsAndDocumentsExtImpl(rpc);
 const messageRegistryExt = new MessageRegistryExt(rpc);
 const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments, messageRegistryExt);

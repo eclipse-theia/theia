@@ -25,6 +25,7 @@ import { DebugExtImpl } from '../../plugin/node/debug/debug';
 import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
 import { MessageRegistryExt } from '../../plugin/message-registry';
+import { EnvNodeExtImpl } from '../../plugin/node/env-node-ext';
 
 /**
  * Handle the RPC calls.
@@ -40,7 +41,7 @@ export class PluginHostRPC {
     }
 
     initialize() {
-        const envExt = new EnvExtImpl(this.rpc);
+        const envExt = new EnvNodeExtImpl(this.rpc);
         const debugExt = new DebugExtImpl(this.rpc);
         const editorsAndDocumentsExt = new EditorsAndDocumentsExtImpl(this.rpc);
         const messageRegistryExt = new MessageRegistryExt(this.rpc);
