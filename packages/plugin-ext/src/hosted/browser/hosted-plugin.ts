@@ -133,7 +133,7 @@ export class HostedPluginSupport {
                     preferences: getPreferences(this.preferenceProviderProvider),
                     globalState: initData.globalStates,
                     workspaceState: initData.workspaceStates,
-                    env: { queryParams: getQueryParameters() },
+                    env: { queryParams: getQueryParameters(), language: navigator.language },
                     extApi: initData.pluginAPIs
                 }, confStorage);
                 setUpPluginApi(worker.rpc, container);
@@ -174,7 +174,7 @@ export class HostedPluginSupport {
                         preferences: getPreferences(this.preferenceProviderProvider),
                         globalState: initData.globalStates,
                         workspaceState: initData.workspaceStates,
-                        env: { queryParams: getQueryParameters() },
+                        env: { queryParams: getQueryParameters(), language: navigator.language },
                         extApi: initData.pluginAPIs
                     }, confStorage);
                     this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc!, container));

@@ -104,6 +104,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
         // init query parameters
         this.envExt.setQueryParameters(pluginInit.env.queryParams);
+        this.envExt.setLanguage(pluginInit.env.language);
 
         this.preferencesManager.init(pluginInit.preferences);
 
