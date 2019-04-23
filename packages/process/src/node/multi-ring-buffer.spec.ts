@@ -23,7 +23,7 @@ describe('MultiRingBuffer', function () {
 
     it('expect buffer to be empty initialized', function () {
         const size = 2;
-        const compareTo = new Buffer('0000', 'hex');
+        const compareTo = Buffer.from('0000', 'hex');
         const ringBuffer = new MultiRingBuffer({ size });
         // tslint:disable-next-line:no-unused-expression
         expect(ringBuffer['buffer'].equals(compareTo)).to.be.true;
