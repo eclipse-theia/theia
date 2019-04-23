@@ -45,7 +45,6 @@ export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
 export const TREE_NODE_CONTENT_CLASS = 'theia-TreeNodeContent';
 export const TREE_NODE_TAIL_CLASS = 'theia-TreeNodeTail';
-export const TREE_NODE_TAIL_INLINE_CMD_CLASS = 'theia-TreeNodeTailInlineCommand';
 export const TREE_NODE_SEGMENT_CLASS = 'theia-TreeNodeSegment';
 
 export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
@@ -576,13 +575,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 const { tooltip } = decoration;
                 const { data, fontData } = decoration as TreeDecoration.TailDecoration;
                 const color = (decoration as TreeDecoration.TailDecorationIcon).color;
-                const iconClass = (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
+                const icon = (decoration as TreeDecoration.TailDecorationIcon).icon || (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
                 const commandDecorator = (decoration as TreeDecoration.TailDecorationCommand);
                 let className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
                 let commandElem: React.ReactNode;
                 if (commandDecorator) {
                     const onClickEvent = commandDecorator.onClick;
-                    className = className.concat(' ').concat(TREE_NODE_TAIL_INLINE_CMD_CLASS);
+                    className = className.concat(' ').concat(TreeDecoration.Styles.TREE_NODE_TAIL_INLINE_CMD_CLASS);
                     commandElem = <div key={node.id + 'icon' + index} data-node-id={node.id} className={commandDecorator.iconClass} onClick={onClickEvent}></div>;
                 }
 
@@ -591,8 +590,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     data :
                     commandElem ?
                         commandElem :
-                        iconClass ?
-                            <span key={node.id + 'icon' + index} className={this.getIconClass(iconClass)}></span> :
+                        icon ?
+                            <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> :
                             '';
 
                 return <div key={node.id + className + index} className={className} style={style} title={tooltip}>

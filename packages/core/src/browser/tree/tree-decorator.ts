@@ -178,6 +178,7 @@ export namespace TreeDecoration {
         export const BOTTOM_RIGHT_CLASS = 'theia-bottom-right';
         export const BOTTOM_LEFT_CLASS = 'theia-bottom-left';
         export const TOP_LEFT_CLASS = 'theia-top-left';
+        export const TREE_NODE_TAIL_INLINE_CMD_CLASS = 'theia-TreeNodeTailInlineCommand';
     }
 
     /**

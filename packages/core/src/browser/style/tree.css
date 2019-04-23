@@ -108,18 +108,6 @@
     text-align: center;
 }
 
-.theia-TreeNode .theia-TreeNodeTailInlineCommand  {
-    visibility: hidden;
-}
-
-.theia-TreeNode:hover .theia-TreeNodeTailInlineCommand  {
-    visibility: visible;
-}
-
-.theia-TreeNode.theia-mod-selected .theia-TreeNodeTailInlineCommand {
-    visibility: visible;
-}
-
 .theia-TreeNodeSegment mark {
     background-color: var(--theia-word-highlight-match-color1);
     color: var(--theia-ui-font-color1);

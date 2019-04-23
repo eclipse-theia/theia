@@ -20,7 +20,6 @@ import { RPCProtocol } from '@theia/plugin-ext/src/api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
 import { Message } from '@phosphor/messaging';
 import { MenuModelRegistry, CompositeMenuNode, ActionMenuNode } from '@theia/core/lib/common/menu';
-import * as path from 'path';
 import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import {
     TreeWidget,
@@ -371,11 +370,11 @@ export class TreeViewWidget extends TreeWidget {
                 iconPath = icon.light;
             }
         }
-
-        const pos = iconPath.indexOf('/extension/');
+        const extensionKeyWord = '/extension/';
+        const pos = iconPath.indexOf(extensionKeyWord);
         if (pos > 0 && this.metadata) {
             // add baseUrl of the extension with the suffix after the extension
-            iconPath = path.join(this.metadata.urlBase, iconPath.substr(pos + 11));
+            iconPath = this.metadata.urlBase.concat(iconPath.substr(pos + extensionKeyWord.length));
         }
         return iconPath;
     }
