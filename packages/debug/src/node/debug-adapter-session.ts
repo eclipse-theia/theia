@@ -47,7 +47,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         protected readonly communicationProvider: CommunicationProvider
     ) {
         this.contentLength = -1;
-        this.buffer = new Buffer(0);
+        this.buffer = Buffer.alloc(0);
         this.toDispose.pushAll([
             this.communicationProvider,
             Disposable.create(() => this.write(JSON.stringify({ seq: -1, type: 'request', command: 'disconnect' }))),
