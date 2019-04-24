@@ -1,133 +1,156 @@
 {
-    // Use IntelliSense to learn about possible Node.js debug attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Attach by Process ID",
-            "processId": "${command:PickProcess}"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch with Node.js",
-            "program": "${file}"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch Electron Backend",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
-            "windows": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
-            },
-            "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
-            "protocol": "inspector",
-            "args": [
-                "--log-level=debug",
-                "--hostname=localhost",
-                "--no-cluster",
-                "--app-project-path=${workspaceRoot}/examples/electron",
-                "--no-app-auto-install"
-            ],
-            "env": {
-                "NODE_ENV": "development"
-            },
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
-                "${workspaceRoot}/examples/electron/src-gen/backend/main.js",
-                "${workspaceRoot}/examples/electron/lib/**/*.js",
-                "${workspaceRoot}/packages/*/lib/**/*.js",
-                "${workspaceRoot}/dev-packages/*/lib/**/*.js"
-            ],
-            "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart",
-            "outputCapture": "std"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch Backend",
-            "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
-            "args": [
-                "--hostname=0.0.0.0",
-                "--port=3000",
-                "--no-cluster",
-                "--app-project-path=${workspaceRoot}/examples/browser",
-                "--no-app-auto-install",
-                "--plugins=local-dir:plugins"
-            ],
-            "env": {
-                "NODE_ENV": "development"
-            },
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
-                "${workspaceRoot}/examples/browser/lib/**/*.js",
-                "${workspaceRoot}/packages/*/lib/**/*.js",
-                "${workspaceRoot}/dev-packages/*/lib/**/*.js"
-            ],
-            "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart",
-            "outputCapture": "std"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch Backend (eclipse.jdt.ls)",
-            "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
-            "args": [
-                "--log-level=debug",
-                "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
-                "--port=3000",
-                "--no-cluster",
-                "--no-app-auto-install"
-            ],
-            "env": {
-                "NODE_ENV": "development"
-            },
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
-                "${workspaceRoot}/examples/browser/lib/**/*.js",
-                "${workspaceRoot}/packages/*/lib/**/*.js",
-                "${workspaceRoot}/dev-packages/*/lib/**/*.js"
-            ],
-            "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart",
-            "outputCapture": "std"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "protocol": "inspector",
-            "name": "Run Mocha Test",
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-            "args": [
-                "--no-timeouts",
-                "--colors",
-                "--opts",
-                "${workspaceRoot}/configs/mocha.opts",
-                "**/${fileBasenameNoExtension}.js"
-            ],
-            "env": {
-                "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"
-            },
-            "sourceMaps": true,
-            "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart",
-            "outputCapture": "std"
-        },
-        {
-            "name": "Launch Frontend",
-            "type": "chrome",
-            "request": "launch",
-            "url": "http://localhost:3000/",
-            "webRoot": "${workspaceRoot}"
-        }
-    ]
+  // Use IntelliSense to learn about possible Node.js debug attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach by Process ID",
+      "processId": "${command:PickProcess}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch with Node.js",
+      "program": "${file}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Electron Backend",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+      },
+      "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+      "protocol": "inspector",
+      "args": [
+        "--log-level=debug",
+        "--hostname=localhost",
+        "--no-cluster",
+        "--app-project-path=${workspaceRoot}/examples/electron",
+        "--no-app-auto-install"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+        "${workspaceRoot}/examples/electron/src-gen/backend/main.js",
+        "${workspaceRoot}/examples/electron/lib/**/*.js",
+        "${workspaceRoot}/packages/*/lib/**/*.js",
+        "${workspaceRoot}/dev-packages/*/lib/**/*.js"
+      ],
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Backend",
+      "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+      "args": [
+        "--hostname=0.0.0.0",
+        "--port=3000",
+        "--no-cluster",
+        "--app-project-path=${workspaceRoot}/examples/browser",
+        "--no-app-auto-install",
+        "--plugins=local-dir:plugins"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
+        "${workspaceRoot}/examples/browser/lib/**/*.js",
+        "${workspaceRoot}/packages/*/lib/**/*.js",
+        "${workspaceRoot}/dev-packages/*/lib/**/*.js"
+      ],
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Backend (eclipse.jdt.ls)",
+      "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+      "args": [
+        "--log-level=debug",
+        "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
+        "--port=3000",
+        "--no-cluster",
+        "--no-app-auto-install"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
+        "${workspaceRoot}/examples/browser/lib/**/*.js",
+        "${workspaceRoot}/packages/*/lib/**/*.js",
+        "${workspaceRoot}/dev-packages/*/lib/**/*.js"
+      ],
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "protocol": "inspector",
+      "name": "Run Mocha Test",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--no-timeouts",
+        "--colors",
+        "--opts",
+        "${workspaceRoot}/configs/mocha.opts",
+        "**/${fileBasenameNoExtension}.js"
+      ],
+      "env": {
+        "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"
+      },
+      "sourceMaps": true,
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "name": "Launch Frontend",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000/",
+      "webRoot": "${workspaceRoot}"
+    },
+    {
+      "name": "Launch VS Code Tests",
+      "type": "node",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+        "${workspaceFolder}/plugins/vscode-api-tests/testWorkspace",
+        "--port",
+        "3030",
+        "--hostname",
+        "0.0.0.0",
+        "--extensionTestsPath=${workspaceFolder}/plugins/vscode-api-tests/out/singlefolder-tests",
+        "--hosted-plugin-inspect=9339"
+      ],
+      "env": {
+        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins"
+      },
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/../.js"
+      ]
+    }
+  ]
 }
