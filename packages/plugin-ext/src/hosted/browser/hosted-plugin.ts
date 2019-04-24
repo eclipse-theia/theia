@@ -197,7 +197,7 @@ export class HostedPluginSupport {
             }
 
             if (plugin.model.contributes) {
-                this.contributionHandler.handleContributions(plugin.model.contributes);
+                this.contributionHandler.handleContributions(plugin.model.contributes, plugin.model.id);
             }
         }
 

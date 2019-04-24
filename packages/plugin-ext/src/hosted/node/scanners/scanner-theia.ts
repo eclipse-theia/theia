@@ -56,6 +56,7 @@ import { deepClone } from '@theia/core/lib/common/objects';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { RecursivePartial } from '@theia/core/lib/common/types';
+import { TaskDefinitionContribution, ProblemMatcherContribution, ProblemPatternContribution } from '@theia/task/lib/common/task-protocol';
 
 namespace nls {
     export function localize(key: string, _default: string) {
@@ -182,6 +183,18 @@ export class TheiaPluginScanner implements PluginScanner {
         if (rawPlugin.contributes!.debuggers) {
             const debuggers = this.readDebuggers(rawPlugin.contributes.debuggers!);
             contributions.debuggers = debuggers;
+        }
+
+        if (rawPlugin.contributes!.taskDefinitions) {
+            contributions.taskDefinitions = rawPlugin.contributes!.taskDefinitions as TaskDefinitionContribution[];
+        }
+
+        if (rawPlugin.contributes!.problemMatchers) {
+            contributions.problemMatchers = rawPlugin.contributes!.problemMatchers as ProblemMatcherContribution[];
+        }
+
+        if (rawPlugin.contributes!.problemPatterns) {
+            contributions.problemPatterns = rawPlugin.contributes!.problemPatterns as ProblemPatternContribution[];
         }
 
         contributions.snippets = this.readSnippets(rawPlugin);

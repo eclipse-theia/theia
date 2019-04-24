@@ -123,4 +123,12 @@ export class TerminalProcess extends Process {
         this.terminal.write(data);
     }
 
+    onData(listener: (buffer: string) => void): void {
+        this.terminal.on('data', listener);
+    }
+
+    onDataClosed(listener: (exitCode: number, signal?: number) => void): void {
+        this.terminal.on('exit', listener);
+        // this.ringBuffer.getStream().on('close', listener); // TODO check if we should listen to the `close` from the buffer
+    }
 }

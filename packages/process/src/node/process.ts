@@ -108,6 +108,9 @@ export abstract class Process {
         return this.errorEmitter.event;
     }
 
+    abstract onData(listener: (buffer: string) => void): void;
+    abstract onDataClosed(listener: (exitCode: number, signal?: number) => void): void;
+
     protected emitOnStarted() {
         this.startEmitter.fire({});
     }

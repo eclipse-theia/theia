@@ -23,9 +23,20 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
+import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
+import {
+    ProblemMatchData,
+    ProblemMatcherContribution,
+    ProblemMatcherRegistry,
+    TaskServer,
+    TaskExitedEvent,
+    TaskInfo,
+    TaskConfiguration,
+    TaskOutputProcessedEvent,
+    RunTaskOption
+} from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -88,6 +99,12 @@ export class TaskService implements TaskConfigurationClient {
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(ProblemManager)
+    protected readonly problemManager: ProblemManager;
+
+    @inject(ProblemMatcherRegistry)
+    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
     /**
      * @deprecated To be removed in 0.5.0
      */
@@ -112,6 +129,22 @@ export class TaskService implements TaskConfigurationClient {
         this.taskWatcher.onTaskCreated((event: TaskInfo) => {
             if (this.isEventForThisClient(event.ctx)) {
                 this.messageService.info(`Task #${event.taskId} created - ${event.config.label}`);
+            }
+        });
+
+        this.taskWatcher.onOutputProcessed((event: TaskOutputProcessedEvent) => {
+            if (!this.isEventForThisClient(event.ctx)) {
+                return;
+            }
+            if (event.problems) {
+                event.problems.forEach(problem => {
+                    if (ProblemMatchData.is(problem) && problem.resource) {
+                        const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
+                        this.problemManager.addMarkers(uri, problem.marker.source || 'external', [problem.marker]);
+                    } else { // should have received an event for finding the "background task begins" pattern
+                        this.problemManager.cleanMarkersByOwner(problem.description.owner);
+                    }
+                });
             }
         });
 
@@ -237,19 +270,24 @@ export class TaskService implements TaskConfigurationClient {
      * It looks for configured and provided tasks.
      */
     async run(source: string, taskLabel: string): Promise<void> {
+        const option: RunTaskOption = {};
         let task = await this.getProvidedTask(source, taskLabel);
-        if (!task) {
+        if (!task) { // if a provided task cannot be found, search from tasks.json
             task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;
             }
+        } else { // if a provided task is found, check if it is customized
+            const taskType = task.taskType || task.type;
+            const customizations = this.taskConfigurations.getTaskCustomizations(taskType);
+            option.customizations = customizations;
         }
 
-        this.runTask(task);
+        this.runTask(task, option);
     }
 
-    async runTask(task: TaskConfiguration): Promise<void> {
+    async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<void> {
         const source = task._source;
         const taskLabel = task.label;
 
@@ -264,9 +302,11 @@ export class TaskService implements TaskConfigurationClient {
             return;
         }
 
+        await this.removeProblemMarks(option);
+
         let taskInfo: TaskInfo;
         try {
-            taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
+            taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
             this.lastTask = { source, taskLabel };
         } catch (error) {
             const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
@@ -280,6 +320,33 @@ export class TaskService implements TaskConfigurationClient {
         // open terminal widget if the task is based on a terminal process (type: shell)
         if (taskInfo.terminalId !== undefined) {
             this.attach(taskInfo.terminalId, taskInfo.taskId);
+        }
+    }
+
+    private async removeProblemMarks(option?: RunTaskOption): Promise<void> {
+        if (option && option.customizations) {
+            const matchersFromOption = option.customizations.map(c => c.problemMatcher);
+            const flattenedMatchers: (string | ProblemMatcherContribution)[] = [];
+            for (const matcher of matchersFromOption) {
+                if (matcher) {
+                    if (Array.isArray(matcher)) {
+                        flattenedMatchers.push(...matcher);
+                    } else {
+                        flattenedMatchers.push(matcher);
+                    }
+                }
+            }
+            const problemMatchers = await Promise.all(flattenedMatchers.map(matcher => {
+                if (typeof matcher === 'string') {
+                    return this.problemMatcherRegistry.get(matcher);
+                }
+                return matcher;
+            }));
+            for (const matcher of problemMatchers) {
+                if (matcher && matcher.owner) {
+                    this.problemManager.cleanMarkersByOwner(matcher.owner);
+                }
+            }
         }
     }
 

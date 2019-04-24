@@ -24,12 +24,41 @@ import { TaskManager } from './task-manager';
 import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
 import { TaskServerImpl } from './task-server';
 import { createCommonBindings } from '../common/task-common-module';
-import { TaskClient, TaskServer, taskPath } from '../common/task-protocol';
+import {
+    TaskClient, TaskServer, taskPath,
+    problemMatcherPath, ProblemMatcherRegistry,
+    problemPatternPath, ProblemPatternRegistry,
+    taskDefinitionPath, TaskDefinitionRegistry
+} from '../common';
+import { TaskDefinitionRegistryImpl } from './task-definition-registry';
+import { ProblemMatcherRegistryImpl } from './task-problem-matcher-registry';
+import { ProblemPatternRegistryImpl } from './task-problem-pattern-registry';
 
 export default new ContainerModule(bind => {
 
     bind(TaskManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(TaskManager);
+
+    bind(TaskDefinitionRegistry).to(TaskDefinitionRegistryImpl).inSingletonScope();
+    bind(ProblemMatcherRegistry).to(ProblemMatcherRegistryImpl).inSingletonScope();
+    bind(ProblemPatternRegistry).to(ProblemPatternRegistryImpl).inSingletonScope();
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(taskDefinitionPath, () =>
+            ctx.container.get(TaskDefinitionRegistry)
+        )
+    ).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(problemMatcherPath, () =>
+            ctx.container.get(ProblemMatcherRegistry)
+        )
+    ).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(problemPatternPath, () =>
+            ctx.container.get(ProblemPatternRegistry)
+        )
+    ).inSingletonScope();
+
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {

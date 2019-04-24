@@ -16,9 +16,22 @@
 
 import { inject, injectable, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/';
-import { TaskClient, TaskExitedEvent, TaskInfo, TaskServer, TaskConfiguration } from '../common/task-protocol';
+import {
+    TaskClient,
+    TaskExitedEvent,
+    TaskInfo,
+    TaskServer,
+    TaskConfiguration,
+    TaskOutputProcessedEvent,
+    TaskDefinitionRegistry,
+    RunTaskOption,
+    ProblemMatcher,
+    ProblemMatcherContribution,
+    ProblemMatcherRegistry
+} from '../common';
 import { TaskManager } from './task-manager';
 import { TaskRunnerRegistry } from './task-runner';
+import { ProblemCollector } from './task-problem-collector';
 
 @injectable()
 export class TaskServerImpl implements TaskServer {
@@ -34,6 +47,15 @@ export class TaskServerImpl implements TaskServer {
 
     @inject(TaskRunnerRegistry)
     protected readonly runnerRegistry: TaskRunnerRegistry;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(ProblemMatcherRegistry)
+    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
+    /** task context - {task id - problem collector} */
+    private problemCollectors: Map<string, Map<number, ProblemCollector>> = new Map();
 
     dispose() {
         // do nothing
@@ -53,13 +75,48 @@ export class TaskServerImpl implements TaskServer {
         return Promise.resolve(taskInfo);
     }
 
-    async run(taskConfiguration: TaskConfiguration, ctx?: string): Promise<TaskInfo> {
+    async run(taskConfiguration: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo> {
         const runner = this.runnerRegistry.getRunner(taskConfiguration.type);
         const task = await runner.run(taskConfiguration, ctx);
 
         task.onExit(event => {
             this.taskManager.delete(task);
             this.fireTaskExitedEvent(event);
+        });
+
+        const problemMatchers = this.getProblemMatchers(taskConfiguration, option);
+        task.onOutput(async event => {
+            let collector: ProblemCollector | undefined = this.getCachedProblemCollector(event.ctx || '', event.taskId);
+            if (!collector) {
+                const matchers: ProblemMatcher[] = [];
+                for (const matcher of problemMatchers) {
+                    let resolvedMatcher: ProblemMatcher | undefined;
+                    if (typeof matcher === 'string') {
+                        resolvedMatcher = this.problemMatcherRegistry.get(matcher);
+                    } else {
+                        resolvedMatcher = await this.problemMatcherRegistry.getProblemMatcherFromContribution(matcher);
+                    }
+                    if (resolvedMatcher) {
+                        matchers.push(resolvedMatcher);
+                    }
+                }
+                collector = new ProblemCollector(matchers);
+                this.cacheProblemCollector(event.ctx || '', event.taskId, collector);
+            }
+
+            const problems = collector.processLine(event.line);
+            if (problems.length > 0) {
+                this.fireTaskOutputProcessedEvent({
+                    taskId: event.taskId,
+                    ctx: event.ctx,
+                    terminalId: event.terminalId,
+                    problems
+                });
+            }
+        });
+
+        task.onExit(event => {
+            this.removedCachedProblemCollector(event.ctx || '', event.taskId);
         });
 
         const taskInfo = await task.getRuntimeInfo();
@@ -69,6 +126,27 @@ export class TaskServerImpl implements TaskServer {
 
     async getRegisteredTaskTypes(): Promise<string[]> {
         return this.runnerRegistry.getRunnerTypes();
+    }
+
+    private getProblemMatchers(taskConfiguration: TaskConfiguration, option?: RunTaskOption): (string | ProblemMatcherContribution)[] {
+        const hasCustomization = option && option.customizations && option.customizations.length > 0;
+        const problemMatchers: (string | ProblemMatcherContribution)[] = [];
+        if (hasCustomization) {
+            const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfiguration);
+            if (taskDefinition) {
+                const cus = option!.customizations!.filter(customization =>
+                    taskDefinition.properties.required.every(rp => customization[rp] === taskConfiguration[rp])
+                )[0];
+                if (cus && cus.problemMatcher) {
+                    if (Array.isArray(cus.problemMatcher)) {
+                        problemMatchers.push(...cus.problemMatcher);
+                    } else {
+                        problemMatchers.push(cus.problemMatcher);
+                    }
+                }
+            }
+        }
+        return problemMatchers;
     }
 
     protected fireTaskExitedEvent(event: TaskExitedEvent) {
@@ -85,6 +163,10 @@ export class TaskServerImpl implements TaskServer {
         this.clients.forEach(client => {
             client.onTaskCreated(event);
         });
+    }
+
+    protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent) {
+        this.clients.forEach(client => client.onTaskOutputProcessed(event));
     }
 
     /** Kill task for a given id. Rejects if task is not found */
@@ -111,6 +193,30 @@ export class TaskServerImpl implements TaskServer {
         const idx = this.clients.indexOf(client);
         if (idx > -1) {
             this.clients.splice(idx, 1);
+        }
+    }
+
+    private getCachedProblemCollector(ctx: string, taskId: number): ProblemCollector | undefined {
+        if (this.problemCollectors.has(ctx)) {
+            return this.problemCollectors.get(ctx)!.get(taskId);
+        }
+    }
+
+    private cacheProblemCollector(ctx: string, taskId: number, problemCollector: ProblemCollector): void {
+        if (this.problemCollectors.has(ctx)) {
+            if (!this.problemCollectors.get(ctx)!.has(taskId)) {
+                this.problemCollectors.get(ctx)!.set(taskId, problemCollector);
+            }
+        } else {
+            const forNewContext = new Map<number, ProblemCollector>();
+            forNewContext.set(taskId, problemCollector);
+            this.problemCollectors.set(ctx, forNewContext);
+        }
+    }
+
+    private removedCachedProblemCollector(ctx: string, taskId: number): void {
+        if (this.problemCollectors.has(ctx) && this.problemCollectors.get(ctx)!.has(taskId)) {
+            this.problemCollectors.get(ctx)!.delete(taskId);
         }
     }
 }

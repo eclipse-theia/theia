@@ -141,6 +141,14 @@ export class RawProcess extends Process {
         }
     }
 
+    onData(listener: (buffer: string) => void): void {
+        this.output.on('data', listener);
+    }
+
+    onDataClosed(listener: (exitCode: number, signal?: number) => void): void {
+        this.output.on('close', listener);
+    }
+
     get pid() {
         return this.process.pid;
     }

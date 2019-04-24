@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration } from '../common/task-protocol';
+import { TaskConfiguration, TaskCustomization, TaskDefinitionRegistry } from '../common';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -47,6 +47,8 @@ export class TaskConfigurations implements Disposable {
      * For the inner map (i.e., task config map), the key is task label and value TaskConfiguration
      */
     protected tasksMap = new Map<string, Map<string, TaskConfiguration>>();
+    protected taskCustomizations: TaskCustomization[] = [];
+
     protected watchedConfigFileUris: string[] = [];
     protected watchersMap = new Map<string, Disposable>(); // map of watchers for task config files, where the key is folder uri
 
@@ -65,6 +67,9 @@ export class TaskConfigurations implements Disposable {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     constructor(
         @inject(FileSystemWatcher) protected readonly watcherServer: FileSystemWatcher,
@@ -173,6 +178,10 @@ export class TaskConfigurations implements Disposable {
         this.tasksMap.delete(source);
     }
 
+    getTaskCustomizations(type: string): TaskCustomization[] {
+        return this.taskCustomizations.filter(c => c.type === type);
+    }
+
     /** returns the string uri of where the config file would be, if it existed under a given root directory */
     protected getConfigFileUri(rootDir: string): string {
         return new URI(rootDir).resolve(this.TASKFILEPATH).resolve(this.TASKFILE).toString();
@@ -198,22 +207,28 @@ export class TaskConfigurations implements Disposable {
      * If reading a config file wasn't successful then does nothing.
      */
     protected async refreshTasks(configFileUri: string) {
-        const tasksConfigsArray = await this.readTasks(configFileUri);
-        if (tasksConfigsArray) {
+        const configuredTasksArray = await this.readTasks(configFileUri);
+        if (configuredTasksArray) {
             // only clear tasks map when successful at parsing the config file
             // this way we avoid clearing and re-filling it multiple times if the
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
             this.removeTasks(configFileUri);
 
-            if (tasksConfigsArray.length > 0) {
+            if (configuredTasksArray.length > 0) {
                 const newTaskMap = new Map<string, TaskConfiguration>();
-                for (const task of tasksConfigsArray) {
+                for (const task of configuredTasksArray) {
                     newTaskMap.set(task.label, task);
                 }
                 const source = this.getSourceFolderFromConfigUri(configFileUri);
                 this.tasksMap.set(source, newTaskMap);
             }
+        }
+
+        const cutomizations = await this.readTaskCustomizations(configFileUri);
+        if (cutomizations) {
+            this.taskCustomizations.length = 0;
+            this.taskCustomizations = cutomizations;
         }
     }
 
@@ -234,7 +249,15 @@ export class TaskConfigurations implements Disposable {
                         console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
                     }
                 } else {
-                    return this.filterDuplicates(tasks['tasks']).map(t => Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) }));
+                    const filtered = this.filterDuplicates(tasks['tasks']);
+                    const isContributed = await Promise.all(filtered.map(t => this.isContributedTask(t)));
+                    const configuredTasks: TaskConfiguration[] = [];
+                    filtered.forEach((t, index) => {
+                        if (!isContributed[index]) {
+                            configuredTasks.push(t);
+                        }
+                    });
+                    return configuredTasks.map(t => Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) }));
                 }
             } catch (err) {
                 console.error(`Error(s) reading config file: ${uri}`);
@@ -300,5 +323,44 @@ export class TaskConfigurations implements Disposable {
 
     private getSourceFolderFromConfigUri(configFileUri: string): string {
         return new URI(configFileUri).parent.parent.path.toString();
+    }
+
+    // TODO put the file read logic into a separate function and reuse
+    protected async readTaskCustomizations(uri: string): Promise<TaskCustomization[] | undefined> {
+        if (!await this.fileSystem.exists(uri)) {
+            return undefined;
+        } else {
+            try {
+                const response = await this.fileSystem.resolveContent(uri);
+
+                const strippedContent = jsoncparser.stripComments(response.content);
+                const errors: ParseError[] = [];
+                const tasks = jsoncparser.parse(strippedContent, errors)['tasks'];
+
+                if (errors.length) {
+                    for (const e of errors) {
+                        console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
+                    }
+                } else {
+                    // tslint:disable-next-line:no-any
+                    const isContributed = await Promise.all(tasks.map((t: TaskConfiguration) => this.isContributedTask(t)));
+                    const customizations: TaskCustomization[] = [];
+                    tasks.forEach((t: TaskConfiguration, index: number) => {
+                        if (isContributed[index]) {
+                            customizations.push(t);
+                        }
+                    });
+                    return customizations;
+                }
+            } catch (err) {
+                console.error(`Error(s) reading config file: ${uri}`);
+            }
+        }
+    }
+
+    private async isContributedTask(task: TaskConfiguration): Promise<boolean> {
+        const taskDefinition = await this.taskDefinitionRegistry.getDefinition(task);
+        // it is considered as a customization if the task definition registry finds a def for the task configuration
+        return !!taskDefinition;
     }
 }

@@ -25,7 +25,12 @@ import { TaskConfigurations } from './task-configurations';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskFrontendContribution } from './task-frontend-contribution';
 import { createCommonBindings } from '../common/task-common-module';
-import { TaskServer, taskPath } from '../common/task-protocol';
+import {
+    TaskServer, taskPath,
+    problemMatcherPath, ProblemMatcherRegistry,
+    problemPatternPath, ProblemPatternRegistry,
+    taskDefinitionPath, TaskDefinitionRegistry
+} from '../common/task-protocol';
 import { TaskWatcher } from '../common/task-watcher';
 import { bindProcessTaskModule } from './process/process-task-frontend-module';
 import { TaskSchemaUpdater } from './task-schema-updater';
@@ -51,6 +56,15 @@ export default new ContainerModule(bind => {
         const taskWatcher = ctx.container.get(TaskWatcher);
         return connection.createProxy<TaskServer>(taskPath, taskWatcher.getTaskClient());
     }).inSingletonScope();
+    bind(TaskDefinitionRegistry).toDynamicValue(({ container }) =>
+        WebSocketConnectionProvider.createProxy(container, taskDefinitionPath)
+    ).inSingletonScope();
+    bind(ProblemMatcherRegistry).toDynamicValue(({ container }) =>
+        WebSocketConnectionProvider.createProxy(container, problemMatcherPath)
+    ).inSingletonScope();
+    bind(ProblemPatternRegistry).toDynamicValue(({ container }) =>
+        WebSocketConnectionProvider.createProxy(container, problemPatternPath)
+    ).inSingletonScope();
 
     createCommonBindings(bind);
 

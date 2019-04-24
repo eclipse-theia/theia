@@ -55,9 +55,18 @@ export class MarkerCollection<T> {
         if (markerData.length > 0) {
             this.owner2Markers.set(owner, markerData.map(data => this.createMarker(owner, data)));
         } else {
-            this.owner2Markers.delete(owner);
+            this.removeMarkers(owner);
         }
         return before || [];
+    }
+
+    addMarkers(owner: string, markerData: T[]): Marker<T>[] {
+        if (markerData.length > 0) {
+            const existing = this.owner2Markers.get(owner) || [];
+            const toAdd = markerData.map(data => this.createMarker(owner, data));
+            this.owner2Markers.set(owner, [...existing, ...toAdd]);
+        }
+        return this.owner2Markers.get(owner) || [];
     }
 
     protected createMarker(owner: string, data: T): Readonly<Marker<T>> {
@@ -95,6 +104,9 @@ export class MarkerCollection<T> {
         }
     }
 
+    removeMarkers(owner: string): void {
+        this.owner2Markers.delete(owner);
+    }
 }
 
 export interface Uri2MarkerEntry {
@@ -161,6 +173,22 @@ export abstract class MarkerManager<D extends object> {
     }
 
     /*
+     * adds markers for the given uri and owner with the given data, without touching the exsting markers associated with the same uri and owner.
+     */
+    addMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
+        const uriString = uri.toString();
+        const collection = this.uri2MarkerCollection.get(uriString) || new MarkerCollection<D>(uri, this.getKind());
+        const newMarkers = collection.addMarkers(owner, data);
+        if (collection.empty) {
+            this.uri2MarkerCollection.delete(uri.toString());
+        } else {
+            this.uri2MarkerCollection.set(uriString, collection);
+        }
+        this.fireOnDidChangeMarkers(uri);
+        return newMarkers;
+    }
+
+    /*
      * returns all markers that satisfy the given filter.
      */
     findMarkers(filter: SearchFilter<D> = {}): Marker<D>[] {
@@ -197,4 +225,10 @@ export abstract class MarkerManager<D extends object> {
         }
     }
 
+    cleanMarkersByOwner(owner: string): void {
+        this.uri2MarkerCollection.forEach((collection, uri) => {
+            collection.removeMarkers(owner);
+            this.fireOnDidChangeMarkers(new URI(uri));
+        });
+    }
 }

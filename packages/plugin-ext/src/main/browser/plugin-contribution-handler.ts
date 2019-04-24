@@ -27,6 +27,7 @@ import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-s
 import { PluginSharedStyle } from './plugin-shared-style';
 import { CommandRegistry } from '@theia/core';
 import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
+import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/common';
 
 @injectable()
 export class PluginContributionHandler {
@@ -60,7 +61,16 @@ export class PluginContributionHandler {
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
 
-    handleContributions(contributions: PluginContribution): void {
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(ProblemMatcherRegistry)
+    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
+    @inject(ProblemPatternRegistry)
+    protected readonly problemPatternRegistry: ProblemPatternRegistry;
+
+    handleContributions(contributions: PluginContribution, modelId: string): void {
         if (contributions.configuration) {
             this.updateConfigurationSchema(contributions.configuration);
         }
@@ -149,6 +159,18 @@ export class PluginContributionHandler {
                     source: snippet.source
                 });
             }
+        }
+
+        if (contributions.taskDefinitions) {
+            contributions.taskDefinitions.forEach(def => this.taskDefinitionRegistry.register(def, modelId));
+        }
+
+        if (contributions.problemPatterns) {
+            contributions.problemPatterns.forEach(pattern => this.problemPatternRegistry.register(pattern.name!, pattern));
+        }
+
+        if (contributions.problemMatchers) {
+            contributions.problemMatchers.forEach(matcher => this.problemMatcherRegistry.register(matcher));
         }
     }
 

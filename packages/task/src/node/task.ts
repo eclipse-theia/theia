@@ -17,12 +17,12 @@
 import { injectable } from 'inversify';
 import { ILogger, Emitter, Event, MaybePromise } from '@theia/core/lib/common/';
 import { TaskManager } from './task-manager';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration } from '../common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputEvent, TaskOutputProcessedEvent } from '../common/task-protocol';
 
 export interface TaskOptions {
-    label: string,
-    config: TaskConfiguration
-    context?: string
+    label: string;
+    config: TaskConfiguration;
+    context?: string;
 }
 
 @injectable()
@@ -30,6 +30,8 @@ export abstract class Task {
 
     protected taskId: number;
     readonly exitEmitter: Emitter<TaskExitedEvent>;
+    readonly outputEmitter: Emitter<TaskOutputEvent>;
+    readonly outputProcessedEmitter: Emitter<TaskOutputProcessedEvent>;
 
     constructor(
         protected readonly taskManager: TaskManager,
@@ -38,6 +40,7 @@ export abstract class Task {
     ) {
         this.taskId = this.taskManager.register(this, this.options.context);
         this.exitEmitter = new Emitter<TaskExitedEvent>();
+        this.outputEmitter = new Emitter<TaskOutputEvent>();
     }
 
     /** Terminates the task. */
@@ -47,9 +50,17 @@ export abstract class Task {
         return this.exitEmitter.event;
     }
 
+    get onOutput(): Event<TaskOutputEvent> {
+        return this.outputEmitter.event;
+    }
+
     /** Has to be called when a task has concluded its execution. */
     protected fireTaskExited(event: TaskExitedEvent): void {
         this.exitEmitter.fire(event);
+    }
+
+    protected fireOutputLine(event: TaskOutputEvent): void {
+        this.outputEmitter.fire(event);
     }
 
     /** Returns runtime information about task. */

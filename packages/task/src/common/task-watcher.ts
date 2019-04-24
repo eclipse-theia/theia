@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { TaskClient, TaskExitedEvent, TaskInfo } from './task-protocol';
+import { TaskClient, TaskExitedEvent, TaskInfo, TaskOutputProcessedEvent } from './task-protocol';
 
 @injectable()
 export class TaskWatcher {
@@ -24,23 +24,31 @@ export class TaskWatcher {
     getTaskClient(): TaskClient {
         const newTaskEmitter = this.onTaskCreatedEmitter;
         const exitEmitter = this.onTaskExitEmitter;
+        const outputProcessedEmitter = this.onOutputProcessedEmitter;
         return {
             onTaskCreated(event: TaskInfo) {
                 newTaskEmitter.fire(event);
             },
             onTaskExit(event: TaskExitedEvent) {
                 exitEmitter.fire(event);
+            },
+            onTaskOutputProcessed(event: TaskOutputProcessedEvent) {
+                outputProcessedEmitter.fire(event);
             }
         };
     }
 
     protected onTaskCreatedEmitter = new Emitter<TaskInfo>();
     protected onTaskExitEmitter = new Emitter<TaskExitedEvent>();
+    protected onOutputProcessedEmitter = new Emitter<TaskOutputProcessedEvent>();
 
     get onTaskCreated(): Event<TaskInfo> {
         return this.onTaskCreatedEmitter.event;
     }
     get onTaskExit(): Event<TaskExitedEvent> {
         return this.onTaskExitEmitter.event;
+    }
+    get onOutputProcessed(): Event<TaskOutputProcessedEvent> {
+        return this.onOutputProcessedEmitter.event;
     }
 }

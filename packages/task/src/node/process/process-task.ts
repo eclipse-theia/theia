@@ -16,15 +16,32 @@
 
 import { injectable, inject, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/';
-import { Process } from '@theia/process/lib/node';
+import { Process, IProcessExitEvent } from '@theia/process/lib/node';
 import { Task, TaskOptions } from '../task';
 import { TaskManager } from '../task-manager';
 import { ProcessType, ProcessTaskInfo } from '../../common/process/task-protocol';
+import { TaskExitedEvent } from '../../common/task-protocol';
+
+// Escape codes
+// http://en.wikipedia.org/wiki/ANSI_escape_code
+const EL = /\x1B\x5B[12]?K/g; // Erase in line
+const COLOR_START = /\x1b\[\d+m/g; // Color
+const COLOR_END = /\x1b\[0?m/g; // Color
+
+export function removeAnsiEscapeCodes(str: string): string {
+    if (str) {
+        str = str.replace(EL, '');
+        str = str.replace(COLOR_START, '');
+        str = str.replace(COLOR_END, '');
+    }
+
+    return str.trimRight();
+}
 
 export const TaskProcessOptions = Symbol('TaskProcessOptions');
 export interface TaskProcessOptions extends TaskOptions {
-    process: Process,
-    processType: ProcessType
+    process: Process;
+    processType: ProcessType;
 }
 
 export const TaskFactory = Symbol('TaskFactory');
@@ -41,17 +58,35 @@ export class ProcessTask extends Task {
     ) {
         super(taskManager, logger, options);
 
-        const toDispose =
-            this.process.onExit(event => {
-                toDispose.dispose();
-                this.fireTaskExited({
-                    taskId: this.taskId,
-                    ctx: this.options.context,
-                    code: event.code,
-                    signal: event.signal
-                });
-            });
+        const toDispose = this.process.onExit(async event => {
+            toDispose.dispose();
+            this.fireTaskExited(await this.getTaskExitedEvent(event));
+        });
 
+        // Buffer to accumulate incoming output.
+        let databuf: string = '';
+        this.process.onData((chunk: string) => {
+            databuf += chunk;
+
+            while (1) {
+                // Check if we have a complete line.
+                const eolIdx = databuf.indexOf('\n');
+                if (eolIdx < 0) {
+                    break;
+                }
+
+                // Get and remove the line from the data buffer.
+                const lineBuf = databuf.slice(0, eolIdx);
+                databuf = databuf.slice(eolIdx + 1);
+                const processedLine = removeAnsiEscapeCodes(lineBuf);
+                this.fireOutputLine({
+                    taskId: this.taskId,
+                    ctx: this.context,
+                    // terminalId?: number; // TODO do we need terminal id?
+                    line: processedLine
+                });
+            }
+        });
         this.logger.info(`Created new task, id: ${this.id}, process id: ${this.options.process.id}, OS PID: ${this.process.pid}, context: ${this.context}`);
     }
 
@@ -69,6 +104,15 @@ export class ProcessTask extends Task {
         });
     }
 
+    protected async getTaskExitedEvent(evt: IProcessExitEvent): Promise<TaskExitedEvent> {
+        return {
+            taskId: this.taskId,
+            ctx: this.options.context,
+            code: evt.code,
+            signal: evt.signal
+        };
+    }
+
     getRuntimeInfo(): ProcessTaskInfo {
         return {
             taskId: this.id,
@@ -77,6 +121,7 @@ export class ProcessTask extends Task {
             terminalId: (this.processType === 'shell') ? this.process.id : undefined
         };
     }
+
     get process() {
         return this.options.process;
     }
