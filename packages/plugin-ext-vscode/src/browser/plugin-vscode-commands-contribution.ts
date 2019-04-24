@@ -35,7 +35,7 @@ export namespace VscodeCommands {
     };
 
     export const DIFF: Command = {
-       id: 'vscode.diff'
+        id: 'vscode.diff'
     };
 
     export const SET_CONTEXT: Command = {
@@ -91,8 +91,19 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.DIFF, {
             isVisible: () => false,
             // tslint:disable-next-line: no-any
-            execute: async (left: URI, right: URI) => {
-                await this.diffService.openDiffEditor(new TheiaURI(left), new TheiaURI(right));
+            execute: async (left: URI, right: URI, label?: string) => {
+                if (!left || !right) {
+                    throw new Error(`${VscodeCommands.DIFF} command requires at least two URI arguments. Found left=${left}, right=${right} as arguments`);
+                }
+                if (!URI.isUri(left)) {
+                    throw new Error(`Invalid argument for ${VscodeCommands.DIFF.id} command with left argument. Expecting URI left type but found ${left}`);
+                }
+                if (!URI.isUri(right)) {
+                    throw new Error(`Invalid argument for ${VscodeCommands.DIFF.id} command with right argument. Expecting URI right type but found ${right}`);
+                }
+
+                const leftURI = new TheiaURI(left);
+                await this.diffService.openDiffEditor(leftURI, new TheiaURI(right), label);
             }
         });
 
