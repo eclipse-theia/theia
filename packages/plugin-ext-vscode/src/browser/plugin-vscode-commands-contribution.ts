@@ -25,6 +25,9 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WebviewWidget } from '@theia/plugin-ext/lib/main/browser/webview/webview';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { ResourceProvider } from '@theia/core';
+import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
+import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/api/model';
+import { fromViewColumn } from '@theia/plugin-ext/lib/plugin/type-converters';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -62,8 +65,26 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
-            execute: (resource: URI) => {
-                this.commandService.executeCommand('theia.open', new TheiaURI(resource));
+            execute: (resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
+                if (!resource) {
+                    throw new Error(`${VscodeCommands.OPEN.id} command requires at least URI argument.`);
+                }
+                if (!URI.isUri(resource)) {
+                    throw new Error(`Invalid argument for ${VscodeCommands.OPEN.id} command with URI argument. Found ${resource}`);
+                }
+
+                let position: number | undefined;
+                if (columnOrOptions) {
+                    if (typeof columnOrOptions === 'number') {
+                        position = fromViewColumn(columnOrOptions);
+                    } else if (columnOrOptions.viewColumn) {
+                        position = fromViewColumn(columnOrOptions.viewColumn);
+                    } else {
+                        throw new Error(`Invalid argument for ${VscodeCommands.OPEN.id} command with columnOrOptions argument. Found ${columnOrOptions}`);
+                    }
+                }
+
+                this.commandService.executeCommand('theia.open', new TheiaURI(resource), position);
             }
         });
 
