@@ -81,9 +81,9 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
     protected readonly toDisposeOnInitialize = new DisposableCollection();
 
-    protected lastCommitHeight: number = 100;
+    protected lastCommitHeight: number = 0;
     lastCommitScrollRef = (instance: HTMLDivElement) => {
-        if (instance && this.lastCommitHeight === 100) {
+        if (this.lastCommitHeight === 0) {
             this.lastCommitHeight = instance.getBoundingClientRect().height;
         }
     }
@@ -174,18 +174,15 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                                             this.amendingCommits.push(this.lastCommit);
                                             if (this.amendingCommits.length === 1) {
                                                 const storageKey = this.getStorageKey(repository);
-                                                await this.storageService.setData<string | undefined>(storageKey, this.amendingCommits[0].commit.sha);
+                                                this.storageService.setData<string | undefined>(storageKey, this.amendingCommits[0].commit.sha);
                                             }
                                         }
                                         break;
                                     case 'unamend':
-                                        const commitToRestore = this.amendingCommits.pop();
+                                        this.amendingCommits.pop();
                                         if (this.amendingCommits.length === 0) {
                                             const storageKey = this.getStorageKey(repository);
-                                            await this.storageService.setData<string | undefined>(storageKey, undefined);
-                                        }
-                                        if (!nextCommit || !commitToRestore || nextCommit.commit.sha !== commitToRestore.commit.sha) {
-                                            // something is wrong
+                                            this.storageService.setData<string | undefined>(storageKey, undefined);
                                         }
                                         break;
                                 }
@@ -331,16 +328,8 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository) {
-            const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
-            const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
             this.transitionHint = 'amend';
-            await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
-            if (commitTextArea) {
-                this.message = message;
-                commitTextArea.value = message;
-                this.resize(commitTextArea);
-                commitTextArea.focus();
-            }
+            await this.resetAndSetMessage(selectedRepository, 'HEAD~', 'HEAD');
         }
     }
 
@@ -358,18 +347,25 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository && commitToRestore) {
-            const message = oldestAmendCommit
-                ? (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B', oldestAmendCommit.commit.sha])).stdout.trim()
-                : '';
-            const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
+            const commitToUseForMessage = oldestAmendCommit
+                ? oldestAmendCommit.commit.sha
+                : undefined;
             this.transitionHint = 'unamend';
-            await this.git.exec(selectedRepository, ['reset', commitToRestore.commit.sha, '--soft']);
-            if (commitTextArea) {
-                this.message = message;
-                commitTextArea.value = message;
-                this.resize(commitTextArea);
-                commitTextArea.focus();
-            }
+            await this.resetAndSetMessage(selectedRepository, commitToRestore.commit.sha, commitToUseForMessage);
+        }
+    }
+
+    private async resetAndSetMessage(repository: Repository, commitToRestore: string, commitToUseForMessage: string | undefined): Promise<void> {
+        const message = commitToUseForMessage
+            ? (await this.git.exec(repository, ['log', '-n', '1', '--format=%B', commitToUseForMessage])).stdout.trim()
+            : '';
+        const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
+        await this.git.exec(repository, ['reset', commitToRestore, '--soft']);
+        if (commitTextArea) {
+            this.message = message;
+            commitTextArea.value = message;
+            this.resize(commitTextArea);
+            commitTextArea.focus();
         }
     }
 
@@ -598,7 +594,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                     <div>
                         <div id='lastCommit' className='changesContainer'>
                             <div className='theia-header git-theia-header'>
-                                Head Commit
+                                HEAD Commit
                             </div>
                             {this.renderLastCommit()}
                         </div>
@@ -643,13 +639,15 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
 
         return <div id='amendedCommits' className={classNames}>
             <div className='theia-header git-theia-header'>
-                Commits being Amended
-                {this.renderCommitCount(this.amendingCommits.length)}
-                {this.renderAmendCommitListButtons()}
+                <div className='noWrapInfo'>Commits being Amended</div>
+                <div className='git-change-list-buttons-container'>
+                    {this.renderAmendCommitListButtons()}
+                    {this.renderCommitCount(this.amendingCommits.length)}
+                </div>
             </div>
             <div style={this.styleAmendedCommits()}>
-                {this.amendingCommits.map((commitData, index, map) =>
-                    this.renderCommitBeingAmended(commitData, index === map.length - 1)
+                {this.amendingCommits.map((commitData, index, array) =>
+                    this.renderCommitBeingAmended(commitData, index === array.length - 1)
                 )}
                 {
                     this.lastCommit && this.transition.state !== 'none' && this.transition.direction === 'down'
@@ -661,8 +659,8 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     }
 
     protected renderAmendCommitListButtons(): React.ReactNode {
-        return <div className='git-change-list-buttons-container'>
-            <a className='toolbar-button' title='Unstage All Changes' onClick={this.unamendAll.bind(this)}>
+        return <div className='buttons'>
+            <a className='toolbar-button' title='Unamend All Commits' onClick={this.unamendAll.bind(this)}>
                 <i className='fa fa-minus' />
             </a>
         </div>;
@@ -818,7 +816,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 }
         }
 
-        return base;  // should never happen
+        throw new Error('Invalid value for transtition state: ' + this.transition.state);
     }
 
     protected styleLastCommitMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {
@@ -838,7 +836,7 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
             paddingBottom: 0,
             borderTop: 0,
             borderBottom: 0,
-            height: 60 // this.lastCommitHeight
+            height: this.lastCommitHeight * 2
         };
 
         // We end with top and bottom margins switched
@@ -866,20 +864,6 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                     transitionTimingFunction: 'linear'
                 };
         }
-    }
-
-    protected styleLastCommitOnBottom(transitionState: 'start' | 'transitioning', startingBottom: number, endingBottom: number): React.CSSProperties {
-        const base = {
-            display: 'flex',
-            marginTop: 0,
-            marginBottom: 0,
-            paddingTop: 0,
-            paddingBottom: 0,
-            borderTop: 0,
-            borderBottom: 0
-        };
-
-        return base;
     }
 
     protected readonly refresh = () => this.doRefresh();

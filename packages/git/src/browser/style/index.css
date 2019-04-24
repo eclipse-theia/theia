@@ -408,7 +408,7 @@
     cursor: pointer;
 }
 
-.git-theia-header:hover>.git-change-list-buttons-container {
+.git-theia-header:hover > .git-change-list-buttons-container {
     visibility: visible;
 }
 
