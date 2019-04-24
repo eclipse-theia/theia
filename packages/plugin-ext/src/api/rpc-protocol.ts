@@ -121,6 +121,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         const result = new Deferred();
 
         if (cancellationToken) {
+            args.push('add.cancellation.token');
             cancellationToken.onCancellationRequested(() =>
                 this.multiplexor.send(MessageFactory.cancel(callId, this.messageToSendHostId))
             );
@@ -175,11 +176,15 @@ export class RPCProtocolImpl implements RPCProtocol {
     private receiveRequest(msg: RequestMessage): void {
         const callId = msg.id;
         const proxyId = msg.proxyId;
+        const args = msg.args;
 
-        const tokenSource = new CancellationTokenSource();
-        this.cancellationTokenSources[callId] = tokenSource;
-        msg.args.push(tokenSource.token);
-        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, msg.args);
+        const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
+        if (addToken) {
+            const tokenSource = new CancellationTokenSource();
+            this.cancellationTokenSources[callId] = tokenSource;
+            args.push(tokenSource.token);
+        }
+        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, args);
 
         this.invokedHandlers[callId].then(r => {
             delete this.invokedHandlers[callId];

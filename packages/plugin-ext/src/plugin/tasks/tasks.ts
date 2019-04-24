@@ -80,7 +80,7 @@ export class TasksExtImpl implements TasksExt {
         return this.createDisposable(callId);
     }
 
-    $provideTasks(handle: number, token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
+    $provideTasks(handle: number, token?: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.provideTasks(token);
@@ -89,7 +89,7 @@ export class TasksExtImpl implements TasksExt {
         }
     }
 
-    $resolveTask(handle: number, task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
+    $resolveTask(handle: number, task: TaskDto, token?: theia.CancellationToken): Promise<TaskDto | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.resolveTask(task, token);
