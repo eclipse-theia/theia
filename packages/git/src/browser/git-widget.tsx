@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, CommandService, MenuPath } from '@theia/core';
 import { DisposableCollection } from '@theia/core/lib/common';
-import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message, SELECTED_CLASS, Key, ConfirmDialog } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message, SELECTED_CLASS, Key, ConfirmDialog, StorageService } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
@@ -33,6 +33,8 @@ import { GitDiffWidget } from './diff/git-diff-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { GitFileChangeNode } from './git-file-change-node';
 import { FileSystem } from '@theia/filesystem/lib/common';
+
+const REPOSITORY_STORAGE_KEY = 'repository';
 
 @injectable()
 export class GitWidget extends GitDiffWidget implements StatefulWidget {
@@ -95,6 +97,9 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
+
     constructor(
         @inject(Git) protected readonly git: Git,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
@@ -143,15 +148,22 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                         } else if (nextCommit === undefined && this.lastCommit === undefined) {
                             // No change here
                         } else if (this.transitionHint === 'none') {
-                            // There is a change to the last commit, but no transition hint so
-                            // the view just updates without transition.
-                            this.lastCommit = nextCommit;
-                            // If the 'last' commit changes, but we are not expecting an 'amend'
-                            // or 'unamend' to occur, then we clear out the list of amended commits.
-                            // This is because an unexpected change has happened to the repoistory,
-                            // perhaps the user commited, merged, or something.  The amended commits
-                            // will no longer be valid.
-                            this.amendingCommits = [];
+                            if (this.lastCommit) {
+                                // If the 'last' commit changes, but we are not expecting an 'amend'
+                                // or 'unamend' to occur, then we clear out the list of amended commits.
+                                // This is because an unexpected change has happened to the repoistory,
+                                // perhaps the user commited, merged, or something.  The amended commits
+                                // will no longer be valid.
+                                await this.clearAmendingCommits(repository);
+                                // There is a change to the last commit, but no transition hint so
+                                // the view just updates without transition.
+                                this.lastCommit = nextCommit;
+                                this.amendingCommits = [];
+                            } else {
+                                // First time through, so initialize amending list
+                                this.lastCommit = nextCommit;
+                                this.amendingCommits = await this.buildAmendingList(repository);
+                            }
                         } else {
                             if (this.lastCommit) {
                                 const direction = this.transitionHint === 'amend' ? 'up' : 'down';
@@ -160,10 +172,18 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                                     case 'amend':
                                         if (this.lastCommit) {
                                             this.amendingCommits.push(this.lastCommit);
+                                            if (this.amendingCommits.length === 1) {
+                                                const storageKey = this.getStorageKey(repository);
+                                                await this.storageService.setData<string | undefined>(storageKey, this.amendingCommits[0].commit.sha);
+                                            }
                                         }
                                         break;
                                     case 'unamend':
                                         const commitToRestore = this.amendingCommits.pop();
+                                        if (this.amendingCommits.length === 0) {
+                                            const storageKey = this.getStorageKey(repository);
+                                            await this.storageService.setData<string | undefined>(storageKey, undefined);
+                                        }
                                         if (!nextCommit || !commitToRestore || nextCommit.commit.sha !== commitToRestore.commit.sha) {
                                             // something is wrong
                                         }
@@ -197,6 +217,40 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
         } else {
             this.updateView(undefined);
         }
+    }
+
+    private async clearAmendingCommits(repository: Repository): Promise<void> {
+        const storageKey = this.getStorageKey(repository);
+        await this.storageService.setData<string | undefined>(storageKey, undefined);
+    }
+
+    private async buildAmendingList(repository: Repository): Promise<{ commit: CommitWithChanges, avatar: string }[]> {
+        const storageKey = this.getStorageKey(repository);
+        const amendingHeadCommitSha = await this.storageService.getData<string | undefined>(storageKey, undefined);
+
+        // Restore list of commits from saved amending head commit up through parents until the
+        // current commit.  (If we don't reach the current commit, the repository has been changed in such
+        // a way then unamending commits can no longer be done).
+        if (amendingHeadCommitSha) {
+            const commits = await this.git.log(
+                repository,
+                {
+                    range: { toRevision: amendingHeadCommitSha, fromRevision: this.lastHead },
+                    maxCount: 50
+                }
+            );
+            const amendingCommitPromises = commits.map(async commit => {
+                const avatar = await this.avatarService.getAvatar(commit.author.email);
+                return { commit, avatar };
+            });
+            return Promise.all(amendingCommitPromises);
+        } else {
+            return [];
+        }
+    }
+
+    private getStorageKey(repository: Repository): string {
+        return REPOSITORY_STORAGE_KEY + ':' + repository.localUri;
     }
 
     protected addGitListKeyListeners = (id: string) => this.doAddGitListKeyListeners(id);
