@@ -64,6 +64,7 @@ export class ExtensionPackageCollector {
         try {
             packagePath = this.resolveModule(name + '/package.json');
         } catch (error) {
+            console.error(error);
             console.warn(`Failed to resolve module: ${name}`);
         }
         if (!packagePath) {
