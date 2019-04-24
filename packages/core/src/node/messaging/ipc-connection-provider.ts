@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from 'path';
 import * as cp from 'child_process';
 import { injectable, inject } from 'inversify';
 import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-jsonrpc';
 import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
 import { createIpcEnv } from './ipc-protocol';
+import nodeRequire from '@theia/application-package/lib/node-require';
 
 export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
@@ -100,7 +100,8 @@ export class IPCConnectionProvider {
             forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
         }
 
-        const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), options.args, forkOptions);
+        const modulePath = nodeRequire.resolve('./ipc-bootstrap.js', { paths: [__dirname] });
+        const childProcess = cp.fork(modulePath, options.args, forkOptions);
         childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
         childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 
