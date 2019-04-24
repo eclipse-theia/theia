@@ -462,7 +462,17 @@ export interface ViewContainer {
 export interface View {
     id: string;
     name: string;
+    /**
+     * urlBase holds the url prefix to access files from the extension which
+     * contributed this view
+     */
     urlBase: string;
+
+    /**
+     * packagePath holds the absolute path of the extension files which
+     * contributed this view
+     */
+    packagePath: string;
 }
 
 export interface PluginCommand {

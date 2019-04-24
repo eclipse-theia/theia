@@ -370,11 +370,11 @@ export class TreeViewWidget extends TreeWidget {
                 iconPath = icon.light;
             }
         }
-        const extensionKeyWord = '/extension/';
-        const pos = iconPath.indexOf(extensionKeyWord);
-        if (pos > 0 && this.metadata) {
-            // add baseUrl of the extension with the suffix after the extension
-            iconPath = this.metadata.urlBase.concat(iconPath.substr(pos + extensionKeyWord.length));
+        if (this.metadata) {
+            // replaces the packagePath with the baseUrl of the extension
+            if (iconPath.startsWith(this.metadata.packagePath)) {
+                iconPath = this.metadata.urlBase.concat(iconPath.substr(this.metadata.packagePath.length));
+            }
         }
         return iconPath;
     }

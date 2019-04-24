@@ -273,7 +273,8 @@ export class TheiaPluginScanner implements PluginScanner {
         const result: View = {
             id: rawView.id,
             name: rawView.name,
-            urlBase: this.toPluginUrl(pck, '/')
+            urlBase: this.toPluginUrl(pck, '/'),
+            packagePath: pck.packagePath
         };
 
         return result;
