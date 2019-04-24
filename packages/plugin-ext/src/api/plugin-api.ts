@@ -863,52 +863,52 @@ export interface ProcessTaskDto extends TaskDto, CommandProperties {
 
 export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position,
-        context: CompletionContext, token?: CancellationToken): Promise<CompletionResultDto | undefined>;
-    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token?: CancellationToken): Promise<Completion>;
+        context: CompletionContext, token: CancellationToken): Promise<CompletionResultDto | undefined>;
+    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: CancellationToken): Promise<Completion>;
     $releaseCompletionItems(handle: number, id: number): void;
-    $provideImplementation(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
-    $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
-    $provideDefinition(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
-    $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext, token?: CancellationToken): Promise<Location[] | undefined>;
-    $provideSignatureHelp(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): Promise<SignatureHelp | undefined>;
-    $provideHover(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): Promise<Hover | undefined>;
-    $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): Promise<DocumentHighlight[] | undefined>;
+    $provideImplementation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
+    $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
+    $provideDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
+    $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext, token: CancellationToken): Promise<Location[] | undefined>;
+    $provideSignatureHelp(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<SignatureHelp | undefined>;
+    $provideHover(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Hover | undefined>;
+    $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents,
-        options: FormattingOptions, token?: CancellationToken): Promise<ModelSingleEditOperation[] | undefined>;
+        options: FormattingOptions, token: CancellationToken): Promise<ModelSingleEditOperation[] | undefined>;
     $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range,
-        options: FormattingOptions, token?: CancellationToken): Promise<ModelSingleEditOperation[] | undefined>;
+        options: FormattingOptions, token: CancellationToken): Promise<ModelSingleEditOperation[] | undefined>;
     $provideOnTypeFormattingEdits(
         handle: number,
         resource: UriComponents,
         position: Position,
         ch: string,
         options: FormattingOptions,
-        token?: CancellationToken
+        token: CancellationToken
     ): Promise<ModelSingleEditOperation[] | undefined>;
-    $provideDocumentLinks(handle: number, resource: UriComponents, token?: CancellationToken): Promise<DocumentLink[] | undefined>;
-    $resolveDocumentLink(handle: number, link: DocumentLink, token?: CancellationToken): Promise<DocumentLink | undefined>;
-    $provideCodeLenses(handle: number, resource: UriComponents, token?: CancellationToken): Promise<CodeLensSymbol[] | undefined>;
-    $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol, token?: CancellationToken): Promise<CodeLensSymbol | undefined>;
+    $provideDocumentLinks(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentLink[] | undefined>;
+    $resolveDocumentLink(handle: number, link: DocumentLink, token: CancellationToken): Promise<DocumentLink | undefined>;
+    $provideCodeLenses(handle: number, resource: UriComponents, token: CancellationToken): Promise<CodeLensSymbol[] | undefined>;
+    $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol, token: CancellationToken): Promise<CodeLensSymbol | undefined>;
     $provideCodeActions(
         handle: number,
         resource: UriComponents,
         rangeOrSelection: Range | Selection,
         context: monaco.languages.CodeActionContext,
-        token?: CancellationToken
+        token: CancellationToken
     ): Promise<monaco.languages.CodeAction[]>;
-    $provideDocumentSymbols(handle: number, resource: UriComponents, token?: CancellationToken): Promise<DocumentSymbol[] | undefined>;
-    $provideWorkspaceSymbols(handle: number, query: string, token?: CancellationToken): PromiseLike<SymbolInformation[]>;
-    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token?: CancellationToken): PromiseLike<SymbolInformation>;
+    $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
+    $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
+    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation>;
     $provideFoldingRange(
         handle: number,
         resource: UriComponents,
         context: monaco.languages.FoldingContext,
-        token?: CancellationToken
+        token: CancellationToken
     ): PromiseLike<monaco.languages.FoldingRange[] | undefined>;
-    $provideDocumentColors(handle: number, resource: UriComponents, token?: CancellationToken): PromiseLike<RawColorInfo[]>;
-    $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token?: CancellationToken): PromiseLike<ColorPresentation[]>;
-    $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token?: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
-    $resolveRenameLocation(handle: number, resource: UriComponents, position: Position, token?: CancellationToken): PromiseLike<RenameLocation | undefined>;
+    $provideDocumentColors(handle: number, resource: UriComponents, token: CancellationToken): PromiseLike<RawColorInfo[]>;
+    $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
+    $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
+    $resolveRenameLocation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): PromiseLike<RenameLocation | undefined>;
 }
 
 export interface LanguagesMain {

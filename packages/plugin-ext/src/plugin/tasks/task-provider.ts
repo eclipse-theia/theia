@@ -25,7 +25,7 @@ export class TaskProviderAdapter {
 
     constructor(private readonly provider: theia.TaskProvider) { }
 
-    provideTasks(token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
+    provideTasks(token?: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         return Promise.resolve(this.provider.provideTasks(token)).then(tasks => {
             if (!Array.isArray(tasks)) {
                 return undefined;
@@ -46,7 +46,7 @@ export class TaskProviderAdapter {
         });
     }
 
-    resolveTask(task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
+    resolveTask(task: TaskDto, token?: theia.CancellationToken): Promise<TaskDto | undefined> {
         if (typeof this.provider.resolveTask !== 'function') {
             return Promise.resolve(undefined);
         }
