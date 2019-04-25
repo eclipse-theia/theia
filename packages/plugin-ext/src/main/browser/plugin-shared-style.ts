@@ -49,6 +49,15 @@ export class PluginSharedStyle {
         }
     }
 
+    exists(selector: string): boolean {
+        for (const rule of this.rules) {
+            if (rule.selector === selector) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     insertRule(selector: string, body: (theme: Theme) => string): Disposable {
         const rule = { selector, body };
         this.rules.push(rule);

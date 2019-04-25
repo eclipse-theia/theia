@@ -47,6 +47,8 @@ import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-k
 import { SelectionService } from '@theia/core/lib/common';
 import { View } from '../../../common/plugin-protocol';
 import { CommandRegistry } from '@theia/core';
+import { PluginSharedStyle } from '../plugin-shared-style';
+
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
 
@@ -307,7 +309,7 @@ export class TreeViewWidget extends TreeWidget {
 
     constructor(
         @inject(ThemeService) themeService: ThemeService,
-
+        @inject(PluginSharedStyle) protected readonly style: PluginSharedStyle,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
@@ -359,26 +361,6 @@ export class TreeViewWidget extends TreeWidget {
         }
     }
 
-    getIconPath(icon: string | { light: string; dark: string }): string {
-        let iconPath: string;
-        if (typeof icon === 'string') {
-            iconPath = icon;
-        } else {
-            if (this.themeService.getCurrentTheme().id === BuiltinThemeProvider.darkTheme.id) {
-                iconPath = icon.dark;
-            } else {
-                iconPath = icon.light;
-            }
-        }
-        if (this.metadata) {
-            // replaces the packagePath with the baseUrl of the extension
-            if (iconPath.startsWith(this.metadata.packagePath)) {
-                iconPath = this.metadata.urlBase.concat(iconPath.substr(this.metadata.packagePath.length));
-            }
-        }
-        return iconPath;
-    }
-
     public setViewMetadata(viewMetaData: View) {
         this.metadata = viewMetaData;
     }
@@ -398,14 +380,45 @@ export class TreeViewWidget extends TreeWidget {
             return <div className={'fa ' + node.icon + ' tree-view-icon'}></div>;
         } else {
             const nodeDMD = node as DescriptiveMetadata;
-            if (nodeDMD && nodeDMD.metadata) {
+
+            if (nodeDMD && nodeDMD.metadata && this.metadata) {
                 const iconPath = nodeDMD.metadata.iconPath;
-                if (iconPath) {
-                    return <img className={'tree-view-icon'} src={this.getIconPath(iconPath)}></img>;
+                let lightIconUrl = typeof iconPath === 'object' ? iconPath.light : iconPath;
+                const iconClass = this.createClassName(lightIconUrl, this.metadata.packagePath);
+
+                // insert dynamic css class
+                if (!this.style.exists('.' + iconClass)) {
+                    let darkIconUrl = typeof iconPath === 'object' ? iconPath.dark : iconPath;
+                    darkIconUrl = this.getIconUrl(darkIconUrl, this.metadata.packagePath, this.metadata.urlBase);
+                    lightIconUrl = this.getIconUrl(lightIconUrl, this.metadata.packagePath, this.metadata.urlBase);
+
+                    this.style.insertRule('.' + iconClass, theme => `
+                        width: 22px;
+                        height: 22px;
+                        background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                    `);
                 }
+                return <div className={iconClass + ' tree-view-icon'}></div>;
             }
         }
         return '';
+    }
+
+    private createClassName(iconPath: string, packagePath: string): string {
+        if (iconPath.startsWith(packagePath)) {
+            iconPath = iconPath.substr(packagePath.length);
+        }
+        return iconPath.replace(/\//g, '_').replace(/\./g, '_');
+    }
+
+    private getIconUrl(iconPath: string, packagePath: string, urlBase: string): string {
+        if (iconPath.startsWith(packagePath)) {
+            return urlBase.concat(iconPath.substr(packagePath.length));
+        }
+        if (iconPath.startsWith('/')) {
+            return urlBase.concat(iconPath);
+        }
+        return urlBase.concat('/').concat(iconPath);
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
