@@ -73,11 +73,12 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
         for (const [code, key] of layoutMap.entries()) {
             tester.updateScores({ code, key });
         }
-        const result = tester.getTopScoringCandidates();
-        if (result.length > 0) {
-            return result[0];
+        const topScoring = tester.getTopScoringCandidates();
+        const result = topScoring.find(l => l !== this.macUS && l !== this.winUS);
+        if (result) {
+            return result;
         } else {
-            return isOSX ? this.macUS : this.winUS;
+            return this.createDefaultLayout();
         }
     }
 
@@ -90,16 +91,12 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
                 return this.macGerman;
             } else if (language.startsWith('fr')) {
                 return this.macFrench;
-            } else {
-                return this.macUS;
             }
         } else if (isWindows) {
             if (language.startsWith('de')) {
                 return this.winGerman;
             } else if (language.startsWith('fr')) {
                 return this.winFrench;
-            } else {
-                return this.winUS;
             }
         } else {
             if (language.startsWith('de')) {
@@ -108,6 +105,10 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
                 return this.linuxFrench;
             }
         }
+        return this.createDefaultLayout();
+    }
+
+    protected createDefaultLayout() {
         return {
             info: { 'model': 'pc105', 'layout': 'us', 'variant': '', 'options': '', 'rules': '' },
             mapping: {}
