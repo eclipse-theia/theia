@@ -614,7 +614,11 @@ export namespace Key {
     KEY_CODE_TO_KEY[105] = Key.DIGIT9;
     CODE_TO_KEY['NumpadEnter'] = Key.ENTER;
     CODE_TO_KEY['NumpadEqual'] = Key.EQUAL;
-    CODE_TO_KEY['IntlBackslash'] = Key.BACKSLASH;
+    if (isOSX) {
+        CODE_TO_KEY['IntlBackslash'] = Key.BACKQUOTE;
+    } else {
+        CODE_TO_KEY['IntlBackslash'] = Key.BACKSLASH;
+    }
     CODE_TO_KEY['MetaLeft'] = Key.OS_LEFT;   // Chrome, Safari
     KEY_CODE_TO_KEY[224] = Key.OS_LEFT;      // Firefox on Mac
     CODE_TO_KEY['MetaRight'] = Key.OS_RIGHT; // Chrome, Safari
@@ -626,6 +630,7 @@ export namespace Key {
     KEY_CODE_TO_KEY[173] = Key.MINUS;        // Firefox
     KEY_CODE_TO_KEY[226] = Key.BACKSLASH;    // Chrome, Edge on Windows
     KEY_CODE_TO_KEY[60] = Key.BACKSLASH;     // Firefox on Linux
+    KEY_CODE_TO_KEY[229] = Key.BACKQUOTE;    // Mac
 
     // Set the modifier keys
     MODIFIERS.push(...[Key.ALT_LEFT, Key.ALT_RIGHT, Key.CONTROL_LEFT, Key.CONTROL_RIGHT, Key.OS_LEFT, Key.OS_RIGHT, Key.SHIFT_LEFT, Key.SHIFT_RIGHT]);
