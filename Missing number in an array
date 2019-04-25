@@ -1,0 +1,32 @@
+#include<stdio.h>
+int main()
+{
+	int i,j,n,sum=0,array_sum,arr[20],size,missing_num;
+	printf("enter the array size");
+	scanf("%d",&size);
+	n=size+1;
+	array_sum=((n*(n+1)/2));
+	printf("get the array:");
+	for(i=1;i<=size;i++)
+	{
+		scanf("%d",&arr[i]);
+	}
+	for(i=1;i<=size;i++)
+	{
+		sum=sum+arr[i];
+	}
+	missing_num=array_sum-sum;
+	printf("Missing num:%d\n",missing_num);
+	
+}
+
+
+                        Missing Element in an array
+ Input:
+  Enter the array size:
+  10
+  Get the array:
+  1 2 4 5 6 7 8 9 10 11
+   Output:
+     Missing number is : 3
+
