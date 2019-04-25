@@ -112,9 +112,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
             isVisible: (uri: URI) => !!this.repositoryProvider.findRepository(uri),
             execute: async uri => this.openView({ activate: true, uri: uri.toString() }),
         }));
-        commands.registerCommand(GitHistoryCommands.OPEN_BRANCH_HISTORY, {
-            execute: () => this.openView({ activate: true, uri: undefined })
-        });
+        super.registerCommands(commands);
     }
 
     protected async refreshWidget(uri: string | undefined) {
