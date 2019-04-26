@@ -20,9 +20,11 @@ import { MaybePromise } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, ApplicationShell,
     NavigatableWidget, NavigatableWidgetOptions,
-    Saveable, WidgetManager, StatefulWidget
+    Saveable, WidgetManager, StatefulWidget, FrontendApplication
 } from '@theia/core/lib/browser';
 import { FileSystemWatcher, FileChangeEvent, FileMoveEvent, FileChangeType } from './filesystem-watcher';
+import { MimeService } from '@theia/core/lib/browser/mime-service';
+import { FileSystemPreferences } from './filesystem-preferences';
 
 @injectable()
 export class FileSystemFrontendContribution implements FrontendApplicationContribution {
@@ -36,9 +38,24 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     @inject(FileSystemWatcher)
     protected readonly fileSystemWatcher: FileSystemWatcher;
 
+    @inject(MimeService)
+    protected readonly mimeService: MimeService;
+
+    @inject(FileSystemPreferences)
+    protected readonly preferences: FileSystemPreferences;
+
     initialize(): void {
         this.fileSystemWatcher.onFilesChanged(event => this.run(() => this.updateWidgets(event)));
         this.fileSystemWatcher.onDidMove(event => this.run(() => this.moveWidgets(event)));
+    }
+
+    onStart?(app: FrontendApplication): MaybePromise<void> {
+        this.updateAssociations();
+        this.preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'files.associations') {
+                this.updateAssociations();
+            }
+        });
     }
 
     protected pendingOperation = Promise.resolve();
@@ -141,4 +158,9 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         }
     }
 
+    protected updateAssociations(): void {
+        const fileAssociations = this.preferences['files.associations'];
+        const mimeAssociations = Object.keys(fileAssociations).map(filepattern => ({ id: fileAssociations[filepattern], filepattern }));
+        this.mimeService.setAssociations(mimeAssociations);
+    }
 }
