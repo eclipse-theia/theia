@@ -40,7 +40,13 @@ export class WebviewsMainImpl implements WebviewsMain {
     protected readonly updateViewOptions: () => void;
 
     private readonly views = new Map<string, WebviewWidget>();
-    private readonly viewsOptions = new Map<string, { panelOptions: WebviewPanelShowOptions; panelId: string; active: boolean; visible: boolean; }>();
+    private readonly viewsOptions = new Map<string, {
+        panelOptions: WebviewPanelShowOptions;
+        options: (WebviewPanelOptions & WebviewOptions) | undefined;
+        panelId: string;
+        active: boolean;
+        visible: boolean;
+    }>();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
@@ -102,7 +108,7 @@ export class WebviewsMainImpl implements WebviewsMain {
         });
 
         this.views.set(panelId, view);
-        this.viewsOptions.set(view.id, { panelOptions: showOptions, panelId, visible: false, active: false });
+        this.viewsOptions.set(view.id, { panelOptions: showOptions, options: options, panelId, visible: false, active: false });
         this.addOrReattachWidget(panelId, showOptions);
     }
     private addOrReattachWidget(handler: string, showOptions: WebviewPanelShowOptions) {
@@ -165,9 +171,13 @@ export class WebviewsMainImpl implements WebviewsMain {
         if (view.isDisposed) {
             return;
         }
-        if (showOptions.viewColumn !== undefined || showOptions.area !== undefined) {
+        const options = this.viewsOptions.get(view.id);
+        let retain = false;
+        if (options && options.options && options.options.retainContextWhenHidden) {
+            retain = options.options.retainContextWhenHidden;
+        }
+        if ((showOptions.viewColumn !== undefined && showOptions.viewColumn !== options!.panelOptions.viewColumn) || showOptions.area !== undefined) {
             this.viewColumnService.updateViewColumns();
-            const options = this.viewsOptions.get(view.id);
             if (!options) {
                 return;
             }
@@ -179,7 +189,11 @@ export class WebviewsMainImpl implements WebviewsMain {
                 this.updateViewOptions();
                 return;
             }
+        } else if (!retain) {
+            // reload content when revealing
+            view.reloadFrame();
         }
+
         if (showOptions.preserveFocus) {
             this.shell.revealWidget(view.id);
         } else {
