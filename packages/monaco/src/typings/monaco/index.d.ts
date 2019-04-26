@@ -1112,3 +1112,19 @@ declare module monaco.contextkey {
         static deserialize(when: string): ContextKeyExpr;
     }
 }
+
+declare module monaco.mime {
+    export interface ITextMimeAssociation {
+        readonly id: string;
+        readonly mime: string;
+        readonly filename?: string;
+        readonly extension?: string;
+        readonly filepattern?: string;
+        readonly firstline?: RegExp;
+        readonly userConfigured?: boolean;
+    }
+
+    export function registerTextMime(association: monaco.mime.ITextMimeAssociation, warnOnOverwrite: boolean): void
+
+    export function clearTextMimes(onlyUserConfigured?: boolean): void;
+}

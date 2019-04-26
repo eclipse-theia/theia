@@ -53,6 +53,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/keybinding/common/usLayoutResolvedKeybinding',
                 'vs/base/common/keybindingLabels',
                 'vs/base/common/keyCodes',
+                'vs/base/common/mime',
                 'vs/editor/browser/editorExtensions',
                 'vs/editor/standalone/browser/simpleServices',
                 'vs/editor/standalone/browser/standaloneServices',
@@ -76,7 +77,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/contextkey/browser/contextKeyService'
             ], (css: any, html: any, commands: any, actions: any,
                 keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
-                keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
+                keyCodes: any, mime: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, platform: any, modes: any, suggest: any, suggestController: any, findController: any, rename: any, snippetParser: any,
                 configuration: any, configurationModels: any,
                 codeEditorService: any, codeEditorServiceImpl: any,
@@ -99,6 +100,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.snippetParser = snippetParser;
                     global.monaco.contextkey = contextKey;
                     global.monaco.contextKeyService = contextKeyService;
+                    global.monaco.mime = mime;
                     resolve();
                 });
         });
