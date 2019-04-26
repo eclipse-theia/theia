@@ -22,6 +22,7 @@ import { MarkerData } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../api/plugin-api';
 import URI from 'vscode-uri';
+import { UUID } from '@phosphor/coreutils';
 
 export class DiagnosticCollection implements theia.DiagnosticCollection {
     private static DIAGNOSTICS_PRIORITY = [
@@ -249,7 +250,6 @@ export class Diagnostics {
 
     private proxy: LanguagesMain;
     private diagnosticCollections: Map<string, DiagnosticCollection>; // id -> diagnostic colection
-    private nextId: number;
 
     private diagnosticsChangedEmitter = new Emitter<theia.DiagnosticChangeEvent>();
     public readonly onDidChangeDiagnostics: Event<theia.DiagnosticChangeEvent> = this.diagnosticsChangedEmitter.event;
@@ -258,7 +258,6 @@ export class Diagnostics {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
 
         this.diagnosticCollections = new Map<string, DiagnosticCollection>();
-        this.nextId = 0;
     }
 
     getDiagnostics(resource: theia.Uri): theia.Diagnostic[];
@@ -288,8 +287,8 @@ export class Diagnostics {
         return diagnosticCollection;
     }
 
-    private getNextId(): number {
-        return this.nextId++;
+    private getNextId(): string {
+        return UUID.uuid4();
     }
 
     private getAllDiagnisticsForResource(uri: URI): theia.Diagnostic[] {
