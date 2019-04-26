@@ -65,6 +65,6 @@ export interface DebugConfiguration {
 }
 export namespace DebugConfiguration {
     export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {
-        return !!arg && 'type' in arg && 'name' in arg && 'request' in arg;
+        return !!arg && typeof arg === 'object' && 'type' in arg && 'name' in arg && 'request' in arg;
     }
 }

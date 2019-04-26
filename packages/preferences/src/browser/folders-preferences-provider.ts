@@ -14,164 +14,207 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
-import { PreferenceProvider } from '@theia/core/lib/browser';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import URI from '@theia/core/lib/common/uri';
+// tslint:disable:no-any
 
-export const LAUNCH_PROPERTY_NAME = 'launch';
-export type ResourceKind = 'settings' | 'launch';
+import { inject, injectable, postConstruct } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
 
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
-    @inject(FolderPreferenceProviderFactory) protected readonly folderPreferenceProviderFactory: FolderPreferenceProviderFactory;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
-    private providersByKind: Map<ResourceKind, FolderPreferenceProvider[]> = new Map();
-    private resourceKinds: ResourceKind[] = ['launch', 'settings'];
+    @inject(FolderPreferenceProviderFactory)
+    protected readonly folderPreferenceProviderFactory: FolderPreferenceProviderFactory;
+
+    @inject(PreferenceConfigurations)
+    protected readonly configurations: PreferenceConfigurations;
+
+    protected readonly providers = new Map<string, FolderPreferenceProvider>();
 
     @postConstruct()
     protected async init(): Promise<void> {
         await this.workspaceService.roots;
+
+        this.updateProviders();
+        this.workspaceService.onWorkspaceChanged(() => this.updateProviders());
+
         const readyPromises: Promise<void>[] = [];
-        for (const root of this.workspaceService.tryGetRoots()) {
-            if (await this.fileSystem.exists(root.uri)) {
-                this.resourceKinds.forEach(kind => {
-                    const provider = this.createFolderPreferenceProvider(root, kind);
-                    this.setProvider(provider, kind);
-                    readyPromises.push(provider.ready);
-                });
-            }
+        for (const provider of this.providers.values()) {
+            readyPromises.push(provider.ready.catch(e => console.error(e)));
         }
+        Promise.all(readyPromises).then(() => this._ready.resolve());
+    }
 
-        // Try to read the initial content of the preferences.  The provider
-        // becomes ready even if we fail reading the preferences, so we don't
-        // hang the preference service.
-        Promise.all(readyPromises)
-            .then(() => this._ready.resolve())
-            .catch(() => this._ready.resolve());
-
-        this.workspaceService.onWorkspaceChanged(roots => {
-            for (const root of roots) {
-                this.resourceKinds.forEach(kind => {
-                    if (!this.existsProvider(root.uri, kind)) {
-                        const provider = this.createFolderPreferenceProvider(root, kind);
-                        this.setProvider(provider, kind);
-                    }
-                });
-            }
-
-            this.resourceKinds.forEach(kind => {
-                const providers = this.providersByKind.get(kind);
-                if (!providers || providers.length === 0) {
-                    return;
-                }
-                const numProviders = providers.length;
-                for (let i = numProviders - 1; i >= 0; i--) {
-                    const provider = providers[i];
-                    if (!this.existsRoot(roots, provider)) {
-                        providers.splice(i, 1);
-                        provider.dispose();
+    protected updateProviders(): void {
+        const roots = this.workspaceService.tryGetRoots();
+        const toDelete = new Set(this.providers.keys());
+        for (const folder of roots) {
+            for (const configPath of this.configurations.getPaths()) {
+                for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
+                    const configUri = this.configurations.createUri(new URI(folder.uri), configPath, configName);
+                    const key = configUri.toString();
+                    toDelete.delete(key);
+                    if (!this.providers.has(key)) {
+                        const provider = this.createProvider({ folder, configUri });
+                        this.providers.set(key, provider);
                     }
                 }
-            });
-        });
-    }
-
-    private existsProvider(folderUri: string, kind: ResourceKind): boolean {
-        const providers = this.providersByKind.get(kind);
-        return !!providers && providers.some(p => !!p.uri && p.uri.toString() === folderUri);
-    }
-
-    private existsRoot(roots: FileStat[], provider: FolderPreferenceProvider): boolean {
-        return roots.some(r => !!provider.uri && r.uri === provider.uri.toString());
-    }
-
-    // tslint:disable-next-line:no-any
-    getPreferences(resourceUri?: string): { [p: string]: any } {
-        if (!resourceUri) {
-            return {};
+            }
         }
+        for (const key of toDelete) {
+            const provider = this.providers.get(key);
+            if (provider) {
+                this.providers.delete(key);
+                provider.dispose();
+            }
+        }
+    }
 
-        const prefProvider = this.getProvider(resourceUri, 'settings');
-        const prefs = prefProvider ? prefProvider.getPreferences() : {};
+    getConfigUri(resourceUri?: string): URI | undefined {
+        for (const provider of this.getFolderProviders(resourceUri)) {
+            const configUri = provider.getConfigUri(resourceUri);
+            if (this.configurations.isConfigUri(configUri)) {
+                return configUri;
+            }
+        }
+        return undefined;
+    }
 
-        const launchProvider = this.getProvider(resourceUri, 'launch');
-        const launch = launchProvider ? launchProvider.getPreferences() : {};
+    getContainingConfigUri(resourceUri?: string): URI | undefined {
+        for (const provider of this.getFolderProviders(resourceUri)) {
+            const configUri = provider.getConfigUri();
+            if (this.configurations.isConfigUri(configUri) && provider.contains(resourceUri)) {
+                return configUri;
+            }
+        }
+        return undefined;
+    }
 
-        const result = Object.assign({}, prefs, launch);
+    getDomain(): string[] {
+        return this.workspaceService.tryGetRoots().map(root => root.uri);
+    }
 
+    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+        const result: PreferenceResolveResult<T> = {};
+        const groups = this.groupProvidersByConfigName(resourceUri);
+        for (const group of groups.values()) {
+            for (const provider of group) {
+                const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
+                if (configUri && value !== undefined) {
+                    result.configUri = configUri;
+                    result.value = PreferenceProvider.merge(result.value as any, value as any) as any;
+                    break;
+                }
+            }
+        }
         return result;
     }
 
-    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
-        if (resourceUri) {
-            const resourceKind = preferenceName === LAUNCH_PROPERTY_NAME ? 'launch' : 'settings';
-            const provider = this.getProvider(resourceUri, resourceKind);
-            if (provider) {
-                return { priority: provider.canProvide(preferenceName, resourceUri).priority, provider };
-            }
-        }
-        return super.canProvide(preferenceName, resourceUri);
-    }
-
-    protected getProvider(resourceUri: string, kind: ResourceKind): PreferenceProvider | undefined {
-        const providers = this.providersByKind.get(kind);
-        if (!providers || providers.length === 0) {
-            return;
-        }
-
-        let provider: PreferenceProvider | undefined;
-        let relativity = Number.MAX_SAFE_INTEGER;
-        for (const p of providers) {
-            if (p.uri) {
-                const providerRelativity = p.uri.path.relativity(new URI(resourceUri).path);
-                if (providerRelativity >= 0 && providerRelativity <= relativity) {
-                    relativity = providerRelativity;
-                    provider = p;
+    getPreferences(resourceUri?: string): { [p: string]: any } {
+        let result = {};
+        const groups = this.groupProvidersByConfigName(resourceUri);
+        for (const group of groups.values()) {
+            for (const provider of group) {
+                if (provider.getConfigUri(resourceUri)) {
+                    const preferences = provider.getPreferences();
+                    result = PreferenceProvider.merge(result, preferences) as any;
+                    break;
                 }
             }
         }
-        return provider;
+        return result;
     }
 
-    protected setProvider(provider: FolderPreferenceProvider, kind: ResourceKind): void {
-        const providers = this.providersByKind.get(kind);
-        if (providers && Array.isArray(providers)) {
-            providers.push(provider);
-        } else {
-            this.providersByKind.set(kind, [provider]);
+    async setPreference(preferenceName: string, value: any, resourceUri?: string): Promise<boolean> {
+        const sectionName = preferenceName.split('.', 1)[0];
+        const configName = this.configurations.isSectionName(sectionName) ? sectionName : this.configurations.getConfigName();
+
+        const providers = this.getFolderProviders(resourceUri);
+        let configPath: string | undefined;
+
+        const iterator: (() => FolderPreferenceProvider | undefined)[] = [];
+        for (const provider of providers) {
+            if (configPath === undefined) {
+                const configUri = provider.getConfigUri(resourceUri);
+                if (configUri) {
+                    configPath = this.configurations.getPath(configUri);
+                }
+            }
+            if (this.configurations.getName(provider.getConfigUri()) === configName) {
+                iterator.push(() => {
+                    if (provider.getConfigUri(resourceUri)) {
+                        return provider;
+                    }
+                    iterator.push(() => {
+                        if (this.configurations.getPath(provider.getConfigUri()) === configPath) {
+                            return provider;
+                        }
+                        iterator.push(() => provider);
+                    });
+                });
+            }
         }
+
+        let next = iterator.shift();
+        while (next) {
+            const provider = next();
+            if (provider) {
+                if (await provider.setPreference(preferenceName, value, resourceUri)) {
+                    return true;
+                }
+            }
+            next = iterator.shift();
+        }
+        return false;
     }
 
-    protected createFolderPreferenceProvider(folder: FileStat, kind: ResourceKind): FolderPreferenceProvider {
-        const provider = this.folderPreferenceProviderFactory({ folder, kind });
+    protected groupProvidersByConfigName(resourceUri?: string): Map<string, FolderPreferenceProvider[]> {
+        const groups = new Map<string, FolderPreferenceProvider[]>();
+        const providers = this.getFolderProviders(resourceUri);
+        for (const configName of [this.configurations.getConfigName(), ...this.configurations.getSectionNames()]) {
+            const group = [];
+            for (const provider of providers) {
+                if (this.configurations.getName(provider.getConfigUri()) === configName) {
+                    group.push(provider);
+                }
+            }
+            groups.set(configName, group);
+        }
+        return groups;
+    }
+
+    protected getFolderProviders(resourceUri?: string): FolderPreferenceProvider[] {
+        if (!resourceUri) {
+            return [];
+        }
+        const resourcePath = new URI(resourceUri).path;
+        let folder: Readonly<{ relativity: number, uri?: string }> = { relativity: Number.MAX_SAFE_INTEGER };
+        const providers = new Map<string, FolderPreferenceProvider[]>();
+        for (const provider of this.providers.values()) {
+            const uri = provider.folderUri.toString();
+            const folderProviders = (providers.get(uri) || []);
+            folderProviders.push(provider);
+            providers.set(uri, folderProviders);
+
+            const relativity = provider.folderUri.path.relativity(resourcePath);
+            if (relativity >= 0 && folder.relativity > relativity) {
+                folder = { relativity, uri };
+            }
+        }
+        return folder.uri && providers.get(folder.uri) || [];
+    }
+
+    protected createProvider(options: FolderPreferenceProviderOptions): FolderPreferenceProvider {
+        const provider = this.folderPreferenceProviderFactory(options);
         this.toDispose.push(provider);
         this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
-        this.toDispose.push(provider.onDidInvalidPreferencesRead(prefs => this.onDidInvalidPreferencesReadEmitter.fire(prefs)));
         return provider;
     }
 
-    // tslint:disable-next-line:no-any
-    async setPreference(key: string, value: any, resourceUri?: string): Promise<void> {
-        if (resourceUri) {
-            const resourceKind = key === LAUNCH_PROPERTY_NAME ? 'launch' : 'settings';
-            const providers = this.providersByKind.get(resourceKind);
-            if (providers && providers.length) {
-                for (const provider of providers) {
-                    const providerResourceUri = await provider.getUri();
-                    if (providerResourceUri && providerResourceUri.toString() === resourceUri) {
-                        return provider.setPreference(key, value);
-                    }
-                }
-            }
-            console.error(`FoldersPreferencesProvider did not find the provider for ${resourceUri} to update the preference ${key}`);
-        } else {
-            console.error('FoldersPreferencesProvider requires resource URI to update preferences');
-        }
-    }
 }

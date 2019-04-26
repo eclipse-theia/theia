@@ -117,6 +117,9 @@
       ],
       "@theia/plugin-ext-vscode/lib/*": [
         "packages/plugin-ext-vscode/src/*"
+      ],
+      "@theia/userstorage/lib/*": [
+        "packages/userstorage/src/*"
       ]
     },
     "plugins": [

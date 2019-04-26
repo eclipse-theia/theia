@@ -57,7 +57,7 @@ export namespace PreferenceScope {
             case 'application':
                 return PreferenceScope.User;
             case 'window':
-                return PreferenceScope.Workspace;
+                return PreferenceScope.Folder;
             case 'resource':
                 return PreferenceScope.Folder;
         }

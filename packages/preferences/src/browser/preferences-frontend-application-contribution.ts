@@ -33,7 +33,7 @@ export class PreferencesFrontendApplicationContribution implements FrontendAppli
         const uri = new URI('vscode://schemas/settings/user');
         this.inmemoryResources.add(uri, serializeSchema());
         this.jsonSchemaStore.registerSchema({
-            fileMatch: ['.theia/settings.json', USER_PREFERENCE_URI.toString()],
+            fileMatch: ['settings.json', USER_PREFERENCE_URI.toString()],
             url: uri.toString()
         });
         this.schemaProvider.onDidPreferenceSchemaChanged(() =>

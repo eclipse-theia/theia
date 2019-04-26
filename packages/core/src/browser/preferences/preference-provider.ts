@@ -17,28 +17,27 @@
 // tslint:disable:no-any
 
 import { injectable } from 'inversify';
+import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
+import URI from '../../common/uri';
 import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceScope } from './preference-scope';
-
-export namespace PreferenceProviderPriority {
-    export const NA = -1;
-    export const Default = 0;
-    export const User = 1;
-    export const Workspace = 2;
-    export const Folder = 3;
-}
 
 export interface PreferenceProviderDataChange {
     readonly preferenceName: string;
     readonly newValue?: any;
     readonly oldValue?: any;
     readonly scope: PreferenceScope;
-    readonly domain: string[];
+    readonly domain?: string[];
 }
 
 export interface PreferenceProviderDataChanges {
     [preferenceName: string]: PreferenceProviderDataChange
+}
+
+export interface PreferenceResolveResult<T> {
+    configUri?: URI
+    value?: T
 }
 
 @injectable()
@@ -47,15 +46,8 @@ export abstract class PreferenceProvider implements Disposable {
     protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges | undefined>();
     readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges | undefined> = this.onDidPreferencesChangedEmitter.event;
 
-    protected readonly onDidInvalidPreferencesReadEmitter = new Emitter<{ [key: string]: any }>();
-    readonly onDidInvalidPreferencesRead: Event<{ [key: string]: any }> = this.onDidInvalidPreferencesReadEmitter.event;
-
     protected readonly toDispose = new DisposableCollection();
 
-    /**
-     * Resolved when the preference provider is ready to provide preferences
-     * It should be resolved by subclasses.
-     */
     protected readonly _ready = new Deferred<void>();
 
     constructor() {
@@ -91,32 +83,64 @@ export abstract class PreferenceProvider implements Disposable {
     }
 
     get<T>(preferenceName: string, resourceUri?: string): T | undefined {
-        const value = this.getPreferences(resourceUri)[preferenceName];
-        if (value !== undefined && value !== null) {
-            return value;
-        }
+        return this.resolve<T>(preferenceName, resourceUri).value;
     }
 
-    // tslint:disable-next-line:no-any
+    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+        const value = this.getPreferences(resourceUri)[preferenceName];
+        if (value !== undefined) {
+            return {
+                value,
+                configUri: this.getConfigUri(resourceUri)
+            };
+        }
+        return {};
+    }
+
     abstract getPreferences(resourceUri?: string): { [p: string]: any };
 
-    // tslint:disable-next-line:no-any
-    abstract setPreference(key: string, value: any, resourceUri?: string): Promise<void>;
+    abstract setPreference(key: string, value: any, resourceUri?: string): Promise<boolean>;
 
-    /** See `_ready`.  */
+    /**
+     * Resolved when the preference provider is ready to provide preferences
+     * It should be resolved by subclasses.
+     */
     get ready() {
         return this._ready.promise;
     }
 
-    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
-        return { priority: PreferenceProviderPriority.NA, provider: this };
+    /**
+     * undefined if all belongs
+     */
+    getDomain(): string[] | undefined {
+        return undefined;
     }
 
-    getDomain(): string[] {
-        return [];
+    /**
+     * undefined if cannot be provided for the given resource uri
+     */
+    getConfigUri(resourceUri?: string): URI | undefined {
+        return undefined;
     }
 
-    protected getScope() {
-        return PreferenceScope.Default;
+    static merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
+        if (source === undefined || !JSONExt.isObject(source)) {
+            return JSONExt.deepCopy(target);
+        }
+        if (JSONExt.isPrimitive(target)) {
+            return {};
+        }
+        for (const key of Object.keys(target)) {
+            const value = (target as any)[key];
+            if (key in source) {
+                if (JSONExt.isObject(source[key]) && JSONExt.isObject(value)) {
+                    this.merge(source[key], value);
+                    continue;
+                }
+            }
+            source[key] = JSONExt.deepCopy(value);
+        }
+        return source;
     }
+
 }

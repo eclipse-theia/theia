@@ -176,7 +176,8 @@ export class RPCProtocolImpl implements RPCProtocol {
     private receiveRequest(msg: RequestMessage): void {
         const callId = msg.id;
         const proxyId = msg.proxyId;
-        const args = msg.args;
+        // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
+        const args = msg.args.map(arg => arg === null ? undefined : arg);
 
         const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
         if (addToken) {

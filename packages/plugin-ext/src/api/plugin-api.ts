@@ -758,7 +758,7 @@ export interface TerminalOptionsExt {
 }
 
 export interface PreferenceRegistryExt {
-    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChangeExt): void;
+    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChangeExt[]): void;
 }
 
 export interface OutputChannelRegistryMain {

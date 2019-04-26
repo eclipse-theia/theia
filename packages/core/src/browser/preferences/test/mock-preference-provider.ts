@@ -14,28 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable } from 'inversify';
-import { PreferenceProvider, PreferenceProviderPriority } from '../';
+import { PreferenceProvider } from '../';
 import { PreferenceScope } from '../preference-scope';
 
 @injectable()
 export class MockPreferenceProvider extends PreferenceProvider {
-    // tslint:disable-next-line:no-any
     readonly prefs: { [p: string]: any } = {};
 
     getPreferences() {
         return this.prefs;
     }
-    // tslint:disable-next-line:no-any
-    async setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<void> {
+    async setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<boolean> {
         const oldValue = this.prefs[preferenceName];
         this.prefs[preferenceName] = newValue;
         this.emitPreferencesChangedEvent([{ preferenceName, oldValue, newValue, scope: PreferenceScope.User, domain: [] }]);
-    }
-    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
-        if (this.prefs[preferenceName] === undefined) {
-            return { priority: PreferenceProviderPriority.NA, provider: this };
-        }
-        return { priority: PreferenceProviderPriority.User, provider: this };
+        return true;
     }
 }

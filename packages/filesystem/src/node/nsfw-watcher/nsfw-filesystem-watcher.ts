@@ -124,7 +124,13 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
                     this.pushAdded(watcherId, this.resolvePath(event.directory, event.newFile!));
                 }
             }
-        });
+        }, {
+                errorCallback: error => {
+                    // see https://github.com/atom/github/issues/342
+                    console.warn(`Failed to watch "${basePath}":`, error);
+                    this.unwatchFileChanges(watcherId);
+                }
+            });
         await watcher.start();
         this.options.info('Started watching:', basePath);
         if (toDisposeWatcher.disposed) {
