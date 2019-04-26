@@ -22,7 +22,7 @@ import { MarkerData } from '../../api/model';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../api/plugin-api';
 import URI from 'vscode-uri';
-import { UUID } from '@phosphor/coreutils';
+import { v4 } from 'uuid';
 
 export class DiagnosticCollection implements theia.DiagnosticCollection {
     private static DIAGNOSTICS_PRIORITY = [
@@ -288,7 +288,7 @@ export class Diagnostics {
     }
 
     private getNextId(): string {
-        return UUID.uuid4();
+        return v4();
     }
 
     private getAllDiagnisticsForResource(uri: URI): theia.Diagnostic[] {
