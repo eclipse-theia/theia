@@ -26,6 +26,7 @@ import {
     PreferenceRegistryExt,
     PreferenceRegistryMain,
     PreferenceData,
+    PreferenceChangeExt,
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
@@ -62,42 +63,45 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
         const preferenceServiceImpl = container.get(PreferenceServiceImpl);
         const workspaceService = container.get(WorkspaceService);
 
-        preferenceServiceImpl.onPreferenceChanged(async e => {
-            const roots = await workspaceService.roots;
+        preferenceServiceImpl.onPreferencesChanged(changes => {
+            // it HAS to be synchronous to propagate changes before update/remove response
+
+            const roots = workspaceService.tryGetRoots();
             const data = getPreferences(this.preferenceProviderProvider, roots);
-            this.proxy.$acceptConfigurationChanged(data, {
-                preferenceName: e.preferenceName,
-                newValue: e.newValue
-            });
+            const eventData: PreferenceChangeExt[] = [];
+            for (const preferenceName of Object.keys(changes)) {
+                const { newValue } = changes[preferenceName];
+                eventData.push({ preferenceName, newValue });
+            }
+            this.proxy.$acceptConfigurationChanged(data, eventData);
         });
     }
 
     // tslint:disable-next-line:no-any
-    $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string): PromiseLike<void> {
+    async $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string): Promise<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, value, scope, resource);
+        await this.preferenceService.set(key, value, scope, resource);
     }
 
-    $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string): PromiseLike<void> {
+    async $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string): Promise<void> {
         const scope = this.parseConfigurationTarget(target);
-        return this.preferenceService.set(key, undefined, scope, resource);
+        await this.preferenceService.set(key, undefined, scope, resource);
     }
 
-    private parseConfigurationTarget(arg?: boolean | ConfigurationTarget): PreferenceScope {
-        if (arg === void 0 || arg === null) {
-            return PreferenceScope.Workspace;
+    private parseConfigurationTarget(target?: boolean | ConfigurationTarget): PreferenceScope | undefined {
+        if (typeof target === 'boolean') {
+            return target ? PreferenceScope.User : PreferenceScope.Workspace;
         }
-        if (typeof arg === 'boolean') {
-            return arg ? PreferenceScope.User : PreferenceScope.Workspace;
-        }
-
-        switch (arg) {
+        switch (target) {
             case ConfigurationTarget.Global:
                 return PreferenceScope.User;
             case ConfigurationTarget.Workspace:
                 return PreferenceScope.Workspace;
+            case ConfigurationTarget.WorkspaceFolder:
+                return PreferenceScope.Folder;
             default:
-                return PreferenceScope.Workspace;
+                // PreferenceService knows how to deal with undefiend in VS Code compatible way
+                return undefined;
         }
     }
 

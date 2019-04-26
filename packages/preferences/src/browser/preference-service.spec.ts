@@ -28,15 +28,8 @@ import * as fs from 'fs-extra';
 import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
-    PreferenceService,
-    PreferenceScope,
-    PreferenceProviderDataChanges,
-    PreferenceSchemaProvider,
-    PreferenceProviderProvider,
-    PreferenceServiceImpl,
-    bindPreferenceSchemaProvider,
-    PreferenceChange,
-    PreferenceSchema
+    PreferenceService, PreferenceScope, PreferenceProviderDataChanges,
+    PreferenceSchemaProvider, PreferenceProviderProvider, PreferenceServiceImpl, bindPreferenceSchemaProvider, PreferenceChange, PreferenceSchema, PreferenceProvider
 } from '@theia/core/lib/browser/preferences';
 import { FileSystem, FileShouldOverwrite, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -46,7 +39,7 @@ import { ILogger, MessageService, MessageClient } from '@theia/core';
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { FoldersPreferencesProvider, } from './folders-preferences-provider';
-import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
+import { FolderPreferenceProviderOptions } from './folder-preference-provider';
 import { ResourceProvider } from '@theia/core/lib/common/resource';
 import { WorkspaceServer } from '@theia/workspace/lib/common/';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -61,8 +54,14 @@ import { WorkspacePreferences, createWorkspacePreferences } from '@theia/workspa
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import * as sinon from 'sinon';
 import URI from '@theia/core/lib/common/uri';
+import { bindWorkspaceFilePreferenceProvider, bindFolderPreferenceProvider } from './preference-bindings';
 
 disableJSDOM();
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error(reason);
+    throw reason;
+});
 
 const expect = chai.expect;
 let testContainer: Container;
@@ -72,7 +71,6 @@ const tempPath = temp.track().openSync().path;
 const mockUserPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 const mockWorkspacePreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 const mockFolderPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
-let mockOnDidUserPreferencesChanged: sinon.SinonStub;
 
 function testContainerSetup() {
     testContainer = new Container();
@@ -82,22 +80,19 @@ function testContainerSetup() {
     testContainer.bind(WorkspacePreferenceProvider).toSelf().inSingletonScope();
     testContainer.bind(FoldersPreferencesProvider).toSelf().inSingletonScope();
 
-    testContainer.bind(FolderPreferenceProvider).toSelf().inSingletonScope();
+    testContainer.bind(PreferenceProvider).toDynamicValue(ctx =>
+        ctx.container.get(FoldersPreferencesProvider)
+    ).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
+    bindWorkspaceFilePreferenceProvider(testContainer.bind.bind(testContainer));
+
     testContainer.bind(FolderPreferenceProviderOptions).toConstantValue({ folder: <FileStat>{ uri: 'file:///home/oneFile', isDirectory: true, lastModification: 0 } });
-    testContainer.bind(FolderPreferenceProviderFactory).toFactory(ctx =>
-        (options: FolderPreferenceProviderOptions) => {
-            const child = new Container({ defaultScope: 'Transient' });
-            child.parent = ctx.container;
-            child.bind(FolderPreferenceProviderOptions).toConstantValue(options);
-            return child.get(FolderPreferenceProvider);
-        }
-    );
+    bindFolderPreferenceProvider(testContainer.bind.bind(testContainer));
 
     testContainer.bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
         switch (scope) {
             case PreferenceScope.User:
                 const userProvider = ctx.container.get(UserPreferenceProvider);
-                mockOnDidUserPreferencesChanged = sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
+                sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
                     mockUserPreferenceEmitter.event
                 );
                 return userProvider;
@@ -191,11 +186,12 @@ describe('Preference Service', () => {
         disableJSDOM();
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         prefSchema = testContainer.get(PreferenceSchemaProvider);
         prefService = testContainer.get<PreferenceService>(PreferenceService);
         const impl = testContainer.get(PreferenceServiceImpl);
         impl.initialize();
+        impl['_ready'].resolve();
     });
 
     afterEach(() => {
@@ -233,15 +229,12 @@ describe('Preference Service', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
             'test.number': 1
         }));
-        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.boolean': false,
-            'test.number': 0
+        stubs.push(sinon.stub(workspaceProvider, 'resolve').returns({
+            value: 0
         }));
         stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
-        expect(prefService.get('test.boolean')).to.be.false;
         expect(prefService.get('test.number')).equals(0);
     });
 
@@ -249,22 +242,16 @@ describe('Preference Service', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         const foldersProvider = testContainer.get(FoldersPreferencesProvider);
-        const oneFolderProvider = testContainer.get(FolderPreferenceProvider);
         stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
-            'test.string': 'userValue',
             'test.number': 1
         }));
         stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.string': 'wsValue',
             'test.number': 0
         }));
-        stubs.push(sinon.stub(foldersProvider, 'canProvide').returns({ priority: 10, provider: oneFolderProvider }));
-        stubs.push(sinon.stub(foldersProvider, 'getPreferences').returns({
-            'test.string': 'folderValue',
-            'test.number': 20
+        stubs.push(sinon.stub(foldersProvider, 'resolve').returns({
+            value: 20
         }));
         stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
-        expect(prefService.get('test.string')).equals('folderValue');
         expect(prefService.get('test.number')).equals(20);
     });
 
@@ -272,19 +259,17 @@ describe('Preference Service', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
             'test.number': 1
         }));
-        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.boolean': false,
-            'test.number': 0
+        const stubWorkspace = sinon.stub(workspaceProvider, 'resolve').returns({
+            value: 0
         });
+        stubs.push(stubWorkspace);
         stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
-        expect(prefService.get('test.boolean')).to.be.false;
+        expect(prefService.get('test.number')).equals(0);
 
         stubWorkspace.restore();
-        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({}));
-        expect(prefService.get('test.boolean')).to.be.true;
+        expect(prefService.get('test.number')).equals(1);
     });
 
     it('should throw a TypeError if the preference (reference object) is modified', () => {
@@ -306,12 +291,10 @@ describe('Preference Service', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
         const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
             'test.number': 1
         });
-        stubs.push(sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.boolean': false,
-            'test.number': 0
+        stubs.push(sinon.stub(workspaceProvider, 'resolve').returns({
+            value: 0
         }));
         mockUserPreferenceEmitter.fire({
             'test.number': {
@@ -326,7 +309,6 @@ describe('Preference Service', () => {
 
         stubUser.restore();
         stubs.push(sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
             'test.number': 4
         }));
         mockUserPreferenceEmitter.fire({
@@ -434,13 +416,13 @@ describe('Preference Service', () => {
             const { preferences, schema } = prepareServices();
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
 
-            assert.deepEqual({
+            assert.deepStrictEqual({
                 'editor.tabSize': 4
             }, preferences.getPreferences());
 
             schema.registerOverrideIdentifier('json');
 
-            assert.deepEqual({
+            assert.deepStrictEqual({
                 'editor.tabSize': 4,
                 '[json].editor.tabSize': 2
             }, preferences.getPreferences());
@@ -450,39 +432,39 @@ describe('Preference Service', () => {
             const { preferences, schema } = prepareServices();
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
 
-            assert.equal(4, preferences.get('editor.tabSize'));
-            assert.equal(undefined, preferences.get('[json].editor.tabSize'));
+            assert.strictEqual(4, preferences.get('editor.tabSize'));
+            assert.strictEqual(undefined, preferences.get('[json].editor.tabSize'));
 
             schema.registerOverrideIdentifier('json');
 
-            assert.equal(4, preferences.get('editor.tabSize'));
-            assert.equal(2, preferences.get('[json].editor.tabSize'));
+            assert.strictEqual(4, preferences.get('editor.tabSize'));
+            assert.strictEqual(2, preferences.get('[json].editor.tabSize'));
         });
 
         it('get #1', () => {
             const { preferences, schema } = prepareServices();
             schema.registerOverrideIdentifier('json');
 
-            assert.equal(4, preferences.get('editor.tabSize'));
-            assert.equal(4, preferences.get('[json].editor.tabSize'));
+            assert.strictEqual(4, preferences.get('editor.tabSize'));
+            assert.strictEqual(4, preferences.get('[json].editor.tabSize'));
 
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
 
-            assert.equal(4, preferences.get('editor.tabSize'));
-            assert.equal(2, preferences.get('[json].editor.tabSize'));
+            assert.strictEqual(4, preferences.get('editor.tabSize'));
+            assert.strictEqual(2, preferences.get('[json].editor.tabSize'));
         });
 
         it('get #2', () => {
             const { preferences, schema } = prepareServices();
             schema.registerOverrideIdentifier('json');
 
-            assert.equal(4, preferences.get('editor.tabSize'));
-            assert.equal(4, preferences.get('[json].editor.tabSize'));
+            assert.strictEqual(4, preferences.get('editor.tabSize'));
+            assert.strictEqual(4, preferences.get('[json].editor.tabSize'));
 
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
-            assert.equal(2, preferences.get('editor.tabSize'));
-            assert.equal(2, preferences.get('[json].editor.tabSize'));
+            assert.strictEqual(2, preferences.get('editor.tabSize'));
+            assert.strictEqual(2, preferences.get('[json].editor.tabSize'));
         });
 
         it('has', () => {
@@ -507,13 +489,13 @@ describe('Preference Service', () => {
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
             };
-            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
             assert.ok(!preferences.has('[json].editor.tabSize'));
 
             schema.registerOverrideIdentifier('json');
 
-            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.deepEqual({
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual({
                 ...expected,
                 preferenceName: '[json].editor.tabSize'
             }, preferences.inspect('[json].editor.tabSize'));
@@ -531,13 +513,13 @@ describe('Preference Service', () => {
             };
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
-            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
             assert.ok(!preferences.has('[json].editor.tabSize'));
 
             schema.registerOverrideIdentifier('json');
 
-            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.deepEqual({
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual({
                 ...expected,
                 preferenceName: '[json].editor.tabSize'
             }, preferences.inspect('[json].editor.tabSize'));
@@ -553,14 +535,14 @@ describe('Preference Service', () => {
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
             };
-            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
             assert.ok(!preferences.has('[json].editor.tabSize'));
 
             schema.registerOverrideIdentifier('json');
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
 
-            assert.deepEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.deepEqual({
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual({
                 ...expected,
                 preferenceName: '[json].editor.tabSize',
                 globalValue: 2
@@ -577,7 +559,7 @@ describe('Preference Service', () => {
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
             preferences.set('editor.tabSize', 3, PreferenceScope.User);
 
-            assert.deepEqual([{
+            assert.deepStrictEqual([{
                 preferenceName: '[json].editor.tabSize',
                 newValue: 2
             }, {
@@ -598,7 +580,7 @@ describe('Preference Service', () => {
             schema.registerOverrideIdentifier('json');
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
-            assert.deepEqual([{
+            assert.deepStrictEqual([{
                 preferenceName: 'editor.tabSize',
                 newValue: 2
             }, {
@@ -622,7 +604,7 @@ describe('Preference Service', () => {
 
             preferences.set('[json].editor.tabSize', undefined, PreferenceScope.User);
 
-            assert.deepEqual([{
+            assert.deepStrictEqual([{
                 preferenceName: '[json].editor.tabSize',
                 newValue: 3
             }], events.map(e => ({
@@ -649,10 +631,10 @@ describe('Preference Service', () => {
                 }
             });
 
-            assert.equal(true, preferences.get('editor.insertSpaces'));
-            assert.equal(undefined, preferences.get('[go].editor.insertSpaces'));
-            assert.equal(false, preferences.get('editor.formatOnSave'));
-            assert.equal(undefined, preferences.get('[go].editor.formatOnSave'));
+            assert.strictEqual(true, preferences.get('editor.insertSpaces'));
+            assert.strictEqual(undefined, preferences.get('[go].editor.insertSpaces'));
+            assert.strictEqual(false, preferences.get('editor.formatOnSave'));
+            assert.strictEqual(undefined, preferences.get('[go].editor.formatOnSave'));
 
             schema.registerOverrideIdentifier('go');
             schema.setSchema({
@@ -670,10 +652,10 @@ describe('Preference Service', () => {
                 }
             });
 
-            assert.equal(true, preferences.get('editor.insertSpaces'));
-            assert.equal(false, preferences.get('[go].editor.insertSpaces'));
-            assert.equal(false, preferences.get('editor.formatOnSave'));
-            assert.equal(true, preferences.get('[go].editor.formatOnSave'));
+            assert.strictEqual(true, preferences.get('editor.insertSpaces'));
+            assert.strictEqual(false, preferences.get('[go].editor.insertSpaces'));
+            assert.strictEqual(false, preferences.get('editor.formatOnSave'));
+            assert.strictEqual(true, preferences.get('[go].editor.formatOnSave'));
         });
 
         function prepareServices(options?: { schema: PreferenceSchema }) {
@@ -698,111 +680,6 @@ describe('Preference Service', () => {
             preferences.initialize();
             return { preferences, schema };
         }
-
-    });
-
-    describe('user preference provider', () => {
-        const userConfigStr = `{
-    "myProp": "property value",
-    "launch": {
-        "version": "0.2.0",
-        "configurations": [
-            {
-                "type": "node",
-                "request": "attach",
-                "name": "User scope: Debug (Attach)",
-                "processId": ""
-            }
-        ]
-    }
-}
-`;
-        const userConfig = JSON.parse(userConfigStr);
-
-        let userProvider: UserPreferenceProvider;
-        beforeEach(async () => {
-            userProvider = testContainer.get(UserPreferenceProvider);
-            await userProvider.ready;
-        });
-
-        afterEach(() => {
-            testContainer.rebind(UserPreferenceProvider).toSelf().inSingletonScope();
-        });
-
-        describe('when schema for `launch` property has not been set yet', () => {
-
-            beforeEach(() => {
-                stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
-                stubs.push(sinon.stub(prefSchema, 'validate').callsFake(prefName => {
-                    if (prefName === 'myProp') {
-                        return true;
-                    }
-                    return false;
-                }));
-            });
-
-            it('should fire "onDidLaunchChanged" event with correct argument', async () => {
-                const spy = sinon.spy();
-                userProvider.onDidInvalidPreferencesRead(spy);
-
-                fs.writeFileSync(tempPath, userConfigStr);
-                await (<any>userProvider).readPreferences();
-
-                expect(spy.calledWith({ launch: userConfig.launch })).to.be.true;
-            });
-
-            it('should fire "onDidPreferencesChanged" with correct argument', async () => {
-
-                const spy = sinon.spy();
-                mockOnDidUserPreferencesChanged.restore();
-                userProvider.onDidPreferencesChanged(spy);
-
-                fs.writeFileSync(tempPath, userConfigStr);
-                await (<any>userProvider).readPreferences();
-
-                expect(spy.called, 'spy should be called').to.be.true;
-
-                const firstCallArgs = spy.args[0];
-                expect(firstCallArgs[0], 'argument should have property "myProp"').to.have.property('myProp');
-                expect(firstCallArgs[0], 'argument shouldn\'t have property "launch"').not.to.have.property('launch');
-            });
-
-        });
-
-        describe('when schema for `launch` property has been already set', () => {
-
-            beforeEach(() => {
-                stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
-                stubs.push(sinon.stub(prefSchema, 'validate').returns(true));
-            });
-
-            it('should not fire "onDidLaunchChanged"', async () => {
-                const spy = sinon.spy();
-                userProvider.onDidInvalidPreferencesRead(spy);
-
-                fs.writeFileSync(tempPath, userConfigStr);
-                await (<any>userProvider).readPreferences();
-
-                expect(spy.notCalled).to.be.true;
-            });
-
-            it('should fire "onDidPreferencesChanged" with correct argument', async () => {
-                const spy = sinon.spy();
-                mockOnDidUserPreferencesChanged.restore();
-                userProvider.onDidPreferencesChanged(spy);
-
-                fs.writeFileSync(tempPath, userConfigStr);
-                await (<any>userProvider).readPreferences();
-
-                expect(spy.called, 'spy should be called').to.be.true;
-
-                const firstCallArgs = spy.args[0];
-                expect(firstCallArgs[0], 'argument should have property "myProp"').to.have.property('myProp');
-                expect(firstCallArgs[0], 'argument should have property "launch"').to.have.property('launch');
-                expect(firstCallArgs[0].launch.newValue, 'property "launch" should have correct "newValue"').to.deep.equal(userConfig.launch);
-            });
-
-        });
 
     });
 

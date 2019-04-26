@@ -36,8 +36,8 @@ export function bindFileSystem(bind: interfaces.Bind, props?: {
     bind(FileSystem).toService(FileSystemNode);
 }
 
-export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
-    if (SINGLE_THREADED) {
+export function bindFileSystemWatcherServer(bind: interfaces.Bind, { singleThreaded }: { singleThreaded: boolean } = { singleThreaded: SINGLE_THREADED }): void {
+    if (singleThreaded) {
         bind(FileSystemWatcherServer).toDynamicValue(ctx => {
             const logger = ctx.container.get<ILogger>(ILogger);
             return new NsfwFileSystemWatcherServer({

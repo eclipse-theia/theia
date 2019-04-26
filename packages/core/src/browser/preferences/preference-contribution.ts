@@ -18,14 +18,13 @@ import * as Ajv from 'ajv';
 import { inject, injectable, interfaces, named, postConstruct } from 'inversify';
 import { ContributionProvider, bindContributionProvider, escapeRegExpCharacters, Emitter, Event } from '../../common';
 import { PreferenceScope } from './preference-scope';
-import { PreferenceProvider, PreferenceProviderPriority, PreferenceProviderDataChange } from './preference-provider';
-import { IJSONSchema } from '../../common/json-schema';
-
+import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
 import {
     PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType
 } from '../../common/preferences/preference-schema';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
+import { bindPreferenceConfigurations, PreferenceConfigurations } from './preference-configurations';
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
 
 // tslint:disable:no-any
@@ -37,6 +36,7 @@ export interface PreferenceContribution {
 }
 
 export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
+    bindPreferenceConfigurations(bind);
     bind(PreferenceSchemaProvider).toSelf().inSingletonScope();
     bindContributionProvider(bind, PreferenceContribution);
 }
@@ -67,11 +67,13 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
     protected readonly preferences: { [name: string]: any } = {};
     protected readonly combinedSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
-    private remoteSchemas: IJSONSchema[] = [];
 
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
     protected validateFunction: Ajv.ValidateFunction;
+
+    @inject(PreferenceConfigurations)
+    protected readonly configurations: PreferenceConfigurations;
 
     protected readonly onDidPreferenceSchemaChangedEmitter = new Emitter<void>();
     readonly onDidPreferenceSchemaChanged: Event<void> = this.onDidPreferenceSchemaChangedEmitter.event;
@@ -133,7 +135,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     protected doSetSchema(schema: PreferenceSchema): PreferenceProviderDataChange[] {
-        const scope = this.getScope();
+        const scope = PreferenceScope.Default;
         const domain = this.getDomain();
         const changes: PreferenceProviderDataChange[] = [];
         const defaultScope = PreferenceSchema.getDefaultScope(schema);
@@ -150,8 +152,9 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                     this.overridePatternProperties.properties[preferenceName] = schemaProps;
                 }
                 this.combinedSchema.properties[preferenceName] = schemaProps;
+                this.unsupportedPreferences.delete(preferenceName);
 
-                const value = schemaProps.default = this.getDefaultValue(schemaProps, preferenceName);
+                const value = schemaProps.defaultValue = this.getDefaultValue(schemaProps, preferenceName);
                 if (this.testOverrideValue(preferenceName, value)) {
                     for (const overridenPreferenceName in value) {
                         const overrideValue = value[overridenPreferenceName];
@@ -167,7 +170,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
     protected doSetPreferenceValue(preferenceName: string, newValue: any, { scope, domain }: {
         scope: PreferenceScope,
-        domain: string[]
+        domain?: string[]
     }): PreferenceProviderDataChange {
         const oldValue = this.preferences[preferenceName];
         this.preferences[preferenceName] = newValue;
@@ -182,7 +185,10 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         if (preferenceName && FrontendApplicationPreferenceConfig.is(config) && preferenceName in config.preferences) {
             return config.preferences[preferenceName];
         }
-        if (property.default) {
+        if (property.defaultValue !== undefined) {
+            return property.defaultValue;
+        }
+        if (property.default !== undefined) {
             return property.default;
         }
         const type = Array.isArray(property.type) ? property.type[0] : property.type;
@@ -204,51 +210,50 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     protected updateValidate(): void {
-        this.validateFunction = new Ajv({ schemas: this.remoteSchemas }).compile(this.combinedSchema);
+        const schema = {
+            ...this.combinedSchema,
+            properties: {
+                ...this.combinedSchema.properties
+            }
+        };
+        for (const sectionName of this.configurations.getSectionNames()) {
+            delete schema.properties[sectionName];
+        }
+        this.validateFunction = new Ajv().compile(schema);
     }
 
+    protected readonly unsupportedPreferences = new Set<string>();
     validate(name: string, value: any): boolean {
-        return this.validateFunction({ [name]: value }) as boolean;
+        if (this.configurations.isSectionName(name)) {
+            return true;
+        }
+        const result = this.validateFunction({ [name]: value }) as boolean;
+        if (!result && !(name in this.combinedSchema.properties)) {
+            // in order to avoid reporting it on each change
+            if (!this.unsupportedPreferences.has(name)) {
+                this.unsupportedPreferences.add(name);
+                console.warn(`"${name}" preference is not supported`);
+            }
+        }
+        return result;
     }
 
     getCombinedSchema(): PreferenceDataSchema {
         return this.combinedSchema;
     }
 
-    setSchema(schema: PreferenceSchema, remoteSchema?: IJSONSchema): void {
+    setSchema(schema: PreferenceSchema): void {
         const changes = this.doSetSchema(schema);
-        if (remoteSchema) {
-            this.doSetRemoteSchema(remoteSchema);
-        }
         this.fireDidPreferenceSchemaChanged();
         this.emitPreferencesChangedEvent(changes);
-    }
-
-    protected doSetRemoteSchema(schema: IJSONSchema): void {
-        // remove existing remote schema if any
-        const existingSchemaIndex = this.remoteSchemas.findIndex(s => !!s.$id && !!s.$id && s.$id !== s.$id);
-        if (existingSchemaIndex) {
-            this.remoteSchemas.splice(existingSchemaIndex, 1);
-        }
-
-        this.remoteSchemas.push(schema);
-    }
-
-    setRemoteSchema(schema: IJSONSchema): void {
-        this.doSetRemoteSchema(schema);
-        this.fireDidPreferenceSchemaChanged();
     }
 
     getPreferences(): { [name: string]: any } {
         return this.preferences;
     }
 
-    async setPreference(): Promise<void> {
-        throw new Error('Unsupported');
-    }
-
-    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
-        return { priority: PreferenceProviderPriority.Default, provider: this };
+    async setPreference(): Promise<boolean> {
+        return false;
     }
 
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean {

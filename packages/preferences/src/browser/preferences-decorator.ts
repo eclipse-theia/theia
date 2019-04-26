@@ -53,7 +53,7 @@ export class PreferencesDecorator implements TreeDecorator {
                 tooltip: preferenceValue.description,
                 captionSuffixes: [
                     {
-                        data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.default)}`
+                        data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.defaultValue)}`
                     },
                     {
                         data: ' ' + preferenceValue.description,

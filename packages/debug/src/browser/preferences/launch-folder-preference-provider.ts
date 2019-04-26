@@ -15,26 +15,28 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
-import { FolderPreferenceProvider } from './folder-preference-provider';
+import { FolderPreferenceProvider } from '@theia/preferences/lib/browser/folder-preference-provider';
 
 @injectable()
-export class FolderLaunchPreferenceProvider extends FolderPreferenceProvider {
-
-    async getUri(): Promise<URI | undefined> {
-        this.folderUri = new URI(this.options.folder.uri);
-        if (await this.fileSystem.exists(this.folderUri.toString())) {
-            const uri = this.folderUri.resolve('.theia').resolve('launch.json');
-            return uri;
-        }
-    }
+export class LaunchFolderPreferenceProvider extends FolderPreferenceProvider {
 
     // tslint:disable-next-line:no-any
     protected parse(content: string): any {
-        const parsedData = super.parse(content);
-        if (!!parsedData && Object.keys(parsedData).length > 0) {
-            return { launch: parsedData };
+        const launch = super.parse(content);
+        if (launch === undefined) {
+            return undefined;
         }
-        return parsedData;
+        return { launch: { ...launch } };
     }
+
+    protected getPath(preferenceName: string): string[] | undefined {
+        if (preferenceName === 'launch') {
+            return [];
+        }
+        if (preferenceName.startsWith('launch.')) {
+            return [preferenceName.substr('launch.'.length)];
+        }
+        return undefined;
+    }
+
 }
