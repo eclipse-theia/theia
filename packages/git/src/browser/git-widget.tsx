@@ -663,6 +663,9 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
             <a className='toolbar-button' title='Unamend All Commits' onClick={this.unamendAll.bind(this)}>
                 <i className='fa fa-minus' />
             </a>
+            <a className='toolbar-button' title='Clear Amending Commits' onClick={this.clearAmending.bind(this)}>
+                <i className='fa fa-times' />
+            </a>
         </div>;
     }
 
@@ -1010,6 +1013,16 @@ export class GitWidget extends GitDiffWidget implements StatefulWidget {
                 await new Promise(resolve => setTimeout(resolve, GitWidget.TRANSITION_TIME_MS));
             }
         }
+    }
+
+    readonly clearAmending = () => this.doClearAmending();
+    protected async doClearAmending() {
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            await this.clearAmendingCommits(repository);
+        }
+        this.amendingCommits = [];
+        this.update();
     }
 
     protected confirm(path: string): Promise<boolean | undefined> {
