@@ -266,6 +266,8 @@ export class WebviewWidget extends BaseWidget {
     waitReceiveMessage(object: WebviewWidget, resolve: any) {
         if (object.readyToReceiveMessage) {
             resolve(true);
+        } else {
+            setTimeout(this.waitReceiveMessage, 100, object, resolve);
         }
     }
 
@@ -273,14 +275,10 @@ export class WebviewWidget extends BaseWidget {
      * Block until we're able to receive message
      */
     public async waitReadyToReceiveMessage(): Promise<boolean> {
-        if (this.readyToReceiveMessage) {
-            return true;
-        }
         return new Promise<boolean>((resolve, reject) => {
-            setTimeout(this.waitReceiveMessage, 100, this, resolve);
+            this.waitReceiveMessage(this, resolve);
         });
     }
-
 }
 
 export namespace WebviewWidget {
