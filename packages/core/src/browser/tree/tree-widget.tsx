@@ -582,7 +582,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 if (commandDecorator) {
                     const onClickEvent = commandDecorator.onClick;
                     className = className.concat(' ').concat(TreeDecoration.Styles.TREE_NODE_TAIL_INLINE_CMD_CLASS);
-                    commandElem = <div key={node.id + 'icon' + index} data-node-id={node.id} className={commandDecorator.iconClass} onClick={onClickEvent}></div>;
+                    commandElem = <div key={node.id + 'icon' + index} data-node-id={node.id} className={commandDecorator.iconClass}
+                        onClick={onClickEvent}></div>;
                 }
 
                 const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;

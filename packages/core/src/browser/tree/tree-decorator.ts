@@ -17,6 +17,7 @@
 import { injectable } from 'inversify';
 import { Tree, TreeNode } from './tree';
 import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
+import { MouseEvent } from 'react';
 
 /**
  * Tree decorator that can change the look and the style of the tree items within a widget.
@@ -293,7 +294,7 @@ export namespace TreeDecoration {
          * Optional event handler for click on the tail decorator
          */
         // tslint:disable-next-line:no-any
-        readonly onClick: any;
+        readonly onClick: (e: MouseEvent<HTMLElement>) => void;
     }
 
     /**
