@@ -46,15 +46,21 @@ export class HostedPluginProcess implements ServerPluginRunner {
     protected readonly pluginHostEnvironmentVariables: ContributionProvider<PluginHostEnvironmentVariable>;
 
     private childProcess: cp.ChildProcess | undefined;
+    private standbyProcess: cp.ChildProcess | undefined;
+    private standbyTimer: NodeJS.Timer;
+
     private client: HostedPluginClient;
 
+    public isProcessRunning(): boolean {
+        return (this.childProcess !== undefined);
+    }
+
     public setClient(client: HostedPluginClient): void {
-        if (this.client) {
-            if (this.childProcess) {
-                this.runPluginServer();
-            }
-        }
         this.client = client;
+
+        if (!this.childProcess) {
+            this.runPluginServer();
+        }
     }
 
     public clientClosed(): void {
@@ -81,9 +87,21 @@ export class HostedPluginProcess implements ServerPluginRunner {
         if (this.childProcess === undefined) {
             return;
         }
-        // tslint:disable-next-line:no-shadowed-variable
-        const cp = this.childProcess;
+        console.log('Debug: put PluginServer to standby');
+        this.standbyProcess = this.childProcess;
         this.childProcess = undefined;
+        this.standbyTimer = setTimeout(this.terminatePluginServerInternal, 60000);
+    }
+
+    private terminatePluginServerInternal(): void {
+        if (this.standbyProcess === undefined) {
+            return;
+        }
+
+        console.log('Debug: real terminate PluginServer');
+        // tslint:disable-next-line:no-shadowed-variable
+        const cp = this.standbyProcess;
+        this.standbyProcess = undefined;
 
         const emitter = new Emitter();
         cp.on('message', message => {
@@ -107,8 +125,21 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     public runPluginServer(): void {
         if (this.childProcess) {
-            this.terminatePluginServer();
+            return;
+            // console.log("DEBUG: terminating in runPlugin");
+            // this.terminatePluginServer();
         }
+
+        if (this.standbyProcess) {
+            console.log('DEBUG: use standby PluginServer');
+            clearTimeout(this.standbyTimer);
+            this.childProcess = this.standbyProcess;
+            this.standbyProcess = undefined;
+            return;
+        }
+
+        console.log('DEBUG: real runPluginServer');
+
         this.childProcess = this.fork({
             serverName: 'hosted-plugin',
             logger: this.logger,

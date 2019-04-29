@@ -21,3 +21,17 @@
 .theia-TreeNodeHyperlink:focus {
     border: none;
 }
+
+.theia-TreeNode .theia-TreeNodeTailInlineCommand  {
+    visibility: hidden;
+    height: 22px;
+    width: 22px;
+}
+
+.theia-TreeNode:hover .theia-TreeNodeTailInlineCommand  {
+    visibility: visible;
+}
+
+.theia-TreeNode.theia-mod-selected .theia-TreeNodeTailInlineCommand {
+    visibility: visible;
+}

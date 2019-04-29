@@ -36,7 +36,6 @@ import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
 import { ElementExt } from '@phosphor/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
-import { ThemeService } from '../theming';
 
 const debounce = require('lodash.debounce');
 
@@ -46,7 +45,6 @@ export const TREE_NODE_CLASS = 'theia-TreeNode';
 export const TREE_NODE_CONTENT_CLASS = 'theia-TreeNodeContent';
 export const TREE_NODE_TAIL_CLASS = 'theia-TreeNodeTail';
 export const TREE_NODE_SEGMENT_CLASS = 'theia-TreeNodeSegment';
-
 export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
 
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
@@ -136,8 +134,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
-
-    @inject(ThemeService) protected readonly themeService: ThemeService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -576,25 +572,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 const { data, fontData } = decoration as TreeDecoration.TailDecoration;
                 const color = (decoration as TreeDecoration.TailDecorationIcon).color;
                 const icon = (decoration as TreeDecoration.TailDecorationIcon).icon || (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
-                const commandDecorator = (decoration as TreeDecoration.TailDecorationCommand);
-                let className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
-                let commandElem: React.ReactNode;
-                if (commandDecorator) {
-                    const onClickEvent = commandDecorator.onClick;
-                    className = className.concat(' ').concat(TreeDecoration.Styles.TREE_NODE_TAIL_INLINE_CMD_CLASS);
-                    commandElem = <div key={node.id + 'icon' + index} data-node-id={node.id} className={commandDecorator.iconClass}
-                        onClick={onClickEvent}></div>;
-                }
-
+                const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
                 const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;
-                const content = data ?
-                    data :
-                    commandElem ?
-                        commandElem :
-                        icon ?
-                            <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> :
-                            '';
-
+                const content = data ? data : icon ? <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> : '';
                 return <div key={node.id + className + index} className={className} style={style} title={tooltip}>
                     {content}
                 </div>;

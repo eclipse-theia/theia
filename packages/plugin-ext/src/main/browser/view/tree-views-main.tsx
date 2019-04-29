@@ -35,7 +35,8 @@ import {
     TreeImpl,
     Tree,
     TREE_NODE_SEGMENT_CLASS,
-    TREE_NODE_SEGMENT_GROW_CLASS
+    TREE_NODE_SEGMENT_GROW_CLASS,
+    TREE_NODE_TAIL_CLASS
 } from '@theia/core/lib/browser';
 
 import { TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
@@ -50,7 +51,18 @@ import { CommandRegistry } from '@theia/core';
 import { PluginSharedStyle } from '../plugin-shared-style';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
+const TREE_NODE_TAIL_INLINE_CMD_CLASS = 'theia-TreeNodeTailInlineCommand';
+
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
+
+interface TailDecorationCommand extends TreeDecoration.BaseTailDecoration {
+    readonly iconClass: string;
+    readonly onClick: (e: React.MouseEvent<HTMLElement>) => void;
+}
+
+interface TailDecoration {
+    decorationData: TailDecorationCommand | undefined;
+}
 
 export class TreeViewsMainImpl implements TreeViewsMain {
 
@@ -167,7 +179,7 @@ export interface DescriptiveMetadata {
 export interface TreeViewFolderNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, DescriptiveMetadata {
 }
 
-export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadata, TreeDecoration.DecoratedTreeNode {
+export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadata, TailDecoration {
 }
 
 @injectable()
@@ -225,7 +237,7 @@ export class TreeViewDataProviderMain {
         };
     }
 
-    getDecorationData(item: TreeViewItem): TreeDecoration.Data {
+    getDecorationData(item: TreeViewItem): TailDecorationCommand | undefined {
         if (this._inlineActions && this._inlineActions.length > 0) {
             const inlineActionInCtx = this._inlineActions.filter(action => {
                 if (action.action.when && this.contextKeyService.match(action.action.when) ||
@@ -239,22 +251,21 @@ export class TreeViewDataProviderMain {
                 const actionMenu = inlineActionInCtx[0];
                 if (actionMenu.icon) {
                     return {
-                        tailDecorations: [{
-                            iconClass: actionMenu.icon,
-                            tooltip: actionMenu.label,
-                            onClick: (event: React.MouseEvent<HTMLElement>) => {
-                                event.stopPropagation();
-                                const nodeID = event.currentTarget.getAttribute('data-node-id');
-                                if (nodeID) {
-                                    this.executeInlineCommand(actionMenu.id, nodeID);
-                                }
+                        iconClass: actionMenu.icon,
+                        tooltip: actionMenu.label,
+                        onClick: (event: React.MouseEvent<HTMLElement>) => {
+                            event.stopPropagation();
+                            const nodeID = event.currentTarget.getAttribute('data-node-id');
+                            if (nodeID) {
+                                this.executeInlineCommand(actionMenu.id, nodeID);
                             }
-                        } as TreeDecoration.TailDecorationCommand]
-                    };
+                        }
+                    } as TailDecorationCommand;
                 }
             }
         }
-        return {};
+
+        return undefined;
     }
 
     createFileNode(item: TreeViewItem): TreeViewFileNode {
@@ -419,6 +430,28 @@ export class TreeViewWidget extends TreeWidget {
             return urlBase.concat(iconPath);
         }
         return urlBase.concat('/').concat(iconPath);
+    }
+
+    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
+        const decorated = node as TreeViewFileNode;
+        if (decorated && decorated.decorationData) {
+            // const tooltip = decorated.decorationData.tooltip;
+            const onClickEvent = decorated.decorationData.onClick;
+            const className = [
+                TREE_NODE_SEGMENT_CLASS,
+                TREE_NODE_TAIL_CLASS,
+                TREE_NODE_TAIL_INLINE_CMD_CLASS,
+                decorated.decorationData.iconClass].join(' ');
+
+            return <React.Fragment>
+                <div key={node.id + 'icon'}
+                    data-node-id={node.id}
+                    className={className}
+                    onClick={onClickEvent}>
+                </div>
+            </React.Fragment>;
+        }
+        return <React.Fragment></React.Fragment>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

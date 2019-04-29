@@ -17,7 +17,6 @@
 import { injectable } from 'inversify';
 import { Tree, TreeNode } from './tree';
 import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
-import { MouseEvent } from 'react';
 
 /**
  * Tree decorator that can change the look and the style of the tree items within a widget.
@@ -179,7 +178,6 @@ export namespace TreeDecoration {
         export const BOTTOM_RIGHT_CLASS = 'theia-bottom-right';
         export const BOTTOM_LEFT_CLASS = 'theia-bottom-left';
         export const TOP_LEFT_CLASS = 'theia-top-left';
-        export const TREE_NODE_TAIL_INLINE_CMD_CLASS = 'theia-TreeNodeTailInlineCommand';
     }
 
     /**
@@ -282,19 +280,6 @@ export namespace TreeDecoration {
          * The color of the icon.
          */
         readonly color?: Color;
-    }
-
-    export interface TailDecorationCommand extends BaseTailDecoration {
-        /**
-         * icon class
-         */
-        readonly iconClass: string;
-
-        /**
-         * Optional event handler for click on the tail decorator
-         */
-        // tslint:disable-next-line:no-any
-        readonly onClick: (e: MouseEvent<HTMLElement>) => void;
     }
 
     /**
@@ -530,7 +515,7 @@ export namespace TreeDecoration {
         /**
          * Optional right-aligned decorations that appear after the node caption and after the caption suffixes (is any).
          */
-        readonly tailDecorations?: Array<TailDecoration | TailDecorationIcon | TailDecorationIconClass | TailDecorationCommand>;
+        readonly tailDecorations?: Array<TailDecoration | TailDecorationIcon | TailDecorationIconClass>;
 
         /**
          * Custom tooltip for the decorated item. Tooltip will be appended to the original tooltip, if any.

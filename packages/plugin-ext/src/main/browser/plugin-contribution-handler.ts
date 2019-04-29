@@ -164,8 +164,8 @@ export class PluginContributionHandler {
                 const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
                 const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
                 this.style.insertRule('.' + iconClass, theme => `
-                    width: 22px;
-                    height: 22px;
+                    width: 16px;
+                    height: 16px;
                     background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
                 `);
             }

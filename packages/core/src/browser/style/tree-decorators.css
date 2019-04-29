@@ -65,15 +65,3 @@
     bottom: 40%;
     right: 25%;
 }
-
-.theia-TreeNode .theia-TreeNodeTailInlineCommand  {
-    visibility: hidden;
-}
-
-.theia-TreeNode:hover .theia-TreeNodeTailInlineCommand  {
-    visibility: visible;
-}
-
-.theia-TreeNode.theia-mod-selected .theia-TreeNodeTailInlineCommand {
-    visibility: visible;
-}

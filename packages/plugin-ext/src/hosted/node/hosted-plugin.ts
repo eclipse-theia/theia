@@ -37,7 +37,7 @@ export class HostedPluginSupport {
     @inject(HostedPluginProcess)
     protected readonly hostedPluginProcess: HostedPluginProcess;
 
-    private isPluginProcessRunning = false;
+    // private isPluginProcessRunning = false;
 
     /**
      * Optional runners to delegate some work
@@ -60,9 +60,9 @@ export class HostedPluginSupport {
     }
 
     clientClosed(): void {
-        this.isPluginProcessRunning = false;
-        this.terminatePluginServer();
-        this.isPluginProcessRunning = false;
+        // this.isPluginProcessRunning = false;
+        this.hostedPluginProcess.terminatePluginServer();
+        // this.isPluginProcessRunning = false;
         this.pluginRunners.forEach(runner => runner.clientClosed());
     }
 
@@ -83,18 +83,19 @@ export class HostedPluginSupport {
                 }
             });
         } else {
+
+            if (String(jsonMessage.content).indexOf('Command') >= 0) {
+                // console.log('Debug: onMessage' + jsonMessage.content);
+            }
             this.hostedPluginProcess.onMessage(jsonMessage.content);
         }
     }
 
-    private terminatePluginServer(): void {
-        this.hostedPluginProcess.terminatePluginServer();
-    }
-
     public runPluginServer(): void {
-        if (!this.isPluginProcessRunning) {
+        if (!this.hostedPluginProcess.isProcessRunning()) {
+            // this.isPluginProcessRunning = true;
             this.hostedPluginProcess.runPluginServer();
-            this.isPluginProcessRunning = true;
+            // this.isPluginProcessRunning = true;
         }
     }
 
@@ -105,5 +106,4 @@ export class HostedPluginSupport {
     public sendLog(logPart: LogPart): void {
         this.client.log(logPart);
     }
-
 }
