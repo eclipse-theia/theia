@@ -183,6 +183,19 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
+    /**
+     * Update the search term and input field.
+     * @param term the search term.
+     */
+    updateSearchTerm(term: string): void {
+        this.searchTerm = term;
+        const search = document.getElementById('search-input-field');
+        if (search) {
+            (search as HTMLInputElement).value = term;
+        }
+        this.refresh();
+    }
+
     hasResultList(): boolean {
         return this.hasResults;
     }
