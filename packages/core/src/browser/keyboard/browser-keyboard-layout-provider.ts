@@ -18,6 +18,7 @@ import { injectable, postConstruct } from 'inversify';
 import { isOSX, isWindows } from '../../common/os';
 import { Emitter } from '../../common/event';
 import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
+import * as browser from '../browser';
 
 @injectable()
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier {
@@ -56,13 +57,20 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
 
     getNativeLayout(): Promise<NativeKeyboardLayout> {
         const keyboard = (navigator as NavigatorExtension).keyboard;
-        if (keyboard && keyboard.getLayoutMap) {
+        if (keyboard && keyboard.getLayoutMap && this.isAbleToGetLayoutMap()) {
             return keyboard.getLayoutMap().then(layoutMap => this.getFromLayoutMap(layoutMap));
         } else if (navigator.language) {
             return Promise.resolve(this.getFromLanguage(navigator.language));
         } else {
             return Promise.resolve(isOSX ? this.macUS : this.winUS);
         }
+    }
+
+    private isAbleToGetLayoutMap(): boolean {
+        if (browser.isChrome && window.top !== window && window.location.protocol === 'https:') {
+            return false;
+        }
+        return true;
     }
 
     /**
