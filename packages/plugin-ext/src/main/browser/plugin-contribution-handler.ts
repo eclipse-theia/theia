@@ -26,7 +26,6 @@ import { KeybindingsContributionPointHandler } from './keybindings/keybindings-c
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 import { PluginSharedStyle } from './plugin-shared-style';
 import { CommandRegistry } from '@theia/core';
-import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 
 @injectable()
 export class PluginContributionHandler {
@@ -152,23 +151,12 @@ export class PluginContributionHandler {
         }
     }
 
-    protected pluginCommandIconId = 0;
     protected registerCommands(contribution: PluginContribution): void {
         if (!contribution.commands) {
             return;
         }
         for (const { iconUrl, command, category, title } of contribution.commands) {
-            let iconClass: string | undefined;
-            if (iconUrl) {
-                iconClass = 'plugin-command-icon-' + this.pluginCommandIconId++;
-                const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
-                const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
-                this.style.insertRule('.' + iconClass, theme => `
-                    width: 16px;
-                    height: 16px;
-                    background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
-                `);
-            }
+            const iconClass = iconUrl ? this.style.toIconClass(iconUrl) : undefined;
             this.commands.registerCommand({
                 id: command,
                 category,
