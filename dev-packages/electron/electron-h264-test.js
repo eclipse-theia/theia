@@ -16,21 +16,28 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/**
- * Theia's `package.json` contains a `prepare` script which is triggered after each install.
- * But we don't always want to build the whole project after installing dependencies.
- * This script looks for an environment variable to skip the prepare step.
- *
- * Example (Unix): `THEIA_SKIP_NPM_PREPARE=1 yarn`
- *
- * Script returns successfully (code=0) when the variable is set, and fails (code>0)
- * when variable is not set. This allows `script || a && b && ...` which will skip
- * the following commands if `script` returns 0, but will keep going otherwise.
- */
+const cp = require('child_process');
 
-if (process.env.THEIA_SKIP_NPM_PREPARE) {
-    console.error('skipping `npm prepare`')
-    process.exit(0) // stop
-} else {
-    process.exit(1) // ok
-}
+const timeout = 60000;
+
+const electronApp = cp.fork(require.resolve('./electron-cli.js'), [
+    require.resolve('./electron-h264-test-application/test-application.js'),
+    '--headless',
+]);
+
+electronApp.on('error', error => {
+    console.error(error);
+    process.exit(127);
+})
+
+electronApp.on('close', (code, signal) => {
+    if (code || signal) {
+        if (signal) console.error(signal);
+        process.exit(code || 1);
+    } else process.exit(0);
+})
+
+setTimeout(() => {
+    console.error('Error: electron process timeout');
+    process.exit(4);
+}, timeout);

@@ -15,12 +15,19 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "bin": {
-    "electron": "cli.js"
+    "electron": "electron-cli.js",
+    "electron-h264-test": "electron-h264-test.js",
+    "electron-replace-ffmpeg": "electron-replace-ffmpeg.js"
   },
   "dependencies": {
     "electron": "^3.1.7",
+    "electron-download": "^4.1.1",
     "electron-store": "^2.0.0",
     "fix-path": "^2.1.0",
-    "native-keymap": "^1.2.5"
+    "native-keymap": "^1.2.5",
+    "unzipper": "^0.9.11"
+  },
+  "scripts": {
+    "postinstall": "node ./scripts/skip-replace-ffmpeg || (node ./electron-replace-ffmpeg && node ./electron-h264-test)"
   }
 }
