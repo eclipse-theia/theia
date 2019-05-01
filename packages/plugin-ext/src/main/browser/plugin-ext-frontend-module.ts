@@ -60,6 +60,8 @@ import { PluginSharedStyle } from './plugin-shared-style';
 import { FSResourceResolver } from './file-system-main';
 import { SelectionProviderCommandContribution } from './selection-provider-command';
 import { ViewColumnService } from './view-column-service';
+import { TreeViewActions } from './view/tree-view-actions';
+import { TreeViewContextKeyService } from './view/tree-view-context-key-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -116,6 +118,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
     }).inSingletonScope();
+
+    bind(TreeViewActions).toSelf().inSingletonScope();
+    bind(TreeViewContextKeyService).toSelf().inSingletonScope();
 
     bind(PluginSharedStyle).toSelf().inSingletonScope();
     bind(ViewRegistry).toSelf().inSingletonScope();
