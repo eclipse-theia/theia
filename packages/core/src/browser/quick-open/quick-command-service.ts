@@ -21,6 +21,7 @@ import { QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, Quick
 import { QuickOpenOptions } from './quick-open-service';
 import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
 import { ContextKeyService } from '../context-key-service';
+import { CLEAR_COMMAND_HISTORY } from './quick-command-contribution';
 
 @injectable()
 export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
@@ -30,6 +31,11 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     readonly prefix: string = '>';
 
     readonly description: string = 'Quick Command';
+
+    // The list of exempted commands not to be displayed in the recently used list.
+    readonly exemptedCommands: Command[] = [
+        CLEAR_COMMAND_HISTORY,
+    ];
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
@@ -106,9 +112,14 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
         // Build the list of recent commands.
         const rCommands: Command[] = [];
         recentCommands.forEach((r: Command) => {
-            const exists = allCommands.some((c: Command) => Command.equals(r, c));
+            // Determine if the command is exempted from display.
+            const exempted: boolean = this.exemptedCommands.some((c: Command) => Command.equals(r, c));
+            // Determine if the command currently exists in the list of all available commands.
+            const exists: boolean = allCommands.some((c: Command) => Command.equals(r, c));
             // Add the recently used item to the list.
-            if (exists) { rCommands.push(r); }
+            if (exists && !exempted) {
+                rCommands.push(r);
+            }
         });
 
         // Build the list of other commands.

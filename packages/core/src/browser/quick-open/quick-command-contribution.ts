@@ -24,6 +24,11 @@ export const quickCommand: Command = {
     id: 'workbench.action.showCommands'
 };
 
+export const CLEAR_COMMAND_HISTORY: Command = {
+    id: 'clear.command.history',
+    label: 'Clear Command History'
+};
+
 @injectable()
 export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
@@ -35,6 +40,9 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
             execute: () => this.quickOpenService.open('>')
+        });
+        commands.registerCommand(CLEAR_COMMAND_HISTORY, {
+            execute: () => commands.clearCommandHistory(),
         });
     }
 

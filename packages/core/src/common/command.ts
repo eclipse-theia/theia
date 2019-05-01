@@ -376,4 +376,11 @@ export class CommandRegistry implements CommandService {
         }
     }
 
+    /**
+     * Clear the list of recently used commands.
+     */
+    clearCommandHistory(): void {
+        this.recent = [];
+    }
+
 }
