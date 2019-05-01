@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        const electron = require('electron');
+
+        function videoSuccess() {
+            electron.ipcRenderer.send('success');
+        }
+
+        function videoError() {
+            electron.ipcRenderer.send('error');
+        }
+
+    </script>
+</head>
+
+<body>
+    <video preload="metadata" onloadeddata="videoSuccess()">
+        <source src="./h264-video.mp4" type="video/mp4" onerror="videoError()">
+        <p>H.264/MP4 not supported.</p>
+    </video>
+</body>
+
+</html>
