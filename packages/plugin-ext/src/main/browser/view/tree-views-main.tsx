@@ -33,7 +33,9 @@ import {
     TreeImpl,
     Tree,
     TREE_NODE_SEGMENT_CLASS,
-    TREE_NODE_SEGMENT_GROW_CLASS
+    TREE_NODE_SEGMENT_GROW_CLASS,
+    FOLDER_ICON,
+    FILE_ICON
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
 import { MenuPath } from '@theia/core/lib/common/menu';
@@ -41,6 +43,7 @@ import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { SelectionService } from '@theia/core/lib/common';
+import { PluginSharedStyle } from '../plugin-shared-style';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -62,6 +65,8 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     protected viewCtxKey: ContextKey<string>;
     protected viewItemCtxKey: ContextKey<string>;
 
+    private readonly sharedStyle: PluginSharedStyle;
+
     constructor(rpc: RPCProtocol, private container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT);
         this.viewRegistry = container.get(ViewRegistry);
@@ -69,10 +74,12 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         const contextKeyService = this.container.get<ContextKeyService>(ContextKeyService);
         this.viewCtxKey = contextKeyService.createKey('view', '');
         this.viewItemCtxKey = contextKeyService.createKey('viewItem', '');
+
+        this.sharedStyle = this.container.get(PluginSharedStyle);
     }
 
     $registerTreeDataProvider(treeViewId: string): void {
-        const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy);
+        const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy, this.sharedStyle);
         this.dataProviders.set(treeViewId, dataProvider);
 
         const treeViewContainer = this.createTreeViewContainer(dataProvider);
@@ -160,20 +167,20 @@ export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadat
 
 export class TreeViewDataProviderMain {
 
-    constructor(private treeViewId: string, private proxy: TreeViewsExt) {
-    }
+    constructor(
+        private treeViewId: string,
+        private proxy: TreeViewsExt,
+        private sharedStyle: PluginSharedStyle
+    ) { }
 
     createFolderNode(item: TreeViewItem): TreeViewFolderNode {
-        let expanded = false;
-        if (TreeViewItemCollapsibleState.Expanded === item.collapsibleState) {
-            expanded = true;
-        }
-
+        const expanded = TreeViewItemCollapsibleState.Expanded === item.collapsibleState;
+        const icon = this.toIconClass(item);
         return {
             id: item.id,
             parent: undefined,
             name: item.label,
-            icon: item.icon,
+            icon,
             description: item.tooltip,
             visible: true,
             selected: false,
@@ -184,10 +191,11 @@ export class TreeViewDataProviderMain {
     }
 
     createFileNode(item: TreeViewItem): TreeViewFileNode {
+        const icon = this.toIconClass(item);
         return {
             id: item.id,
             name: item.label,
-            icon: item.icon,
+            icon,
             description: item.tooltip,
             parent: undefined,
             visible: true,
@@ -196,20 +204,31 @@ export class TreeViewDataProviderMain {
         };
     }
 
+    protected toIconClass(item: TreeViewItem): string | undefined {
+        if (item.icon) {
+            return 'fa ' + item.icon;
+        }
+        if (item.iconUrl) {
+            return this.sharedStyle.toIconClass(item.iconUrl);
+        }
+        if (item.themeIconId) {
+            return item.themeIconId === 'folder' ? FOLDER_ICON : FILE_ICON;
+        }
+        if (item.resourceUri) {
+            return item.collapsibleState !== TreeViewItemCollapsibleState.None ? FOLDER_ICON : FILE_ICON;
+        }
+        return undefined;
+    }
+
     /**
      * Creates TreeNode
      *
      * @param item tree view item from the ext
      */
     createTreeNode(item: TreeViewItem): TreeNode {
-        if ('collapsibleState' in item) {
-            if (TreeViewItemCollapsibleState.Expanded === item.collapsibleState) {
-                return this.createFolderNode(item);
-            } else if (TreeViewItemCollapsibleState.Collapsed === item.collapsibleState) {
-                return this.createFolderNode(item);
-            }
+        if (item.collapsibleState !== TreeViewItemCollapsibleState.None) {
+            return this.createFolderNode(item);
         }
-
         return this.createFileNode(item);
     }
 
@@ -282,9 +301,8 @@ export class TreeViewWidget extends TreeWidget {
 
     renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (node.icon) {
-            return <div className={'fa ' + node.icon + ' tree-view-icon'}></div>;
+            return <div className={node.icon + ' tree-view-icon'}></div>;
         }
-
         return undefined;
     }
 

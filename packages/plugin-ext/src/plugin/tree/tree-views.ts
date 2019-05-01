@@ -16,12 +16,15 @@
 
 // tslint:disable:no-any
 
+import * as path from 'path';
+import URI from 'vscode-uri';
 import { TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem } from '@theia/plugin';
 import { Emitter } from '@theia/core/lib/common/event';
-import { Disposable } from '../types-impl';
-import { PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
+import { Disposable, ThemeIcon } from '../types-impl';
+import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
+import { PluginPackage } from '../../common';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 
@@ -33,8 +36,8 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN);
     }
 
-    registerTreeDataProvider<T>(treeViewId: string, treeDataProvider: TreeDataProvider<T>): Disposable {
-        const treeView = this.createTreeView(treeViewId, { treeDataProvider });
+    registerTreeDataProvider<T>(plugin: Plugin, treeViewId: string, treeDataProvider: TreeDataProvider<T>): Disposable {
+        const treeView = this.createTreeView(plugin, treeViewId, { treeDataProvider });
 
         return Disposable.create(() => {
             this.treeViews.delete(treeViewId);
@@ -42,12 +45,12 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         });
     }
 
-    createTreeView<T>(treeViewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T> {
+    createTreeView<T>(plugin: Plugin, treeViewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T> {
         if (!options || !options.treeDataProvider) {
             throw new Error('Options with treeDataProvider is mandatory');
         }
 
-        const treeView = new TreeViewExtImpl(treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry);
+        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry);
         this.treeViews.set(treeViewId, treeView);
 
         return {
@@ -122,6 +125,7 @@ class TreeViewExtImpl<T> extends Disposable {
     private idCounter: number = 0;
 
     constructor(
+        private plugin: Plugin,
         private treeViewId: string,
         private treeDataProvider: TreeDataProvider<T>,
         private proxy: TreeViewsMain,
@@ -203,17 +207,43 @@ class TreeViewExtImpl<T> extends Disposable {
                     label = id;
                 }
 
-                // Take the icon
-                // currently only icons from font-awesome are supported
-                let icon = undefined;
-                if (typeof treeItem.iconPath === 'string') {
-                    icon = treeItem.iconPath;
+                let icon;
+                let iconUrl;
+                let themeIconId;
+                const { iconPath } = treeItem;
+                if (iconPath) {
+                    const toUrl = (arg: string | URI) => {
+                        arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
+                        if (typeof arg !== 'string') {
+                            return arg.toString(true);
+                        }
+                        const absolutePath = path.isAbsolute(arg) ? arg : path.join(this.plugin.pluginPath, arg);
+                        const normalizedPath = path.normalize(absolutePath);
+                        const relativePath = path.relative(this.plugin.rawModel.packagePath, normalizedPath);
+                        return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
+                    };
+                    if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
+                        icon = iconPath;
+                    } else if (iconPath instanceof ThemeIcon) {
+                        themeIconId = iconPath.id;
+                    } else if (typeof iconPath === 'string' || iconPath instanceof URI) {
+                        iconUrl = toUrl(iconPath);
+                    } else {
+                        const { light, dark } = iconPath as { light: string | URI, dark: string | URI };
+                        iconUrl = {
+                            light: toUrl(light),
+                            dark: toUrl(dark)
+                        };
+                    }
                 }
 
                 const treeViewItem = {
                     id,
                     label: label,
                     icon,
+                    iconUrl,
+                    themeIconId,
+                    resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
                     metadata: value

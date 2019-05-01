@@ -42,8 +42,7 @@ import {
     SnippetContribution,
     PluginPackageCommand,
     PluginCommand,
-    IconUrl,
-    getPluginId
+    IconUrl
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -204,7 +203,7 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
-        return path.join('hostedPlugin', getPluginId(pck), relativePath);
+        return PluginPackage.toPluginUrl(pck, relativePath);
     }
 
     protected readSnippets(pck: PluginPackage): SnippetContribution[] | undefined {
