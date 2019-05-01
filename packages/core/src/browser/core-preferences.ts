@@ -38,6 +38,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             ],
             default: 'ifRequired',
             description: 'When to confirm before closing the application window.',
+        },
+        'workbench.commandPalette.history': {
+            type: 'number',
+            default: 50,
+            minimum: 0,
+            description: 'Controls the number of recently used commands to keep in history for the command palette. Set to 0 to disable command history.'
         }
     }
 };
@@ -45,6 +51,7 @@ export const corePreferenceSchema: PreferenceSchema = {
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
     'list.openMode': 'singleClick' | 'doubleClick';
+    'workbench.commandPalette.history': number;
 }
 
 export const CorePreferences = Symbol('CorePreferences');

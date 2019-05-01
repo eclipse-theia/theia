@@ -22,6 +22,7 @@ import { QuickOpenOptions } from './quick-open-service';
 import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
 import { ContextKeyService } from '../context-key-service';
 import { CLEAR_COMMAND_HISTORY } from './quick-command-contribution';
+import { CorePreferences } from '../core-preferences';
 
 @injectable()
 export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
@@ -45,6 +46,9 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     protected readonly contexts = new Map<string, string[]>();
     pushCommandContext(commandId: string, when: string) {
@@ -109,15 +113,22 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
         // Get the list of all valid commands.
         const allCommands: Command[] = this.getValidCommands(this.commands.commands);
 
+        // Get the max history limit.
+        const limit: number = this.corePreferences['workbench.commandPalette.history'];
+
         // Build the list of recent commands.
         const rCommands: Command[] = [];
         recentCommands.forEach((r: Command) => {
+            // Opt out of displaying the recently used list.
+            if (limit === 0) {
+                return;
+            }
             // Determine if the command is exempted from display.
             const exempted: boolean = this.exemptedCommands.some((c: Command) => Command.equals(r, c));
             // Determine if the command currently exists in the list of all available commands.
             const exists: boolean = allCommands.some((c: Command) => Command.equals(r, c));
             // Add the recently used item to the list.
-            if (exists && !exempted) {
+            if (exists && !exempted && rCommands.length < limit) {
                 rCommands.push(r);
             }
         });
