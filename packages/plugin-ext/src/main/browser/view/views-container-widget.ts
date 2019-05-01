@@ -16,7 +16,8 @@
 
 import { ViewContainer, View } from '../../../common';
 import { TreeViewWidget } from './tree-views-main';
-import { Widget } from '@theia/core/lib/browser';
+import { Widget, COLLAPSED_CLASS, EXPANSION_TOGGLE_CLASS } from '@theia/core/lib/browser';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export function createElement(className?: string): HTMLDivElement {
     const div = document.createElement('div');
@@ -103,7 +104,6 @@ export class ViewContainerSection {
     control: HTMLDivElement;
     title: HTMLDivElement;
     content: HTMLDivElement;
-    opened: boolean = true;
 
     private viewWidget: TreeViewWidget;
 
@@ -118,36 +118,39 @@ export class ViewContainerSection {
         this.header = createElement('theia-views-container-section-title');
         this.node.appendChild(this.header);
 
-        this.control = createElement('theia-views-container-section-control');
-        this.control.setAttribute('opened', '' + this.opened);
+        this.control = createElement(EXPANSION_TOGGLE_CLASS);
         this.header.appendChild(this.control);
 
         this.title = createElement('theia-views-container-section-label');
         this.title.innerText = this.view.name;
         this.header.appendChild(this.title);
 
-        this.header.onclick = () => { this.handleClick(); };
+        this.header.onclick = () => this.toggleOpen();
     }
 
     createContent(): void {
         this.content = createElement('theia-views-container-section-content');
-        this.content.setAttribute('opened', '' + this.opened);
         this.node.appendChild(this.content);
 
         this.content.innerHTML = `<div style='padding: 20px 0; text-align: center; '>${this.view.name}</div>`;
     }
 
-    handleClick(): void {
-        this.opened = !this.opened;
+    get opened(): boolean {
+        return !this.control.classList.contains(COLLAPSED_CLASS);
+    }
 
-        this.control.setAttribute('opened', '' + this.opened);
-        this.content.setAttribute('opened', '' + this.opened);
-
-        this.updateDimensionsCallback();
-
+    protected toDisposeOnOpen = new DisposableCollection();
+    toggleOpen(): void {
+        this.control.classList.toggle(COLLAPSED_CLASS);
         if (this.opened) {
-            this.update();
+            this.toDisposeOnOpen.dispose();
+        } else {
+            const display = this.content.style.display;
+            this.content.style.display = 'none';
+            this.toDisposeOnOpen.push(Disposable.create(() => this.content.style.display = display));
         }
+        this.updateDimensionsCallback();
+        this.update();
     }
 
     addViewWidget(viewWidget: TreeViewWidget): void {
@@ -163,7 +166,7 @@ export class ViewContainerSection {
     }
 
     update(): void {
-        if (this.viewWidget) {
+        if (this.opened && this.viewWidget) {
             this.viewWidget.updateWidget();
         }
     }
