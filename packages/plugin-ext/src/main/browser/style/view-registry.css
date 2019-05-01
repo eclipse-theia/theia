@@ -64,7 +64,17 @@
 }
 
 .theia-views-container-section-content .tree-view-icon {
-    align-self: center;
     padding-right: var(--theia-ui-padding);
     -webkit-font-smoothing: antialiased;
 }
+
+.theia-tree-view-inline-action {
+    background-size: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.theia-views-container-section-content .theia-TreeNodeContent {
+    align-items: center;
+}
+

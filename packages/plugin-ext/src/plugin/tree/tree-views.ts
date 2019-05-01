@@ -18,7 +18,7 @@
 
 import * as path from 'path';
 import URI from 'vscode-uri';
-import { TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem } from '@theia/plugin';
+import { TreeDataProvider, TreeView, TreeViewExpansionEvent } from '@theia/plugin';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, ThemeIcon } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
@@ -161,9 +161,8 @@ class TreeViewExtImpl<T> extends Disposable {
         }
     }
 
-    /** Note, the generated ID must include the item's `contextValue`. */
-    generateId(item: TreeItem): string {
-        return `item-${this.idCounter++}/${item.contextValue || ''}`;
+    generateId(): string {
+        return `item-${this.idCounter++}`;
     }
 
     async getChildren(treeItemId: string): Promise<TreeViewItem[] | undefined> {
@@ -183,7 +182,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
                 // Generate the ID
                 // ID is used for caching the element
-                const id = this.generateId(treeItem);
+                const id = this.generateId();
 
                 // Add element to the cache
                 this.cache.set(id, value);
@@ -217,9 +216,10 @@ class TreeViewExtImpl<T> extends Disposable {
                         if (typeof arg !== 'string') {
                             return arg.toString(true);
                         }
-                        const absolutePath = path.isAbsolute(arg) ? arg : path.join(this.plugin.pluginPath, arg);
+                        const { packagePath } = this.plugin.rawModel;
+                        const absolutePath = path.isAbsolute(arg) ? arg : path.join(packagePath, arg);
                         const normalizedPath = path.normalize(absolutePath);
-                        const relativePath = path.relative(this.plugin.rawModel.packagePath, normalizedPath);
+                        const relativePath = path.relative(packagePath, normalizedPath);
                         return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
                     };
                     if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
@@ -246,7 +246,8 @@ class TreeViewExtImpl<T> extends Disposable {
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
-                    metadata: value
+                    metadata: value,
+                    contextValue: treeItem.contextValue
                 } as TreeViewItem;
 
                 treeItems.push(treeViewItem);
