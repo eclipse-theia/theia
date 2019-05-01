@@ -54,11 +54,21 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
         }
     }
 
-    getNativeLayout(): Promise<NativeKeyboardLayout> {
+    async getNativeLayout(): Promise<NativeKeyboardLayout> {
         const keyboard = (navigator as NavigatorExtension).keyboard;
         if (keyboard && keyboard.getLayoutMap) {
-            return keyboard.getLayoutMap().then(layoutMap => this.getFromLayoutMap(layoutMap));
-        } else if (navigator.language) {
+            try {
+                const layoutMap = await keyboard.getLayoutMap();
+                return this.getFromLayoutMap(layoutMap);
+            } catch (error) {
+                return this.getLayoutByLanguageOrPlatform();
+            }
+        }
+        return this.getLayoutByLanguageOrPlatform();
+    }
+
+    private getLayoutByLanguageOrPlatform(): Promise<NativeKeyboardLayout> {
+        if (navigator.language) {
             return Promise.resolve(this.getFromLanguage(navigator.language));
         } else {
             return Promise.resolve(isOSX ? this.macUS : this.winUS);
