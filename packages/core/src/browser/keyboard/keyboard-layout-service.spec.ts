@@ -67,7 +67,7 @@ describe('keyboard layout service', function () {
     });
 
     it('resolves correct key bindings with German Mac layout', async () => {
-        const macGerman = require('../../../src/common/keyboard/layouts/mac-de-German.json');
+        const macGerman = require('../../../src/common/keyboard/layouts/de-German-mac.json');
         const service = await setup(macGerman, 'mac');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
@@ -80,7 +80,7 @@ describe('keyboard layout service', function () {
     });
 
     it('resolves correct key bindings with French Mac layout', async () => {
-        const macFrench = require('../../../src/common/keyboard/layouts/mac-fr-French.json');
+        const macFrench = require('../../../src/common/keyboard/layouts/fr-French-mac.json');
         const service = await setup(macFrench, 'mac');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
@@ -93,7 +93,7 @@ describe('keyboard layout service', function () {
     });
 
     it('resolves correct key bindings with German Windows layout', async () => {
-        const winGerman = require('../../../src/common/keyboard/layouts/win-de-German.json');
+        const winGerman = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(winGerman, 'win');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));
@@ -106,7 +106,7 @@ describe('keyboard layout service', function () {
     });
 
     it('resolves correct key bindings with French Windows layout', async () => {
-        const winFrench = require('../../../src/common/keyboard/layouts/win-fr-French.json');
+        const winFrench = require('../../../src/common/keyboard/layouts/fr-French-pc.json');
         const service = await setup(winFrench, 'win');
 
         const toggleComment = service.resolveKeyCode(KeyCode.createKeyCode('Slash+M1'));

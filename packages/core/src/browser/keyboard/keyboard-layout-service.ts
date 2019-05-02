@@ -101,6 +101,18 @@ export class KeyboardLayoutService {
         return key.easyString;
     }
 
+    /**
+     * Called when a KeyboardEvent is processed by the KeybindingRegistry.
+     * If the keyboard layout provider supports KeyCode validation, delegate to it.
+     */
+    validateKeyCode(keyCode: KeyCode): void {
+        // tslint:disable-next-line:no-any
+        const provider = this.layoutProvider as any;
+        if (typeof provider.validateKeyCode === 'function') {
+            provider.validateKeyCode(keyCode);
+        }
+    }
+
     protected transformKeyCode(inCode: KeyCode, mappedCode: KeyCode, keyNeedsShift: boolean): KeyCode | undefined {
         if (!inCode.shift && keyNeedsShift) {
             return undefined;
