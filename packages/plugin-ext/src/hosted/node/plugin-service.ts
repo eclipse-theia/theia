@@ -13,8 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject, named } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, DebugConfiguration } from '../../common/plugin-protocol';
+import { injectable, inject, named, postConstruct } from 'inversify';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, DebugConfiguration, PluginDeployer } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { HostedPluginSupport } from './hosted-plugin';
@@ -24,6 +24,7 @@ import { ILogger } from '@theia/core';
 import { ContributionProvider } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
@@ -35,9 +36,14 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     @inject(HostedPluginDeployerHandler)
     protected readonly deployerHandler: HostedPluginDeployerHandler;
 
+    @inject(PluginDeployer)
+    protected readonly pluginDeployer: PluginDeployerImpl;
+
     @inject(ContributionProvider)
     @named(Symbol.for(ExtPluginApiProvider))
     protected readonly extPluginAPIContributions: ContributionProvider<ExtPluginApiProvider>;
+
+    protected client: HostedPluginClient | undefined;
 
     constructor(
         @inject(HostedPluginReader) private readonly reader: HostedPluginReader,
@@ -45,10 +51,20 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         @inject(HostedInstanceManager) protected readonly hostedInstanceManager: HostedInstanceManager) {
     }
 
+    @postConstruct()
+    protected init(): void {
+        this.pluginDeployer.onDidDeploy(() => {
+            if (this.client) {
+                this.client.onDidDeploy();
+            }
+        });
+    }
+
     dispose(): void {
         this.hostedPlugin.clientClosed();
     }
     setClient(client: HostedPluginClient): void {
+        this.client = client;
         this.hostedPlugin.setClient(client);
     }
     async getHostedPlugin(): Promise<PluginMetadata | undefined> {

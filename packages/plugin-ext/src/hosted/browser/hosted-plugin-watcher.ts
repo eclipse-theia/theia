@@ -24,6 +24,9 @@ export class HostedPluginWatcher {
     private onPostMessage = new Emitter<string[]>();
     private onLogMessage = new Emitter<LogPart>();
 
+    private readonly onDidDeployEmitter = new Emitter<void>();
+    readonly onDidDeploy = this.onDidDeployEmitter.event;
+
     getHostedPluginClient(): HostedPluginClient {
         const messageEmitter = this.onPostMessage;
         const logEmitter = this.onLogMessage;
@@ -35,7 +38,8 @@ export class HostedPluginWatcher {
             log(logPart: LogPart): Promise<void> {
                 logEmitter.fire(logPart);
                 return Promise.resolve();
-            }
+            },
+            onDidDeploy: () => this.onDidDeployEmitter.fire(undefined)
         };
     }
 

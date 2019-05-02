@@ -16,7 +16,6 @@
 
 .theia-plugins {
     min-width: 250px !important;
-    background-color: var(--theia-layout-color0);
     display: flex;
     flex-direction: column;
 }
@@ -31,7 +30,6 @@
 .theia-plugins .pluginHeaderContainer {
     padding: 3px 15px;
     font-size: var(--theia-ui-font-size0);
-    background: var(--theia-layout-color0);
     border-bottom: 1px solid;
 }
 
