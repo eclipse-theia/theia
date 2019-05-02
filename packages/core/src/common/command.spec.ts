@@ -97,6 +97,29 @@ describe('Commands', () => {
         expect(result[1].id).equal(commandIds[2]);
         expect(result[2].id).equal(commandIds[1]);
     });
+
+    it('should clear the recently used command history', async () => {
+        const commandIds = ['a', 'b', 'c'];
+        const commands: Command[] = [
+            { id: commandIds[0] },
+            { id: commandIds[1] },
+            { id: commandIds[2] },
+        ];
+
+        // Register each command.
+        commands.forEach((c: Command) => {
+            commandRegistry.registerCommand(c, new StubCommandHandler());
+        });
+
+        // Execute each command.
+        await commandRegistry.executeCommand(commandIds[0]);
+        await commandRegistry.executeCommand(commandIds[1]);
+        await commandRegistry.executeCommand(commandIds[2]);
+
+        // Clear the list of recently used commands.
+        commandRegistry.clearCommandHistory();
+        expect(commandRegistry.recent.length).equal(0);
+    });
 });
 
 class EmptyContributionProvider implements ContributionProvider<CommandContribution> {
