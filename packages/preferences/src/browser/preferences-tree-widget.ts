@@ -48,6 +48,7 @@ import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import { UserStorageUri, THEIA_USER_STORAGE_FOLDER } from '@theia/userstorage/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
+import { FoldersPreferencesProvider } from './folders-preferences-provider';
 
 @injectable()
 export class PreferencesContainer extends SplitPanel implements ApplicationShell.TrackableWidgetProvider, Saveable {
@@ -279,9 +280,11 @@ export class PreferencesEditorsContainer extends DockPanel {
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(PreferenceProvider) @named(PreferenceScope.Folder)
+        protected readonly foldersPreferenceProvider: FoldersPreferencesProvider
     ) {
-        super({ renderer: new PreferenceEditorContainerTabBarRenderer(workspaceService, fileSystem) });
+        super({ renderer: new PreferenceEditorContainerTabBarRenderer(workspaceService, fileSystem, foldersPreferenceProvider) });
     }
 
     dispose(): void {
@@ -313,7 +316,7 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async getUserPreferenceEditorWidget(): Promise<PreferencesEditorWidget> {
-        const userPreferenceUri = this.userPreferenceProvider.getUri();
+        const userPreferenceUri = this.userPreferenceProvider.getConfigUri();
         const userPreferences = await this.editorManager.getOrCreateByUri(userPreferenceUri) as PreferencesEditorWidget;
         userPreferences.title.label = 'User';
         userPreferences.title.caption = `User Preferences: ${await this.getPreferenceEditorCaption(userPreferenceUri)}`;
@@ -335,7 +338,7 @@ export class PreferencesEditorsContainer extends DockPanel {
     }
 
     protected async getWorkspacePreferenceEditorWidget(): Promise<PreferencesEditorWidget | undefined> {
-        const workspacePreferenceUri = await this.workspacePreferenceProvider.getUri();
+        const workspacePreferenceUri = this.workspacePreferenceProvider.getConfigUri();
         const workspacePreferences = workspacePreferenceUri && await this.editorManager.getOrCreateByUri(workspacePreferenceUri) as PreferencesEditorWidget;
 
         if (workspacePreferences) {
@@ -354,9 +357,9 @@ export class PreferencesEditorsContainer extends DockPanel {
         }
     }
 
-    async refreshFoldersPreferencesEditorWidget(currentFolder: string | undefined): Promise<void> {
+    async refreshFoldersPreferencesEditorWidget(currentFolderUri: string | undefined): Promise<void> {
         const folders = this.workspaceService.tryGetRoots().map(r => r.uri);
-        const newFolderUri = currentFolder || folders[0];
+        const newFolderUri = currentFolderUri || folders[0];
         const newFoldersPreferenceEditorWidget = await this.getFoldersPreferencesEditor(newFolderUri);
         if (newFoldersPreferenceEditorWidget && // new widget is created
             // the FolderPreferencesEditor is not available, OR the existing FolderPreferencesEditor is displaying the content of a different file
@@ -377,14 +380,14 @@ export class PreferencesEditorsContainer extends DockPanel {
         }
     }
 
-    protected async getFoldersPreferencesEditor(folder: string | undefined): Promise<PreferencesEditorWidget | undefined> {
+    protected async getFoldersPreferencesEditor(folderUri: string | undefined): Promise<PreferencesEditorWidget | undefined> {
         if (this.workspaceService.saved) {
-            const settingsUri = await this.getFolderSettingsUri(folder);
+            const settingsUri = await this.getFolderSettingsUri(folderUri);
             const foldersPreferences = settingsUri && await this.editorManager.getOrCreateByUri(settingsUri) as PreferencesEditorWidget;
             if (foldersPreferences) {
                 foldersPreferences.title.label = 'Folder';
                 foldersPreferences.title.caption = `Folder Preferences: ${await this.getPreferenceEditorCaption(settingsUri!)}`;
-                foldersPreferences.title.clickableText = new URI(folder).displayName;
+                foldersPreferences.title.clickableText = new URI(folderUri).displayName;
                 foldersPreferences.title.clickableTextTooltip = 'Click to manage preferences in another folder';
                 foldersPreferences.title.clickableTextCallback = async (folderUriStr: string) => {
                     await foldersPreferences.saveable.save();
@@ -397,14 +400,15 @@ export class PreferencesEditorsContainer extends DockPanel {
         }
     }
 
-    private async getFolderSettingsUri(folder: string | undefined): Promise<URI | undefined> {
-        if (folder) {
-            const settingsUri = new URI(folder).resolve('.theia').resolve('settings.json');
-            if (!(await this.fileSystem.exists(settingsUri.toString()))) {
-                await this.fileSystem.createFile(settingsUri.toString());
+    private async getFolderSettingsUri(folderUri: string | undefined): Promise<URI | undefined> {
+        let configUri = this.foldersPreferenceProvider.getConfigUri(folderUri);
+        if (!configUri) {
+            configUri = this.foldersPreferenceProvider.getContainingConfigUri(folderUri);
+            if (configUri) {
+                await this.fileSystem.createFile(configUri.toString());
             }
-            return settingsUri;
         }
+        return configUri;
     }
 
     activatePreferenceEditor(preferenceScope: PreferenceScope) {

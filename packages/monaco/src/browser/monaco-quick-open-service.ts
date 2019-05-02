@@ -374,6 +374,11 @@ export class QuickOpenEntryGroup extends monaco.quickOpen.QuickOpenEntryGroup {
         return this.item.showBorder();
     }
 
+    getKeybinding(): monaco.keybindings.ResolvedKeybinding | undefined {
+        const entry = this.getEntry();
+        return entry ? entry.getKeybinding() : super.getKeybinding();
+    }
+
 }
 
 export class MonacoQuickOpenAction implements monaco.quickOpen.IAction {

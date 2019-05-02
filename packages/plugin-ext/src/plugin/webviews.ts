@@ -113,7 +113,10 @@ export class WebviewsExtImpl implements WebviewsExt {
     }
 
     private getWebviewPanel(viewId: string): WebviewPanelImpl | undefined {
-        return this.webviewPanels.get(viewId);
+        if (this.webviewPanels.has(viewId)) {
+            return this.webviewPanels.get(viewId);
+        }
+        return undefined;
     }
 }
 
@@ -145,7 +148,30 @@ export class WebviewImpl implements theia.Webview {
     // tslint:disable-next-line:no-any
     postMessage(message: any): PromiseLike<boolean> {
         this.checkIsDisposed();
-        return this.proxy.$postMessage(this.viewId, message);
+        // replace theia-resource: content in the given message
+        const decoded = JSON.stringify(message);
+        let newMessage = decoded.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
+        if (this._options && this._options.localResourceRoots) {
+            newMessage = this.filterLocalRoots(newMessage, this._options.localResourceRoots);
+        }
+        return this.proxy.$postMessage(this.viewId, JSON.parse(newMessage));
+    }
+
+    protected filterLocalRoots(content: string, localResourceRoots: ReadonlyArray<theia.Uri>) {
+        const webViewsRegExp = /"(\/webview\/.*?)\"/g;
+        let m;
+        while ((m = webViewsRegExp.exec(content)) !== null) {
+            if (m.index === webViewsRegExp.lastIndex) {
+                webViewsRegExp.lastIndex++;
+            }
+            // take group 1 which is webview URL
+            const url = m[1];
+            const isIncluded = localResourceRoots.some((uri): boolean => url.substring('/webview'.length).startsWith(uri.fsPath));
+            if (!isIncluded) {
+                content = content.replace(url, url.replace('/webview', '/webview-disallowed-localroot'));
+            }
+        }
+        return content;
     }
 
     get options(): theia.WebviewOptions {
@@ -164,7 +190,12 @@ export class WebviewImpl implements theia.Webview {
         return this._html;
     }
 
-    set html(newHtml: string) {
+    set html(html: string) {
+        let newHtml = html.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
+        if (this._options && this._options.localResourceRoots) {
+            newHtml = this.filterLocalRoots(newHtml, this._options.localResourceRoots);
+        }
+
         this.checkIsDisposed();
         if (this._html !== newHtml) {
             this._html = newHtml;
@@ -201,6 +232,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         private readonly _webview: WebviewImpl
     ) {
         this._showOptions = typeof showOptions === 'object' ? showOptions : { viewColumn: showOptions as theia.ViewColumn };
+        this.setViewColumn(undefined);
     }
 
     dispose() {
@@ -263,7 +295,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         return this._showOptions.viewColumn;
     }
 
-    setViewColumn(value: theia.ViewColumn) {
+    setViewColumn(value: theia.ViewColumn | undefined) {
         this.checkIsDisposed();
         this._showOptions.viewColumn = value;
     }

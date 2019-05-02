@@ -23,10 +23,6 @@
     color: var(--theia-ui-font-color1) !important;
 }
 
-.quick-open-entry-keybinding {
-    padding-right: 15px;
-}
-
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */

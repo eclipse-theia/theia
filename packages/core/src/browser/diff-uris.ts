@@ -75,12 +75,19 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
         if (left.path.toString() === right.path.toString() && left.query && right.query) {
             return `${left.displayName}: ${left.query} ⟷ ${right.query}`;
         } else {
+            let title;
+            if (left.path.toString() !== right.path.toString() && left.displayName !== uri.displayName) {
+                title = `${uri.displayName}: `;
+            } else {
+                title = '';
+            }
+
             const leftLongName = this.labelProvider.getName(left);
             const rightLongName = this.labelProvider.getName(right);
             if (leftLongName === rightLongName) {
                 return leftLongName;
             }
-            return `${leftLongName} ⟷ ${rightLongName}`;
+            return `${title}${leftLongName} ⟷ ${rightLongName}`;
         }
     }
 

@@ -44,6 +44,7 @@ import './debug-monaco-contribution';
 import { bindDebugPreferences } from './debug-preferences';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
+import { bindLaunchPreferences } from './preferences/launch-preferences';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -86,4 +87,5 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);
 
     bindDebugPreferences(bind);
+    bindLaunchPreferences(bind);
 });

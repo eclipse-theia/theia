@@ -26,7 +26,7 @@ import { Event } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import VSCodeURI from 'vscode-uri';
 import URI from '@theia/core/lib/common/uri';
-import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver-protocol';
+import { CancellationToken, CancellationTokenSource, Range, Position } from 'vscode-languageserver-protocol';
 
 export interface MessageConnection {
     send(msg: {}): void;
@@ -121,6 +121,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         const result = new Deferred();
 
         if (cancellationToken) {
+            args.push('add.cancellation.token');
             cancellationToken.onCancellationRequested(() =>
                 this.multiplexor.send(MessageFactory.cancel(callId, this.messageToSendHostId))
             );
@@ -175,11 +176,16 @@ export class RPCProtocolImpl implements RPCProtocol {
     private receiveRequest(msg: RequestMessage): void {
         const callId = msg.id;
         const proxyId = msg.proxyId;
+        // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
+        const args = msg.args.map(arg => arg === null ? undefined : arg);
 
-        const tokenSource = new CancellationTokenSource();
-        this.cancellationTokenSources[callId] = tokenSource;
-        msg.args.push(tokenSource.token);
-        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, msg.args);
+        const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
+        if (addToken) {
+            const tokenSource = new CancellationTokenSource();
+            this.cancellationTokenSources[callId] = tokenSource;
+            args.push(tokenSource.token);
+        }
+        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, args);
 
         this.invokedHandlers[callId].then(r => {
             delete this.invokedHandlers[callId];
@@ -357,6 +363,22 @@ namespace ObjectsTransferrer {
                 $type: SerializedObjectType.THEIA_URI,
                 data: value.toString()
             } as SerializedObject;
+        } else if (Range.is(value)) {
+            const range = value as Range;
+            const serializedValue = {
+                start: {
+                    line: range.start.line,
+                    character: range.start.character
+                },
+                end: {
+                    line: range.end.line,
+                    character: range.end.character
+                }
+            };
+            return {
+                $type: SerializedObjectType.THEIA_RANGE,
+                data: JSON.stringify(serializedValue)
+            } as SerializedObject;
         } else if (value && value['$mid'] === 1) {
             // Given value is VSCode URI
             // We cannot use instanceof here because VSCode URI has toJSON method which is invoked before this replacer.
@@ -378,6 +400,11 @@ namespace ObjectsTransferrer {
                     return new URI(value.data);
                 case SerializedObjectType.VSCODE_URI:
                     return VSCodeURI.parse(value.data);
+                case SerializedObjectType.THEIA_RANGE:
+                    // tslint:disable-next-line:no-any
+                    const obj: any = JSON.parse(value.data);
+                    // May require to use types-impl there instead of vscode lang server Range for the revival
+                    return Range.create(Position.create(obj.start.line, obj.start.character), Position.create(obj.end.line, obj.end.character));
             }
         }
 
@@ -393,7 +420,8 @@ interface SerializedObject {
 
 enum SerializedObjectType {
     THEIA_URI,
-    VSCODE_URI
+    VSCODE_URI,
+    THEIA_RANGE
 }
 
 function isSerializedObject(obj: any): obj is SerializedObject {

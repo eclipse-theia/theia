@@ -60,6 +60,14 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
             }
         });
 
+        // override postMessage method to replace vscode-resource:
+        const originalPostMessage = panel.webview.postMessage;
+        panel.webview.postMessage = (message: any): PromiseLike<boolean> => {
+            const decoded = JSON.stringify(message);
+            const newMessage = decoded.replace(new RegExp('vscode-resource:/', 'g'), '/webview/');
+            return originalPostMessage.call(panel.webview, JSON.parse(newMessage));
+        };
+
         return panel;
     };
 

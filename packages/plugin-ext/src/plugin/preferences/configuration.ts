@@ -17,43 +17,92 @@
 import { WorkspaceExtImpl } from '../workspace';
 import { isObject } from '../../common/types';
 import cloneDeep = require('lodash.clonedeep');
+import URI from 'vscode-uri';
 
 /* tslint:disable:no-any */
 
 export class Configuration {
 
-    private configuration: ConfigurationModel | undefined;
+    private combinedConfig: ConfigurationModel | undefined;
+    private folderCombinedConfigs: { [resource: string]: ConfigurationModel } = {};
 
     constructor(
         private defaultConfiguration: ConfigurationModel,
         private userConfiguration: ConfigurationModel,
         private workspaceConfiguration: ConfigurationModel = new ConfigurationModel(),
+        private folderConfigurations: { [resource: string]: ConfigurationModel } = {},
     ) { }
 
-    getValue(section?: string): any {
-        return this.getCombined().getValue(section);
+    getValue(section: string | undefined, workspace: WorkspaceExtImpl, resource?: URI): any {
+        return this.getCombinedResourceConfig(workspace, resource).getValue(section);
     }
 
-    inspect<C>(key: string, workspace: WorkspaceExtImpl): {
+    inspect<C>(key: string, workspace: WorkspaceExtImpl, resource?: URI): {
         default: C,
         user: C,
         workspace: C | undefined,
+        workspaceFolder: C | undefined,
         value: C,
     } {
-        const combinedConfiguration = this.getCombined();
+        const combinedConfiguration = this.getCombinedResourceConfig(workspace, resource);
+        const folderConfiguration = this.getFolderResourceConfig(workspace, resource);
         return {
             default: this.defaultConfiguration.getValue(key),
             user: this.userConfiguration.getValue(key),
             workspace: workspace ? this.workspaceConfiguration.getValue(key) : void 0,
+            workspaceFolder: folderConfiguration ? folderConfiguration.getValue(key) : void 0,
             value: combinedConfiguration.getValue(key)
         };
     }
 
-    private getCombined(): ConfigurationModel {
-        if (!this.configuration) {
-            this.configuration = this.defaultConfiguration.merge(this.userConfiguration, this.workspaceConfiguration);
+    private getCombinedResourceConfig(workspace: WorkspaceExtImpl, resource?: URI): ConfigurationModel {
+        const combinedConfig = this.getCombinedConfig();
+        if (!workspace || !resource) {
+            return combinedConfig;
         }
-        return this.configuration;
+
+        const workspaceFolder = workspace.getWorkspaceFolder(resource);
+        if (!workspaceFolder) {
+            return combinedConfig;
+        }
+
+        return this.getFolderCombinedConfig(workspaceFolder.uri.toString()) || combinedConfig;
+    }
+
+    private getCombinedConfig(): ConfigurationModel {
+        if (!this.combinedConfig) {
+            this.combinedConfig = this.defaultConfiguration.merge(this.userConfiguration, this.workspaceConfiguration);
+        }
+        return this.combinedConfig;
+    }
+
+    private getFolderCombinedConfig(folder: string): ConfigurationModel | undefined {
+        if (this.folderCombinedConfigs[folder]) {
+            return this.folderCombinedConfigs[folder];
+        }
+
+        const combinedConfig = this.getCombinedConfig();
+        const folderConfig = this.folderConfigurations[folder];
+        if (!folderConfig) {
+            return combinedConfig;
+        }
+
+        const folderCombinedConfig = combinedConfig.merge(folderConfig);
+        this.folderCombinedConfigs[folder] = folderCombinedConfig;
+
+        return folderCombinedConfig;
+    }
+
+    private getFolderResourceConfig(workspace: WorkspaceExtImpl, resource?: URI): ConfigurationModel | undefined {
+        if (!workspace || !resource) {
+            return;
+        }
+
+        const workspaceFolder = workspace.getWorkspaceFolder(resource);
+        if (!workspaceFolder) {
+            return;
+        }
+        return this.folderConfigurations[workspaceFolder.uri.toString()];
     }
 
 }

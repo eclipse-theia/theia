@@ -36,7 +36,7 @@ export class PreferencesMenuFactory {
                         if (!commands.hasCommand(commandId)) {
                             commands.addCommand(commandId, {
                                 label: enumValue,
-                                iconClass: escapeInvisibleChars(savedPreference) === enumValue || !savedPreference && property.default === enumValue ? 'fa fa-check' : '',
+                                iconClass: escapeInvisibleChars(savedPreference) === enumValue || !savedPreference && property.defaultValue === enumValue ? 'fa fa-check' : '',
                                 execute: () => execute(id, unescapeInvisibleChars(enumValue))
                             });
                             menu.addItem({
@@ -49,7 +49,7 @@ export class PreferencesMenuFactory {
                 const commandTrue = id + '-true';
                 commands.addCommand(commandTrue, {
                     label: 'true',
-                    iconClass: savedPreference === true || savedPreference === 'true' || savedPreference === undefined && property.default === true ? 'fa fa-check' : '',
+                    iconClass: savedPreference === true || savedPreference === 'true' || savedPreference === undefined && property.defaultValue === true ? 'fa fa-check' : '',
                     execute: () => execute(id, true)
                 });
                 menu.addItem({
@@ -60,7 +60,7 @@ export class PreferencesMenuFactory {
                 const commandFalse = id + '-false';
                 commands.addCommand(commandFalse, {
                     label: 'false',
-                    iconClass: savedPreference === false || savedPreference === 'false' || savedPreference === undefined && property.default === false ? 'fa fa-check' : '',
+                    iconClass: savedPreference === false || savedPreference === 'false' || savedPreference === undefined && property.defaultValue === false ? 'fa fa-check' : '',
                     execute: () => execute(id, false)
                 });
                 menu.addItem({
@@ -71,7 +71,7 @@ export class PreferencesMenuFactory {
                 const commandId = id + '-stringValue';
                 commands.addCommand(commandId, {
                     label: 'Add Value',
-                    execute: () => execute(id, property.default ? property.default : '')
+                    execute: () => execute(id, property.defaultValue ? property.defaultValue : '')
                 });
                 menu.addItem({
                     type: 'command',

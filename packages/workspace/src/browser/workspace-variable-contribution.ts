@@ -117,11 +117,11 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
     }
 
-    protected getWorkspaceRootUri(uri: URI | undefined = this.getResourceUri()): URI | undefined {
+    getWorkspaceRootUri(uri: URI | undefined = this.getResourceUri()): URI | undefined {
         return this.workspaceService.getWorkspaceRootUri(uri);
     }
 
-    protected getResourceUri(): URI | undefined {
+    getResourceUri(): URI | undefined {
         return this.currentWidget && this.currentWidget.getResourceUri();
     }
 

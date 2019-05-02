@@ -52,6 +52,8 @@ import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-de
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
+import { MonacoMimeService } from './monaco-mime-service';
+import { MimeService } from '@theia/core/lib/browser/mime-service';
 
 const deepmerge: (args: object[]) => object = require('deepmerge').default.all;
 
@@ -119,6 +121,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoOutlineDecorator).toSelf().inSingletonScope();
     bind(OutlineTreeDecorator).toService(MonacoOutlineDecorator);
+
+    bind(MonacoMimeService).toSelf().inSingletonScope();
+    rebind(MimeService).toService(MonacoMimeService);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

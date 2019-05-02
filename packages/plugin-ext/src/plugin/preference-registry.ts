@@ -41,6 +41,7 @@ enum PreferenceScope {
     Default,
     User,
     Workspace,
+    Folder,
 }
 
 interface ConfigurationInspect<T> {
@@ -80,19 +81,19 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     init(data: PreferenceData): void {
-        data[PreferenceScope.Default]['files.associations'] = {};
         this._preferences = this.parse(data);
     }
 
-    $acceptConfigurationChanged(data: PreferenceData, eventData: PreferenceChangeExt): void {
+    $acceptConfigurationChanged(data: PreferenceData, eventData: PreferenceChangeExt[]): void {
         this.init(data);
         this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
     }
 
     getConfiguration(section?: string, resource?: theia.Uri | null, extensionId?: string): theia.WorkspaceConfiguration {
+        resource = resource === null ? undefined : resource;
         const preferences = this.toReadonlyValue(section
-            ? lookUp(this._preferences.getValue(), section)
-            : this._preferences.getValue());
+            ? lookUp(this._preferences.getValue(undefined, this.workspace, resource), section)
+            : this._preferences.getValue(undefined, this.workspace, resource));
 
         const configuration: theia.WorkspaceConfiguration = {
             has(key: string): boolean {
@@ -152,30 +153,34 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
             },
             update: (key: string, value: any, arg?: ConfigurationTarget | boolean): PromiseLike<void> => {
                 key = section ? `${section}.${key}` : key;
+                const resourceStr: string | undefined = resource ? resource.toString() : undefined;
                 if (typeof value !== 'undefined') {
-                    return this.proxy.$updateConfigurationOption(arg, key, value, resource);
+                    return this.proxy.$updateConfigurationOption(arg, key, value, resourceStr);
                 } else {
-                    return this.proxy.$removeConfigurationOption(arg, key, resource);
+                    return this.proxy.$removeConfigurationOption(arg, key, resourceStr);
                 }
             },
-            inspect: <T>(key: string): ConfigurationInspect<T> => {
+            inspect: <T>(key: string): ConfigurationInspect<T> | undefined => {
                 key = section ? `${section}.${key}` : key;
                 resource = resource === null ? undefined : resource;
-                const result = cloneDeep(this._preferences.inspect<T>(key, this.workspace));
+                const result = cloneDeep(this._preferences.inspect<T>(key, this.workspace, resource));
 
                 if (!result) {
-                    return undefined!;
+                    return undefined;
                 }
 
                 const configInspect: ConfigurationInspect<T> = { key };
-                if (result.default) {
+                if (typeof result.default !== 'undefined') {
                     configInspect.defaultValue = result.default;
                 }
-                if (result.user) {
+                if (typeof result.user !== 'undefined') {
                     configInspect.globalValue = result.user;
                 }
-                if (result.workspace) {
+                if (typeof result.workspace !== 'undefined') {
                     configInspect.workspaceValue = result.workspace;
+                }
+                if (typeof result.workspaceFolder !== 'undefined') {
+                    configInspect.workspaceFolderValue = result.workspaceFolder;
                 }
                 return configInspect;
             }
@@ -215,7 +220,11 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         const defaultConfiguration = this.getConfigurationModel(data[PreferenceScope.Default]);
         const userConfiguration = this.getConfigurationModel(data[PreferenceScope.User]);
         const workspaceConfiguration = this.getConfigurationModel(data[PreferenceScope.Workspace]);
-        return new Configuration(defaultConfiguration, userConfiguration, workspaceConfiguration);
+        const folderConfigurations = {} as { [resource: string]: ConfigurationModel };
+        Object.keys(data[PreferenceScope.Folder]).forEach(resource => {
+            folderConfigurations[resource] = this.getConfigurationModel(data[PreferenceScope.Folder][resource]);
+        });
+        return new Configuration(defaultConfiguration, userConfiguration, workspaceConfiguration, folderConfigurations);
     }
 
     private getConfigurationModel(data: { [key: string]: any }): ConfigurationModel {
@@ -243,14 +252,19 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         }, {});
     }
 
-    private toConfigurationChangeEvent(eventData: PreferenceChangeExt): theia.ConfigurationChangeEvent {
+    private toConfigurationChangeEvent(eventData: PreferenceChangeExt[]): theia.ConfigurationChangeEvent {
         return Object.freeze({
             affectsConfiguration: (section: string, uri?: theia.Uri): boolean => {
-                const tree = eventData.preferenceName
-                    .split('.')
-                    .reverse()
-                    .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), eventData.newValue);
-                return !!lookUp(tree, section);
+                // TODO respect uri
+                // TODO respect scopes shadowing
+                for (const change of eventData) {
+                    const tree = change.preferenceName
+                        .split('.')
+                        .reverse()
+                        .reduce((prevValue: any, curValue: any) => ({ [curValue]: prevValue }), change.newValue);
+                    return typeof lookUp(tree, section) !== 'undefined';
+                }
+                return false;
             }
         });
     }

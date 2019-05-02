@@ -26,6 +26,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
+import { Range } from 'vscode-languageserver-types';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -70,6 +72,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     @inject(SearchInWorkspaceContextKeyService)
     protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
@@ -102,9 +105,10 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
             isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
-            execute: () => this.openView({
-                activate: true
-            })
+            execute: async () => {
+                const widget = await this.openView({ activate: true });
+                widget.updateSearchTerm(this.getSearchTerm());
+            }
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER, this.newMultiUriAwareCommandHandler({
@@ -151,6 +155,29 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             return fn(widget);
         }
         return false;
+    }
+
+    /**
+     * Get the search term based on current editor selection.
+     * @returns the selection if available.
+     */
+    protected getSearchTerm(): string {
+        if (!this.editorManager.currentEditor) {
+            return '';
+        }
+        // Get the current editor selection.
+        const selection = this.editorManager.currentEditor.editor.selection;
+        // Compute the selection range.
+        const selectedRange: Range = Range.create(
+            selection.start.line,
+            selection.start.character,
+            selection.end.line,
+            selection.end.character
+        );
+        // Return the selection text if available, else return empty.
+        return this.editorManager.currentEditor
+            ? this.editorManager.currentEditor.editor.document.getText(selectedRange)
+            : '';
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

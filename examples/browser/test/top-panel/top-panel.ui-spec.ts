@@ -149,10 +149,7 @@ describe('theia top panel (menubar)', () => {
         it('should start with git history view not visible', () => {
             expect(leftPanel.isGitHistoryContainerVisible()).to.be.false;
         });
-
-        // note: skipping since git history view does not toggle ATM
-        // see: https://github.com/theia-ide/theia/issues/1727
-        it.skip('git history view should toggle-on then toggle-off', () => {
+        it('git history view should toggle-on then toggle-off', () => {
             if (!leftPanel.isGitHistoryContainerVisible()) {
                 topPanel.toggleGitHistoryView();
                 leftPanel.waitForGitHistoryViewVisible();

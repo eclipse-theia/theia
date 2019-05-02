@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, postConstruct, inject } from 'inversify';
+import *  as path from 'path';
 import { ApplicationPackage } from '@theia/application-package';
 import { BaseLanguageServerContribution, IConnection, LanguageServerStartOptions } from '@theia/languages/lib/node';
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TypescriptStartParams } from '../common';
@@ -56,7 +57,7 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
     async start(clientConnection: IConnection, { parameters }: TypeScriptStartOptions): Promise<void> {
         const command = 'node';
         const args: string[] = [
-            __dirname + '/startserver.js',
+            path.join(__dirname, 'startserver.js'),
             '--stdio'
         ];
         const tsServerPath = TypescriptVersionURI.getTsServerPath(parameters && parameters.version);

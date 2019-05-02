@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog } from '@theia/core/lib/browser';
 import { FileSystem, fileSystemPath, FileShouldOverwrite, FileStat } from '../common';
@@ -54,8 +54,12 @@ export default new ContainerModule(bind => {
         return WebSocketConnectionProvider.createProxy(ctx.container, fileSystemPath, proxyFactory);
     }).inSingletonScope();
 
-    bind(FileResourceResolver).toSelf().inSingletonScope();
-    bind(ResourceResolver).toService(FileResourceResolver);
+    bindFileResource(bind);
 
     bind(FrontendApplicationContribution).to(FileSystemFrontendContribution).inSingletonScope();
 });
+
+export function bindFileResource(bind: interfaces.Bind): void {
+    bind(FileResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(FileResourceResolver);
+}

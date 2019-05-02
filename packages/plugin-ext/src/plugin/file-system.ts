@@ -88,7 +88,7 @@ export class FileSystemExtImpl implements FileSystemExt {
 
         const uri = URI.revive(resource);
         const encoding = options === null ? undefined : options && options.encoding;
-        const buffer = new Buffer(content, encoding);
+        const buffer = Buffer.from(content, encoding);
         const opts = { create: true, overwrite: true };
         return Promise.resolve(this.fsProviders.get(handle)!.writeFile(uri, buffer, opts));
     }

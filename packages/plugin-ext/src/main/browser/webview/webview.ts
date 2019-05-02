@@ -33,8 +33,10 @@ export class WebviewWidget extends BaseWidget {
     private static readonly ID = new IdGenerator('webview-widget-');
     protected readonly toDispose = new DisposableCollection();
     private iframe: HTMLIFrameElement;
-    private state: string | undefined = undefined;
+    private state: { [key: string]: any } | undefined = undefined;
     private loadTimeout: number | undefined;
+    private scrollY: number;
+    private readyToReceiveMessage: boolean = false;
 
     constructor(title: string, private options: WebviewWidgetOptions, private eventDelegate: WebviewEvents) {
         super();
@@ -43,6 +45,7 @@ export class WebviewWidget extends BaseWidget {
         this.title.closable = true;
         this.title.label = title;
         this.addClass(WebviewWidget.Styles.WEBVIEW);
+        this.scrollY = 0;
     }
 
     protected handleMessage(message: any) {
@@ -55,7 +58,9 @@ export class WebviewWidget extends BaseWidget {
         }
     }
 
-    postMessage(message: any) {
+    async postMessage(message: any): Promise<void> {
+        // wait message can be delivered
+        await this.waitReadyToReceiveMessage();
         this.iframe.contentWindow!.postMessage(message, '*');
     }
 
@@ -73,7 +78,6 @@ export class WebviewWidget extends BaseWidget {
     }
 
     setHTML(html: string) {
-        html = html.replace(/theia-resource:/g, '/webview/');
         const newDocument = new DOMParser().parseFromString(html, 'text/html');
         if (!newDocument || !newDocument.body) {
             return;
@@ -83,6 +87,9 @@ export class WebviewWidget extends BaseWidget {
                 a.title = a.href;
             }
         });
+        (window as any)[`postMessageExt${this.id}`] = (e: any) => {
+            this.handleMessage(e);
+        };
         this.updateApiScript(newDocument);
         const previousPendingFrame = this.iframe;
         if (previousPendingFrame) {
@@ -98,6 +105,9 @@ export class WebviewWidget extends BaseWidget {
         newFrame.contentDocument!.open('text/html', 'replace');
 
         const onLoad = (contentDocument: any, contentWindow: any) => {
+            if (newFrame && newFrame.contentDocument === contentDocument) {
+                newFrame.style.visibility = 'visible';
+            }
             if (contentDocument.body) {
                 if (this.eventDelegate && this.eventDelegate.onKeyboardEvent) {
                     const eventNames = ['keydown', 'keypress', 'click'];
@@ -110,12 +120,6 @@ export class WebviewWidget extends BaseWidget {
                 if (this.eventDelegate && this.eventDelegate.onLoad) {
                     this.eventDelegate.onLoad(<Document>contentDocument);
                 }
-            }
-            if (newFrame && newFrame.contentDocument === contentDocument) {
-                (<any>contentWindow).postMessageExt = (e: any) => {
-                    this.handleMessage(e);
-                };
-                newFrame.style.visibility = 'visible';
             }
         };
 
@@ -142,10 +146,29 @@ export class WebviewWidget extends BaseWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        // restore scrolling if there was one
+        if (this.scrollY > 0) {
+            this.iframe.contentWindow!.scrollTo({ top: this.scrollY });
+        }
         this.node.focus();
+        // unblock messages
+        this.readyToReceiveMessage = true;
     }
 
-    private reloadFrame() {
+    // block messages
+    protected onBeforeShow(msg: Message): void {
+        this.readyToReceiveMessage = false;
+    }
+
+    protected onBeforeHide(msg: Message): void {
+        // persist scrolling
+        if (this.iframe.contentWindow) {
+            this.scrollY = this.iframe.contentWindow.scrollY;
+        }
+        super.onBeforeHide(msg);
+    }
+
+    public reloadFrame() {
         if (!this.iframe || !this.iframe.contentDocument || !this.iframe.contentDocument.documentElement) {
             return;
         }
@@ -178,7 +201,8 @@ export class WebviewWidget extends BaseWidget {
         const codeApiScript = contentDocument.createElement('script');
         codeApiScript.id = scriptId;
         codeApiScript.textContent = `
-            const acquireVsCodeApi = (function() {
+        window.postMessageExt = window.parent['postMessageExt${this.id}'];
+        const acquireVsCodeApi = (function() {
                 let acquired = false;
                 let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
                 return () => {
@@ -234,6 +258,26 @@ export class WebviewWidget extends BaseWidget {
         } else {
             parent.appendChild(codeApiScript);
         }
+    }
+
+    /**
+     * Check if given object is ready to receive message and if it is ready, resolve promise
+     */
+    waitReceiveMessage(object: WebviewWidget, resolve: any) {
+        if (object.readyToReceiveMessage) {
+            resolve(true);
+        } else {
+            setTimeout(this.waitReceiveMessage, 100, object, resolve);
+        }
+    }
+
+    /**
+     * Block until we're able to receive message
+     */
+    public async waitReadyToReceiveMessage(): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            this.waitReceiveMessage(this, resolve);
+        });
     }
 }
 

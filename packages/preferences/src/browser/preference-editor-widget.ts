@@ -24,6 +24,7 @@ import { EditorWidget } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileAccess, FileSystem } from '@theia/filesystem/lib/common';
+import { FoldersPreferencesProvider } from './folders-preferences-provider';
 
 export class PreferencesEditorWidgetTitle extends Title<PreferencesEditorWidget> {
     clickableText?: string;
@@ -42,11 +43,13 @@ export class PreferencesEditorWidget extends EditorWidget {
     }
 }
 
+// TODO: put into DI context
 export class PreferenceEditorTabHeaderRenderer extends TabBar.Renderer {
 
     constructor(
         private readonly workspaceService: WorkspaceService,
-        private readonly fileSystem: FileSystem
+        private readonly fileSystem: FileSystem,
+        private readonly foldersPreferenceProvider: FoldersPreferencesProvider
     ) {
         super();
     }
@@ -115,26 +118,27 @@ export class PreferenceEditorTabHeaderRenderer extends TabBar.Renderer {
     }
 
     private async canAccessSettings(folderUriStr: string): Promise<boolean> {
-        const folderUri = new URI(folderUriStr);
-        const settingsUriStr = folderUri.resolve('.theia').resolve('settings.json').toString();
-        if (await this.fileSystem.exists(settingsUriStr)) {
-            return this.fileSystem.access(settingsUriStr, FileAccess.Constants.R_OK);
+        const settingsUri = this.foldersPreferenceProvider.getConfigUri(folderUriStr);
+        if (settingsUri) {
+            return this.fileSystem.access(settingsUri.toString(), FileAccess.Constants.R_OK);
         }
         return this.fileSystem.access(folderUriStr, FileAccess.Constants.W_OK);
     }
 }
 
+// TODO put into DI context
 export class PreferenceEditorContainerTabBarRenderer extends DockPanel.Renderer {
 
     constructor(
         private readonly workspaceService: WorkspaceService,
-        private readonly fileSystem: FileSystem
+        private readonly fileSystem: FileSystem,
+        private readonly foldersPreferenceProvider: FoldersPreferencesProvider
     ) {
         super();
     }
 
     createTabBar(): TabBar<Widget> {
-        const bar = new TabBar({ renderer: new PreferenceEditorTabHeaderRenderer(this.workspaceService, this.fileSystem) });
+        const bar = new TabBar({ renderer: new PreferenceEditorTabHeaderRenderer(this.workspaceService, this.fileSystem, this.foldersPreferenceProvider) });
         bar.addClass('p-DockPanel-tabBar');
         return bar;
     }

@@ -14,82 +14,106 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+// tslint:disable:no-any
+
+import { inject, injectable, postConstruct, named } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceScope, PreferenceProvider, PreferenceProviderPriority } from '@theia/core/lib/browser';
-import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/workspace-service';
-import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser/preferences';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider';
 
 @injectable()
-export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvider {
+export class WorkspacePreferenceProvider extends PreferenceProvider {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(WorkspaceFilePreferenceProviderFactory)
+    protected readonly workspaceFileProviderFactory: WorkspaceFilePreferenceProviderFactory;
+
+    @inject(PreferenceProvider) @named(PreferenceScope.Folder)
+    protected readonly folderPreferenceProvider: PreferenceProvider;
+
     @postConstruct()
     protected async init(): Promise<void> {
-        await super.init();
-        this.workspaceService.onWorkspaceLocationChanged(workspaceFile => {
-            if (workspaceFile && !workspaceFile.isDirectory) {
-                this.toDisposeOnWorkspaceLocationChanged.dispose();
-                super.init();
+        this._ready.resolve();
+        this.ensureDelegateUpToDate();
+        this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate());
+    }
+
+    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri()): URI | undefined {
+        const delegate = this.delegate;
+        return delegate && delegate.getConfigUri(resourceUri);
+    }
+
+    protected _delegate: PreferenceProvider | undefined;
+    protected get delegate(): PreferenceProvider | undefined {
+        if (!this._delegate) {
+            this.ensureDelegateUpToDate();
+        }
+        return this._delegate;
+    }
+    protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
+    protected ensureDelegateUpToDate(): void {
+        const delegate = this.createDelegate();
+        if (this._delegate !== delegate) {
+            this.toDisposeOnEnsureDelegateUpToDate.dispose();
+            this.toDispose.push(this.toDisposeOnEnsureDelegateUpToDate);
+
+            this._delegate = delegate;
+
+            if (delegate instanceof WorkspaceFilePreferenceProvider) {
+                this.toDisposeOnEnsureDelegateUpToDate.pushAll([
+                    delegate,
+                    delegate.onDidPreferencesChanged(changes => this.onDidPreferencesChangedEmitter.fire(changes))
+                ]);
             }
+            this.onDidPreferencesChangedEmitter.fire(undefined);
+        }
+    }
+    protected createDelegate(): PreferenceProvider | undefined {
+        const workspace = this.workspaceService.workspace;
+        if (!workspace) {
+            return undefined;
+        }
+        if (workspace.isDirectory) {
+            return this.folderPreferenceProvider;
+        }
+        return this.workspaceFileProviderFactory({
+            workspaceUri: new URI(workspace.uri)
         });
     }
 
-    async getUri(): Promise<URI | undefined> {
-        await this.workspaceService.roots;
+    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
+        const delegate = this.delegate;
+        return delegate ? delegate.get<T>(preferenceName, resourceUri) : undefined;
+    }
+
+    resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
+        const delegate = this.delegate;
+        return delegate ? delegate.resolve<T>(preferenceName, resourceUri) : {};
+    }
+
+    getPreferences(resourceUri: string | undefined = this.ensureResourceUri()): { [p: string]: any } {
+        const delegate = this.delegate;
+        return delegate ? delegate.getPreferences(resourceUri) : {};
+    }
+
+    async setPreference(preferenceName: string, value: any, resourceUri: string | undefined = this.ensureResourceUri()): Promise<boolean> {
+        const delegate = this.delegate;
+        if (delegate) {
+            return delegate.setPreference(preferenceName, value, resourceUri);
+        }
+        return false;
+    }
+
+    protected ensureResourceUri(): string | undefined {
         const workspace = this.workspaceService.workspace;
-        if (workspace) {
-            const uri = new URI(workspace.uri);
-            return workspace.isDirectory ? uri.resolve('.theia').resolve('settings.json') : uri;
+        if (workspace && workspace.isDirectory) {
+            return workspace.uri;
         }
+        return undefined;
     }
 
-    canProvide(preferenceName: string, resourceUri?: string): { priority: number, provider: PreferenceProvider } {
-        const value = this.get(preferenceName);
-        if (value === undefined || value === null) {
-            return super.canProvide(preferenceName, resourceUri);
-        }
-        if (resourceUri) {
-            const folderPaths = this.getDomain().map(f => new URI(f).path);
-            if (folderPaths.every(p => p.relativity(new URI(resourceUri).path) < 0)) {
-                return super.canProvide(preferenceName, resourceUri);
-            }
-        }
-
-        return { priority: PreferenceProviderPriority.Workspace, provider: this };
-    }
-
-    // tslint:disable-next-line:no-any
-    protected parse(content: string): any {
-        const data = super.parse(content);
-        if (this.workspaceService.saved) {
-            if (WorkspaceData.is(data)) {
-                return data.settings || {};
-            }
-        }
-        return data;
-    }
-
-    protected getPath(preferenceName: string): string[] {
-        if (this.workspaceService.saved) {
-            return ['settings', preferenceName];
-        }
-        return super.getPath(preferenceName);
-    }
-
-    protected getScope() {
-        return PreferenceScope.Workspace;
-    }
-
-    getDomain(): string[] {
-        const workspace = this.workspaceService.workspace;
-        if (workspace) {
-            return workspace.isDirectory
-                ? [workspace.uri]
-                : this.workspaceService.tryGetRoots().map(r => r.uri).concat([workspace.uri]); // workspace file is treated as part of the workspace
-        }
-        return [];
-    }
 }

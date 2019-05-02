@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import {
     bindContributionProvider,
     SelectionService,
@@ -72,6 +72,7 @@ import { QuickPickService, quickPickServicePath } from '../common/quick-pick-ser
 import { ContextKeyService } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
+import { MimeService } from './mime-service';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -123,11 +124,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ShellLayoutRestorer).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ShellLayoutRestorer);
 
-    bind(DefaultResourceProvider).toSelf().inSingletonScope();
-    bind(ResourceProvider).toProvider(context =>
-        uri => context.container.get(DefaultResourceProvider).get(uri)
-    );
-    bindContributionProvider(bind, ResourceResolver);
+    bindResourceProvider(bind);
     bind(InMemoryResources).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(InMemoryResources);
 
@@ -150,8 +147,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, KeybindingContext);
     bindContributionProvider(bind, KeybindingContribution);
 
-    bind(MessageClient).toSelf().inSingletonScope();
-    bind(MessageService).toSelf().inSingletonScope().onActivation(({ container }, messages) => {
+    bindMessageService(bind).onActivation(({ container }, messages) => {
         const client = container.get(MessageClient);
         WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
         return messages;
@@ -197,19 +193,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
-    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
-        if (scope === PreferenceScope.Default) {
-            return ctx.container.get(PreferenceSchemaProvider);
-        }
-        return ctx.container.getNamed(PreferenceProvider, scope);
-    });
-    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
-    bind(PreferenceService).toService(PreferenceServiceImpl);
-    bind(FrontendApplicationContribution).toService(PreferenceServiceImpl);
-    bindPreferenceSchemaProvider(bind);
+    bindPreferenceService(bind);
+    bind(FrontendApplicationContribution).toService(PreferenceService);
 
     bind(JsonSchemaStore).toSelf().inSingletonScope();
 
@@ -249,4 +234,32 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     );
 
     bindCorePreferences(bind);
+
+    bind(MimeService).toSelf().inSingletonScope();
 });
+
+export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
+    bind(MessageClient).toSelf().inSingletonScope();
+    return bind(MessageService).toSelf().inSingletonScope();
+}
+
+export function bindPreferenceService(bind: interfaces.Bind): void {
+    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
+    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
+    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
+        if (scope === PreferenceScope.Default) {
+            return ctx.container.get(PreferenceSchemaProvider);
+        }
+        return ctx.container.getNamed(PreferenceProvider, scope);
+    });
+    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceService).toService(PreferenceServiceImpl);
+    bindPreferenceSchemaProvider(bind);
+}
+
+export function bindResourceProvider(bind: interfaces.Bind) {
+    bind(DefaultResourceProvider).toSelf().inSingletonScope();
+    bind(ResourceProvider).toProvider(context => uri => context.container.get(DefaultResourceProvider).get(uri));
+    bindContributionProvider(bind, ResourceResolver);
+}

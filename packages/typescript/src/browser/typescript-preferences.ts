@@ -36,12 +36,18 @@ export const typescriptPreferenceSchema: PreferenceSchema = {
                 'verbose'
             ],
             'default': 'off',
-            // tslint:disable:max-line-length
+            // tslint:disable-next-line:max-line-length
             'description': 'Enables logging of the TS server to a file. This log can be used to diagnose TS Server issues. The log may contain file paths, source code, and other potentially sensitive information from your project.'
         },
         'typescript.tsdk': {
-            'type': 'string',
-            'description': 'Specifies the folder path containing the tsserver and lib*.d.ts files to use.'
+            'type': [
+                'string',
+                'null'
+            ],
+            // tslint:disable-next-line:no-null-keyword
+            'default': null,
+            'description': 'Specifies the folder path containing the tsserver and lib*.d.ts files to use.',
+            'scope': 'window'
         }
     }
 };

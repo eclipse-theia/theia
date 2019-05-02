@@ -1,23 +1,72 @@
 # Change Log
 
-## v0.6.0
-
-- [filesystem] added the menu item `Upload Files...` to easily upload files into a workspace
-- [plugin] added `CodeActionKind` `intersects` Plug-in API
-- [task] added support to configure tasks
-- [workspace] allow creation of files and folders using recursive paths
-- [electron] upgraded version of electron used to version 3.
-- [tree] support icons in node tail decorators
+## v0.7.0
 
 Breaking changes:
 
-- [core] support native keyboard layouts [#4724](https://github.com/theia-ide/theia/pull/4724)
-- [node] moved to using Node.js version 10, dropping support for Node.js version 8.
-- [electron] removed cluster mode and startup timeout setting
-- [electron] make Electron runtime dependencies optional [#4873](https://github.com/theia-ide/theia/pull/4873)
-- [dialog] `validate` and `accept` methods are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
-- [editor] turn off autoSave by default to align with VS Code [#4777](https://github.com/theia-ide/theia/pull/4777)
-  - default settings can be overriden in application package.json:
+- [preferences] refactored to integrate launch configurations as preferences
+
+## v0.6.0
+
+- Allowed the creation of sub-files and/or sub-folders if name has `/`
+- [core] added `files.enableTrash` preference
+- [core] added support for custom React toolbar widgets
+- [core] added support for tail decorators
+- [core] aligned the statusbar styles with VSCode
+- [core] updated the prefix quick-open service to support `actionProviders`
+- [cpp] added support for block comment auto-closing pairs
+- [editor-preview] fixed error at application startup if no preview editors are opened
+- [editor-preview] fixed the `goToDefinition` failure when in editor preview mode
+- [electron] added the ability to run plugins by binding the components on the backend
+- [electron] added the configure Plug-ins option to the start script
+- [electron] updated Electron to include a `minWidth` and `minHeight`
+- [electron] upgraded version of Electron used to version 3
+- [filesystem] added the menu item `Upload Files...` to easily upload files into a workspace
+- [filesystem] implemented `Save As` including a save dialog, and new command
+- [filesystem] updated the handling when attempting to perform copying when the source and target are the same
+- [git] added ability to toggle `Git History` widget
+- [git] fixed `Discard All` alignment when the `Git` widget is too narrow
+- [git] fixed `Git History` widget alignment and behavior issues
+- [git] updated the ahead/behind icons on the statusbar
+- [keyboard] aligned the file and event naming conventions
+- [languages] updated error type for backwards compatibility
+- [plugin-ext] fixed the Plug-in path selection dialog for the hosted instance
+- [plugin] added `CodeActionKind` `intersects` Plug-in API
+- [plugin] added necessary Webview Plug-in APIs
+- [plugin] added propagation of `thisArg` on `registerCommand`
+- [plugin] added support for Gulp, Jake, Grunt Plug-in extensions
+- [plugin] added support for extensions without activation functions
+- [plugin] added the ability to choose through the CLI which VSCode API version to use
+- [plugin] aligned `window.setStatusBarMessage` with VSCode
+- [plugin] fixed `vscode.open` command by adding checks on arguments
+- [plugin] fixed implementation of `vscode.diff` command
+- [plugin] fixed issue where webviews were not focused or revealed properly
+- [plugin] fixed memory leak on Plug-ins reload
+- [plugin] fixed serialization of `Range` object
+- [plugin] fixed the registration of text decoration keys
+- [plugin] updated Plug-in language services to hook in monaco cancellation tokens
+- [preferences] added ability to override default application preference values
+- [search-in-workspace] added the ability to pass the currently selected editor text when searching
+- [security] fixed XSS vulnerability
+- [task] added command to clear task history
+- [task] added support to configure tasks
+- [task] added the ability to configure tasks
+- [task] added the ability to display recently used tasks
+- [task] updated the tasks quick-open menu including alignment, category labels and borders
+- [terminal] updated terminal preference's minimum value for `lineHeight` and `fontSize`
+- [textmate-grammars] added php grammar
+- [textmate-grammars] added rust grammar
+- [textmate-grammars] fixed incorrect jsx scope
+- [tree] added support for icons in node tail decorators
+- [workspace] allowed the creation of files and folders using recursive paths
+- [workspace] fixed incorrect file-icon when displaying recent workspaces
+
+Breaking changes:
+
+- [core] added support native keyboard layouts [#4724](https://github.com/theia-ide/theia/pull/4724)
+- [dialog] updated `validate` and `accept` methods so they are now Promisified [#4764](https://github.com/theia-ide/theia/pull/4764)
+- [editor] turned off autoSave by default to align with VSCode [#4777](https://github.com/theia-ide/theia/pull/4777)
+  - default settings can be overridden in application package.json:
   ```json
   {
     "private": true,
@@ -33,7 +82,10 @@ Breaking changes:
     }
   }
   ```
+- [electron] removed cluster mode and startup timeout setting
+- [electron] updated Electron to make runtime dependencies optional [#4873](https://github.com/theia-ide/theia/pull/4873)
 - [extension-manager] deprecated [#4876](https://github.com/theia-ide/theia/pull/4876)
+- [node] moved to using Node.js version 10, dropping support for Node.js version 8
 
 ## v0.5.0
 

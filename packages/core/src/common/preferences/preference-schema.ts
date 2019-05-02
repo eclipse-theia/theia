@@ -62,7 +62,14 @@ export interface PreferenceDataSchema {
 export interface PreferenceItem {
     type?: JsonType | JsonType[];
     minimum?: number;
+    /**
+     * content assist (UI) default value
+     */
     default?: any;
+    /**
+     * preference default value, if `undefined` then `default`
+     */
+    defaultValue?: any;
     enum?: string[];
     items?: PreferenceItem;
     properties?: { [name: string]: PreferenceItem };
