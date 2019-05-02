@@ -37,9 +37,6 @@ import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 export class GitCommands implements Disposable {
 
     private static MESSAGE_BOX_MIN_HEIGHT = 25;
-    protected stagedChanges: GitFileChangeNode[] = [];
-    protected unstagedChanges: GitFileChangeNode[] = [];
-    protected mergeChanges: GitFileChangeNode[] = [];
     protected incomplete?: boolean;
     protected message: string = '';
     protected messageBoxHeight: number = GitCommands.MESSAGE_BOX_MIN_HEIGHT;
@@ -76,9 +73,9 @@ export class GitCommands implements Disposable {
         @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator) {
     }
 
-    openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+    async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const uriToOpen = this.getUriToOpen(change);
-        return this.editorManager.open(uriToOpen, options);
+        return this.editorManager.open(await uriToOpen, options);
     }
     protected async amend(): Promise<void> {
         const { selectedRepository } = this.repositoryProvider;
@@ -180,7 +177,9 @@ export class GitCommands implements Disposable {
     protected async doUnstageAll() {
         const repository = this.repositoryProvider.selectedRepository;
         if (repository) {
-            this.unstage(repository, this.stagedChanges);
+            const status = await this.git.status(repository);
+            const staged = status.changes.filter(change => change.staged);
+            this.unstage(repository, staged);
         }
     }
 
@@ -205,10 +204,11 @@ export class GitCommands implements Disposable {
                 const repository = this.repositoryProvider.selectedRepository;
                 if (repository) {
                     // discard new files
-                    const newUris = this.unstagedChanges.filter(c => c.status === GitFileStatus.New).map(c => c.uri);
+                    const unstaged = await this.getUnStagedChanges(repository);
+                    const newUris = unstaged.filter(c => c.status === GitFileStatus.New).map(c => c.uri);
                     this.deleteAll(newUris);
                     // unstage changes
-                    const uris = this.unstagedChanges.map(c => c.uri);
+                    const uris = unstaged.map(c => c.uri);
                     await this.git.unstage(repository, uris, { treeish: 'HEAD', reset: 'working-tree' });
                 }
             } catch (error) {
@@ -252,7 +252,7 @@ export class GitCommands implements Disposable {
     protected async doStageAll() {
         const repository = this.repositoryProvider.selectedRepository;
         if (repository) {
-            this.stage(repository, this.unstagedChanges);
+            this.stage(repository, await this.getUnStagedChanges(repository));
         }
     }
 
@@ -270,52 +270,63 @@ export class GitCommands implements Disposable {
         }
     }
 
-    findChange(uri: URI): GitFileChange | undefined {
-        const stringUri = uri.toString();
-        const merge = this.mergeChanges.find(c => c.uri.toString() === stringUri);
-        if (merge) {
-            return merge;
+    async findChange(uri: URI): Promise<GitFileChange | undefined> {
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            const stringUri = uri.toString();
+            const merged = await this.getMergeChanges(repository);
+            const merge = merged.find(c => c.uri.toString() === stringUri);
+            if (merge) {
+                return merge;
+            }
+            const unstagedChanges = await this.getUnStagedChanges(repository);
+            const unstaged = unstagedChanges.find(c => c.uri.toString() === stringUri);
+            if (unstaged) {
+                return unstaged;
+            }
+            const staged = await this.getStagedChanges(repository);
+            return staged.find(c => c.uri.toString() === stringUri);
         }
-        const unstaged = this.unstagedChanges.find(c => c.uri.toString() === stringUri);
-        if (unstaged) {
-            return unstaged;
-        }
-        return this.stagedChanges.find(c => c.uri.toString() === stringUri);
     }
 
     handleOpenChange = async (change: GitFileChange, options?: EditorOpenerOptions) => this.openChange(change, options);
 
-    getUriToOpen(change: GitFileChange): URI {
+    async getUriToOpen(change: GitFileChange): Promise<URI> {
         const changeUri: URI = new URI(change.uri);
-        if (change.status !== GitFileStatus.New) {
-            if (change.staged) {
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            const staged = await this.getStagedChanges(repository);
+            if (change.status !== GitFileStatus.New) {
+                if (change.staged) {
+                    return DiffUris.encode(
+                        changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                        changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                        changeUri.displayName + ' (Index)');
+                }
+                if (staged.find(c => c.uri === change.uri)) {
+                    return DiffUris.encode(
+                        changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                        changeUri,
+                        changeUri.displayName + ' (Working tree)');
+                }
+                const merged = await this.getMergeChanges(repository);
+                if (merged.find(c => c.uri === change.uri)) {
+                    return changeUri;
+                }
                 return DiffUris.encode(
                     changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
-                    changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                    changeUri.displayName + ' (Index)');
+                    changeUri,
+                    changeUri.displayName + ' (Working tree)');
             }
-            if (this.stagedChanges.find(c => c.uri === change.uri)) {
+            if (change.staged) {
+                return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+            }
+            if (staged.find(c => c.uri === change.uri)) {
                 return DiffUris.encode(
                     changeUri.withScheme(GIT_RESOURCE_SCHEME),
                     changeUri,
                     changeUri.displayName + ' (Working tree)');
             }
-            if (this.mergeChanges.find(c => c.uri === change.uri)) {
-                return changeUri;
-            }
-            return DiffUris.encode(
-                changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
-                changeUri,
-                changeUri.displayName + ' (Working tree)');
-        }
-        if (change.staged) {
-            return changeUri.withScheme(GIT_RESOURCE_SCHEME);
-        }
-        if (this.stagedChanges.find(c => c.uri === change.uri)) {
-            return DiffUris.encode(
-                changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                changeUri,
-                changeUri.displayName + ' (Working tree)');
         }
         return changeUri;
     }
@@ -340,5 +351,20 @@ export class GitCommands implements Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    private async getStagedChanges(repository: Repository): Promise<GitFileChange[]> {
+        const status = await this.git.status(repository);
+        return  status.changes.filter(change => change.staged);
+    }
+
+    private async getUnStagedChanges(repository: Repository): Promise<GitFileChange[]> {
+        const status = await this.git.status(repository);
+        return  status.changes.filter(change => !change.staged);
+    }
+
+    private async getMergeChanges(repository: Repository): Promise<GitFileChange[]> {
+        const status = await this.git.status(repository);
+        return  status.changes.filter(change => GitFileStatus[GitFileStatus.Conflicted.valueOf()] === GitFileStatus[change.status]);
     }
 }

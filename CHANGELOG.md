@@ -5,6 +5,8 @@
 Breaking changes:
 
 - [preferences] refactored to integrate launch configurations as preferences
+- [scm] added Source Control Model
+- [git] bind Git UI to SCM  
 
 ## v0.6.0
 
@@ -148,8 +150,6 @@ Breaking changes:
 - [quick-open] disable separate fuzzy matching by default [#4549](https://github.com/theia-ide/theia/pull/4549)
 - [shell] support toolbars in side bars [#4600](https://github.com/theia-ide/theia/pull/4600)
   - In side bars a widget title is rendered as an icon.
-- [scm] added Source Control Model
-- [git] bind Git UI to SCM  
 
 ## v0.4.0
 

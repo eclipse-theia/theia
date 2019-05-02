@@ -118,7 +118,8 @@ export namespace GIT_COMMANDS {
         id: 'git-commit-add-sign-off',
         label: 'Add Signed-off-by',
         iconClass: 'fa fa-pencil-square-o',
-        category: 'navigation'
+        category: 'navigation',
+        props: { ['group']: 'navigation' }
     };
     export const COMMIT_AMEND = {
         id: 'git.commit.amend'
@@ -163,7 +164,8 @@ export namespace GIT_COMMANDS {
         id: 'git.stage.all',
         label: 'Stage All Changes',
         iconClass: 'fa fa-plus',
-        category: 'inline'
+        category: 'inline',
+        props: { ['group']: 'inline' }
     };
     export const UNSTAGE = {
         id: 'git.unstage',
@@ -174,7 +176,8 @@ export namespace GIT_COMMANDS {
         id: 'git.unstage.all',
         iconClass: 'fa fa-minus',
         label: 'Unstage All',
-        category: 'inline'
+        category: 'inline',
+        props: { ['group']: 'inline' }
     };
     export const DISCARD = {
         id: 'git.discard',
@@ -185,7 +188,8 @@ export namespace GIT_COMMANDS {
         id: 'git.discard.all',
         iconClass: 'fa fa-undo',
         label: 'Discard All Changes',
-        category: 'inline'
+        category: 'inline',
+        props: { ['group']: 'inline' }
     };
     export const STASH = {
         id: 'git.stash',
@@ -221,7 +225,8 @@ export namespace GIT_COMMANDS {
         id: 'git-refresh',
         label: 'Refresh',
         iconClass: 'fa fa-refresh',
-        category: 'navigation'
+        category: 'navigation',
+        props: { ['group']: 'navigation' }
     };
 }
 
@@ -381,8 +386,8 @@ export class GitContribution implements
                     open();
                 }
             };
-            const open = () => {
-                const uriToOpen = this.gitCommands.getUriToOpen(change);
+            const open = async () => {
+                const uriToOpen = await this.gitCommands.getUriToOpen(change);
                 this.editorManager.open(uriToOpen, { mode: 'activate' });
             };
             return resource;
@@ -761,18 +766,18 @@ export class GitContribution implements
     }
 
     async openChanges(widget?: Widget): Promise<EditorWidget | undefined> {
-        const options = this.getOpenChangesOptions(widget);
+        const options = await this.getOpenChangesOptions(widget);
         if (options) {
             return this.gitCommands.openChange(options.change, options.options);
         }
         return undefined;
     }
 
-    protected getOpenChangesOptions(widget?: Widget): GitOpenChangesOptions | undefined {
+    protected async getOpenChangesOptions(widget?: Widget): Promise<GitOpenChangesOptions | undefined> {
         const ref = widget ? widget : this.editorManager.currentEditor;
         if (ref instanceof EditorWidget && !DiffUris.isDiffUri(ref.editor.uri)) {
             const uri = ref.editor.uri;
-            const change = this.gitCommands.findChange(uri);
+            const change = await this.gitCommands.findChange(uri);
             if (change && this.gitCommands.getUriToOpen(change).toString() !== uri.toString()) {
                 const selection = ref.editor.selection;
                 return { change, options: { selection, widgetOptions: { ref } } };
