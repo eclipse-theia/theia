@@ -23,6 +23,12 @@ export class MarkerTreeModel extends TreeModelImpl {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
+    selectNode(node: TreeNode): void {
+        if (MarkerNode.is(node)) {
+            open(this.openerService, node.uri, this.getOpenerOptionsByMarker(node));
+        }
+    }
+
     protected doOpenNode(node: TreeNode): void {
         if (MarkerNode.is(node)) {
             open(this.openerService, node.uri, this.getOpenerOptionsByMarker(node));
