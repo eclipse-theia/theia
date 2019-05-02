@@ -45,7 +45,7 @@
     "webdriverio": "4.14.1"
   },
   "scripts": {
-    "prepare": "yarn prepare:travis && yarn rebuild:clean && yarn build:clean && yarn prepare:hoisting",
+    "prepare": "node scripts/skip-prepare || (yarn prepare:travis && yarn rebuild:clean && yarn build:clean && yarn prepare:hoisting)",
     "prepare:travis": "node scripts/prepare-travis",
     "prepare:hoisting": "theia check:hoisted -s",
     "build": "run build",
