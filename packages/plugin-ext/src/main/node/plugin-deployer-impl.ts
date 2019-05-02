@@ -27,11 +27,14 @@ import { PluginDeployerResolverContextImpl, PluginDeployerResolverInitImpl } fro
 import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
 import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
 import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
-import { ILogger } from '@theia/core';
+import { ILogger, Emitter } from '@theia/core';
 import { PluginCliContribution } from './plugin-cli-contribution';
 
 @injectable()
 export class PluginDeployerImpl implements PluginDeployer {
+
+    protected readonly onDidDeployEmitter = new Emitter<void>();
+    readonly onDidDeploy = this.onDidDeployEmitter.event;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -102,11 +105,6 @@ export class PluginDeployerImpl implements PluginDeployer {
         const pluginIdList = pluginsValue ? pluginsValue.split(',') : [];
         const pluginsList = defaultPluginIdList.concat(pluginIdList).concat(defaultPluginsValueViaCli ? defaultPluginsValueViaCli.split(',') : []);
 
-        // skip if no plug-ins
-        if (pluginsList.length === 0) {
-            return Promise.resolve();
-        }
-
         await this.deployMultipleEntries(pluginsList);
 
     }
@@ -157,6 +155,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins),
             this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins)
         ]);
+        this.onDidDeployEmitter.fire(undefined);
     }
 
     /**

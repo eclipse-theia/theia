@@ -563,6 +563,8 @@ export interface HostedPluginClient {
     postMessage(message: string): Promise<void>;
 
     log(logPart: LogPart): void;
+
+    onDidDeploy(): void;
 }
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
