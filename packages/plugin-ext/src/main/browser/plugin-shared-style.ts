@@ -96,6 +96,7 @@ export class PluginSharedStyle {
                     width: ${size}px;
                     height: ${size}px;
                     background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                    background-size: ${size}px;
                 `);
             this.icons.set(key, iconClass);
         }

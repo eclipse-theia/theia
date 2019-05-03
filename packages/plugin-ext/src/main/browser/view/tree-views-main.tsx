@@ -362,7 +362,7 @@ export class TreeViewWidget extends TreeWidget {
         try {
             const arg = node.metadata;
             return <React.Fragment>
-                {this.actions.getInlineActions(arg).map(action => this.renderInlineAction(action, arg))}
+                {this.actions.getInlineCommands(arg).map(command => this.renderInlineCommand(command, arg))}
             </React.Fragment>;
         } finally {
             this.contextKeys.view.set(view);
@@ -371,13 +371,15 @@ export class TreeViewWidget extends TreeWidget {
     }
 
     // tslint:disable-next-line:no-any
-    protected renderInlineAction(action: Command, arg: any): React.ReactNode {
-        if (!action.iconClass) {
+    protected renderInlineCommand(command: Command, arg: any): React.ReactNode {
+        if (!command.iconClass) {
             return false;
         }
-        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, action.iconClass, 'theia-tree-view-inline-action'].join(' ');
-        return <div key={action.id} className={className} title={action.label || ''}
-            onClick={() => this.commands.executeCommand(action.id, arg)} />;
+        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, command.iconClass, 'theia-tree-view-inline-action'].join(' ');
+        return <div key={command.id} className={className} title={command.label || ''} onClick={e => {
+            e.stopPropagation();
+            this.commands.executeCommand(command.id, arg);
+        }} />;
     }
 
     protected hoverNodeId: string | undefined;
