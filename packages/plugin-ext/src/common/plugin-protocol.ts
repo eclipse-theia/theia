@@ -51,13 +51,8 @@ export interface PluginPackage {
     packagePath: string;
 }
 export namespace PluginPackage {
-    /**
-     * @param relativePath should be normalized, i.e. should not contain `.` or `..`,
-     * otherwise they will be removed by a browser leading to a bogus path,
-     * see https://stackoverflow.com/questions/3856693/a-url-resource-that-is-a-dot-2e
-     */
     export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
-        return `hostedPlugin/${getPluginId(pck)}/${relativePath}`;
+        return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
     }
 }
 

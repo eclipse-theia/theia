@@ -19,6 +19,8 @@ import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Menu } from '../../../common/plugin-protocol';
 
+// tslint:disable:no-any
+
 @injectable()
 export class TreeViewActions {
 
@@ -34,8 +36,7 @@ export class TreeViewActions {
         this.inlineActions.push(action);
     }
 
-    // tslint:disable-next-line:no-any
-    getInlineActions(...args: any[]): Command[] {
+    getInlineCommands(...args: any[]): Command[] {
         const commands: Command[] = [];
         for (const action of this.inlineActions) {
             const command = this.commands.getCommand(action.command);
