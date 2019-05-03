@@ -15,14 +15,15 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { ProblemManager, ProblemStat } from './problem-manager';
-import { ProblemWidget } from './problem-widget';
+import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { MenuPath, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Command, CommandRegistry } from '@theia/core/lib/common';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export const PROBLEMS_CONTEXT_MENU: MenuPath = [PROBLEM_KIND];
 
@@ -32,12 +33,16 @@ export namespace ProblemsMenu {
 
 export namespace ProblemsCommands {
     export const COLLAPSE_ALL: Command = {
-        id: 'problems.collapse.all',
+        id: 'problems.collapse.all'
+    };
+    export const COLLAPSE_ALL_TOOLBAR: Command = {
+        id: 'problems.collapse.all.toolbar',
+        iconClass: 'collapse-all'
     };
 }
 
 @injectable()
-export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution {
+export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(StatusBar) protected readonly statusBar: StatusBar;
@@ -79,6 +84,11 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         commands.registerCommand(ProblemsCommands.COLLAPSE_ALL, {
             execute: () => this.collapseAllProblems()
         });
+        commands.registerCommand(ProblemsCommands.COLLAPSE_ALL_TOOLBAR, {
+            isEnabled: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.withWidget(widget, () => true),
+            execute: widget => this.withWidget(widget, () => this.collapseAllProblems())
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -90,6 +100,15 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
     }
 
+    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+        toolbarRegistry.registerItem({
+            id: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
+            command: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
+            tooltip: 'Collapse All',
+            priority: 0,
+        });
+    }
+
     protected async collapseAllProblems(): Promise<void> {
         const { model } = await this.widget;
         const root = model.root as CompositeTreeNode;
@@ -98,5 +117,12 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         if (SelectableTreeNode.is(firstChild)) {
             await model.selectNode(firstChild);
         }
+    }
+
+    protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (problems: ProblemWidget) => T): T | false {
+        if (widget instanceof ProblemWidget && widget.id === PROBLEMS_WIDGET_ID) {
+            return cb(widget);
+        }
+        return false;
     }
 }
