@@ -24,6 +24,7 @@ import { PROBLEM_KIND } from '../../common/problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
 import { ProblemDecorator } from './problem-decorator';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import '../../../src/browser/style/index.css';
 
@@ -40,6 +41,7 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, ProblemContribution);
     bind(FrontendApplicationContribution).toService(ProblemContribution);
+    bind(TabBarToolbarContribution).toService(ProblemContribution);
 
     bind(ProblemDecorator).toSelf().inSingletonScope();
     bind(NavigatorTreeDecorator).toService(ProblemDecorator);
