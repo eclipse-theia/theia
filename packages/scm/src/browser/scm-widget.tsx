@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, postConstruct } from 'inversify';
-import { ContextMenuRenderer, SELECTED_CLASS, StatefulWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, SELECTED_CLASS, StatefulWidget, StorageService } from '@theia/core/lib/browser';
 import * as React from 'react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import {
@@ -24,14 +24,17 @@ import {
     ScmRepository,
     ScmResource,
     ScmResourceGroup,
-    ScmService
+    ScmService,
+    ScmAmendSupport
 } from './scm-service';
 import { CommandRegistry, MenuPath } from '@theia/core';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { GitAvatarService } from '@theia/git/lib/browser/history/git-avatar-service';
 import { ScmTitleCommandRegistry, ScmTitleItem } from './scm-title-command-registry';
 import { ScmResourceCommandRegistry } from './scm-resource-command-registry';
 import { ScmGroupCommandRegistry } from './scm-group-command-registry';
 import { ScmNavigableListWidget } from './scm-navigable-list-widget';
+import { ScmAmendComponent } from './scm-amend-component';
 import { KeyboardEvent } from 'react';
 
 @injectable()
@@ -66,6 +69,8 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     @inject(CommandRegistry) private readonly commandRegistry: CommandRegistry;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(GitAvatarService) protected readonly avatarService: GitAvatarService;
+    @inject(StorageService) protected readonly storageService: StorageService;
 
     constructor() {
         super();
@@ -141,12 +146,16 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         }
         const input = repository.input;
         this.inputCommandMessageValidator = input.validateInput;
+
+        const amendSupport: ScmAmendSupport | undefined = repository.provider.amendSupport;
+
         return <div className={ScmWidget.Styles.MAIN_CONTAINER}>
-            <div className='headerContainer'>
+            <div className='headerContainer' style={{ flexGrow: 0 }}>
                 {this.renderInput(input, repository)}
                 {this.renderCommandBar(repository)}
             </div>
             <ScmResourceGroupsContainer
+                style={{ flexGrow: 1 }}
                 id={this.scrollContainer}
                 repository={repository}
                 scmResourceCommandRegistry={this.scmResourceCommandRegistry}
@@ -157,6 +166,20 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
                 addScmListKeyListeners={this.addScmListKeyListeners}
                 renderContextMenu={this.showMoreToolButtons}
             />
+            {
+                amendSupport
+                    ? <ScmAmendComponent
+                        key={`amend:${repository.provider.rootUri}`}
+                        style={{ flexGrow: 0 }}
+                        id={this.scrollContainer}
+                        repository={repository}
+                        scmAmendSupport={amendSupport}
+                        setCommitMessage={this.setInputMessages}
+                        avatarService={this.avatarService}
+                        storageService={this.storageService}
+                    />
+                    : ''
+            }
         </div>;
     }
 
@@ -212,7 +235,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     }
 
     protected onInputMessageChange(e: Event): void {
-        const {target} = e;
+        const { target } = e;
         if (target instanceof HTMLTextAreaElement) {
             const { value } = target;
             this.message = value;
@@ -246,10 +269,10 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
             <div className='buttons'>
                 {this.scmTitleRegistry.getCommands().map(command => this.renderButton(command))}
                 <a className='toolbar-button' title='More...' onClick={onClick}>
-                    <i className='fa fa-ellipsis-h'/>
+                    <i className='fa fa-ellipsis-h' />
                 </a>
             </div>
-            <div className='placeholder'/>
+            <div className='placeholder' />
             {this.renderInputCommand(repository)}
         </div>;
     }
@@ -284,7 +307,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
                     this.commandRegistry.executeCommand(item.command);
                 };
                 return <a className='toolbar-button' key={command.id}>
-                    <i className={command.iconClass} title={command.label} onClick={execute}/>
+                    <i className={command.iconClass} title={command.label} onClick={execute} />
                 </a>;
             }
         }
@@ -295,9 +318,9 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
             const command = repository.provider.acceptInputCommand;
             return <div className='buttons'>
                 <button className='theia-button'
-                        onClick={() => {
-                            this.executeInputCommand(command.id, repository.provider.handle);
-                        }} title={`${command.tooltip}`}>
+                    onClick={() => {
+                        this.executeInputCommand(command.id, repository.provider.handle);
+                    }} title={`${command.tooltip}`}>
                     {`${repository.provider.acceptInputCommand.text}`}
                 </button>
             </div>;
@@ -314,7 +337,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         }
         if (this.inputCommandMessageValidation === undefined) {
             this.commandRegistry.executeCommand(commandId, providerId);
-            this.resetInputMessages();
+            this.doSetInputMessages('');
             this.update();
         } else {
             const messageInput = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLInputElement;
@@ -325,17 +348,19 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         }
     }
 
-    private resetInputMessages(): void {
-        this.message = '';
+    protected readonly setInputMessages = (message: string) => this.doSetInputMessages(message);
+
+    protected doSetInputMessages(message: string): void {
+        this.message = message;
         const messageInput = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLTextAreaElement;
-        messageInput.value = '';
+        messageInput.value = message;
         this.resize(messageInput);
     }
 
     resize(textArea: HTMLTextAreaElement): void {
         // tslint:disable-next-line:no-null-keyword
         const fontSize = Number.parseInt(window.getComputedStyle(textArea, undefined).getPropertyValue('font-size').split('px')[0] || '0', 10);
-        const {value} = textArea;
+        const { value } = textArea;
         if (Number.isInteger(fontSize) && fontSize > 0) {
             const requiredHeight = fontSize * value.split(/\r?\n/).length;
             if (requiredHeight < textArea.scrollHeight) {
@@ -422,7 +447,7 @@ export namespace ScmResourceItem {
 class ScmResourceItem extends React.Component<ScmResourceItem.Props> {
     protected readonly selectChange = () => this.props.selectChange(this.props.resource);
     render() {
-        const {name, path, icon, letter, color, open} = this.props;
+        const { name, path, icon, letter, color, open } = this.props;
         const style = {
             color
         };
@@ -432,9 +457,9 @@ class ScmResourceItem extends React.Component<ScmResourceItem.Props> {
         };
         const tooltip = this.props.resource.decorations ? this.props.resource.decorations.tooltip : '';
         return <div className={`scmItem ${ScmWidget.Styles.NO_SELECT}${this.props.resource.selected ? ' ' + SELECTED_CLASS : ''}`}
-                    onContextMenu={renderContextMenu}>
+            onContextMenu={renderContextMenu}>
             <div className='noWrapInfo' onDoubleClick={open} onClick={this.selectChange}>
-                <span className={icon + ' file-icon'}/>
+                <span className={icon + ' file-icon'} />
                 <span className='name'>{name}</span>
                 <span className='path'>{path}</span>
             </div>
@@ -471,7 +496,7 @@ class ScmResourceItem extends React.Component<ScmResourceItem.Props> {
                 this.props.commandRegistry.executeCommand(commandId, arg);
             };
             return <div className='toolbar-button' key={command.id}>
-                <a className={command.iconClass} title={command.label} onClick={execute}/>
+                <a className={command.iconClass} title={command.label} onClick={execute} />
             </div>;
         }
     }
@@ -480,6 +505,7 @@ class ScmResourceItem extends React.Component<ScmResourceItem.Props> {
 export namespace ScmResourceGroupsContainer {
     export interface Props {
         id: string,
+        style: React.CSSProperties | undefined,
         repository: ScmRepository,
         scmResourceCommandRegistry: ScmResourceCommandRegistry,
         scmGroupCommandRegistry: ScmGroupCommandRegistry,
@@ -494,7 +520,7 @@ export namespace ScmResourceGroupsContainer {
 class ScmResourceGroupsContainer extends React.Component<ScmResourceGroupsContainer.Props> {
     render() {
         return (
-            <div className={ScmWidget.Styles.GROUPS_CONTAINER} id={this.props.id} tabIndex={2}>
+            <div className={ScmWidget.Styles.GROUPS_CONTAINER} style={this.props.style} id={this.props.id} tabIndex={2}>
                 {this.props.repository.provider.groups ? this.props.repository.provider.groups.map(group => this.renderGroup(group)) : undefined}
             </div>
         );
@@ -510,7 +536,7 @@ class ScmResourceGroupsContainer extends React.Component<ScmResourceGroupsContai
                 selectChange={this.props.selectChange}
                 scmNodes={this.props.scmNodes}
                 renderContextMenu={this.props.renderContextMenu}
-                commandRegistry={this.props.commandRegistry}/>;
+                commandRegistry={this.props.commandRegistry} />;
         }
     }
     componentDidMount() {
@@ -579,7 +605,7 @@ class ScmResourceGroupContainer extends React.Component<ScmResourceGroupContaine
                     this.props.commandRegistry.executeCommand(commandId, arg);
                 };
                 return <a className='toolbar-button' key={command.id}>
-                    <i className={command.iconClass} title={command.label} onClick={execute}/>
+                    <i className={command.iconClass} title={command.label} onClick={execute} />
                 </a>;
             }
         }
@@ -606,19 +632,19 @@ class ScmResourceGroupContainer extends React.Component<ScmResourceGroupContaine
         const name = uri.substring(uri.lastIndexOf('/') + 1) + ' ';
         const path = uri.substring(uri.lastIndexOf(project) + project.length + 1, uri.lastIndexOf('/'));
         return <ScmResourceItem key={`${resource.sourceUri}`}
-                                name={name}
-                                path={path.length > 1 ? path : ''}
-                                icon={(decorations && decorations.icon) ? decorations.icon : ''}
-                                color={(decorations && decorations.color) ? decorations.color : ''}
-                                letter={(decorations && decorations.letter) ? decorations.letter : ''}
-                                resource={resource}
-                                open={open}
-                                groupLabel={this.props.group.label}
-                                groupId={this.props.group.id}
-                                commandRegistry={this.props.commandRegistry}
-                                scmResourceCommandRegistry={this.props.scmResourceCommandRegistry}
-                                selectChange={this.props.selectChange}
-                                renderContextMenu={this.props.renderContextMenu}
+            name={name}
+            path={path.length > 1 ? path : ''}
+            icon={(decorations && decorations.icon) ? decorations.icon : ''}
+            color={(decorations && decorations.color) ? decorations.color : ''}
+            letter={(decorations && decorations.letter) ? decorations.letter : ''}
+            resource={resource}
+            open={open}
+            groupLabel={this.props.group.label}
+            groupId={this.props.group.id}
+            commandRegistry={this.props.commandRegistry}
+            scmResourceCommandRegistry={this.props.scmResourceCommandRegistry}
+            selectChange={this.props.selectChange}
+            renderContextMenu={this.props.renderContextMenu}
         />;
     }
 }

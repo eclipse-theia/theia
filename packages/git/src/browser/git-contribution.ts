@@ -39,7 +39,8 @@ import {
     EditorOpenerOptions,
     EditorWidget
 } from '@theia/editor/lib/browser';
-import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
+import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
+
 import { GitCommands } from './git-commands';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitAction, GitQuickOpenService } from './git-quick-open-service';
@@ -52,7 +53,9 @@ import {
     ScmRepository,
     ScmResource,
     ScmResourceGroup,
-    ScmService
+    ScmService,
+    ScmCommit,
+    ScmAmendSupport
 } from '@theia/scm/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitCommitMessageValidator } from '../browser/git-commit-message-validator';
@@ -232,12 +235,12 @@ export namespace GIT_COMMANDS {
 
 @injectable()
 export class GitContribution implements
-        CommandContribution,
-        MenuContribution,
-        TabBarToolbarContribution,
-        ScmTitleCommandsContribution,
-        ScmResourceCommandContribution,
-        ScmGroupCommandContribution {
+    CommandContribution,
+    MenuContribution,
+    TabBarToolbarContribution,
+    ScmTitleCommandsContribution,
+    ScmResourceCommandContribution,
+    ScmGroupCommandContribution {
 
     static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
     static GIT_REPOSITORY_STATUS = 'git-repository-status';
@@ -260,7 +263,7 @@ export class GitContribution implements
     @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(Git) protected readonly git: Git;
-    @inject(GitErrorHandler)protected readonly gitErrorHandler: GitErrorHandler;
+    @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ScmWidget) protected readonly scmWidget: ScmWidget;
     @inject(GitCommands) protected readonly gitCommands: GitCommands;
@@ -318,8 +321,8 @@ export class GitContribution implements
         });
         this.syncService.onDidChange(() => this.updateSyncStatusBarEntry(
             this.repositoryProvider.selectedRepository
-            ? this.repositoryProvider.selectedRepository.localUri
-            : undefined)
+                ? this.repositoryProvider.selectedRepository.localUri
+                : undefined)
         );
     }
 
@@ -366,7 +369,7 @@ export class GitContribution implements
             provider,
             onDidChange: provider.onDidChange,
             resources: [],
-            dispose: () => {}
+            dispose: () => { }
         };
         const scmResources: ScmResource[] = await Promise.all(changes.map(async change => {
             const icon = await this.labelProvider.getIcon(new URI(change.uri));
@@ -430,9 +433,10 @@ export class GitContribution implements
         const onDidChangeRepositoryEmitter = new Emitter<void>();
         disposableCollection.push(onDidChangeRepositoryEmitter);
         disposableCollection.push(onDidChangeResourcesEmitter);
-        const provider = new ScmProviderImpl('Git', uri.substring(uri.lastIndexOf('/') + 1), uri);
+        const amendSupport: ScmAmendSupport = new GitAmendSupport(repository, this.git);
+        const provider = new ScmProviderImpl('Git', uri.substring(uri.lastIndexOf('/') + 1), uri, amendSupport);
         this.scmProviders.push(provider);
-        const repo =  this.scmService.registerScmProvider(provider, disposableCollection);
+        const repo = this.scmService.registerScmProvider(provider, disposableCollection);
         repo.input.placeholder = 'Commit Message';
         repo.input.validateInput = async input => {
             const validate = await this.commitMessageValidator.validate(input);
@@ -478,8 +482,8 @@ export class GitContribution implements
             commandId: GIT_COMMANDS.OPEN_CHANGES.id
         });
         [GIT_COMMANDS.STASH, GIT_COMMANDS.APPLY_STASH,
-            GIT_COMMANDS.APPLY_LATEST_STASH, GIT_COMMANDS.POP_STASH,
-            GIT_COMMANDS.POP_LATEST_STASH, GIT_COMMANDS.DROP_STASH].forEach(command =>
+        GIT_COMMANDS.APPLY_LATEST_STASH, GIT_COMMANDS.POP_STASH,
+        GIT_COMMANDS.POP_LATEST_STASH, GIT_COMMANDS.DROP_STASH].forEach(command =>
             menus.registerMenuAction(ScmWidget.ContextMenu.SECOND_GROUP, {
                 commandId: command.id,
                 label: command.label
@@ -874,6 +878,7 @@ export class ScmProviderImpl implements ScmProvider {
         private _contextValue: string,
         private _label: string,
         private _rootUri: string | undefined,
+        private _amendSupport: ScmAmendSupport,
     ) {
         this.disposableCollection.push(this.onDidChangeEmitter);
         this.disposableCollection.push(this.onDidChangeResourcesEmitter);
@@ -881,7 +886,7 @@ export class ScmProviderImpl implements ScmProvider {
         this.disposableCollection.push(this.onDidChangeStatusBarCommandsEmitter);
     }
 
-    private _id = `scm${ScmProviderImpl.ID ++}`;
+    private _id = `scm${ScmProviderImpl.ID++}`;
 
     get id(): string {
         return this._id;
@@ -915,7 +920,7 @@ export class ScmProviderImpl implements ScmProvider {
     }
 
     get acceptInputCommand(): ScmCommand | undefined {
-        return  GIT_COMMANDS.COMMIT;
+        return GIT_COMMANDS.COMMIT;
     }
 
     get statusBarCommands(): ScmCommand[] | undefined {
@@ -926,7 +931,7 @@ export class ScmProviderImpl implements ScmProvider {
         return this._count;
     }
 
-    set count(count: number| undefined) {
+    set count(count: number | undefined) {
         this._count = count;
     }
 
@@ -960,5 +965,56 @@ export class ScmProviderImpl implements ScmProvider {
 
     fireChange(): void {
         this.onDidChangeEmitter.fire(undefined);
+    }
+
+    get amendSupport(): ScmAmendSupport | undefined {
+        return this._amendSupport;
+    }
+}
+
+export class GitAmendSupport implements ScmAmendSupport {
+
+    constructor(protected readonly repository: Repository, protected readonly git: Git) { }
+
+    public async init(repository: ScmRepository, storedState: string, lastHead: string): Promise<ScmCommit[]> {
+        if (!repository.provider.rootUri) {
+            throw new Error('Repository is not a valid Git repository');
+        }
+        const { amendingHeadCommitSha } = JSON.parse(storedState);
+        const gitRepository: Repository = { localUri: repository.provider.rootUri };
+        const commits = await this.git.log(
+            gitRepository,
+            {
+                range: { toRevision: amendingHeadCommitSha, fromRevision: lastHead },
+                maxCount: 50
+            }
+        );
+
+        return commits.map(this.createScmCommit);
+    }
+
+    public async getMessage(commit: string): Promise<string> {
+        return (await this.git.exec(this.repository, ['log', '-n', '1', '--format=%B', commit])).stdout.trim();
+    }
+
+    public async reset(commit: string): Promise<void> {
+        await this.git.exec(this.repository, ['reset', commit, '--soft']);
+    }
+
+    public async getLastCommit(): Promise<ScmCommit | undefined> {
+        const commits = await this.git.log(this.repository, { maxCount: 1, shortSha: true });
+        if (commits.length > 0) {
+            return this.createScmCommit(commits[0]);
+        }
+    }
+
+    private createScmCommit(gitCommit: CommitWithChanges) {
+        return {
+            id: gitCommit.sha,
+            summary: gitCommit.summary,
+            authorName: gitCommit.author.name,
+            authorEmail: gitCommit.author.email,
+            authorDateRelative: gitCommit.authorDateRelative
+        };
     }
 }

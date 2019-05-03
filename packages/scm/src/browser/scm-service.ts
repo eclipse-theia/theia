@@ -32,6 +32,8 @@ export interface ScmProvider extends Disposable {
     readonly onDidChangeStatusBarCommands?: Event<ScmCommand[]>;
     readonly acceptInputCommand?: ScmCommand;
     readonly onDidChange: Event<void>;
+
+    readonly amendSupport?: ScmAmendSupport;
 }
 
 export interface ScmResourceGroup extends Disposable {
@@ -86,6 +88,21 @@ export interface ScmInput extends Disposable {
     validateInput: InputValidator;
 
     readonly onDidChange: Event<string>;
+}
+
+export interface ScmCommit {
+    id: string,  // eg Git sha or Mercurial revision number
+    summary: string,
+    authorName: string,
+    authorEmail: string,
+    authorDateRelative: string
+}
+
+export interface ScmAmendSupport {
+    init(repository: ScmRepository, storedState: string, lastHead: string): Promise<ScmCommit[]>
+    getMessage(commit: string): Promise<string>;
+    reset(commit: string): Promise<void>;
+    getLastCommit(): Promise<ScmCommit | undefined>;
 }
 
 @injectable()
