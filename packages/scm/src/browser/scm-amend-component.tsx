@@ -16,7 +16,7 @@
 
 import React = require('react');
 import { ScmRepository, ScmAmendSupport, ScmCommit } from './scm-service';
-import { GitAvatarService } from '@theia/git/lib/browser/history/git-avatar-service';
+import { AvatarService } from './avatar-service';
 import { StorageService } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core';
 
@@ -28,7 +28,7 @@ export interface ScmAmendComponentProps {
     repository: ScmRepository,
     scmAmendSupport: ScmAmendSupport,
     setCommitMessage: (message: string) => void,
-    avatarService: GitAvatarService,
+    avatarService: AvatarService,
     storageService: StorageService,
 }
 
@@ -59,7 +59,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     /**
      * a hint on how to animate an update, set by certain user action handlers
-     * and used when updating the view based on a Git repository change
+     * and used when updating the view based on a repository change
      */
     protected transitionHint: 'none' | 'amend' | 'unamend' = 'none';
 
@@ -89,12 +89,12 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         this.setState({ amendingCommits: await this.buildAmendingList(lastCommit ? lastCommit.commit : undefined), lastCommit });
 
         this.toDisposeOnUnmount.push(
-            this.props.repository.provider.onDidChange(async gitEvent => {
+            this.props.repository.provider.onDidChange(async event => {
                 this.fetchStatusAndSetState();
             })
         );
         this.toDisposeOnUnmount.push(
-            this.props.repository.provider.onDidChangeResources(async gitEvent => {
+            this.props.repository.provider.onDidChangeResources(async event => {
                 this.fetchStatusAndSetState();
             })
         );
@@ -203,7 +203,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     /**
      * This function will update the 'model' (lastCommit, amendingCommits) only
-     * when the Git repository sees the last commit change.
+     * when the repository sees the last commit change.
      * 'render' can be called at any time, so be sure we don't update any 'model'
      * fields until we actually start the transition.
      */
@@ -247,7 +247,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     render() {
         return (
-            <div className={ScmAmendComponent.Styles.LAST_COMMIT_CONTAINER} style={this.props.style} id={this.props.id} tabIndex={2}>
+            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER} style={this.props.style} id={this.props.id} tabIndex={2}>
                 {
                     this.state.amendingCommits.length > 0 || (this.state.lastCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'down')
                         ? this.renderAmendingCommits()
@@ -257,7 +257,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                     this.state.lastCommit ?
                         <div>
                             <div id='lastCommit' className='changesContainer'>
-                                <div className='theia-header git-theia-header'>
+                                <div className='theia-header scm-theia-header'>
                                     HEAD Commit
                             </div>
                                 {this.renderLastCommit()}
@@ -321,7 +321,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         }
 
         const canAmend: boolean = true;
-        return <div className={ScmAmendComponent.Styles.LAST_COMMIT_AND_BUTTON} style={{ flexGrow: 0, flexShrink: 0 }} key={this.state.lastCommit.commit.id}>
+        return <div className={ScmAmendComponent.Styles.COMMIT_AND_BUTTON} style={{ flexGrow: 0, flexShrink: 0 }} key={this.state.lastCommit.commit.id}>
             {this.renderLastCommitNoButton(this.state.lastCommit)}
             {
                 canAmend
@@ -372,32 +372,32 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     protected renderCommitAvatarAndDetail(commitData: { commit: ScmCommit, avatar: string }): React.ReactNode {
         const { commit, avatar } = commitData;
-        return <div className={ScmAmendComponent.Styles.LAST_COMMIT_AVATAR_AND_TEXT} key={commit.id}>
-            <div className={ScmAmendComponent.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
+        return <div className={ScmAmendComponent.Styles.COMMIT_AVATAR_AND_TEXT} key={commit.id}>
+            <div className={ScmAmendComponent.Styles.COMMIT_MESSAGE_AVATAR}>
                 <img src={avatar} />
             </div>
-            <div className={ScmAmendComponent.Styles.LAST_COMMIT_DETAILS}>
-                <div className={ScmAmendComponent.Styles.LAST_COMMIT_MESSAGE_SUMMARY}>{commit.summary}</div>
+            <div className={ScmAmendComponent.Styles.COMMIT_DETAILS}>
+                <div className={ScmAmendComponent.Styles.COMMIT_MESSAGE_SUMMARY}>{commit.summary}</div>
                 <div className={ScmAmendComponent.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${commit.authorDateRelative} by ${commit.authorName}`}</div>
             </div>
         </div>;
     }
 
     protected renderCommitCount(commits: number): React.ReactNode {
-        return <div className='notification-count-container git-change-count'>
+        return <div className='notification-count-container scm-change-count'>
             <span className='notification-count'>{commits}</span>
         </div>;
     }
 
     protected renderCommitBeingAmended(commitData: { commit: ScmCommit, avatar: string }, isOldestAmendCommit: boolean) {
         if (isOldestAmendCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'up') {
-            return <div className='theia-git-last-commit-avatar-and-text' style={{ flexGrow: 0, flexShrink: 0 }} key={commitData.commit.id}>
+            return <div className={ScmAmendComponent.Styles.COMMIT_AVATAR_AND_TEXT} style={{ flexGrow: 0, flexShrink: 0 }} key={commitData.commit.id}>
                 <div className='fixed-height-commit-container'>
                     {this.renderCommitAvatarAndDetail(commitData)}
                 </div>
             </div>;
         } else {
-            return <div className='theia-git-last-commit-avatar-and-text' style={{ flexGrow: 0, flexShrink: 0 }} key={commitData.commit.id}>
+            return <div className={ScmAmendComponent.Styles.COMMIT_AVATAR_AND_TEXT} style={{ flexGrow: 0, flexShrink: 0 }} key={commitData.commit.id}>
                 {this.renderCommitAvatarAndDetail(commitData)}
                 {
                     isOldestAmendCommit
@@ -538,13 +538,13 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 export namespace ScmAmendComponent {
 
     export namespace Styles {
-        export const LAST_COMMIT_CONTAINER = 'theia-git-last-commit-container';
-        export const LAST_COMMIT_AND_BUTTON = 'theia-git-last-commit-and-button';
-        export const LAST_COMMIT_AVATAR_AND_TEXT = 'theia-git-last-commit-avatar-and-text';
-        export const LAST_COMMIT_DETAILS = 'theia-git-last-commit-details';
-        export const LAST_COMMIT_MESSAGE_AVATAR = 'theia-git-last-commit-message-avatar';
-        export const LAST_COMMIT_MESSAGE_SUMMARY = 'theia-git-last-commit-message-summary';
-        export const LAST_COMMIT_MESSAGE_TIME = 'theia-git-last-commit-message-time';
+        export const COMMIT_CONTAINER = 'theia-scm-commit-container';
+        export const COMMIT_AND_BUTTON = 'theia-scm-commit-and-button';
+        export const COMMIT_AVATAR_AND_TEXT = 'theia-scm-commit-avatar-and-text';
+        export const COMMIT_DETAILS = 'theia-scm-commit-details';
+        export const COMMIT_MESSAGE_AVATAR = 'theia-scm-commit-message-avatar';
+        export const COMMIT_MESSAGE_SUMMARY = 'theia-scm-commit-message-summary';
+        export const LAST_COMMIT_MESSAGE_TIME = 'theia-scm-commit-message-time';
 
         export const FLEX_CENTER = 'flex-container-center';
     }

@@ -26,7 +26,6 @@ import { GitWatcher } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
-import { GitAvatarService } from './history/git-avatar-service';
 import * as React from 'react';
 import { GitErrorHandler } from './git-error-handler';
 import { GitFileChangeNode } from './git-file-change-node';
@@ -69,26 +68,12 @@ export class GitCommands implements Disposable {
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(GitAvatarService) protected readonly avatarService: GitAvatarService,
         @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator) {
     }
 
     async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const uriToOpen = this.getUriToOpen(change);
         return this.editorManager.open(await uriToOpen, options);
-    }
-    protected async amend(): Promise<void> {
-        const { selectedRepository } = this.repositoryProvider;
-        if (selectedRepository) {
-            const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
-            const commitTextArea = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLTextAreaElement;
-            await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
-            if (commitTextArea) {
-                this.message = message;
-                commitTextArea.value = message;
-                commitTextArea.focus();
-            }
-        }
     }
 
     async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message): Promise<void> {
@@ -132,19 +117,6 @@ export class GitCommands implements Disposable {
     readonly openFile = (uri: URI) => this.doOpenFile(uri);
     protected doOpenFile(uri: URI): void {
         this.editorManager.open(uri, { mode: 'reveal' });
-    }
-
-    protected async getLastCommit(): Promise<{ commit: CommitWithChanges, avatar: string } | undefined> {
-        const { selectedRepository } = this.repositoryProvider;
-        if (selectedRepository) {
-            const commits = await this.git.log(selectedRepository, { maxCount: 1, shortSha: true });
-            if (commits.length > 0) {
-                const commit = commits[0];
-                const avatar = await this.avatarService.getAvatar(commit.author.email);
-                return { commit, avatar };
-            }
-        }
-        return undefined;
     }
 
     protected readonly refresh = () => this.doRefresh();
@@ -355,16 +327,16 @@ export class GitCommands implements Disposable {
 
     private async getStagedChanges(repository: Repository): Promise<GitFileChange[]> {
         const status = await this.git.status(repository);
-        return  status.changes.filter(change => change.staged);
+        return status.changes.filter(change => change.staged);
     }
 
     private async getUnStagedChanges(repository: Repository): Promise<GitFileChange[]> {
         const status = await this.git.status(repository);
-        return  status.changes.filter(change => !change.staged);
+        return status.changes.filter(change => !change.staged);
     }
 
     private async getMergeChanges(repository: Repository): Promise<GitFileChange[]> {
         const status = await this.git.status(repository);
-        return  status.changes.filter(change => GitFileStatus[GitFileStatus.Conflicted.valueOf()] === GitFileStatus[change.status]);
+        return status.changes.filter(change => GitFileStatus[GitFileStatus.Conflicted.valueOf()] === GitFileStatus[change.status]);
     }
 }

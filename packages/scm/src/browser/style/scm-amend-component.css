@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.theia-git-last-commit-container {
+.theia-scm-commit-container {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -23,14 +23,14 @@
     padding-top: 6px;
 }
 
-.theia-git-last-commit-and-button {
+.theia-scm-commit-and-button {
     display: flex;
     white-space: nowrap;
     overflow: hidden;
     width: 100%;
 }
 
-.theia-git-last-commit-avatar-and-text {
+.theia-scm-commit-avatar-and-text {
     display: flex;
     white-space: nowrap;
     overflow: hidden;
@@ -38,11 +38,11 @@
     padding-top: 2px;
 }
 
-.theia-git-last-commit-avatar-and-text img {
+.theia-scm-commit-avatar-and-text img {
     width: 27px;
 }
 
-.theia-git-last-commit-details {
+.theia-scm-commit-details {
     display: flex;
     flex-direction: column;
     white-space: nowrap;
@@ -51,17 +51,17 @@
     width: 100%;
 }
 
-.theia-git-last-commit-message-avatar {
+.theia-scm-commit-message-avatar {
     margin-right: 5px;
 }
 
-.theia-git-last-commit-message-summary {
+.theia-scm-commit-message-summary {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.theia-git-last-commit-message-time {
+.theia-scm-commit-message-time {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
