@@ -36,6 +36,7 @@ export class DocumentsMainImpl implements DocumentsMain {
     private toDispose = new DisposableCollection();
     private modelToDispose = new Map<string, Disposable>();
     private modelIsSynced = new Map<string, boolean>();
+    private modelService: EditorModelService;
 
     protected saveTimeout = 1750;
 
@@ -47,6 +48,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         private openerService: OpenerService,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
+        this.modelService = modelService;
 
         this.toDispose.push(editorsAndDocuments.onDocumentAdd(documents => documents.forEach(this.onModelAdded, this)));
         this.toDispose.push(editorsAndDocuments.onDocumentRemove(documents => documents.forEach(this.onModelRemoved, this)));
@@ -125,7 +127,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         return monaco.Uri.parse(resource.uri.toString());
     }
 
-    async $tryOpenDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
+    async $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
         // Removing try-catch block here makes it not possible to handle errors.
         // Following message is appeared in browser console
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
@@ -187,6 +189,15 @@ export class DocumentsMainImpl implements DocumentsMain {
         }
 
         return false;
+    }
+
+    async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
+        const model = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
+        if (model) {
+            this.onModelAdded(model);
+            return true;
+        }
+         return false;
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {

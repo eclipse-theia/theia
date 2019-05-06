@@ -730,7 +730,8 @@ export interface DocumentsExt {
 
 export interface DocumentsMain {
     $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents>;
-    $tryOpenDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
+    $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
+    $tryOpenDocument(uri: UriComponents): Promise<boolean>;
     $trySaveDocument(uri: UriComponents): Promise<boolean>;
     $tryCloseDocument(uri: UriComponents): Promise<boolean>;
 }

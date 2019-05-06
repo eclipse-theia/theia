@@ -253,7 +253,7 @@ export function createAPIFactory(
                         documentOptions = { preserveFocus };
                     }
                 }
-                await documents.openDocument(uri, documentOptions);
+                await documents.showDocument(uri, documentOptions);
                 const textEditor = editors.getVisibleTextEditors().find(editor => editor.document.uri.toString() === uri.toString());
                 if (textEditor) {
                     return Promise.resolve(textEditor);
