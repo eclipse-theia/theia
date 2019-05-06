@@ -16,16 +16,13 @@
 
 import { interfaces, injectable, inject, Container } from 'inversify';
 import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt } from '../../../api/plugin-api';
-import { RPCProtocol } from '@theia/plugin-ext/src/api/rpc-protocol';
+import { RPCProtocol } from '../../../api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
 import { Message } from '@phosphor/messaging';
 import {
     TreeWidget,
-    ContextMenuRenderer,
-    TreeModel,
     TreeNode,
     NodeProps,
-    TreeProps,
     createTreeContainer,
     SelectableTreeNode,
     ExpandableTreeNode,
@@ -33,14 +30,19 @@ import {
     TreeImpl,
     Tree,
     TREE_NODE_SEGMENT_CLASS,
-    TREE_NODE_SEGMENT_GROW_CLASS
+    TREE_NODE_SEGMENT_GROW_CLASS,
+    FOLDER_ICON,
+    FILE_ICON,
+    TREE_NODE_TAIL_CLASS
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
+import { Command, CommandService } from '@theia/core/lib/common/command';
 import { MenuPath } from '@theia/core/lib/common/menu';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
-import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
-import { SelectionService } from '@theia/core/lib/common';
+import { PluginSharedStyle } from '../plugin-shared-style';
+import { TreeViewActions } from './tree-view-actions';
+import { TreeViewContextKeyService } from './tree-view-context-key-service';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -59,24 +61,24 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
     private viewRegistry: ViewRegistry;
 
-    protected viewCtxKey: ContextKey<string>;
-    protected viewItemCtxKey: ContextKey<string>;
+    private readonly contextKeys: TreeViewContextKeyService;
+    private readonly sharedStyle: PluginSharedStyle;
 
     constructor(rpc: RPCProtocol, private container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT);
         this.viewRegistry = container.get(ViewRegistry);
 
-        const contextKeyService = this.container.get<ContextKeyService>(ContextKeyService);
-        this.viewCtxKey = contextKeyService.createKey('view', '');
-        this.viewItemCtxKey = contextKeyService.createKey('viewItem', '');
+        this.contextKeys = this.container.get(TreeViewContextKeyService);
+        this.sharedStyle = this.container.get(PluginSharedStyle);
     }
 
     $registerTreeDataProvider(treeViewId: string): void {
-        const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy);
+        const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy, this.sharedStyle);
         this.dataProviders.set(treeViewId, dataProvider);
 
         const treeViewContainer = this.createTreeViewContainer(dataProvider);
         const treeViewWidget = treeViewContainer.get(TreeViewWidget);
+        treeViewWidget.id = treeViewId;
 
         this.treeViewWidgets.set(treeViewId, treeViewWidget);
 
@@ -128,15 +130,13 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
         treeViewWidget.model.onSelectionChanged(event => {
             if (event.length === 1) {
-                const treeItemId = event[0].id;
-                const [, contextValue = ''] = treeItemId.split('/');
-
-                this.proxy.$setSelection(treeViewId, treeItemId, treeViewWidget.contextSelection);
-                this.viewItemCtxKey.set(contextValue);
+                const { id, contextValue } = event[0] as TreeViewNode;
+                this.proxy.$setSelection(treeViewId, id, treeViewWidget.contextSelection);
+                this.contextKeys.viewItem.set(contextValue);
             } else {
-                this.viewItemCtxKey.set('');
+                this.contextKeys.viewItem.set('');
             }
-            this.viewCtxKey.set(treeViewId);
+            this.contextKeys.view.set(treeViewId);
         });
     }
 
@@ -152,48 +152,68 @@ export interface DescriptiveMetadata {
     readonly metadata?: any
 }
 
-export interface TreeViewFolderNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, DescriptiveMetadata {
+export interface TreeViewNode extends SelectableTreeNode, DescriptiveMetadata {
+    contextValue?: string
 }
 
-export interface TreeViewFileNode extends SelectableTreeNode, DescriptiveMetadata {
+export interface CompositeTreeViewNode extends TreeViewNode, ExpandableTreeNode, CompositeTreeNode {
 }
 
 export class TreeViewDataProviderMain {
 
-    constructor(private treeViewId: string, private proxy: TreeViewsExt) {
-    }
+    constructor(
+        private treeViewId: string,
+        private proxy: TreeViewsExt,
+        private sharedStyle: PluginSharedStyle
+    ) { }
 
-    createFolderNode(item: TreeViewItem): TreeViewFolderNode {
-        let expanded = false;
-        if (TreeViewItemCollapsibleState.Expanded === item.collapsibleState) {
-            expanded = true;
-        }
-
+    createFolderNode(item: TreeViewItem): CompositeTreeViewNode {
+        const expanded = TreeViewItemCollapsibleState.Expanded === item.collapsibleState;
+        const icon = this.toIconClass(item);
         return {
             id: item.id,
             parent: undefined,
             name: item.label,
-            icon: item.icon,
+            icon,
             description: item.tooltip,
             visible: true,
             selected: false,
             expanded,
             children: [],
-            metadata: item.metadata
+            metadata: item.metadata,
+            contextValue: item.contextValue
         };
     }
 
-    createFileNode(item: TreeViewItem): TreeViewFileNode {
+    createFileNode(item: TreeViewItem): TreeViewNode {
+        const icon = this.toIconClass(item);
         return {
             id: item.id,
             name: item.label,
-            icon: item.icon,
+            icon,
             description: item.tooltip,
             parent: undefined,
             visible: true,
             selected: false,
-            metadata: item.metadata
+            metadata: item.metadata,
+            contextValue: item.contextValue
         };
+    }
+
+    protected toIconClass(item: TreeViewItem): string | undefined {
+        if (item.icon) {
+            return 'fa ' + item.icon;
+        }
+        if (item.iconUrl) {
+            return this.sharedStyle.toIconClass(item.iconUrl);
+        }
+        if (item.themeIconId) {
+            return item.themeIconId === 'folder' ? FOLDER_ICON : FILE_ICON;
+        }
+        if (item.resourceUri) {
+            return item.collapsibleState !== TreeViewItemCollapsibleState.None ? FOLDER_ICON : FILE_ICON;
+        }
+        return undefined;
     }
 
     /**
@@ -202,14 +222,9 @@ export class TreeViewDataProviderMain {
      * @param item tree view item from the ext
      */
     createTreeNode(item: TreeViewItem): TreeNode {
-        if ('collapsibleState' in item) {
-            if (TreeViewItemCollapsibleState.Expanded === item.collapsibleState) {
-                return this.createFolderNode(item);
-            } else if (TreeViewItemCollapsibleState.Collapsed === item.collapsibleState) {
-                return this.createFolderNode(item);
-            }
+        if (item.collapsibleState !== TreeViewItemCollapsibleState.None) {
+            return this.createFolderNode(item);
         }
-
         return this.createFileNode(item);
     }
 
@@ -230,14 +245,14 @@ export class TreeViewWidget extends TreeWidget {
 
     protected _contextSelection = false;
 
-    constructor(
-        @inject(TreeProps) readonly treeProps: TreeProps,
-        @inject(TreeModel) readonly model: TreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(TreeViewDataProviderMain) readonly dataProvider: TreeViewDataProviderMain,
-        @inject(SelectionService) readonly selectionService: SelectionService) {
-        super(treeProps, model, contextMenuRenderer);
-    }
+    @inject(TreeViewActions)
+    protected readonly actions: TreeViewActions;
+
+    @inject(CommandService)
+    protected readonly commands: CommandService;
+
+    @inject(TreeViewContextKeyService)
+    protected readonly contextKeys: TreeViewContextKeyService;
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
@@ -282,9 +297,8 @@ export class TreeViewWidget extends TreeWidget {
 
     renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (node.icon) {
-            return <div className={'fa ' + node.icon + ' tree-view-icon'}></div>;
+            return <div className={node.icon + ' tree-view-icon'}></div>;
         }
-
         return undefined;
     }
 
@@ -335,6 +349,51 @@ export class TreeViewWidget extends TreeWidget {
 
         nodes.push(work);
         return nodes;
+    }
+
+    protected renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
+        if (this.model.selectedNodes.every(selected => selected.id !== node.id) && node.id !== this.hoverNodeId) {
+            return false;
+        }
+        const view = this.contextKeys.view.get();
+        const viewItem = this.contextKeys.viewItem.get();
+        this.contextKeys.view.set(this.id);
+        this.contextKeys.viewItem.set(node.contextValue);
+        try {
+            const arg = node.metadata;
+            return <React.Fragment>
+                {this.actions.getInlineCommands(arg).map(command => this.renderInlineCommand(command, arg))}
+            </React.Fragment>;
+        } finally {
+            this.contextKeys.view.set(view);
+            this.contextKeys.viewItem.set(viewItem);
+        }
+    }
+
+    // tslint:disable-next-line:no-any
+    protected renderInlineCommand(command: Command, arg: any): React.ReactNode {
+        if (!command.iconClass) {
+            return false;
+        }
+        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, command.iconClass, 'theia-tree-view-inline-action'].join(' ');
+        return <div key={command.id} className={className} title={command.label || ''} onClick={e => {
+            e.stopPropagation();
+            this.commands.executeCommand(command.id, arg);
+        }} />;
+    }
+
+    protected hoverNodeId: string | undefined;
+    protected setHoverNodeId(hoverNodeId: string | undefined): void {
+        this.hoverNodeId = hoverNodeId;
+        this.update();
+    }
+
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+        return {
+            ...super.createNodeAttributes(node, props),
+            onMouseOver: () => this.setHoverNodeId(node.id),
+            onMouseOut: () => this.setHoverNodeId(undefined)
+        };
     }
 
 }

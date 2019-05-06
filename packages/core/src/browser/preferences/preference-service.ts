@@ -33,6 +33,7 @@ export interface PreferenceChange {
     readonly preferenceName: string;
     readonly newValue?: any;
     readonly oldValue?: any;
+    readonly scope: PreferenceScope;
     affects(resourceUri?: string): boolean;
 }
 
@@ -49,6 +50,9 @@ export class PreferenceChangeImpl implements PreferenceChange {
     }
     get oldValue() {
         return this.change.oldValue;
+    }
+    get scope(): PreferenceScope {
+        return this.change.scope;
     }
 
     // TODO add tests

@@ -20,6 +20,7 @@ import '../../src/browser/style/symbol-icons.css';
 
 import { ContainerModule, decorate, injectable, interfaces } from 'inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution, PreferenceServiceImpl } from '@theia/core/lib/browser';
 import { Languages, Workspace } from '@theia/languages/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
@@ -54,6 +55,8 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
 import { MonacoMimeService } from './monaco-mime-service';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
+
+import debounce = require('lodash.debounce');
 
 const deepmerge: (args: object[]) => object = require('deepmerge').default.all;
 
@@ -147,6 +150,16 @@ export function createMonacoConfigurationService(container: interfaces.Container
         return preferenceConfig.toJSON();
     };
 
+    const initFromConfiguration = debounce(() => {
+        const event = new monaco.services.ConfigurationChangeEvent();
+        event._source = monaco.services.ConfigurationTarget.DEFAULT;
+        service._onDidChangeConfiguration.fire(event);
+    });
+    preferences.onPreferenceChanged(e => {
+        if (e.scope === PreferenceScope.Default) {
+            initFromConfiguration();
+        }
+    });
     preferences.onPreferencesChanged(changes => {
         const event = new monaco.services.ConfigurationChangeEvent();
         event.change(Object.keys(changes));

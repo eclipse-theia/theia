@@ -14,14 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import * as React from 'react';
+import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import { DisposableCollection } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import * as React from 'react';
+import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
 
 @injectable()
 export class PluginWidget extends ReactWidget {
@@ -30,6 +31,9 @@ export class PluginWidget extends ReactWidget {
     protected readonly toDisposeOnFetch = new DisposableCollection();
     protected readonly toDisposeOnSearch = new DisposableCollection();
     protected ready = false;
+
+    @inject(HostedPluginWatcher)
+    protected readonly watcher: HostedPluginWatcher;
 
     constructor(
         @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
@@ -41,20 +45,21 @@ export class PluginWidget extends ReactWidget {
         this.title.caption = 'Plugins';
         this.title.iconClass = 'fa plugins-tab-icon';
         this.title.closable = true;
+        this.node.tabIndex = 0;
         this.addClass('theia-plugins');
 
         this.update();
         this.fetchPlugins();
     }
 
-    protected onActivateRequest(msg: Message) {
-        super.onActivateRequest(msg);
-        this.fetchPlugins();
-        this.node.focus();
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.watcher.onDidDeploy(() => this.fetchPlugins()));
     }
 
-    public refreshPlugins(): void {
-        this.fetchPlugins();
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.node.focus();
     }
 
     protected fetchPlugins(): Promise<PluginMetadata[]> {

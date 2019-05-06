@@ -28,6 +28,7 @@ import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { MetadataSelection } from '../metadata-selection';
+import { TreeViewActions } from '../view/tree-view-actions';
 import { ScmTitleCommandRegistry } from '@theia/scm/lib/browser/scm-title-command-registry';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmGroupCommandRegistry } from '@theia/scm/lib/browser/scm-group-command-registry';
@@ -55,6 +56,9 @@ export class MenusContributionPointHandler {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
+    @inject(TreeViewActions)
+    protected readonly treeViewActions: TreeViewActions;
+
     @inject(ScmTitleCommandRegistry)
     protected readonly scmTitleCommandRegistry: ScmTitleCommandRegistry;
 
@@ -78,6 +82,14 @@ export class MenusContributionPointHandler {
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
                     this.registerEditorTitleAction(action);
+                }
+            } else if (location === 'view/item/context') {
+                for (const menu of allMenus[location]) {
+                    if (menu.group && /^inline/.test(menu.group)) {
+                        this.treeViewActions.registerInlineAction(menu);
+                    } else {
+                        this.registerMenuAction(VIEW_ITEM_CONTEXT_MENU, menu);
+                    }
                 }
             } else if (location === 'scm/title') {
                 for (const action of allMenus[location]) {
@@ -208,7 +220,6 @@ export class MenusContributionPointHandler {
         switch (value) {
             case 'editor/context': return [EDITOR_CONTEXT_MENU];
             case 'explorer/context': return [NAVIGATOR_CONTEXT_MENU];
-            case 'view/item/context': return [VIEW_ITEM_CONTEXT_MENU];
             case 'debug/callstack/context': return [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU];
         }
         return [];

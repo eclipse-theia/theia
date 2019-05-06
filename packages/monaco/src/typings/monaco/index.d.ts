@@ -498,7 +498,12 @@ declare module monaco.services {
         getValue(section: string, overrides: any, workspace: any): any;
     }
 
+    export enum ConfigurationTarget {
+        DEFAULT
+    }
+
     export class ConfigurationChangeEvent {
+        _source?: ConfigurationTarget;
         change(keys: string[]): ConfigurationChangeEvent;
     }
 

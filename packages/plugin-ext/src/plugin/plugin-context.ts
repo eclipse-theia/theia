@@ -341,10 +341,10 @@ export function createAPIFactory(
                 return editors.createTextEditorDecorationType(options);
             },
             registerTreeDataProvider<T>(viewId: string, treeDataProvider: theia.TreeDataProvider<T>): Disposable {
-                return treeViewsExt.registerTreeDataProvider(viewId, treeDataProvider);
+                return treeViewsExt.registerTreeDataProvider(plugin, viewId, treeDataProvider);
             },
             createTreeView<T>(viewId: string, options: { treeDataProvider: theia.TreeDataProvider<T> }): theia.TreeView<T> {
-                return treeViewsExt.createTreeView(viewId, options);
+                return treeViewsExt.createTreeView(plugin, viewId, options);
             },
             withProgress<R>(
                 options: ProgressOptions,

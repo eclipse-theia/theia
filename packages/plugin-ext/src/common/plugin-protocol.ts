@@ -50,6 +50,11 @@ export interface PluginPackage {
     contributes?: PluginPackageContribution;
     packagePath: string;
 }
+export namespace PluginPackage {
+    export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
+        return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
+    }
+}
 
 /**
  * This interface describes a package.json contribution section object.
@@ -563,6 +568,8 @@ export interface HostedPluginClient {
     postMessage(message: string): Promise<void>;
 
     log(logPart: LogPart): void;
+
+    onDidDeploy(): void;
 }
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');

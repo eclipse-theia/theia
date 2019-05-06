@@ -45,6 +45,10 @@ export namespace ElectronCommands {
         id: 'view.resetZoom',
         label: 'Reset Zoom'
     };
+    export const CLOSE_WINDOW: Command = {
+        id: 'close.window',
+        label: 'Close Window'
+    };
 }
 
 export namespace ElectronMenus {
@@ -54,6 +58,10 @@ export namespace ElectronMenus {
 
 export namespace ElectronMenus {
     export const HELP_TOGGLE = [...CommonMenus.HELP, 'z_toggle'];
+}
+
+export namespace ElectronMenus {
+    export const FILE_CLOSE = [...CommonMenus.FILE_CLOSE, 'window-close'];
 }
 
 @injectable()
@@ -96,6 +104,9 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     registerCommands(registry: CommandRegistry): void {
+
+        const currentWindow = electron.remote.getCurrentWindow();
+
         registry.registerCommand(ElectronCommands.TOGGLE_DEVELOPER_TOOLS, {
             execute: () => {
                 const webContent = electron.remote.getCurrentWebContents();
@@ -108,42 +119,30 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         });
 
         registry.registerCommand(ElectronCommands.RELOAD, {
-            execute: () => {
-                const focusedWindow = electron.remote.getCurrentWindow();
-                if (focusedWindow) {
-                    focusedWindow.reload();
-                }
-            }
+            execute: () => currentWindow.reload()
         });
+        registry.registerCommand(ElectronCommands.CLOSE_WINDOW, {
+            execute: () => currentWindow.close()
+        });
+
         registry.registerCommand(ElectronCommands.ZOOM_IN, {
             execute: () => {
-                const focusedWindow = electron.remote.getCurrentWindow();
-                if (focusedWindow) {
-                    const webContents = focusedWindow.webContents;
-                    webContents.getZoomLevel(zoomLevel =>
-                        webContents.setZoomLevel(zoomLevel + 0.5)
-                    );
-                }
+                const webContents = currentWindow.webContents;
+                webContents.getZoomLevel(zoomLevel =>
+                    webContents.setZoomLevel(zoomLevel + 0.5)
+                );
             }
         });
         registry.registerCommand(ElectronCommands.ZOOM_OUT, {
             execute: () => {
-                const focusedWindow = electron.remote.getCurrentWindow();
-                if (focusedWindow) {
-                    const webContents = focusedWindow.webContents;
-                    webContents.getZoomLevel(zoomLevel =>
-                        webContents.setZoomLevel(zoomLevel - 0.5)
-                    );
-                }
+                const webContents = currentWindow.webContents;
+                webContents.getZoomLevel(zoomLevel =>
+                    webContents.setZoomLevel(zoomLevel - 0.5)
+                );
             }
         });
         registry.registerCommand(ElectronCommands.RESET_ZOOM, {
-            execute: () => {
-                const focusedWindow = electron.remote.getCurrentWindow();
-                if (focusedWindow) {
-                    focusedWindow.webContents.setZoomLevel(0);
-                }
-            }
+            execute: () => currentWindow.webContents.setZoomLevel(0)
         });
     }
 
@@ -168,6 +167,10 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             {
                 command: ElectronCommands.RESET_ZOOM.id,
                 keybinding: 'ctrlcmd+0'
+            },
+            {
+                command: ElectronCommands.CLOSE_WINDOW.id,
+                keybinding: 'ctrlcmd+shift+w'
             }
         );
     }
@@ -193,6 +196,9 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerMenuAction(ElectronMenus.VIEW_ZOOM, {
             commandId: ElectronCommands.RESET_ZOOM.id,
             order: 'z3'
+        });
+        registry.registerMenuAction(ElectronMenus.FILE_CLOSE, {
+            commandId: ElectronCommands.CLOSE_WINDOW.id,
         });
     }
 

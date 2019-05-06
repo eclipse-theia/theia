@@ -14,34 +14,31 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, postConstruct } from 'inversify';
-import { isOSX, isWindows } from '../../common/os';
+import { injectable, postConstruct, inject } from 'inversify';
+import { IKeyboardLayoutInfo } from 'native-keymap';
+import { isOSX } from '../../common/os';
 import { Emitter } from '../../common/event';
+import { ILogger } from '../../common/logger';
 import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
+import { KeyCode } from './keys';
+
+export type KeyboardLayoutSource = 'navigator.keyboard' | 'none';
 
 @injectable()
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier {
 
-    private linuxFrench = require('../../../src/common/keyboard/layouts/linux-fr-French.json');
-    private linuxGerman = require('../../../src/common/keyboard/layouts/linux-de-German.json');
-    private macUS = require('../../../src/common/keyboard/layouts/mac-en-US.json');
-    private macFrench = require('../../../src/common/keyboard/layouts/mac-fr-French.json');
-    private macGerman = require('../../../src/common/keyboard/layouts/mac-de-German.json');
-    private winUS = require('../../../src/common/keyboard/layouts/win-en-US.json');
-    private winFrench = require('../../../src/common/keyboard/layouts/win-fr-French.json');
-    private winGerman = require('../../../src/common/keyboard/layouts/win-de-German.json');
-
-    protected get allLayouts(): NativeKeyboardLayout[] {
-        return [
-            this.winUS, this.macUS, this.winFrench, this.macFrench, this.winGerman, this.macGerman
-        ];
-    }
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     protected readonly nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();
 
     get onDidChangeNativeLayout() {
         return this.nativeLayoutChanged.event;
     }
+
+    protected readonly tester = new KeyboardTester(loadAllLayouts());
+    protected source: KeyboardLayoutSource = 'none';
+    protected lastSelected?: KeyboardLayoutData;
 
     @postConstruct()
     protected initialize(): void {
@@ -59,73 +56,198 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
         if (keyboard && keyboard.getLayoutMap) {
             try {
                 const layoutMap = await keyboard.getLayoutMap();
-                return this.getFromLayoutMap(layoutMap);
+                this.source = 'navigator.keyboard';
+                this.testLayoutMap(layoutMap);
             } catch (error) {
-                return this.getLayoutByLanguageOrPlatform();
+                this.logger.warn('Failed to obtain keyboard layout map.', error);
             }
         }
-        return this.getLayoutByLanguageOrPlatform();
+        const layout = this.selectLayout();
+        this.setSelected(layout);
+        return layout.raw;
     }
 
-    private getLayoutByLanguageOrPlatform(): Promise<NativeKeyboardLayout> {
-        if (navigator.language) {
-            return Promise.resolve(this.getFromLanguage(navigator.language));
-        } else {
-            return Promise.resolve(isOSX ? this.macUS : this.winUS);
+    /**
+     * Test all known keyboard layouts with the given KeyCode. Layouts that match the
+     * combination of key and produced character have their score increased (see class
+     * KeyboardTester). If this leads to a change of the top-scoring layout, a layout
+     * change event is fired.
+     */
+    validateKeyCode(keyCode: KeyCode): void {
+        if (!keyCode.key || !keyCode.character || this.source !== 'none') {
+            return;
         }
+        const accepted = this.tester.updateScores({
+            code: keyCode.key.code,
+            character: keyCode.character,
+            shiftKey: keyCode.shift,
+            ctrlKey: keyCode.ctrl,
+            altKey: keyCode.alt
+        });
+        if (!accepted) {
+            return;
+        }
+        const layout = this.selectLayout();
+        if (this.lastSelected === undefined || layout !== this.lastSelected && layout !== DEFAULT_LAYOUT_DATA) {
+            this.setSelected(layout);
+            this.nativeLayoutChanged.fire(layout.raw);
+        }
+    }
+
+    protected setSelected(layout: KeyboardLayoutData): void {
+        this.lastSelected = layout;
+        this.logger.info(`Detected keyboard layout: ${layout.name}`);
     }
 
     /**
      * @param layoutMap a keyboard layout map according to https://wicg.github.io/keyboard-map/
      */
-    protected getFromLayoutMap(layoutMap: KeyboardLayoutMap): NativeKeyboardLayout {
-        const tester = new KeyboardTester(this.allLayouts);
+    protected testLayoutMap(layoutMap: KeyboardLayoutMap): void {
+        this.tester.reset();
         for (const [code, key] of layoutMap.entries()) {
-            tester.updateScores({ code, key });
-        }
-        const result = tester.getTopScoringCandidates();
-        if (result.length > 0) {
-            return result[0];
-        } else {
-            return isOSX ? this.macUS : this.winUS;
+            this.tester.updateScores({ code, character: key });
         }
     }
 
     /**
-     * @param language an IETF BCP 47 language tag
+     * Select a layout based on the current tester state and the operating system
+     * and language detected from the browser.
      */
-    protected getFromLanguage(language: string): NativeKeyboardLayout {
-        if (isOSX) {
-            if (language.startsWith('de')) {
-                return this.macGerman;
-            } else if (language.startsWith('fr')) {
-                return this.macFrench;
-            } else {
-                return this.macUS;
-            }
-        } else if (isWindows) {
-            if (language.startsWith('de')) {
-                return this.winGerman;
-            } else if (language.startsWith('fr')) {
-                return this.winFrench;
-            } else {
-                return this.winUS;
-            }
-        } else {
-            if (language.startsWith('de')) {
-                return this.linuxGerman;
-            } else if (language.startsWith('fr')) {
-                return this.linuxFrench;
+    protected selectLayout(): KeyboardLayoutData {
+        const candidates = this.tester.candidates;
+        const scores = this.tester.scores;
+        const topScore = this.tester.topScore;
+        const language = navigator.language;
+        let matchingOScount = 0;
+        let topScoringCount = 0;
+        for (let i = 0; i < candidates.length; i++) {
+            if (scores[i] === topScore) {
+                const candidate = candidates[i];
+                if (osMatches(candidate.hardware)) {
+                    if (language && language.startsWith(candidate.language)) {
+                        return candidate;
+                    }
+                    matchingOScount++;
+                }
+                topScoringCount++;
             }
         }
-        return {
-            info: { 'model': 'pc105', 'layout': 'us', 'variant': '', 'options': '', 'rules': '' },
-            mapping: {}
-        };
+        if (topScoringCount === 1) {
+            return candidates.find((_, i) => scores[i] === topScore)!;
+        }
+        if (matchingOScount === 1) {
+            return candidates.find((c, i) => scores[i] === topScore && osMatches(c.hardware))!;
+        }
+        return DEFAULT_LAYOUT_DATA;
     }
 
 }
 
+export interface KeyboardLayoutData {
+    name: string;
+    hardware: 'pc' | 'mac';
+    language: string;
+    raw: NativeKeyboardLayout;
+}
+
+function osMatches(hardware: 'pc' | 'mac'): boolean {
+    return isOSX ? hardware === 'mac' : hardware === 'pc';
+}
+
+/**
+ * This is the fallback keyboard layout selected when nothing else matches.
+ * It has an empty mapping, so user inputs are handled like with a standard US keyboard.
+ */
+export const DEFAULT_LAYOUT_DATA: KeyboardLayoutData = {
+    name: 'US',
+    hardware: isOSX ? 'mac' : 'pc',
+    language: 'en',
+    raw: {
+        info: {} as IKeyboardLayoutInfo,
+        mapping: {}
+    }
+};
+
+export interface KeyboardTestInput {
+    code: string;
+    character: string;
+    shiftKey?: boolean;
+    ctrlKey?: boolean;
+    altKey?: boolean;
+}
+
+/**
+ * Holds score values for all known keyboard layouts. Scores are updated
+ * by comparing key codes with the corresponding character produced by
+ * the user's keyboard.
+ */
+export class KeyboardTester {
+
+    readonly scores: number[];
+    topScore: number = 0;
+
+    private readonly testedInputs = new Map<string, string>();
+
+    constructor(readonly candidates: KeyboardLayoutData[]) {
+        this.scores = this.candidates.map(() => 0);
+    }
+
+    reset(): void {
+        for (let i = 0; i < this.scores.length; i++) {
+            this.scores[i] = 0;
+        }
+        this.topScore = 0;
+        this.testedInputs.clear();
+    }
+
+    updateScores(input: KeyboardTestInput): boolean {
+        let property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr';
+        if (input.shiftKey && input.altKey) {
+            property = 'withShiftAltGr';
+        } else if (input.shiftKey) {
+            property = 'withShift';
+        } else if (input.altKey) {
+            property = 'withAltGr';
+        } else {
+            property = 'value';
+        }
+        const inputKey = `${input.code}.${property}`;
+        if (this.testedInputs.has(inputKey)) {
+            if (this.testedInputs.get(inputKey) === input.character) {
+                return false;
+            } else {
+                // The same input keystroke leads to a different character:
+                // probably a keyboard layout change, so forget all previous scores
+                this.reset();
+            }
+        }
+
+        const scores = this.scores;
+        for (let i = 0; i < this.candidates.length; i++) {
+            scores[i] += this.testCandidate(this.candidates[i], input, property);
+            if (scores[i] > this.topScore) {
+                this.topScore = scores[i];
+            }
+        }
+        this.testedInputs.set(inputKey, input.character);
+        return true;
+    }
+
+    protected testCandidate(candidate: KeyboardLayoutData, input: KeyboardTestInput,
+        property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr'): number {
+        const keyMapping = candidate.raw.mapping[input.code];
+        if (keyMapping && keyMapping[property]) {
+            return keyMapping[property] === input.character ? 1 : 0;
+        } else {
+            return 0;
+        }
+    }
+
+}
+
+/**
+ * API specified by https://wicg.github.io/keyboard-map/
+ */
 interface NavigatorExtension extends Navigator {
     keyboard: Keyboard;
 }
@@ -137,53 +259,23 @@ interface Keyboard {
 
 type KeyboardLayoutMap = Map<string, string>;
 
-interface KeyboardTestInput {
-    code: string;
-    key: string;
-    shiftKey?: boolean;
-    ctrlKey?: boolean;
-    altKey?: boolean;
+function loadLayout(fileName: string): KeyboardLayoutData {
+    const [language, name, hardware] = fileName.split('-');
+    return {
+        name: `${name} (${hardware === 'mac' ? 'Mac' : 'PC'})`,
+        hardware: hardware as 'pc' | 'mac',
+        language,
+        raw: require('../../../src/common/keyboard/layouts/' + fileName + '.json')
+    };
 }
 
-class KeyboardTester {
-
-    private readonly scores: number[];
-
-    constructor(private readonly candidates: NativeKeyboardLayout[]) {
-        this.scores = this.candidates.map(() => 0);
-    }
-
-    testCandidate(candidate: NativeKeyboardLayout, input: KeyboardTestInput): number {
-        let property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr';
-        if (input.shiftKey && input.altKey) {
-            property = 'withShiftAltGr';
-        } else if (input.shiftKey) {
-            property = 'withShift';
-        } else if (input.altKey) {
-            property = 'withAltGr';
-        } else {
-            property = 'value';
-        }
-        const keyMapping = candidate.mapping[input.code];
-        if (keyMapping && keyMapping[property]) {
-            return keyMapping[property] === input.key ? 1 : 0;
-        } else {
-            return 0;
-        }
-    }
-
-    updateScores(input: KeyboardTestInput): void {
-        for (let i = 0; i < this.candidates.length; i++) {
-            this.scores[i] += this.testCandidate(this.candidates[i], input);
-        }
-    }
-
-    getTopScoringCandidates() {
-        let maxScore = 0;
-        for (let i = 0; i < this.scores.length; i++) {
-            maxScore = Math.max(maxScore, this.scores[i]);
-        }
-        return this.candidates.filter((c, i) => this.scores[i] === maxScore);
-    }
-
+function loadAllLayouts(): KeyboardLayoutData[] {
+    return [
+        'de-German-pc',
+        'de-German-mac',
+        'en-US-pc',
+        'en-US-mac',
+        'fr-French-pc',
+        'fr-French-mac'
+    ].map(loadLayout);
 }
