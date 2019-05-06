@@ -15,11 +15,15 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
+import { CommandContribution } from '../../common/command';
 import { KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
+import { BrowserKeyboardFrontendContribution } from './browser-keyboard-frontend-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(BrowserKeyboardLayoutProvider).toSelf().inSingletonScope();
     bind(KeyboardLayoutProvider).toService(BrowserKeyboardLayoutProvider);
     bind(KeyboardLayoutChangeNotifier).toService(BrowserKeyboardLayoutProvider);
+    bind(BrowserKeyboardFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(BrowserKeyboardFrontendContribution);
 });
