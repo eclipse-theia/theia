@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// Copyright (c) Red Hat.
+// Licensed under EPL-1.0 license
+// Function parseVMargs() copied and modified https://github.com/redhat-developer/vscode-java/blob/v0.44.0/src/javaServerStarter.ts#L105-L121
+
 import { injectable, inject } from 'inversify';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { CommandService } from '@theia/core/lib/common';
@@ -36,6 +40,7 @@ import {
     ExecuteClientCommand
 } from './java-protocol';
 import { MaybePromise } from '@theia/core';
+import { PreferenceService } from '@theia/core/lib/browser/preferences';
 
 @injectable()
 export class JavaClientContribution extends BaseLanguageClientContribution {
@@ -44,6 +49,9 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
     readonly name = JAVA_LANGUAGE_NAME;
     private readonly statusNotificationName = 'java-status-notification';
     private statusBarTimeout: number | undefined;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -121,7 +129,28 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
 
     protected getStartParameters(): MaybePromise<JavaStartParams> {
         const workspace = this.workspace.rootUri ? this.workspace.rootUri : undefined;
-        return { workspace };
+        const jvmArgs: string[] = [];
+        const vmargsLine = this.preferenceService.get('java.jdt.ls.vmargs', '');
+        this.parseVMargs(jvmArgs, vmargsLine);
+        return { workspace, jvmArgs };
     }
 
+    private parseVMargs(params: string[], vmargsLine: string) {
+        if (!vmargsLine) {
+            return;
+        }
+        const vmargs = vmargsLine.match(/(?:[^\s"]+|"[^"]*")+/g);
+        if (vmargs === null) {
+            return;
+        }
+        vmargs.forEach(arg => {
+            // remove all standalone double quotes
+            arg = arg.replace(/(\\)?"/g, ($0, $1) => ($1 ? $0 : ''));
+            // unescape all escaped double quotes
+            arg = arg.replace(/(\\)"/g, '"');
+            if (params.indexOf(arg) < 0) {
+                params.push(arg);
+            }
+        });
+    }
 }

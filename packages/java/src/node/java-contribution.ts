@@ -112,6 +112,10 @@ export class JavaContribution extends BaseLanguageServerContribution {
         const command = 'java';
         const args: string[] = [];
 
+        if (parameters && parameters.jvmArgs) {
+            parameters.jvmArgs.map(jvmArg => args.push(jvmArg));
+        }
+
         if (DEBUG_MODE) {
             args.push('-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1044');
         }

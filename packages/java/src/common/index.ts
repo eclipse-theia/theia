@@ -20,4 +20,5 @@ export const JAVA_LANGUAGE_NAME = 'Java';
 
 export interface JavaStartParams {
     workspace?: string
+    jvmArgs?: string[]
 }
