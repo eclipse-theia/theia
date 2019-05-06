@@ -2,6 +2,10 @@
 
 ## v0.7.0
 
+- [core] added support for several international keyboard layouts
+- [core] implemented auto-detection of keyboard layout based on pressed keys
+- [core] added command to manually choose a keyboard layout
+
 Breaking changes:
 
 - [preferences] refactored to integrate launch configurations as preferences

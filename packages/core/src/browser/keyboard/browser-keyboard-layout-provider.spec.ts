@@ -16,11 +16,14 @@
 
 import { Container, injectable } from 'inversify';
 import { IMacKeyboardLayoutInfo } from 'native-keymap';
-import * as os from '../../common/os';
-import { ILogger, Loggable } from '../../common/logger';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { BrowserKeyboardLayoutProvider, DEFAULT_LAYOUT_DATA } from './browser-keyboard-layout-provider';
+import * as os from '../../common/os';
+import { ILogger, Loggable } from '../../common/logger';
+import { LocalStorageService } from '../storage-service';
+import { MessageService } from '../../common/message-service';
+import { WindowService } from '../window/window-service';
+import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
 import { Key, KeyCode } from './keys';
 
 describe('browser keyboard layout provider', function () {
@@ -46,10 +49,13 @@ describe('browser keyboard layout provider', function () {
         // tslint:disable-next-line:no-any
         stubNavigator = sinon.stub(global, 'navigator' as any).value({});
         const container = new Container();
-        container.bind(BrowserKeyboardLayoutProvider).toSelf().inSingletonScope();
+        container.bind(BrowserKeyboardLayoutProvider).toSelf();
         container.bind(ILogger).to(MockLogger);
+        container.bind(LocalStorageService).toSelf().inSingletonScope();
+        container.bind(MessageService).toConstantValue({} as MessageService);
+        container.bind(WindowService).toConstantValue({} as WindowService);
         const service = container.get(BrowserKeyboardLayoutProvider);
-        return service;
+        return { service, container };
     };
 
     afterEach(() => {
@@ -59,31 +65,31 @@ describe('browser keyboard layout provider', function () {
     });
 
     it('detects German Mac layout', async () => {
-        const service = setup('mac');
+        const { service } = setup('mac');
         let currentLayout = await service.getNativeLayout();
         service.onDidChangeNativeLayout(l => {
             currentLayout = l;
         });
 
-        chai.expect(currentLayout).to.equal(DEFAULT_LAYOUT_DATA.raw);
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.US');
         service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'ö' }));
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.German');
     });
 
     it('detects French Mac layout', async () => {
-        const service = setup('mac');
+        const { service } = setup('mac');
         let currentLayout = await service.getNativeLayout();
         service.onDidChangeNativeLayout(l => {
             currentLayout = l;
         });
 
-        chai.expect(currentLayout).to.equal(DEFAULT_LAYOUT_DATA.raw);
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.US');
         service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
     });
 
     it('detects keyboard layout change', async () => {
-        const service = setup('mac');
+        const { service } = setup('mac');
         let currentLayout = await service.getNativeLayout();
         service.onDidChangeNativeLayout(l => {
             currentLayout = l;
@@ -95,6 +101,43 @@ describe('browser keyboard layout provider', function () {
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.German');
         service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
+    });
+
+    it('applies layout chosen by the user', async () => {
+        const { service } = setup('mac');
+        let currentLayout = await service.getNativeLayout();
+        service.onDidChangeNativeLayout(l => {
+            currentLayout = l;
+        });
+
+        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        const spanishLayout = service.allLayoutData.find(data => data.name === 'Spanish' && data.hardware === 'mac')!;
+        await service.setLayoutData(spanishLayout);
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.Spanish');
+        await service.setLayoutData('autodetect');
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
+    });
+
+    it('restores pressed keys from last session', async () => {
+        const { service, container } = setup('mac');
+
+        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        const service2 = container.get(BrowserKeyboardLayoutProvider);
+        chai.expect(service2).to.not.equal(service);
+        const currentLayout = await service2.getNativeLayout();
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
+    });
+
+    it('restores user selection from last session', async () => {
+        const { service, container } = setup('mac');
+
+        const spanishLayout = service.allLayoutData.find(data => data.name === 'Spanish' && data.hardware === 'mac')!;
+        await service.setLayoutData(spanishLayout);
+        const service2 = container.get(BrowserKeyboardLayoutProvider);
+        chai.expect(service2).to.not.equal(service);
+        service2.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        const currentLayout = await service2.getNativeLayout();
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.Spanish');
     });
 
 });
