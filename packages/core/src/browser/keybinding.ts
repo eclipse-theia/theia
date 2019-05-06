@@ -611,6 +611,7 @@ export class KeybindingRegistry {
             return;
         }
 
+        this.keyboardLayoutService.validateKeyCode(keyCode);
         this.keySequence.push(keyCode);
         const bindings = this.getKeybindingsForKeySequence(this.keySequence);
 

@@ -332,15 +332,38 @@ export namespace KeyCode {
      * `keyIdentifier` is used to access this deprecated field:
      * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyIdentifier
      */
-    export function toKey(event: KeyboardEvent & { readonly keyIdentifier?: string }): Key {
-        const properties: ('keyCode' | 'code' | 'keyIdentifier')[]
-            = ['code', 'keyCode', 'keyIdentifier'];
-        for (const prop of properties) {
-            if (event[prop]) {
-                const key = Key.getKey(event[prop]!);
-                if (key) {
-                    return key;
+    export function toKey(event: KeyboardEvent): Key {
+        const code = event.code;
+        if (code) {
+            if (isOSX) {
+                // https://github.com/theia-ide/theia/issues/4986
+                const char = event.key;
+                if (code === 'IntlBackslash' && (char === '`' || char === '~')) {
+                    return Key.BACKQUOTE;
+                } else if (code === 'Backquote' && (char === '§' || char === '±')) {
+                    return Key.INTL_BACKSLASH;
                 }
+            }
+            const key = Key.getKey(code);
+            if (key) {
+                return key;
+            }
+        }
+
+        // tslint:disable-next-line: deprecation
+        const keyCode = event.keyCode;
+        if (keyCode) {
+            const key = Key.getKey(keyCode);
+            if (key) {
+                return key;
+            }
+        }
+
+        const keyIdentifier = (event as KeyboardEvent & { keyIdentifier?: string }).keyIdentifier;
+        if (keyIdentifier) {
+            const key = Key.getKey(keyIdentifier);
+            if (key) {
+                return key;
             }
         }
         throw new Error(`Cannot get key code from the keyboard event: ${event}.`);
@@ -576,6 +599,7 @@ export namespace Key {
     export const BACKSLASH: Key = { code: 'Backslash', keyCode: 220, easyString: '\\' };
     export const BRACKET_RIGHT: Key = { code: 'BracketRight', keyCode: 221, easyString: ']' };
     export const QUOTE: Key = { code: 'Quote', keyCode: 222, easyString: '\'' };
+    export const INTL_BACKSLASH: Key = { code: 'IntlBackslash', keyCode: 229, easyString: 'intlbackslash' };
     export const INTL_YEN: Key = { code: 'IntlYen', keyCode: 255, easyString: 'intlyen' };
 
     export const MAX_KEY_CODE = INTL_YEN.keyCode;
@@ -614,11 +638,6 @@ export namespace Key {
     KEY_CODE_TO_KEY[105] = Key.DIGIT9;
     CODE_TO_KEY['NumpadEnter'] = Key.ENTER;
     CODE_TO_KEY['NumpadEqual'] = Key.EQUAL;
-    if (isOSX) {
-        CODE_TO_KEY['IntlBackslash'] = Key.BACKQUOTE;
-    } else {
-        CODE_TO_KEY['IntlBackslash'] = Key.BACKSLASH;
-    }
     CODE_TO_KEY['MetaLeft'] = Key.OS_LEFT;   // Chrome, Safari
     KEY_CODE_TO_KEY[224] = Key.OS_LEFT;      // Firefox on Mac
     CODE_TO_KEY['MetaRight'] = Key.OS_RIGHT; // Chrome, Safari
@@ -630,7 +649,6 @@ export namespace Key {
     KEY_CODE_TO_KEY[173] = Key.MINUS;        // Firefox
     KEY_CODE_TO_KEY[226] = Key.BACKSLASH;    // Chrome, Edge on Windows
     KEY_CODE_TO_KEY[60] = Key.BACKSLASH;     // Firefox on Linux
-    KEY_CODE_TO_KEY[229] = Key.BACKQUOTE;    // Mac
 
     // Set the modifier keys
     MODIFIERS.push(...[Key.ALT_LEFT, Key.ALT_RIGHT, Key.CONTROL_LEFT, Key.CONTROL_RIGHT, Key.OS_LEFT, Key.OS_RIGHT, Key.SHIFT_LEFT, Key.SHIFT_RIGHT]);

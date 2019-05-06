@@ -16,7 +16,8 @@
 
 import { injectable } from 'inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ThemeService, Theme } from '@theia/core/lib/browser/theming';
+import { ThemeService, Theme, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
+import { IconUrl } from '../../common/plugin-protocol';
 
 @injectable()
 export class PluginSharedStyle {
@@ -80,6 +81,26 @@ export class PluginSharedStyle {
                 sheet.deleteRule(i);
             }
         }
+    }
+
+    private iconSequence = 0;
+    private readonly icons = new Map<string, string>();
+    toIconClass(iconUrl: IconUrl, { size }: { size?: number } = { size: 16 }): string {
+        const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
+        const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
+        const key = JSON.stringify({ lightIconUrl, darkIconUrl });
+        let iconClass = this.icons.get(key);
+        if (typeof iconClass !== 'string') {
+            iconClass = 'plugin-icon-' + this.iconSequence++;
+            this.insertRule('.' + iconClass, theme => `
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                    background-size: ${size}px;
+                `);
+            this.icons.set(key, iconClass);
+        }
+        return iconClass;
     }
 
 }

@@ -32,6 +32,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TreeViewActions } from '../view/tree-view-actions';
 
 disableJSDOM();
 
@@ -64,6 +65,7 @@ before(() => {
         // tslint:disable-next-line:no-any mock PluginSharedStyle
         bind(PluginSharedStyle).toConstantValue({} as any);
         bind(SelectionService).toSelf().inSingletonScope();
+        bind(TreeViewActions).toSelf().inSingletonScope();
     });
 
     testContainer.load(module);

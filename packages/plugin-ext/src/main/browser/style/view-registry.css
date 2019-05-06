@@ -15,10 +15,7 @@
  ********************************************************************************/
 
 .theia-views-container {
-    width: 100%;
-    height: 100%;
     overflow: hidden;
-    background: var(--theia-layout-color0);
 }
 
 .theia-views-container:focus {
@@ -31,51 +28,20 @@
 }
 
 .theia-views-container-section-title {
-    position: relative;
-    height: 22px;
-    background-color: var(--theia-layout-color2);
-    line-height: 22px;
+    display: flex;
+    padding-left: 4px;
     overflow: hidden;
+    line-height: 22px;
     color: var(--theia-ui-font-color1);
-    font-size: var(--theia-ui-font-size0);
+    font-size: 80%;
+    font-weight: 500;
+    background-color: var(--theia-layout-color4);
     text-transform:  uppercase;
     cursor: pointer;
     user-select: none;
 }
 
-.theia-views-container-section-title:hover {
-    background-color: var(--theia-layout-color1);
-}
-
-.theia-views-container-section-control {
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    width: 15px;
-    height: 22px;
-    padding: 0px 5px;
-    box-sizing: border-box;
-}
-
-.theia-views-container-section-control[opened='true']:before {
-    font-family: FontAwesome;
-    font-size: calc(var(--theia-content-font-size) * 0.8);
-    content: "\F0D7";
-}
-
-.theia-views-container-section-control[opened='false']:before {
-    font-family: FontAwesome;
-    font-size: calc(var(--theia-content-font-size) * 0.8);
-    content: "\F0DA";
-}
-
 .theia-views-container-section-label {
-    position: absolute;
-    left: 15px;
-    right: 0px;
-    top: 0px;
-    height: 22px;
-    line-height: 22px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -91,10 +57,6 @@
     height: 300px;
 }
 
-.theia-views-container-section-content[opened='false'] {
-    display: none;
-}
-
 .theia-views-container-section-content > div {
     position: absolute;
     width: 100%;
@@ -102,15 +64,17 @@
 }
 
 .theia-views-container-section-content .tree-view-icon {
-    max-height: calc(var(--theia-content-font-size) * 0.8);
-    line-height: 0.8em;
-
+    padding-right: var(--theia-ui-padding);
+    -webkit-font-smoothing: antialiased;
 }
 
-.theia-views-container-section-content .tree-view-icon:before {
-    font-size: calc(var(--theia-content-font-size) * 0.8);
-    text-align: center;
-    margin-right: 4px;
-    top: -1px;
-    position: relative;
+.theia-tree-view-inline-action {
+    background-size: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
 }
+
+.theia-views-container-section-content .theia-TreeNodeContent {
+    align-items: center;
+}
+

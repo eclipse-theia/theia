@@ -28,6 +28,7 @@ import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { MetadataSelection } from '../metadata-selection';
+import { TreeViewActions } from '../view/tree-view-actions';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -50,6 +51,9 @@ export class MenusContributionPointHandler {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
+    @inject(TreeViewActions)
+    protected readonly treeViewActions: TreeViewActions;
+
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
         if (!allMenus) {
@@ -65,6 +69,14 @@ export class MenusContributionPointHandler {
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
                     this.registerEditorTitleAction(action);
+                }
+            } else if (location === 'view/item/context') {
+                for (const menu of allMenus[location]) {
+                    if (menu.group && /^inline/.test(menu.group)) {
+                        this.treeViewActions.registerInlineAction(menu);
+                    } else {
+                        this.registerMenuAction(VIEW_ITEM_CONTEXT_MENU, menu);
+                    }
                 }
             } else if (allMenus.hasOwnProperty(location)) {
                 const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
@@ -105,7 +117,6 @@ export class MenusContributionPointHandler {
         switch (value) {
             case 'editor/context': return [EDITOR_CONTEXT_MENU];
             case 'explorer/context': return [NAVIGATOR_CONTEXT_MENU];
-            case 'view/item/context': return [VIEW_ITEM_CONTEXT_MENU];
             case 'debug/callstack/context': return [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU];
         }
         return [];
