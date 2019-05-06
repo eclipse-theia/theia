@@ -49,6 +49,7 @@ import { UserStorageUri, THEIA_USER_STORAGE_FOLDER } from '@theia/userstorage/li
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FoldersPreferencesProvider } from './folders-preferences-provider';
+import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 
 @injectable()
 export class PreferencesContainer extends SplitPanel implements ApplicationShell.TrackableWidgetProvider, Saveable {
@@ -441,7 +442,7 @@ export class PreferencesTreeWidget extends TreeWidget {
     static ID = 'preferences_tree_widget';
 
     private activeFolderUri: string | undefined;
-    private preferencesGroupNames: string[] = [];
+    private preferencesGroupNames = new Set<string>();
     private readonly properties: { [name: string]: PreferenceDataProperty };
     private readonly onPreferenceSelectedEmitter: Emitter<{ [key: string]: string }>;
     readonly onPreferenceSelected: Event<{ [key: string]: string }>;
@@ -451,6 +452,7 @@ export class PreferencesTreeWidget extends TreeWidget {
     @inject(PreferencesMenuFactory) protected readonly preferencesMenuFactory: PreferencesMenuFactory;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(PreferencesDecorator) protected readonly decorator: PreferencesDecorator;
+    @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
 
     protected constructor(
         @inject(TreeModel) readonly model: TreeModel,
@@ -470,9 +472,10 @@ export class PreferencesTreeWidget extends TreeWidget {
         this.properties = this.preferenceSchemaProvider.getCombinedSchema().properties;
         for (const property in this.properties) {
             if (property) {
+                // Compute preference group name and accept those which have the proper format.
                 const group: string = property.substring(0, property.indexOf('.'));
-                if (this.preferencesGroupNames.indexOf(group) < 0) {
-                    this.preferencesGroupNames.push(group);
+                if (property.split('.').length > 1) {
+                    this.preferencesGroupNames.add(group);
                 }
             }
         }
@@ -537,6 +540,9 @@ export class PreferencesTreeWidget extends TreeWidget {
     protected initializeModel(): void {
         type GroupNode = SelectableTreeNode & ExpandableTreeNode;
         const preferencesGroups: GroupNode[] = [];
+        const nodes: { [id: string]: PreferenceDataProperty }[] = [];
+        const groupNames: string[] = Array.from(this.preferencesGroupNames).sort((a, b) => this.sort(a, b));
+
         const root: ExpandableTreeNode = {
             id: 'root-node-id',
             name: 'Apply the preference to selected preferences file',
@@ -545,15 +551,21 @@ export class PreferencesTreeWidget extends TreeWidget {
             children: preferencesGroups,
             expanded: true,
         };
-        const nodes: { [id: string]: PreferenceDataProperty }[] = [];
-        for (const group of this.preferencesGroupNames.sort((a, b) => a.localeCompare(b))) {
+
+        for (const group of groupNames) {
             const propertyNodes: SelectableTreeNode[] = [];
             const properties: string[] = [];
+
+            // Add a preference property if it is currently part of the group name.
+            // Properties which satisfy the condition `isSectionName` should not be added.
             for (const property in this.properties) {
-                if (property.split('.', 1)[0] === group) {
+                if (property.split('.', 1)[0] === group &&
+                    !this.preferenceConfigs.isSectionName(property)) {
                     properties.push(property);
                 }
             }
+
+            // Build the group name node (used to categorize common preferences together).
             const preferencesGroup: GroupNode = {
                 id: group + '-id',
                 name: group.toLocaleUpperCase().substring(0, 1) + group.substring(1) + ' (' + properties.length + ')',
@@ -563,8 +575,8 @@ export class PreferencesTreeWidget extends TreeWidget {
                 expanded: false,
                 selected: false
             };
-            properties.sort((a, b) => a.localeCompare(b));
-            properties.forEach(property => {
+
+            properties.sort((a, b) => this.sort(a, b)).forEach(property => {
                 const node: SelectableTreeNode = {
                     id: property,
                     name: property.substring(property.indexOf('.') + 1),
@@ -584,5 +596,15 @@ export class PreferencesTreeWidget extends TreeWidget {
     setActiveFolder(folder: string) {
         this.activeFolderUri = folder;
         this.decorator.setActiveFolder(folder);
+    }
+
+    /**
+     * Sort two string.
+     *
+     * @param a the first string.
+     * @param b the second string.
+     */
+    protected sort(a: string, b: string): number {
+        return a.localeCompare(b, undefined, { ignorePunctuation: true });
     }
 }
