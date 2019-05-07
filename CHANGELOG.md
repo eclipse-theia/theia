@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.6.1
+
+- Fix Theia loading inside iframe
+
+
 ## v0.6.0
 
 - Allowed the creation of sub-files and/or sub-folders if name has `/`
