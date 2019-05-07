@@ -4,7 +4,6 @@
   "description": "Theia - FileSystem Extension",
   "dependencies": {
     "@theia/core": "^0.6.0",
-    "@types/base64-js": "^1.2.5",
     "@types/body-parser": "^1.17.0",
     "@types/formidable": "^1.0.31",
     "@types/fs-extra": "^4.0.2",
@@ -13,7 +12,6 @@
     "@types/tar-fs": "^1.16.1",
     "@types/touch": "0.0.1",
     "@types/uuid": "^3.4.3",
-    "base64-js": "^1.2.1",
     "body-parser": "^1.18.3",
     "drivelist": "^6.4.3",
     "formidable": "^1.2.1",

@@ -5,6 +5,8 @@
 Breaking changes:
 
 - [preferences] refactored to integrate launch configurations as preferences
+- [filesystem] extracted `FileUploadService` and refactored `FileTreeWidget` to use it [#5086](https://github.com/theia-ide/theia/pull/5086)
+  - moved `FileDownloadCommands.UPLOAD` to `FileSystemCommands.UPLOAD`
 
 ## v0.6.0
 

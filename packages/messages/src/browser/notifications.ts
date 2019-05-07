@@ -160,7 +160,7 @@ class ProgressNotificationImpl implements ProgressNotification {
         container = document.getElementById('notification-container-' + this.properties.id);
         if (container) {
             const progressContainer = container.appendChild(document.createElement('div'));
-            progressContainer.className = 'progress';
+            progressContainer.className = 'theia-notification-progress';
             const progress = progressContainer.appendChild(document.createElement('p'));
             progress.id = 'notification-progress-' + this.properties.id;
         }

@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
+import * as path from 'path';
+import * as fs from 'fs-extra';
 import { injectable, inject, named } from 'inversify';
 import { json } from 'body-parser';
 // tslint:disable-next-line:no-implicit-dependencies
@@ -66,12 +70,34 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
                 targetUri = new URI(value);
             }
         });
-        form.on('fileBegin', (_: string, file: formidable.File) => {
-            if (targetUri) {
-                file.path = FileUri.fsPath(targetUri.resolve(file.name));
-            } else {
-                clientErrors.push(`cannot upload "${file.name}", target is not provided`);
+        const existingDirs = new Set<string>();
+        const ensureDir = (dirPath: string) => {
+            // minimize sync fs access
+            if (!existingDirs.has(dirPath)) {
+                existingDirs.add(dirPath);
+                // unfortunately formidable api does not allow async fs access
+                fs.mkdirsSync(dirPath);
             }
+        };
+        form.onPart = part => {
+            const { filename } = part;
+            if (filename === undefined) {
+                // processing fields
+                form.handlePart(part);
+            } else {
+                const uri = targetUri ? targetUri.resolve(filename) : new URI(filename);
+                const fsPath = FileUri.fsPath(uri);
+                if (path.isAbsolute(fsPath)) {
+                    ensureDir(path.dirname(fsPath));
+                    part.filename = fsPath;
+                    form.handlePart(part);
+                } else {
+                    clientErrors.push(`cannot upload "${filename}", neither target or file uri provided`);
+                }
+            }
+        };
+        form.on('fileBegin', (_, file) => {
+            file.path = file.name;
         });
         form.on('error', (error: Error) => {
             if (String(error).indexOf('maxFileSize') !== -1) {
@@ -86,7 +112,7 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
             if (clientErrors.length) {
                 res.writeHead(400, clientErrors.join('\n'));
             } else {
-                res.writeHead(200);
+                res.writeHead(200, { 'content-type': 'text/plain' });
             }
             res.end();
         });
