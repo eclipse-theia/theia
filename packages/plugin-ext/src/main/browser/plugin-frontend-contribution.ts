@@ -46,7 +46,6 @@ export class PluginApiFrontendContribution implements CommandContribution {
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
-
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(HostedPluginCommands.START, {
             execute: () => this.hostedPluginManagerClient.start()
