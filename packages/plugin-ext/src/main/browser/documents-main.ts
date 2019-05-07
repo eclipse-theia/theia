@@ -188,4 +188,15 @@ export class DocumentsMainImpl implements DocumentsMain {
         return false;
     }
 
+    async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
+        const widget = await this.editorManger.getByUri(new URI(CodeURI.revive(uri)));
+        if (widget) {
+            await Saveable.save(widget);
+            widget.close();
+            return true;
+        }
+
+        return false;
+    }
+
 }

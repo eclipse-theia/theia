@@ -732,6 +732,7 @@ export interface DocumentsMain {
     $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents>;
     $tryOpenDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
     $trySaveDocument(uri: UriComponents): Promise<boolean>;
+    $tryCloseDocument(uri: UriComponents): Promise<boolean>;
 }
 
 export interface EnvMain {
