@@ -197,6 +197,12 @@ export class DocumentsExtImpl implements DocumentsExt {
         return undefined;
     }
 
+    /**
+     * Retrieve document and open it in the editor if need.
+     *
+     * @param uri path to the resource
+     * @param options if options exists, resource will be opened in editor, otherwise only document object is returned
+     */
     async openDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
         const cached = this.editorsAndDocuments.getDocument(uri.toString());
         if (cached) {
@@ -248,6 +254,14 @@ export class DocumentsExtImpl implements DocumentsExt {
             };
         }
         await this.proxy.$tryOpenDocument(uri, documentOptions);
+
+        // below block of code needs to be removed after fix https://github.com/theia-ide/theia/issues/5079
+        if (!options) {
+            const document = this.editorsAndDocuments.getDocument(uri.toString());
+            await this.proxy.$tryCloseDocument(uri);
+            return document;
+        }
+
         return this.editorsAndDocuments.getDocument(uri.toString());
     }
 
