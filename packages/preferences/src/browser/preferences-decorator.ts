@@ -50,7 +50,7 @@ export class PreferencesDecorator implements TreeDecorator {
             const preferenceValue = m[preferenceName];
             const storedValue = this.preferencesService.get(preferenceName, undefined, this.activeFolderUri);
             return [preferenceName, {
-                tooltip: preferenceValue.description,
+                tooltip: this.buildTooltip(preferenceValue),
                 captionSuffixes: [
                     {
                         data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.defaultValue)}`
@@ -82,5 +82,24 @@ export class PreferencesDecorator implements TreeDecorator {
             return storedValue;
         }
         return defaultValue;
+    }
+
+    private buildTooltip(data: PreferenceDataProperty): string {
+        let tooltips: string = '';
+        if (data.description) {
+            tooltips = data.description;
+        }
+        if (data.defaultValue) {
+            tooltips += `\nDefault: ${JSON.stringify(data.defaultValue)}`;
+        } else if (data.default !== undefined) {
+            tooltips += `\nDefault: ${JSON.stringify(data.default)}`;
+        }
+        if (data.minimum) {
+            tooltips += `\nMin: ${data.minimum}`;
+        }
+        if (data.enum) {
+            tooltips += `\nAccepted Values: ${data.enum.join(', ')}`;
+        }
+        return tooltips;
     }
 }
