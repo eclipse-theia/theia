@@ -24,7 +24,7 @@ import { LocalStorageService } from '../storage-service';
 import { MessageService } from '../../common/message-service';
 import { WindowService } from '../window/window-service';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
-import { Key, KeyCode } from './keys';
+import { Key } from './keys';
 
 describe('browser keyboard layout provider', function () {
 
@@ -72,7 +72,7 @@ describe('browser keyboard layout provider', function () {
         });
 
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.US');
-        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'ö' }));
+        service.validateKey({ code: Key.SEMICOLON.code, character: 'ö' });
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.German');
     });
 
@@ -84,7 +84,7 @@ describe('browser keyboard layout provider', function () {
         });
 
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.US');
-        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        service.validateKey({ code: Key.SEMICOLON.code, character: 'm' });
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
     });
 
@@ -95,11 +95,11 @@ describe('browser keyboard layout provider', function () {
             currentLayout = l;
         });
 
-        service.validateKeyCode(new KeyCode({ key: Key.QUOTE, character: 'ä' }));
-        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'ö' }));
-        service.validateKeyCode(new KeyCode({ key: Key.BRACKET_LEFT, character: 'ü' }));
+        service.validateKey({ code: Key.QUOTE.code, character: 'ä' });
+        service.validateKey({ code: Key.SEMICOLON.code, character: 'ö' });
+        service.validateKey({ code: Key.BRACKET_LEFT.code, character: 'ü' });
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.German');
-        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        service.validateKey({ code: Key.SEMICOLON.code, character: 'm' });
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
     });
 
@@ -110,7 +110,7 @@ describe('browser keyboard layout provider', function () {
             currentLayout = l;
         });
 
-        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        service.validateKey({ code: Key.SEMICOLON.code, character: 'm' });
         const spanishLayout = service.allLayoutData.find(data => data.name === 'Spanish' && data.hardware === 'mac')!;
         await service.setLayoutData(spanishLayout);
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.Spanish');
@@ -121,7 +121,7 @@ describe('browser keyboard layout provider', function () {
     it('restores pressed keys from last session', async () => {
         const { service, container } = setup('mac');
 
-        service.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        service.validateKey({ code: Key.SEMICOLON.code, character: 'm' });
         const service2 = container.get(BrowserKeyboardLayoutProvider);
         chai.expect(service2).to.not.equal(service);
         const currentLayout = await service2.getNativeLayout();
@@ -135,7 +135,7 @@ describe('browser keyboard layout provider', function () {
         await service.setLayoutData(spanishLayout);
         const service2 = container.get(BrowserKeyboardLayoutProvider);
         chai.expect(service2).to.not.equal(service);
-        service2.validateKeyCode(new KeyCode({ key: Key.SEMICOLON, character: 'm' }));
+        service2.validateKey({ code: Key.SEMICOLON.code, character: 'm' });
         const currentLayout = await service2.getNativeLayout();
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.Spanish');
     });
