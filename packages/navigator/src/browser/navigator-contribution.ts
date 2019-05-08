@@ -35,7 +35,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
         id: 'navigator.reveal',
-        label: 'Reveal in Files'
+        label: 'Reveal in Explorer'
     };
     export const TOGGLE_HIDDEN_FILES: Command = {
         id: 'navigator.toggle.hidden.files',
@@ -153,7 +153,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         super.registerMenus(registry);
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
-            label: 'Reveal in Files',
+            label: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.label,
             order: '5'
         });
 
