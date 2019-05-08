@@ -272,12 +272,13 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected renderHistoryHeader(): React.ReactNode {
         if (this.options.uri) {
             const path = this.relativePath(this.options.uri);
+            const fileName = path.split('/').pop();
             return <div className='diff-header'>
                 {
                     this.renderHeaderRow({ name: 'repository', value: this.getRepositoryLabel(this.options.uri) })
                 }
                 {
-                    this.renderHeaderRow({ name: 'path', value: path })
+                    this.renderHeaderRow({ name: 'file', value: fileName, title: path })
                 }
                 <div className='theia-header'>
                     Commits
