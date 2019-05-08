@@ -14,10 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
 import { IWindowsKeyMapping } from 'native-keymap';
 import { isWindows } from '../../common/os';
-import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
+import {
+    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
+} from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter } from '../../common/event';
 import { KeyCode, Key } from './keys';
 
@@ -42,6 +44,9 @@ export class KeyboardLayoutService {
 
     @inject(KeyboardLayoutChangeNotifier)
     protected readonly layoutChangeNotifier: KeyboardLayoutChangeNotifier;
+
+    @inject(KeyValidator) @optional()
+    protected readonly keyValidator?: KeyValidator;
 
     private currentLayout?: KeyboardLayout;
 
@@ -103,13 +108,17 @@ export class KeyboardLayoutService {
 
     /**
      * Called when a KeyboardEvent is processed by the KeybindingRegistry.
-     * If the keyboard layout provider supports KeyCode validation, delegate to it.
+     * The KeyValidator may trigger a keyboard layout change.
      */
     validateKeyCode(keyCode: KeyCode): void {
-        // tslint:disable-next-line:no-any
-        const provider = this.layoutProvider as any;
-        if (typeof provider.validateKeyCode === 'function') {
-            provider.validateKeyCode(keyCode);
+        if (this.keyValidator && keyCode.key && keyCode.character) {
+            this.keyValidator.validateKey({
+                code: keyCode.key.code,
+                character: keyCode.character,
+                shiftKey: keyCode.shift,
+                ctrlKey: keyCode.ctrl,
+                altKey: keyCode.alt
+            });
         }
     }
 

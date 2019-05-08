@@ -20,14 +20,15 @@ import { isOSX } from '../../common/os';
 import { Emitter } from '../../common/event';
 import { ILogger } from '../../common/logger';
 import { Deferred } from '../../common/promise-util';
-import { NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
+import {
+    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput
+} from '../../common/keyboard/keyboard-layout-provider';
 import { LocalStorageService } from '../storage-service';
-import { KeyCode } from './keys';
 
 export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'pressed-keys';
 
 @injectable()
-export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier {
+export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -103,22 +104,16 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     }
 
     /**
-     * Test all known keyboard layouts with the given KeyCode. Layouts that match the
-     * combination of key and produced character have their score increased (see class
+     * Test all known keyboard layouts with the given combination of pressed key and
+     * produced character. Matching layouts have their score increased (see class
      * KeyboardTester). If this leads to a change of the top-scoring layout, a layout
      * change event is fired.
      */
-    validateKeyCode(keyCode: KeyCode): void {
-        if (!keyCode.key || !keyCode.character || this.source !== 'pressed-keys') {
+    validateKey(keyCode: KeyValidationInput): void {
+        if (this.source !== 'pressed-keys') {
             return;
         }
-        const accepted = this.tester.updateScores({
-            code: keyCode.key.code,
-            character: keyCode.character,
-            shiftKey: keyCode.shift,
-            ctrlKey: keyCode.ctrl,
-            altKey: keyCode.alt
-        });
+        const accepted = this.tester.updateScores(keyCode);
         if (!accepted) {
             return;
         }
@@ -254,14 +249,6 @@ export interface LayoutProviderState {
     currentLayout?: string;
 }
 
-export interface KeyboardTestInput {
-    code: string;
-    character: string;
-    shiftKey?: boolean;
-    ctrlKey?: boolean;
-    altKey?: boolean;
-}
-
 export interface KeyboardTesterState {
     scores?: { [id: string]: number };
     topScore?: number;
@@ -296,7 +283,7 @@ export class KeyboardTester {
         this.testedInputs.clear();
     }
 
-    updateScores(input: KeyboardTestInput): boolean {
+    updateScores(input: KeyValidationInput): boolean {
         let property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr';
         if (input.shiftKey && input.altKey) {
             property = 'withShiftAltGr';
@@ -329,7 +316,7 @@ export class KeyboardTester {
         return true;
     }
 
-    protected testCandidate(candidate: KeyboardLayoutData, input: KeyboardTestInput,
+    protected testCandidate(candidate: KeyboardLayoutData, input: KeyValidationInput,
         property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr'): number {
         const keyMapping = candidate.raw.mapping[input.code];
         if (keyMapping && keyMapping[property]) {
