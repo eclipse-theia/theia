@@ -123,8 +123,7 @@ export class DocumentsMainImpl implements DocumentsMain {
     async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
         const language = options && options.language;
         const content = options && options.content;
-        const resource = createUntitledResource(content, language);
-        return monaco.Uri.parse(resource.uri.toString());
+        return createUntitledResource(content, language);
     }
 
     async $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
@@ -193,11 +192,7 @@ export class DocumentsMainImpl implements DocumentsMain {
 
     async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
         const model = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
-        if (model) {
-            this.onModelAdded(model);
-            return true;
-        }
-         return false;
+        return !!model;
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
