@@ -46,6 +46,9 @@
 
 .theia-git .header-value {
     margin: 9px 0px 5px 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .theia-git .gitItem.diff-file {

@@ -98,12 +98,12 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         return result;
     }
 
-    protected renderHeaderRow({ name, value, classNames }: { name: string, value: React.ReactNode, classNames?: string[] }): React.ReactNode {
+    protected renderHeaderRow({ name, value, classNames, title }: { name: string, value: React.ReactNode, classNames?: string[], title?: string }): React.ReactNode {
         if (!value) {
             return;
         }
         const className = ['header-row', ...(classNames || [])].join(' ');
-        return <div key={name} className={className}>
+        return <div key={name} className={className} title={title}>
             <div className='theia-header'>{name}</div>
             <div className='header-value'>{value}</div>
         </div>;
