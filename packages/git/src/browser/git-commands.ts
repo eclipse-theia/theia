@@ -37,7 +37,6 @@ export class GitCommands implements Disposable {
 
     private static MESSAGE_BOX_MIN_HEIGHT = 25;
     protected incomplete?: boolean;
-    protected message: string = '';
     protected messageBoxHeight: number = GitCommands.MESSAGE_BOX_MIN_HEIGHT;
     protected status: WorkingDirectoryStatus | undefined;
     protected scrollContainer: string;
@@ -56,6 +55,10 @@ export class GitCommands implements Disposable {
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
+
+    @inject(ScmWidget)
+    protected readonly scmWidget: ScmWidget;
+
     protected readonly toDispose = new DisposableCollection();
 
     protected gitNodes: GitFileChangeNode[];
@@ -76,7 +79,7 @@ export class GitCommands implements Disposable {
         return this.editorManager.open(await uriToOpen, options);
     }
 
-    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message): Promise<void> {
+    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.scmWidget.messageInput.value): Promise<void> {
         if (repository) {
             this.commitMessageValidationResult = undefined;
             if (message.trim().length === 0) {
@@ -102,7 +105,7 @@ export class GitCommands implements Disposable {
                     this.gitErrorHandler.handleError(error);
                 }
             } else {
-                const messageInput = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLInputElement;
+                const messageInput = this.scmWidget.messageInput;
                 if (messageInput) {
                     messageInput.focus();
                 }
@@ -304,9 +307,7 @@ export class GitCommands implements Disposable {
     }
 
     protected resetCommitMessages(): void {
-        this.message = '';
-        const messageInput = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLTextAreaElement;
-        messageInput.value = '';
+        this.scmWidget.messageInput.value = '';
     }
 
     protected async delete(uri: URI): Promise<void> {

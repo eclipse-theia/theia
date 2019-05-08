@@ -234,6 +234,10 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         </div>;
     }
 
+    public get messageInput(): HTMLTextAreaElement {
+        return document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLTextAreaElement;
+    }
+
     protected onInputMessageChange(e: Event): void {
         const { target } = e;
         if (target instanceof HTMLTextAreaElement) {
@@ -340,7 +344,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
             this.doSetInputMessages('');
             this.update();
         } else {
-            const messageInput = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLInputElement;
+            const messageInput = this.messageInput;
             if (messageInput) {
                 this.update();
                 messageInput.focus();
@@ -352,7 +356,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
 
     protected doSetInputMessages(message: string): void {
         this.message = message;
-        const messageInput = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLTextAreaElement;
+        const messageInput = this.messageInput;
         messageInput.value = message;
         this.resize(messageInput);
     }
