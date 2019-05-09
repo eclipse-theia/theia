@@ -117,7 +117,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     terminateHostedPluginInstance(): Promise<void> {
-        return Promise.resolve(this.hostedInstanceManager.terminate());
+        this.hostedInstanceManager.terminate();
+        return Promise.resolve();
     }
 
     isHostedPluginInstanceRunning(): Promise<boolean> {

@@ -257,7 +257,8 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     async toggleNodeExpansion(raw?: Readonly<ExpandableTreeNode>): Promise<void> {
         for (const node of raw ? [raw] : this.selectedNodes) {
             if (ExpandableTreeNode.is(node)) {
-                return await this.expansionService.toggleNodeExpansion(node);
+                await this.expansionService.toggleNodeExpansion(node);
+                return;
             }
         }
     }

@@ -115,7 +115,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         const firstChild = root.children[0];
         root.children.forEach(child => CompositeTreeNode.is(child) && model.collapseAll(child));
         if (SelectableTreeNode.is(firstChild)) {
-            await model.selectNode(firstChild);
+            model.selectNode(firstChild);
         }
     }
 

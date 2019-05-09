@@ -25,11 +25,13 @@ const expectedArgvCount = 5;
 function main(argv: string[]): void {
 
     if (argv.length !== expectedArgvCount) {
-        return fatal(`Wrong number of arguments. Expected ${expectedArgvCount}. Got ${argv.length} instead.`);
+        fatal(`Wrong number of arguments. Expected ${expectedArgvCount}. Got ${argv.length} instead.`);
+        return;
     }
 
     if (!process.env['THEIA_GIT_ASKPASS_HANDLE']) {
-        return fatal("Missing 'THEIA_GIT_ASKPASS_HANDLE' handle.");
+        fatal("Missing 'THEIA_GIT_ASKPASS_HANDLE' handle.");
+        return;
     }
 
     const handle = process.env['THEIA_GIT_ASKPASS_HANDLE'] as string;
@@ -48,7 +50,8 @@ function main(argv: string[]): void {
 
     const req = http.request(opts, res => {
         if (res.statusCode !== 200) {
-            return fatal(`Bad status code: ${res.statusCode}.`);
+            fatal(`Bad status code: ${res.statusCode}.`);
+            return;
         }
 
         const chunks: string[] = [];
@@ -61,7 +64,8 @@ function main(argv: string[]): void {
                 const result = JSON.parse(raw);
                 process.stdout.write(result);
             } catch (err) {
-                return fatal('Error parsing the response.');
+                fatal('Error parsing the response.');
+                return;
             }
 
             setTimeout(() => process.exit(0), 0);

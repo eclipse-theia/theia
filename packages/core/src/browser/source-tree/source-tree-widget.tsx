@@ -103,7 +103,8 @@ export class SourceTreeWidget extends TreeWidget {
         // no-op
     }
     protected superRestoreState(state: object): void {
-        return super.restoreState(state);
+        super.restoreState(state);
+        return;
     }
 
 }
