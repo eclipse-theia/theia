@@ -155,7 +155,7 @@ export class ApplicationProject implements Disposable {
                 reverting,
                 failed: true
             });
-            await this.revert(token);
+            this.revert(token);
         }
     }
 

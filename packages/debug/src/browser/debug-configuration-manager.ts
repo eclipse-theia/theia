@@ -119,7 +119,8 @@ export class DebugConfigurationManager {
         return this.getSupported();
     }
     protected async getSupported(): Promise<IterableIterator<DebugSessionOptions>> {
-        const [, debugTypes] = await Promise.all([await this.initialized, this.debug.debugTypes()]);
+        await this.initialized;
+        const debugTypes = await this.debug.debugTypes();
         return this.doGetSupported(new Set(debugTypes));
     }
     protected *doGetSupported(debugTypes: Set<string>): IterableIterator<DebugSessionOptions> {

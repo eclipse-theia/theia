@@ -45,6 +45,11 @@
     "no-trailing-whitespace": true,
     "no-unused-expression": true,
     "no-var-keyword": true,
+    "no-void-expression": {
+      "options": [
+        "ignore-arrow-function-shorthand"
+      ]
+    },
     "one-line": [
       true,
       "check-open-brace",

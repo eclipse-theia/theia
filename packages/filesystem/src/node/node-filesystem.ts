@@ -208,7 +208,8 @@ export class FileSystemNode implements FileSystem {
             return new Promise<FileStat>((resolve, reject) => {
                 mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true, clobber: overwrite }, async error => {
                     if (error) {
-                        return reject(error);
+                        reject(error);
+                        return;
                     }
                     resolve(await this.doGetStat(_targetUri, 1));
                 });
@@ -289,7 +290,8 @@ export class FileSystemNode implements FileSystem {
                 // tslint:disable-next-line:no-any
                 touch(FileUri.fsPath(_uri), async (error: any) => {
                     if (error) {
-                        return reject(error);
+                        reject(error);
+                        return;
                     }
                     resolve(await this.doGetStat(_uri, 1));
                 });
@@ -316,7 +318,8 @@ export class FileSystemNode implements FileSystem {
                 await new Promise<void>((resolve, reject) => {
                     fs.rename(filePath, outputRootPath, async error => {
                         if (error) {
-                            return reject(error);
+                            reject(error);
+                            return;
                         }
                         resolve();
                     });

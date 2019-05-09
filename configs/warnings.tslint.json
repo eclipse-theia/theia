@@ -43,12 +43,6 @@
     },
     "no-return-await": {
       "severity": "warning"
-    },
-    "no-void-expression": {
-      "severity": "warning",
-      "options": [
-        "ignore-arrow-function-shorthand"
-      ]
     }
   }
 }

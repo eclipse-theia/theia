@@ -314,7 +314,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         // select first visible node
         const firstChild = WorkspaceNode.is(root) ? root.children[0] : root;
         if (SelectableTreeNode.is(firstChild)) {
-            await model.selectNode(firstChild);
+            model.selectNode(firstChild);
         }
     }
 

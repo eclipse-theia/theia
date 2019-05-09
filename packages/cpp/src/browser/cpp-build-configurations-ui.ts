@@ -85,7 +85,8 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
 
         // Only return 'Create New' when no build configurations present
         if (!configurations.length) {
-            return acceptor(items);
+            acceptor(items);
+            return;
         }
 
         // Item to de-select any active build config

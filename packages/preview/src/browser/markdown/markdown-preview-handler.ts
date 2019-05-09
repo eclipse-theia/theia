@@ -230,6 +230,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         token.attrSet('data-line', line.toString());
                     }
                     return (originalRenderer)
+                        // tslint:disable-next-line:no-void-expression
                         ? originalRenderer(tokens, index, options, env, self)
                         : self.renderToken(tokens, index, options);
                 };
@@ -247,6 +248,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         }
                     }
                 }
+                // tslint:disable-next-line:no-void-expression
                 return originalImageRenderer(tokens, index, options, env, self);
             };
 
@@ -285,6 +287,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         const documentUri = env.originUri;
                         currentToken.content = normalizeAllImgSrcInHTML(content, link => this.linkNormalizer.normalizeLink(documentUri, link));
                     }
+                    // tslint:disable-next-line:no-void-expression
                     return originalRenderer(tokens, index, options, env, self);
                 };
             }

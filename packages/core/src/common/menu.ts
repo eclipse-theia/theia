@@ -113,7 +113,8 @@ export class MenuModelRegistry {
 
         if (menuPath) {
             const parent = this.findGroup(menuPath);
-            return parent.removeNode(id);
+            parent.removeNode(id);
+            return;
         }
 
         // Recurse all menus, removing any menus matching the id
