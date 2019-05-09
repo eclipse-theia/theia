@@ -976,14 +976,10 @@ export class GitAmendSupport implements ScmAmendSupport {
 
     constructor(protected readonly repository: Repository, protected readonly git: Git) { }
 
-    public async init(repository: ScmRepository, storedState: string, lastHead: string): Promise<ScmCommit[]> {
-        if (!repository.provider.rootUri) {
-            throw new Error('Repository is not a valid Git repository');
-        }
+    public async getIntialAmendingCommits(storedState: string, lastHead: string): Promise<ScmCommit[]> {
         const { amendingHeadCommitSha } = JSON.parse(storedState);
-        const gitRepository: Repository = { localUri: repository.provider.rootUri };
         const commits = await this.git.log(
-            gitRepository,
+            this.repository,
             {
                 range: { toRevision: amendingHeadCommitSha, fromRevision: lastHead },
                 maxCount: 50

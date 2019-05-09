@@ -83,8 +83,6 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     protected readonly toDisposeOnUnmount = new DisposableCollection();
 
     async componentDidMount() {
-        // this.props.addScmListKeyListeners(this.props.id);
-
         const lastCommit = await this.getLastCommit();
         this.setState({ amendingCommits: await this.buildAmendingList(lastCommit ? lastCommit.commit : undefined), lastCommit });
 
@@ -101,8 +99,6 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     }
 
     componentWillUnmount() {
-        // this.props.addScmListKeyListeners(this.props.id);
-
         this.toDisposeOnUnmount.dispose();
     }
 
@@ -129,7 +125,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                 // this.setState({ amendingCommits: await this.buildAmendingList(), lastCommit: nextCommit });
             }
         } else {
-            if (this.state.lastCommit) {
+            if (this.state.lastCommit && nextCommit) {
                 const direction: 'up' | 'down' = this.transitionHint === 'amend' ? 'up' : 'down';
                 const transitionData = { direction, previousLastCommit: this.state.lastCommit };
                 const amendingCommits = this.state.amendingCommits.concat([]);
@@ -139,7 +135,10 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                             amendingCommits.push(this.state.lastCommit);
                             if (this.state.amendingCommits.length === 1) {
                                 const storageKey = this.getStorageKey();
-                                const serializedState = JSON.stringify({ amendingHeadCommitSha: this.state.amendingCommits[0].commit.id });
+                                const serializedState = JSON.stringify({
+                                    amendingHeadCommitSha: this.state.amendingCommits[0].commit.id,
+                                    latestCommitSha: nextCommit.commit.id
+                                });
                                 this.props.storageService.setData<string | undefined>(storageKey, serializedState);
                             }
                         }
@@ -185,7 +184,13 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         // current commit.  (If we don't reach the current commit, the repository has been changed in such
         // a way then unamending commits can no longer be done).
         if (storedState && lastCommit) {
-            const commits = await this.props.scmAmendSupport.init(this.props.repository, storedState, lastCommit.id);
+            const { amendingHeadCommitSha, latestCommitSha } = JSON.parse(storedState);
+            if (lastCommit.id !== latestCommitSha) {
+                // The head commit in the repository has changed.  It is not the same commit that was the
+                // head commit after the last 'amend'.
+                return [];
+            }
+            const commits = await this.props.scmAmendSupport.getIntialAmendingCommits(amendingHeadCommitSha, lastCommit.id);
 
             const amendingCommitPromises = commits.map(async commit => {
                 const avatar = await this.props.avatarService.getAvatar(commit.authorEmail);
@@ -246,8 +251,21 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     }
 
     render() {
+        const neverShrink = this.state.amendingCommits.length <= 3;
+
+        const style: React.CSSProperties = neverShrink
+            ? {
+                ...this.props.style,
+                flexShrink: 0,
+            }
+            : {
+                ...this.props.style,
+                flexShrink: 1,
+                minHeight: 240   // height with three commits
+            };
+
         return (
-            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER} style={this.props.style} id={this.props.id} tabIndex={2}>
+            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER} style={style} id={this.props.id} tabIndex={2}>
                 {
                     this.state.amendingCommits.length > 0 || (this.state.lastCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'down')
                         ? this.renderAmendingCommits()
@@ -281,11 +299,18 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     protected renderAmendingCommits(): React.ReactNode {
         const neverShrink = this.state.amendingCommits.length <= 3;
 
-        const classNames = neverShrink
-            ? 'amendedCommitsOuterContainer'
-            : 'amendedCommitsOuterContainer withMinHeight';
+        const style: React.CSSProperties = neverShrink
+            ? {
+                flexShrink: 0,
+            }
+            : {
+                flexShrink: 1,
+                // parent minHeight controls height, we just need any value smaller than
+                // what the height would be when the parent is at its minHeight
+                minHeight: 0
+            };
 
-        return <div id='amendedCommits' className={classNames}>
+        return <div id='amendedCommits' className='theia-scm-amend-outer-container' style={style}>
             <div className='theia-header scm-theia-header'>
                 <div className='noWrapInfo'>Commits being Amended</div>
                 {this.renderAmendCommitListButtons()}

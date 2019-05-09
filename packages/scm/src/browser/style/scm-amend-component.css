@@ -15,12 +15,19 @@
  ********************************************************************************/
 
 .theia-scm-commit-container {
-    flex-grow: 1;
     display: flex;
     flex-direction: column;
     border-top: 1px solid var(--theia-layout-color4);
     width: 100%;
     padding-top: 6px;
+}
+
+.theia-scm-amend-outer-container {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px dotted var(--theia-layout-color4);
+    width: 100%;
+    overflow: auto;
 }
 
 .theia-scm-commit-and-button {
