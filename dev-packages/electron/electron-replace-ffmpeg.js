@@ -60,7 +60,7 @@ async function main() {
 /**
  * @typedef {Object} File
  * @property {String} name
- * @property {String|undefined} folder
+ * @property {String} [folder]
  */
 
 /**
