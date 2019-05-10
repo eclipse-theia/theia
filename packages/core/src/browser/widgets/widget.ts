@@ -17,7 +17,7 @@
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
-import { Disposable, DisposableCollection, MaybePromise } from '../../common';
+import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
@@ -41,6 +41,10 @@ export class BaseWidget extends Widget {
     protected readonly toDisposeOnDetach = new DisposableCollection();
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
+    protected readonly onScrollYReachEndEmitter = new Emitter<void>();
+    readonly onScrollYReachEnd: Event<void> = this.onScrollYReachEndEmitter.event;
+    protected readonly onScrollUpEmitter = new Emitter<void>();
+    readonly onScrollUp: Event<void> = this.onScrollUpEmitter.event;
 
     dispose(): void {
         if (this.isDisposed) {
@@ -81,6 +85,8 @@ export class BaseWidget extends Widget {
                 const container = await this.getScrollContainer();
                 container.style.overflow = 'hidden';
                 this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
+                container.addEventListener('ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); });
+                container.addEventListener('ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); });
                 this.toDisposeOnDetach.push(Disposable.create(() => {
                     if (this.scrollBar) {
                         this.scrollBar.destroy();
