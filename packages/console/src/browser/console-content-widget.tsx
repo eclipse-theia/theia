@@ -17,6 +17,8 @@
 import { interfaces, Container, injectable } from 'inversify';
 import { MenuPath, MessageType } from '@theia/core';
 import { TreeProps } from '@theia/core/lib/browser/tree';
+import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
+import { Message } from '@theia/core/lib/browser';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { ConsoleItem } from './console-session';
 
@@ -24,6 +26,17 @@ import { ConsoleItem } from './console-session';
 export class ConsoleContentWidget extends SourceTreeWidget {
 
     static CONTEXT_MENU: MenuPath = ['console-context-menu'];
+
+    private _shouldScrollToEnd: boolean = true;
+
+    set shouldScrollToEnd(value: boolean) {
+        this._shouldScrollToEnd = value;
+        this.shouldScrollToRow = this._shouldScrollToEnd;
+    }
+
+    get shouldScrollToEnd() {
+        return this._shouldScrollToEnd;
+    }
 
     static createContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
         const child = SourceTreeWidget.createContainer(parent, {
@@ -33,6 +46,20 @@ export class ConsoleContentWidget extends SourceTreeWidget {
         child.unbind(SourceTreeWidget);
         child.bind(ConsoleContentWidget).toSelf();
         return child;
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.toDispose.push(this.onScrollUp(() => this.shouldScrollToEnd = false));
+        this.toDispose.push(this.onScrollYReachEnd(() => this.shouldScrollToEnd = true));
+        this.toDispose.push(this.model.onChanged(() => this.revealLastOutputIfNeeded()));
+    }
+
+    protected revealLastOutputIfNeeded(): void {
+        const { root } = this.model;
+        if (this.shouldScrollToEnd && TreeSourceNode.is(root)) {
+            this.model.selectNode(root.children[root.children.length - 1]);
+        }
     }
 
     protected createTreeElementNodeClassNames(node: TreeElementNode): string[] {

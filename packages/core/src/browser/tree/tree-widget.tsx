@@ -135,6 +135,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
+    protected shouldScrollToRow: boolean = true;
+
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
@@ -244,7 +246,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const selected = this.model.selectedNodes;
         const node: TreeNode | undefined = selected.find(SelectableTreeNode.hasFocus) || selected[0];
         const row = node && this.rows.get(node.id);
-        this.scrollToRow = row && row.index;
+        this.scrollToRow = !this.shouldScrollToRow ? undefined : (row && row.index);
         this.forceUpdate(updateOptions);
     }
 
