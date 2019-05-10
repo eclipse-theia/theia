@@ -16,7 +16,7 @@
  ********************************************************************************/
 
 const fs = require('fs');
-const request = require('requestretry');
+const fetch = require('node-fetch');
 const unzip = require('unzip-stream');
 const path = require('path');
 const process = require('process');
@@ -26,6 +26,36 @@ const tar = require('tar');
 
 const pck = require(path.resolve(process.cwd(), 'package.json'));
 const adapterDir = pck.adapterDir || 'download';
+
+function delay(ms) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve()
+        }, ms)
+    })
+}
+
+function retryFetch(url, options={retries: 5, retryDelay: 2000}) {
+    const {retries, retryDelay, ...fetchOptions} = options;
+    return new Promise((resolve, reject) => {
+        const wrapper = n => {
+            fetch(url, fetchOptions)
+                .then(res => {
+                    res.attempts = retries - n;
+                    resolve(res)
+                })
+                .catch(async err => {
+                    if(n > 0) {
+                        await delay(retryDelay)
+                        wrapper(--n)
+                    } else {
+                        reject(err)
+                    }
+                })
+        }
+        wrapper(retries)
+    })
+}
 
 function isDownloaded(dirPath) {
     try {
@@ -42,35 +72,33 @@ for (const name in pck.adapters) {
         continue;
     }
     const adapterUrl = pck.adapters[name];
-    console.log(name + ': downloading from ' + adapterUrl);
-    const download = request({
-        ...pck.requestOptions,
-        url: adapterUrl,
-        maxAttempts: 5,
+
+    const download = retryFetch(adapterUrl, {
+        retries: 5,
         retryDelay: 2000,
-        retryStrategy: request.RetryStrategies.HTTPOrNetworkError
-    }, (err, response) => {
-        if (err) {
+        ...pck.requestOptions,
+    }, (res) => {
+        if (!res.ok) {
             console.error(name + ': failed to download', err)
             process.exitCode = 1;
         } else {
             console.log(name + ': downloaded successfully' + (response.attempts > 1 ? ` after ${response.attempts}  attempts` : ''));
+
+            if (response.headers['content-encoding'] === 'gzip') {
+                // Support tar gz
+                mkdirp(targetPath);
+                const gunzip = zlib.createGunzip({
+                    finishFlush: zlib.Z_SYNC_FLUSH,
+                    flush: zlib.Z_SYNC_FLUSH
+                });
+                const untar = tar.x({
+                    cwd: targetPath
+                });
+                response.body.pipe(gunzip).pipe(untar);
+            } else {
+                // Support zip or vsix
+                response.body.pipe(unzip.Extract({ path: targetPath }));
+            }
         }
     });
-
-    if (adapterUrl.endsWith('gz')) {
-        // Support tar gz
-        mkdirp(targetPath);
-        const gunzip = zlib.createGunzip({
-            finishFlush: zlib.Z_SYNC_FLUSH,
-            flush: zlib.Z_SYNC_FLUSH
-        });
-        const untar = tar.x({
-            cwd: targetPath
-        });
-        download.pipe(gunzip).pipe(untar);
-    } else {
-        // Support zip or vsix
-        download.pipe(unzip.Extract({ path: targetPath }));
-    }
 }
