@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
@@ -37,14 +39,18 @@ export const FOCUS_CLASS = 'theia-mod-focus';
 @injectable()
 export class BaseWidget extends Widget {
 
-    protected readonly toDispose = new DisposableCollection();
-    protected readonly toDisposeOnDetach = new DisposableCollection();
-    protected scrollBar?: PerfectScrollbar;
-    protected scrollOptions?: PerfectScrollbar.Options;
     protected readonly onScrollYReachEndEmitter = new Emitter<void>();
     readonly onScrollYReachEnd: Event<void> = this.onScrollYReachEndEmitter.event;
     protected readonly onScrollUpEmitter = new Emitter<void>();
     readonly onScrollUp: Event<void> = this.onScrollUpEmitter.event;
+
+    protected readonly toDispose = new DisposableCollection(
+        this.onScrollYReachEndEmitter,
+        this.onScrollUpEmitter
+    );
+    protected readonly toDisposeOnDetach = new DisposableCollection();
+    protected scrollBar?: PerfectScrollbar;
+    protected scrollOptions?: PerfectScrollbar.Options;
 
     dispose(): void {
         if (this.isDisposed) {
@@ -85,8 +91,8 @@ export class BaseWidget extends Widget {
                 const container = await this.getScrollContainer();
                 container.style.overflow = 'hidden';
                 this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
-                container.addEventListener('ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); });
-                container.addEventListener('ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); });
+                this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); }));
+                this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); }));
                 this.toDisposeOnDetach.push(Disposable.create(() => {
                     if (this.scrollBar) {
                         this.scrollBar.destroy();

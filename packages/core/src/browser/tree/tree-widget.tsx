@@ -135,7 +135,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
-    protected shouldScrollToRow: boolean = true;
+    protected shouldScrollToRow = true;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -243,11 +243,18 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected scrollToRow: number | undefined;
     protected updateScrollToRow(updateOptions?: TreeWidget.ForceUpdateOptions): void {
+        this.scrollToRow = this.getScrollToRow();
+        this.forceUpdate(updateOptions);
+    }
+
+    protected getScrollToRow(): number | undefined {
+        if (!this.shouldScrollToRow) {
+            return undefined;
+        }
         const selected = this.model.selectedNodes;
         const node: TreeNode | undefined = selected.find(SelectableTreeNode.hasFocus) || selected[0];
         const row = node && this.rows.get(node.id);
-        this.scrollToRow = !this.shouldScrollToRow ? undefined : (row && row.index);
-        this.forceUpdate(updateOptions);
+        return row && row.index;
     }
 
     protected readonly updateDecorations = debounce(() => this.doUpdateDecorations(), 150);

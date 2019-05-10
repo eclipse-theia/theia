@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { Message } from '@phosphor/messaging';
 import { interfaces, Container, injectable } from 'inversify';
 import { MenuPath, MessageType } from '@theia/core';
 import { TreeProps } from '@theia/core/lib/browser/tree';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
-import { Message } from '@theia/core/lib/browser';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { ConsoleItem } from './console-session';
 
@@ -27,14 +27,14 @@ export class ConsoleContentWidget extends SourceTreeWidget {
 
     static CONTEXT_MENU: MenuPath = ['console-context-menu'];
 
-    private _shouldScrollToEnd: boolean = true;
+    protected _shouldScrollToEnd = true;
 
-    set shouldScrollToEnd(value: boolean) {
-        this._shouldScrollToEnd = value;
+    protected set shouldScrollToEnd(shouldScrollToEnd: boolean) {
+        this._shouldScrollToEnd = shouldScrollToEnd;
         this.shouldScrollToRow = this._shouldScrollToEnd;
     }
 
-    get shouldScrollToEnd() {
+    protected get shouldScrollToEnd() {
         return this._shouldScrollToEnd;
     }
 
@@ -50,9 +50,9 @@ export class ConsoleContentWidget extends SourceTreeWidget {
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.toDispose.push(this.onScrollUp(() => this.shouldScrollToEnd = false));
-        this.toDispose.push(this.onScrollYReachEnd(() => this.shouldScrollToEnd = true));
-        this.toDispose.push(this.model.onChanged(() => this.revealLastOutputIfNeeded()));
+        this.toDisposeOnDetach.push(this.onScrollUp(() => this.shouldScrollToEnd = false));
+        this.toDisposeOnDetach.push(this.onScrollYReachEnd(() => this.shouldScrollToEnd = true));
+        this.toDisposeOnDetach.push(this.model.onChanged(() => this.revealLastOutputIfNeeded()));
     }
 
     protected revealLastOutputIfNeeded(): void {
