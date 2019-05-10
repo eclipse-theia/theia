@@ -107,8 +107,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         if (options.ignored.length > 0) {
             this.debug('Files ignored for watching', options.ignored);
         }
-
-        let watcher: nsfw.NSFW | undefined = await nsfw(fs.realpathSync(basePath), (events: nsfw.ChangeEvent[]) => {
+        return nsfw(fs.realpathSync(basePath), (events: nsfw.ChangeEvent[]) => {
             for (const event of events) {
                 if (event.action === nsfw.actions.CREATED) {
                     this.pushAdded(watcherId, this.resolvePath(event.directory, event.file!));
@@ -130,30 +129,39 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
                     console.warn(`Failed to watch "${basePath}":`, error);
                     this.unwatchFileChanges(watcherId);
                 }
+            }).then((watcher: nsfw.NSFW | undefined) => {
+                if (!watcher) {
+                    return;
+                }
+                watcher.start().then(() => {
+                    this.options.info('Started watching:', basePath);
+                    if (toDisposeWatcher.disposed) {
+                        if (watcher) {
+                            this.debug('Stopping watching:', basePath);
+                            watcher.stop().then(() => {
+                                // remove a reference to nsfw otherwise GC cannot collect it
+                                watcher = undefined;
+                                this.options.info('Stopped watching:', basePath);
+                            });
+                        }
+                        return;
+                    }
+                    toDisposeWatcher.push(Disposable.create(() => {
+                        this.watcherOptions.delete(watcherId);
+                        if (watcher) {
+                            this.debug('Stopping watching:', basePath);
+                            watcher.stop().then(() => {
+                                // remove a reference to nsfw otherwise GC cannot collect it
+                                watcher = undefined;
+                                this.options.info('Stopped watching:', basePath);
+                            });
+                        }
+                    }));
+                    this.watcherOptions.set(watcherId, {
+                        ignored: options.ignored.map(pattern => new Minimatch(pattern))
+                    });
+                });
             });
-        await watcher.start();
-        this.options.info('Started watching:', basePath);
-        if (toDisposeWatcher.disposed) {
-            this.debug('Stopping watching:', basePath);
-            await watcher.stop();
-            // remove a reference to nsfw otherwise GC cannot collect it
-            watcher = undefined;
-            this.options.info('Stopped watching:', basePath);
-            return;
-        }
-        toDisposeWatcher.push(Disposable.create(async () => {
-            this.watcherOptions.delete(watcherId);
-            if (watcher) {
-                this.debug('Stopping watching:', basePath);
-                await watcher.stop();
-                // remove a reference to nsfw otherwise GC cannot collect it
-                watcher = undefined;
-                this.options.info('Stopped watching:', basePath);
-            }
-        }));
-        this.watcherOptions.set(watcherId, {
-            ignored: options.ignored.map(pattern => new Minimatch(pattern))
-        });
     }
 
     unwatchFileChanges(watcherId: number): Promise<void> {
