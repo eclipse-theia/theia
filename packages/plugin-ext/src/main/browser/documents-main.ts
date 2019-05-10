@@ -29,6 +29,51 @@ import { TextDocumentShowOptions } from '../../api/model';
 import { Range } from 'vscode-languageserver-types';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ViewColumn } from '../../plugin/types-impl';
+import { Reference } from '@theia/core/lib/common/reference';
+import { dispose } from '../../common/disposable-util';
+
+export class ModelReferenceCollection {
+
+    private data = new Array<{ length: number, dispose(): void }>();
+    private length = 0;
+
+    constructor(
+        private readonly maxAge: number = 1000 * 60 * 3,
+        private readonly maxLength: number = 1024 * 1024 * 80
+    ) { }
+
+    dispose(): void {
+        this.data = dispose(this.data) || [];
+    }
+
+    add(ref: Reference<MonacoEditorModel>): void {
+        const length = ref.object.textEditorModel.getValueLength();
+        // tslint:disable-next-line: no-any
+        let handle: any;
+        let entry: { length: number, dispose(): void };
+        const _dispose = () => {
+            const idx = this.data.indexOf(entry);
+            if (idx >= 0) {
+                this.length -= length;
+                ref.dispose();
+                clearTimeout(handle);
+                this.data.splice(idx, 1);
+            }
+        };
+        handle = setTimeout(_dispose, this.maxAge);
+        entry = { length, dispose: _dispose };
+
+        this.data.push(entry);
+        this.length += length;
+        this.cleanup();
+    }
+
+    private cleanup(): void {
+        while (this.length > this.maxLength) {
+            this.data[0].dispose();
+        }
+    }
+}
 
 export class DocumentsMainImpl implements DocumentsMain {
 
@@ -37,6 +82,7 @@ export class DocumentsMainImpl implements DocumentsMain {
     private modelToDispose = new Map<string, Disposable>();
     private modelIsSynced = new Map<string, boolean>();
     private modelService: EditorModelService;
+    private modelReferenceCache = new ModelReferenceCollection();
 
     protected saveTimeout = 1750;
 
@@ -53,6 +99,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         this.toDispose.push(editorsAndDocuments.onDocumentAdd(documents => documents.forEach(this.onModelAdded, this)));
         this.toDispose.push(editorsAndDocuments.onDocumentRemove(documents => documents.forEach(this.onModelRemoved, this)));
         this.toDispose.push(modelService.onModelModeChanged(this.onModelChanged, this));
+        this.toDispose.push(this.modelReferenceCache);
 
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
@@ -191,8 +238,9 @@ export class DocumentsMainImpl implements DocumentsMain {
     }
 
     async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
-        const model = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
-        return !!model;
+        const ref = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
+        this.modelReferenceCache.add(ref);
+        return !!ref.object;
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {

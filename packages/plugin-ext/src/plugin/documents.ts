@@ -204,11 +204,6 @@ export class DocumentsExtImpl implements DocumentsExt {
      * @param options if options exists, resource will be opened in editor, otherwise only document object is returned
      */
     async showDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
-        const cached = this.editorsAndDocuments.getDocument(uri.toString());
-        if (cached) {
-            return cached;
-        }
-
         // Determine whether the document is already loading
         const loadingDocument = this.loadingDocuments.get(uri.toString());
         if (loadingDocument) {
@@ -223,7 +218,7 @@ export class DocumentsExtImpl implements DocumentsExt {
             this.loadingDocuments.set(uri.toString(), document);
             // wait the document being opened
             await document;
-            // retun opened document
+            // return opened document
             return document;
         } catch (error) {
             return Promise.reject(error);
@@ -234,6 +229,11 @@ export class DocumentsExtImpl implements DocumentsExt {
     }
 
     async openDocument(uri: URI): Promise<DocumentDataExt | undefined> {
+        const cached = this.editorsAndDocuments.getDocument(uri.toString());
+        if (cached) {
+            return cached;
+        }
+
         await this.proxy.$tryOpenDocument(uri);
         return this.editorsAndDocuments.getDocument(uri.toString());
     }
