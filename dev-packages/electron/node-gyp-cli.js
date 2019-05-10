@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// @ts-check
 /********************************************************************************
  * Copyright (C) 2019 Ericsson and others.
  *
@@ -16,9 +15,4 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-if (process.env.THEIA_ELECTRON_SKIP_REPLACE_FFMPEG) {
-    console.error('skipping `electron-replace-ffmpeg`')
-    process.exit(0) // stop
-} else {
-    process.exit(1) // ok
-}
+require('node-gyp/bin/node-gyp.js')

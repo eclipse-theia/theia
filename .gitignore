@@ -21,3 +21,5 @@ package-backup.json
 packages/plugin/typedoc
 plugins
 gh-pages
+.vscode/ipch
+dev-packages/electron/compile_commands.json
