@@ -33,7 +33,7 @@ import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
 import { ScmNavigatorDecorator } from './decorations/scm-navigator-decorator';
 import { ScmDecorationsService } from './decorations/scm-decorations-service';
-import { AvatarService } from './avatar-service';
+import { ScmAvatarService } from './scm-avatar-service';
 
 export default new ContainerModule(bind => {
     bind(ScmService).toSelf().inSingletonScope();
@@ -66,7 +66,7 @@ export default new ContainerModule(bind => {
     bind(NavigatorTreeDecorator).to(ScmNavigatorDecorator).inSingletonScope();
     bind(ScmDecorationsService).toSelf().inSingletonScope();
 
-    bind(AvatarService).toSelf().inSingletonScope();
+    bind(ScmAvatarService).toSelf().inSingletonScope();
 
     bindDirtyDiff(bind);
 });

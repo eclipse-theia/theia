@@ -16,7 +16,7 @@
 
 import React = require('react');
 import { ScmRepository, ScmAmendSupport, ScmCommit } from './scm-service';
-import { AvatarService } from './avatar-service';
+import { ScmAvatarService } from './scm-avatar-service';
 import { StorageService } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core';
 
@@ -28,7 +28,7 @@ export interface ScmAmendComponentProps {
     repository: ScmRepository,
     scmAmendSupport: ScmAmendSupport,
     setCommitMessage: (message: string) => void,
-    avatarService: AvatarService,
+    avatarService: ScmAvatarService,
     storageService: StorageService,
 }
 

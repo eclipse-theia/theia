@@ -29,7 +29,7 @@ import {
 } from './scm-service';
 import { CommandRegistry, MenuPath } from '@theia/core';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { AvatarService } from './avatar-service';
+import { ScmAvatarService } from './scm-avatar-service';
 import { ScmTitleCommandRegistry, ScmTitleItem } from './scm-title-command-registry';
 import { ScmResourceCommandRegistry } from './scm-resource-command-registry';
 import { ScmGroupCommandRegistry } from './scm-group-command-registry';
@@ -69,7 +69,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     @inject(CommandRegistry) private readonly commandRegistry: CommandRegistry;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
-    @inject(AvatarService) protected readonly avatarService: AvatarService;
+    @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService;
     @inject(StorageService) protected readonly storageService: StorageService;
 
     constructor() {
