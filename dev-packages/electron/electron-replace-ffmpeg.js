@@ -15,10 +15,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+'use-strict'
 
 const downloadElectron = require('electron-download');
 const unzipper = require('unzipper');
 const fs = require('fs');
+
+const { libffmpeg } = require('./electron-ffmpeg-lib')
 
 async function main() {
     const electronVersionFilePath = require.resolve('electron/dist/version');
@@ -40,7 +43,7 @@ async function main() {
     const {
         name: libffmpegFileName,
         folder: libffmpegFolder = '',
-    } = libffmpegFile();
+    } = libffmpeg();
 
     const libffmpegZip = await unzipper.Open.file(libffmpegZipPath);
     const file = libffmpegZip.files.find(file => file.path.endsWith(libffmpegFileName));
@@ -55,35 +58,6 @@ async function main() {
             .on('finish', resolve)
             .on('error', reject);
     });
-}
-
-/**
- * @typedef {Object} File
- * @property {String} name
- * @property {String|undefined} folder
- */
-
-/**
- * @return {File}
- */
-function libffmpegFile() {
-    switch (process.platform) {
-        case 'darwin':
-            return {
-                name: 'libffmpeg.dylib',
-                folder: 'Electron.app/Contents/Frameworks/Electron Framework.framework/Libraries/',
-            };
-        case 'linux':
-            return {
-                name: 'libffmpeg.so',
-            };
-        case 'win32':
-            return {
-                name: 'ffmpeg.dll',
-            };
-        default:
-            throw new Error(`${process.platform} is not supported`);
-    }
 }
 
 main().catch(error => {

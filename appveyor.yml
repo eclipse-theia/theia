@@ -17,7 +17,8 @@ install:
   - netsh advfirewall firewall add rule name="SeleniumIn" dir=in action=allow protocol=TCP localport=4444
   - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4444
   - cmd: set THEIA_SKIP_NPM_PREPARE=1 && yarn install
-  - npx electron-h264-test
+  - npx electron-codecs-test
+  - npx electron-h264-test # obsolete?
 
 before_build:
   - node --version && npm --version && yarn --version && python --version

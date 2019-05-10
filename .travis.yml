@@ -95,7 +95,8 @@ before_install:
   - export PATH=$HOME/.yarn/bin:$PATH
 install:
   - THEIA_SKIP_NPM_PREPARE=1 yarn install
-  - travis_retry npx electron-h264-test
+  - npx electron-codecs-test
+  - npx electron-h264-test # obsolete?
   - yarn prepare
   - scripts/check_git_status.sh
 script:

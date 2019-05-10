@@ -17,28 +17,27 @@
  ********************************************************************************/
 'use-strict'
 
-const cp = require('child_process');
+const { libffmpegCodecs } = require('./electron-ffmpeg-lib');
 
-const timeout = 60000;
+const bad = [
+    'h264',
+    'aac',
+];
 
-const electronApp = cp.fork(require.resolve('./electron-cli.js'), [
-    require.resolve('./electron-h264-test-application/test-application.js'),
-    '--headless',
-]);
+async function main() {
+    const codecs = await libffmpegCodecs();
+    const found = [];
+    for (const codec of codecs) {
+        for (const name of bad) {
+            if (codec.name === name) found.push(codec);
+        }
+    }
+    if (found.length > 0) {
+        throw new Error(found.map(codec => `\n> ${codec.name} detected (${codec.longName})`).join());
+    }
+}
 
-electronApp.on('error', error => {
+main().catch(error => {
     console.error(error);
-    process.exit(127);
+    process.exit(error.code || 127);
 })
-
-electronApp.on('close', (code, signal) => {
-    if (code || signal) {
-        if (signal) console.error(signal);
-        process.exit(code || 1);
-    } else process.exit(0);
-})
-
-setTimeout(() => {
-    console.error('Error: electron process timeout');
-    process.exit(4);
-}, timeout);
