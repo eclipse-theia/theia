@@ -239,8 +239,11 @@ export class DocumentsMainImpl implements DocumentsMain {
 
     async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
         const ref = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
-        this.modelReferenceCache.add(ref);
-        return !!ref.object;
+        if (ref.object) {
+            this.modelReferenceCache.add(ref);
+            return true;
+        }
+        return false;
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
