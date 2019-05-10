@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// @ts-check
 /********************************************************************************
  * Copyright (C) 2019 Ericsson and others.
  *
@@ -15,75 +14,130 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+'use-strict'
+
+// @ts-check
 
 const downloadElectron = require('electron-download');
 const unzipper = require('unzipper');
+const crypto = require('crypto');
+const yargs = require('yargs');
+const path = require('path');
 const fs = require('fs');
 
-async function main() {
-    const electronVersionFilePath = require.resolve('electron/dist/version');
-    const electronVersion = fs.readFileSync(electronVersionFilePath, {
-        encoding: 'utf8'
-    }).trim();
+const { platforms, libffmpegLocation } = require('./electron-ffmpeg-lib')
 
-    const libffmpegZipPath = await new Promise((resolve, reject) => {
-        downloadElectron({
-            // `version` usually starts with a `v`, which already gets added by `electron-download`.
-            version: electronVersion.slice(1),
-            ffmpeg: true,
-        }, (error, path) => {
-            if (error) reject(error);
-            else resolve(path);
-        });
+const downloadCache = path.resolve(__dirname, 'download');
+if (!fs.existsSync(downloadCache)) {
+    fs.mkdirSync(downloadCache);
+}
+
+/**
+ * @param {String} path
+ * @return {Buffer} Hash of the file.
+ */
+async function hashFile(path) {
+    return new Promise((resolve, reject) => {
+        const hash = crypto.createHash('md5');
+        const stream = fs.createReadStream(path);
+        stream.pipe(hash).on('finish', () => resolve(hash.digest()));
     });
+}
+
+async function main() {
+    const options = yargs
+        .option('electronVersion', {
+            alias: ['v'],
+            description: 'Electron version for which to pull the "clean" ffmpeg library.',
+        })
+        .option('absolutePath', {
+            alias: ['a'],
+            description: 'Absolute path to the ffmpeg shared library.',
+        })
+        .option('electronDist', {
+            alias: ['d'],
+            description: 'Electron distribution location.',
+        })
+        .option('platform', {
+            alias: ['p'],
+            description: 'Dictates where the library is located within the Electron distribution.',
+            choices: platforms,
+        })
+        .help().alias('h', 'help')
+        .exitProcess(false)
+        .argv;
+
+    if (options.help) {
+        return; // help is being displayed.
+    }
+
+    let shouldDownload = true;
+    let shouldReplace = true;
 
     const {
         name: libffmpegFileName,
         folder: libffmpegFolder = '',
-    } = libffmpegFile();
+    } = libffmpegLocation(options['platform']);
 
-    const libffmpegZip = await unzipper.Open.file(libffmpegZipPath);
-    const file = libffmpegZip.files.find(file => file.path.endsWith(libffmpegFileName));
-    if (!file) {
-        throw new Error(`archive did not contain "${libffmpegFileName}"`);
+    const electronDist = options['electronDist'] || path.resolve(require.resolve('electron/index.js'), '..', 'dist');
+    const libffmpegDistPath = options['absolutePath'] || path.resolve(electronDist, libffmpegFolder, libffmpegFileName);
+    const libffmpegCachedPath = path.resolve(downloadCache, libffmpegFileName);
+
+    if (fs.existsSync(libffmpegCachedPath)) {
+        shouldDownload = false; // If the file is already cached, do not download.
+        console.info('Found cached ffmpeg library.');
+        const [cacheHash, distHash] = await Promise.all([
+            hashFile(libffmpegCachedPath),
+            hashFile(libffmpegDistPath),
+        ])
+        if (cacheHash.equals(distHash)) {
+            shouldReplace = false; // If files are already the same, do not replace.
+            console.info('Hashes are equal, not replacing the ffmpeg library.');
+        }
     }
-    const electronFfmpegLibPath = require.resolve(`electron/dist/${libffmpegFolder}${libffmpegFileName}`);
 
-    await new Promise((resolve, reject) => {
-        file.stream()
-            .pipe(fs.createWriteStream(electronFfmpegLibPath))
-            .on('finish', resolve)
-            .on('error', reject);
-    });
-}
+    if (shouldDownload) {
+        let electronVersion = options['electronVersion'];
+        if (!electronVersion) {
+            const electronVersionFilePath = path.resolve(electronDist, 'version');
+            electronVersion = fs.readFileSync(electronVersionFilePath, {
+                encoding: 'utf8'
+            }).trim();
+        }
 
-/**
- * @typedef {Object} File
- * @property {String} name
- * @property {String} [folder]
- */
+        const libffmpegZipPath = await new Promise((resolve, reject) => {
+            downloadElectron({
+                // `version` usually starts with a `v`, which already gets added by `electron-download`.
+                version: electronVersion.replace(/^v/i, ''),
+                ffmpeg: true,
+            }, (error, path) => {
+                if (error) reject(error);
+                else resolve(path);
+            });
+        });
 
-/**
- * @return {File}
- */
-function libffmpegFile() {
-    switch (process.platform) {
-        case 'darwin':
-            return {
-                name: 'libffmpeg.dylib',
-                folder: 'Electron.app/Contents/Frameworks/Electron Framework.framework/Libraries/',
-            };
-        case 'linux':
-            return {
-                name: 'libffmpeg.so',
-            };
-        case 'win32':
-            return {
-                name: 'ffmpeg.dll',
-            };
-        default:
-            throw new Error(`${process.platform} is not supported`);
+        const libffmpegZip = await unzipper.Open.file(libffmpegZipPath);
+        file = libffmpegZip.files.find(file => file.path.endsWith(libffmpegFileName));
+        if (!file) {
+            throw new Error(`Archive did not contain "${libffmpegFileName}".`);
+        }
+
+        // Extract file to cache.
+        await new Promise((resolve, reject) => {
+            file.stream()
+                .pipe(fs.createWriteStream(libffmpegCachedPath, {  }))
+                .on('finish', resolve)
+                .on('error', reject);
+        });
+
+        console.info(`Downloaded ffmpeg shared library { version: "${electronVersion}", dist: "${electronDist}" }.`);
     }
+
+    if (shouldReplace) {
+        fs.copyFileSync(libffmpegCachedPath, libffmpegDistPath);
+        console.info(`Successfully replaced "${libffmpegDistPath}".`);
+    }
+
 }
 
 main().catch(error => {

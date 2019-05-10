@@ -1,0 +1,26 @@
+{
+    "configurations": [
+        {
+            "name": "@theia/electron (Linux)",
+            "compileCommands": "${workspaceFolder}/dev-packages/electron/compile_commands.json",
+            "defines": [],
+            "cStandard": "c89",
+            "intelliSenseMode": "${default}"
+        },
+        {
+            "name": "@theia/electron Debug (Windows)",
+            "compileCommands": "${workspaceFolder}\\dev-packages\\electron\\Debug\\compile_commands.json",
+            "defines": [],
+            "cStandard": "c89",
+            "intelliSenseMode": "${default}"
+        },
+        {
+            "name": "@theia/electron Release (Windows)",
+            "compileCommands": "${workspaceFolder}\\dev-packages\\electron\\Release\\compile_commands.json",
+            "defines": [],
+            "cStandard": "c89",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
