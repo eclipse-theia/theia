@@ -170,7 +170,8 @@ export class DocumentsMainImpl implements DocumentsMain {
     async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
         const language = options && options.language;
         const content = options && options.content;
-        return createUntitledResource(content, language);
+        const resource = createUntitledResource(content, language);
+        return monaco.Uri.parse(resource.uri.toString());
     }
 
     async $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
