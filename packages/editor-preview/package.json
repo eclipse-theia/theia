@@ -1,11 +1,11 @@
 {
   "name": "@theia/editor-preview",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Theia - Editor Preview Extension",
   "dependencies": {
-    "@theia/core": "^0.6.0",
-    "@theia/editor": "^0.6.0",
-    "@theia/navigator": "^0.6.0"
+    "@theia/core": "^0.6.1",
+    "@theia/editor": "^0.6.1",
+    "@theia/navigator": "^0.6.1"
   },
   "publishConfig": {
     "access": "public"
@@ -39,7 +39,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.6.0"
+    "@theia/ext-scripts": "^0.6.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
