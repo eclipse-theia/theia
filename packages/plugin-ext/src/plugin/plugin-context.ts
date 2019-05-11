@@ -346,6 +346,10 @@ export function createAPIFactory(
                         console.error('Progress location \'SourceControl\' is not supported.');
                     });
                 }
+            },
+            registerUriHandler(handler: theia.UriHandler): theia.Disposable {
+                // TODO Apply full implementation https://github.com/theia-ide/theia/issues/5119
+                return new Disposable(() => {});
             }
         };
 
