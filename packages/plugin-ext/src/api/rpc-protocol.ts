@@ -329,7 +329,8 @@ class MessageFactory {
         if (typeof res === 'undefined') {
             return `{${prefix}"type":${MessageType.Reply},"id":"${req}"}`;
         }
-        return `{${prefix}"type":${MessageType.Reply},"id":"${req}","res":${JSON.stringify(res, ObjectsTransferrer.replacer)}}`;
+        const cache: any = [];
+        return `{${prefix}"type":${MessageType.Reply},"id":"${req}","res":${JSON.stringify(res, (key, value) => ObjectsTransferrer.replacer(key, value, cache))}}`;
     }
 
     public static replyErr(req: string, err: any, messageToSendHostId?: string): string {
@@ -357,7 +358,7 @@ class MessageFactory {
 namespace ObjectsTransferrer {
 
     // tslint:disable-next-line:no-any
-    export function replacer(key: string | undefined, value: any): any {
+    export function replacer(key: string | undefined, value: any, cache: any[] = []): any {
         if (value instanceof URI) {
             return {
                 $type: SerializedObjectType.THEIA_URI,
@@ -387,6 +388,15 @@ namespace ObjectsTransferrer {
                 $type: SerializedObjectType.VSCODE_URI,
                 data: uri.toString()
             } as SerializedObject;
+        } else if (value && typeof value === 'object') {
+            if (cache.indexOf(value) !== -1) {
+                try {
+                    return JSON.parse(JSON.stringify(value));
+                } catch (e) {
+                    return undefined;
+                }
+            }
+            cache.push(value);
         }
 
         return value;
