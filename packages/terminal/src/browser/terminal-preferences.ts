@@ -73,13 +73,13 @@ export interface TerminalConfiguration {
     'terminal.enablePaste': boolean
     'terminal.integrated.fontFamily': string
     'terminal.integrated.fontSize': number
-    'terminal.integrated.fontWeight': FontWeigth
-    'terminal.integrated.fontWeightBold': FontWeigth
+    'terminal.integrated.fontWeight': FontWeight
+    'terminal.integrated.fontWeightBold': FontWeight
     'terminal.integrated.letterSpacing': number
     'terminal.integrated.lineHeight': number
 }
 
-type FontWeigth = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
 export const TerminalPreferences = Symbol('TerminalPreferences');
 export type TerminalPreferences = PreferenceProxy<TerminalConfiguration>;
