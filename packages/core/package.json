@@ -36,6 +36,7 @@
     "reconnecting-websocket": "^3.0.7",
     "reflect-metadata": "^0.1.10",
     "route-parser": "^0.0.5",
+    "tslib": "^1.9.3",
     "vscode-languageserver-types": "^3.10.0",
     "vscode-uri": "^1.0.1",
     "vscode-ws-jsonrpc": "^0.0.2-1",

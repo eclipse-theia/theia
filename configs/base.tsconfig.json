@@ -1,25 +1,28 @@
 {
-    "compilerOptions": {
-        "skipLibCheck": true,
-        "declaration": true,
-        "declarationMap": true,
-        "noImplicitAny": true,
-        "noEmitOnError": false,
-        "noImplicitThis": true,
-        "noUnusedLocals": true,
-        "strictNullChecks": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "downlevelIteration": true,
-        "resolveJsonModule": true,
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "target": "es5",
-        "jsx": "react",
-        "lib": [
-            "es6",
-            "dom"
-        ],
-        "sourceMap": true
-    }
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es5",
+    "jsx": "react",
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "sourceMap": true,
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "declaration": true,
+    "declarationMap": true,
+    "downlevelIteration": true,
+    "importHelpers": true,
+    "noEmitOnError": false,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true
+  }
 }
