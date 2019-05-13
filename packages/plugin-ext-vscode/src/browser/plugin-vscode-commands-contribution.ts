@@ -292,6 +292,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
             }
         });
+
+        commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
+            execute: () => {
+                window.location.reload();
+            }
+        });
+
         /**
          * TODO:
          * Keep Open	workbench.action.keepEditor
