@@ -11,6 +11,8 @@ Breaking changes:
 - [preferences] refactored to integrate launch configurations as preferences
 - [filesystem] extracted `FileUploadService` and refactored `FileTreeWidget` to use it [#5086](https://github.com/theia-ide/theia/pull/5086)
   - moved `FileDownloadCommands.UPLOAD` to `FileSystemCommands.UPLOAD`
+- [output] moved the channel selection and clear icons to the toolbar.  The CLEAR_BUTTON and
+OVERLAY constants are no longer available.  Furthermore OutputChannelManager API has changed.
 - [scm] added Source Control Model
 - [git] bind Git UI to SCM  
 

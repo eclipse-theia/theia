@@ -27,8 +27,6 @@ export const OUTPUT_WIDGET_KIND = 'outputView';
 @injectable()
 export class OutputWidget extends ReactWidget {
 
-    protected selectedChannel: OutputChannel | undefined;
-
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
 
@@ -49,10 +47,7 @@ export class OutputWidget extends ReactWidget {
             this.registerListener(channel);
             this.update();
         }));
-        this.toDispose.push(this.outputChannelManager.onChannelDelete(event => {
-            if (this.selectedChannel && this.selectedChannel.name === event.channelName) {
-                this.selectedChannel = this.getVisibleChannels()[0];
-            }
+        this.toDispose.push(this.outputChannelManager.onSelectedChannelChange(event => {
             this.update();
         }));
         this.update();
@@ -69,43 +64,22 @@ export class OutputWidget extends ReactWidget {
     }
 
     protected registerListener(outputChannel: OutputChannel): void {
-        if (!this.selectedChannel) {
-            this.selectedChannel = outputChannel;
-        }
         this.toDispose.push(outputChannel.onContentChange(c => {
-            if (outputChannel === this.selectedChannel) {
+            if (outputChannel === this.outputChannelManager.selectedChannel) {
                 this.update();
             }
-        }));
-        this.toDispose.push(outputChannel.onVisibilityChange(event => {
-            if (event.visible) {
-                this.selectedChannel = outputChannel;
-            } else if (outputChannel === this.selectedChannel) {
-                this.selectedChannel = this.getVisibleChannels()[0];
-            }
-            this.update();
         }));
     }
 
     protected render(): React.ReactNode {
         return <React.Fragment>
-            <div id={OutputWidget.IDs.OVERLAY}>
-                {this.renderChannelSelector()}
-                {this.renderClearButton()}
-            </div>
             {this.renderChannelContents()}
         </React.Fragment>;
     }
 
-    protected renderClearButton(): React.ReactNode {
-        return <span title='Clear'
-            className={this.selectedChannel ? 'enabled' : ''}
-            id={OutputWidget.IDs.CLEAR_BUTTON} onClick={() => this.clear()} />;
-    }
-
-    protected clear(): void {
-        if (this.selectedChannel) {
-            this.selectedChannel.clear();
+    public clear(): void {
+        if (this.outputChannelManager.selectedChannel) {
+            this.outputChannelManager.selectedChannel.clear();
         }
     }
 
@@ -122,8 +96,8 @@ export class OutputWidget extends ReactWidget {
             fontFamily: 'monospace',
         };
 
-        if (this.selectedChannel) {
-            for (const text of this.selectedChannel.getLines()) {
+        if (this.outputChannelManager.selectedChannel) {
+            for (const text of this.outputChannelManager.selectedChannel.getLines()) {
                 const lines = text.split(/[\n\r]+/);
                 for (const line of lines) {
                     result.push(<div style={style} key={id++}>{line}</div>);
@@ -136,32 +110,6 @@ export class OutputWidget extends ReactWidget {
         return result;
     }
 
-    private readonly NONE = '<no channels>';
-
-    protected renderChannelSelector(): React.ReactNode {
-        const channelOptionElements: React.ReactNode[] = [];
-        this.getVisibleChannels().forEach(channel => {
-            channelOptionElements.push(<option value={channel.name} key={channel.name}>{channel.name}</option>);
-        });
-        if (channelOptionElements.length === 0) {
-            channelOptionElements.push(<option key={this.NONE} value={this.NONE}>{this.NONE}</option>);
-        }
-        return <select
-            id={OutputWidget.IDs.CHANNEL_LIST}
-            value={this.selectedChannel ? this.selectedChannel.name : this.NONE}
-            onChange={
-                async event => {
-                    const channelName = (event.target as HTMLSelectElement).value;
-                    if (channelName !== this.NONE) {
-                        this.selectedChannel = this.outputChannelManager.getChannel(channelName);
-                        this.update();
-                    }
-                }
-            }>
-            {channelOptionElements}
-        </select>;
-    }
-
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         setTimeout(() => {
@@ -171,17 +119,11 @@ export class OutputWidget extends ReactWidget {
             }
         });
     }
-
-    protected getVisibleChannels(): OutputChannel[] {
-        return this.outputChannelManager.getChannels().filter(channel => channel.isVisible);
-    }
 }
 
 export namespace OutputWidget {
     export namespace IDs {
-        export const CLEAR_BUTTON = 'outputClear';
         export const CONTENTS = 'outputContents';
-        export const OVERLAY = 'outputOverlay';
         export const CHANNEL_LIST = 'outputChannelList';
     }
 }
