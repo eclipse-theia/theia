@@ -15,12 +15,18 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Message } from '@theia/core/lib/browser';
+import { Message, Widget, MessageLoop } from '@theia/core/lib/browser';
 import { OutputChannelManager, OutputChannel } from '../common/output-channel';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 
 import '../../src/browser/style/output.css';
+import * as Xterm from 'xterm';
+// import { TerminalPreferences } from '@theia/terminal/lib/browser/terminal-preferences';
+import { getCSSPropertiesFromPage } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
+import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 
 export const OUTPUT_WIDGET_KIND = 'outputView';
 
@@ -31,6 +37,13 @@ export class OutputWidget extends ReactWidget {
 
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
+
+    @inject(PreferenceServiceImpl)
+    protected prefService: PreferenceServiceImpl;
+    @inject(ThemeService)
+    protected themeService: ThemeService;
+
+    private term: Xterm.Terminal;
 
     constructor() {
         super();
@@ -43,7 +56,7 @@ export class OutputWidget extends ReactWidget {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected async init(): Promise<void> {
         this.outputChannelManager.getChannels().forEach(this.registerListener.bind(this));
         this.toDispose.push(this.outputChannelManager.onChannelAdded(channel => {
             this.registerListener(channel);
@@ -55,6 +68,47 @@ export class OutputWidget extends ReactWidget {
             }
             this.update();
         }));
+
+        /* Read CSS properties from the page and apply them to the terminal.  */
+        const cssProps = getCSSPropertiesFromPage();
+        await this.prefService.ready;
+
+        this.term = new Xterm.Terminal({
+            experimentalCharAtlas: 'dynamic',
+            cursorBlink: false,
+            fontFamily: this.prefService.get('terminal.integrated.fontFamily'),
+            fontSize: this.prefService.get('terminal.integrated.fontSize'),
+            fontWeight: this.prefService.get('terminal.integrated.fontWeight'),
+            fontWeightBold: this.prefService.get('terminal.integrated.fontWeightBold'),
+            letterSpacing: this.prefService.get('terminal.integrated.letterSpacing'),
+            lineHeight: this.prefService.get('terminal.integrated.lineHeight'),
+            theme: {
+                foreground: cssProps.foreground,
+                background: cssProps.background,
+                cursor: cssProps.foreground,
+                selection: cssProps.selection
+            },
+        });
+
+        this.toDispose.push(this.prefService.onPreferenceChanged(change => {
+            const lastSeparator = change.preferenceName.lastIndexOf('.');
+            if (lastSeparator > 0) {
+                const preferenceName = change.preferenceName.substr(lastSeparator + 1);
+                this.term.setOption(preferenceName, this.prefService.get(change.preferenceName));
+                this.update();
+            }
+        }));
+
+        this.toDispose.push(this.themeService.onThemeChange(c => {
+            const changedProps = getCSSPropertiesFromPage();
+            this.term.setOption('theme', {
+                foreground: changedProps.foreground,
+                background: changedProps.background,
+                cursor: changedProps.foreground,
+                selection: cssProps.selection
+            });
+        }));
+
         this.update();
     }
 
@@ -88,6 +142,7 @@ export class OutputWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        console.log('>>>>render');
         return <React.Fragment>
             <div id={OutputWidget.IDs.OVERLAY}>
                 {this.renderChannelSelector()}
@@ -110,30 +165,7 @@ export class OutputWidget extends ReactWidget {
     }
 
     protected renderChannelContents(): React.ReactNode {
-        return <div id={OutputWidget.IDs.CONTENTS}>{this.renderLines()}</div>;
-    }
-
-    protected renderLines(): React.ReactNode[] {
-        let id = 0;
-        const result = [];
-
-        const style: React.CSSProperties = {
-            whiteSpace: 'pre',
-            fontFamily: 'monospace',
-        };
-
-        if (this.selectedChannel) {
-            for (const text of this.selectedChannel.getLines()) {
-                const lines = text.split(/[\n\r]+/);
-                for (const line of lines) {
-                    result.push(<div style={style} key={id++}>{line}</div>);
-                }
-            }
-        }
-        if (result.length === 0) {
-            result.push(<div style={style} key={id++}>{'<no output yet>'}</div>);
-        }
-        return result;
+        return <div id={OutputWidget.IDs.CONTENTS} className='terminal-container'></div>;
     }
 
     private readonly NONE = '<no channels>';
@@ -164,12 +196,80 @@ export class OutputWidget extends ReactWidget {
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        setTimeout(() => {
-            const div = document.getElementById(OutputWidget.IDs.CONTENTS) as HTMLDivElement;
-            if (div && div.children.length > 0) {
-                div.children[div.children.length - 1].scrollIntoView(false);
+        if (!this.isVisible || !this.isAttached || !this.term) {
+            return;
+        }
+
+        this.open();
+        this.resizeTerminal();
+
+        if (this.selectedChannel) {
+            const selectedLines = this.selectedChannel.getLines();
+
+            if (selectedLines.length === 0) {
+                this.term.reset();
             }
-        });
+
+            for (const text of selectedLines) {
+                const lines = text.split(/[\n\r]+/);
+                for (const line of lines) {
+                    this.term.writeln(line);
+                }
+            }
+
+            if (selectedLines.length === 0) {
+                this.showNoOutput();
+            }
+        } else {
+            this.showNoOutput();
+        }
+    }
+
+    protected open(): void {
+        if (this.term.element) {
+            return;
+        }
+         const contentElement = this.node.children.namedItem(OutputWidget.IDs.CONTENTS);
+         if (contentElement) {
+             this.term.open(contentElement as HTMLElement); // use element instead of bool flag;
+         }
+    }
+
+    processMessage(msg: Message): void {
+        super.processMessage(msg);
+        switch (msg.type) {
+            case 'fit-request':
+                this.onFitRequest(msg);
+                break;
+            default:
+                break;
+        }
+    }
+    protected onFitRequest(msg: Message): void {
+        MessageLoop.sendMessage(this, Widget.ResizeMessage.UnknownSize);
+    }
+
+    protected onAfterShow(msg: Message): void {
+        this.update();
+    }
+    protected onAfterAttach(msg: Message): void {
+        this.update();
+    }
+    protected onResize(msg: Widget.ResizeMessage): void {
+        this.update();
+    }
+
+    protected resizeTerminal(): void {
+        const geo = proposeGeometry(this.term);
+        const cols = geo.cols;
+        const rows = geo.rows;
+        console.log('Proposed size ', cols, rows);
+        this.term.resize(cols, rows);
+    }
+
+    private showNoOutput() {
+        this.term.reset();
+        this.term.write('<no output yet>');
     }
 
     protected getVisibleChannels(): OutputChannel[] {

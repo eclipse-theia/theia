@@ -19,14 +19,7 @@
     color: var(--theia-ui-font-color1);
 }
 
-#outputView #outputContents {
-    overflow: auto;
-    height: inherit;
-    padding: 6px;
-    box-sizing: border-box;
-}
-
-.theia-side-panel #outputView #outputContents {
+.theia-side-panel #outputView {
     margin-left: 14px;
 }
 
@@ -35,6 +28,7 @@
     right: 24px;
     margin: 6px;
     display: flex;
+    z-index: 10;
 }
 
 #outputView #outputOverlay > * {

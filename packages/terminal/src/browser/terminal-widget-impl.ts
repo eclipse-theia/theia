@@ -49,6 +49,47 @@ interface TerminalCSSProperties {
     selection: string;
 }
 
+// Todo move to the terminal namespace
+/* Get the font family and size from the CSS custom properties defined in
+       the root element.  */
+export function getCSSPropertiesFromPage(): TerminalCSSProperties {
+    /* Helper to look up a CSS property value and throw an error if it's
+        not defined.  */
+    function lookup(props: CSSStyleDeclaration, name: string): string {
+        /* There is sometimes an extra space in the front, remove it.  */
+        const value = props.getPropertyValue(name).trim();
+        if (!value) {
+            throw new Error(`Couldn\'t find value of ${name}`);
+        }
+
+        return value;
+    }
+
+    /* Get the CSS properties of <html> (aka :root in css).  */
+    const htmlElementProps = getComputedStyle(document.documentElement!);
+
+    const foreground = lookup(htmlElementProps, '--theia-ui-font-color1');
+    const background = lookup(htmlElementProps, '--theia-layout-color0');
+    const selection = lookup(htmlElementProps, '--theia-transparent-accent-color2');
+
+    /* xterm.js expects #XXX of #XXXXXX for colors.  */
+    const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+    if (!foreground.match(colorRe)) {
+        throw new Error(`Unexpected format for --theia-ui-font-color1 (${foreground})`);
+    }
+
+    if (!background.match(colorRe)) {
+        throw new Error(`Unexpected format for --theia-layout-color0 (${background})`);
+    }
+
+    return {
+        foreground,
+        background,
+        selection
+    };
+}
+
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
@@ -91,7 +132,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.addClass('terminal-container');
 
         /* Read CSS properties from the page and apply them to the terminal.  */
-        const cssProps = this.getCSSPropertiesFromPage();
+        const cssProps = getCSSPropertiesFromPage();
 
         this.term = new Xterm.Terminal({
             experimentalCharAtlas: 'dynamic',
@@ -120,7 +161,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
 
         this.toDispose.push(this.themeService.onThemeChange(c => {
-            const changedProps = this.getCSSPropertiesFromPage();
+            const changedProps = getCSSPropertiesFromPage();
             this.term.setOption('theme', {
                 foreground: changedProps.foreground,
                 background: changedProps.background,
@@ -188,46 +229,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.title.label = state.titleLabel;
             this.start(state.terminalId);
         }
-    }
-
-    /* Get the font family and size from the CSS custom properties defined in
-       the root element.  */
-    private getCSSPropertiesFromPage(): TerminalCSSProperties {
-        /* Helper to look up a CSS property value and throw an error if it's
-           not defined.  */
-        function lookup(props: CSSStyleDeclaration, name: string): string {
-            /* There is sometimes an extra space in the front, remove it.  */
-            const value = props.getPropertyValue(name).trim();
-            if (!value) {
-                throw new Error(`Couldn\'t find value of ${name}`);
-            }
-
-            return value;
-        }
-
-        /* Get the CSS properties of <html> (aka :root in css).  */
-        const htmlElementProps = getComputedStyle(document.documentElement!);
-
-        const foreground = lookup(htmlElementProps, '--theia-ui-font-color1');
-        const background = lookup(htmlElementProps, '--theia-layout-color0');
-        const selection = lookup(htmlElementProps, '--theia-transparent-accent-color2');
-
-        /* xterm.js expects #XXX of #XXXXXX for colors.  */
-        const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-
-        if (!foreground.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-ui-font-color1 (${foreground})`);
-        }
-
-        if (!background.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-layout-color0 (${background})`);
-        }
-
-        return {
-            foreground,
-            background,
-            selection
-        };
     }
 
     /**
