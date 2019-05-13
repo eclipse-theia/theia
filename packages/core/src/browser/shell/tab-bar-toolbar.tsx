@@ -21,7 +21,7 @@ import { LabelParser, LabelIcon } from '../label-parser';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution } from '../frontend-application';
 import { CommandRegistry, CommandService } from '../../common/command';
-import { Disposable } from '../../common/disposable';
+import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
 
@@ -51,7 +51,7 @@ export class TabBarToolbar extends ReactWidget {
 
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
         this.items = new Map(items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse().map(item => [item.id, item] as [string, TabBarToolbarItem]));
-        this.current = current;
+        this.setCurrent(current);
         if (!this.items.size) {
             this.hide();
         }
@@ -61,6 +61,23 @@ export class TabBarToolbar extends ReactWidget {
             }
         }));
         this.update();
+    }
+
+    protected readonly toDisposeOnSetCurrent = new DisposableCollection();
+    protected setCurrent(current: Widget | undefined): void {
+        this.toDisposeOnSetCurrent.dispose();
+        this.toDispose.push(this.toDisposeOnSetCurrent);
+        this.current = current;
+        if (current) {
+            const resetCurrent = () => {
+                this.setCurrent(undefined);
+                this.update();
+            };
+            current.disposed.connect(resetCurrent);
+            this.toDisposeOnSetCurrent.push(Disposable.create(() =>
+                current.disposed.disconnect(resetCurrent)
+            ));
+        }
     }
 
     protected render(): React.ReactNode {

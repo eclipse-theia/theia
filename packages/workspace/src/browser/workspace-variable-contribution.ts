@@ -16,6 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ApplicationShell, NavigatableWidget } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
@@ -38,7 +39,20 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected updateCurrentWidget(): void {
         const { currentWidget } = this.shell;
         if (NavigatableWidget.is(currentWidget)) {
-            this.currentWidget = currentWidget;
+            this.setCurrentWidget(currentWidget);
+        }
+    }
+
+    protected readonly toDiposeOnUpdateCurrentWidget = new DisposableCollection();
+    protected setCurrentWidget(currentWidget: NavigatableWidget | undefined): void {
+        this.toDiposeOnUpdateCurrentWidget.dispose();
+        this.currentWidget = currentWidget;
+        if (currentWidget) {
+            const resetCurrentWidget = () => this.setCurrentWidget(undefined);
+            currentWidget.disposed.connect(resetCurrentWidget);
+            this.toDiposeOnUpdateCurrentWidget.push(Disposable.create(() =>
+                currentWidget.disposed.disconnect(resetCurrentWidget)
+            ));
         }
     }
 
