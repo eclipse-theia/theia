@@ -21,6 +21,8 @@ import { FileSystem, FileSystemClient, fileSystemPath, DispatchingFileSystemClie
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
+import { NodeFileUploadService } from './node-file-upload-service';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
 
@@ -79,4 +81,7 @@ export default new ContainerModule(bind => {
             return server;
         })
     ).inSingletonScope();
+
+    bind(NodeFileUploadService).toSelf().inSingletonScope();
+    bind(MessagingService.Contribution).toService(NodeFileUploadService);
 });
