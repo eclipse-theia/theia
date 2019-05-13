@@ -17,6 +17,7 @@
 import { find, toArray, ArrayExt } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
+import { Disposable, DisposableCollection } from '../../common/disposable';
 
 /**
  * This specialization of DockPanel adds various events that are used for implementing the
@@ -62,8 +63,17 @@ export class TheiaDockPanel extends DockPanel {
         return find(this.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, title) > -1);
     }
 
+    protected readonly toDisposeOnMarkAsCurrent = new DisposableCollection();
     markAsCurrent(title: Title<Widget> | undefined): void {
+        this.toDisposeOnMarkAsCurrent.dispose();
         this._currentTitle = title;
+        if (title) {
+            const resetCurrent = () => this.markAsCurrent(undefined);
+            title.owner.disposed.connect(resetCurrent);
+            this.toDisposeOnMarkAsCurrent.push(Disposable.create(() =>
+                title.owner.disposed.disconnect(resetCurrent)
+            ));
+        }
     }
 
     addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
