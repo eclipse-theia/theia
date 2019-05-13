@@ -32,6 +32,10 @@ import { ViewColumn } from '../../plugin/types-impl';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
 
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 export class ModelReferenceCollection {
 
     private data = new Array<{ length: number, dispose(): void }>();
@@ -243,8 +247,10 @@ export class DocumentsMainImpl implements DocumentsMain {
         if (ref.object) {
             this.modelReferenceCache.add(ref);
             return true;
+        } else {
+            ref.dispose();
+            return false;
         }
-        return false;
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
