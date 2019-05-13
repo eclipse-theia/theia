@@ -178,7 +178,8 @@ export class FileSystemWatcher implements Disposable {
 
     protected createWatchOptions(uri: string): Promise<WatchOptions> {
         return this.getIgnored(uri).then(ignored => ({
-            ignored
+            // always ignore temporary upload files
+            ignored: ignored.concat('**/theia_upload_*')
         }));
     }
 

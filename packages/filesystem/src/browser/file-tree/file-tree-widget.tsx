@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as React from 'react';
 import { injectable, inject } from 'inversify';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from '@theia/core/lib/browser';
-import { DirNode, FileStatNode } from './file-tree';
-import { FileTreeModel } from './file-tree-model';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
 import { UriSelection } from '@theia/core/lib/common/selection';
-import * as React from 'react';
+import { isCancelled } from '@theia/core/lib/common/cancellation';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from '@theia/core/lib/browser';
+import { FileUploadService } from '../file-upload-service';
+import { DirNode, FileStatNode } from './file-tree';
+import { FileTreeModel } from './file-tree-model';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -31,6 +33,9 @@ export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 export class FileTreeWidget extends TreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
+
+    @inject(FileUploadService)
+    protected readonly uploadService: FileUploadService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -127,17 +132,23 @@ export class FileTreeWidget extends TreeWidget {
         this.toCancelNodeExpansion.dispose();
     }
 
-    protected handleDropEvent(node: TreeNode | undefined, event: React.DragEvent): void {
-        event.preventDefault();
-        event.stopPropagation();
-        event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-        const containing = DirNode.getContainingDir(node);
-        if (containing) {
-            const source = this.getTreeNodeFromData(event.dataTransfer);
-            if (source) {
-                this.model.move(source, containing);
-            } else {
-                this.model.upload(containing, event.dataTransfer.items);
+    protected async handleDropEvent(node: TreeNode | undefined, event: React.DragEvent): Promise<void> {
+        try {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+            const containing = DirNode.getContainingDir(node);
+            if (containing) {
+                const source = this.getTreeNodeFromData(event.dataTransfer);
+                if (source) {
+                    await this.model.move(source, containing);
+                } else {
+                    await this.uploadService.upload(containing.uri, { source: event.dataTransfer });
+                }
+            }
+        } catch (e) {
+            if (!isCancelled(e)) {
+                console.error(e);
             }
         }
     }

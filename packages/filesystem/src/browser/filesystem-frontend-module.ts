@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from 'inversify';
-import { ResourceResolver } from '@theia/core/lib/common';
+import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog } from '@theia/core/lib/browser';
 import { FileSystem, fileSystemPath, FileShouldOverwrite, FileStat } from '../common';
 import {
@@ -29,6 +29,7 @@ import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemWatcher } from './filesystem-watcher';
 import { FileSystemFrontendContribution } from './filesystem-frontend-contribution';
 import { FileSystemProxyFactory } from './filesystem-proxy-factory';
+import { FileUploadService } from './file-upload-service';
 
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
@@ -56,7 +57,11 @@ export default new ContainerModule(bind => {
 
     bindFileResource(bind);
 
-    bind(FrontendApplicationContribution).to(FileSystemFrontendContribution).inSingletonScope();
+    bind(FileUploadService).toSelf().inSingletonScope();
+
+    bind(FileSystemFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(FileSystemFrontendContribution);
+    bind(FrontendApplicationContribution).toService(FileSystemFrontendContribution);
 });
 
 export function bindFileResource(bind: interfaces.Bind): void {

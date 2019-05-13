@@ -77,10 +77,12 @@
     color: var(--theia-warn-color0);
 }
 
-.theia-Notification .progress {
+.theia-notification-progress {
     order: 2;
     width: 35px;
+    display: flex;
     align-items: center;
+    justify-items: left;
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
@@ -89,7 +91,7 @@
     height: 100%;
 }
 
-.theia-Notification .progress > p {
+.theia-notification-progress > p {
     margin: 0px;
     font-size: var(--theia-ui-font-size1);
     vertical-align: middle;
