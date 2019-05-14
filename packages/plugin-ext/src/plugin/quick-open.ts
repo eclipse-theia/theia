@@ -19,6 +19,9 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { anyPromise } from '../api/async-util';
 import { hookCancellationToken } from '../api/async-util';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { QuickPick, QuickInputButton } from '@theia/plugin';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export type Item = string | QuickPickItem;
 
@@ -109,6 +112,10 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return hookCancellationToken<Item | Item[] | undefined>(token, promise);
     }
 
+    createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
+        return new QuickPickExt(this);
+    }
+
     showInput(options?: InputBoxOptions, token: CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
         this.validateInputHandler = options && options.validateInput;
 
@@ -120,6 +127,131 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
         const promise = this.proxy.$input(options, typeof this.validateInputHandler === 'function');
         return hookCancellationToken(token, promise);
+    }
+
+}
+
+/**
+ * Base implementation of {@link QuickPick} that uses {@link QuickOpenExt}.
+ * Missing functionality is going to be implemented in the scope of https://github.com/theia-ide/theia/issues/5059
+ */
+export class QuickPickExt<T extends QuickPickItem> implements QuickPick<T> {
+
+    busy: boolean;
+    buttons: ReadonlyArray<QuickInputButton>;
+    canSelectMany: boolean;
+    enabled: boolean;
+    ignoreFocusOut: boolean;
+    matchOnDescription: boolean;
+    matchOnDetail: boolean;
+    selectedItems: ReadonlyArray<T>;
+    step: number | undefined;
+    title: string | undefined;
+    totalSteps: number | undefined;
+    value: string;
+
+    private _items: T[];
+    private _activeItems: T[];
+    private _placeholder: string | undefined;
+    private disposableCollection: DisposableCollection;
+    private readonly onDidHideEmitter: Emitter<void>;
+    private readonly onDidAcceptEmitter: Emitter<void>;
+    private readonly onDidChangeActiveEmitter: Emitter<T[]>;
+    private readonly onDidChangeSelectionEmitter: Emitter<T[]>;
+    private readonly onDidChangeValueEmitter: Emitter<string>;
+    private readonly onDidTriggerButtonEmitter: Emitter<QuickInputButton>;
+
+    constructor(readonly quickOpen: QuickOpenExtImpl) {
+        this._items = [];
+        this._activeItems = [];
+        this._placeholder = '';
+        this.buttons = [];
+        this.step = 0;
+        this.title = '';
+        this.totalSteps = 0;
+        this.value = '';
+        this.disposableCollection = new DisposableCollection();
+        this.disposableCollection.push(this.onDidHideEmitter = new Emitter());
+        this.disposableCollection.push(this.onDidAcceptEmitter = new Emitter());
+        this.disposableCollection.push(this.onDidChangeActiveEmitter = new Emitter());
+        this.disposableCollection.push(this.onDidChangeSelectionEmitter = new Emitter());
+        this.disposableCollection.push(this.onDidChangeValueEmitter = new Emitter());
+        this.disposableCollection.push(this.onDidTriggerButtonEmitter = new Emitter());
+    }
+
+    get items(): T[] {
+        return this._items;
+    }
+
+    set items(activeItems: T[]) {
+        this._items = activeItems;
+    }
+
+    get activeItems(): T[] {
+        return this._activeItems;
+    }
+
+    set activeItems(activeItems: T[]) {
+        this._activeItems = activeItems;
+    }
+
+    get onDidAccept(): Event<void> {
+        return this.onDidAcceptEmitter.event;
+    }
+
+    get placeholder(): string | undefined {
+        return this._placeholder;
+    }
+    set placeholder(placeholder: string | undefined) {
+        this._placeholder = placeholder;
+    }
+
+    get onDidChangeActive(): Event<T[]> {
+        return this.onDidChangeActiveEmitter.event;
+    }
+
+    get onDidChangeSelection(): Event<T[]> {
+        return this.onDidChangeSelectionEmitter.event;
+    }
+
+    get onDidChangeValue(): Event<string> {
+        return this.onDidChangeValueEmitter.event;
+    }
+
+    get onDidTriggerButton(): Event<QuickInputButton> {
+        return this.onDidTriggerButtonEmitter.event;
+    }
+
+    get onDidHide(): Event<void> {
+        return this.onDidHideEmitter.event;
+    }
+
+    dispose(): void {
+        this.disposableCollection.dispose();
+    }
+
+    hide(): void {
+        this.dispose();
+    }
+
+    show(): void {
+        const hide = () => {
+            this.onDidHideEmitter.fire(undefined);
+        };
+        const selectItem = (item: T) => {
+            this.activeItems = [item];
+            this.onDidAcceptEmitter.fire(undefined);
+            this.onDidChangeSelectionEmitter.fire([item]);
+        };
+        this.quickOpen.showQuickPick(this.items.map(item => item as T), {
+            // tslint:disable-next-line:no-any
+            onDidSelectItem(item: T | string): any {
+                if (typeof item !== 'string') {
+                    selectItem(item);
+                }
+                hide();
+            }, placeHolder: this.placeholder
+        });
     }
 
 }

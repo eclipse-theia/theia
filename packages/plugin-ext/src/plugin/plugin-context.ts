@@ -123,6 +123,7 @@ import { WebviewsExtImpl } from './webviews';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system';
+import { QuickPick, QuickPickItem } from '@theia/plugin';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -270,6 +271,9 @@ export function createAPIFactory(
                 } else {
                     return quickOpenExt.showQuickPick(items, options);
                 }
+            },
+            createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
+                return quickOpenExt.createQuickPick();
             },
             showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
                 return workspaceExt.pickWorkspaceFolder(options);
