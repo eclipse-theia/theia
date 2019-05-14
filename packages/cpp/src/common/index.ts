@@ -19,7 +19,7 @@ export const CPP_LANGUAGE_ID = 'cpp';
 export const CPP_LANGUAGE_NAME = 'C/C++';
 // These should become preferences eventually and be forwarded to the server.
 export const HEADER_FILE_EXTENSIONS = ['h', 'hxx', 'hh', 'hpp', 'inc'];
-export const SOURCE_FILE_EXTENSIONS = ['c', 'cxx', 'C', 'c++', 'cc', 'cpp'];
+export const SOURCE_FILE_EXTENSIONS = ['c', 'cxx', 'C', 'c++', 'cc', 'cpp', 'cl'];
 export const HEADER_AND_SOURCE_FILE_EXTENSIONS = SOURCE_FILE_EXTENSIONS.concat(HEADER_FILE_EXTENSIONS);
 
 export const CLANGD_EXECUTABLE_DEFAULT = 'clangd';

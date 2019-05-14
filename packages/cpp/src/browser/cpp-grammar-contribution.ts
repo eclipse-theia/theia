@@ -87,7 +87,7 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
         // cpp
         monaco.languages.register({
             id: CPP_LANGUAGE_ID,
-            extensions: ['.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.h', '.ino', '.inl', '.ipp'],
+            extensions: ['.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.h', '.ino', '.inl', '.ipp', 'cl'],
             aliases: ['C++', 'Cpp', 'cpp'],
         });
 
