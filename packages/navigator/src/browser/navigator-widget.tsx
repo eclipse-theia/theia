@@ -158,11 +158,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected handleCopy(event: ClipboardEvent): void {
         const uris = this.model.selectedFileStatNodes.map(node => node.uri.toString());
-        if (uris.length > 0) {
-            if (event.clipboardData) {
-                event.clipboardData.setData('text/plain', uris.join('\n'));
-                event.preventDefault();
-            }
+        if (uris.length > 0 && event.clipboardData) {
+            event.clipboardData.setData('text/plain', uris.join('\n'));
+            event.preventDefault();
         }
     }
 

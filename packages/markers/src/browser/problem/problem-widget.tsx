@@ -63,11 +63,9 @@ export class ProblemWidget extends TreeWidget {
 
     protected handleCopy(event: ClipboardEvent) {
         const uris = this.model.selectedNodes.filter(MarkerNode.is).map(node => node.uri.toString());
-        if (uris.length > 0) {
-            if (event.clipboardData) {
-                event.clipboardData.setData('text/plain', uris.join('\n'));
-                event.preventDefault();
-            }
+        if (uris.length > 0 && event.clipboardData) {
+            event.clipboardData.setData('text/plain', uris.join('\n'));
+            event.preventDefault();
         }
     }
 
