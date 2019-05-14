@@ -159,19 +159,23 @@ export class FileNavigatorWidget extends FileTreeWidget {
     protected handleCopy(event: ClipboardEvent): void {
         const uris = this.model.selectedFileStatNodes.map(node => node.uri.toString());
         if (uris.length > 0) {
-            event.clipboardData.setData('text/plain', uris.join('\n'));
-            event.preventDefault();
+            if (event.clipboardData) {
+                event.clipboardData.setData('text/plain', uris.join('\n'));
+                event.preventDefault();
+            }
         }
     }
 
     protected handlePaste(event: ClipboardEvent): void {
-        const raw = event.clipboardData.getData('text/plain');
-        if (!raw) {
-            return;
-        }
-        const uri = new URI(raw);
-        if (this.model.copy(uri)) {
-            event.preventDefault();
+        if (event.clipboardData) {
+            const raw = event.clipboardData.getData('text/plain');
+            if (!raw) {
+                return;
+            }
+            const uri = new URI(raw);
+            if (this.model.copy(uri)) {
+                event.preventDefault();
+            }
         }
     }
 
