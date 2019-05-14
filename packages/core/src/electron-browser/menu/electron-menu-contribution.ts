@@ -18,11 +18,12 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    isOSX, MenuModelRegistry, MenuContribution
+    isOSX, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
+import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 
 export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS: Command = {
@@ -67,6 +68,9 @@ export namespace ElectronMenus {
 @injectable()
 export class ElectronMenuContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
 
+    @inject(FrontendApplicationStateService)
+    protected readonly stateService: FrontendApplicationStateService;
+
     constructor(
         @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
     ) { }
@@ -85,21 +89,35 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             }
         }
 
-        const currentWindow = electron.remote.getCurrentWindow();
-        const createdMenuBar = this.factory.createMenuBar();
-
+        this.setMenu();
         if (isOSX) {
-            electron.remote.Menu.setApplicationMenu(createdMenuBar);
-            currentWindow.on('focus', () =>
-                // OSX: Recreate the menus when changing windows.
-                // OSX only has one menu bar for all windows, so we need to swap
-                // between them as the user switch windows.
-                electron.remote.Menu.setApplicationMenu(this.factory.createMenuBar())
-            );
+            // OSX: Recreate the menus when changing windows.
+            // OSX only has one menu bar for all windows, so we need to swap
+            // between them as the user switches windows.
+            electron.remote.getCurrentWindow().on('focus', () => this.setMenu());
+        }
+        // Make sure the application menu is complete, once the frontend application is ready.
+        // https://github.com/theia-ide/theia/issues/5100
+        let onStateChange: Disposable | undefined = undefined;
+        const stateServiceListener = (state: FrontendApplicationState) => {
+            if (state === 'ready') {
+                this.setMenu();
+            }
+            if (state === 'closing_window') {
+                if (!!onStateChange) {
+                    onStateChange.dispose();
+                }
+            }
+        };
+        onStateChange = this.stateService.onStateChanged(stateServiceListener);
+    }
 
+    private setMenu(menu: electron.Menu = this.factory.createMenuBar(), electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
+        if (isOSX) {
+            electron.remote.Menu.setApplicationMenu(menu);
         } else {
             // Unix/Windows: Set the per-window menus
-            currentWindow.setMenu(createdMenuBar);
+            electronWindow.setMenu(menu);
         }
     }
 
