@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,11 +15,10 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { WindowService } from '../../browser/window/window-service';
-import { ElectronWindowService } from './electron-window-service';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { ElectronShutdownHook } from './electron-shutdown-hook';
 
 export default new ContainerModule(bind => {
-    bind(WindowService).to(ElectronWindowService).inSingletonScope();
-    bind(FrontendApplicationContribution).toService(WindowService);
+    bind(ElectronShutdownHook).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ElectronShutdownHook);
 });

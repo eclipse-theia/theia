@@ -14,8 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
-
 export interface NewWindowOptions {
     readonly external?: boolean;
 }
@@ -33,17 +31,11 @@ export interface WindowService {
      */
     openNewWindow(url: string, options?: NewWindowOptions): Window | undefined;
 
-}
-
-@injectable()
-export class DefaultWindowService implements WindowService {
-
-    openNewWindow(url: string): Window {
-        const newWindow = window.open(url);
-        if (newWindow === null) {
-            throw new Error('Cannot open a new window for URL: ' + url);
-        }
-        return newWindow;
-    }
+    /**
+     * Called when the `window` is about to `unload` its resources.
+     * At this point, the `document` is still visible and the [`BeforeUnloadEvent`](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)
+     * event will be canceled if the return value of this method is `false`.
+     */
+    canUnload(): boolean;
 
 }
