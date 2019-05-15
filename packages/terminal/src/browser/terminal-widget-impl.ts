@@ -288,18 +288,23 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
     protected onFitRequest(msg: Message): void {
+        super.onFitRequest(msg);
         MessageLoop.sendMessage(this, Widget.ResizeMessage.UnknownSize);
     }
     protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
         this.term.focus();
     }
     protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
         this.update();
     }
     protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
         this.update();
     }
     protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
         this.needsResize = true;
         this.update();
     }
