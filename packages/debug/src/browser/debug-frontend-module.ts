@@ -20,7 +20,10 @@ import { ContainerModule, interfaces } from 'inversify';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
-import { WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution, bindViewContribution, KeybindingContext } from '@theia/core/lib/browser';
+import {
+    WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
+    bindViewContribution, KeybindingContext, QuickOpenContribution
+} from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
 import {
@@ -45,6 +48,8 @@ import { bindDebugPreferences } from './debug-preferences';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
 import { bindLaunchPreferences } from './preferences/launch-preferences';
+import { DebugPrefixConfiguration } from './debug-prefix-configuration';
+import { CommandContribution } from '@theia/core';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -85,6 +90,11 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugSessionContributionRegistryImpl).toSelf().inSingletonScope();
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);
+
+    bind(DebugPrefixConfiguration).toSelf().inSingletonScope();
+    for (const identifier of [CommandContribution, QuickOpenContribution]) {
+        bind(identifier).toService(DebugPrefixConfiguration);
+    }
 
     bindDebugPreferences(bind);
     bindLaunchPreferences(bind);
