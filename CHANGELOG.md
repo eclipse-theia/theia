@@ -69,6 +69,7 @@ Breaking changes:
   - The CLEAR_BUTTON and OVERLAY constants are no longer available. Furthermore OutputChannelManager API has changed.
 - [preferences] refactored to integrate launch configurations as preferences
 - [scm] added Source Control Model
+- [core] renamed the `src/electron-main` folder to `src/electron-node` in `@theia/core`. Removed `preventStop` from the `FrontendApplication` API. Move the `DefaultWindowService` class into its own module.
 
 ## v0.6.0
 
