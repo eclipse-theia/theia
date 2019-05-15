@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import { ILogger, ContributionProvider } from '@theia/core/lib/common';
-import { QuickOpenTask } from './quick-open-task';
+import { QuickOpenTask, TaskTerminateQuickOpen } from './quick-open-task';
 import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import {
     FrontendApplication, FrontendApplicationContribution, QuickOpenContribution,
@@ -66,6 +66,12 @@ export namespace TaskCommands {
         category: TASK_CATEGORY,
         label: 'Clear History'
     };
+
+    export const TASK_TERMINATE: Command = {
+        id: 'task:terminate',
+        category: TASK_CATEGORY,
+        label: 'Terminate Task'
+    };
 }
 
 const TASKS_STORAGE_KEY = 'tasks';
@@ -101,6 +107,9 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
+
+    @inject(TaskTerminateQuickOpen)
+    protected readonly taskTerminateQuickOpen: TaskTerminateQuickOpen;
 
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib => {
@@ -170,6 +179,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_CLEAR_HISTORY,
             {
                 execute: () => this.taskService.clearRecentTasks()
+            }
+        );
+
+        registry.registerCommand(
+            TaskCommands.TASK_TERMINATE,
+            {
+                execute: () => this.taskTerminateQuickOpen.open()
             }
         );
     }
