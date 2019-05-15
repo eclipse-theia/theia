@@ -1091,6 +1091,8 @@ export interface TasksExt {
     $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto | undefined>;
     $onDidStartTask(execution: TaskExecutionDto): void;
     $onDidEndTask(id: number): void;
+    $onDidStartTaskProcess(processId: number | undefined, execution: TaskExecutionDto): void;
+    $onDidEndTaskProcess(exitCode: number | undefined, taskId: number): void;
 }
 
 export interface TasksMain {

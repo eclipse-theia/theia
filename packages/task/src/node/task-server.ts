@@ -19,6 +19,8 @@ import { ILogger } from '@theia/core/lib/common/';
 import { TaskClient, TaskExitedEvent, TaskInfo, TaskServer, TaskConfiguration } from '../common/task-protocol';
 import { TaskManager } from './task-manager';
 import { TaskRunnerRegistry } from './task-runner';
+import { Task } from './task';
+import { ProcessTask } from './process/process-task';
 
 @injectable()
 export class TaskServerImpl implements TaskServer {
@@ -71,20 +73,32 @@ export class TaskServerImpl implements TaskServer {
         return this.runnerRegistry.getRunnerTypes();
     }
 
-    protected fireTaskExitedEvent(event: TaskExitedEvent) {
+    protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task) {
         this.logger.debug(log => log('task has exited:', event));
 
         this.clients.forEach(client => {
             client.onTaskExit(event);
         });
+
+        if (task && task instanceof ProcessTask && task.processType === 'process') {
+            this.clients.forEach(client => {
+                client.onDidEndTaskProcess(event);
+            });
+        }
     }
 
-    protected fireTaskCreatedEvent(event: TaskInfo) {
+    protected fireTaskCreatedEvent(event: TaskInfo, task?: Task) {
         this.logger.debug(log => log('task created:', event));
 
         this.clients.forEach(client => {
             client.onTaskCreated(event);
         });
+
+        if (task && task instanceof ProcessTask) {
+            this.clients.forEach(client => {
+                client.onDidStartTaskProcess(event);
+            });
+        }
     }
 
     /** Kill task for a given id. Rejects if task is not found */

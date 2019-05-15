@@ -68,6 +68,21 @@ export class TasksMainImpl implements TasksMain {
                 this.proxy.$onDidEndTask(event.taskId);
             }
         });
+
+        this.taskWatcher.onDidStartTaskProcess((event: TaskInfo) => {
+            if (event.ctx === this.workspaceRootUri && event.processId !== undefined) {
+                this.proxy.$onDidStartTaskProcess(event.processId, {
+                    id: event.taskId,
+                    task: event.config
+                });
+            }
+        });
+
+        this.taskWatcher.onDidEndTaskProcess((event: TaskExitedEvent) => {
+            if (event.ctx === this.workspaceRootUri && event.code !== undefined) {
+                this.proxy.$onDidEndTaskProcess(event.code, event.taskId);
+            }
+        });
     }
 
     $registerTaskProvider(handle: number, type: string): void {

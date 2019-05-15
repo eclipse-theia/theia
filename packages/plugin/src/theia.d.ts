@@ -7531,6 +7531,39 @@ declare module '@theia/plugin' {
         execution: TaskExecution;
     }
 
+    /**
+     * An event signaling the start of a process execution
+     * triggered through a task
+     */
+    export interface TaskProcessStartEvent {
+        /**
+         * The task execution for which the process got started.
+         */
+        execution: TaskExecution;
+
+        /**
+         * The underlying process id.
+         */
+        processId: number;
+    }
+
+    /**
+     * An event signaling the end of a process execution
+     * triggered through a task
+     */
+    export interface TaskProcessEndEvent {
+
+        /**
+         * The task execution for which the process got started.
+         */
+        execution: TaskExecution;
+
+        /**
+         * The process's exit code.
+         */
+        exitCode: number;
+    }
+
     export namespace tasks {
 
         /**
@@ -7552,6 +7585,20 @@ declare module '@theia/plugin' {
 
         /** Fires when a task ends. */
         export const onDidEndTask: Event<TaskEndEvent>;
+
+        /**
+         * Fires when the underlying process has been started.
+         * This event will not fire for tasks that don't
+         * execute an underlying process.
+         */
+        export const onDidStartTaskProcess: Event<TaskProcessStartEvent>;
+
+        /**
+         * Fires when the underlying process has ended.
+         * This event will not fire for tasks that don't
+         * execute an underlying process.
+         */
+        export const onDidEndTaskProcess: Event<TaskProcessEndEvent>;
     }
 
     /**
@@ -7561,11 +7608,11 @@ declare module '@theia/plugin' {
     export interface Memento {
 
         /**
-        * Return a value.
-        *
-        * @param key A string.
-        * @return The stored value or `undefined`.
-        */
+         * Return a value.
+         *
+         * @param key A string.
+         * @return The stored value or `undefined`.
+         */
         get<T>(key: string): T | undefined;
 
         /**

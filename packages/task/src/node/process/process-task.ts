@@ -74,7 +74,8 @@ export class ProcessTask extends Task {
             taskId: this.id,
             ctx: this.context,
             config: this.options.config,
-            terminalId: (this.processType === 'shell') ? this.process.id : undefined
+            terminalId: (this.processType === 'shell') ? this.process.id : undefined,
+            processId: this.processType === 'process' ? this.process.id : undefined
         };
     }
     get process() {

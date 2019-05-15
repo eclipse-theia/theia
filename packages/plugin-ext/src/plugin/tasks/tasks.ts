@@ -37,6 +37,8 @@ export class TasksExtImpl implements TasksExt {
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
     private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
+    private readonly onDidExecuteTaskProcess: Emitter<theia.TaskProcessStartEvent> = new Emitter<theia.TaskProcessStartEvent>();
+    private readonly onDidTerminateTaskProcess: Emitter<theia.TaskProcessEndEvent> = new Emitter<theia.TaskProcessEndEvent>();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
@@ -71,6 +73,33 @@ export class TasksExtImpl implements TasksExt {
 
         this.onDidTerminateTask.fire({
             execution: taskExecution
+        });
+    }
+
+    get onDidStartTaskProcess(): Event<theia.TaskProcessStartEvent> {
+        return this.onDidExecuteTaskProcess.event;
+    }
+
+    $onDidStartTaskProcess(processId: number, executionDto: TaskExecutionDto): void {
+        this.onDidExecuteTaskProcess.fire({
+            processId,
+            execution: this.getTaskExecution(executionDto)
+        });
+    }
+
+    get onDidEndTaskProcess(): Event<theia.TaskProcessEndEvent> {
+        return this.onDidTerminateTaskProcess.event;
+    }
+
+    $onDidEndTaskProcess(exitCode: number, taskId: number): void {
+        const taskExecution = this.executions.get(taskId);
+        if (!taskExecution) {
+            throw new Error(`Task execution with id ${taskId} is not found`);
+        }
+
+        this.onDidTerminateTaskProcess.fire({
+            execution: taskExecution,
+            exitCode
         });
     }
 
