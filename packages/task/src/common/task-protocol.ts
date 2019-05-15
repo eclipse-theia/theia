@@ -102,4 +102,6 @@ export interface TaskExitedEvent {
 export interface TaskClient {
     onTaskExit(event: TaskExitedEvent): void;
     onTaskCreated(event: TaskInfo): void;
+    onDidStartTaskProcess(event: TaskInfo): void;
+    onDidEndTaskProcess(event: TaskExitedEvent): void;
 }

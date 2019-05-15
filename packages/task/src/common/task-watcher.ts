@@ -24,23 +24,39 @@ export class TaskWatcher {
     getTaskClient(): TaskClient {
         const newTaskEmitter = this.onTaskCreatedEmitter;
         const exitEmitter = this.onTaskExitEmitter;
+        const taskProcessStartedEmitter = this.onDidStartTaskProcessEmitter;
+        const taskProcessEndedEmitter = this.onDidEndTaskProcessEmitter;
         return {
             onTaskCreated(event: TaskInfo) {
                 newTaskEmitter.fire(event);
             },
             onTaskExit(event: TaskExitedEvent) {
                 exitEmitter.fire(event);
+            },
+            onDidStartTaskProcess(event: TaskInfo) {
+                taskProcessStartedEmitter.fire(event);
+            },
+            onDidEndTaskProcess(event: TaskExitedEvent) {
+                taskProcessEndedEmitter.fire(event);
             }
         };
     }
 
     protected onTaskCreatedEmitter = new Emitter<TaskInfo>();
     protected onTaskExitEmitter = new Emitter<TaskExitedEvent>();
+    protected onDidStartTaskProcessEmitter = new Emitter<TaskInfo>();
+    protected onDidEndTaskProcessEmitter = new Emitter<TaskExitedEvent>();
 
     get onTaskCreated(): Event<TaskInfo> {
         return this.onTaskCreatedEmitter.event;
     }
     get onTaskExit(): Event<TaskExitedEvent> {
         return this.onTaskExitEmitter.event;
+    }
+    get onDidStartTaskProcess(): Event<TaskInfo> {
+        return this.onDidStartTaskProcessEmitter.event;
+    }
+    get onDidEndTaskProcess(): Event<TaskExitedEvent> {
+        return this.onDidEndTaskProcessEmitter.event;
     }
 }
