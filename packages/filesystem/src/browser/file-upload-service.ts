@@ -31,13 +31,14 @@ const maxChunkSize = 64 * 1024;
 export interface FileUploadParams {
     source?: DataTransfer
     progress?: FileUploadProgressParams
+    onDidUpload?: (uri: string) => void;
 }
 export interface FileUploadProgressParams {
     text: string
 }
 
 export interface FileUploadResult {
-    uploaded: URI[]
+    uploaded: string[]
 }
 
 @injectable()
@@ -76,14 +77,15 @@ export class FileUploadService {
 
         fileInput.addEventListener('change', () => {
             if (this.deferredUpload && fileInput.value) {
-                const body = new FormData(form);
+                const source = new FormData(form);
                 // clean up to allow upload to the same folder twice
                 fileInput.value = '';
-                const targetUri = new URI(<string>body.get(FileUploadService.TARGET));
+                const targetUri = new URI(<string>source.get(FileUploadService.TARGET));
                 const { resolve, reject } = this.deferredUpload;
                 this.deferredUpload = undefined;
+                const { onDidUpload } = this.uploadForm;
                 this.withProgress((progress, token) =>
-                    this.doUpload(targetUri, body, progress, token),
+                    this.doUpload(targetUri, { source, progress, token, onDidUpload }),
                     this.uploadForm.progress).then(resolve, reject);
             }
         });
@@ -92,20 +94,21 @@ export class FileUploadService {
 
     protected deferredUpload: Deferred<FileUploadResult> | undefined;
     async upload(targetUri: string | URI, params: FileUploadParams = {}): Promise<FileUploadResult> {
-        const { source } = params;
+        const { source, onDidUpload } = params;
         if (source) {
             return this.withProgress((progress, token) =>
-                this.doUpload(new URI(String(targetUri)), source, progress, token),
+                this.doUpload(new URI(String(targetUri)), { source, progress, token, onDidUpload }),
                 params.progress);
         }
         this.deferredUpload = new Deferred<FileUploadResult>();
         this.uploadForm.targetInput.value = String(targetUri);
         this.uploadForm.fileInput.click();
         this.uploadForm.progress = params.progress;
+        this.uploadForm.onDidUpload = params.onDidUpload;
         return this.deferredUpload.promise;
     }
 
-    protected async doUpload(targetUri: URI, source: FileUploadService.Source, progress: Progress, token: CancellationToken): Promise<FileUploadResult> {
+    protected async doUpload(targetUri: URI, { source, progress, token, onDidUpload }: FileUploadService.UploadParams): Promise<FileUploadResult> {
         const result: FileUploadResult = { uploaded: [] };
         let total = 0;
         let done = 0;
@@ -126,9 +129,13 @@ export class FileUploadService {
         socket.onclose = ({ code, reason }) => deferredUpload.reject(new Error(String(reason || code)));
         socket.onmessage = ({ data }) => {
             const response = JSON.parse(data);
-            if (response.doneFiles) {
-                doneFiles = response.doneFiles;
+            if (response.uri) {
+                doneFiles++;
+                result.uploaded.push(response.uri);
                 reportProgress();
+                if (onDidUpload) {
+                    onDidUpload(response.uri);
+                }
                 return;
             }
             if (response.done) {
@@ -354,5 +361,12 @@ export namespace FileUploadService {
         targetInput: HTMLInputElement
         fileInput: HTMLInputElement
         progress?: FileUploadProgressParams
+        onDidUpload?: (uri: string) => void
+    }
+    export interface UploadParams {
+        source: FileUploadService.Source,
+        progress: Progress,
+        token: CancellationToken,
+        onDidUpload?: (uri: string) => void
     }
 }

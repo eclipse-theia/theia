@@ -17,7 +17,6 @@
 // tslint:disable-next-line
 import * as ws from 'ws';
 import { injectable } from 'inversify';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { NodeFileUpload } from './node-file-upload';
 
@@ -32,8 +31,18 @@ export class NodeFileUploadService implements MessagingService.Contribution {
 
     protected handleFileUpload(socket: ws): void {
         let done = 0;
-        let doneFiles = 0;
         let upload: NodeFileUpload | undefined;
+        const commitUpload = async () => {
+            if (!upload) {
+                return;
+            }
+            await upload.rename();
+            const { uri } = upload;
+            upload = undefined;
+            if (socket.readyState === 1) {
+                socket.send(JSON.stringify({ uri }));
+            }
+        };
         let queue = Promise.resolve();
         socket.on('message', data => queue = queue.then(async () => {
             try {
@@ -41,12 +50,7 @@ export class NodeFileUploadService implements MessagingService.Contribution {
                     await upload.append(data as ArrayBuffer);
                     if (upload.uploadedBytes >= upload.size) {
                         done += upload.size;
-                        await upload.rename();
-                        upload = undefined;
-                        doneFiles++;
-                        if (socket.readyState === 1) {
-                            socket.send(JSON.stringify({ doneFiles }));
-                        }
+                        await commitUpload();
                     }
                     if (socket.readyState === 1) {
                         const uploadedBytes = done + (upload ? upload.uploadedBytes : 0);
@@ -62,15 +66,10 @@ export class NodeFileUploadService implements MessagingService.Contribution {
                     return;
                 }
                 if (request.uri) {
-                    upload = new NodeFileUpload(FileUri.fsPath(request.uri), request.size);
+                    upload = new NodeFileUpload(request.uri, request.size);
                     await upload.create();
                     if (!upload.size) {
-                        await upload.rename();
-                        upload = undefined;
-                        doneFiles++;
-                        if (socket.readyState === 1) {
-                            socket.send(JSON.stringify({ doneFiles }));
-                        }
+                        await commitUpload();
                     }
                     return;
                 }
