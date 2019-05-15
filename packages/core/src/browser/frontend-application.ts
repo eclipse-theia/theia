@@ -155,13 +155,6 @@ export class FrontendApplication {
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        window.addEventListener('beforeunload', event => {
-            if (this.preventStop()) {
-                event.returnValue = '';
-                event.preventDefault();
-                return '';
-            }
-        });
         window.addEventListener('unload', () => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
@@ -246,24 +239,6 @@ export class FrontendApplication {
                 );
             }
         }
-    }
-
-    /**
-     * `beforeunload` listener implementation
-     */
-    protected preventStop(): boolean {
-        const confirmExit = this.corePreferences['application.confirmExit'];
-        if (confirmExit === 'never') {
-            return false;
-        }
-        for (const contribution of this.contributions.getContributions()) {
-            if (contribution.onWillStop) {
-                if (!!contribution.onWillStop(this)) {
-                    return true;
-                }
-            }
-        }
-        return confirmExit === 'always';
     }
 
     /**
