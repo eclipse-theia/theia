@@ -60,6 +60,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
+    protected hoverMessage: HTMLDivElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -111,6 +112,25 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 selection: cssProps.selection
             },
         });
+
+        this.hoverMessage = document.createElement('div');
+        if (isOSX) {
+            this.hoverMessage.textContent = 'Cmd + click to follow link';
+        } else {
+            this.hoverMessage.textContent = 'Ctrl + click to follow link';
+        }
+        this.hoverMessage.textContent = 'Cmd + click to follow link';
+        this.hoverMessage.style.position = 'fixed';
+        this.hoverMessage.style.color = 'var(--theia-ui-font-color1)';
+        this.hoverMessage.style.backgroundColor = 'var(--theia-layout-color1)';
+        this.hoverMessage.style.borderColor = 'var(--theia-layout-color3)';
+        this.hoverMessage.style.borderWidth = '0.5px';
+        this.hoverMessage.style.borderStyle = 'solid';
+        this.hoverMessage.style.padding = '5px';
+        this.hoverMessage.style.zIndex = '1';
+        // initially invisible
+        this.hoverMessage.style.display = 'none';
+        this.node.appendChild(this.hoverMessage);
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             const lastSeparator = change.preferenceName.lastIndexOf('.');
@@ -169,13 +189,61 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected async registerLinkMatchers() {
         for (const linkMatcher of this.terminalLinkMatchers.getContributions()) {
             const regexp = await linkMatcher.getRegex();
-            const matcherId = this.term.registerLinkMatcher(regexp, linkMatcher.handler, linkMatcher.options);
+            const isCmdClickBehavior = !linkMatcher.options || !linkMatcher.options.tooltipCallback;
+            let matcherId: number;
+            if (!isCmdClickBehavior) {
+                matcherId = this.term.registerLinkMatcher(regexp, (event, uri) => linkMatcher.handler(event, uri), linkMatcher.options);
+            } else {
+                const wrapped = (event: MouseEvent, uri: string) => {
+                    event.preventDefault();
+                    if (this.isCommandPressed(event)) {
+                        linkMatcher.handler(event, uri);
+                    } else {
+                        this.term.focus();
+                    }
+                };
+                matcherId = this.term.registerLinkMatcher(regexp, wrapped, {
+                    ...linkMatcher.options,
+                    willLinkActivate: (event: MouseEvent, uri: string) => {
+                        if (linkMatcher.options && linkMatcher.options.willLinkActivate) {
+                            return linkMatcher.options.willLinkActivate(event, uri);
+                        }
+                        return this.isCommandPressed(event);
+                    },
+                    tooltipCallback: (event: MouseEvent, uri: string) => {
+                        this.showClickCommandHover(event);
+                        if (linkMatcher.options && linkMatcher.options.tooltipCallback) {
+                            linkMatcher.options.tooltipCallback(event, uri);
+                        }
+                    },
+                    leaveCallback: (event: MouseEvent, uri: string) => {
+                        this.hideClickCommandHover();
+                        if (linkMatcher.options && linkMatcher.options.leaveCallback) {
+                            linkMatcher.options.leaveCallback(event, uri);
+                        }
+                    }
+                });
+            }
             this.toDispose.push({
                 dispose: () => {
                     this.term.deregisterLinkMatcher(matcherId);
                 }
             });
         }
+    }
+
+    protected showClickCommandHover(event: MouseEvent) {
+        this.hoverMessage.style.display = 'inline';
+        this.hoverMessage.style.top = `${event.clientY - 30}px`;
+        this.hoverMessage.style.left = `${event.clientX - 60}px`;
+    }
+
+    protected hideClickCommandHover() {
+        this.hoverMessage.style.display = 'none';
+    }
+
+    protected isCommandPressed(event: MouseEvent) {
+        return isOSX ? event.metaKey : event.ctrlKey;
     }
 
     get processId(): Promise<number> {
