@@ -17,7 +17,7 @@
 import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
+import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -30,6 +30,7 @@ import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from './terminal-preferences';
+import { ITerminalLinkMatcher } from './terminal-linkmatcher';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -69,6 +70,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
     @inject('terminal-dom-id') public readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
+    @inject(ContributionProvider) @named(ITerminalLinkMatcher) protected readonly terminalLinkMatchers: ContributionProvider<ITerminalLinkMatcher>;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -109,6 +111,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 selection: cssProps.selection
             },
         });
+
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             const lastSeparator = change.preferenceName.lastIndexOf('.');
             if (lastSeparator > 0) {
@@ -134,6 +137,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.title.label = title;
             }
         });
+        this.registerLinkMatchers();
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
@@ -160,6 +164,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
+    }
+
+    protected async registerLinkMatchers() {
+        for (const linkMatcher of this.terminalLinkMatchers.getContributions()) {
+            const regexp = await linkMatcher.getRegex();
+            const matcherId = this.term.registerLinkMatcher(regexp, linkMatcher.handler, linkMatcher.options);
+            this.toDispose.push({
+                dispose: () => {
+                    this.term.deregisterLinkMatcher(matcherId);
+                }
+            });
+        }
     }
 
     get processId(): Promise<number> {

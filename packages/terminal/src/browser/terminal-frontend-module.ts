@@ -16,6 +16,7 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { bindContributionProvider } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
@@ -28,6 +29,7 @@ import { TerminalActiveContext } from './terminal-keybinding-contexts';
 import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
 import { bindTerminalPreferences } from './terminal-preferences';
+import { URLMatcher, ITerminalLinkMatcher, LocalhostMatcher } from './terminal-linkmatcher';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
@@ -80,4 +82,11 @@ export default new ContainerModule(bind => {
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
 
     createCommonBindings(bind);
+
+    // link matchers
+    bindContributionProvider(bind, ITerminalLinkMatcher);
+    bind(URLMatcher).toSelf().inSingletonScope();
+    bind(ITerminalLinkMatcher).toService(URLMatcher);
+    bind(LocalhostMatcher).toSelf().inSingletonScope();
+    bind(ITerminalLinkMatcher).toService(LocalhostMatcher);
 });
