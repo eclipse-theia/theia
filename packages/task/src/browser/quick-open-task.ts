@@ -329,3 +329,47 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
         return true;
     }
 }
+
+@injectable()
+export class TaskTerminateQuickOpen implements QuickOpenModel {
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
+    async onType(_lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+        const items: QuickOpenItem[] = [];
+        const runningTasks: TaskInfo[] = await this.taskService.getRunningTasks();
+        if (runningTasks.length <= 0) {
+            items.push(new QuickOpenItem({
+                label: 'No task is currently running',
+                run: (): boolean => false,
+            }));
+        } else {
+            runningTasks.forEach((task: TaskInfo) => {
+                items.push(new QuickOpenItem({
+                    label: task.config.label,
+                    run: (mode: QuickOpenMode): boolean => {
+                        if (mode !== QuickOpenMode.OPEN) {
+                            return false;
+                        }
+                        this.taskService.kill(task.taskId);
+                        return true;
+                    }
+                }));
+            });
+        }
+        acceptor(items);
+    }
+
+    async open(): Promise<void> {
+        this.quickOpenService.open(this, {
+            placeholder: 'Select task to terminate',
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
+        });
+    }
+
+}
