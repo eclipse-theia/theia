@@ -19,10 +19,12 @@ import * as crypto from 'crypto';
 import * as fs from 'fs-extra';
 import { Buffer } from 'buffer';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 export class NodeFileUpload implements Disposable {
 
     readonly id: string;
+    readonly fsPath: string;
     readonly uploadPath: string;
     protected _uploadedBytes = 0;
     get uploadedBytes(): number {
@@ -30,11 +32,12 @@ export class NodeFileUpload implements Disposable {
     }
 
     constructor(
-        readonly fsPath: string,
+        readonly uri: string,
         readonly size: number
     ) {
+        this.fsPath = FileUri.fsPath(uri);
         this.id = 'theia_upload_' + crypto.randomBytes(16).toString('hex');
-        this.uploadPath = path.join(path.dirname(fsPath), this.id);
+        this.uploadPath = path.join(path.dirname(this.fsPath), this.id);
     }
 
     async create(): Promise<void> {
