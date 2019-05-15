@@ -27,4 +27,5 @@
 
 .webview-icon {
     background: none !important;
+    min-height: 20px;
 }
