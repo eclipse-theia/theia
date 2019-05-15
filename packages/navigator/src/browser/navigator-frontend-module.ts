@@ -25,12 +25,15 @@ import { createFileNavigatorWidget } from './navigator-container';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindFileNavigatorPreferences } from './navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
+import { NavigatorDiff } from './navigator-diff';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
     bind(FileNavigatorFilter).toSelf().inSingletonScope();
+
+    bind(NavigatorDiff).toSelf().inSingletonScope();
 
     bind(NavigatorContextKeyService).toSelf().inSingletonScope();
 

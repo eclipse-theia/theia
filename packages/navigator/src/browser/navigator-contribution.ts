@@ -31,6 +31,10 @@ import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
+import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import URI from '@theia/core/lib/common/uri';
+import { SelectionService } from '@theia/core/lib/common/selection-service';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -92,7 +96,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences
+        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences,
+        @inject(NavigatorDiff) protected readonly navigatorDiff: NavigatorDiff,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
@@ -149,6 +156,24 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
         });
+
+        registry.registerCommand(NavigatorDiffCommands.COMPARE_FIRST, {
+            execute: () => {
+                this.navigatorDiff.addFirstComparisonFile();
+            },
+            isEnabled: () => true,
+            isVisible: () => true
+        });
+
+        console.log('Registering commands');
+        registry.registerCommand(NavigatorDiffCommands.COMPARE_SECOND, new UriAwareCommandHandler<URI>(this.selectionService, {
+            execute: () => {
+                this.navigatorDiff.compareFiles();
+            },
+            isEnabled: () => this.navigatorDiff.isFirstFileSelected,
+            isVisible: () => this.navigatorDiff.isFirstFileSelected
+        })
+        );
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (navigator: FileNavigatorWidget) => T): T | false {
@@ -225,6 +250,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
             label: 'Collapse All',
             order: 'z2'
+        });
+
+        registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
+            commandId: NavigatorDiffCommands.COMPARE_FIRST.id,
+            order: 'z'
+        });
+
+        console.log('Registering menues');
+        registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
+            commandId: NavigatorDiffCommands.COMPARE_SECOND.id,
+            order: 'z'
         });
     }
 
@@ -330,5 +366,4 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             }));
         }
     }
-
 }
