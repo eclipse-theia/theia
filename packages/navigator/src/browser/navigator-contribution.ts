@@ -44,6 +44,8 @@ export namespace FileNavigatorCommands {
     };
     export const COLLAPSE_ALL: Command = {
         id: 'navigator.collapse.all',
+        category: 'File',
+        label: 'Collapse Folders in Explorer',
         iconClass: 'collapse-all'
     };
 }
