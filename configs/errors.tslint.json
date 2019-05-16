@@ -1,5 +1,10 @@
 {
   "defaultSeverity": "error",
+  "linterOptions": {
+    "exclude": [
+      "node_modules/**"
+    ]
+  },
   "rules": {
     "arrow-parens": [
       true,
