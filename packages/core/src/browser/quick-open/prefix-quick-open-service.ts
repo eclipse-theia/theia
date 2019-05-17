@@ -21,6 +21,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ILogger } from '../../common/logger';
 import { MaybePromise } from '../../common/types';
 import { QuickOpenActionProvider } from './quick-open-action-provider';
+import { QuickTitleBar } from './quick-title-bar';
 
 export const QuickOpenContribution = Symbol('QuickOpenContribution');
 /**
@@ -141,6 +142,9 @@ export class PrefixQuickOpenService {
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    @inject(QuickTitleBar)
+    protected readonly quickTitleBar: QuickTitleBar;
+
     /**
      * Opens a quick open widget with the model that handles the known prefixes.
      * @param prefix string that may contain a prefix of some of the known quick open handlers.
@@ -188,6 +192,9 @@ export class PrefixQuickOpenService {
     }
 
     protected doOpen(options?: QuickOpenOptions): void {
+        if (this.quickTitleBar.isAttached) {
+            this.quickTitleBar.hide();
+        }
         this.quickOpenService.open({
             onType: (lookFor, acceptor) => this.onType(lookFor, acceptor)
         }, options);

@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { QuickInputTitleButton } from '../browser/quick-open/quick-title-bar';
+import { Event } from '../common/event';
+import { QuickOpenItem, QuickOpenItemOptions } from '../browser/quick-open/quick-open-model';
+
 export type QuickPickItem<T> = QuickPickValue<T> | QuickPickSeparator;
 
 export interface QuickPickSeparator {
@@ -44,6 +48,36 @@ export interface QuickPickOptions {
      * default: true
      */
     fuzzyMatchDescription?: boolean
+
+    /**
+     * Current step count
+     */
+    step?: number | undefined
+
+    /**
+     * The title of the input
+     */
+    title?: string | undefined
+
+    /**
+     * Total number of steps
+     */
+    totalSteps?: number | undefined
+
+    /**
+     * Buttons that are displayed on the title panel
+     */
+    buttons?: ReadonlyArray<QuickInputTitleButton>
+
+    /**
+     * Set to `true` to keep the input box open when focus moves to another part of the editor or to another window.
+     */
+    ignoreFocusOut?: boolean
+
+    /**
+     * The prefill value.
+     */
+    value?: string;
 }
 
 export const quickPickServicePath = '/services/quickPick';
@@ -54,4 +88,6 @@ export interface QuickPickService {
 
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
 
+    readonly onDidAccept: Event<void>;
+    readonly onDidChangeActiveItems: Event<QuickOpenItem<QuickOpenItemOptions>[]>;
 }

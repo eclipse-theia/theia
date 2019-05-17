@@ -24,8 +24,11 @@ import {
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
+import { QuickOpenHideReason } from '@theia/core/lib/common/quick-open-service';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
+    valueSelection?: Readonly<[number, number]>;
+    enabled?: boolean;
     readonly prefix?: string;
     readonly password?: boolean;
     readonly ignoreFocusOut?: boolean;
@@ -40,6 +43,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
     protected _widget: monaco.quickOpen.QuickOpenWidget | undefined;
     protected opts: MonacoQuickOpenControllerOpts | undefined;
     protected previousActiveElement: Element | undefined;
+    protected _widgetNode: HTMLElement;
 
     @inject(MonacoContextKeyService)
     protected readonly contextKeyService: MonacoContextKeyService;
@@ -59,6 +63,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         container.style.position = 'absolute';
         container.style.top = '0px';
         container.style.right = '50%';
+        container.style.zIndex = '1000000';
         overlayWidgets.appendChild(container);
     }
 
@@ -69,6 +74,22 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
         this.internalOpen(new MonacoQuickOpenControllerOptsImpl(model, this.keybindingRegistry, options));
+    }
+
+    hide(reason?: QuickOpenHideReason): void {
+        let hideReason: monaco.quickOpen.HideReason | undefined;
+        switch (reason) {
+            case QuickOpenHideReason.ELEMENT_SELECTED:
+                hideReason = monaco.quickOpen.HideReason.ELEMENT_SELECTED;
+                break;
+            case QuickOpenHideReason.FOCUS_LOST:
+                hideReason = monaco.quickOpen.HideReason.FOCUS_LOST;
+                break;
+            case QuickOpenHideReason.CANCELED:
+                hideReason = monaco.quickOpen.HideReason.CANCELED;
+                break;
+        }
+        this.widget.hide(hideReason);
     }
 
     showDecoration(type: MessageType): void {
@@ -84,6 +105,13 @@ export class MonacoQuickOpenService extends QuickOpenService {
         this.clearInputDecoration();
     }
 
+    refresh(): void {
+        const inputBox = this.widget.inputBox;
+        if (inputBox) {
+            this.onType(inputBox.inputElement.value);
+        }
+    }
+
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
         this.opts = opts;
         const activeContext = window.document.activeElement || undefined;
@@ -91,11 +119,54 @@ export class MonacoQuickOpenService extends QuickOpenService {
             this.previousActiveElement = activeContext;
             this.contextKeyService.activeContext = activeContext instanceof HTMLElement ? activeContext : undefined;
         }
+
         this.hideDecoration();
         this.widget.show(this.opts.prefix || '');
         this.setPlaceHolder(opts.inputAriaLabel);
         this.setPassword(opts.password ? true : false);
+        this.setEnabled(opts.enabled);
+        this.setValueSelected(opts.inputAriaLabel, opts.valueSelection);
         this.inQuickOpenKey.set(true);
+
+        const widget = this.widget;
+        if (widget.inputBox) {
+            widget.inputBox.inputElement.tabIndex = 1;
+        }
+    }
+
+    setValueSelected(value: string | undefined, selectLocation: Readonly<[number, number]> | undefined) {
+        if (!value) {
+            return;
+        }
+
+        const widget = this.widget;
+        if (widget.inputBox) {
+
+            if (!selectLocation) {
+                widget.inputBox.inputElement.setSelectionRange(0, value.length);
+                return;
+            }
+
+            if (selectLocation[0] === selectLocation[1]) {
+                widget.inputBox.inputElement.setSelectionRange(selectLocation[0], selectLocation[0]);
+                return;
+            }
+
+            widget.inputBox.inputElement.setSelectionRange(selectLocation[0], selectLocation[1]);
+        }
+    }
+
+    setEnabled(isEnabled: boolean | undefined) {
+        const widget = this.widget;
+        if (widget.inputBox) {
+            widget.inputBox.inputElement.readOnly = (isEnabled !== undefined) ? !isEnabled : false;
+        }
+    }
+
+    setValue(value: string | undefined) {
+        if (this.widget && this.widget.inputBox) {
+            this.widget.inputBox.inputElement.value = (value !== undefined) ? value : '';
+        }
     }
 
     setPlaceHolder(placeHolder: string): void {
@@ -147,11 +218,25 @@ export class MonacoQuickOpenService extends QuickOpenService {
                 this.onClose(true);
             },
             onType: lookFor => this.onType(lookFor || ''),
-            onFocusLost: () => (this.opts && this.opts.ignoreFocusOut !== undefined) ? this.opts.ignoreFocusOut : false
+            onFocusLost: () => {
+                if (this.opts && this.opts.ignoreFocusOut !== undefined) {
+                    if (this.opts.ignoreFocusOut === false) {
+                        this.onClose(true);
+                    }
+                    return this.opts.ignoreFocusOut;
+                } else {
+                    return false;
+                }
+            }
         }, {});
         this.attachQuickOpenStyler();
-        this._widget.create();
+        const newWidget = this._widget.create();
+        this._widgetNode = newWidget;
         return this._widget;
+    }
+
+    get widgetNode(): HTMLElement {
+        return this._widgetNode;
     }
 
     protected attachQuickOpenStyler(): void {
@@ -204,6 +289,10 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         this.password = this.options.password;
     }
 
+    get enabled(): boolean {
+        return this.options.enabled;
+    }
+
     get prefix(): string {
         return this.options.prefix;
     }
@@ -214,6 +303,10 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
 
     get inputAriaLabel(): string {
         return this.options.placeholder || '';
+    }
+
+    get valueSelection(): Readonly<[number, number]> {
+        return this.options.valueSelection || [-1, -1];
     }
 
     onClose(cancelled: boolean): void {
