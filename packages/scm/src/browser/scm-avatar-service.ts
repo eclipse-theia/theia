@@ -18,7 +18,7 @@ import { injectable } from 'inversify';
 import { Md5 } from 'ts-md5';
 
 @injectable()
-export class GitAvatarService {
+export class ScmAvatarService {
 
     async getAvatar(email: string): Promise<string> {
         const hash = Md5.hashStr(email);

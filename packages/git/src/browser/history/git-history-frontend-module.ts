@@ -19,7 +19,6 @@ import { interfaces, Container } from 'inversify';
 import { WidgetFactory, OpenHandler, bindViewContribution } from '@theia/core/lib/browser';
 import { GitHistoryWidget } from './git-history-widget';
 import { GIT_COMMIT_DETAIL, GitCommitDetailWidget, GitCommitDetails, GitCommitDetailWidgetOptions } from './git-commit-detail-widget';
-import { GitAvatarService } from './git-avatar-service';
 
 import '../../../src/browser/style/history.css';
 import '../../../src/browser/style/git-icons.css';
@@ -27,7 +26,6 @@ import { GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 
 export function bindGitHistoryModule(bind: interfaces.Bind) {
 
-    bind(GitAvatarService).toSelf().inSingletonScope();
     bind(GitHistoryWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: GIT_HISTORY_ID,

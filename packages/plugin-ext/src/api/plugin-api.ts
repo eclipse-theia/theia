@@ -16,12 +16,19 @@
 
 /* tslint:disable:no-any */
 
+import { Plugin as InternalPlugin } from '../api/plugin-api';
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
 import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl } from '../common/plugin-protocol';
 import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
-import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane, IndentAction, FileOperationOptions } from '../plugin/types-impl';
+import {
+    TextEditorLineNumbersStyle,
+    EndOfLine,
+    OverviewRulerLane,
+    IndentAction,
+    FileOperationOptions
+} from '../plugin/types-impl';
 import { UriComponents } from '../common/uri-components';
 import { ConfigurationTarget } from '../plugin/types-impl';
 import {
@@ -63,6 +70,8 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { SymbolInformation } from 'vscode-languageserver-types';
+import { ScmCommand } from '@theia/scm/lib/browser';
+import { ArgumentProcessor } from '../plugin/command-registry';
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
@@ -169,6 +178,7 @@ export interface CommandRegistryMain {
 
 export interface CommandRegistryExt {
     $executeCommand<T>(id: string, ...ars: any[]): PromiseLike<T>;
+    registerArgumentProcessor(processor: ArgumentProcessor): void;
 }
 
 export interface TerminalServiceExt {
@@ -464,6 +474,116 @@ export interface NotificationExt {
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): PromiseLike<R>;
     $onCancel(id: string): void;
+}
+
+export interface ScmExt {
+    createSourceControl(plugin: InternalPlugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
+    getLastInputBox(plugin: InternalPlugin): theia.SourceControlInputBox | undefined;
+    $updateInputBox(sourceControlHandle: number, message: string): Promise<void>;
+    $executeResourceCommand(sourceControlHandle: number, groupHandle: number, resourceHandle: number): Promise<void>;
+    $provideOriginalResource(sourceControlHandle: number, uri: string, token: CancellationToken): Promise<UriComponents | undefined>;
+}
+
+export interface DecorationsExt {
+    registerDecorationProvider(provider: theia.DecorationProvider): theia.Disposable
+    $provideDecoration(id: number, uri: string): Promise<DecorationData | undefined>
+}
+
+export interface DecorationsMain {
+    $registerDecorationProvider(id: number, provider: DecorationProvider): Promise<number>;
+    $fireDidChangeDecorations(id: number, arg: undefined | string | string[]): Promise<void>;
+    $dispose(id: number): Promise<void>;
+}
+
+export interface DecorationData {
+    letter?: string;
+    title?: string;
+    color?: ThemeColor;
+    priority?: number;
+    bubble?: boolean;
+    source?: string;
+}
+
+export interface ScmMain {
+    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: string): Promise<void>
+    $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void>;
+    $unregisterSourceControl(sourceControlHandle: number): Promise<void>;
+
+    $registerGroup(sourceControlHandle: number, groupHandle: number, id: string, label: string): Promise<void>;
+    $updateGroup(sourceControlHandle: number, groupHandle: number, features: SourceControlGroupFeatures): Promise<void>;
+    $updateGroupLabel(sourceControlHandle: number, groupHandle: number, label: string): Promise<void>;
+    $updateResourceState(sourceControlHandle: number, groupHandle: number, resources: SourceControlResourceState[]): Promise<void>;
+    $unregisterGroup(sourceControlHandle: number, groupHandle: number): Promise<void>;
+
+    $setInputBoxValue(sourceControlHandle: number, value: string): Promise<void>;
+    $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): Promise<void>;
+}
+
+export interface SourceControlProviderFeatures {
+    hasQuickDiffProvider?: boolean;
+    count?: number;
+    commitTemplate?: string;
+    acceptInputCommand?: ScmCommand;
+    statusBarCommands?: ScmCommand[];
+}
+
+export interface SourceControlGroupFeatures {
+    hideWhenEmpty: boolean | undefined;
+}
+
+export interface SourceControlResourceState {
+    readonly handle: number
+    /**
+     * The uri of the underlying resource inside the workspace.
+     */
+    readonly resourceUri: string;
+
+    /**
+     * The command which should be run when the resource
+     * state is open in the Source Control viewlet.
+     */
+    readonly command?: Command;
+
+    /**
+     * The decorations for this source control
+     * resource state.
+     */
+    readonly decorations?: SourceControlResourceDecorations;
+
+    readonly letter?: string;
+
+    readonly colorId?: string
+}
+
+/**
+ * The decorations for a [source control resource state](#SourceControlResourceState).
+ * Can be independently specified for light and dark themes.
+ */
+export interface SourceControlResourceDecorations {
+
+    /**
+     * Whether the source control resource state should be striked-through in the UI.
+     */
+    readonly strikeThrough?: boolean;
+
+    /**
+     * Whether the source control resource state should be faded in the UI.
+     */
+    readonly faded?: boolean;
+
+    /**
+     * The title for a specific source control resource state.
+     */
+    readonly tooltip?: string;
+
+    /**
+     * The icon path for a specific source control resource state.
+     */
+    readonly iconPath?: string;
+}
+
+export interface DecorationProvider {
+    provideDecoration(uri: string): Promise<DecorationData | undefined>;
 }
 
 export interface NotificationMain {
@@ -1060,7 +1180,9 @@ export const PLUGIN_RPC_CONTEXT = {
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     LANGUAGES_CONTRIBUTION_MAIN: createProxyIdentifier<LanguagesContributionMain>('LanguagesContributionMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
-    FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain')
+    FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
+    SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
+    DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1083,7 +1205,9 @@ export const MAIN_RPC_CONTEXT = {
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
-    FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt')
+    FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt'),
+    SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
+    DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt')
 };
 
 export interface TasksExt {
