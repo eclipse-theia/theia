@@ -93,6 +93,8 @@ export class PluginSharedStyle {
         if (typeof iconClass !== 'string') {
             iconClass = 'plugin-icon-' + this.iconSequence++;
             this.insertRule('.' + iconClass, theme => `
+                    display: inline-block;
+                    background-position: 2px;
                     width: ${size}px;
                     height: ${size}px;
                     background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");

@@ -1,0 +1,295 @@
+/********************************************************************************
+ * Copyright (C) 2019 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+.theia-scm {
+    color: var(--theia-ui-font-color1);
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.theia-side-panel .theia-scm {
+    padding-left: 19px;
+}
+
+.theia-scm:focus, .theia-scm :focus {
+    outline: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.theia-scm .noWrapInfo {
+    width: 100%;
+    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
+    align-items: center;
+    text-overflow: ellipsis;
+}
+
+.theia-scm .space-between {
+    justify-content: space-between;
+}
+
+#theia-scmContainer .buttons {
+    display: flex;
+}
+
+#theia-scmContainer .buttons .toolbar-button {
+    margin: 0 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 3px 3px;
+}
+
+#theia-scmContainer .itemButtonsContainer .buttons .toolbar-button {
+    padding: 0 3px;
+}
+
+#theia-scmContainer .buttons .toolbar-button:hover {
+    background: var(--theia-content-font-color3);
+}
+
+#theia-scmContainer .buttons .toolbar-button .open-file {
+    height: 16px;
+    width: 12px;
+    background: var(--theia-icon-open-file) no-repeat center center;
+}
+
+#theia-scmContainer .scmItem .itemButtonsContainer .buttons {
+    display: none;
+    margin: 0 3px;
+}
+
+#theia-scmContainer .scmItem:hover .itemButtonsContainer .buttons {
+    display: flex;
+}
+
+#theia-scmContainer .changesHeader {
+    font-weight: bold;
+}
+
+#theia-scmContainer .changesContainer {
+    margin: 5px 0;
+}
+
+#theia-scmContainer #messageInputContainer {
+    position: relative;
+}
+
+#theia-scmContainer #repositoryListContainer {
+    display: flex;
+    margin-bottom: 5px;
+    flex: 1;
+}
+
+#theia-scmContainer #commandBar {
+    margin-bottom: 5px;
+    align-items: baseline;
+}
+
+#theia-scmContainer .groups-outer-container {
+    overflow-y: auto;
+    border-top: 1px solid var(--theia-layout-color4);
+    width: 100%;
+    flex-grow: 1;
+}
+
+#theia-scmContainer .warn {
+    background-color: var(--theia-error-color2) !important;
+}
+
+#theia-scmContainer .placeholder {
+    width: 100%;
+}
+
+.theia-scm div:focus .theia-mod-selected{
+    background: var(--theia-accent-color3);
+}
+
+.theia-scm .theia-mod-selected{
+    background: var(--theia-accent-color4);
+}
+
+.theia-scm-main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.theia-scm-input-message-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 0px 7px 0px;
+    max-height: 400px;
+}
+
+.flex-container-center {
+    display: flex;
+    align-items: center;
+}
+
+.theia-scm-input-message-container textarea {
+    line-height: var(--theia-content-line-height);
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-ui-font-color1);
+    background: var(--theia-layout-color2);
+    border-style: solid;
+    border-width: 1px;
+    resize: none;
+    box-sizing: border-box;
+    padding-left: 4px;
+}
+
+.theia-scm-input-message {
+    width: 100%;
+}
+
+.theia-scm-input-message-idle {
+    border-color: var(--theia-border-color0);
+}
+
+.theia-scm-input-message-info {
+    border-color: var(--theia-info-color0);
+}
+
+.theia-scm-input-message-success {
+    border-color: var(--theia-success-color0);
+}
+
+.theia-scm-input-message-warning {
+    border-color: var(--theia-warn-color0);
+}
+
+.theia-scm-input-message-error {
+    border-color: var(--theia-error-color0) !important;
+}
+
+.theia-scm-message,
+.theia-scm-input-validation-message {
+    padding: 4px 4px 4px 4px;
+}
+
+.theia-scm-validation-message-idle {
+    background-color: var(--theia-border-color0) !important;
+}
+
+.theia-scm-validation-message-info {
+    background-color: var(--theia-info-color0) !important;
+    color: var(--theia-info-font-color0);
+}
+
+.theia-scm-validation-message-success {
+    background-color: var(--theia-success-color0) !important;
+    color: var(--theia-success-font-color0);
+}
+
+.theia-scm-message-warning,
+.theia-scm-validation-message-warning {
+    background-color: var(--theia-warn-color0) !important;
+    color: var(--theia-warn-font-color0);
+}
+
+.theia-scm-validation-message-error {
+    background-color: var(--theia-error-color0) !important;
+    color: var(--theia-error-font-color0);
+}
+
+.no-select {
+    cursor: default;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+}
+
+.no-select:focus {
+    outline: none;
+}
+
+.theia-scm .scmItem {
+    margin: 1px 0 1px 3px;
+    padding: 2px;
+    font-size: var(--theia-ui-font-size1);
+    display: flex;
+    justify-content: space-between;
+}
+
+.theia-scm .scmItem .file-icon {
+    display: initial;
+}
+
+.theia-scm .scmItem:hover {
+    background-color: var(--theia-layout-color2);
+    cursor: pointer;
+}
+
+.theia-scm .scmItem .path {
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    margin-left: 3px;
+}
+
+.theia-scm .scmItem .itemButtonsContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 3px;
+}
+
+.theia-scm .scmItem .status {
+    padding: 2px 4px;
+    font-size: var(--theia-ui-font-size0);
+}
+.scm-change-count {
+    float: right;
+}
+
+.scm-theia-header {
+    padding: 5px;
+    display: flex;
+}
+
+.scm-theia-header:hover {
+    background-color: var(--theia-layout-color2);
+    cursor: pointer;
+}
+
+.scm-theia-header:hover > .scm-change-list-buttons-container {
+    visibility: visible;
+}
+
+.scm-change-list-buttons-container {
+    display: flex;
+    margin: 0 3px;
+    visibility: hidden;
+}
+
+.scm-change-list-buttons-container .toolbar-button {
+    cursor: pointer;
+    font-size: var(--theia-ui-font-size1);
+    margin: 0 2px;
+    padding: 0 3px;
+}
+
+.scm-change-list-buttons-container .toolbar-button:hover {
+    background: var(--theia-content-font-color3);
+}
+
+.scm-tab-icon {
+    -webkit-mask: url('scm.svg');
+    mask: url('scm.svg');
+}

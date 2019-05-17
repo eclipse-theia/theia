@@ -26,7 +26,7 @@ import { GIT_HISTORY_ID, GIT_HISTORY_MAX_COUNT, GIT_HISTORY_LABEL } from './git-
 import { GitFileStatus, Git, GitFileChange, Repository } from '../../common';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitDiffContribution } from '../diff/git-diff-contribution';
-import { GitAvatarService } from './git-avatar-service';
+import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 import { GitCommitDetails } from './git-commit-detail-widget';
 import { GitNavigableListWidget } from '../git-navigable-list-widget';
@@ -67,7 +67,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(Git) protected readonly git: Git,
-        @inject(GitAvatarService) protected readonly avatarService: GitAvatarService,
+        @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(GitDiffContribution) protected readonly diffContribution: GitDiffContribution) {
         super();

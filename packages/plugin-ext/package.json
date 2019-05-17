@@ -16,6 +16,7 @@
     "@theia/navigator": "^0.6.0",
     "@theia/plugin": "^0.6.0",
     "@theia/preferences": "^0.6.0",
+    "@theia/scm": "^0.6.0",
     "@theia/search-in-workspace": "^0.6.0",
     "@theia/task": "^0.6.0",
     "@theia/workspace": "^0.6.0",

@@ -8,6 +8,7 @@
     "@theia/filesystem": "^0.6.0",
     "@theia/languages": "^0.6.0",
     "@theia/navigator": "^0.6.0",
+    "@theia/scm": "^0.6.0",
     "@theia/workspace": "^0.6.0",
     "@types/diff": "^3.2.2",
     "@types/fs-extra": "^4.0.2",
