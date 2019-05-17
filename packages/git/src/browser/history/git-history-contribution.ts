@@ -24,7 +24,7 @@ import { GitHistoryWidget } from './git-history-widget';
 import { Git } from '../../common';
 import { GitRepositoryTracker } from '../git-repository-tracker';
 import { GitRepositoryProvider } from '../git-repository-provider';
-import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
+import { EDITOR_CONTEXT_MENU_GIT } from '../git-contribution';
 
 export const GIT_HISTORY_ID = 'git-history';
 export const GIT_HISTORY_LABEL = 'Git History';

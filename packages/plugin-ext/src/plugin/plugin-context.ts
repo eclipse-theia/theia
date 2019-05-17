@@ -21,7 +21,13 @@ import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
-import { MAIN_RPC_CONTEXT, Plugin as InternalPlugin, PluginManager, PluginAPIFactory, MainMessageType } from '../api/plugin-api';
+import {
+    MAIN_RPC_CONTEXT,
+    Plugin as InternalPlugin,
+    PluginManager,
+    PluginAPIFactory,
+    MainMessageType
+} from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
@@ -125,6 +131,9 @@ import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system';
 import { QuickPick, QuickPickItem } from '@theia/plugin';
 import { SelectionServiceExt } from './selection-provider-ext';
+import { ScmExtImpl } from './scm';
+import { DecorationProvider, LineChange } from '@theia/plugin';
+import { DecorationsExtImpl } from './decorations';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -156,6 +165,8 @@ export function createAPIFactory(
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
     const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
+    const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
+    const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -197,6 +208,10 @@ export function createAPIFactory(
             },
             getCommands(filterInternal: boolean = false): PromiseLike<string[]> {
                 return commandRegistry.getCommands(filterInternal);
+            },
+            registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
+                // Dummy implementation.
+                return new Disposable(() => {});
             }
         };
 
@@ -348,10 +363,6 @@ export function createAPIFactory(
                         console.error('Progress location \'SourceControl\' is not supported.');
                     });
                 }
-            },
-            registerUriHandler(handler: theia.UriHandler): theia.Disposable {
-                // TODO Apply full implementation https://github.com/theia-ide/theia/issues/5119
-                return new Disposable(() => {});
             }
         };
 
@@ -653,6 +664,20 @@ export function createAPIFactory(
             }
         };
 
+        const scm: typeof theia.scm = {
+            get inputBox(): theia.SourceControlInputBox {
+                const inputBox = scmExt.getLastInputBox(plugin);
+                if (inputBox) {
+                    return inputBox;
+                } else {
+                    throw new Error('Input box not found!');
+                }
+            },
+            createSourceControl(id: string, label: string, rootUri?: Uri): theia.SourceControl {
+                return scmExt.createSourceControl(plugin, id, label, rootUri);
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             commands,
@@ -664,6 +689,7 @@ export function createAPIFactory(
             plugins,
             debug,
             tasks,
+            scm,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,

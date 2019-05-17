@@ -21,7 +21,7 @@ import { BlameDecorator } from './blame-decorator';
 import { EditorManager, EditorKeybindingContexts, EditorWidget, EditorTextFocusContext, StrictEditorTextFocusContext } from '@theia/editor/lib/browser';
 import { BlameManager } from './blame-manager';
 import URI from '@theia/core/lib/common/uri';
-import { EDITOR_CONTEXT_MENU_GIT } from '../git-view-contribution';
+import { EDITOR_CONTEXT_MENU_GIT } from '../git-contribution';
 
 import debounce = require('lodash.debounce');
 

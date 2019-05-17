@@ -115,7 +115,7 @@ export class GitDecorator implements TreeDecorator {
 
     protected toDecorator(change: GitFileChange): TreeDecoration.Data {
         const data = GitFileStatus.toAbbreviation(change.status, change.staged);
-        const color = this.getDecorationColor(change.status, change.staged);
+        const color = GitDecorator.getDecorationColor(change.status, change.staged);
         const tooltip = GitFileStatus.toString(change.status, change.staged);
         let decorationData: TreeDecoration.Data = {
             tailDecorations: [
@@ -143,7 +143,7 @@ export class GitDecorator implements TreeDecorator {
         return GitFileStatus.statusCompare(left.status, right.status);
     }
 
-    protected getDecorationColor(status: GitFileStatus, staged?: boolean): string {
+    static getDecorationColor(status: GitFileStatus, staged?: boolean): string {
         switch (status) {
             case GitFileStatus.New: return 'var(--theia-success-color0)';
             case GitFileStatus.Renamed: // Fall through.
