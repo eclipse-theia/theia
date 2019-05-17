@@ -18,31 +18,99 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding-left: var(--theia-ui-padding);
 }
 
-.theia-view-container-part {
-    display: block;
+.theia-view-container .split-panel {
+    height: 100%;
+    width: 100%;
 }
 
-.theia-view-container-part-head {
+.theia-view-container .split-panel .p-SplitPanel-child {
+    min-height: 22px;
+}
+
+.theia-view-container .p-SplitPanel > .p-SplitPanel-handle:after {
+    background-color: var(--theia-menu-color0);
+    min-height: 2px;
+    min-width: 2px
+}
+
+.theia-view-container .p-SplitPanel-handle {
+    background-color: var(--theia-menu-color0);
+}
+
+.theia-view-container .part {
+    height: 100%;
+}
+
+.theia-view-container .part .header {
     cursor: pointer;
     display: flex;
     align-items: center;
+    background: var(--theia-menu-color0);
+    line-height: 22px;
+    z-index: 10;
 }
 
-.theia-view-container-part-head .label {
+.theia-view-container .part .header .theia-ExpansionToggle {
+    padding-left: 4px;
+}
+
+.theia-view-container .p-SplitPanel[data-orientation='horizontal'] .part .header .theia-ExpansionToggle::before {
+    display: none;
+    padding-left: 0px;
+}
+
+.theia-view-container .p-SplitPanel[data-orientation='horizontal'] .part .header .theia-ExpansionToggle {
+    padding-left: 0px;
+}
+
+.theia-view-container .part .header .label {
     width: 100%;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-.theia-view-container-part-head .element {
+
+.theia-view-container .part .header .element {
     min-width: 16px;
     min-height: 16px;
-    padding-left: calc(var(--theia-ui-padding)*2)
+    padding-left: calc(var(--theia-ui-padding)*2);
+    display: none;
 }
 
-.theia-view-container-part-body {
+.theia-view-container .part:hover .element {
     display: block;
+}
+
+.theia-view-container .body {
+    height: 100%;
+}
+
+.theia-view-container .body .theia-tree-source-node-placeholder {
+    padding-top: 4px;
+    height: 100%;
+}
+
+.theia-view-container .part:hover .body {
+    display: block;
+}
+
+.theia-view-container .part.drop-target {
+    background: rgba(33, 150, 243, 0.1);
+    border: var(--theia-border-width) dashed var(--theia-brand-color1);
+    transition-property: top, left, right, bottom;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+}
+
+.theia-view-container-drag-image {
+    background: var(--theia-menu-color0);
+    line-height: 22px;
+    position: absolute;
+    color: var(--theia-ui-font-color1);
+    text-transform: uppercase;
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    padding: 0 var(--theia-ui-padding) 0 var(--theia-ui-padding);
 }

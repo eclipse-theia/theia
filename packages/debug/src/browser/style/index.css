@@ -132,7 +132,7 @@
 .theia-session-container > .debug-toolbar {
     padding-top: var(--theia-ui-padding);
     padding-bottom: var(--theia-ui-padding);
-    border-bottom: 1px solid var(--theia-layout-color4);
+    border-bottom: 1px solid var(--theia-layout-color0);
 }
 
 .debug-toolbar .debug-configuration {
@@ -350,10 +350,6 @@
 .theia-debug-hover-content {
     display: flex;
     flex: 1;
-}
-
-.theia-debug-widget-container .theia-header {
-    margin-top: 5px;
 }
 
 /** Breakpoint Widget */
