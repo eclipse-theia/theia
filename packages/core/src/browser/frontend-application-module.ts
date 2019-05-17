@@ -76,6 +76,7 @@ import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
 import { ViewContainer, ViewContainerIdentifier } from './view-container';
 import { QuickViewService } from './quick-view-service';
+import { QuickTitleBar } from './quick-open/quick-title-bar';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -163,6 +164,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(QuickOpenService).toSelf().inSingletonScope();
     bind(QuickInputService).toSelf().inSingletonScope();
+    bind(QuickTitleBar).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>

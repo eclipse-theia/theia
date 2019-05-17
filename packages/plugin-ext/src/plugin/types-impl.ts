@@ -1231,6 +1231,20 @@ export enum CommentThreadCollapsibleState {
     Expanded = 1
 }
 
+export interface QuickInputButton {
+    readonly iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon;
+    readonly tooltip?: string | undefined;
+}
+
+export class QuickInputButtons {
+    static readonly Back: QuickInputButton = {
+        iconPath: {
+            id: 'Back'
+        },
+        tooltip: 'Back'
+    };
+}
+
 export enum CommentMode {
     Editing = 0,
     Preview = 1

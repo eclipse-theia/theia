@@ -24,6 +24,7 @@ import {
     ResourceFileEditDto,
     TaskDto,
     ProcessTaskDto
+, PickOpenItem
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
 import * as theia from '@theia/plugin';
@@ -35,6 +36,7 @@ import URI from 'vscode-uri';
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
 import { SymbolInformation, Range as R, Position as P, SymbolKind as S, Location as L } from 'vscode-languageserver-types';
+import { Item } from './quick-open';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -875,4 +877,28 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
         textEdit: colorPresentation.textEdit ? fromTextEdit(colorPresentation.textEdit) : undefined,
         additionalTextEdits: colorPresentation.additionalTextEdits ? colorPresentation.additionalTextEdits.map(value => fromTextEdit(value)) : undefined
     };
+}
+
+export function quickPickItemToPickOpenItem(items: Item[]) {
+    const pickItems: PickOpenItem[] = [];
+    for (let handle = 0; handle < items.length; handle++) {
+        const item = items[handle];
+        let label: string;
+        let description: string | undefined;
+        let detail: string | undefined;
+        let picked: boolean | undefined;
+        if (typeof item === 'string') {
+            label = item;
+        } else {
+            ({ label, description, detail, picked } = item);
+        }
+        pickItems.push({
+            label,
+            description,
+            handle,
+            detail,
+            picked
+        });
+    }
+    return pickItems;
 }
