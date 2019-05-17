@@ -128,24 +128,23 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             if (this.state.lastCommit && nextCommit) {
                 const direction: 'up' | 'down' = this.transitionHint === 'amend' ? 'up' : 'down';
                 const transitionData = { direction, previousLastCommit: this.state.lastCommit };
-                const amendingCommits = this.state.amendingCommits.concat([]);
+                const amendingCommits = this.state.amendingCommits.concat([]); // copy the array
                 switch (this.transitionHint) {
                     case 'amend':
                         if (this.state.lastCommit) {
                             amendingCommits.push(this.state.lastCommit);
-                            if (this.state.amendingCommits.length === 1) {
-                                const storageKey = this.getStorageKey();
-                                const serializedState = JSON.stringify({
-                                    amendingHeadCommitSha: this.state.amendingCommits[0].commit.id,
-                                    latestCommitSha: nextCommit.commit.id
-                                });
-                                this.props.storageService.setData<string | undefined>(storageKey, serializedState);
-                            }
+
+                            const storageKey = this.getStorageKey();
+                            const serializedState = JSON.stringify({
+                                amendingHeadCommitSha: amendingCommits[0].commit.id,
+                                latestCommitSha: nextCommit.commit.id
+                            });
+                            this.props.storageService.setData<string | undefined>(storageKey, serializedState);
                         }
                         break;
                     case 'unamend':
                         amendingCommits.pop();
-                        if (this.state.amendingCommits.length === 0) {
+                        if (amendingCommits.length === 0) {
                             const storageKey = this.getStorageKey();
                             this.props.storageService.setData<string | undefined>(storageKey, undefined);
                         }
@@ -190,7 +189,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                 // head commit after the last 'amend'.
                 return [];
             }
-            const commits = await this.props.scmAmendSupport.getIntialAmendingCommits(amendingHeadCommitSha, lastCommit.id);
+            const commits = await this.props.scmAmendSupport.getInitialAmendingCommits(amendingHeadCommitSha, lastCommit.id);
 
             const amendingCommitPromises = commits.map(async commit => {
                 const avatar = await this.props.avatarService.getAvatar(commit.authorEmail);
