@@ -22,8 +22,8 @@ import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
 import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel, DebugViewOptions } from './debug-view-model';
-import { ViewContainer } from '@theia/core/lib/browser/view-container';
 import { BOTTOM_AREA_ID, MAIN_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
+import { ViewContainer } from '@theia/core/lib/browser/view-container';
 
 export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
@@ -49,24 +49,16 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
     }
 
     protected readonly container = new SplitPanel();
+    protected viewContainer: ViewContainer;
+
+    @inject(ViewContainer.Factory)
+    protected readonly viewContainerFactory: ViewContainer.Factory;
 
     @inject(DebugViewModel)
     readonly model: DebugViewModel;
 
     @inject(DebugToolBar)
     protected readonly toolbar: DebugToolBar;
-
-    @inject(DebugThreadsWidget)
-    protected readonly threads: DebugThreadsWidget;
-
-    @inject(DebugStackFramesWidget)
-    protected readonly frames: DebugStackFramesWidget;
-
-    @inject(DebugVariablesWidget)
-    protected readonly variables: DebugVariablesWidget;
-
-    @inject(DebugBreakpointsWidget)
-    protected readonly breakpoints: DebugBreakpointsWidget;
 
     @postConstruct()
     protected init(): void {
@@ -75,20 +67,41 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
         this.title.closable = true;
         this.title.iconClass = 'fa debug-tab-icon';
         this.addClass('theia-session-container');
-        this.toDispose.pushAll([
-            this.toolbar,
-            this.threads,
-            this.frames,
-            this.variables,
-            this.breakpoints,
-            this.container
-        ]);
 
         this.container.addClass('theia-debug-widget-container');
-        this.container.addWidget(this.createViewContainer(this.threads));
-        this.container.addWidget(this.createViewContainer(this.frames));
-        this.container.addWidget(this.createViewContainer(this.variables));
-        this.container.addWidget(this.createViewContainer(this.breakpoints));
+        this.viewContainer = this.viewContainerFactory(...[
+            {
+                widget: DebugThreadsWidget,
+                options: {
+                    weight: 30
+                }
+            },
+            {
+                widget: DebugStackFramesWidget,
+                options: {
+                    weight: 20
+                }
+            },
+            {
+                widget: DebugVariablesWidget,
+                options: {
+                    weight: 10
+                }
+            },
+            {
+                widget: DebugBreakpointsWidget,
+                options: {
+                    weight: 10
+                }
+            }]);
+
+        this.container.addWidget(this.viewContainer);
+
+        this.toDispose.pushAll([
+            this.toolbar,
+            this.container,
+            this.viewContainer
+        ]);
 
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.toolbar);
@@ -101,18 +114,13 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
     }
 
     protected createViewContainer(widget: Widget): Widget {
-        const viewContainer = new ViewContainer();
+        const viewContainer = this.viewContainerFactory({ widget });
         viewContainer.addWidget(widget);
         return viewContainer;
     }
 
-    getTrackableWidgets(): Widget[] {
-        return [
-            this.threads,
-            this.frames,
-            this.variables,
-            this.breakpoints
-        ];
+    async getTrackableWidgets(): Promise<Widget[]> {
+        return this.viewContainer.getTrackableWidgets();
     }
 
     onAfterAttach(msg: Message): void {

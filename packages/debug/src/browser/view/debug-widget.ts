@@ -77,7 +77,7 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
         this.toolbar.focus();
     }
 
-    getTrackableWidgets(): Widget[] {
+    async getTrackableWidgets(): Promise<Widget[]> {
         return this.sessionWidget.getTrackableWidgets();
     }
 
