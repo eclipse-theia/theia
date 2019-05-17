@@ -20,8 +20,46 @@ import { QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { Deferred } from '../../common/promise-util';
 import { MaybePromise } from '../../common/types';
 import { MessageType } from '../../common/message-service-protocol';
+import { Emitter, Event } from '../../common/event';
+import { QuickTitleBar, QuickInputTitleButton } from './quick-title-bar';
 
 export interface QuickInputOptions {
+
+    /**
+     * Show the progress indicator if true
+     */
+    busy?: boolean
+
+    /**
+     * Allow user input
+     */
+    enabled?: boolean;
+
+    /**
+     * Current step count
+     */
+    step?: number | undefined
+
+    /**
+     * The title of the input
+     */
+    title?: string | undefined
+
+    /**
+     * Total number of steps
+     */
+    totalSteps?: number | undefined
+
+    /**
+     * Buttons that are displayed on the title panel
+     */
+    buttons?: ReadonlyArray<QuickInputTitleButton>
+
+    /**
+     * Text for when there is a problem with the current input value
+     */
+    validationMessage?: string | undefined;
+
     /**
      * The prefill value.
      */
@@ -48,6 +86,14 @@ export interface QuickInputOptions {
     ignoreFocusOut?: boolean;
 
     /**
+     * Selection of the prefilled [`value`](#InputBoxOptions.value). Defined as tuple of two number where the
+     * first is the inclusive start index and the second the exclusive end index. When `undefined` the whole
+     * word will be selected, when empty (start equals end) only the cursor will be set,
+     * otherwise the defined range will be selected.
+     */
+    valueSelection?: [number, number]
+
+    /**
      * An optional function that will be called to validate input and to give a hint
      * to the user.
      *
@@ -63,15 +109,24 @@ export class QuickInputService {
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    @inject(QuickTitleBar)
+    protected readonly quickTitleBar: QuickTitleBar;
+
     open(options: QuickInputOptions): Promise<string | undefined> {
         const result = new Deferred<string | undefined>();
         const prompt = this.createPrompt(options.prompt);
         let label = prompt;
         let currentText = '';
         const validateInput = options && options.validateInput;
+
+        if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
+            this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);
+        }
+
         this.quickOpenService.open({
             onType: async (lookFor, acceptor) => {
-                const error = validateInput ? await validateInput(lookFor) : undefined;
+                this.onDidChangeValueEmitter.fire(lookFor);
+                const error = validateInput && lookFor !== undefined ? await validateInput(lookFor) : undefined;
                 label = error || prompt;
                 if (error) {
                     this.quickOpenService.showDecoration(MessageType.Error);
@@ -83,6 +138,8 @@ export class QuickInputService {
                     run: mode => {
                         if (!error && mode === QuickOpenMode.OPEN) {
                             result.resolve(currentText);
+                            this.onDidAcceptEmitter.fire(undefined);
+                            this.quickTitleBar.hide();
                             return true;
                         }
                         return false;
@@ -95,14 +152,33 @@ export class QuickInputService {
                 placeholder: options.placeHolder,
                 password: options.password,
                 ignoreFocusOut: options.ignoreFocusOut,
-                onClose: () => result.resolve(undefined)
+                enabled: options.enabled,
+                valueSelection: options.valueSelection,
+                onClose: () => {
+                    result.resolve(undefined);
+                    this.quickTitleBar.hide();
+                }
             });
         return result.promise;
+    }
+
+    refresh() {
+        this.quickOpenService.refresh();
     }
 
     protected defaultPrompt = "Press 'Enter' to confirm your input or 'Escape' to cancel";
     protected createPrompt(prompt?: string): string {
         return prompt ? `${prompt} (${this.defaultPrompt})` : this.defaultPrompt;
+    }
+
+    readonly onDidAcceptEmitter: Emitter<void> = new Emitter();
+    get onDidAccept(): Event<void> {
+        return this.onDidAcceptEmitter.event;
+    }
+
+    readonly onDidChangeValueEmitter: Emitter<string> = new Emitter();
+    get onDidChangeValue(): Event<string> {
+        return this.onDidChangeValueEmitter.event;
     }
 
 }

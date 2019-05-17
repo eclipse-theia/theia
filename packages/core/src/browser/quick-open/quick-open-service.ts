@@ -33,4 +33,10 @@ export class QuickOpenService {
     hide(reason?: common.QuickOpenHideReason): void { }
     showDecoration(type: MessageType): void { }
     hideDecoration(): void { }
+    refresh(): void { }
+
+    /**
+     * Dom node of the QuickOpenWidget
+     */
+    widgetNode: HTMLElement;
 }

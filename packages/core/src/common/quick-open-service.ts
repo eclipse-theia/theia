@@ -29,9 +29,12 @@ export namespace QuickOpenOptions {
         enableSeparateSubstringMatching?: boolean
     }
     export interface Resolved {
+        readonly enabled: boolean;
+
         readonly prefix: string;
         readonly placeholder: string;
         readonly ignoreFocusOut: boolean;
+        readonly valueSelection: Readonly<[number, number]>;
 
         readonly fuzzyMatchLabel: boolean | FuzzyMatchOptions;
         readonly fuzzyMatchDetail: boolean | FuzzyMatchOptions;
@@ -57,9 +60,12 @@ export namespace QuickOpenOptions {
         onClose(canceled: boolean): void;
     }
     export const defaultOptions: Resolved = Object.freeze({
+        enabled: true,
+
         prefix: '',
         placeholder: '',
         ignoreFocusOut: false,
+        valueSelection: [-1, -1] as Readonly<[number, number]>,
 
         fuzzyMatchLabel: false,
         fuzzyMatchDetail: false,
