@@ -14,13 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem } from '../api/plugin-api';
-import { QuickPickOptions, QuickPickItem, InputBoxOptions } from '@theia/plugin';
+import { QuickPickOptions, QuickPickItem, InputBoxOptions, InputBox, QuickInputButton, QuickPick } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { anyPromise } from '../api/async-util';
 import { hookCancellationToken } from '../api/async-util';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { QuickPick, QuickInputButton } from '@theia/plugin';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export type Item = string | QuickPickItem;
@@ -29,9 +28,11 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     private proxy: QuickOpenMain;
     private selectItemHandler: undefined | ((handle: number) => void);
     private validateInputHandler: undefined | ((input: string) => string | PromiseLike<string | undefined> | undefined);
+    private onDidAcceptInputEmitter: Emitter<void>;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.QUICK_OPEN_MAIN);
+        this.onDidAcceptInputEmitter = new Emitter();
     }
     $onItemSelected(handle: number): void {
         if (this.selectItemHandler) {
@@ -129,6 +130,91 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return hookCancellationToken(token, promise);
     }
 
+    createInputBox(): InputBox {
+        return new InputBoxExt(this, this.onDidAcceptInputEmitter);
+    }
+
+    async $acceptInput(): Promise<void> {
+        this.onDidAcceptInputEmitter.fire(undefined);
+    }
+
+}
+
+/**
+ * Base implementation of {@link InputBox} that uses {@link QuickOpenExt}.
+ * Missing functionality is going to be implemented in the scope of https://github.com/theia-ide/theia/issues/5109
+ */
+export class InputBoxExt implements InputBox {
+
+    busy: boolean;
+    buttons: ReadonlyArray<QuickInputButton>;
+    enabled: boolean;
+    ignoreFocusOut: boolean;
+    password: boolean;
+    placeholder: string | undefined;
+    prompt: string | undefined;
+    step: number | undefined;
+    title: string | undefined;
+    totalSteps: number | undefined;
+    validationMessage: string | undefined;
+    value: string;
+
+    private readonly disposables: DisposableCollection;
+    private readonly onDidChangeValueEmitter: Emitter<string>;
+    private readonly onDidHideEmitter: Emitter<void>;
+    private readonly onDidTriggerButtonEmitter: Emitter<QuickInputButton>;
+
+    constructor(readonly quickOpen: QuickOpenExtImpl, readonly onDidAcceptEmitter: Emitter<void>) {
+        this.disposables = new DisposableCollection();
+        this.disposables.push(this.onDidChangeValueEmitter = new Emitter());
+        this.disposables.push(this.onDidHideEmitter = new Emitter());
+        this.disposables.push(this.onDidTriggerButtonEmitter = new Emitter());
+    }
+
+    get onDidChangeValue(): Event<string> {
+        return this.onDidChangeValueEmitter.event;
+    }
+
+    get onDidAccept(): Event<void> {
+        return this.onDidAcceptEmitter.event;
+    }
+
+    get onDidHide(): Event<void> {
+        return this.onDidHideEmitter.event;
+    }
+
+    get onDidTriggerButton(): Event<QuickInputButton> {
+        return this.onDidTriggerButtonEmitter.event;
+    }
+
+    dispose(): void {
+        this.disposables.dispose();
+    }
+
+    hide(): void {
+        this.dispose();
+    }
+
+    show(): void {
+        const update = (value: string) => {
+            this.onDidChangeValueEmitter.fire(value);
+            if (this.validationMessage && this.validationMessage.length > 0) {
+                return this.validationMessage;
+            }
+        };
+        this.quickOpen.showInput({
+            password: this.password,
+            placeHolder: this.placeholder,
+            prompt: this.prompt,
+            value: this.value,
+            ignoreFocusOut: this.ignoreFocusOut,
+            validateInput(value: string): string | undefined {
+                if (value.length > 0) {
+                    return update(value);
+                }
+            }
+        });
+    }
 }
 
 /**

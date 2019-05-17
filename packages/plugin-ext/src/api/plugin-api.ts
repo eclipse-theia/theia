@@ -283,6 +283,7 @@ export interface StatusBarMessageRegistryMain {
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
     $validateInput(input: string): PromiseLike<string | undefined> | undefined;
+    $acceptInput(): Promise<void>;
 }
 
 /**

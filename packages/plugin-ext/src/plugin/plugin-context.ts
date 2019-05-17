@@ -98,7 +98,8 @@ import {
     ColorPresentation,
     OperatingSystem,
     WebviewPanelTargetArea,
-    FileSystemError
+    FileSystemError,
+    QuickInputButtons
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -346,6 +347,9 @@ export function createAPIFactory(
                         console.error('Progress location \'SourceControl\' is not supported.');
                     });
                 }
+            },
+            createInputBox(): theia.InputBox {
+                return quickOpenExt.createInputBox();
             }
         };
 
@@ -725,7 +729,8 @@ export function createAPIFactory(
             FoldingRangeKind,
             OperatingSystem,
             WebviewPanelTargetArea,
-            FileSystemError
+            FileSystemError,
+            QuickInputButtons
         };
     };
 }

@@ -1226,6 +1226,15 @@ export enum FileChangeType {
     Deleted = 3,
 }
 
+export interface QuickInputButton {
+    readonly iconPath: ThemeIcon;
+    readonly tooltip?: string | undefined;
+}
+
+export class QuickInputButtons {
+    static readonly Back: QuickInputButton;
+}
+
 export class FileSystemError extends Error {
 
     static FileExists(messageOrUri?: string | URI): FileSystemError {

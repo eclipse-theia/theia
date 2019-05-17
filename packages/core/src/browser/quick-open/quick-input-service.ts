@@ -20,6 +20,7 @@ import { QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { Deferred } from '../../common/promise-util';
 import { MaybePromise } from '../../common/types';
 import { MessageType } from '../../common/message-service-protocol';
+import { Emitter, Event } from '../../common/event';
 
 export interface QuickInputOptions {
     /**
@@ -83,6 +84,7 @@ export class QuickInputService {
                     run: mode => {
                         if (!error && mode === QuickOpenMode.OPEN) {
                             result.resolve(currentText);
+                            this.onDidAcceptEmitter.fire(undefined);
                             return true;
                         }
                         return false;
@@ -103,6 +105,11 @@ export class QuickInputService {
     protected defaultPrompt = "Press 'Enter' to confirm your input or 'Escape' to cancel";
     protected createPrompt(prompt?: string): string {
         return prompt ? `${prompt} (${this.defaultPrompt})` : this.defaultPrompt;
+    }
+
+    readonly onDidAcceptEmitter: Emitter<void> = new Emitter();
+    get onDidAccept(): Event<void> {
+        return this.onDidAcceptEmitter.event;
     }
 
 }

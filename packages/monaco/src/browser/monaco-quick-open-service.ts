@@ -59,6 +59,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         container.style.position = 'absolute';
         container.style.top = '0px';
         container.style.right = '50%';
+        container.style.zIndex = '1000000';
         overlayWidgets.appendChild(container);
     }
 

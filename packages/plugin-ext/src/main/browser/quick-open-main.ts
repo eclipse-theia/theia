@@ -37,6 +37,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
         this.delegate = container.get(MonacoQuickOpenService);
         this.quickInput = container.get(QuickInputService);
+        this.quickInput.onDidAccept(() => this.proxy.$acceptInput());
     }
 
     private cleanUp() {
