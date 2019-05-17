@@ -99,7 +99,7 @@ export interface ScmCommit {
 }
 
 export interface ScmAmendSupport {
-    getIntialAmendingCommits(storedState: string, lastHead: string): Promise<ScmCommit[]>
+    getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]>
     getMessage(commit: string): Promise<string>;
     reset(commit: string): Promise<void>;
     getLastCommit(): Promise<ScmCommit | undefined>;
