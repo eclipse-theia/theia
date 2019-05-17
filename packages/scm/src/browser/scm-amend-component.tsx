@@ -52,7 +52,7 @@ interface ScmAmendComponentState {
     lastCommit: { commit: ScmCommit, avatar: string } | undefined;
 }
 
-const TRANSITION_TIME_MS = 500;
+const TRANSITION_TIME_MS = 300;
 const REPOSITORY_STORAGE_KEY = 'scmRepository';
 
 export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, ScmAmendComponentState> {
@@ -265,7 +265,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             };
 
         return (
-            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER} style={style} id={this.props.id} tabIndex={2}>
+            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER} style={style} id={this.props.id}>
                 {
                     this.state.amendingCommits.length > 0 || (this.state.lastCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'down')
                         ? this.renderAmendingCommits()
