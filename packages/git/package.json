@@ -12,7 +12,6 @@
     "@theia/workspace": "^0.7.0",
     "@types/diff": "^3.2.2",
     "@types/fs-extra": "^4.0.2",
-    "@types/p-queue": "^2.3.1",
     "diff": "^3.4.0",
     "dugite-extra": "0.1.11",
     "find-git-exec": "^0.0.1-alpha.2",
@@ -20,7 +19,6 @@
     "fs-extra": "^4.0.2",
     "moment": "^2.21.0",
     "octicons": "^7.1.0",
-    "p-queue": "^2.4.2",
     "ts-md5": "^1.2.2"
   },
   "publishConfig": {

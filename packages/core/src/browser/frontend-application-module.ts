@@ -73,6 +73,8 @@ import { ContextKeyService } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
+import { ViewContainer } from './view-container';
+import { Widget } from './widgets';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -236,6 +238,25 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindCorePreferences(bind);
 
     bind(MimeService).toSelf().inSingletonScope();
+
+    bind(ViewContainer.Factory).toFactory(context => (...descriptors: ViewContainer.Factory.WidgetDescriptor[]) => {
+        const { container } = context;
+        const services: ViewContainer.Services = {
+            contextMenuRenderer: container.get(ContextMenuRenderer),
+            commandRegistry: container.get(CommandRegistry),
+            menuRegistry: container.get(MenuModelRegistry)
+        };
+        const inputs: Array<{ widget: Widget, options?: ViewContainer.Factory.WidgetOptions }> = [];
+        for (const descriptor of descriptors) {
+            const { widget, options } = descriptor;
+            if (widget instanceof Widget) {
+                inputs.push({ widget, options });
+            } else {
+                inputs.push({ widget: container.get(widget), options });
+            }
+        }
+        return new ViewContainer(services, ...inputs);
+    });
 });
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
