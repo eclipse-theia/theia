@@ -976,12 +976,11 @@ export class GitAmendSupport implements ScmAmendSupport {
 
     constructor(protected readonly repository: Repository, protected readonly git: Git) { }
 
-    public async getIntialAmendingCommits(storedState: string, lastHead: string): Promise<ScmCommit[]> {
-        const { amendingHeadCommitSha } = JSON.parse(storedState);
+    public async getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]> {
         const commits = await this.git.log(
             this.repository,
             {
-                range: { toRevision: amendingHeadCommitSha, fromRevision: lastHead },
+                range: { toRevision: amendingHeadCommitSha, fromRevision: latestCommitSha },
                 maxCount: 50
             }
         );
@@ -998,7 +997,7 @@ export class GitAmendSupport implements ScmAmendSupport {
     }
 
     public async getLastCommit(): Promise<ScmCommit | undefined> {
-        const commits = await this.git.log(this.repository, { maxCount: 1, shortSha: true });
+        const commits = await this.git.log(this.repository, { maxCount: 1 });
         if (commits.length > 0) {
             return this.createScmCommit(commits[0]);
         }
