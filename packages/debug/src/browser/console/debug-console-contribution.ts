@@ -15,16 +15,28 @@
  ********************************************************************************/
 
 import { interfaces, injectable } from 'inversify';
-import { AbstractViewContribution, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { AbstractViewContribution, bindViewContribution, WidgetFactory, Widget } from '@theia/core/lib/browser';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ConsoleWidget, ConsoleOptions } from '@theia/console/lib/browser/console-widget';
 import { DebugConsoleSession } from './debug-console-session';
+import { Command, CommandRegistry } from '@theia/core/lib/common/command';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
 
+export namespace DebugConsoleCommands {
+    const DEBUG_CONSOLE_CATEGORY = 'Debug';
+    export const CLEAR: Command = {
+        id: 'debug.console.clear',
+        category: DEBUG_CONSOLE_CATEGORY,
+        label: 'Clear Console',
+        iconClass: 'clear-all'
+    };
+}
+
 @injectable()
-export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> {
+export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution {
 
     constructor() {
         super({
@@ -35,6 +47,26 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             },
             toggleCommandId: 'debug:console:toggle',
             toggleKeybinding: 'ctrlcmd+shift+y'
+        });
+    }
+
+    registerCommands(commands: CommandRegistry): void {
+        super.registerCommands(commands);
+        commands.registerCommand(DebugConsoleCommands.CLEAR, {
+            isEnabled: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.withWidget(widget, () => true),
+            execute: widget => this.withWidget(widget, () => {
+                this.clearConsole();
+            }),
+        });
+    }
+
+    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): void {
+        toolbarRegistry.registerItem({
+            id: DebugConsoleCommands.CLEAR.id,
+            command: DebugConsoleCommands.CLEAR.id,
+            tooltip: 'Clear Console',
+            priority: 0,
         });
     }
 
@@ -75,10 +107,26 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             context.container.get(DebugConsoleSession);
             return _;
         });
+        bind(TabBarToolbarContribution).toService(DebugConsoleContribution);
         bind(WidgetFactory).toDynamicValue(({ container }) => ({
             id: DebugConsoleContribution.options.id,
             createWidget: () => DebugConsoleContribution.create(container)
         }));
+    }
+
+    protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: ConsoleWidget) => T): T | false {
+        if (widget instanceof ConsoleWidget && widget.id === DebugConsoleContribution.options.id) {
+            return fn(widget);
+        }
+        return false;
+    }
+
+    /**
+     * Clear the console widget.
+     */
+    protected async clearConsole(): Promise<void> {
+        const widget = await this.widget;
+        widget.clear();
     }
 
 }
