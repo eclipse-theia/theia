@@ -14,22 +14,32 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { InputBoxOptions } from '@theia/plugin';
+import { InputBoxOptions, QuickPickItem as QuickPickItemExt } from '@theia/plugin';
 import { interfaces } from 'inversify';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { RPCProtocol } from '../../api/rpc-protocol';
-import { QuickOpenExt, QuickOpenMain, MAIN_RPC_CONTEXT, PickOptions, PickOpenItem } from '../../api/plugin-api';
+import { QuickOpenExt, QuickOpenMain, MAIN_RPC_CONTEXT, PickOptions, PickOpenItem, ITransferInputBox, QuickInputTitleButtonHandle, ITransferQuickPick } from '../../api/plugin-api';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
-import { QuickInputService } from '@theia/core/lib/browser';
+import { QuickInputService, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser';
+import { PluginSharedStyle } from './plugin-shared-style';
+import URI from 'vscode-uri';
+import { ThemeIcon, QuickInputButton } from '../../plugin/types-impl';
+import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-pick-service';
+import { QuickTitleBar, QuickInputTitleButtonSide } from '@theia/core/lib/browser/quick-open/quick-title-bar';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
 
     private quickInput: QuickInputService;
+    private quickPick: QuickPickService;
+    private quickTitleBar: QuickTitleBar;
     private doResolve: (value?: number | number[] | PromiseLike<number | number[]> | undefined) => void;
     private proxy: QuickOpenExt;
     private delegate: MonacoQuickOpenService;
     private acceptor: ((items: QuickOpenItem[]) => void) | undefined;
     private items: QuickOpenItem[] | undefined;
+
+    private sharedStyle: PluginSharedStyle;
 
     private activeElement: HTMLElement | undefined;
 
@@ -37,6 +47,9 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
         this.delegate = container.get(MonacoQuickOpenService);
         this.quickInput = container.get(QuickInputService);
+        this.quickTitleBar = container.get(QuickTitleBar);
+        this.quickPick = container.get(QuickPickService);
+        this.sharedStyle = container.get(PluginSharedStyle);
     }
 
     private cleanUp() {
@@ -90,6 +103,20 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         return Promise.resolve();
     }
 
+    private convertPickOpenItemToQuickOpenItem<T>(items: PickOpenItem[]): QuickPickItem<Object>[] {
+        const convertedItems: QuickPickItem<Object>[] = [];
+        for (const i of items) {
+            convertedItems.push({
+                label: i.label,
+                description: i.description,
+                detail: i.detail,
+                type: i,
+                value: i.label
+            } as QuickPickValue<Object>);
+        }
+        return convertedItems;
+    }
+
     // tslint:disable-next-line:no-any
     $setError(error: Error): Promise<any> {
         throw new Error('Method not implemented.');
@@ -103,11 +130,175 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         return this.quickInput.open(options);
     }
 
+    convertQuickInputButton(quickInputButton: QuickInputButton, index: number): QuickInputTitleButtonHandle {
+        const currentIconPath = quickInputButton.iconPath;
+        let newIcon = '';
+        let newIconClass = '';
+        if ('id' in currentIconPath || currentIconPath instanceof ThemeIcon) {
+            newIconClass = this.resolveIconClassFromThemeIcon(currentIconPath);
+        } else if (currentIconPath instanceof URI) {
+            newIcon = currentIconPath.toString();
+        } else {
+            const { light, dark } = currentIconPath as { light: string | URI, dark: string | URI };
+            const themedIconClasses = {
+                light: light.toString(),
+                dark: dark.toString()
+            };
+            newIconClass = this.sharedStyle.toIconClass(themedIconClasses);
+        }
+
+        const isDefaultQuickInputButton = 'id' in quickInputButton.iconPath && quickInputButton.iconPath.id === 'Back' ? true : false;
+        return {
+            icon: newIcon,
+            iconClass: newIconClass,
+            tooltip: quickInputButton.tooltip,
+            side: isDefaultQuickInputButton ? QuickInputTitleButtonSide.LEFT : QuickInputTitleButtonSide.RIGHT,
+            index: isDefaultQuickInputButton ? -1 : index
+        };
+    }
+
+    private resolveIconClassFromThemeIcon(themeIconID: ThemeIcon): string {
+        switch (themeIconID.id) {
+            case 'folder': {
+                return FOLDER_ICON;
+            }
+            case 'file': {
+                return FILE_ICON;
+            }
+            case 'Back': {
+                return 'fa fa-arrow-left';
+            }
+            default: {
+                return '';
+            }
+        }
+    }
+
+    $showInputBox(inputBox: ITransferInputBox, validateInput: boolean): void {
+        if (validateInput) {
+            inputBox.validateInput = val => this.proxy.$validateInput(val);
+        }
+
+        const quickInput = this.quickInput.open({
+            busy: inputBox.busy,
+            enabled: inputBox.enabled,
+            ignoreFocusOut: inputBox.ignoreFocusOut,
+            password: inputBox.password,
+            step: inputBox.step,
+            title: inputBox.title,
+            totalSteps: inputBox.totalSteps,
+            buttons: inputBox.buttons.map((btn, i) => this.convertQuickInputButton(btn, i)),
+            validationMessage: inputBox.validationMessage,
+            placeHolder: inputBox.placeholder,
+            value: inputBox.value,
+            prompt: inputBox.prompt,
+            validateInput: inputBox.validateInput
+        });
+
+        const disposableListeners = new DisposableCollection();
+        disposableListeners.push(this.quickInput.onDidAccept(() => this.proxy.$acceptOnDidAccept(inputBox.quickInputIndex)));
+        disposableListeners.push(this.quickInput.onDidChangeValue(changedText => this.proxy.$acceptDidChangeValue(inputBox.quickInputIndex, changedText)));
+        disposableListeners.push(this.quickTitleBar.onDidTriggerButton(button => {
+            this.proxy.$acceptOnDidTriggerButton(inputBox.quickInputIndex, button);
+        }));
+        quickInput.then(selection => {
+            if (selection) {
+                this.proxy.$acceptDidChangeSelection(inputBox.quickInputIndex, selection as string);
+            }
+            this.proxy.$acceptOnDidHide(inputBox.quickInputIndex);
+            disposableListeners.dispose();
+        });
+    }
+
+    // tslint:disable-next-line:no-any
+    private findChangedKey(key: string, value: any) {
+        switch (key) {
+            case 'title': {
+                this.quickTitleBar.title = value;
+                break;
+            }
+            case 'step': {
+                this.quickTitleBar.step = value;
+                break;
+            }
+            case 'totalSteps': {
+                this.quickTitleBar.totalSteps = value;
+                break;
+            }
+            case 'buttons': {
+                this.quickTitleBar.buttons = value;
+                break;
+            }
+            case 'value': {
+                this.delegate.setValue(value);
+                break;
+            }
+            case 'enabled': {
+                this.delegate.setEnabled(value);
+                break;
+            }
+            case 'password': {
+                this.delegate.setPassword(value);
+                break;
+            }
+            case 'placeholder': {
+                this.delegate.setPlaceHolder(value);
+                break;
+            }
+        }
+    }
+
+    // tslint:disable-next-line:no-any
+    $setQuickInputChanged(changed: any) {
+        for (const key in changed) {
+            if (changed.hasOwnProperty(key)) {
+                const value = changed[key];
+                this.findChangedKey(key, value);
+            }
+        }
+    }
+    $refreshQuickInput() {
+        this.quickInput.refresh();
+    }
+
+    $showCustomQuickPick<T extends QuickPickItemExt>(options: ITransferQuickPick<T>): void {
+        const items = this.convertPickOpenItemToQuickOpenItem(options.items);
+        const quickPick = this.quickPick.show(items, {
+            buttons: options.buttons.map((btn, i) => this.convertQuickInputButton(btn, i)),
+            placeholder: options.placeholder,
+            fuzzyMatchDescription: options.matchOnDescription,
+            fuzzyMatchLabel: true,
+            step: options.step,
+            title: options.title,
+            totalSteps: options.totalSteps,
+            ignoreFocusOut: options.ignoreFocusOut,
+            value: options.value
+        });
+
+        const disposableListeners = new DisposableCollection();
+        disposableListeners.push(this.quickPick.onDidAccept(() => this.proxy.$acceptOnDidAccept(options.quickInputIndex)));
+        disposableListeners.push(this.quickPick.onDidChangeActiveItems(changedItems => this.proxy.$acceptDidChangeActive(options.quickInputIndex, changedItems)));
+        disposableListeners.push(this.quickTitleBar.onDidTriggerButton(button => {
+            this.proxy.$acceptOnDidTriggerButton(options.quickInputIndex, button);
+        }));
+        quickPick.then(selection => {
+            if (selection) {
+                this.proxy.$acceptDidChangeSelection(options.quickInputIndex, selection as string);
+            }
+            this.proxy.$acceptOnDidHide(options.quickInputIndex);
+            disposableListeners.dispose();
+        });
+    }
+
     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         this.acceptor = acceptor;
         if (this.items) {
             acceptor(this.items);
         }
+    }
+
+    $hide(): void {
+        this.delegate.hide();
     }
 
 }
