@@ -78,13 +78,13 @@ export class LeftPanel {
         this.driver.pause(300);
     }
 
-    isGitContainerVisible(): boolean {
-        return (this.driver.isExisting('#theia-gitContainer') && this.driver.element('#theia-gitContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
+    isScmContainerVisible(): boolean {
+        return (this.driver.isExisting('#theia-scmContainer') && this.driver.element('#theia-scmContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
             && this.isPanelVisible());
     }
 
-    waitForGitViewVisible(): void {
-        this.driver.waitForVisible('#theia-gitContainer');
+    waitForScmViewVisible(): void {
+        this.driver.waitForVisible('#theia-scmContainer');
         // Wait for animations to finish
         this.driver.pause(300);
     }

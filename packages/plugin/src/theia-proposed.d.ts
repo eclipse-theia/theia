@@ -81,6 +81,16 @@ declare module '@theia/plugin' {
     }
 
 
+    /**
+     * The contiguous set of modified lines in a diff.
+     */
+    export interface LineChange {
+        readonly originalStartLineNumber: number;
+        readonly originalEndLineNumber: number;
+        readonly modifiedStartLineNumber: number;
+        readonly modifiedEndLineNumber: number;
+    }
+
     export namespace commands {
 
         /**
@@ -88,6 +98,22 @@ declare module '@theia/plugin' {
         * @param commandId The ID of the command for which we are looking for keybindings.
         */
         export function getKeyBinding(commandId: string): PromiseLike<CommandKeyBinding[] | undefined>;
+
+        /**
+         * Registers a diff information command that can be invoked via a keyboard shortcut,
+         * a menu item, an action, or directly.
+         *
+         * Diff information commands are different from ordinary [commands](#commands.registerCommand) as
+         * they only execute when there is an active diff editor when the command is called, and the diff
+         * information has been computed. Also, the command handler of an editor command has access to
+         * the diff information.
+         *
+         * @param command A unique identifier for the command.
+         * @param callback A command handler function with access to the [diff information](#LineChange).
+         * @param thisArg The `this` context used when invoking the handler function.
+         * @return Disposable which unregisters this command on disposal.
+         */
+        export function registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable;
 
     }
 
@@ -103,6 +129,12 @@ declare module '@theia/plugin' {
          * Value of the keyBinding
          */
         value: string;
+    }
+
+    export interface SourceControlResourceDecorations {
+        source?: string;
+        letter?: string;
+        color?: ThemeColor;
     }
 
     /**
@@ -129,5 +161,29 @@ declare module '@theia/plugin' {
          */
         export function getClientOperatingSystem(): PromiseLike<OperatingSystem>;
 
+    }
+
+    export interface DecorationData {
+        letter?: string;
+        title?: string;
+        color?: ThemeColor;
+        priority?: number;
+        bubble?: boolean;
+        source?: string;
+    }
+
+    export interface SourceControlResourceDecorations {
+        source?: string;
+        letter?: string;
+        color?: ThemeColor;
+    }
+
+    export interface DecorationProvider {
+        onDidChangeDecorations: Event<undefined | Uri | Uri[]>;
+        provideDecoration(uri: Uri, token: CancellationToken): ProviderResult<DecorationData>;
+    }
+
+    export namespace window {
+        export function registerDecorationProvider(provider: DecorationProvider): Disposable;
     }
 }

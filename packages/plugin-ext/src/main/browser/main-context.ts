@@ -38,6 +38,8 @@ import { StorageMainImpl } from './plugin-storage';
 import { LanguagesContributionMainImpl } from './languages-contribution-main';
 import { DebugMainImpl } from './debug/debug-main';
 import { FileSystemMainImpl } from './file-system-main';
+import { ScmMainImpl } from './scm-main';
+import { DecorationsMainImpl } from './decorations/decorations-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -103,4 +105,10 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);
 
     rpc.set(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN, new FileSystemMainImpl(rpc, container));
+
+    const scmMain = new ScmMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.SCM_MAIN, scmMain);
+
+    const decorationsMain = new DecorationsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.DECORATIONS_MAIN, decorationsMain);
 }

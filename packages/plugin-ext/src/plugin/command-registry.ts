@@ -23,14 +23,21 @@ import { KnownCommands } from './type-converters';
 // tslint:disable-next-line:no-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
 
+export interface ArgumentProcessor {
+    // tslint:disable-next-line:no-any
+    processArgument(arg: any): any;
+}
+
 export class CommandRegistryImpl implements CommandRegistryExt {
 
     private proxy: CommandRegistryMain;
     private readonly commands = new Set<string>();
     private readonly handlers = new Map<string, Handler>();
+    private readonly argumentProcessors: ArgumentProcessor[];
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
+        this.argumentProcessors = [];
     }
 
     // tslint:disable-next-line:no-any
@@ -98,6 +105,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         const handler = this.handlers.get(id);
         if (handler) {
+            args = args.map(arg => this.argumentProcessors.reduce((r, p) => p.processArgument(r), arg));
             return Promise.resolve(handler(...args));
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
@@ -110,5 +118,9 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             return result.filter(command => command[0] !== '_');
         }
         return result;
+    }
+
+    registerArgumentProcessor(processor: ArgumentProcessor): void {
+        this.argumentProcessors.push(processor);
     }
 }
