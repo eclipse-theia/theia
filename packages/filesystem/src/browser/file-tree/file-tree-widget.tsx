@@ -98,7 +98,13 @@ export class FileTreeWidget extends TreeWidget {
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
         event.stopPropagation();
-        this.setTreeNodeAsData(event.dataTransfer, node);
+        let elements;
+        if (this.model.selectedNodes.find(selected => TreeNode.equals(selected, node))) {
+            elements = [...this.model.selectedNodes];
+        } else {
+            elements = [node];
+        }
+        this.setTreeNodesAsData(event.dataTransfer, elements);
     }
 
     protected handleDragEnterEvent(node: TreeNode | undefined, event: React.DragEvent): void {
@@ -139,9 +145,13 @@ export class FileTreeWidget extends TreeWidget {
             event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
             const containing = DirNode.getContainingDir(node);
             if (containing) {
-                const source = this.getTreeNodeFromData(event.dataTransfer);
-                if (source) {
-                    await this.model.move(source, containing);
+                const resources = this.getTreeNodesFromData(event.dataTransfer);
+                if (resources.length > 0) {
+                    for (const treeNode of resources) {
+                        if (treeNode) {
+                            await this.model.move(treeNode, containing);
+                        }
+                    }
                 } else {
                     await this.uploadService.upload(containing.uri, { source: event.dataTransfer });
                 }
@@ -152,14 +162,16 @@ export class FileTreeWidget extends TreeWidget {
             }
         }
     }
-
-    protected setTreeNodeAsData(data: DataTransfer, node: TreeNode): void {
-        data.setData('tree-node', node.id);
+    protected setTreeNodesAsData(data: DataTransfer, nodes: TreeNode[]): void {
+        data.setData('tree-nodes', JSON.stringify(nodes.map(node => node.id)));
     }
 
-    protected getTreeNodeFromData(data: DataTransfer): TreeNode | undefined {
-        const id = data.getData('tree-node');
-        return this.model.getNode(id);
+    protected getTreeNodesFromData(data: DataTransfer) {
+        const resources = data.getData('tree-nodes');
+        if (!resources) {
+            return [];
+        }
+        const ids: string[] = JSON.parse(resources);
+        return ids.map(id => this.model.getNode(id));
     }
-
 }

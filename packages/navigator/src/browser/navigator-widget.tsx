@@ -101,11 +101,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
     protected enableDndOnMainPanel(): void {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
-            const treeNode = dataTransfer && this.getTreeNodeFromData(dataTransfer) || undefined;
-
-            if (FileNode.is(treeNode)) {
-                this.commandService.executeCommand(CommonCommands.OPEN.id, treeNode.uri);
-            }
+            const treeNodes = dataTransfer && this.getTreeNodesFromData(dataTransfer) || [];
+            treeNodes.filter(FileNode.is).forEach(treeNode => this.commandService.executeCommand(CommonCommands.OPEN.id, treeNode.uri));
         });
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {
