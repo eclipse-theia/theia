@@ -35,7 +35,13 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     // tslint:disable-next-line:no-any
-    registerCommand(command: theia.CommandDescription, handler?: Handler, thisArg?: any): Disposable {
+    registerCommand(command: theia.CommandDescription | String, handler?: Handler, thisArg?: any): Disposable {
+
+        if (typeof command === 'string' || command instanceof String) {
+            const tCommand = { id: command };
+            command = tCommand as theia.CommandDescription;
+        }
+
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
         }
@@ -47,7 +53,9 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             toDispose.push(this.registerHandler(command.id, handler, thisArg));
         }
         toDispose.push(Disposable.create(() => {
+            // @ts-ignore
             this.commands.delete(command.id);
+            // @ts-ignore
             this.proxy.$unregisterCommand(command.id);
         }));
         return Disposable.from(...toDispose);
