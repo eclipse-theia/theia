@@ -451,7 +451,7 @@ export class MiniBrowserContent extends BaseWidget {
         clearTimeout(this.frameLoadTimeout);
         this.maybeResetBackground();
         this.hideLoadIndicator();
-        this.showErrorBar('Loading this page is taking longer than usual');
+        this.showErrorBar('Still loading...');
     }
 
     protected showLoadIndicator(): void {
@@ -657,7 +657,7 @@ export class MiniBrowserContent extends BaseWidget {
                     this.input.title = `Open ${url} In A New Window`;
                 }
                 clearTimeout(this.frameLoadTimeout);
-                this.frameLoadTimeout = window.setTimeout(this.onFrameTimeout.bind(this), 3000);
+                this.frameLoadTimeout = window.setTimeout(this.onFrameTimeout.bind(this), 4000);
                 if (showLoadIndicator) {
                     this.showLoadIndicator();
                 }
