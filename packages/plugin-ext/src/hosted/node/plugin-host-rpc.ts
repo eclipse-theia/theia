@@ -26,6 +26,7 @@ import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
 import { MessageRegistryExt } from '../../plugin/message-registry';
 import { EnvNodeExtImpl } from '../../plugin/node/env-node-ext';
+import { SelectionServiceExt } from '../../plugin/selection-provider-ext';
 
 /**
  * Handle the RPC calls.
@@ -47,6 +48,7 @@ export class PluginHostRPC {
         const messageRegistryExt = new MessageRegistryExt(this.rpc);
         const workspaceExt = new WorkspaceExtImpl(this.rpc, editorsAndDocumentsExt, messageRegistryExt);
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc, workspaceExt);
+        const selectionServiceExt = new SelectionServiceExt();
         this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
@@ -61,7 +63,8 @@ export class PluginHostRPC {
             preferenceRegistryExt,
             editorsAndDocumentsExt,
             workspaceExt,
-            messageRegistryExt
+            messageRegistryExt,
+            selectionServiceExt
         );
     }
 

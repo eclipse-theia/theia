@@ -25,6 +25,7 @@ import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem }
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
 import { PluginPackage } from '../../common';
+import { SelectionServiceExt } from '../selection-provider-ext';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 
@@ -32,7 +33,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
 
     private treeViews: Map<string, TreeViewExtImpl<any>> = new Map<string, TreeViewExtImpl<any>>();
 
-    constructor(rpc: RPCProtocol, private commandRegistry: CommandRegistryImpl) {
+    constructor(rpc: RPCProtocol, private commandRegistry: CommandRegistryImpl, private selectionService: SelectionServiceExt) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN);
     }
 
@@ -50,7 +51,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             throw new Error('Options with treeDataProvider is mandatory');
         }
 
-        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry);
+        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry, this.selectionService);
         this.treeViews.set(treeViewId, treeView);
 
         return {
@@ -129,7 +130,8 @@ class TreeViewExtImpl<T> extends Disposable {
         private treeViewId: string,
         private treeDataProvider: TreeDataProvider<T>,
         private proxy: TreeViewsMain,
-        private commandRegistry: CommandRegistryImpl) {
+        private commandRegistry: CommandRegistryImpl,
+        private selectionService: SelectionServiceExt) {
 
         super(() => {
             this.dispose();
@@ -288,6 +290,8 @@ class TreeViewExtImpl<T> extends Disposable {
         // get element from a cache
         const cachedElement: T | undefined = this.cache.get(treeItemId);
 
+        this.selectionService.selection = undefined;
+
         if (cachedElement) {
             this.selection = [cachedElement];
 
@@ -295,9 +299,11 @@ class TreeViewExtImpl<T> extends Disposable {
             const treeItem = await this.treeDataProvider.getTreeItem(cachedElement);
 
             if (!contextSelection && treeItem.command) {
-                this.commandRegistry.executeCommand((treeItem.command.command || treeItem.command.id)!, ...(treeItem.command.arguments || []));
+                await this.commandRegistry.executeCommand((treeItem.command.command || treeItem.command.id)!, ...(treeItem.command.arguments || []));
             }
         }
+
+        this.selectionService.selection = cachedElement;
     }
 
 }
