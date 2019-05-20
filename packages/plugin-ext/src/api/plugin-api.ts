@@ -421,6 +421,7 @@ export interface TreeViewsExt {
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
     $setSelection(treeViewId: string, treeItemId: string, contextSelection: boolean): Promise<any>;
+    $onCommandExecuted(treeViewId: string, treeItemId: string, commandId: string): Promise<any>;
 }
 
 export class TreeViewItem {

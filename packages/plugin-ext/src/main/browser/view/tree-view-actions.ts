@@ -18,13 +18,25 @@ import { injectable, inject } from 'inversify';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Menu } from '../../../common/plugin-protocol';
+import { TreeViewsExt } from '../../../api/plugin-api';
 
+export interface TreeViewSelection {
+    treeViewId: string;
+    treeItemId: string;
+}
+export namespace TreeViewSelection {
+    export function is(arg: Object | undefined): arg is TreeViewSelection {
+        return typeof arg === 'object' &&
+            ('treeViewId' in arg) && ('treeItemId' in arg);
+    }
+}
 // tslint:disable:no-any
 
 @injectable()
 export class TreeViewActions {
 
     protected inlineActions: Menu[] = [];
+    protected treeViewExt: TreeViewsExt;
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
@@ -34,6 +46,21 @@ export class TreeViewActions {
 
     registerInlineAction(action: Menu): void {
         this.inlineActions.push(action);
+    }
+
+    registerTreeViewProxy(treeViewExt: TreeViewsExt) {
+        this.treeViewExt = treeViewExt;
+    }
+
+    viewItemSelection(selection: any) {
+        if (TreeViewSelection.is(selection)) {
+            return selection;
+        }
+    }
+    executeTreeViewCommand(treeViewId: string, treeItemId: string, commandId: string) {
+        if (this.treeViewExt) {
+            return this.treeViewExt.$onCommandExecuted(treeViewId, treeItemId, commandId);
+        }
     }
 
     getInlineCommands(...args: any[]): Command[] {

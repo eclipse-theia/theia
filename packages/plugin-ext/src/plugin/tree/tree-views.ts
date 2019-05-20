@@ -27,6 +27,8 @@ import { CommandRegistryImpl } from '../command-registry';
 import { PluginPackage } from '../../common';
 import { SelectionServiceExt } from '../selection-provider-ext';
 
+const NO_TREE_WITH_ID_MSG = 'No tree view with id';
+
 export class TreeViewsExtImpl implements TreeViewsExt {
 
     private proxy: TreeViewsMain;
@@ -76,11 +78,10 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             }
         };
     }
-
     async $getChildren(treeViewId: string, treeItemId: string): Promise<TreeViewItem[] | undefined> {
         const treeView = this.treeViews.get(treeViewId);
         if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
+            throw new Error(NO_TREE_WITH_ID_MSG + treeViewId);
         }
 
         return treeView.getChildren(treeItemId);
@@ -89,7 +90,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
     async $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any> {
         const treeView = this.treeViews.get(treeViewId);
         if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
+            throw new Error(NO_TREE_WITH_ID_MSG + treeViewId);
         }
 
         if (expanded) {
@@ -102,10 +103,18 @@ export class TreeViewsExtImpl implements TreeViewsExt {
     async $setSelection(treeViewId: string, treeItemId: string, contextSelection: boolean): Promise<any> {
         const treeView = this.treeViews.get(treeViewId);
         if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
+            throw new Error(NO_TREE_WITH_ID_MSG + treeViewId);
         }
 
         treeView.onSelectionChanged(treeItemId, contextSelection);
+    }
+
+    async $onCommandExecuted(treeViewId: string, treeItemId: string, commandId: string): Promise<any> {
+        const treeView = this.treeViews.get(treeViewId);
+        if (!treeView) {
+            throw new Error(NO_TREE_WITH_ID_MSG + treeViewId);
+        }
+        return treeView.onCommandOnItem(treeItemId, commandId);
     }
 
 }
@@ -248,7 +257,6 @@ class TreeViewExtImpl<T> extends Disposable {
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
-                    metadata: value,
                     contextValue: treeItem.contextValue
                 } as TreeViewItem;
 
@@ -306,4 +314,10 @@ class TreeViewExtImpl<T> extends Disposable {
         this.selectionService.selection = cachedElement;
     }
 
+    onCommandOnItem(treeItemId: string, commandId: string): any {
+        const cachedElement: T | undefined = this.cache.get(treeItemId);
+        if (cachedElement) {
+            this.commandRegistry.executeCommand(commandId, cachedElement);
+        }
+    }
 }

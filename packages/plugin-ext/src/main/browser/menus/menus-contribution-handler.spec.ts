@@ -45,6 +45,7 @@ import {
     ScmGroupCommandContribution,
     ScmGroupCommandRegistry
 } from '@theia/scm/lib/browser/scm-group-command-registry';
+import { TreeViewContextKeyService } from '../view/tree-view-context-key-service';
 
 disableJSDOM();
 
@@ -84,6 +85,7 @@ before(() => {
         bind(PluginSharedStyle).toConstantValue({} as any);
         bind(SelectionService).toSelf().inSingletonScope();
         bind(TreeViewActions).toSelf().inSingletonScope();
+        bind(TreeViewContextKeyService).toSelf().inSingletonScope();
     });
 
     testContainer.load(module);

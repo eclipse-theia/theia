@@ -318,7 +318,8 @@ class MessageFactory {
         if (messageToSendHostId) {
             prefix = `"hostID":"${messageToSendHostId}",`;
         }
-        return `{${prefix}"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args, ObjectsTransferrer.replacer)}}`;
+        return `{${prefix}"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}",
+                 "args":${JSON.stringify(args, ObjectsTransferrer.replacer)}}`;
     }
 
     public static replyOK(req: string, res: any, messageToSendHostId?: string): string {
@@ -329,18 +330,19 @@ class MessageFactory {
         if (typeof res === 'undefined') {
             return `{${prefix}"type":${MessageType.Reply},"id":"${req}"}`;
         }
-        return `{${prefix}"type":${MessageType.Reply},"id":"${req}","res":${JSON.stringify(res, ObjectsTransferrer.replacer)}}`;
+        return `{${prefix}"type":${MessageType.Reply},"id":"${req}",
+                 "res":${JSON.stringify(res, ObjectsTransferrer.replacer)}}`;
     }
 
     public static replyErr(req: string, err: any, messageToSendHostId?: string): string {
         let prefix = '';
         if (messageToSendHostId) {
-            prefix = `"hostID":"${messageToSendHostId}",`;
+            prefix = `"hostID": "${messageToSendHostId}", `;
         }
         if (err instanceof Error) {
-            return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":${JSON.stringify(transformErrorForSerialization(err))}}`;
+            return `{ ${prefix} "type": ${MessageType.ReplyErr}, "id": "${req}", "err": ${JSON.stringify(transformErrorForSerialization(err))} } `;
         }
-        return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
+        return `{ ${prefix} "type": ${MessageType.ReplyErr}, "id": "${req}", "err": null } `;
     }
 }
 

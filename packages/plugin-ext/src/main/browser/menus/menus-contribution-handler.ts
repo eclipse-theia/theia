@@ -27,13 +27,13 @@ import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
 import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
-import { MetadataSelection } from '../metadata-selection';
 import { TreeViewActions } from '../view/tree-view-actions';
 import { ScmTitleCommandRegistry } from '@theia/scm/lib/browser/scm-title-command-registry';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmGroupCommandRegistry } from '@theia/scm/lib/browser/scm-group-command-registry';
 import { ScmResourceCommandRegistry } from '@theia/scm/lib/browser/scm-resource-command-registry';
 import PATH = ScmWidget.ContextMenu.PATH;
+import { TreeViewContextKeyService } from '../view/tree-view-context-key-service';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -55,6 +55,9 @@ export class MenusContributionPointHandler {
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
+
+    @inject(TreeViewContextKeyService)
+    protected readonly contextKeys: TreeViewContextKeyService;
 
     @inject(TreeViewActions)
     protected readonly treeViewActions: TreeViewActions;
@@ -228,19 +231,28 @@ export class MenusContributionPointHandler {
     protected registerMenuAction(menuPath: MenuPath, menu: Menu): void {
         const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
+        const getItemViewSelection = () => {
+            const selection = this.selectionService.selection;
+            return this.treeViewActions.viewItemSelection(selection);
+        };
+
         const selectedResource = () => {
             const selection = this.selectionService.selection;
-
-            const metadata = MetadataSelection.getMetadata(selection);
-            if (metadata) {
-                return metadata;
-            }
-
             const uri = UriSelection.getUri(selection);
             return uri ? uri['codeUri'] : (typeof selection !== 'object' && typeof selection !== 'function') ? selection : undefined;
         };
+
+        const executeCommand = () => {
+            const viewItemSelection = getItemViewSelection();
+            if (viewItemSelection) {
+                return this.treeViewActions.executeTreeViewCommand(viewItemSelection.treeViewId,
+                    viewItemSelection.treeItemId, menu.command);
+            }
+            return this.commands.executeCommand(menu.command, selectedResource());
+        };
+
         this.commands.registerCommand(command, {
-            execute: () => this.commands.executeCommand(menu.command, selectedResource()),
+            execute: () => executeCommand(),
             isEnabled: () => this.commands.isEnabled(menu.command, selectedResource()),
             isVisible: () => this.commands.isVisible(menu.command, selectedResource())
         });
