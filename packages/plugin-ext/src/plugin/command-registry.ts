@@ -19,6 +19,7 @@ import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } fr
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from './types-impl';
 import { KnownCommands } from './type-converters';
+import { SelectionServiceExt } from './selection-provider-ext';
 
 // tslint:disable-next-line:no-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
@@ -29,7 +30,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private readonly commands = new Set<string>();
     private readonly handlers = new Map<string, Handler>();
 
-    constructor(rpc: RPCProtocol) {
+    constructor(rpc: RPCProtocol, private selectionService: SelectionServiceExt) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
     }
 
@@ -98,7 +99,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private executeLocalCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
         const handler = this.handlers.get(id);
         if (handler) {
-            return Promise.resolve(handler(...args));
+            return Promise.resolve(this.selectionService.selection !== undefined ? handler(this.selectionService.selection) : handler(...args));
         } else {
             return Promise.reject(new Error(`Command ${id} doesn't exist`));
         }
