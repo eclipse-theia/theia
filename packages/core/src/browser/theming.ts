@@ -201,7 +201,7 @@ export class BuiltinThemeProvider {
         id: 'dark',
         label: 'Dark Theme',
         description: 'Bright fonts on dark backgrounds.',
-        editorTheme: 'vs-dark',
+        editorTheme: 'dark-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
         activate() {
             BuiltinThemeProvider.darkCss.use();
         },
@@ -214,7 +214,7 @@ export class BuiltinThemeProvider {
         id: 'light',
         label: 'Light Theme',
         description: 'Dark fonts on light backgrounds.',
-        editorTheme: 'vs',
+        editorTheme: 'light-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
         activate() {
             BuiltinThemeProvider.lightCss.use();
         },
