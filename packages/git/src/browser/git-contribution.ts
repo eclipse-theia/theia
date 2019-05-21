@@ -326,7 +326,7 @@ export class GitContribution implements
         );
     }
 
-    private async getGroups(status: WorkingDirectoryStatus | undefined, provider: ScmProvider): Promise<ScmResourceGroup[]> {
+    protected async getGroups(status: WorkingDirectoryStatus | undefined, provider: ScmProvider): Promise<ScmResourceGroup[]> {
         const groups: ScmResourceGroup[] = [];
         const stagedChanges = [];
         const unstagedChanges = [];
@@ -358,7 +358,7 @@ export class GitContribution implements
         return groups;
     }
 
-    private async getGroup(label: string, provider: ScmProvider, changes: GitFileChange[]): Promise<ScmResourceGroup> {
+    protected async getGroup(label: string, provider: ScmProvider, changes: GitFileChange[]): Promise<ScmResourceGroup> {
         const sort = (l: ScmResource, r: ScmResource) =>
             l.sourceUri.toString().substring(l.sourceUri.toString().lastIndexOf('/')).localeCompare(r.sourceUri.toString().substring(r.sourceUri.toString().lastIndexOf('/')));
         const group: ScmResourceGroup = {
@@ -390,7 +390,7 @@ export class GitContribution implements
                 }
             };
             const open = async () => {
-                const uriToOpen = await this.gitCommands.getUriToOpen(change);
+                const uriToOpen = this.gitCommands.getUriToOpen(change);
                 this.editorManager.open(uriToOpen, { mode: 'reveal' });
             };
             return resource;
@@ -401,7 +401,7 @@ export class GitContribution implements
     }
 
     /** Detect and handle added or removed repositories. */
-    private checkNewOrRemovedRepositories(): void {
+    protected checkNewOrRemovedRepositories(): void {
         const added =
             this.repositoryProvider
                 .allRepositories
@@ -426,7 +426,7 @@ export class GitContribution implements
         }
     }
 
-    private registerScmProvider(repository: Repository): ScmRepository {
+    protected registerScmProvider(repository: Repository): ScmRepository {
         const uri = repository.localUri;
         const disposableCollection: Disposable[] = [];
         const onDidChangeResourcesEmitter = new Emitter<void>();
@@ -770,7 +770,7 @@ export class GitContribution implements
     }
 
     async openChanges(widget?: Widget): Promise<EditorWidget | undefined> {
-        const options = await this.getOpenChangesOptions(widget);
+        const options = this.getOpenChangesOptions(widget);
         if (options) {
             return this.gitCommands.openChange(options.change, options.options);
         }

@@ -312,7 +312,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         }
     }
 
-    private renderButton(item: ScmTitleItem): React.ReactNode {
+    protected renderButton(item: ScmTitleItem): React.ReactNode {
         const command = this.commandRegistry.getCommand(item.command);
         if (item.when) {
             const provider = item.when.substring(item.when.indexOf('scmProvider == ') + 15);
@@ -336,7 +336,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         }
     }
 
-    private renderInputCommand(repository: ScmRepository | undefined): React.ReactNode {
+    protected renderInputCommand(repository: ScmRepository | undefined): React.ReactNode {
         if (repository && repository.provider.acceptInputCommand) {
             const command = repository.provider.acceptInputCommand;
             return <div className='buttons'>
@@ -350,7 +350,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         }
     }
 
-    private executeInputCommand(commandId: string, providerId: number): void {
+    protected executeInputCommand(commandId: string, providerId: number): void {
         this.inputCommandMessageValidation = undefined;
         if (this.message.trim().length === 0) {
             this.inputCommandMessageValidation = {
@@ -549,7 +549,7 @@ class ScmResourceGroupsContainer extends React.Component<ScmResourceGroupsContai
         );
     }
 
-    private renderGroup(group: ScmResourceGroup): React.ReactNode {
+    protected renderGroup(group: ScmResourceGroup): React.ReactNode {
         if (group.resources.length > 0) {
             return <ScmResourceGroupContainer
                 group={group}
