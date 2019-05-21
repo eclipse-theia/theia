@@ -234,10 +234,14 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         return new ConfigurationModel(this.parseConfigurationData(data), Object.keys(data));
     }
 
+    private readonly OVERRIDE_PROPERTY = '\\[(.*)\\]$';
+    private readonly OVERRIDE_PROPERTY_PATTERN = new RegExp(this.OVERRIDE_PROPERTY);
+
     private parseConfigurationData(data: { [key: string]: any }): { [key: string]: any } {
         return Object.keys(data).reduce((result: any, key: string) => {
             const parts = key.split('.');
             let branch = result;
+
             for (let i = 0; i < parts.length; i++) {
                 if (i === parts.length - 1) {
                     branch[parts[i]] = data[key];
@@ -247,6 +251,16 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     branch[parts[i]] = {};
                 }
                 branch = branch[parts[i]];
+
+                // overridden properties should be transformed into
+                // "[overridden_identifier]" : {
+                //              "property1" : "value1"
+                //              "property2" : "value2"
+                //  }
+                if (i === 0 && this.OVERRIDE_PROPERTY_PATTERN.test(parts[i])) {
+                    branch[key.substring(parts[0].length + 1)] = data[key];
+                    break;
+                }
             }
             return result;
         }, {});
