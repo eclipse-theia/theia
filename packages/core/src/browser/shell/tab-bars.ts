@@ -366,6 +366,14 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         this.toolbar.updateItems(items, widget);
     }
 
+    handleEvent(event: Event): void {
+        if (this.toolbar && event instanceof MouseEvent && this.toolbar.shouldHandleMouseEvent(event)) {
+            // if the mouse event is over the toolbar part don't handle it.
+            return;
+        }
+        super.handleEvent(event);
+    }
+
     /**
      * Restructures the DOM defined in PhosphorJS.
      *
