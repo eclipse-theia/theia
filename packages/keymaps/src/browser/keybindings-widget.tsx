@@ -240,9 +240,6 @@ export class KeybindingWidget extends ReactWidget {
         const commands = this.commandRegistry.commands.sort((a, b) => this.compareCommands(a, b));
         const items: KeybindingItem[] = [];
         for (let i = 0; i < commands.length; i++) {
-            if (!commands[i].label) {
-                continue;
-            }
             const keybindings = this.keybindingRegistry.getKeybindingsForCommand(commands[i].id);
             const item: KeybindingItem = {
                 id: commands[i].id,

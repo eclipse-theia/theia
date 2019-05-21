@@ -56,6 +56,7 @@ export class KeymapsService {
         if (this.resource.onDidChangeContents) {
             this.resource.onDidChangeContents(() => this.reconcile());
         }
+        this.keyBindingRegistry.onKeybindingsChanged(() => this.changeKeymapEmitter.fire(undefined));
     }
 
     protected async reconcile(): Promise<void> {

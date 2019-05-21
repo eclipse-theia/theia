@@ -166,7 +166,8 @@ export class KeybindingRegistry {
     protected keybindingsChanged = new Emitter<void>();
 
     /**
-     * Event that is fired when the resolved keybindings change due to a different keyboard layout.
+     * Event that is fired when the resolved keybindings change due to a different keyboard layout
+     * or when a new keymap is being set
      */
     get onKeybindingsChanged() {
         return this.keybindingsChanged.event;
@@ -652,6 +653,7 @@ export class KeybindingRegistry {
     setKeymap(scope: KeybindingScope, bindings: Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
         this.doRegisterKeybindings(bindings, scope);
+        this.keybindingsChanged.fire(undefined);
     }
 
     /**
