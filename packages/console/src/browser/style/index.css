@@ -23,14 +23,15 @@
 
 .theia-console-input {
     padding-left: 20px;
-	border-top: var(--theia-panel-border-width) solid var(--theia-border-color1);
+    padding-top: 5px;
+    border-top: var(--theia-panel-border-width) solid var(--theia-border-color1);
 }
 
 .theia-console-input:before {
-	left: 8px;
-	position: absolute;
+    left: 8px;
+    position: absolute;
     content: '\276f';
-	line-height: 18px;
+    line-height: 18px;
     color: var(--theia-ui-font-color1);
 }
 
