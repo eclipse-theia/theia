@@ -6,7 +6,10 @@
     "@theia/core": "^0.6.0",
     "@theia/editor": "^0.6.0",
     "@theia/filesystem": "^0.6.0",
-    "@theia/plugin-ext": "^0.6.0"
+    "@theia/navigator": "^0.6.0",
+    "@theia/plugin-ext": "^0.6.0",
+    "@types/diff": "^3.2.2",
+    "ts-md5": "^1.2.2"
   },
   "publishConfig": {
     "access": "public"

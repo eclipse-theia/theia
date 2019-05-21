@@ -305,11 +305,11 @@ class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup
         this.resourceStatesMap.clear();
         this.proxy.$updateResourceState(this.sourceControlHandle, this.handle, resources.map(resourceState => {
             const handle = SourceControlResourceGroupImpl.resourceHandle ++;
-            let command;
+            let resourceCommand;
             let decorations;
             if (resourceState.command) {
-                const { id, title, tooltip } = resourceState.command;
-                command = { id : id ? id : '', title: title ? title : '', tooltip };
+                const { command, title, tooltip } = resourceState.command;
+                resourceCommand = { id : command ? command : '', title: title ? title : '', tooltip };
             }
             if (resourceState.decorations) {
                 const { strikeThrough, faded, tooltip, light, dark } = resourceState.decorations;
@@ -323,7 +323,7 @@ class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup
             this.resourceStatesMap.set(handle, resourceState);
             // tslint:disable-next-line:no-any
             const resource: any = resourceState;
-            return { handle, resourceUri: resourceState.resourceUri.path, command, decorations, letter: resource.letter, colorId: resource.color.id };
+            return { handle, resourceUri: resourceState.resourceUri.path, command: resourceCommand, decorations, letter: resource.letter, colorId: resource.color.id };
         }));
     }
 

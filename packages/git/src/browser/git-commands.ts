@@ -120,9 +120,9 @@ export class GitCommands implements Disposable {
         });
     }
 
-    async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+    async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget> {
         const uriToOpen = this.getUriToOpen(change);
-        return this.editorManager.open(await uriToOpen, options);
+        return this.editorManager.open(uriToOpen, options);
     }
 
     async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.scmWidget.messageInput.value): Promise<void> {
