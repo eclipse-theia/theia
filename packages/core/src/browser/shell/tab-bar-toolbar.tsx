@@ -111,6 +111,10 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
+    shouldHandleMouseEvent(event: MouseEvent): boolean {
+        return event.target instanceof Element && !!this.items.get(event.target.id);
+    }
+
     protected commandIsEnabled(command: string): boolean {
         return this.commands.isEnabled(command, this.current);
     }
