@@ -22,6 +22,7 @@ export interface IBaseTerminalServerOptions { }
 export interface IBaseTerminalServer extends JsonRpcServer<IBaseTerminalClient> {
     create(IBaseTerminalServerOptions: object): Promise<number>;
     getProcessId(id: number): Promise<number>;
+    getCwdURI(id: number): Promise<string>;
     resize(id: number, cols: number, rows: number): Promise<void>;
     attach(id: number): Promise<number>;
     close(id: number): Promise<void>;

@@ -17,7 +17,11 @@
 import { injectable, unmanaged } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
+import { FileUri } from '@theia/core/lib/node';
+import { isOSX, isWindows } from '@theia/core';
 import { Readable, Writable } from 'stream';
+import { exec } from 'child_process';
+import * as fs from 'fs';
 
 export interface IProcessExitEvent {
     // Exactly one of code and signal will be set.
@@ -111,6 +115,7 @@ export abstract class Process {
         protected readonly options: ProcessOptions | ForkOptions
     ) {
         this.id = this.processManager.register(this);
+        this.initialCwd = options && options.options && 'cwd' in options.options && options.options['cwd'].toString() || __dirname;
     }
 
     abstract kill(signal?: string): void;
@@ -171,5 +176,38 @@ export abstract class Process {
     // tslint:disable-next-line:no-any
     protected isForkOptions(options: any): options is ForkOptions {
         return !!options && !!options.modulePath;
+    }
+
+    protected readonly initialCwd: string;
+
+    /**
+     * @returns the current working directory as a URI (usually file:// URI)
+     */
+    public getCwdURI(): Promise<string> {
+        if (isOSX) {
+            return new Promise<string>(resolve => {
+                exec('lsof -p ' + this.pid + ' | grep cwd', (error, stdout, stderr) => {
+                    if (stdout !== '') {
+                        resolve(FileUri.create(stdout.substring(stdout.indexOf('/'), stdout.length - 1)).toString());
+                    } else {
+                        resolve(FileUri.create(this.initialCwd).toString());
+                    }
+                });
+            });
+        } else if (!isWindows) {
+            return new Promise<string>(resolve => {
+                resolve(FileUri.create(this.initialCwd).toString());
+            });
+        } else {
+            return new Promise<string>(resolve => {
+                fs.readlink('/proc/' + this.pid + '/cwd', (err, linkedstr) => {
+                    if (err || !linkedstr) {
+                        resolve(FileUri.create(this.initialCwd).toString());
+                    } else {
+                        resolve(FileUri.create(linkedstr).toString());
+                    }
+                });
+            });
+        }
     }
 }

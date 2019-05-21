@@ -14,42 +14,96 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ILinkMatcherOptions } from 'xterm';
 import { injectable, inject } from 'inversify';
-import { MaybePromise, } from '@theia/core';
+import { isOSX, } from '@theia/core';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { TerminalContribution } from './terminal-contribution';
+import { TerminalWidgetImpl } from './terminal-widget-impl';
 
-export const ITerminalLinkMatcher = Symbol('ITerminalLinkMatcher');
+@injectable()
+export abstract class AbstractCmdClickTerminalContribution implements TerminalContribution {
 
-export interface ITerminalLinkMatcher {
-    getRegex(): MaybePromise<RegExp>;
-    readonly options?: ILinkMatcherOptions;
-    handler(event: MouseEvent, uri: string): void;
+    abstract getRegExp(terminalWidget: TerminalWidgetImpl): Promise<RegExp>;
+    abstract getHandler(terminalWidget: TerminalWidgetImpl): (event: MouseEvent, text: string) => void;
+    getValidate(terminalWidget: TerminalWidgetImpl): (text: string) => Promise<boolean> {
+        return () => Promise.resolve(true);
+    }
+
+    async onCreate(terminalWidget: TerminalWidgetImpl) {
+        const term = terminalWidget.getTerminal();
+        const regexp = await this.getRegExp(terminalWidget);
+        const handler = this.getHandler(terminalWidget);
+        const validate = this.getValidate(terminalWidget);
+        const wrappedHandler = (event: MouseEvent, match: string) => {
+            event.preventDefault();
+            if (this.isCommandPressed(event)) {
+                handler(event, match);
+            } else {
+                term.focus();
+            }
+        };
+        const matcherId = term.registerLinkMatcher(regexp, wrappedHandler, {
+            willLinkActivate: (event: MouseEvent, uri: string) => this.isCommandPressed(event),
+            tooltipCallback: (event: MouseEvent, uri: string) => {
+                terminalWidget.showHoverMessage(event.clientX, event.clientY, this.getHoverMessage());
+            },
+            leaveCallback: (event: MouseEvent, uri: string) => {
+                terminalWidget.hideHover();
+            },
+            validationCallback: async (uri: string, callBack: (isValid: boolean) => void) => {
+                callBack(await validate(uri));
+            }
+        });
+        terminalWidget.onDispose(() => {
+            term.deregisterLinkMatcher(matcherId);
+        });
+    }
+
+    protected isCommandPressed(event: MouseEvent): boolean {
+        return isOSX ? event.metaKey : event.ctrlKey;
+    }
+
+    protected getHoverMessage(): string {
+        if (isOSX) {
+            return 'Cmd + click to follow link';
+        } else {
+            return 'Ctrl + click to follow link';
+        }
+    }
+
 }
 
 @injectable()
-export class URLMatcher implements ITerminalLinkMatcher {
+export class URLMatcher extends AbstractCmdClickTerminalContribution {
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    getRegex() { return /(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/; }
+    async getRegExp() {
+        return /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
+    }
 
-    handler = (event: MouseEvent, uri: string) => {
-        this.windowService.openNewWindow(uri);
+    getHandler() {
+        return (event: MouseEvent, uri: string) => {
+            this.windowService.openNewWindow(uri);
+        };
     }
 }
 
 @injectable()
-export class LocalhostMatcher implements ITerminalLinkMatcher {
+export class LocalhostMatcher extends AbstractCmdClickTerminalContribution {
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    getRegex() { return /(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]{1,5})?([-a-zA-Z0-9@:%_\+.~#?&//=]*)/; }
+    async getRegExp() {
+        return /(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]{1,5})?([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
+    }
 
-    handler = (event: MouseEvent, matched: string) => {
-        const uri = matched.startsWith('http') ? matched : `http://${matched}`;
-        this.windowService.openNewWindow(uri);
+    getHandler() {
+        return (event: MouseEvent, matched: string) => {
+            const uri = matched.startsWith('http') ? matched : `http://${matched}`;
+            this.windowService.openNewWindow(uri);
+        };
     }
 }
