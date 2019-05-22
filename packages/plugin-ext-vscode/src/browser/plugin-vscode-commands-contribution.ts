@@ -310,21 +310,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
          * Compare Opened File With	workbench.files.action.compareFileWith
          */
 
-        commands.registerCommand({ id: 'editor.action.rename' }, {
-            execute: () => {
-                commands.executeCommand('monaco.editor.action.rename');
-            }
-        });
-        commands.registerCommand({ id: 'editor.action.formatSelection' }, {
-            execute: () => {
-                commands.executeCommand('monaco.editor.action.formatSelection');
-            }
-        });
-        commands.registerCommand({ id: 'editor.action.formatDocument' }, {
-            execute: () => {
-                commands.executeCommand('monaco.editor.action.formatDocument');
-            }
-        });
     }
 
     private getHtml(body: String) {

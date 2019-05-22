@@ -25,6 +25,18 @@ export namespace EditorCommands {
 
     const EDITOR_CATEGORY = 'Editor';
 
+    export const RENAME: Command = {
+        id: 'editor.action.rename'
+    };
+
+    export const FORMAT_SELECTION: Command = {
+        id: 'editor.action.formatSelection'
+    };
+
+    export const FORMAT_DOCUMENT: Command = {
+        id: 'editor.action.formatDocument'
+    };
+
     /**
      * Show editor references
      */
@@ -115,6 +127,9 @@ export class EditorCommandContribution implements CommandContribution {
     protected readonly editorManager: EditorManager;
 
     registerCommands(registry: CommandRegistry): void {
+        registry.registerCommand(EditorCommands.RENAME);
+        registry.registerCommand(EditorCommands.FORMAT_SELECTION);
+        registry.registerCommand(EditorCommands.FORMAT_DOCUMENT);
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
         registry.registerCommand(EditorCommands.CONFIG_INDENTATION);
         registry.registerCommand(EditorCommands.CONFIG_EOL);

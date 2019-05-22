@@ -126,6 +126,9 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         this.registry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
         this.registry.registerHandler(EditorCommands.INDENT_USING_SPACES.id, this.newConfigTabSizeHandler(true));
         this.registry.registerHandler(EditorCommands.INDENT_USING_TABS.id, this.newConfigTabSizeHandler(false));
+        this.registry.registerHandler(EditorCommands.RENAME.id, this.newCommandHandler('monaco.editor.action.rename'));
+        this.registry.registerHandler(EditorCommands.FORMAT_SELECTION.id, this.newCommandHandler('monaco.editor.action.formatSelection'));
+        this.registry.registerHandler(EditorCommands.FORMAT_DOCUMENT.id, this.newCommandHandler('monaco.editor.action.formatDocument'));
     }
 
     protected newShowReferenceHandler(): MonacoEditorCommandHandler {
