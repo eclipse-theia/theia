@@ -44,14 +44,29 @@ For Windows instructions [click here](#building-on-windows).
      - [Root privileges errors](#root-privileges-errors)
 
 ## Prerequisites
+
  - Node.js `>= 10.2.0`.
    - Preferably, **use** version `10.15.3`, it has the [active LTS](https://github.com/nodejs/Release).
    - Node.js `11.x` is untested.
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
-[nvm](https://github.com/creationix/nvm) is recommended to easily switch between
-Node.js versions.
+Some additional tools and libraries are needed depending on your platform:
+
+- Linux
+  - [make](https://www.gnu.org/software/make/)
+  - [gcc](https://gcc.gnu.org/) (or another compiling toolchain)
+  - [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
+  - Dependencies for `native-keymap` node native extension:
+    - Debian-based: `sudo apt-get install libx11-dev libxkbfile-dev`
+    - Red Hat-based: `sudo yum install libx11-devel.x86_64 libxkbfile-devel.x86_64 # or .i686`
+    - FreeBSD: `sudo pkg install libX11`
+
+- Linux/MacOS
+  - [nvm](https://github.com/nvm-sh/nvm) is recommended to easily switch between Node.js versions.
+
+- Windows
+  - [nvm-windows](https://github.com/coreybutler/nvm-windows) addresses the same issue as the Unix [nvm](https://github.com/nvm-sh/nvm) shell tool, although they are completely separate projects.
 
 ## Quick Start
 
