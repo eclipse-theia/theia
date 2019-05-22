@@ -88,7 +88,7 @@ export class HostedPluginSupport {
     }
 
     private terminatePluginServer(): void {
-        this.hostedPluginProcess.terminatePluginServer();
+        this.hostedPluginProcess.markPluginServerTerminated();
     }
 
     public runPluginServer(): void {
