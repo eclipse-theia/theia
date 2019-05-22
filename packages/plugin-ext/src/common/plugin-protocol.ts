@@ -565,6 +565,10 @@ export interface DebugConfiguration {
 
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
+    setClientId(clientId: number): Promise<void>;
+
+    getClientId(): Promise<number>;
+
     postMessage(message: string): Promise<void>;
 
     log(logPart: LogPart): void;

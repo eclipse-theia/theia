@@ -33,6 +33,7 @@ import { HostedPluginProcess } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+import { HostedPluginProcessesCache } from './hosted-plugin-processes-cache';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -54,6 +55,7 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
 });
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
+    bind(HostedPluginProcessesCache).toSelf().inSingletonScope();
     bind(HostedPluginCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(HostedPluginCliContribution);
 
