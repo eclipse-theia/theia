@@ -309,7 +309,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
          * Show Opened File in New Window	workbench.action.files.showOpenedFileInNewWindow
          * Compare Opened File With	workbench.files.action.compareFileWith
          */
-
     }
 
     private getHtml(body: String) {
