@@ -110,8 +110,12 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
         const widget = await super.open(uri, options);
         const area = this.shell.getAreaFor(widget);
-        if (area && area !== 'main') {
-            this.shell.resize(this.shell.mainPanel.node.offsetWidth / 2, area);
+        if (area === 'right' || area === 'left') {
+            const panelLayout = area === 'right' ? this.shell.getLayoutData().rightPanel : this.shell.getLayoutData().leftPanel;
+            const minSize = this.shell.mainPanel.node.offsetWidth / 2;
+            if (panelLayout && panelLayout.size && panelLayout.size <= minSize) {
+                requestAnimationFrame(() => this.shell.resize(minSize, area));
+            }
         }
         return widget;
     }

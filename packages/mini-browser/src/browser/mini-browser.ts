@@ -46,7 +46,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
         const { uri } = this.options;
         this.id = `${MiniBrowser.ID}:${uri.toString()}`;
         this.title.closable = true;
-        this.layout = new PanelLayout();
+        this.layout = new PanelLayout({ fitPolicy: 'set-no-constraint' });
     }
 
     getResourceUri(): URI | undefined {
@@ -59,6 +59,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
 
     protected props: MiniBrowserProps | undefined;
     protected readonly toDisposeOnProps = new DisposableCollection();
+
     setProps(raw: MiniBrowserProps): void {
         const props: MiniBrowserProps = {
             toolbar: raw.toolbar,
