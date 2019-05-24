@@ -70,7 +70,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
             createSaveFileDialogContainer(ctx.container, props).get(SaveFileDialog)
     );
 
-    bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
+    bind(WorkspaceCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(WorkspaceCommandContribution);
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
     bind(WorkspaceDeleteHandler).toSelf().inSingletonScope();
     bind(WorkspaceDuplicateHandler).toSelf().inSingletonScope();
