@@ -123,7 +123,7 @@ function overrideInternalLoad(): void {
 }
 
 function findPlugin(filePath: string): Plugin | undefined {
-    return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+    return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder.substr(0,-1)));
 }
 
 function withExtensionPath(plugin: any | undefined): any | undefined {
