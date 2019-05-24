@@ -35,8 +35,7 @@ import {
     ScmAmendSupport
 } from './scm-service';
 import { CommandRegistry, Emitter, MenuPath } from '@theia/core';
-import { Event as CoreEvent} from '@theia/core';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { Event as CoreEvent } from '@theia/core';
 import { ScmAvatarService } from './scm-avatar-service';
 import { ScmTitleCommandRegistry, ScmTitleItem } from './scm-title-command-registry';
 import { ScmResourceCommandRegistry } from './scm-resource-command-registry';
@@ -79,7 +78,6 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     @inject(ScmService) private readonly scmService: ScmService;
     @inject(CommandRegistry) private readonly commandRegistry: CommandRegistry;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService;
     @inject(StorageService) protected readonly storageService: StorageService;

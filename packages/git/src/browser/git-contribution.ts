@@ -75,8 +75,6 @@ import {
 } from '@theia/scm/lib/browser/scm-group-command-registry';
 import { GitDecorator } from './git-decorator';
 
-export const GIT_WIDGET_FACTORY_ID = 'git';
-
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
 export namespace GIT_COMMANDS {
