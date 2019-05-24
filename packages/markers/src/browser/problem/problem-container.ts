@@ -23,7 +23,8 @@ import { PROBLEM_KIND } from '../../common/problem-marker';
 
 export const PROBLEM_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,
-    contextMenuPath: [PROBLEM_KIND]
+    contextMenuPath: [PROBLEM_KIND],
+    globalSelection: true
 };
 
 export const PROBLEM_OPTIONS = <MarkerOptions>{
