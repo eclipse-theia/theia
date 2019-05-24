@@ -94,6 +94,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.activatedPlugins.clear();
         this.pluginActivationPromises.clear();
         this.pluginContextsMap.clear();
+
         return Promise.resolve();
     }
 
