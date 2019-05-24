@@ -190,7 +190,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
 }
 
 // See `EditorManager#canHandle`.
-const CODE_EDITOR_PRIORITY = 100;
+const CODE_EDITOR_PRIORITY = 200;
 
 /**
  * Endpoint handler contribution for HTML files.
