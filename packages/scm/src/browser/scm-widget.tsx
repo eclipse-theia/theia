@@ -48,6 +48,7 @@ import { KeyboardEvent } from 'react';
 @injectable()
 export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements StatefulWidget {
     private static MESSAGE_BOX_MIN_HEIGHT = 25;
+    private static LABEL = 'Source Control';
 
     protected message: string = '';
     protected messageBoxHeight: number = ScmWidget.MESSAGE_BOX_MIN_HEIGHT;
@@ -85,7 +86,8 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     constructor() {
         super();
         this.id = 'theia-scmContainer';
-        this.title.caption = 'Source Control';
+        this.title.label = ScmWidget.LABEL;
+        this.title.caption = ScmWidget.LABEL;
         this.title.closable = true;
         this.title.iconClass = 'scm-tab-icon';
         this.addClass('theia-scm');
@@ -115,7 +117,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         this.scmService.onDidChangeSelectedRepositories(repository => {
             if (repository) {
                 this.selectedRepoUri = repository.provider.rootUri;
-                this.title.label = 'Source Control: ' + repository.provider.contextValue;
+                this.title.label = ScmWidget.LABEL + ': ' + repository.provider.contextValue;
                 this.shell.leftPanelHandler.refresh();
                 this.update();
             } else {

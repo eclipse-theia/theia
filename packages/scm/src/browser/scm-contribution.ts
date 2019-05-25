@@ -55,6 +55,10 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         });
     }
 
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
+    }
+
     onStart(): void {
         const CHANGE_REPOSITORY = {
             id: 'scm.change.repository',
