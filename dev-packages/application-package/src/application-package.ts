@@ -14,14 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as fs from 'fs-extra';
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
-import { environment } from './environment';
 
 // tslint:disable:no-implicit-dependencies
 
@@ -261,16 +259,8 @@ export class ApplicationPackage {
      */
     get resolveModule(): ApplicationModuleResolver {
         if (!this._moduleResolver) {
-            // If running a bundled electron application, we cannot create a file for the module on the fly.
-            // https://github.com/theia-ide/theia/issues/2992
-            if (environment.electron.is() && !environment.electron.isDevMode()) {
-                this._moduleResolver = modulePath => require.resolve(modulePath);
-            } else {
-                const loaderPath = this.path('.application-module-loader.js');
-                fs.writeFileSync(loaderPath, 'module.exports = modulePath => require.resolve(modulePath);');
-                this._moduleResolver = require(loaderPath) as ApplicationModuleResolver;
-                fs.removeSync(loaderPath);
-            }
+            const resolutionPaths = [this.packagePath || process.cwd()];
+            this._moduleResolver = modulePath => require.resolve(modulePath, { paths: resolutionPaths });
         }
         return this._moduleResolver!;
     }
