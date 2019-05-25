@@ -167,8 +167,6 @@ export namespace GIT_COMMANDS {
         id: 'git.stage.all',
         label: 'Stage All Changes',
         iconClass: 'fa fa-plus',
-        category: 'inline',
-        props: { ['group']: 'inline' }
     };
     export const UNSTAGE = {
         id: 'git.unstage',
@@ -179,8 +177,6 @@ export namespace GIT_COMMANDS {
         id: 'git.unstage.all',
         iconClass: 'fa fa-minus',
         label: 'Unstage All',
-        category: 'inline',
-        props: { ['group']: 'inline' }
     };
     export const DISCARD = {
         id: 'git.discard',
@@ -191,8 +187,6 @@ export namespace GIT_COMMANDS {
         id: 'git.discard.all',
         iconClass: 'fa fa-undo',
         label: 'Discard All Changes',
-        category: 'inline',
-        props: { ['group']: 'inline' }
     };
     export const STASH = {
         id: 'git.stash',
@@ -824,7 +818,7 @@ export class GitContribution implements
         const { upstreamBranch, aheadBehind } = status;
         if (upstreamBranch) {
             return {
-                text: '$(refresh)' + (aheadBehind ? ` ${aheadBehind.behind} $(arrow-down) ${aheadBehind.ahead} $(arrow-up)` : ''),
+                text: '$(refresh)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
                 tooltip: 'Synchronize Changes'
             };
@@ -837,20 +831,64 @@ export class GitContribution implements
     }
 
     registerScmTitleCommands(registry: ScmTitleCommandRegistry): void {
-        registry.registerCommand({ command: GIT_COMMANDS.REFRESH.id });
-        registry.registerCommand({ command: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id });
+        registry.registerItem({ command: GIT_COMMANDS.REFRESH.id, group: 'navigation' });
+        registry.registerItem({ command: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id, group: 'navigation'});
     }
 
     registerScmResourceCommands(registry: ScmResourceCommandRegistry): void {
-        registry.registerCommands('Changes', [GIT_COMMANDS.OPEN_CHANGED_FILE.id, GIT_COMMANDS.DISCARD.id, GIT_COMMANDS.STAGE.id]);
-        registry.registerCommands('Staged changes', [GIT_COMMANDS.OPEN_CHANGED_FILE.id, GIT_COMMANDS.UNSTAGE.id]);
-        registry.registerCommands('Merged Changes', [GIT_COMMANDS.OPEN_CHANGED_FILE.id, GIT_COMMANDS.DISCARD.id, GIT_COMMANDS.STAGE.id]);
+        registry.registerItems('Changes', [
+            {
+                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.DISCARD.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.STAGE.id,
+                group: 'navigation'
+            }
+        ]);
+        registry.registerItems('Staged changes', [
+            {
+                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.UNSTAGE.id,
+                group: 'navigation'
+            }
+        ]);
+        registry.registerItems('Merged Changes', [
+            {
+                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.DISCARD.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.STAGE.id,
+                group: 'navigation'
+            }
+        ]);
     }
 
     registerScmGroupCommands(registry: ScmGroupCommandRegistry): void {
-        registry.registerCommands('Changes', [GIT_COMMANDS.DISCARD_ALL.id, GIT_COMMANDS.STAGE_ALL.id]);
-        registry.registerCommands('Staged changes', [GIT_COMMANDS.UNSTAGE_ALL.id]);
-        registry.registerCommands('Merged Changes', [GIT_COMMANDS.STAGE_ALL.id]);
+        registry.registerItems('Changes', [
+            {
+                command: GIT_COMMANDS.DISCARD_ALL.id,
+                group: 'inline'
+            },
+            {
+                command: GIT_COMMANDS.STAGE_ALL.id,
+                group: 'inline'
+            }
+        ]);
+        registry.registerItems('Staged changes', [{ command: GIT_COMMANDS.UNSTAGE_ALL.id, group: 'inline' }]);
+        registry.registerItems('Merged Changes', [{ command: GIT_COMMANDS.STAGE_ALL.id, group: 'inline' }]);
     }
 }
 export interface GitOpenFileOptions {

@@ -40,7 +40,8 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmAvatarService } from './scm-avatar-service';
 import { ScmTitleCommandRegistry, ScmTitleItem } from './scm-title-command-registry';
 import { ScmResourceCommandRegistry } from './scm-resource-command-registry';
-import { ScmGroupCommandRegistry } from './scm-group-command-registry';
+import { ScmResourceItem as ResourceItem} from './scm-resource-command-registry';
+import { ScmGroupCommandRegistry, ScmGroupItem } from './scm-group-command-registry';
 import { ScmNavigableListWidget } from './scm-navigable-list-widget';
 import { ScmAmendComponent } from './scm-amend-component';
 import { KeyboardEvent } from 'react';
@@ -143,9 +144,9 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     protected handleListEnter() {
         const selected = this.getSelected();
         if (selected) {
-            const commands = this.scmResourceCommandRegistry.getCommands(selected.group.label);
-            if (commands && commands.length > 0) {
-                this.commandRegistry.executeCommand(commands[0], selected.sourceUri.toString());
+            const items = this.scmResourceCommandRegistry.getItems(selected.group.label);
+            if (items && items.length > 0) {
+                this.commandRegistry.executeCommand(items[0].command, selected.sourceUri.toString());
             }
         }
     }
@@ -290,7 +291,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         };
         return <div id='commandBar' className='flexcontainer'>
             <div className='buttons'>
-                {this.scmTitleRegistry.getCommands().map(command => this.renderButton(command))}
+                {this.scmTitleRegistry.getItems().map(command => this.renderButton(command))}
                 <a className='toolbar-button' title='More...' onClick={onClick}>
                     <i className='fa fa-ellipsis-h' />
                 </a>
@@ -323,9 +324,8 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
                 }
             }
         }
-        if (command && command.props) {
-            const props = command.props;
-            if (props && props['group'] === 'navigation') {
+        if (command) {
+            if (item.group && item.group === 'navigation') {
                 const execute = () => {
                     this.commandRegistry.executeCommand(item.command);
                 };
@@ -496,16 +496,16 @@ class ScmResourceItem extends React.Component<ScmResourceItem.Props> {
     }
 
     protected renderScmItemButtons(): React.ReactNode {
-        const commands = this.props.scmResourceCommandRegistry.getCommands(this.props.groupId);
-        if (commands) {
+        const items = this.props.scmResourceCommandRegistry.getItems(this.props.groupId);
+        if (items) {
             return <div className='buttons'>
-                {commands.map(command => this.renderScmItemButton(command))}
+                {items.map(item => this.renderScmItemButton(item))}
             </div>;
         }
     }
 
-    protected renderScmItemButton(commandId: string): React.ReactNode {
-        const command = this.props.commandRegistry.getCommand(commandId);
+    protected renderScmItemButton(item: ResourceItem): React.ReactNode {
+        const command = this.props.commandRegistry.getCommand(item.command);
         if (command) {
             const execute = () => {
                 const resource = this.props.resource;
@@ -516,7 +516,7 @@ class ScmResourceItem extends React.Component<ScmResourceItem.Props> {
                     sourceControlHandle: resource.sourceControlHandle,
                     uri: this.props.resource.sourceUri.toString()
                 };
-                this.props.commandRegistry.executeCommand(commandId, arg);
+                this.props.commandRegistry.executeCommand(item.command, arg);
             };
             return <div className='toolbar-button' key={command.id}>
                 <a className={command.iconClass} title={command.label} onClick={execute} />
@@ -605,19 +605,18 @@ class ScmResourceGroupContainer extends React.Component<ScmResourceGroupContaine
     }
 
     protected renderGroupButtons(): React.ReactNode {
-        const commands = this.props.scmGroupCommandRegistry.getCommands(this.props.group.id);
-        if (commands) {
+        const items = this.props.scmGroupCommandRegistry.getItems(this.props.group.id);
+        if (items) {
             return <div className='scm-change-list-buttons-container'>
-                {commands.map(command => this.renderGroupButton(command))}
+                {items.map(item => this.renderGroupButton(item))}
             </div>;
         }
     }
 
-    protected renderGroupButton(commandId: string): React.ReactNode {
-        const command = this.props.commandRegistry.getCommand(commandId);
-        if (command && command.props) {
-            const props = command.props;
-            if (props && props['group'] === 'inline') {
+    protected renderGroupButton(item: ScmGroupItem): React.ReactNode {
+        const command = this.props.commandRegistry.getCommand(item.command);
+        if (command) {
+            if (item.group && item.group === 'inline') {
                 const execute = () => {
                     const group = this.props.group;
                     const arg = {
@@ -625,7 +624,7 @@ class ScmResourceGroupContainer extends React.Component<ScmResourceGroupContaine
                         groupHandle: group.handle,
                         sourceControlHandle: group.sourceControlHandle
                     };
-                    this.props.commandRegistry.executeCommand(commandId, arg);
+                    this.props.commandRegistry.executeCommand(item.command, arg);
                 };
                 return <a className='toolbar-button' key={command.id}>
                     <i className={command.iconClass} title={command.label} onClick={execute} />
