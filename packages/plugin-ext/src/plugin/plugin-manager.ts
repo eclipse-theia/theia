@@ -75,14 +75,18 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     $stopPlugin(contextPath: string): PromiseLike<void> {
         this.activatedPlugins.forEach(plugin => {
-            if (plugin.stopFn) {
-                plugin.stopFn();
-            }
+            try {
+                if (plugin.stopFn) {
+                    plugin.stopFn();
+                }
 
-            // dispose any objects
-            const pluginContext = plugin.pluginContext;
-            if (pluginContext) {
-                dispose(pluginContext.subscriptions);
+                // dispose any objects
+                const pluginContext = plugin.pluginContext;
+                if (pluginContext) {
+                    dispose(pluginContext.subscriptions);
+                }
+            } catch (error) {
+                console.error(error);
             }
         });
 
