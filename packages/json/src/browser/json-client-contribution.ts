@@ -75,6 +75,7 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
             }
         }
         const client = await this.languageClient;
+        await client.onReady();
         client.sendNotification('json/schemaAssociations', registry);
     }
 
