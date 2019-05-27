@@ -85,9 +85,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
             if (!pluginPath) {
                 return undefined;
             }
-            if (!pluginPath.endsWith('/')) {
-                pluginPath += '/';
-            }
+            pluginPath = path.normalize(pluginPath + '/');
             return await this.loadPluginMetadata(pluginPath);
         } catch (e) {
             this.logger.error(`Failed to load plugin metadata from "${pluginPath}"`, e);
