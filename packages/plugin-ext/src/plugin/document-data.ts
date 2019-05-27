@@ -36,7 +36,6 @@ export class DocumentDataExt {
     private disposed = false;
     private dirty: boolean;
     private _document: theia.TextDocument;
-    private isDisposed = false;
     private textLines = new Array<theia.TextLine>();
     private lineStarts: PrefixSumComputer | undefined;
 
@@ -73,7 +72,8 @@ export class DocumentDataExt {
         this.dirty = isDirty;
     }
     acceptLanguageId(langId: string): void {
-        throw new Error('Method not implemented.');
+        ok(!this.disposed);
+        this.languageId = langId;
     }
     get document(): theia.TextDocument {
         if (!this._document) {
@@ -84,7 +84,7 @@ export class DocumentDataExt {
                 get isUntitled() { return that.uri.scheme === 'untitled'; },
                 get languageId() { return that.languageId; },
                 get version() { return that.versionId; },
-                get isClosed() { return that.isDisposed; },
+                get isClosed() { return that.disposed; },
                 get isDirty() { return that.dirty; },
                 save() { return that.save(); },
                 getText(range?) { return range ? that.getTextInRange(range) : that.getText(); },
@@ -175,7 +175,7 @@ export class DocumentDataExt {
     }
 
     private save(): Promise<boolean> {
-        if (this.isDisposed) {
+        if (this.disposed) {
             return Promise.reject(new Error('Document is closed'));
         }
         return this.proxy.$trySaveDocument(this.uri);
