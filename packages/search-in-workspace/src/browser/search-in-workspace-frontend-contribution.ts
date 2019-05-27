@@ -60,7 +60,7 @@ export namespace SearchInWorkspaceCommands {
     export const CLEAR_ALL: Command = {
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
-        label: 'Clear All',
+        label: 'Clear Search Results',
         iconClass: 'clear-all'
     };
 }
