@@ -323,14 +323,19 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async attach(terminalId: number, taskId: number): Promise<void> {
-        // create terminal widget to display an execution output of a Task that was launched as a command inside a shell
+        // Get the list of all available running tasks.
+        const runningTasks: TaskInfo[] = await this.getRunningTasks();
+        // Get the corresponding task information based on task id if available.
+        const taskInfo: TaskInfo | undefined = runningTasks.find((t: TaskInfo) => t.taskId === taskId);
+        // Create terminal widget to display an execution output of a task that was launched as a command inside a shell.
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
             TERMINAL_WIDGET_FACTORY_ID,
             <TerminalWidgetFactoryOptions>{
                 created: new Date().toString(),
                 id: 'terminal-' + terminalId,
-                caption: `Task #${taskId}`,
-                label: `Task #${taskId}`,
+                title: taskInfo
+                    ? `Task: ${taskInfo.config.label}`
+                    : `Task: #${taskId}`,
                 destroyTermOnClose: true
             }
         );
