@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/**
+ * The documentation was copied from https://pdfobject.com/#api.
+ * License: MIT (https://pipwerks.mit-license.org)
+ */
 declare module 'pdfobject' {
 
     interface Options {
@@ -44,7 +48,7 @@ declare module 'pdfobject' {
 
         /**
          * Any string entered here will be inserted into the target element when the browser doesn't support inline PDFs.
-         * 
+         *
          * **Default**: `"<p>This browser does not support inline PDFs. Please download the PDF to view it: <a href='[url]'>Download PDF</a></p>"`.
          * Supports HTML. Use the shortcode `[url]` to insert the URL of the PDF (as specified via the URL parameter in the `embed()` method).
          * Entering `false` will disable the fallback text option and prevent `PDFObject` from inserting fallback text.
@@ -68,9 +72,9 @@ declare module 'pdfobject' {
     interface PDFObject {
 
         /**
-         * Returns the embedded element (`<embed>` for most situations, and `<iframe>` when integrated with PDF.js), or `false` if unable to embed. 
+         * Returns the embedded element (`<embed>` for most situations, and `<iframe>` when integrated with PDF.js), or `false` if unable to embed.
          *
-         * The heart of `PDFObject`, the embed method provides a ton of functionality and flexibility. 
+         * The heart of `PDFObject`, the embed method provides a ton of functionality and flexibility.
          */
         embed(url: string, target?: string | HTMLElement /* | jQuery object (HTML node) for target */, options?: Options): HTMLElement;
 
@@ -81,7 +85,7 @@ declare module 'pdfobject' {
 
         /**
          * Returns `true` or `false` based on detection of `navigator.mimeTypes['application/pdf']` and/or ActiveX `AcroPDF.PDF` or `PDF.PdfCtrl`.
-         * 
+         *
          * `PDFObject` does not perform detection for specific vendors (Adobe Reader, FoxIt, PDF.js, etc.).
          * Note: For those who wish to target PDF.js, there is an option in `PDFObject.embed()` to force use of PDF.js.
          */
