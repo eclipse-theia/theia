@@ -440,19 +440,17 @@ export class KeybindingWidget extends ReactWidget {
         for (let i = 0; i < commands.length; i++) {
             // Obtain the keybinding for the given command.
             const keybindings = this.keybindingRegistry.getKeybindingsForCommand(commands[i].id);
-            const item: KeybindingItem = {
-                id: commands[i].id,
-                // Get the command label if available, else use the keybinding id.
-                command: commands[i].label || commands[i].id,
-                keybinding: (keybindings && keybindings[0]) ? keybindings[0].keybinding : '',
-                context: (keybindings && keybindings[0])
-                    ? keybindings[0].context
-                        ? keybindings[0].context : keybindings[0].when
-                    : '',
-                source: (keybindings && keybindings[0] && typeof keybindings[0].scope !== 'undefined')
-                    ? KeybindingScope[keybindings[0].scope!].toLocaleLowerCase() : '',
-            };
-            items.push(item);
+            for (const keybinding of keybindings) {
+                const item: KeybindingItem = {
+                    id: commands[i].id,
+                    // Get the command label if available, else use the keybinding id.
+                    command: commands[i].label || commands[i].id,
+                    keybinding: keybinding.keybinding,
+                    context: keybinding.context || keybinding.when || '',
+                    source: keybinding.scope !== undefined ? KeybindingScope[keybinding.scope].toLocaleLowerCase() : '',
+                };
+                items.push(item);
+            }
         }
         // Sort the keybinding item by label.
         const sorted: KeybindingItem[] = items.sort((a: KeybindingItem, b: KeybindingItem) => this.compareItem(a.command, b.command));
@@ -500,6 +498,7 @@ export class KeybindingWidget extends ReactWidget {
         const id = this.getRawValue(item.id);
         const keybinding = (item.keybinding) ? this.getRawValue(item.keybinding) : '';
         const context = (item.context) ? this.getRawValue(item.context) : '';
+        const source = item.source;
         const dialog = new EditKeybindingDialog({
             title: `Edit Keybinding For ${command}`,
             initialValue: keybinding,
@@ -508,6 +507,10 @@ export class KeybindingWidget extends ReactWidget {
         dialog.open().then(async newKeybinding => {
             if (newKeybinding) {
                 await this.keymapsService.setKeybinding({ 'command': id, 'keybinding': newKeybinding, 'context': context });
+                if (source === 'default') {
+                    const removalCommand = `-${id}`;
+                    await this.keymapsService.setKeybinding({ 'command': removalCommand, 'keybinding': keybinding, 'context': context });
+                }
             }
         });
     }
@@ -552,13 +555,9 @@ export class KeybindingWidget extends ReactWidget {
             return 'keybinding value is required';
         }
         try {
-            const binding = { 'command': command, 'keybinding': keybinding };
             KeySequence.parse(keybinding);
             if (oldKeybinding === keybinding) {
                 return ' '; // if old and new keybindings match, quietly reject update
-            }
-            if (this.keybindingRegistry.containsKeybindingInScope(binding)) {
-                return 'keybinding currently collides';
             }
             return '';
         } catch (error) {
