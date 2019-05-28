@@ -29,4 +29,7 @@ if (process.platform === 'win32') {
     }
     console.log('Running lerna as: ' + process.argv.join(' '));
 }
+if (process.argv.indexOf('--reject-cycles') === -1) {
+    process.argv.push('--reject-cycles');
+}
 require(lernaPath);

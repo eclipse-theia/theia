@@ -29,6 +29,18 @@ body {
   background: var(--theia-layout-color0);
 }
 
+.theia-maximized {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    z-index: 255 !important;
+    background: var(--theia-layout-color0);
+}
+
 .theia-ApplicationShell {
   position: absolute;
   top: 0;

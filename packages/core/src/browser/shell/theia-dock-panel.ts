@@ -15,9 +15,14 @@
  ********************************************************************************/
 
 import { find, toArray, ArrayExt } from '@phosphor/algorithm';
-import { TabBar, Widget, DockPanel, Title } from '@phosphor/widgets';
+import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
+
+const MAXIMIZED_CLASS = 'theia-maximized';
+
+export const MAIN_AREA_ID = 'theia-main-content-panel';
+export const BOTTOM_AREA_ID = 'theia-bottom-content-panel';
 
 /**
  * This specialization of DockPanel adds various events that are used for implementing the
@@ -122,6 +127,54 @@ export class TheiaDockPanel extends DockPanel {
             return tabBars[index - 1];
         }
         return undefined;
+    }
+
+    protected readonly toDisposeOnToggleMaximized = new DisposableCollection();
+    toggleMaximized(): void {
+        const areaContainer = this.node.parentElement;
+        if (!areaContainer) {
+            return;
+        }
+        const maximizedElement = this.getMaximizedElement();
+        if (areaContainer === maximizedElement) {
+            this.toDisposeOnToggleMaximized.dispose();
+            return;
+        }
+        maximizedElement.style.display = 'block';
+        this.addClass(MAXIMIZED_CLASS);
+        maximizedElement.appendChild(this.node);
+        this.fit();
+        this.toDisposeOnToggleMaximized.push(Disposable.create(() => {
+            maximizedElement.style.display = 'none';
+            this.removeClass(MAXIMIZED_CLASS);
+            areaContainer.appendChild(this.node);
+            this.fit();
+        }));
+
+        const layout = this.layout;
+        if (layout instanceof DockLayout) {
+            const onResize = layout['onResize'];
+            layout['onResize'] = () => onResize.bind(layout)(Widget.ResizeMessage.UnknownSize);
+            this.toDisposeOnToggleMaximized.push(Disposable.create(() => layout['onResize'] = onResize));
+        }
+
+        const removedListener = () => {
+            if (!this.widgets().next()) {
+                this.toDisposeOnToggleMaximized.dispose();
+            }
+        };
+        this.widgetRemoved.connect(removedListener);
+        this.toDisposeOnToggleMaximized.push(Disposable.create(() => this.widgetRemoved.disconnect(removedListener)));
+    }
+
+    protected maximizedElement: HTMLElement | undefined;
+    protected getMaximizedElement(): HTMLElement {
+        if (!this.maximizedElement) {
+            this.maximizedElement = document.createElement('div');
+            this.maximizedElement.style.display = 'none';
+            document.body.appendChild(this.maximizedElement);
+        }
+        return this.maximizedElement;
     }
 
 }

@@ -19,6 +19,8 @@ import { injectable, inject } from 'inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Schemes } from '../../common/uri-components';
+import URI from '@theia/core/lib/common/uri';
+import { Reference } from '@theia/core/lib/common/reference';
 
 export const EditorModelService = Symbol('EditorModelService');
 export interface EditorModelService {
@@ -31,6 +33,7 @@ export interface EditorModelService {
     onModelSaved: Event<MonacoEditorModel>;
 
     getModels(): MonacoEditorModel[];
+    createModelReference(uri: URI): Promise<Reference<MonacoEditorModel>>
     saveAll(includeUntitled?: boolean): Promise<boolean>;
 }
 
@@ -108,4 +111,7 @@ export class EditorModelServiceImpl implements EditorModelService {
         return results.reduce((a, b) => a && b, true);
     }
 
+    async createModelReference(uri: URI): Promise<Reference<MonacoEditorModel>> {
+        return this.monacoModelService.createModelReference(uri);
+    }
 }

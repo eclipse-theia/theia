@@ -29,6 +29,55 @@ import { TextDocumentShowOptions } from '../../api/model';
 import { Range } from 'vscode-languageserver-types';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ViewColumn } from '../../plugin/types-impl';
+import { Reference } from '@theia/core/lib/common/reference';
+import { dispose } from '../../common/disposable-util';
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+export class ModelReferenceCollection {
+
+    private data = new Array<{ length: number, dispose(): void }>();
+    private length = 0;
+
+    constructor(
+        private readonly maxAge: number = 1000 * 60 * 3,
+        private readonly maxLength: number = 1024 * 1024 * 80
+    ) { }
+
+    dispose(): void {
+        this.data = dispose(this.data) || [];
+    }
+
+    add(ref: Reference<MonacoEditorModel>): void {
+        const length = ref.object.textEditorModel.getValueLength();
+        // tslint:disable-next-line: no-any
+        let handle: any;
+        let entry: { length: number, dispose(): void };
+        const _dispose = () => {
+            const idx = this.data.indexOf(entry);
+            if (idx >= 0) {
+                this.length -= length;
+                ref.dispose();
+                clearTimeout(handle);
+                this.data.splice(idx, 1);
+            }
+        };
+        handle = setTimeout(_dispose, this.maxAge);
+        entry = { length, dispose: _dispose };
+
+        this.data.push(entry);
+        this.length += length;
+        this.cleanup();
+    }
+
+    private cleanup(): void {
+        while (this.length > this.maxLength) {
+            this.data[0].dispose();
+        }
+    }
+}
 
 export class DocumentsMainImpl implements DocumentsMain {
 
@@ -36,6 +85,8 @@ export class DocumentsMainImpl implements DocumentsMain {
     private toDispose = new DisposableCollection();
     private modelToDispose = new Map<string, Disposable>();
     private modelIsSynced = new Map<string, boolean>();
+    private modelService: EditorModelService;
+    private modelReferenceCache = new ModelReferenceCollection();
 
     protected saveTimeout = 1750;
 
@@ -47,10 +98,12 @@ export class DocumentsMainImpl implements DocumentsMain {
         private openerService: OpenerService,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
+        this.modelService = modelService;
 
         this.toDispose.push(editorsAndDocuments.onDocumentAdd(documents => documents.forEach(this.onModelAdded, this)));
         this.toDispose.push(editorsAndDocuments.onDocumentRemove(documents => documents.forEach(this.onModelRemoved, this)));
         this.toDispose.push(modelService.onModelModeChanged(this.onModelChanged, this));
+        this.toDispose.push(this.modelReferenceCache);
 
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
@@ -125,7 +178,7 @@ export class DocumentsMainImpl implements DocumentsMain {
         return monaco.Uri.parse(resource.uri.toString());
     }
 
-    async $tryOpenDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
+    async $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
         // Removing try-catch block here makes it not possible to handle errors.
         // Following message is appeared in browser console
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
@@ -187,6 +240,17 @@ export class DocumentsMainImpl implements DocumentsMain {
         }
 
         return false;
+    }
+
+    async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
+        const ref = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
+        if (ref.object) {
+            this.modelReferenceCache.add(ref);
+            return true;
+        } else {
+            ref.dispose();
+            return false;
+        }
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {

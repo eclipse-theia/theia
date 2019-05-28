@@ -124,11 +124,11 @@ export class DocumentsExtImpl implements DocumentsExt {
     protected async fireTextDocumentWillSaveEvent({
         document, reason, fireEvent, accept
     }: {
-            document: theia.TextDocument,
-            reason: theia.TextDocumentSaveReason,
-            fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
-            accept: (operation: SingleEditOperation) => void
-        }): Promise<void> {
+        document: theia.TextDocument,
+        reason: theia.TextDocumentSaveReason,
+        fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
+        accept: (operation: SingleEditOperation) => void
+    }): Promise<void> {
 
         const promises: PromiseLike<TextEdit[] | any>[] = [];
         fireEvent(Object.freeze({
@@ -203,12 +203,7 @@ export class DocumentsExtImpl implements DocumentsExt {
      * @param uri path to the resource
      * @param options if options exists, resource will be opened in editor, otherwise only document object is returned
      */
-    async openDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
-        const cached = this.editorsAndDocuments.getDocument(uri.toString());
-        if (cached) {
-            return cached;
-        }
-
+    async showDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
         // Determine whether the document is already loading
         const loadingDocument = this.loadingDocuments.get(uri.toString());
         if (loadingDocument) {
@@ -223,7 +218,7 @@ export class DocumentsExtImpl implements DocumentsExt {
             this.loadingDocuments.set(uri.toString(), document);
             // wait the document being opened
             await document;
-            // retun opened document
+            // return opened document
             return document;
         } catch (error) {
             return Promise.reject(error);
@@ -231,6 +226,16 @@ export class DocumentsExtImpl implements DocumentsExt {
             // remove loader from the map
             this.loadingDocuments.delete(uri.toString());
         }
+    }
+
+    async openDocument(uri: URI): Promise<DocumentDataExt | undefined> {
+        const cached = this.editorsAndDocuments.getDocument(uri.toString());
+        if (cached) {
+            return cached;
+        }
+
+        await this.proxy.$tryOpenDocument(uri);
+        return this.editorsAndDocuments.getDocument(uri.toString());
     }
 
     private async loadDocument(uri: URI, options?: theia.TextDocumentShowOptions): Promise<DocumentDataExt | undefined> {
@@ -253,15 +258,7 @@ export class DocumentsExtImpl implements DocumentsExt {
                 viewColumn: options.viewColumn
             };
         }
-        await this.proxy.$tryOpenDocument(uri, documentOptions);
-
-        // below block of code needs to be removed after fix https://github.com/theia-ide/theia/issues/5079
-        if (!options) {
-            const document = this.editorsAndDocuments.getDocument(uri.toString());
-            await this.proxy.$tryCloseDocument(uri);
-            return document;
-        }
-
+        await this.proxy.$tryShowDocument(uri, documentOptions);
         return this.editorsAndDocuments.getDocument(uri.toString());
     }
 
