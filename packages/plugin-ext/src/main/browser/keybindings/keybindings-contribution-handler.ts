@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { PluginContribution, Keybinding as PluginKeybinding } from '../../../common';
-import { Keybinding, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
+import { Keybinding, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { OS } from '@theia/core/lib/common/os';
 
@@ -48,7 +48,7 @@ export class KeybindingsContributionPointHandler {
                 }
             }
         }
-        this.keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
+        this.keybindingRegistry.registerKeybindings(...keybindings);
     }
 
     protected toKeybinding(pluginKeybinding: PluginKeybinding): Keybinding | undefined {
@@ -75,7 +75,7 @@ export class KeybindingsContributionPointHandler {
 
     private handlePartialKeybindings(keybinding: Keybinding, partialKeybindings: Keybinding[]) {
         partialKeybindings.forEach(partial => {
-            if (keybinding.context === undefined || keybinding.context === partial.context) {
+            if (keybinding.when === undefined || keybinding.when === partial.context) {
                 this.logger.warn(`Partial keybinding is ignored; ${Keybinding.stringify(keybinding)} shadows ${Keybinding.stringify(partial)}`);
             }
         });
@@ -84,8 +84,6 @@ export class KeybindingsContributionPointHandler {
     private handleShadingKeybindings(keybinding: Keybinding, shadingKeybindings: Keybinding[]) {
         shadingKeybindings.forEach(shadow => {
             if (shadow.context === undefined || shadow.context === keybinding.context) {
-                this.keybindingRegistry.unregisterKeybinding(shadow);
-
                 this.logger.warn(`Shadowing keybinding is ignored; ${Keybinding.stringify(shadow)}, shadows ${Keybinding.stringify(keybinding)}`);
             }
         });
