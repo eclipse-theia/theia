@@ -121,8 +121,7 @@ export namespace GIT_COMMANDS {
         id: 'git-commit-add-sign-off',
         label: 'Add Signed-off-by',
         iconClass: 'fa fa-pencil-square-o',
-        category: 'navigation',
-        props: { ['group']: 'navigation' }
+        category: 'Git'
     };
     export const COMMIT_AMEND = {
         id: 'git.commit.amend'
@@ -137,7 +136,8 @@ export namespace GIT_COMMANDS {
     export const OPEN_FILE: Command = {
         id: 'git.open.file',
         category: 'Git',
-        label: 'Open File'
+        label: 'Open File',
+        iconClass: 'theia-open-file-icon'
     };
     export const OPEN_CHANGED_FILE: Command = {
         id: 'git.open.changed.file',
@@ -148,7 +148,8 @@ export namespace GIT_COMMANDS {
     export const OPEN_CHANGES: Command = {
         id: 'git.open.changes',
         category: 'Git',
-        label: 'Open Changes'
+        label: 'Open Changes',
+        iconClass: 'theia-open-change-icon'
     };
     export const SYNC = {
         id: 'git.sync',
@@ -160,39 +161,39 @@ export namespace GIT_COMMANDS {
     };
     export const STAGE = {
         id: 'git.stage',
+        category: 'Git',
         label: 'Stage Changes',
         iconClass: 'fa fa-plus'
     };
     export const STAGE_ALL = {
         id: 'git.stage.all',
+        category: 'Git',
         label: 'Stage All Changes',
         iconClass: 'fa fa-plus',
-        category: 'inline',
-        props: { ['group']: 'inline' }
     };
     export const UNSTAGE = {
         id: 'git.unstage',
         iconClass: 'fa fa-minus',
+        category: 'Git',
         label: 'Unstage Changes'
     };
     export const UNSTAGE_ALL = {
         id: 'git.unstage.all',
         iconClass: 'fa fa-minus',
+        category: 'Git',
         label: 'Unstage All',
-        category: 'inline',
-        props: { ['group']: 'inline' }
     };
     export const DISCARD = {
         id: 'git.discard',
         iconClass: 'fa fa-undo',
+        category: 'Git',
         label: 'Discard Changes'
     };
     export const DISCARD_ALL = {
         id: 'git.discard.all',
         iconClass: 'fa fa-undo',
+        category: 'Git',
         label: 'Discard All Changes',
-        category: 'inline',
-        props: { ['group']: 'inline' }
     };
     export const STASH = {
         id: 'git.stash',
@@ -228,8 +229,7 @@ export namespace GIT_COMMANDS {
         id: 'git-refresh',
         label: 'Refresh',
         iconClass: 'fa fa-refresh',
-        category: 'navigation',
-        props: { ['group']: 'navigation' }
+        category: 'Git'
     };
 }
 
@@ -242,11 +242,12 @@ export class GitContribution implements
     ScmResourceCommandContribution,
     ScmGroupCommandContribution {
 
-    static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
-    static GIT_REPOSITORY_STATUS = 'git-repository-status';
+    static GIT_CHECKOUT = 'git.checkout';
     static GIT_SYNC_STATUS = 'git-sync-status';
 
     protected toDispose = new DisposableCollection();
+
+    protected readonly icons: Map<string, ScmCommand> = new Map();
 
     private dirtyRepositories: Repository[] = [];
     private scmProviders: ScmProvider[] = [];
@@ -282,7 +283,7 @@ export class GitContribution implements
             if (repository) {
                 this.repositoryProvider.selectedRepository = repository;
             } else {
-                this.statusBar.removeElement(GitContribution.GIT_REPOSITORY_STATUS);
+                this.statusBar.removeElement(GitContribution.GIT_CHECKOUT);
                 this.statusBar.removeElement(GitContribution.GIT_SYNC_STATUS);
             }
         });
@@ -310,14 +311,14 @@ export class GitContribution implements
                 this.getGroups(status, provider).then(groups => {
                     provider.groups = groups;
                     provider.fireChangeStatusBarCommands([{
-                        id: GIT_COMMANDS.CHECKOUT.id,
+                        id: GitContribution.GIT_CHECKOUT,
                         text: `$(code-fork) ${branch}${dirty}`,
                         command: GIT_COMMANDS.CHECKOUT.id
                     }]);
                     provider.fireChangeResources();
+                    this.updateSyncStatusBarEntry(event.source.localUri);
                 });
             }
-            this.updateSyncStatusBarEntry(event.source.localUri);
         });
         this.syncService.onDidChange(() => this.updateSyncStatusBarEntry(
             this.repositoryProvider.selectedRepository
@@ -414,7 +415,10 @@ export class GitContribution implements
             this.dirtyRepositories
                 .find(dirtyRepo => this.repositoryProvider.allRepositories.every(repo => repo.localUri !== dirtyRepo.localUri));
         if (removed) {
-            this.dirtyRepositories.push(removed);
+            const i = this.dirtyRepositories.indexOf(removed, 0);
+            if (i > -1) {
+                this.dirtyRepositories.splice(i, 1);
+            }
             const removedScmRepo = this.scmService.repositories.find(scmRepo => scmRepo.provider.rootUri === removed.localUri);
             if (removedScmRepo) {
                 removedScmRepo.dispose();
@@ -437,7 +441,7 @@ export class GitContribution implements
         const provider = new ScmProviderImpl('Git', uri.substring(uri.lastIndexOf('/') + 1), uri, amendSupport);
         this.scmProviders.push(provider);
         const repo = this.scmService.registerScmProvider(provider, disposableCollection);
-        repo.input.placeholder = 'Commit Message';
+        repo.input.placeholder = 'Commit message';
         repo.input.validateInput = async input => {
             const validate = await this.commitMessageValidator.validate(input);
             if (validate) {
@@ -734,13 +738,11 @@ export class GitContribution implements
         registry.registerItem({
             id: GIT_COMMANDS.OPEN_FILE.id,
             command: GIT_COMMANDS.OPEN_FILE.id,
-            text: '$(file-o)',
             tooltip: GIT_COMMANDS.OPEN_FILE.label
         });
         registry.registerItem({
             id: GIT_COMMANDS.OPEN_CHANGES.id,
             command: GIT_COMMANDS.OPEN_CHANGES.id,
-            text: '$(files-o)',
             tooltip: GIT_COMMANDS.OPEN_CHANGES.label
         });
     }
@@ -800,7 +802,7 @@ export class GitContribution implements
             const scmProvider = this.scmProviders.find(provider => provider.rootUri === repositoryUri);
             if (scmProvider) {
                 (scmProvider as ScmProviderImpl).fireChangeStatusBarCommands([{
-                    id: 'vcs-sync-status',
+                    id: GitContribution.GIT_SYNC_STATUS,
                     text: entry.text,
                     tooltip: entry.tooltip,
                     command: entry.command,
@@ -824,7 +826,7 @@ export class GitContribution implements
         const { upstreamBranch, aheadBehind } = status;
         if (upstreamBranch) {
             return {
-                text: '$(refresh)' + (aheadBehind ? ` ${aheadBehind.behind} $(arrow-down) ${aheadBehind.ahead} $(arrow-up)` : ''),
+                text: '$(refresh)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
                 tooltip: 'Synchronize Changes'
             };
@@ -837,20 +839,64 @@ export class GitContribution implements
     }
 
     registerScmTitleCommands(registry: ScmTitleCommandRegistry): void {
-        registry.registerCommand({ command: GIT_COMMANDS.REFRESH.id });
-        registry.registerCommand({ command: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id });
+        registry.registerItem({ command: GIT_COMMANDS.REFRESH.id, group: 'navigation' });
+        registry.registerItem({ command: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id, group: 'navigation'});
     }
 
     registerScmResourceCommands(registry: ScmResourceCommandRegistry): void {
-        registry.registerCommands('Changes', [GIT_COMMANDS.OPEN_CHANGED_FILE.id, GIT_COMMANDS.DISCARD.id, GIT_COMMANDS.STAGE.id]);
-        registry.registerCommands('Staged changes', [GIT_COMMANDS.OPEN_CHANGED_FILE.id, GIT_COMMANDS.UNSTAGE.id]);
-        registry.registerCommands('Merged Changes', [GIT_COMMANDS.OPEN_CHANGED_FILE.id, GIT_COMMANDS.DISCARD.id, GIT_COMMANDS.STAGE.id]);
+        registry.registerItems('Changes', [
+            {
+                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.DISCARD.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.STAGE.id,
+                group: 'navigation'
+            }
+        ]);
+        registry.registerItems('Staged changes', [
+            {
+                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.UNSTAGE.id,
+                group: 'navigation'
+            }
+        ]);
+        registry.registerItems('Merged Changes', [
+            {
+                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.DISCARD.id,
+                group: 'navigation'
+            },
+            {
+                command: GIT_COMMANDS.STAGE.id,
+                group: 'navigation'
+            }
+        ]);
     }
 
     registerScmGroupCommands(registry: ScmGroupCommandRegistry): void {
-        registry.registerCommands('Changes', [GIT_COMMANDS.DISCARD_ALL.id, GIT_COMMANDS.STAGE_ALL.id]);
-        registry.registerCommands('Staged changes', [GIT_COMMANDS.UNSTAGE_ALL.id]);
-        registry.registerCommands('Merged Changes', [GIT_COMMANDS.STAGE_ALL.id]);
+        registry.registerItems('Changes', [
+            {
+                command: GIT_COMMANDS.DISCARD_ALL.id,
+                group: 'inline'
+            },
+            {
+                command: GIT_COMMANDS.STAGE_ALL.id,
+                group: 'inline'
+            }
+        ]);
+        registry.registerItems('Staged changes', [{ command: GIT_COMMANDS.UNSTAGE_ALL.id, group: 'inline' }]);
+        registry.registerItems('Merged Changes', [{ command: GIT_COMMANDS.STAGE_ALL.id, group: 'inline' }]);
     }
 }
 export interface GitOpenFileOptions {

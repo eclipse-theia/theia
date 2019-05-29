@@ -22,7 +22,7 @@ import { DisposableCollection, Event, Emitter } from '@theia/core';
 import { StorageService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
-
+import { ScmService } from '@theia/scm/lib/browser';
 import debounce = require('lodash.debounce');
 
 export interface GitRefreshOptions {
@@ -43,6 +43,7 @@ export class GitRepositoryProvider {
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(ScmService) protected readonly scmService: ScmService,
         @inject(StorageService) protected readonly storageService: StorageService
     ) {
         this.initialize();
@@ -93,6 +94,9 @@ export class GitRepositoryProvider {
      * Sets or un-sets the repository.
      */
     set selectedRepository(repository: Repository | undefined) {
+        if (!repository) {
+            this.scmService.selectedRepository = undefined;
+        }
         this._selectedRepository = repository;
         this.storageService.setData<Repository | undefined>(this.selectedRepoStorageKey, repository);
         this.fireDidChangeRepository();
