@@ -14,7 +14,7 @@
     "jsonc-parser": "^2.0.2",
     "monaco-css": "^2.0.1",
     "monaco-html": "^2.0.2",
-    "onigasm": "^2.1.0",
+    "onigasm": "2.2.1",
     "vscode-textmate": "^4.0.1"
   },
   "publishConfig": {
