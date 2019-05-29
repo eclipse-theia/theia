@@ -29,7 +29,9 @@ import * as path from 'path';
 @injectable()
 export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
 
-    private static PREFIX = 'vscode:extension/';
+    private static PREFIX_VSCODE_EXTENSION = 'vscode:extension/';
+
+    private static PREFIX_EXT_INSTALL = 'ext install ';
 
     private static MARKET_PLACE_ENDPOINT = 'https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery';
 
@@ -38,11 +40,11 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
         'Accept': 'application/json;api-version=3.0-preview.1'
     };
 
-    private unpackedFolder: string;
+    private vscodeExtensionsFolder: string;
     constructor() {
-        this.unpackedFolder = path.resolve(os.tmpdir(), 'vscode-extension-marketplace');
-        if (!fs.existsSync(this.unpackedFolder)) {
-            fs.mkdirSync(this.unpackedFolder);
+        this.vscodeExtensionsFolder = process.env.VSCODE_PLUGINS || path.resolve(os.tmpdir(), 'vscode-extension-marketplace');
+        if (!fs.existsSync(this.vscodeExtensionsFolder)) {
+            fs.mkdirSync(this.vscodeExtensionsFolder);
         }
     }
 
@@ -53,14 +55,20 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
 
         // download the file
         return new Promise<void>((resolve, reject) => {
-            // extract name
-            const extracted = /^vscode:extension\/(.*)/gm.exec(pluginResolverContext.getOriginId());
+            const originId = pluginResolverContext.getOriginId();
 
-            if (!extracted || extracted === null) {
-                reject(new Error('Invalid extension' + pluginResolverContext.getOriginId()));
+            let extensionName = '';
+            if (originId.startsWith(VsCodePluginDeployerResolver.PREFIX_VSCODE_EXTENSION)) {
+                extensionName = originId.substring(VsCodePluginDeployerResolver.PREFIX_VSCODE_EXTENSION.length);
+            } else if (originId.startsWith(VsCodePluginDeployerResolver.PREFIX_EXT_INSTALL)) {
+                extensionName = originId.substring(VsCodePluginDeployerResolver.PREFIX_EXT_INSTALL.length);
+            }
+
+            if (!extensionName) {
+                reject(new Error('Invalid extension' + originId));
                 return;
             }
-            const extensionName = extracted[1];
+
             const wantedExtensionVersion = undefined;
 
             const json = {
@@ -94,14 +102,15 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
                         // take first one
                         asset = extension.versions[0].files.filter((f: any) => f.assetType === 'Microsoft.VisualStudio.Services.VSIXPackage')[0];
                     }
-                    const shortName = pluginResolverContext.getOriginId().replace(/\W/g, '_');
-                    const unpackedPath = path.resolve(this.unpackedFolder, path.basename(shortName + '.vsix'));
+
+                    const shortName = extensionName.replace(/\W/g, '_');
+                    const extensionPath = path.resolve(this.vscodeExtensionsFolder, path.basename(shortName + '.vsix'));
                     const finish = () => {
-                        pluginResolverContext.addPlugin(pluginResolverContext.getOriginId(), unpackedPath);
+                        pluginResolverContext.addPlugin(originId, extensionPath);
                         resolve();
                     };
 
-                    const dest = fs.createWriteStream(unpackedPath);
+                    const dest = fs.createWriteStream(extensionPath);
                     dest.addListener('finish', finish);
 
                     request.get(asset.source)
@@ -120,6 +129,7 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
      * Handle only the plugins that starts with vscode:
      */
     accept(pluginId: string): boolean {
-        return pluginId.startsWith(VsCodePluginDeployerResolver.PREFIX);
+        return pluginId.startsWith(VsCodePluginDeployerResolver.PREFIX_VSCODE_EXTENSION) ||
+            pluginId.startsWith(VsCodePluginDeployerResolver.PREFIX_EXT_INSTALL);
     }
 }
