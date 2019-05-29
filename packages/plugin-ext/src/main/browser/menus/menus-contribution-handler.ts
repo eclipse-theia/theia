@@ -126,7 +126,7 @@ export class MenusContributionPointHandler {
             execute: () => this.commands.executeCommand(menuAction.command)
         });
 
-        this.scmTitleCommandRegistry.registerCommand({ command: id, when: menuAction.when });
+        this.scmTitleCommandRegistry.registerItem({ command: id, when: menuAction.when, group: menuAction.group });
 
         if (menuAction.group && menuAction.group !== 'navigation') {
             const action: MenuAction = { commandId: id };
@@ -137,7 +137,6 @@ export class MenusContributionPointHandler {
             command.iconClass = pluginCommand.iconClass;
             command.category = pluginCommand.category;
             command.label = pluginCommand.label;
-            command.props = { ['group']: menuAction.group };
         });
     }
 
@@ -157,7 +156,7 @@ export class MenusContributionPointHandler {
             if (action.group !== 'inline') {
                 this.menuRegistry.registerMenuAction(['scm-group-context-menu_' + group], { commandId: id });
             } else {
-                this.scmGroupCommandRegistry.registerCommand(group, id);
+                this.scmGroupCommandRegistry.registerItem(group, { command: id, group: action.group });
             }
         }
 
@@ -165,7 +164,6 @@ export class MenusContributionPointHandler {
             command.iconClass = pluginCommand.iconClass;
             command.category = pluginCommand.category;
             command.label = pluginCommand.label;
-            command.props = { ['group']: action.group };
         });
     }
 
@@ -183,7 +181,7 @@ export class MenusContributionPointHandler {
                 group = group.substring(0, group.indexOf(' &&'));
             }
             if (action.group && action.group.startsWith('inline')) {
-                this.scmResourceCommandRegistry.registerCommand(group, id);
+                this.scmResourceCommandRegistry.registerItem(group, {command: id, group: 'inline'});
             } else {
                 this.menuRegistry.registerMenuAction(['scm-resource-context-menu_' + group], { commandId: id });
             }
@@ -193,7 +191,6 @@ export class MenusContributionPointHandler {
             command.iconClass = pluginCommand.iconClass;
             command.category = pluginCommand.category;
             command.label = pluginCommand.label;
-            command.props = { ['group']: action.group };
         });
     }
 

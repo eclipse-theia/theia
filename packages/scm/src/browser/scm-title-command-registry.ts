@@ -25,6 +25,7 @@ export interface ScmTitleCommandsContribution {
 export interface ScmTitleItem {
     command: string;
     when?: string;
+    group?: string;
 }
 
 @injectable()
@@ -42,11 +43,11 @@ export class ScmTitleCommandRegistry implements FrontendApplicationContribution 
         }
     }
 
-    registerCommand(item: ScmTitleItem): void {
+    registerItem(item: ScmTitleItem): void {
         this.items.push(item);
     }
 
-    getCommands(): ScmTitleItem[] {
+    getItems(): ScmTitleItem[] {
         return this.items;
     }
 }

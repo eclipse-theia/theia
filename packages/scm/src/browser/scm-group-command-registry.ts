@@ -24,9 +24,14 @@ export interface ScmGroupCommandContribution {
     registerScmGroupCommands(registry: ScmGroupCommandRegistry): void;
 }
 
+export interface ScmGroupItem {
+    command: string;
+    group?: string;
+}
+
 @injectable()
 export class ScmGroupCommandRegistry implements FrontendApplicationContribution {
-    private commands: Map<string, string[]> = new Map();
+    private items: Map<string, ScmGroupItem[]> = new Map();
 
     @inject(ContributionProvider)
     @named(ScmGroupCommandContribution)
@@ -39,27 +44,27 @@ export class ScmGroupCommandRegistry implements FrontendApplicationContribution 
         }
     }
 
-    registerCommands(groupId: string, commands: string[]): void {
-        const savedCommands = this.commands.get(groupId);
-        if (savedCommands) {
-            commands.forEach(command => savedCommands.push(command));
-            this.commands.set(groupId, savedCommands);
+    registerItems(groupId: string, items: ScmGroupItem[]): void {
+        const savedItems = this.items.get(groupId);
+        if (savedItems) {
+            items.forEach(item => savedItems.push(item));
+            this.items.set(groupId, savedItems);
         } else {
-            this.commands.set(groupId, commands);
+            this.items.set(groupId, items);
         }
     }
 
-    registerCommand(groupId: string, command: string): void {
-        const commands = this.commands.get(groupId);
-        if (commands) {
-            commands.push(command);
-            this.commands.set(groupId, commands);
+    registerItem(groupId: string, item: ScmGroupItem): void {
+        const items = this.items.get(groupId);
+        if (items) {
+            items.push(item);
+            this.items.set(groupId, items);
         } else {
-            this.commands.set(groupId, [command]);
+            this.items.set(groupId, [item]);
         }
     }
 
-    getCommands(groupId: string): string[] | undefined {
-        return this.commands.get(groupId);
+    getItems(groupId: string): ScmGroupItem[] | undefined {
+        return this.items.get(groupId);
     }
 }
