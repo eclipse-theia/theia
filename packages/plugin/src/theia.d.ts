@@ -6370,6 +6370,19 @@ declare module '@theia/plugin' {
         export function getLanguages(): PromiseLike<string[]>;
 
         /**
+         * Set (and change) the [language](#TextDocument.languageId) that is associated
+         * with the given document.
+         *
+         * *Note* that calling this function will trigger the [`onDidCloseTextDocument`](#workspace.onDidCloseTextDocument) event
+         * followed by the [`onDidOpenTextDocument`](#workspace.onDidOpenTextDocument) event.
+         *
+         * @param document The document which language is to be changed
+         * @param languageId The new language identifier.
+         * @returns A thenable that resolves with the updated document.
+         */
+        export function setTextDocumentLanguage(document: TextDocument, languageId: string): PromiseLike<TextDocument>;
+
+        /**
          * Compute the match between a document [selector](#DocumentSelector) and a document. Values
          * greater than zero mean the selector matches the document.
          *
