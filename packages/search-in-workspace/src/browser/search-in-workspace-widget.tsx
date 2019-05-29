@@ -248,8 +248,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
-        this.onDidUpdateEmitter.fire(undefined);
+        const searchInfo = this.renderSearchInfo();
+        if (searchInfo) {
+            ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{searchInfo}</React.Fragment>, this.searchFormContainer);
+            this.onDidUpdateEmitter.fire(undefined);
+        }
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -516,19 +519,24 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected renderSearchInfo(): React.ReactNode {
         let message = '';
-        if (this.searchInWorkspaceOptions.include && this.searchInWorkspaceOptions.include.length > 0 && this.resultNumber === 0) {
-            message = `No results found in '${this.searchInWorkspaceOptions.include}'`;
-        } else if (this.resultNumber === 0) {
-            message = 'No results found.';
-        } else {
-            if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
-                message = `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
-            } else if (this.resultTreeWidget.fileNumber === 1) {
-                message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
+        if (this.searchTerm) {
+            if (this.searchInWorkspaceOptions.include && this.searchInWorkspaceOptions.include.length > 0 && this.resultNumber === 0) {
+                message = `No results found in '${this.searchInWorkspaceOptions.include}'`;
+            } else if (this.resultNumber === 0) {
+                message = 'No results found.';
             } else {
-                message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
+                if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
+                    message = `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
+                } else if (this.resultTreeWidget.fileNumber === 1) {
+                    message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
+                } else if (this.resultTreeWidget.fileNumber > 0) {
+                    message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
+                } else {
+                    // if fileNumber === 0, return undefined so that `onUpdateRequest()` would not re-render component
+                    return undefined;
+                }
             }
         }
-        return this.searchTerm !== '' ? <div className='search-info'>{message}</div> : '';
+        return <div className='search-info'>{message}</div>;
     }
 }
