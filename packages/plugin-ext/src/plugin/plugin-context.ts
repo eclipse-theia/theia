@@ -507,6 +507,9 @@ export function createAPIFactory(
             getLanguages(): PromiseLike<string[]> {
                 return languagesExt.getLanguages();
             },
+            setTextDocumentLanguage(document: theia.TextDocument, languageId: string): PromiseLike<theia.TextDocument> {
+                return languagesExt.changeLanguage(document.uri, languageId);
+            },
             match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
                 return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
             },

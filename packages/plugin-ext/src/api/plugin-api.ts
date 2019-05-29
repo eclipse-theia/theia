@@ -1049,6 +1049,7 @@ export interface LanguagesExt {
 
 export interface LanguagesMain {
     $getLanguages(): Promise<string[]>;
+    $changeLanguage(resource: UriComponents, languageId: string): Promise<void>;
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
     $unregister(handle: number): void;
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
