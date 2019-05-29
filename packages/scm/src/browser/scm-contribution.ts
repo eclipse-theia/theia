@@ -98,14 +98,18 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         });
         this.scmService.onDidChangeSelectedRepositories(repository => {
             if (repository) {
-                const path = this.labelProvider.getName(new URI(repository.provider.rootUri));
-                this.statusBar.setElement(CHANGE_REPOSITORY.id, {
-                    text: `$(database) ${path}`,
-                    tooltip: path.toString(),
-                    command: CHANGE_REPOSITORY.id,
-                    alignment: StatusBarAlignment.LEFT,
-                    priority: 100
-                });
+                if (this.scmService.repositories.length === 1) {
+                    this.statusBar.removeElement(CHANGE_REPOSITORY.id);
+                } else {
+                    const path = this.labelProvider.getName(new URI(repository.provider.rootUri));
+                    this.statusBar.setElement(CHANGE_REPOSITORY.id, {
+                        text: `$(database) ${path}`,
+                        tooltip: path.toString(),
+                        command: CHANGE_REPOSITORY.id,
+                        alignment: StatusBarAlignment.LEFT,
+                        priority: 100
+                    });
+                }
             } else {
                 this.statusBarCommands.forEach(id => {
                     this.statusBar.removeElement(id);
