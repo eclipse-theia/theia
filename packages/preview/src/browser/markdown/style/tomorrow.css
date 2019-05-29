@@ -23,8 +23,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
- /* copied from https://github.com/microsoft/vscode/blob/08537497eecd3172390194693d3d7c0ec8f52b70/extensions/markdown-language-features/media/tomorrow.css
-    with modifications */
+/* Copied from https://github.com/microsoft/vscode/blob/08537497eecd3172390194693d3d7c0ec8f52b70/extensions/markdown-language-features/media/tomorrow.css
+ * with modifications.
+ */
+
+/* This theme is used to style the output of the highlight.js library which is
+ * licensed under the BSD-3-Clause. See https://github.com/highlightjs/highlight.js/blob/master/LICENSE
+ */
 
 /* Tomorrow Comment */
 .theia-preview-widget .hljs-comment,
