@@ -27,7 +27,6 @@ import { HostedPluginServer } from '../../common/plugin-protocol';
 import { DebugConfiguration as HostedDebugConfig } from '../../common';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -174,7 +173,13 @@ export class HostedPluginManagerClient {
         this.isDebug = true;
 
         await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
-        const outFiles = this.pluginLocation && [path.join(FileUri.fsPath(this.pluginLocation), '**', '*.js')];
+        let outFiles: string[] | undefined = undefined;
+        if (this.pluginLocation) {
+            const fsPath = await this.fileSystem.getFsPath(this.pluginLocation.toString());
+            if (fsPath) {
+                outFiles = [path.join(fsPath, '**', '*.js')];
+            }
+        }
         await this.debugSessionManager.start({
             configuration: {
                 type: 'node',
