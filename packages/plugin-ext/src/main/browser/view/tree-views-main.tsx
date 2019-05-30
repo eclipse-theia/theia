@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces, injectable, inject, Container } from 'inversify';
-import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt } from '../../../api/plugin-api';
+import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewSelection } from '../../../api/plugin-api';
 import { RPCProtocol } from '../../../api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
 import { Message } from '@phosphor/messaging';
@@ -147,12 +147,7 @@ export interface SelectionEventHandler {
     readonly contextSelection: boolean;
 }
 
-export interface DescriptiveMetadata {
-    // tslint:disable-next-line:no-any
-    readonly metadata?: any
-}
-
-export interface TreeViewNode extends SelectableTreeNode, DescriptiveMetadata {
+export interface TreeViewNode extends SelectableTreeNode {
     contextValue?: string
 }
 
@@ -180,7 +175,6 @@ export class TreeViewDataProviderMain {
             selected: false,
             expanded,
             children: [],
-            metadata: item.metadata,
             contextValue: item.contextValue
         };
     }
@@ -195,7 +189,6 @@ export class TreeViewDataProviderMain {
             parent: undefined,
             visible: true,
             selected: false,
-            metadata: item.metadata,
             contextValue: item.contextValue
         };
     }
@@ -360,7 +353,7 @@ export class TreeViewWidget extends TreeWidget {
         this.contextKeys.view.set(this.id);
         this.contextKeys.viewItem.set(node.contextValue);
         try {
-            const arg = node.metadata;
+            const arg = this.toTreeViewSelection(node);
             return <React.Fragment>
                 {this.actions.getInlineCommands(arg).map(command => this.renderInlineCommand(command, arg))}
             </React.Fragment>;
@@ -368,6 +361,10 @@ export class TreeViewWidget extends TreeWidget {
             this.contextKeys.view.set(view);
             this.contextKeys.viewItem.set(viewItem);
         }
+    }
+
+    toTreeViewSelection(node: TreeNode): TreeViewSelection {
+        return { treeViewId: this.id, treeItemId: node.id };
     }
 
     // tslint:disable-next-line:no-any

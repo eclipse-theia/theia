@@ -23,16 +23,17 @@ import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
-import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-views-main';
+import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget } from '../view/tree-views-main';
 import { PluginContribution, Menu } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
-import { MetadataSelection } from '../metadata-selection';
 import { TreeViewActions } from '../view/tree-view-actions';
 import { ScmTitleCommandRegistry } from '@theia/scm/lib/browser/scm-title-command-registry';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmGroupCommandRegistry } from '@theia/scm/lib/browser/scm-group-command-registry';
 import { ScmResourceCommandRegistry } from '@theia/scm/lib/browser/scm-resource-command-registry';
+import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
+
 import PATH = ScmWidget.ContextMenu.PATH;
 
 @injectable()
@@ -181,7 +182,7 @@ export class MenusContributionPointHandler {
                 group = group.substring(0, group.indexOf(' &&'));
             }
             if (action.group && action.group.startsWith('inline')) {
-                this.scmResourceCommandRegistry.registerItem(group, {command: id, group: 'inline'});
+                this.scmResourceCommandRegistry.registerItem(group, { command: id, group: 'inline' });
             } else {
                 this.menuRegistry.registerMenuAction(['scm-resource-context-menu_' + group], { commandId: id });
             }
@@ -228,9 +229,8 @@ export class MenusContributionPointHandler {
         const selectedResource = () => {
             const selection = this.selectionService.selection;
 
-            const metadata = MetadataSelection.getMetadata(selection);
-            if (metadata) {
-                return metadata;
+            if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
+                return selection.source.toTreeViewSelection(selection[0]);
             }
 
             const uri = UriSelection.getUri(selection);
