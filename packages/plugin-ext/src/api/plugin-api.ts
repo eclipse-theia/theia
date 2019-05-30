@@ -441,9 +441,18 @@ export class TreeViewItem {
 
     collapsibleState?: TreeViewItemCollapsibleState;
 
-    metadata?: any;
     contextValue?: string;
 
+}
+
+export interface TreeViewSelection {
+    treeViewId: string
+    treeItemId: string
+}
+export namespace TreeViewSelection {
+    export function is(arg: Object | any): arg is TreeViewSelection {
+        return !!arg && typeof arg === 'object' && 'treeViewId' in arg && 'treeItemId' in arg;
+    }
 }
 
 /**

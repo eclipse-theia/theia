@@ -24,7 +24,7 @@ import { Disposable, ThemeIcon } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
-import { PluginPackage } from '../../common';
+import { PluginPackage, TreeViewSelection } from '../../common';
 import { SelectionServiceExt } from '../selection-provider-ext';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
@@ -35,6 +35,16 @@ export class TreeViewsExtImpl implements TreeViewsExt {
 
     constructor(rpc: RPCProtocol, private commandRegistry: CommandRegistryImpl, private selectionService: SelectionServiceExt) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN);
+        commandRegistry.registerArgumentProcessor({
+            processArgument: arg => {
+                if (!TreeViewSelection.is(arg)) {
+                    return arg;
+                }
+                const { treeViewId, treeItemId } = arg;
+                const treeView = this.treeViews.get(treeViewId);
+                return treeView && treeView.getTreeItem(treeItemId);
+            }
+        });
     }
 
     registerTreeDataProvider<T>(plugin: Plugin, treeViewId: string, treeDataProvider: TreeDataProvider<T>): Disposable {
@@ -167,9 +177,13 @@ class TreeViewExtImpl<T> extends Disposable {
         return `item-${this.idCounter++}`;
     }
 
+    getTreeItem(treeItemId: string): T | undefined {
+        return this.cache.get(treeItemId);
+    }
+
     async getChildren(treeItemId: string): Promise<TreeViewItem[] | undefined> {
         // get element from a cache
-        const cachedElement: T | undefined = this.cache.get(treeItemId);
+        const cachedElement = this.getTreeItem(treeItemId);
 
         // ask data provider for children for cached element
         const result = await this.treeDataProvider.getChildren(cachedElement);
@@ -248,7 +262,6 @@ class TreeViewExtImpl<T> extends Disposable {
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
-                    metadata: value,
                     contextValue: treeItem.contextValue
                 } as TreeViewItem;
 
@@ -264,7 +277,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
     async onExpanded(treeItemId: string): Promise<any> {
         // get element from a cache
-        const cachedElement: T | undefined = this.cache.get(treeItemId);
+        const cachedElement = this.getTreeItem(treeItemId);
 
         // fire an event
         if (cachedElement) {
@@ -276,7 +289,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
     async onCollapsed(treeItemId: string): Promise<any> {
         // get element from a cache
-        const cachedElement: T | undefined = this.cache.get(treeItemId);
+        const cachedElement = this.getTreeItem(treeItemId);
 
         // fire an event
         if (cachedElement) {
@@ -288,7 +301,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
     async onSelectionChanged(treeItemId: string, contextSelection: boolean): Promise<any> {
         // get element from a cache
-        const cachedElement: T | undefined = this.cache.get(treeItemId);
+        const cachedElement = this.getTreeItem(treeItemId);
 
         this.selectionService.selection = undefined;
 
