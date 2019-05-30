@@ -33,6 +33,11 @@ export namespace KeymapsCommands {
         category: 'Settings',
         label: 'Open Keyboard Shortcuts',
     };
+    export const OPEN_KEYMAPS_JSON: Command = {
+        id: 'keymaps:openJson',
+        category: 'Settings',
+        label: 'Open Keyboard Shortcuts (JSON)'
+    };
 }
 
 @injectable()
@@ -55,6 +60,10 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS, {
             isEnabled: () => true,
             execute: () => this.openView({ activate: true })
+        });
+        commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS_JSON, {
+            isEnabled: () => true,
+            execute: () => this.keymaps.open()
         });
     }
 
