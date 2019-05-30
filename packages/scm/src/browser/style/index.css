@@ -31,7 +31,6 @@
 
 .theia-scm .noWrapInfo {
     width: 100%;
-    display: flex;
     overflow: hidden;
     white-space: nowrap;
     align-items: center;

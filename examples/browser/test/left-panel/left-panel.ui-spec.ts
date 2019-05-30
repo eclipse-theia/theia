@@ -33,8 +33,9 @@ before(() => {
 });
 
 describe('theia left panel', () => {
-    it("should show 'Explorer'", () => {
+    it("should show 'Explorer' and 'SCM'", () => {
         expect(leftPanel.doesTabExist('Explorer')).to.be.true;
+        expect(leftPanel.doesTabExist('Source Control')).to.be.true;
     });
 
     describe('files tab', () => {
@@ -46,6 +47,18 @@ describe('theia left panel', () => {
             leftPanel.openCloseTab('Explorer');
             expect(leftPanel.isFileTreeVisible()).to.be.false;
             expect(leftPanel.isTabActive('Explorer')).to.be.false;
+        });
+    });
+
+    describe('SCM tab', () => {
+        it('should open/close the SCM tab', () => {
+            leftPanel.openCloseTab('Source Control');
+            expect(leftPanel.isScmContainerVisible()).to.be.true;
+            expect(leftPanel.isTabActive('Source Control')).to.be.true;
+
+            leftPanel.openCloseTab('Source Control');
+            expect(leftPanel.isScmContainerVisible()).to.be.false;
+            expect(leftPanel.isTabActive('Source Control')).to.be.false;
         });
     });
 });

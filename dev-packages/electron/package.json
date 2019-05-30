@@ -28,6 +28,6 @@
     "unzipper": "^0.9.11"
   },
   "scripts": {
-    "postinstall": "node ./scripts/skip-replace-ffmpeg || (node ./electron-replace-ffmpeg && node ./electron-h264-test)"
+    "postinstall": "node ./scripts/skip-replace-ffmpeg || (node ./electron-replace-ffmpeg)"
   }
 }

@@ -46,19 +46,24 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     constructor() {
         super({
             widgetId: SCM_WIDGET_FACTORY_ID,
-            widgetName: 'Scm',
+            widgetName: 'SCM',
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 300
             },
-            toggleCommandId: 'scmView:toggle'
+            toggleCommandId: 'scmView:toggle',
+            toggleKeybinding: 'ctrlcmd+shift+g'
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     onStart(): void {
         const CHANGE_REPOSITORY = {
             id: 'scm.change.repository',
-            label: 'Scm: Change Repository...'
+            label: 'SCM: Change Repository...'
         };
 
         const refresh = (commands: ScmCommand[]) => {
@@ -93,14 +98,18 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         });
         this.scmService.onDidChangeSelectedRepositories(repository => {
             if (repository) {
-                const path = this.labelProvider.getName(new URI(repository.provider.rootUri));
-                this.statusBar.setElement(CHANGE_REPOSITORY.id, {
-                    text: `$(database) ${path}: ${repository.provider.contextValue}`,
-                    tooltip: path.toString(),
-                    command: CHANGE_REPOSITORY.id,
-                    alignment: StatusBarAlignment.LEFT,
-                    priority: 100
-                });
+                if (this.scmService.repositories.length === 1) {
+                    this.statusBar.removeElement(CHANGE_REPOSITORY.id);
+                } else {
+                    const path = this.labelProvider.getName(new URI(repository.provider.rootUri));
+                    this.statusBar.setElement(CHANGE_REPOSITORY.id, {
+                        text: `$(database) ${path}`,
+                        tooltip: path.toString(),
+                        command: CHANGE_REPOSITORY.id,
+                        alignment: StatusBarAlignment.LEFT,
+                        priority: 100
+                    });
+                }
             } else {
                 this.statusBarCommands.forEach(id => {
                     this.statusBar.removeElement(id);
