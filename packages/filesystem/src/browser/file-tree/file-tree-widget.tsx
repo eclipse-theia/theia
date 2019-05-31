@@ -105,6 +105,20 @@ export class FileTreeWidget extends TreeWidget {
             selectedNodes = [node];
         }
         this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
+        if (event.dataTransfer) {
+            let label: string;
+            if (selectedNodes.length === 1) {
+                label = node.name;
+            } else {
+                label = String(selectedNodes.length);
+            }
+            const dragImage = document.createElement('div');
+            dragImage.className = 'theia-file-tree-drag-image';
+            dragImage.textContent = label;
+            document.body.appendChild(dragImage);
+            event.dataTransfer.setDragImage(dragImage, -10, -10);
+            setTimeout(() => document.body.removeChild(dragImage), 0);
+        }
     }
 
     protected handleDragEnterEvent(node: TreeNode | undefined, event: React.DragEvent): void {
