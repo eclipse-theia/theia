@@ -360,6 +360,20 @@ export class TaskTerminateQuickOpen implements QuickOpenModel {
                     }
                 }));
             });
+            if (runningTasks.length > 1) {
+                items.push(new QuickOpenItem({
+                    label: 'All running tasks',
+                    run: (mode: QuickOpenMode): boolean => {
+                        if (mode !== QuickOpenMode.OPEN) {
+                            return false;
+                        }
+                        runningTasks.forEach((t: TaskInfo) => {
+                            this.taskService.kill(t.taskId);
+                        });
+                        return true;
+                    }
+                }));
+            }
         }
         acceptor(items);
     }
