@@ -47,6 +47,8 @@ export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
     export const TERMINAL_NEW = [...TERMINAL, '1_terminal'];
     export const TERMINAL_TASKS = [...TERMINAL, '2_terminal'];
+    export const TERMINAL_TASKS_INFO = [...TERMINAL_TASKS, '3_terminal'];
+    export const TERMINAL_TASKS_CONFIG = [...TERMINAL_TASKS, '4_terminal'];
     export const TERMINAL_NAVIGATOR_CONTEXT_MENU = ['navigator-context-menu', 'navigation'];
 }
 

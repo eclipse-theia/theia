@@ -211,9 +211,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             order: '3'
         });
 
-        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
+            commandId: TaskCommands.TASK_TERMINATE.id,
+            label: 'Terminate Task...',
+            order: '0'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_CONFIG, {
             commandId: TaskCommands.TASK_CONFIGURE.id,
-            order: '4'
+            order: '0'
         });
     }
 
