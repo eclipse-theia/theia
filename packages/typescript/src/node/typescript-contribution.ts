@@ -55,7 +55,9 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
     }
 
     async start(clientConnection: IConnection, { parameters }: TypeScriptStartOptions): Promise<void> {
-        const command = 'node';
+        // Re-use the same tool used to launch Theia. e.g. for an Electron Theia packaging,
+        // this will be "electron" executable that is bundled with the application.
+        const command = process.execPath;
         const args: string[] = [
             path.join(__dirname, 'startserver.js'),
             '--stdio'
