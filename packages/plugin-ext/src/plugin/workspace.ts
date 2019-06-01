@@ -161,7 +161,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         }
 
         return this.proxy.$startFileSearch(includePattern, includeFolderUri, excludePatternOrDisregardExcludes, maxResults, token)
-            .then(data => Array.isArray(data) ? data.map(URI.revive) : []);
+            .then(data => Array.isArray(data) ? data.map(uri => URI.revive(uri)) : []);
     }
 
     createFileSystemWatcher(globPattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {

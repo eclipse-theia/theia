@@ -38,7 +38,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
         const homeStat = await this.fileSystem.getCurrentUserHome();
-        const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
+        const home = (homeStat) ? new URI(homeStat.uri).path.toString() : undefined;
         let tempWorkspaceFile: URI | undefined;
         if (home) {
             tempWorkspaceFile = getTemporaryWorkspaceFileUri(new URI(home));

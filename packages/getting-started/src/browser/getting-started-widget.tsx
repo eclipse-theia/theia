@@ -68,7 +68,7 @@ export class GettingStartedWidget extends ReactWidget {
         this.applicationInfo = await this.appServer.getApplicationInfo();
         this.recentWorkspaces = await this.workspaceService.recentWorkspaces();
         this.stat = await this.fileSystem.getCurrentUserHome();
-        this.home = (this.stat) ? new URI(this.stat.uri).withoutScheme().toString() : undefined;
+        this.home = (this.stat) ? new URI(this.stat.uri).path.toString() : undefined;
         this.update();
     }
 

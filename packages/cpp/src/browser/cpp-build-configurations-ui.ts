@@ -78,7 +78,7 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         const configurations = this.cppBuildConfigurations.getValidConfigs();
 
         const homeStat = await this.fileSystem.getCurrentUserHome();
-        const home = (homeStat) ? new URI(homeStat.uri).withoutScheme().toString() : undefined;
+        const home = (homeStat) ? new URI(homeStat.uri).path.toString() : undefined;
 
         // Item to create a new build configuration
         items.push(this.createItem);
