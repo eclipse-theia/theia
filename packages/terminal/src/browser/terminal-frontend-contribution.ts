@@ -349,7 +349,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected async selectTerminalCwd(): Promise<string | undefined> {
         const roots = this.workspaceService.tryGetRoots();
         return this.quickPick.show(roots.map(
-            ({ uri }) => ({ label: this.labelProvider.getLongName(new URI(uri).withoutScheme()), value: uri })
+            ({ uri }) => ({ label: this.labelProvider.getLongName(new URI(uri)), value: uri })
         ), { placeholder: 'Select current working directory for new terminal' });
     }
 

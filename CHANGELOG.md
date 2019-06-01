@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.8.0
+
+Breaking changes:
+
+- [core] `scheme` is mandatory for URI
+  - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
+
 ## v0.7.0
 
 - [console] added `Clear Console` command and toolbar item
