@@ -58,7 +58,7 @@ export class GitResourceResolver implements ResourceResolver {
     }
 
     async getRepository(uri: URI): Promise<Repository | undefined> {
-        const uriWithoutScheme = uri.withoutScheme();
+        const fileUri = uri.withScheme('file');
         const repositories = this.repositoryProvider.allRepositories;
         // The layout restorer might ask for the known repositories this point.
         if (repositories.length === 0) {
@@ -72,9 +72,9 @@ export class GitResourceResolver implements ResourceResolver {
         const sortedRepositories = repositories.sort((a, b) => b.localUri.length - a.localUri.length);
         for (const repository of sortedRepositories) {
             const localUri = new URI(repository.localUri);
-            // make sure that localUri of repository has no scheme.
-            const localUriStr = localUri.withoutScheme().toString();
-            if (uriWithoutScheme.toString().startsWith(localUriStr)) {
+            // make sure that localUri of repository has file scheme.
+            const localUriStr = localUri.withScheme('file').toString();
+            if (fileUri.toString().startsWith(localUriStr)) {
                 return { localUri: localUriStr };
             }
         }

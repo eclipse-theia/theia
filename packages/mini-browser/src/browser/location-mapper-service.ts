@@ -136,7 +136,7 @@ export class FileLocationMapper implements LocationMapper {
         if (uri.scheme !== 'file') {
             throw new Error(`Only URIs with 'file' scheme can be mapped to an URL. URI was: ${uri}.`);
         }
-        let rawLocation = uri.withoutScheme().toString();
+        let rawLocation = uri.path.toString();
         if (rawLocation.charAt(0) === '/') {
             rawLocation = rawLocation.substr(1);
         }

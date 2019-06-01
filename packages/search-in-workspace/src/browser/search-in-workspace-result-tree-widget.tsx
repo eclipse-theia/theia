@@ -353,12 +353,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected getFileNodesByUri(uri: URI): SearchInWorkspaceFileNode[] {
         const nodes: SearchInWorkspaceFileNode[] = [];
-        const path = uri.withoutScheme().toString();
+        const fileUri = uri.withScheme('file').toString();
         for (const rootFolderNode of this.resultTree.values()) {
             const rootUri = new URI(rootFolderNode.path).withScheme('file');
             if (rootUri.isEqualOrParent(uri)) {
                 for (const fileNode of rootFolderNode.children) {
-                    if (fileNode.fileUri === path) {
+                    if (fileNode.fileUri === fileUri) {
                         nodes.push(fileNode);
                     }
                 }
@@ -650,7 +650,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected async createReplacePreview(node: SearchInWorkspaceFileNode): Promise<URI> {
         const fileUri = new URI(node.fileUri).withScheme('file');
-        const uri = fileUri.withoutScheme().toString();
         const resource = await this.fileResourceResolver.resolve(fileUri);
         const content = await resource.readContents();
 
@@ -663,7 +662,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             lines[l.line - 1] = start + this._replaceTerm + end;
         });
 
-        return new URI(uri).withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
+        return fileUri.withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
     }
 
     protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget) {

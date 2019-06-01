@@ -36,7 +36,7 @@ export class BlameDecorator implements HoverProvider {
 
     protected registerHoverProvider(uri: string): Disposable {
         if (this.languages.registerHoverProvider) {
-            return this.languages.registerHoverProvider([{ pattern: new URI(uri).withoutScheme().toString() }], this);
+            return this.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
         }
         return Disposable.NULL;
     }

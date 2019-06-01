@@ -237,8 +237,8 @@ export class DirtyDiffModel implements Disposable {
     }
 
     protected async isInGitRepository(repository: Repository): Promise<boolean> {
-        const modelUri = this.editor.uri.withoutScheme().toString();
-        const repoUri = new URI(repository.localUri).withoutScheme().toString();
+        const modelUri = this.editor.uri.withScheme('file').toString();
+        const repoUri = new URI(repository.localUri).withScheme('file').toString();
         return modelUri.startsWith(repoUri) && this.previousRevision.isVersionControlled();
     }
 

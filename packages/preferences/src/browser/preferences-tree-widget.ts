@@ -428,10 +428,10 @@ export class PreferencesEditorsContainer extends DockPanel {
 
         let uri = preferenceUri;
         if (preferenceUri.scheme === UserStorageUri.SCHEME && homeUri) {
-            uri = homeUri.resolve(THEIA_USER_STORAGE_FOLDER).resolve(preferenceUri.withoutScheme().path);
+            uri = homeUri.resolve(THEIA_USER_STORAGE_FOLDER).resolve(preferenceUri.path);
         }
         return homeUri
-            ? FileSystemUtils.tildifyPath(uri.path.toString(), homeUri.withoutScheme().toString())
+            ? FileSystemUtils.tildifyPath(uri.path.toString(), homeUri.path.toString())
             : uri.path.toString();
     }
 }
