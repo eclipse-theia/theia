@@ -649,6 +649,10 @@ export function createAPIFactory(
                 return tasksExt.registerTaskProvider(type, provider);
             },
 
+            fetchTasks(filter?: theia.TaskFilter): Thenable<theia.Task[]> {
+                return tasksExt.fetchTasks(filter);
+            },
+
             get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
                 return tasksExt.taskExecutions;
             },

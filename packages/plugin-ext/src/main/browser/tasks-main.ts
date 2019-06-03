@@ -17,14 +17,15 @@
 import {
     TasksMain,
     MAIN_RPC_CONTEXT,
-    TasksExt
+    TasksExt,
+    TaskDto
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { TaskInfo, TaskExitedEvent } from '@theia/task/lib/common/task-protocol';
+import { ContributedTaskConfiguration, TaskConfiguration, TaskInfo, TaskExitedEvent } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 
@@ -93,6 +94,40 @@ export class TasksMainImpl implements TasksMain {
         disposable.push(this.taskProviderRegistry.register(type, taskProvider, handle));
         disposable.push(this.taskResolverRegistry.register(type, taskResolver));
         this.disposables.set(handle, disposable);
+    }
+
+    async $fetchTasks(taskVersion: string | undefined, taskType: string | undefined): Promise<TaskDto[]> {
+        if (taskVersion && !taskVersion.startsWith('2.')) { // Theia does not support 1.x or earlier task versions
+            return [];
+        }
+
+        let found: TaskConfiguration[] = [];
+        const tasks = [...this.taskService.getConfiguredTasks(), ...(await this.taskService.getProvidedTasks())];
+        if (taskType) {
+            found = tasks.filter(t => {
+                if (ContributedTaskConfiguration.is(t)) {
+                    return t._source === taskType;
+                }
+                return t.type === taskType;
+            });
+        } else {
+            found = tasks;
+        }
+        return found.map(taskConfig => {
+            const dto: TaskDto = {
+                type: taskConfig.type,
+                label: taskConfig.label
+            };
+            const { _scope, _source, ...properties } = taskConfig;
+            dto.scope = _scope;
+            dto.source = _source;
+            for (const key in properties) {
+                if (properties.hasOwnProperty(key)) {
+                    dto[key] = properties[key];
+                }
+            }
+            return dto;
+        });
     }
 
     $unregister(handle: number): void {

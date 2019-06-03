@@ -1231,6 +1231,7 @@ export interface TasksExt {
 
 export interface TasksMain {
     $registerTaskProvider(handle: number, type: string): void;
+    $fetchTasks(taskVersion: string | undefined, taskType: string | undefined): Promise<TaskDto[]>;
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;

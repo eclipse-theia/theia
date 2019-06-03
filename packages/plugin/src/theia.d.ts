@@ -7831,6 +7831,19 @@ declare module '@theia/plugin' {
         exitCode: number;
     }
 
+    export interface TaskFilter {
+		/**
+		 * The task version as used in the tasks.json file.
+		 * The string support the package.json semver notation.
+		 */
+        version?: string;
+
+		/**
+		 * The task type to return;
+		 */
+        type?: string;
+    }
+
     export namespace tasks {
 
         /**
@@ -7841,6 +7854,15 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
+
+        /**
+         * Fetches all tasks available in the systems. This includes tasks
+         * from `tasks.json` files as well as tasks from task providers
+         * contributed through extensions.
+         *
+         * @param filter a filter to filter the return tasks.
+         */
+        export function fetchTasks(filter?: TaskFilter): Thenable<Task[]>;
 
         /**
          * The currently active task executions or an empty array.
