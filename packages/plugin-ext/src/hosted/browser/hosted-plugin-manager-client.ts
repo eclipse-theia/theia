@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from 'path';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
+import { Path } from '@theia/core/lib/common/path';
 import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -177,7 +177,7 @@ export class HostedPluginManagerClient {
         if (this.pluginLocation) {
             const fsPath = await this.fileSystem.getFsPath(this.pluginLocation.toString());
             if (fsPath) {
-                outFiles = [path.join(fsPath, '**', '*.js')];
+                outFiles = [new Path(fsPath).join('**', '*.js').toString()];
             }
         }
         await this.debugSessionManager.start({
