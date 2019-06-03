@@ -1,11 +1,12 @@
 # Change Log
 
-## v0.8.0
+## v0.7.1
 
-Breaking changes:
+Bugfix release:
 
-- [core] `scheme` is mandatory for URI
-  - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
+- [markdown] Fix error with anchor library
+- fix #5308: vscode URI incompatibilities
+- [plugin/tree] fix #4975: don't pass tree item data over JSON-RPC
 
 ## v0.7.0
 

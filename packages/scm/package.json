@@ -1,12 +1,12 @@
 {
   "name": "@theia/scm",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Theia - Source control Extension",
   "dependencies": {
-    "@theia/core": "^0.7.0",
-    "@theia/editor": "^0.7.0",
-    "@theia/filesystem": "^0.7.0",
-    "@theia/navigator": "^0.7.0",
+    "@theia/core": "^0.7.1",
+    "@theia/editor": "^0.7.1",
+    "@theia/filesystem": "^0.7.1",
+    "@theia/navigator": "^0.7.1",
     "@types/diff": "^3.2.2",
     "diff": "^3.4.0",
     "ts-md5": "^1.2.2"
@@ -43,7 +43,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.7.0"
+    "@theia/ext-scripts": "^0.7.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
