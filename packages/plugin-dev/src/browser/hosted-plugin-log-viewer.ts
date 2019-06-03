@@ -17,8 +17,8 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
-import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { LogPart } from '../../common/types';
+import { LogPart } from '@theia/plugin-ext/lib/common/types';
+import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 
 @injectable()
 export class HostedPluginLogViewer {

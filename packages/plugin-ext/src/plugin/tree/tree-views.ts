@@ -24,8 +24,9 @@ import { Disposable, ThemeIcon } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
-import { PluginPackage, TreeViewSelection } from '../../common';
+import { TreeViewSelection } from '../../common';
 import { SelectionServiceExt } from '../selection-provider-ext';
+import { PluginPackage } from '../../common/plugin-protocol';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 

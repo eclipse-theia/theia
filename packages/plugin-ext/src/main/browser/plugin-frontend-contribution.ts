@@ -16,16 +16,12 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { HostedPluginManagerClient, HostedPluginCommands } from '../../hosted/browser/hosted-plugin-manager-client';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { OpenUriCommandHandler } from './commands';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution {
-
-    @inject(HostedPluginManagerClient)
-    protected readonly hostedPluginManagerClient: HostedPluginManagerClient;
 
     @inject(PluginExtDeployCommandService)
     protected readonly pluginExtDeployCommandService: PluginExtDeployCommandService;
@@ -34,21 +30,6 @@ export class PluginApiFrontendContribution implements CommandContribution {
     protected readonly openUriCommandHandler: OpenUriCommandHandler;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(HostedPluginCommands.START, {
-            execute: () => this.hostedPluginManagerClient.start()
-        });
-        commands.registerCommand(HostedPluginCommands.DEBUG, {
-            execute: () => this.hostedPluginManagerClient.debug()
-        });
-        commands.registerCommand(HostedPluginCommands.STOP, {
-            execute: () => this.hostedPluginManagerClient.stop()
-        });
-        commands.registerCommand(HostedPluginCommands.RESTART, {
-            execute: () => this.hostedPluginManagerClient.restart()
-        });
-        commands.registerCommand(HostedPluginCommands.SELECT_PATH, {
-            execute: () => this.hostedPluginManagerClient.selectPluginPath()
-        });
 
         commands.registerCommand(PluginExtDeployCommandService.COMMAND, {
             execute: () => this.pluginExtDeployCommandService.deploy()

@@ -558,11 +558,6 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
-export interface DebugConfiguration {
-    port?: number;
-    debugMode?: string;
-}
-
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
     setClientId(clientId: number): Promise<void>;
@@ -584,7 +579,6 @@ export interface PluginDeployerHandler {
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
-    getHostedPlugin(): Promise<PluginMetadata | undefined>;
 
     getDeployedMetadata(): Promise<PluginMetadata[]>;
     getDeployedFrontendMetadata(): Promise<PluginMetadata[]>;
@@ -594,17 +588,6 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
     onMessage(message: string): Promise<void>;
 
-    isPluginValid(uri: string): Promise<boolean>;
-    runHostedPluginInstance(uri: string): Promise<string>;
-    runDebugHostedPluginInstance(uri: string, debugConfig: DebugConfiguration): Promise<string>;
-    terminateHostedPluginInstance(): Promise<void>;
-    isHostedPluginInstanceRunning(): Promise<boolean>;
-    getHostedPluginInstanceURI(): Promise<string>;
-    getHostedPluginURI(): Promise<string>;
-
-    runWatchCompilation(uri: string): Promise<void>;
-    stopWatchCompilation(uri: string): Promise<void>;
-    isWatchCompilationRunning(uri: string): Promise<boolean>;
 }
 
 /**

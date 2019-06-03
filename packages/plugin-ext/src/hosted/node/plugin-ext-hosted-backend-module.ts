@@ -18,15 +18,12 @@ import { interfaces } from 'inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { HostedInstanceManager, NodeHostedPluginRunner } from './hosted-instance-manager';
-import { HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MetadataScanner } from './metadata-scanner';
 import { HostedPluginServerImpl } from './plugin-service';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
-import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
 import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler, PluginHostEnvironmentVariable } from '../../common/plugin-protocol';
 import { GrammarsReader } from './scanners/grammars-reader';
 import { HostedPluginProcess } from './hosted-plugin-process';
@@ -38,9 +35,6 @@ import { HostedPluginProcessesCache } from './hosted-plugin-processes-cache';
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
-
-    bind(HostedPluginsManagerImpl).toSelf().inSingletonScope();
-    bind(HostedPluginsManager).toService(HostedPluginsManagerImpl);
 
     bindContributionProvider(bind, Symbol.for(ExtPluginApiProvider));
     bindContributionProvider(bind, PluginHostEnvironmentVariable);
@@ -71,14 +65,8 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
 }
 
-const hostedBackendConnectionModule = ConnectionContainerModule.create(({ bind }) => {
-    bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
-    bind(HostedInstanceManager).to(NodeHostedPluginRunner).inSingletonScope();
-});
-
 export function bindHostedBackend(bind: interfaces.Bind): void {
     bindCommonHostedBackend(bind);
-    bind(ConnectionContainerModule).toConstantValue(hostedBackendConnectionModule);
 
     bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
 }

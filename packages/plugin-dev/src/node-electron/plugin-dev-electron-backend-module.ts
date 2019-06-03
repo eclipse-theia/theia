@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2019 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,13 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
-import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module';
-import { PluginScanner } from '../../common/plugin-protocol';
-import { TheiaPluginScannerElectron } from './scanner-theia-electron';
+import { HostedInstanceManager, ElectronNodeHostedPluginRunner } from '../node/hosted-instance-manager';
+import { ContainerModule } from 'inversify';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { bindCommonHostedBackend } from '../node/plugin-dev-backend-module';
 
-export function bindElectronBackend(bind: interfaces.Bind): void {
+const hostedBackendConnectionModule = ConnectionContainerModule.create(({ bind }) => {
+    bind(HostedInstanceManager).to(ElectronNodeHostedPluginRunner);
+});
+
+export default new ContainerModule(bind => {
     bindCommonHostedBackend(bind);
-
-    bind(PluginScanner).to(TheiaPluginScannerElectron).inSingletonScope();
-}
+    bind(ConnectionContainerModule).toConstantValue(hostedBackendConnectionModule);
+});

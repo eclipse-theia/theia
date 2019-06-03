@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2019 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,13 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
-import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module';
-import { PluginScanner } from '../../common/plugin-protocol';
-import { TheiaPluginScannerElectron } from './scanner-theia-electron';
+// Exports contribution point for uri postprocessor of hosted plugin manager.
+// This could be used to alter hosted instance uri, for example, change port.
+export * from '../node/hosted-plugin-uri-postprocessor';
 
-export function bindElectronBackend(bind: interfaces.Bind): void {
-    bindCommonHostedBackend(bind);
-
-    bind(PluginScanner).to(TheiaPluginScannerElectron).inSingletonScope();
-}
+export * from './plugin-dev-protocol';

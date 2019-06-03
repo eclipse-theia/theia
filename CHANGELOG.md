@@ -4,6 +4,7 @@
 
 Breaking changes:
 
+- [plugin] 'Hosted mode' extracted in `plugin-dev` extension
 - [core] `scheme` is mandatory for URI
   - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
 

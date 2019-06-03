@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2019 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
-import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module';
-import { PluginScanner } from '../../common/plugin-protocol';
-import { TheiaPluginScannerElectron } from './scanner-theia-electron';
+/* note: this bogus test file is required so that
+   we are able to run mocha unit tests on this
+   package, without having any actual unit tests in it.
+   This way a coverage report will be generated,
+   showing 0% coverage, instead of no report.
+   This file can be removed once we have real unit
+   tests in place. */
 
-export function bindElectronBackend(bind: interfaces.Bind): void {
-    bindCommonHostedBackend(bind);
+describe('plugin-dev package', () => {
 
-    bind(PluginScanner).to(TheiaPluginScannerElectron).inSingletonScope();
-}
+    it('support code coverage statistics', () => true);
+});

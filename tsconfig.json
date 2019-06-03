@@ -115,6 +115,9 @@
       "@theia/file-search/lib/*": [
         "packages/file-search/src/*"
       ],
+      "@theia/plugin-dev/lib/*": [
+        "packages/plugin-dev/src/*"
+      ],
       "@theia/plugin-ext/lib/*": [
         "packages/plugin-ext/src/*"
       ],

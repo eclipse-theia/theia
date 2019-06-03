@@ -23,13 +23,13 @@ import * as request from 'request';
 
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { LogType } from './../../common/types';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { HostedPluginSupport } from './hosted-plugin';
-import { DebugConfiguration } from '../../common';
+import { DebugConfiguration } from '../common';
 import { environment } from '@theia/core';
-import { MetadataScanner } from './metadata-scanner';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { LogType } from '@theia/plugin-ext/lib/common/types';
+import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
+import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
 const processTree = require('ps-tree');
 
 export const HostedInstanceManager = Symbol('HostedInstanceManager');
@@ -190,8 +190,8 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     /**
      * Start a loop to ping, if ping is OK return immediately, else start a new ping after 1second. We iterate for the given amount of loops provided in remainingCount
-     * @param remainingCount the number of occurence to check
-     * @param resolve resolvefunction if ok
+     * @param remainingCount the number of occurrence to check
+     * @param resolve resolve function if ok
      * @param reject reject function if error
      */
     private async pingLoop(remainingCount: number,
@@ -246,11 +246,13 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         } else {
             command = processArguments.filter((arg, index, args) => {
                 // remove --port=X and --port X arguments if set
+                // remove --plugins arguments
                 if (arg.startsWith('--port') || args[index - 1] === '--port') {
                     return;
                 } else {
                     return arg;
                 }
+
             });
         }
         if (process.env.HOSTED_PLUGIN_HOSTNAME) {
