@@ -44,6 +44,7 @@ cache:
   - packages/navigator/node_modules
   - packages/outline-view/node_modules
   - packages/output/node_modules
+  - packages/plugin-dev/node_modules
   - packages/plugin-ext-vscode/node_modules
   - packages/plugin-ext/node_modules
   - packages/plugin/node_modules

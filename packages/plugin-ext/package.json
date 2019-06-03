@@ -24,7 +24,6 @@
     "getmac": "^1.4.6",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
-    "ps-tree": "1.1.0",
     "uuid": "^3.2.1",
     "vscode-debugprotocol": "^1.32.0"
   },

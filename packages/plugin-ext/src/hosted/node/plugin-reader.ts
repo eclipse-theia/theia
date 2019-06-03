@@ -21,7 +21,6 @@ import * as fs from 'fs-extra';
 import * as express from 'express';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject } from 'inversify';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { PluginMetadata, getPluginId, MetadataProcessor } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';
@@ -35,8 +34,6 @@ export class HostedPluginReader implements BackendApplicationContribution {
     @inject(MetadataScanner)
     private readonly scanner: MetadataScanner;
 
-    private readonly hostedPlugin = new Deferred<PluginMetadata | undefined>();
-
     @optional()
     @multiInject(MetadataProcessor) private readonly metadataProcessors: MetadataProcessor[];
 
@@ -44,11 +41,6 @@ export class HostedPluginReader implements BackendApplicationContribution {
      * Map between a plugin's id and the local storage
      */
     private pluginsIdsFiles: Map<string, string> = new Map();
-
-    initialize(): void {
-        this.doGetPluginMetadata(process.env.HOSTED_PLUGIN)
-            .then(this.hostedPlugin.resolve.bind(this.hostedPlugin));
-    }
 
     configure(app: express.Application): void {
         app.get('/hostedPlugin/:pluginId/:path(*)', (req, res) => {
@@ -66,21 +58,13 @@ export class HostedPluginReader implements BackendApplicationContribution {
     }
 
     async getPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
-        const plugin = await this.doGetPluginMetadata(pluginPath);
-        if (plugin) {
-            const hostedPlugin = await this.getPlugin();
-            if (hostedPlugin && hostedPlugin.model.name === plugin.model.name) {
-                // prefer hosted plugin
-                return undefined;
-            }
-        }
-        return plugin;
+        return this.doGetPluginMetadata(pluginPath);
     }
 
     /**
      * MUST never throw to isolate plugin deployment
      */
-    protected async doGetPluginMetadata(pluginPath: string | undefined) {
+    async doGetPluginMetadata(pluginPath: string | undefined) {
         try {
             if (!pluginPath) {
                 return undefined;
@@ -113,10 +97,6 @@ export class HostedPluginReader implements BackendApplicationContribution {
             this.pluginsIdsFiles.set(getPluginId(pluginMetadata.model), pluginPath);
         }
         return pluginMetadata;
-    }
-
-    async getPlugin(): Promise<PluginMetadata | undefined> {
-        return this.hostedPlugin.promise;
     }
 
     protected async loadManifest(pluginPath: string): Promise<any> {

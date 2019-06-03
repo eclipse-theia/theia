@@ -14,12 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, named, postConstruct } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, DebugConfiguration, PluginDeployer } from '../../common/plugin-protocol';
-import { HostedPluginReader } from './plugin-reader';
-import { HostedInstanceManager } from './hosted-instance-manager';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployer } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
-import { HostedPluginsManager } from './hosted-plugins-manager';
-import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core';
 import { ContributionProvider } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
@@ -30,8 +26,6 @@ import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
 export class HostedPluginServerImpl implements HostedPluginServer {
     @inject(ILogger)
     protected readonly logger: ILogger;
-    @inject(HostedPluginsManager)
-    protected readonly hostedPluginsManager: HostedPluginsManager;
 
     @inject(HostedPluginDeployerHandler)
     protected readonly deployerHandler: HostedPluginDeployerHandler;
@@ -46,9 +40,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     protected client: HostedPluginClient | undefined;
 
     constructor(
-        @inject(HostedPluginReader) private readonly reader: HostedPluginReader,
-        @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport,
-        @inject(HostedInstanceManager) protected readonly hostedInstanceManager: HostedInstanceManager) {
+        @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
     }
 
     @postConstruct()
@@ -66,13 +58,6 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     setClient(client: HostedPluginClient): void {
         this.client = client;
         this.hostedPlugin.setClient(client);
-    }
-    async getHostedPlugin(): Promise<PluginMetadata | undefined> {
-        const pluginMetadata = await this.reader.getPlugin();
-        if (pluginMetadata) {
-            this.hostedPlugin.runPlugin(pluginMetadata.model);
-        }
-        return Promise.resolve(this.reader.getPlugin());
     }
 
     getDeployedFrontendMetadata(): Promise<PluginMetadata[]> {
@@ -102,55 +87,6 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     onMessage(message: string): Promise<void> {
         this.hostedPlugin.onMessage(message);
         return Promise.resolve();
-    }
-
-    isPluginValid(uri: string): Promise<boolean> {
-        return Promise.resolve(this.hostedInstanceManager.isPluginValid(new URI(uri)));
-    }
-
-    runHostedPluginInstance(uri: string): Promise<string> {
-        return this.uriToStrPromise(this.hostedInstanceManager.run(new URI(uri)));
-    }
-
-    runDebugHostedPluginInstance(uri: string, debugConfig: DebugConfiguration): Promise<string> {
-        return this.uriToStrPromise(this.hostedInstanceManager.debug(new URI(uri), debugConfig));
-    }
-
-    terminateHostedPluginInstance(): Promise<void> {
-        this.hostedInstanceManager.terminate();
-        return Promise.resolve();
-    }
-
-    isHostedPluginInstanceRunning(): Promise<boolean> {
-        return Promise.resolve(this.hostedInstanceManager.isRunning());
-    }
-
-    getHostedPluginInstanceURI(): Promise<string> {
-        return Promise.resolve(this.hostedInstanceManager.getInstanceURI().toString());
-    }
-
-    getHostedPluginURI(): Promise<string> {
-        return Promise.resolve(this.hostedInstanceManager.getPluginURI().toString());
-    }
-
-    protected uriToStrPromise(promise: Promise<URI>): Promise<string> {
-        return new Promise((resolve, reject) => {
-            promise.then((uri: URI) => {
-                resolve(uri.toString());
-            }).catch(error => reject(error));
-        });
-    }
-
-    runWatchCompilation(path: string): Promise<void> {
-        return this.hostedPluginsManager.runWatchCompilation(path);
-    }
-
-    stopWatchCompilation(path: string): Promise<void> {
-        return this.hostedPluginsManager.stopWatchCompilation(path);
-    }
-
-    isWatchCompilationRunning(path: string): Promise<boolean> {
-        return this.hostedPluginsManager.isWatchCompilationRunning(path);
     }
 
     getExtPluginAPI(): Promise<ExtPluginApi[]> {

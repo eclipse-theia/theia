@@ -23,7 +23,7 @@ import { CommandRegistry } from '@phosphor/commands';
 import { Menu } from '@phosphor/widgets';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import { HostedPluginServer } from '../../common/plugin-protocol';
+import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client';
 import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
@@ -102,6 +102,8 @@ export class HostedPluginController implements FrontendApplicationContribution {
                 this.connectionStatusService.onStatusChange(() => this.onConnectionStatusChanged());
 
                 this.preferenceService.onPreferenceChanged(preference => this.onPreferencesChanged(preference));
+            } else {
+                console.error(`Need to load plugin ${pluginMetadata.model.id}`);
             }
         });
     }
