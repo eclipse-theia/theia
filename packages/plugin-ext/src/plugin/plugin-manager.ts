@@ -209,6 +209,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
 
         const deferred = new Deferred<void>();
+
+        if (this.activatedPlugins.get(pluginId)) {
+            deferred.resolve();
+        }
         this.pluginActivationPromises.set(pluginId, deferred);
         return deferred.promise;
     }
