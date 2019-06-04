@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
+ * Copyright (C) 2019 David Saunders and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -39,19 +39,27 @@ export namespace NavigatorDiffCommands {
 
 @injectable()
 export class NavigatorDiff {
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @inject(OpenerService)
+    protected openerService: OpenerService;
+
+    @inject(MessageService)
+    protected readonly notifications: MessageService;
+
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
+
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(OpenerService) protected openerService: OpenerService,
-        @inject(MessageService) protected readonly notifications: MessageService,
     ) {
     }
 
-    protected _firstCompareFile: URI;
-    protected get firstCompareFile(): URI {
+    protected _firstCompareFile: URI | undefined = undefined;
+    protected get firstCompareFile(): URI | undefined {
         return this._firstCompareFile;
     }
-    protected set firstCompareFile(uri: URI) {
+    protected set firstCompareFile(uri: URI | undefined) {
         this._firstCompareFile = uri;
         this._isFirstFileSelected = true;
     }
@@ -62,43 +70,65 @@ export class NavigatorDiff {
     }
 
     protected async isDirectory(uri: URI): Promise<boolean> {
-        const stat = await this.fileSystem.getFileStat(uri.path.toString());
-        if (!stat || stat.isDirectory) {
-            return true;
+        try {
+            const stat = await this.fileSystem.getFileStat(uri.path.toString());
+            if (!stat || stat.isDirectory) {
+                return true;
+            }
+        } catch (e) {
         }
 
         return false;
     }
 
-    async addFirstComparisonFile() {
+    protected async getURISelection(): Promise<URI | undefined> {
         const uri = UriSelection.getUri(this.selectionService.selection);
         if (!uri) {
-            return;
+            return undefined;
         }
 
         if (await this.isDirectory(uri)) {
-            return;
+            return undefined;
         }
 
-        this.firstCompareFile = uri;
+        return uri;
     }
 
-    async compareFiles() {
-        const uri = UriSelection.getUri(this.selectionService.selection);
-        if (!uri) {
-            return;
+    /**
+     * Adds the initial file for comparison
+     * @see SelectionService
+     * @see compareFiles
+     * @returns Promise<boolean> indicating whether the uri is valid
+     */
+    async addFirstComparisonFile(): Promise<boolean> {
+        const uriSelected = await this.getURISelection();
+
+        if (uriSelected === undefined) {
+            return false;
         }
 
-        if (await this.isDirectory(uri)) {
-            return;
-        }
+        this.firstCompareFile = uriSelected;
 
-        const diffUri = DiffUris.encode(this.firstCompareFile, uri);
+        return true;
+    }
 
-        if (diffUri) {
-            open(this.openerService, diffUri).catch(e => {
-                this.notifications.error(e.message);
-            });
+    /**
+     * Compare selected files.  First file is selected through addFirstComparisonFile
+     * @see SelectionService
+     * @see addFirstComparisonFile
+     * @returns Promise<boolean> indiccating whether the comparison was completed successfully
+     */
+    async compareFiles(): Promise<boolean> {
+        const uriSelected = await this.getURISelection();
+
+        if (this.firstCompareFile === undefined || uriSelected === undefined) {
+            return false;
         }
+        const diffUri = DiffUris.encode(this.firstCompareFile, uriSelected);
+
+        open(this.openerService, diffUri).catch(e => {
+            this.notifications.error(e.message);
+        });
+        return true;
     }
 }
