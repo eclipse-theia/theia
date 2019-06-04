@@ -188,6 +188,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             contribution.onCreate(this);
         }
         console.log('>>>>>>>', this.findTextWidget.node);
+        this.findTextWidget.hide();
         this.node.appendChild(this.findTextWidget.node);
         this.findTextWidget.update();
     }
@@ -201,6 +202,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     hideHover() {
         this.hoverMessage.style.display = 'none';
+    }
+
+    showFindText() {
+        this.findTextWidget.show();
+        this.findTextWidget.focus();
+    }
+
+    hideFindText() {
+        this.findTextWidget.hide();
+        this.term.focus();
     }
 
     getTerminal() {

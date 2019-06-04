@@ -47,6 +47,11 @@ export abstract class TerminalWidget extends BaseWidget {
      * Cleat terminal output.
      */
     abstract clearOutput(): void;
+
+    // or separated interface TextSearchable
+    abstract showFindText(): void;
+
+    abstract hideFindText(): void;
 }
 
 /**

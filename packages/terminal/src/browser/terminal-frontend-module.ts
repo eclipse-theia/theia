@@ -48,12 +48,6 @@ export default new ContainerModule(bind => {
     let terminalNum = 0;
 
     bind(FindTextTerminalWidget).toSelf();
-    // bind(WidgetFactory).toDynamicValue(ctx => ({
-    //     id: FIND_TERMINAL_TEXT_WIDGET_ID,
-    //     createWidget(): () => {
-    //         return ctx.container.
-    //     }
-    // }));
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: TERMINAL_WIDGET_FACTORY_ID,

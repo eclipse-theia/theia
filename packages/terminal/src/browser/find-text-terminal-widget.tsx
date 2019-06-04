@@ -25,10 +25,17 @@ import '../../src/browser/find-text.css';
 @injectable()
 export class FindTextTerminalWidget extends ReactWidget {
 
-    //todo add hover: find text in the output.
+    private searchInp: HTMLInputElement | null;
 
+    //todo add hover: find text in the output.
     constructor() {
         super();
+    }
+
+    focus(): void {
+        if (this.searchInp) {
+            this.searchInp.focus();
+        }
     }
 
     protected render(): React.ReactNode {
@@ -39,11 +46,13 @@ export class FindTextTerminalWidget extends ReactWidget {
     }
 
     // todo replace buttons next and previous with help svg images...
+    // todo bring back focus onDidCloseButtonClicked
     protected renderFindTextWidget(): React.ReactNode {
         return <div className='find-text-box'>
-                <input className='find-terminal-widget-text input' type='text' placeholder='Find'></input>
+                <input className='find-terminal-widget-text input' type='text' placeholder='Find' ref={(ip) => this.searchInp = ip}></input>
                 <button className='find-terminal-widget-text button'>&#171;</button>
                 <button className='find-terminal-widget-text button'>&#187;</button>
+                <button className='find-terminal-widget-text button' onClick={() => this.hide()}>&#215;</button>
             </div>
     }
 }

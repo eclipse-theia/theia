@@ -79,6 +79,17 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal'
     };
+    export const TERMINAL_FIND_TEXT: Command = {
+        id: 'terminal:find',
+        category: TERMINAL_CATEGORY,
+        label: 'Find'
+    }
+    // Todo maybe improve context for this command: terminal widget and find widget is open.
+    export const TERMINAL_FIND_TEXT_CANCEL: Command = {
+        id: 'terminal:find:cancel',
+        category: TERMINAL_CATEGORY,
+        label: 'Hide find widget'
+    }
 }
 
 @injectable()
@@ -188,6 +199,17 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 this.activateTerminal(termWidget);
             }
         }));
+
+        commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT);
+        commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT.id, {
+            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
+            execute:() => (this.shell.activeWidget as TerminalWidget).showFindText()
+        })
+        commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT_CANCEL);
+        commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id, {
+            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
+            execute:() => (this.shell.activeWidget as TerminalWidget).hideFindText()
+        })
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -217,6 +239,17 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_FIND_TEXT.id,
+            keybinding: 'ctrlcmd+f',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
+            keybinding: 'esc',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
             keybinding: 'ctrl+shift+`'
