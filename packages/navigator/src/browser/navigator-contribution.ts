@@ -89,13 +89,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     @inject(MenuModelRegistry)
     protected readonly menuRegistry: MenuModelRegistry;
 
+    @inject(NavigatorDiff)
+    protected readonly navigatorDiff: NavigatorDiff;
+
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences,
-        @inject(NavigatorDiff) protected readonly navigatorDiff: NavigatorDiff
+        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
