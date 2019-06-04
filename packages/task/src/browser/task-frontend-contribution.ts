@@ -14,20 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named, postConstruct } from 'inversify';
 import { ILogger, ContributionProvider } from '@theia/core/lib/common';
-import { QuickOpenTask, TaskTerminateQuickOpen } from './quick-open-task';
+import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
 import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import {
     FrontendApplication, FrontendApplicationContribution, QuickOpenContribution,
-    QuickOpenHandlerRegistry, KeybindingRegistry, KeybindingContribution, StorageService
+    QuickOpenHandlerRegistry, KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskConfiguration } from '../common';
+import { TaskConfiguration, TaskWatcher } from '../common';
 
 export namespace TaskCommands {
     const TASK_CATEGORY = 'Task';
@@ -65,6 +65,12 @@ export namespace TaskCommands {
         id: 'task:clear-history',
         category: TASK_CATEGORY,
         label: 'Clear History'
+    };
+
+    export const TASK_SHOW_RUNNING: Command = {
+        id: 'task:show-running',
+        category: TASK_CATEGORY,
+        label: 'Show Running Tasks'
     };
 
     export const TASK_TERMINATE: Command = {
@@ -108,8 +114,23 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(StorageService)
     protected readonly storageService: StorageService;
 
+    @inject(TaskRunningQuickOpen)
+    protected readonly taskRunningQuickOpen: TaskRunningQuickOpen;
+
     @inject(TaskTerminateQuickOpen)
     protected readonly taskTerminateQuickOpen: TaskTerminateQuickOpen;
+
+    @inject(TaskWatcher)
+    protected readonly taskWatcher: TaskWatcher;
+
+    @inject(StatusBar)
+    protected readonly statusBar: StatusBar;
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        this.taskWatcher.onTaskCreated(() => this.updateRunningTasksItem());
+        this.taskWatcher.onTaskExit(() => this.updateRunningTasksItem());
+    }
 
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib => {
@@ -129,6 +150,26 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     onStop(): void {
         const recent = this.taskService.recentTasks;
         this.storageService.setData<{ recent: TaskConfiguration[] }>(TASKS_STORAGE_KEY, { recent });
+    }
+
+    /**
+     * Contribute a status-bar item to trigger
+     * the `Show Running Tasks` command.
+     */
+    protected async updateRunningTasksItem(): Promise<void> {
+        const id = 'show-running-tasks';
+        const items = await this.taskService.getRunningTasks();
+        if (!!items.length) {
+            this.statusBar.setElement(id, {
+                text: `$(wrench) ${items.length}`,
+                tooltip: 'Show Running Tasks',
+                alignment: StatusBarAlignment.LEFT,
+                priority: 2,
+                command: TaskCommands.TASK_SHOW_RUNNING.id,
+            });
+        } else {
+            this.statusBar.removeElement(id);
+        }
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -183,6 +224,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         );
 
         registry.registerCommand(
+            TaskCommands.TASK_SHOW_RUNNING,
+            {
+                execute: () => this.taskRunningQuickOpen.open()
+            }
+        );
+
+        registry.registerCommand(
             TaskCommands.TASK_TERMINATE,
             {
                 execute: () => this.taskTerminateQuickOpen.open()
@@ -212,9 +260,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
+            commandId: TaskCommands.TASK_SHOW_RUNNING.id,
+            label: 'Show Running Tasks...',
+            order: '0'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
             commandId: TaskCommands.TASK_TERMINATE.id,
             label: 'Terminate Task...',
-            order: '0'
+            order: '1'
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_CONFIG, {
