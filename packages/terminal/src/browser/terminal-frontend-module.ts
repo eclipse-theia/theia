@@ -36,6 +36,7 @@ import { TerminalLinkmatcherDiffPre, TerminalLinkmatcherDiffPost } from './termi
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
+import { FindTextTerminalWidget } from './find-text-terminal-widget';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -45,6 +46,15 @@ export default new ContainerModule(bind => {
     bind(TerminalWatcher).toSelf().inSingletonScope();
 
     let terminalNum = 0;
+
+    bind(FindTextTerminalWidget).toSelf();
+    // bind(WidgetFactory).toDynamicValue(ctx => ({
+    //     id: FIND_TERMINAL_TEXT_WIDGET_ID,
+    //     createWidget(): () => {
+    //         return ctx.container.
+    //     }
+    // }));
+
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: TERMINAL_WIDGET_FACTORY_ID,
         createWidget: (options: TerminalWidgetOptions) => {

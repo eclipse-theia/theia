@@ -32,6 +32,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
+import { FindTextTerminalWidget } from './find-text-terminal-widget';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -73,6 +74,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject('terminal-dom-id') public readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
+    @inject(FindTextTerminalWidget) findTextWidget: FindTextTerminalWidget;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -81,6 +83,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     @postConstruct()
     protected init(): void {
+
         this.title.caption = this.options.title || this.TERMINAL;
         this.title.label = this.options.title || this.TERMINAL;
         this.title.iconClass = 'fa fa-terminal';
@@ -184,6 +187,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
         }
+        console.log('>>>>>>>', this.findTextWidget.node);
+        this.node.appendChild(this.findTextWidget.node);
+        this.findTextWidget.update();
     }
 
     showHoverMessage(x: number, y: number, message: string) {
