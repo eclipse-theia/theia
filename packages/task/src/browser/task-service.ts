@@ -225,18 +225,17 @@ export class TaskService implements TaskConfigurationClient {
      * Run the last executed task.
      */
     async runLastTask(): Promise<void> {
-        if (!this.lastTask) {
-            return;
+        if (this.lastTask) {
+            const { source, taskLabel } = this.lastTask;
+            this.run(source, taskLabel);
         }
-        const { source, taskLabel } = this.lastTask;
-        return this.run(source, taskLabel);
     }
 
     /**
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and provided tasks.
      */
-    async run(source: string, taskLabel: string): Promise<void> {
+    async run(source: string, taskLabel: string): Promise<TaskInfo | undefined> {
         let task = await this.getProvidedTask(source, taskLabel);
         if (!task) {
             task = this.taskConfigurations.getTask(source, taskLabel);
@@ -246,10 +245,10 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
-        this.runTask(task);
+        return this.runTask(task);
     }
 
-    async runTask(task: TaskConfiguration): Promise<void> {
+    async runTask(task: TaskConfiguration): Promise<TaskInfo | undefined> {
         const source = task._source;
         const taskLabel = task.label;
 
@@ -281,6 +280,8 @@ export class TaskService implements TaskConfigurationClient {
         if (taskInfo.terminalId !== undefined) {
             this.attach(taskInfo.terminalId, taskInfo.taskId);
         }
+
+        return taskInfo;
     }
 
     /**

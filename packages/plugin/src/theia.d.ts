@@ -7843,6 +7843,14 @@ declare module '@theia/plugin' {
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
 
         /**
+		 * Executes a task that is managed by VS Code. The returned
+		 * task execution can be used to terminate the task.
+		 *
+		 * @param task the task to execute
+		 */
+        export function executeTask(task: Task): Thenable<TaskExecution>;
+
+        /**
          * The currently active task executions or an empty array.
          */
         export const taskExecutions: ReadonlyArray<TaskExecution>;

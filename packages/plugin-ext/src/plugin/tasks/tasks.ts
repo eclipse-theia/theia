@@ -109,6 +109,21 @@ export class TasksExtImpl implements TasksExt {
         return this.createDisposable(callId);
     }
 
+    async executeTask(task: theia.Task): Promise<theia.TaskExecution> {
+        const taskDto = converter.fromTask(task);
+        if (taskDto) {
+            const executionDto = await this.proxy.$executeTask(taskDto);
+            if (executionDto) {
+                const taskExecution = this.getTaskExecution(executionDto);
+                return taskExecution;
+            }
+        }
+        return {
+            task,
+            terminate: () => { }
+        };
+    }
+
     $provideTasks(handle: number, token?: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {

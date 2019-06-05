@@ -17,14 +17,16 @@
 import {
     TasksMain,
     MAIN_RPC_CONTEXT,
-    TasksExt
+    TaskExecutionDto,
+    TasksExt,
+    TaskDto
 } from '../../api/plugin-api';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { TaskInfo, TaskExitedEvent } from '@theia/task/lib/common/task-protocol';
+import { TaskConfiguration, TaskExitedEvent, TaskInfo } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 
@@ -95,6 +97,17 @@ export class TasksMainImpl implements TasksMain {
         this.disposables.set(handle, disposable);
     }
 
+    async $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined> {
+        const taskConfig = this.toTaskConfiguration(taskDto);
+        const taskInfo = await this.taskService.runTask(taskConfig);
+        if (taskInfo) {
+            return {
+                id: taskInfo.taskId,
+                task: taskInfo.config
+            };
+        }
+    }
+
     $unregister(handle: number): void {
         const disposable = this.disposables.get(handle);
         if (disposable) {
@@ -120,10 +133,7 @@ export class TasksMainImpl implements TasksMain {
             provideTasks: () =>
                 this.proxy.$provideTasks(handle).then(v =>
                     v!.map(taskDto =>
-                        Object.assign(taskDto, {
-                            _source: taskDto.source || 'plugin',
-                            _scope: taskDto.scope
-                        })
+                        this.toTaskConfiguration(taskDto)
                     )
                 )
         };
@@ -133,11 +143,15 @@ export class TasksMainImpl implements TasksMain {
         return {
             resolveTask: taskConfig =>
                 this.proxy.$resolveTask(handle, taskConfig).then(v =>
-                    Object.assign(v!, {
-                        _source: v!.source || 'plugin',
-                        _scope: v!.scope
-                    })
+                    this.toTaskConfiguration(v!)
                 )
         };
+    }
+
+    protected toTaskConfiguration(taskDto: TaskDto): TaskConfiguration {
+        return Object.assign(taskDto, {
+            _source: taskDto.source || 'plugin',
+            _scope: taskDto.scope
+        });
     }
 }

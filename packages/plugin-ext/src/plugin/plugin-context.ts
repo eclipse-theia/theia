@@ -211,7 +211,7 @@ export function createAPIFactory(
             },
             registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
                 // Dummy implementation.
-                return new Disposable(() => {});
+                return new Disposable(() => { });
             }
         };
 
@@ -368,7 +368,7 @@ export function createAPIFactory(
                 return decorationsExt.registerDecorationProvider(provider);
             },
             registerUriHandler(handler: theia.UriHandler): theia.Disposable {
-                return new Disposable(() => {});
+                return new Disposable(() => { });
             }
         };
 
@@ -647,6 +647,10 @@ export function createAPIFactory(
         const tasks: typeof theia.tasks = {
             registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
                 return tasksExt.registerTaskProvider(type, provider);
+            },
+
+            executeTask(task: theia.Task): Thenable<theia.TaskExecution> {
+                return tasksExt.executeTask(task);
             },
 
             get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
