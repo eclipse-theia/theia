@@ -18,10 +18,9 @@ import URI from '@theia/core/lib/common/uri';
 import {
     Command,
     CommandContribution,
-    CommandRegistry, Disposable,
+    CommandRegistry,
     DisposableCollection,
-    Emitter,
-    Event, MenuContribution,
+    MenuContribution,
     MenuModelRegistry
 } from '@theia/core';
 import {
@@ -39,7 +38,7 @@ import {
     EditorOpenerOptions,
     EditorWidget
 } from '@theia/editor/lib/browser';
-import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
+import { Git, GitFileChange, GitFileStatus, WorkingDirectoryStatus } from '../common';
 
 import { GitCommands } from './git-commands';
 import { GitRepositoryTracker } from './git-repository-tracker';
@@ -50,14 +49,11 @@ import { GitPrompt } from '../common/git-prompt';
 import {
     ScmCommand,
     ScmProvider,
-    ScmRepository,
     ScmResource,
     ScmResourceGroup,
-    ScmService,
-    ScmCommit,
-    ScmAmendSupport
+    ScmService
 } from '@theia/scm/lib/browser';
-import { GitRepositoryProvider } from './git-repository-provider';
+import { GitRepositoryProvider, ScmProviderImpl } from './git-repository-provider';
 import { GitCommitMessageValidator } from '../browser/git-commit-message-validator';
 import { GitErrorHandler } from '../browser/git-error-handler';
 import {
@@ -126,10 +122,6 @@ export namespace GIT_COMMANDS {
     };
     export const COMMIT_SIGN_OFF = {
         id: 'git.commit.signOff'
-    };
-    export const CHANGE_REPOSITORY = {
-        id: 'git.change.repository',
-        label: 'Git: Change Repository...'
     };
     export const OPEN_FILE: Command = {
         id: 'git.open.file',
@@ -247,9 +239,6 @@ export class GitContribution implements
 
     protected readonly icons: Map<string, ScmCommand> = new Map();
 
-    private dirtyRepositories: Repository[] = [];
-    private scmProviders: ScmProvider[] = [];
-
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService;
@@ -268,25 +257,13 @@ export class GitContribution implements
     @inject(GitCommands) protected readonly gitCommands: GitCommands;
 
     onStart(): void {
-        this.repositoryProvider.allRepositories.forEach(repository => this.registerScmProvider(repository));
-        this.dirtyRepositories = this.repositoryProvider.allRepositories;
-        this.scmService.onDidChangeSelectedRepositories(scmRepository => {
-            const repository = this.repositoryProvider.allRepositories.find(repo => {
-                if (scmRepository) {
-                    return repo.localUri === scmRepository.provider.rootUri;
-                } else {
-                    return false;
-                }
-            });
-            if (repository) {
-                this.repositoryProvider.selectedRepository = repository;
-            } else {
+        this.scmService.onDidChangeSelectedRepositories(repository => {
+            if (!repository) {
                 this.statusBar.removeElement(GitContribution.GIT_CHECKOUT);
                 this.statusBar.removeElement(GitContribution.GIT_SYNC_STATUS);
             }
         });
         this.repositoryTracker.onGitEvent(event => {
-            this.checkNewOrRemovedRepositories();
             const { status } = event;
             const branch = status.branch ? status.branch : status.currentHead ? status.currentHead.substring(0, 8) : 'NO-HEAD';
             let dirty = '';
@@ -303,7 +280,7 @@ export class GitContribution implements
                     dirty = '*';
                 }
             }
-            const scmProvider = this.scmProviders.find(provider => provider.rootUri === event.source.localUri);
+            const scmProvider = this.scmService.selectedRepository ? this.scmService.selectedRepository.provider : undefined;
             if (scmProvider) {
                 const provider = (scmProvider as ScmProviderImpl);
                 this.getGroups(status, provider).then(groups => {
@@ -397,57 +374,6 @@ export class GitContribution implements
         scmResources.sort(sort);
         scmResources.forEach(resource => group.resources.push(resource));
         return group;
-    }
-
-    /** Detect and handle added or removed repositories. */
-    protected checkNewOrRemovedRepositories(): void {
-        const added =
-            this.repositoryProvider
-                .allRepositories
-                .find(repo => this.dirtyRepositories.every(dirtyRepo => dirtyRepo.localUri !== repo.localUri));
-        if (added) {
-            this.registerScmProvider(added);
-            this.dirtyRepositories.push(added);
-        }
-        const removed =
-            this.dirtyRepositories
-                .find(dirtyRepo => this.repositoryProvider.allRepositories.every(repo => repo.localUri !== dirtyRepo.localUri));
-        if (removed) {
-            const i = this.dirtyRepositories.indexOf(removed, 0);
-            if (i > -1) {
-                this.dirtyRepositories.splice(i, 1);
-            }
-            const removedScmRepo = this.scmService.repositories.find(scmRepo => scmRepo.provider.rootUri === removed.localUri);
-            if (removedScmRepo) {
-                removedScmRepo.dispose();
-                const index = this.scmProviders.indexOf(removedScmRepo.provider);
-                if (index > -1) {
-                    this.scmProviders.splice(index, 1);
-                }
-            }
-        }
-    }
-
-    protected registerScmProvider(repository: Repository): ScmRepository {
-        const uri = repository.localUri;
-        const disposableCollection: Disposable[] = [];
-        const onDidChangeResourcesEmitter = new Emitter<void>();
-        const onDidChangeRepositoryEmitter = new Emitter<void>();
-        disposableCollection.push(onDidChangeRepositoryEmitter);
-        disposableCollection.push(onDidChangeResourcesEmitter);
-        const amendSupport: ScmAmendSupport = new GitAmendSupport(repository, this.git);
-        const provider = new ScmProviderImpl('Git', uri.substring(uri.lastIndexOf('/') + 1), uri, amendSupport);
-        this.scmProviders.push(provider);
-        const repo = this.scmService.registerScmProvider(provider, disposableCollection);
-        repo.input.placeholder = 'Commit message';
-        repo.input.validateInput = async input => {
-            const validate = await this.commitMessageValidator.validate(input);
-            if (validate) {
-                const { message, status } = validate;
-                return { message, type: status };
-            }
-        };
-        return repo;
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -559,10 +485,6 @@ export class GitContribution implements
                 this.gitCommands.discardAll();
             },
             isEnabled: () => !!this.repositoryTracker.selectedRepository
-        });
-        registry.registerCommand(GIT_COMMANDS.CHANGE_REPOSITORY, {
-            execute: () => this.quickOpenService.changeRepository(),
-            isEnabled: () => this.hasMultipleRepositories()
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_FILE, {
             execute: widget => this.openFile(widget),
@@ -791,13 +713,13 @@ export class GitContribution implements
     }
 
     protected hasMultipleRepositories(): boolean {
-        return this.repositoryTracker.allRepositories.length > 1;
+        return this.scmService.repositories.length > 1;
     }
 
     protected updateSyncStatusBarEntry(repositoryUri: string | undefined): void {
         const entry = this.getStatusBarEntry();
         if (entry && repositoryUri) {
-            const scmProvider = this.scmProviders.find(provider => provider.rootUri === repositoryUri);
+            const scmProvider = this.scmService.selectedRepository ? this.scmService.selectedRepository.provider : undefined;
             if (scmProvider) {
                 (scmProvider as ScmProviderImpl).fireChangeStatusBarCommands([{
                     id: GitContribution.GIT_SYNC_STATUS,
@@ -904,156 +826,4 @@ export interface GitOpenFileOptions {
 export interface GitOpenChangesOptions {
     readonly change: GitFileChange
     readonly options?: EditorOpenerOptions
-}
-
-export class ScmProviderImpl implements ScmProvider {
-    private static ID = 0;
-
-    private onDidChangeEmitter = new Emitter<void>();
-    private onDidChangeResourcesEmitter = new Emitter<void>();
-    private onDidChangeCommitTemplateEmitter = new Emitter<string>();
-    private onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[]>();
-    private disposableCollection: DisposableCollection = new DisposableCollection();
-    private _groups: ScmResourceGroup[];
-    private _count: number | undefined;
-    readonly handle = 0;
-
-    constructor(
-        private _contextValue: string,
-        private _label: string,
-        private _rootUri: string | undefined,
-        private _amendSupport: ScmAmendSupport,
-    ) {
-        this.disposableCollection.push(this.onDidChangeEmitter);
-        this.disposableCollection.push(this.onDidChangeResourcesEmitter);
-        this.disposableCollection.push(this.onDidChangeCommitTemplateEmitter);
-        this.disposableCollection.push(this.onDidChangeStatusBarCommandsEmitter);
-    }
-
-    private _id = `scm${ScmProviderImpl.ID++}`;
-
-    get id(): string {
-        return this._id;
-    }
-    get groups(): ScmResourceGroup[] {
-        return this._groups;
-    }
-
-    set groups(groups: ScmResourceGroup[]) {
-        this._groups = groups;
-    }
-
-    get label(): string {
-        return this._label;
-    }
-
-    get rootUri(): string | undefined {
-        return this._rootUri;
-    }
-
-    get contextValue(): string {
-        return this._contextValue;
-    }
-
-    get onDidChangeResources(): Event<void> {
-        return this.onDidChangeResourcesEmitter.event;
-    }
-
-    get commitTemplate(): string | undefined {
-        return undefined;
-    }
-
-    get acceptInputCommand(): ScmCommand | undefined {
-        return GIT_COMMANDS.COMMIT;
-    }
-
-    get statusBarCommands(): ScmCommand[] | undefined {
-        return undefined;
-    }
-
-    get count(): number | undefined {
-        return this._count;
-    }
-
-    set count(count: number | undefined) {
-        this._count = count;
-    }
-
-    get onDidChangeCommitTemplate(): Event<string> {
-        return this.onDidChangeCommitTemplateEmitter.event;
-    }
-
-    get onDidChangeStatusBarCommands(): Event<ScmCommand[]> {
-        return this.onDidChangeStatusBarCommandsEmitter.event;
-    }
-
-    get onDidChange(): Event<void> {
-        return this.onDidChangeEmitter.event;
-    }
-
-    dispose(): void {
-        this.disposableCollection.dispose();
-    }
-
-    async getOriginalResource(uri: URI): Promise<URI | undefined> {
-        return undefined;
-    }
-
-    fireChangeStatusBarCommands(commands: ScmCommand[]): void {
-        this.onDidChangeStatusBarCommandsEmitter.fire(commands);
-    }
-
-    fireChangeResources(): void {
-        this.onDidChangeResourcesEmitter.fire(undefined);
-    }
-
-    fireChange(): void {
-        this.onDidChangeEmitter.fire(undefined);
-    }
-
-    get amendSupport(): ScmAmendSupport | undefined {
-        return this._amendSupport;
-    }
-}
-
-export class GitAmendSupport implements ScmAmendSupport {
-
-    constructor(protected readonly repository: Repository, protected readonly git: Git) { }
-
-    public async getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]> {
-        const commits = await this.git.log(
-            this.repository,
-            {
-                range: { toRevision: amendingHeadCommitSha, fromRevision: latestCommitSha },
-                maxCount: 50
-            }
-        );
-
-        return commits.map(this.createScmCommit);
-    }
-
-    public async getMessage(commit: string): Promise<string> {
-        return (await this.git.exec(this.repository, ['log', '-n', '1', '--format=%B', commit])).stdout.trim();
-    }
-
-    public async reset(commit: string): Promise<void> {
-        await this.git.exec(this.repository, ['reset', commit, '--soft']);
-    }
-
-    public async getLastCommit(): Promise<ScmCommit | undefined> {
-        const commits = await this.git.log(this.repository, { maxCount: 1 });
-        if (commits.length > 0) {
-            return this.createScmCommit(commits[0]);
-        }
-    }
-
-    private createScmCommit(gitCommit: CommitWithChanges) {
-        return {
-            id: gitCommit.sha,
-            summary: gitCommit.summary,
-            authorName: gitCommit.author.name,
-            authorEmail: gitCommit.author.email,
-            authorDateRelative: gitCommit.authorDateRelative
-        };
-    }
 }

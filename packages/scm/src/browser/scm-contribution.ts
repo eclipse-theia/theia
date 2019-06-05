@@ -23,7 +23,7 @@ import {
     StatusBarAlignment,
     StatusBarEntry
 } from '@theia/core/lib/browser';
-import {ScmCommand, ScmService} from './scm-service';
+import { ScmCommand, ScmRepository, ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import {CommandRegistry} from '@theia/core';
@@ -41,7 +41,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(ScmQuickOpenService) protected readonly scmQuickOpenService: ScmQuickOpenService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
-    private statusBarCommands: string[];
+    private statusBarCommands: string[] = [];
 
     constructor() {
         super({
@@ -96,7 +96,10 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                 this.scmQuickOpenService.changeRepository();
             }
         });
-        this.scmService.onDidChangeSelectedRepositories(repository => {
+        this.scmService.onDidRemoveRepository(() => handle(this.scmService.selectedRepository));
+        this.scmService.onDidAddRepository(() => handle(this.scmService.selectedRepository));
+        this.scmService.onDidChangeSelectedRepositories(repository => handle(repository));
+        const handle = (repository: ScmRepository | undefined) => {
             if (repository) {
                 if (this.scmService.repositories.length === 1) {
                     this.statusBar.removeElement(CHANGE_REPOSITORY.id);
@@ -115,7 +118,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                     this.statusBar.removeElement(id);
                 });
             }
-        });
+        };
     }
 
     onStop(app: FrontendApplication): void {

@@ -51,7 +51,7 @@ export class ScmMainImpl implements ScmMain {
         this.labelProvider = container.get(LabelProvider);
     }
 
-    async $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: string): Promise<void> {
+    async $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri: string): Promise<void> {
         const provider: ScmProvider = new ScmProviderImpl(this.proxy, sourceControlHandle, id, label, rootUri, this.labelProvider);
         const repository = this.scmService.registerScmProvider(provider);
         repository.input.onDidChange(message => {
@@ -146,7 +146,7 @@ class ScmProviderImpl implements ScmProvider {
         readonly handle: number,
         private _contextValue: string,
         private _label: string,
-        private _rootUri: string | undefined,
+        private _rootUri: string,
         readonly labelProvider: LabelProvider
     ) {
         this.disposableCollection.push(this.onDidChangeEmitter);
@@ -168,7 +168,7 @@ class ScmProviderImpl implements ScmProvider {
         return this._label;
     }
 
-    get rootUri(): string | undefined {
+    get rootUri(): string {
         return this._rootUri;
     }
 

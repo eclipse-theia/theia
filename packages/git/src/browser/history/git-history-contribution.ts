@@ -25,6 +25,7 @@ import { Git } from '../../common';
 import { GitRepositoryTracker } from '../git-repository-tracker';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { EDITOR_CONTEXT_MENU_GIT } from '../git-contribution';
+import { ScmService } from '@theia/scm/lib/browser';
 
 export const GIT_HISTORY_ID = 'git-history';
 export const GIT_HISTORY_LABEL = 'Git History';
@@ -54,6 +55,8 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
     protected readonly repositoryTracker: GitRepositoryTracker;
     @inject(GitRepositoryProvider)
     protected readonly repositoryProvider: GitRepositoryProvider;
+    @inject(ScmService)
+    protected readonly scmService: ScmService;
 
     constructor() {
         super({
@@ -70,10 +73,9 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
 
     @postConstruct()
     protected init() {
-        this.repositoryTracker.onDidChangeRepository(async repository => {
-            this.refreshWidget(repository ? repository.localUri : undefined);
-        }
-        );
+        this.scmService.onDidChangeSelectedRepositories(repository => {
+            this.refreshWidget(repository ? repository.provider.rootUri : undefined);
+        });
         this.repositoryTracker.onGitEvent(event => {
             const { source, status, oldStatus } = event;
             let isBranchChanged = false;
