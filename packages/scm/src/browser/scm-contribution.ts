@@ -23,11 +23,11 @@ import {
     StatusBarAlignment,
     StatusBarEntry
 } from '@theia/core/lib/browser';
-import {ScmCommand, ScmService} from './scm-service';
+import { ScmCommand, ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
-import {CommandRegistry} from '@theia/core';
-import {ScmQuickOpenService} from './scm-quick-open-service';
+import { CommandRegistry } from '@theia/core';
+import { ScmQuickOpenService } from './scm-quick-open-service';
 
 export const SCM_WIDGET_FACTORY_ID = 'scm';
 
@@ -41,7 +41,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(ScmQuickOpenService) protected readonly scmQuickOpenService: ScmQuickOpenService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
-    private statusBarCommands: string[];
+    private statusBarCommands: string[] = [];
 
     constructor() {
         super({
