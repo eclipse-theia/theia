@@ -55,8 +55,9 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         }
         return <select
             id={OutputWidget.IDs.CHANNEL_LIST}
+            key={OutputWidget.IDs.CHANNEL_LIST}
             value={this.outputChannelManager.selectedChannel ? this.outputChannelManager.selectedChannel.name : this.NONE}
-            onChange={ this.changeChannel}
+            onChange={this.changeChannel}
         >
             {channelOptionElements}
         </select>;
