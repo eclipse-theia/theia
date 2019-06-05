@@ -468,7 +468,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected resizeTerminalProcess(): void {
-        if (typeof this.terminalId !== 'number') {
+        if (!IBaseTerminalServer.validateId(this.terminalId)
+            && !this.terminalService.getById(this.terminalId.toString())) {
             return;
         }
         const { cols, rows } = this.term;
