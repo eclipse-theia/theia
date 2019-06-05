@@ -38,7 +38,7 @@ import { ScmAvatarService } from './scm-avatar-service';
 export default new ContainerModule(bind => {
     bind(ScmService).toSelf().inSingletonScope();
 
-    bind(ScmWidget).toSelf().inSingletonScope();
+    bind(ScmWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SCM_WIDGET_FACTORY_ID,
         createWidget: () => ctx.container.get(ScmWidget)

@@ -74,6 +74,7 @@ import {
     ScmGroupCommandRegistry
 } from '@theia/scm/lib/browser/scm-group-command-registry';
 import { GitDecorator } from './git-decorator';
+import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -264,7 +265,7 @@ export class GitContribution implements
     @inject(Git) protected readonly git: Git;
     @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(ScmWidget) protected readonly scmWidget: ScmWidget;
+    @inject(ScmContribution) protected readonly scmContribution: ScmContribution;
     @inject(GitCommands) protected readonly gitCommands: GitCommands;
 
     onStart(): void {
@@ -636,7 +637,8 @@ export class GitContribution implements
                     } else {
                         commitTextArea.value = `${content}${signOff}`;
                     }
-                    this.scmWidget.resize(commitTextArea);
+                    const scmWidget = await this.scmContribution.widget;
+                    scmWidget.resize(commitTextArea);
                     commitTextArea.focus();
                 }
             }
@@ -913,7 +915,6 @@ export class ScmProviderImpl implements ScmProvider {
     private onDidChangeResourcesEmitter = new Emitter<void>();
     private onDidChangeCommitTemplateEmitter = new Emitter<string>();
     private onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[]>();
-    private disposableCollection: DisposableCollection = new DisposableCollection();
     private _groups: ScmResourceGroup[];
     private _count: number | undefined;
     readonly handle = 0;
@@ -923,12 +924,7 @@ export class ScmProviderImpl implements ScmProvider {
         private _label: string,
         private _rootUri: string | undefined,
         private _amendSupport: ScmAmendSupport,
-    ) {
-        this.disposableCollection.push(this.onDidChangeEmitter);
-        this.disposableCollection.push(this.onDidChangeResourcesEmitter);
-        this.disposableCollection.push(this.onDidChangeCommitTemplateEmitter);
-        this.disposableCollection.push(this.onDidChangeStatusBarCommandsEmitter);
-    }
+    ) {}
 
     private _id = `scm${ScmProviderImpl.ID++}`;
 
@@ -992,7 +988,10 @@ export class ScmProviderImpl implements ScmProvider {
     }
 
     dispose(): void {
-        this.disposableCollection.dispose();
+        this.onDidChangeEmitter.dispose();
+        this.onDidChangeResourcesEmitter.dispose();
+        this.onDidChangeCommitTemplateEmitter.dispose();
+        this.onDidChangeStatusBarCommandsEmitter.dispose();
     }
 
     async getOriginalResource(uri: URI): Promise<URI | undefined> {

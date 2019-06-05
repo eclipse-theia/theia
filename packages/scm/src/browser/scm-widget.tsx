@@ -88,6 +88,11 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         this.addClass('theia-scm');
         this.scrollContainer = ScmWidget.Styles.GROUPS_CONTAINER;
 
+        this.title.iconClass = 'scm-tab-icon';
+        this.title.label = ScmWidget.LABEL;
+        this.title.caption = ScmWidget.LABEL;
+        this.title.closable = true;
+
         this.update();
     }
 
@@ -95,7 +100,7 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
     protected init() {
         const changeHandler = (repository: ScmRepository) => {
             repository.provider.onDidChangeResources(() => {
-                if (this.selectedRepoUri === repository.provider.rootUri) {
+                if (this.scmService.selectedRepository === repository) {
                     this.update();
                 }
             });
@@ -127,13 +132,9 @@ export class ScmWidget extends ScmNavigableListWidget<ScmResource> implements St
         });
     }
 
-    protected onBeforeAttach(msg: Message): void {
-        const repository = this.scmService.selectedRepository;
-        this.title.iconClass = 'scm-tab-icon';
-        this.title.label = ScmWidget.LABEL + (repository ? ': ' + repository.provider.contextValue : '');
-        this.title.caption = ScmWidget.LABEL;
-        this.title.closable = true;
-        super.onBeforeAttach(msg);
+    protected onAfterDetach(msg: Message) {
+        this.scmService.repositories.forEach(repository => repository.provider.dispose());
+        super.onAfterDetach(msg);
     }
 
     get onUpdate(): CoreEvent<void> {

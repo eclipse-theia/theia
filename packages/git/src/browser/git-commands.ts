@@ -31,6 +31,7 @@ import { GitErrorHandler } from './git-error-handler';
 import { GitFileChangeNode } from './git-file-change-node';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 
 @injectable()
 export class GitCommands implements Disposable {
@@ -70,53 +71,55 @@ export class GitCommands implements Disposable {
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(ScmWidget) protected readonly scmWidget: ScmWidget,
+        @inject(ScmContribution) protected readonly scmContribution: ScmContribution,
         @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator) {
 
-        this.scmWidget.onUpdate(async () => {
-            const repository = this.repositoryProvider.selectedRepository;
-            let status;
-            if (repository) {
-                status = await this.git.status(repository);
-            }
-            const stagedChanges = [];
-            const unstagedChanges = [];
-            const mergeChanges = [];
-            if (status) {
-                for (const change of status.changes) {
-                    const uri = new URI(change.uri);
-                    const [icon, label, description] = await Promise.all([
-                        this.labelProvider.getIcon(uri),
-                        this.labelProvider.getName(uri),
-                        repository ? Repository.relativePath(repository, uri.parent).toString() : this.labelProvider.getLongName(uri.parent)
-                    ]);
-                    if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
-                        if (change.staged) {
-                            stagedChanges.push({
-                                icon, label, description,
-                                ...change
-                            });
+        this.scmContribution.widget.then(widget => {
+            widget.onUpdate(async () => {
+                const repository = this.repositoryProvider.selectedRepository;
+                let status;
+                if (repository) {
+                    status = await this.git.status(repository);
+                }
+                const stagedChanges = [];
+                const unstagedChanges = [];
+                const mergeChanges = [];
+                if (status) {
+                    for (const change of status.changes) {
+                        const uri = new URI(change.uri);
+                        const [icon, label, description] = await Promise.all([
+                            this.labelProvider.getIcon(uri),
+                            this.labelProvider.getName(uri),
+                            repository ? Repository.relativePath(repository, uri.parent).toString() : this.labelProvider.getLongName(uri.parent)
+                        ]);
+                        if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
+                            if (change.staged) {
+                                stagedChanges.push({
+                                    icon, label, description,
+                                    ...change
+                                });
+                            } else {
+                                unstagedChanges.push({
+                                    icon, label, description,
+                                    ...change
+                                });
+                            }
                         } else {
-                            unstagedChanges.push({
-                                icon, label, description,
-                                ...change
-                            });
-                        }
-                    } else {
-                        if (!change.staged) {
-                            mergeChanges.push({
-                                icon, label, description,
-                                ...change
-                            });
+                            if (!change.staged) {
+                                mergeChanges.push({
+                                    icon, label, description,
+                                    ...change
+                                });
+                            }
                         }
                     }
+                    this.incomplete = status.incomplete;
                 }
-                this.incomplete = status.incomplete;
-            }
-            const sort = (l: GitFileChangeNode, r: GitFileChangeNode) => l.label.localeCompare(r.label);
-            this.stagedChanges = stagedChanges.sort(sort);
-            this.unstagedChanges = unstagedChanges.sort(sort);
-            this.mergeChanges = mergeChanges.sort(sort);
+                const sort = (l: GitFileChangeNode, r: GitFileChangeNode) => l.label.localeCompare(r.label);
+                this.stagedChanges = stagedChanges.sort(sort);
+                this.unstagedChanges = unstagedChanges.sort(sort);
+                this.mergeChanges = mergeChanges.sort(sort);
+            });
         });
     }
 
@@ -125,7 +128,11 @@ export class GitCommands implements Disposable {
         return this.editorManager.open(uriToOpen, options);
     }
 
-    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.scmWidget.messageInput.value): Promise<void> {
+    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message?: string): Promise<void> {
+        if (!message) {
+            const widget = await this.scmContribution.widget;
+            message = widget.messageInput.value;
+        }
         if (repository) {
             this.commitMessageValidationResult = undefined;
             if (message.trim().length === 0) {
@@ -151,7 +158,8 @@ export class GitCommands implements Disposable {
                     this.gitErrorHandler.handleError(error);
                 }
             } else {
-                const messageInput = this.scmWidget.messageInput;
+                const widget = await this.scmContribution.widget;
+                const messageInput = widget.messageInput;
                 if (messageInput) {
                     messageInput.focus();
                 }
@@ -340,8 +348,9 @@ export class GitCommands implements Disposable {
         return changeUri;
     }
 
-    protected resetCommitMessages(): void {
-        this.scmWidget.messageInput.value = '';
+    protected async resetCommitMessages(): Promise<void> {
+        const widget = await this.scmContribution.widget;
+        widget.messageInput.value = '';
     }
 
     protected async delete(uri: URI): Promise<void> {
