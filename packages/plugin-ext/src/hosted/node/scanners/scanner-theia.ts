@@ -72,6 +72,7 @@ const INTERNAL_CONSOLE_OPTIONS_SCHEMA = {
 
 @injectable()
 export class TheiaPluginScanner implements PluginScanner {
+
     private readonly _apiType: PluginEngine = 'theiaPlugin';
 
     @inject(GrammarsReader)
@@ -97,7 +98,8 @@ export class TheiaPluginScanner implements PluginScanner {
             entryPoint: {
                 frontend: plugin.theiaPlugin!.frontend,
                 backend: plugin.theiaPlugin!.backend
-            }
+            },
+            extensionDependencies: plugin.extensionDependencies || []
         };
         result.contributes = this.readContributions(plugin);
         return result;

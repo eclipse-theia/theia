@@ -57,6 +57,16 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         return this.currentBackendPluginsMetadata;
     }
 
+    async getPluginDependencies(plugin: PluginDeployerEntry): Promise<string[]> {
+        const metadata = await this.reader.getPluginMetadata(plugin.path());
+        if (metadata) {
+            if (metadata.model.extensionDependencies) {
+                return metadata.model.extensionDependencies;
+            }
+        }
+        return [];
+    }
+
     async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
         for (const plugin of frontendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());

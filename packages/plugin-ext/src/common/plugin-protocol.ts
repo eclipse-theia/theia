@@ -270,6 +270,8 @@ export interface PluginDeployerResolverContext {
 
     addPlugin(pluginId: string, path: string): void;
 
+    getPlugins(): PluginDeployerEntry[];
+
     getOriginId(): string;
 
 }
@@ -375,6 +377,7 @@ export interface PluginModel {
         backend?: string;
     };
     contributes?: PluginContribution;
+    extensionDependencies?: string[];
 }
 
 /**
@@ -607,6 +610,8 @@ export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+
+    getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<string[]>
 }
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
