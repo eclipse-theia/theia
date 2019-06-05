@@ -21,6 +21,7 @@ import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/s
 @injectable()
 export class VsCodePluginScanner extends TheiaPluginScanner implements PluginScanner {
     private readonly VSCODE_TYPE: PluginEngine = 'vscode';
+    private readonly VSCODE_PREFIX: string = 'vscode:extension/';
 
     get apiType(): PluginEngine {
         return this.VSCODE_TYPE;
@@ -41,7 +42,8 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             },
             entryPoint: {
                 backend: plugin.main
-            }
+            },
+            extensionDependencies: this.getDeployableDependencies(plugin.extensionDependencies || [])
         };
         result.contributes = this.readContributions(plugin);
         return result;
@@ -54,5 +56,13 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
 
             backendInitPath: __dirname + '/plugin-vscode-init.js'
         };
+    }
+
+    /**
+     * Converts an array of extension dependencies
+     * to an array of deployable extension dependencies
+     */
+    private getDeployableDependencies(dependencies: string[]): string[] {
+        return dependencies.map(dep => this.VSCODE_PREFIX + dep);
     }
 }
