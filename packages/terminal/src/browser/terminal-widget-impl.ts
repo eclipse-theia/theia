@@ -374,6 +374,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
+    // Device status code emitted by Xterm.js
+    // Check: https://github.com/xtermjs/xterm.js/blob/release/3.14/src/InputHandler.ts#L1055-L1082
+    protected readonly deviceStatusCodes = new Set(['\u001B[>0;276;0c', '\u001B[>85;95;0c', '\u001B[>83;40003;0c', '\u001B[?1;2c', '\u001B[?6c']);
+
     protected connectTerminalProcess(): void {
         if (typeof this.terminalId !== 'number') {
             return;
@@ -387,7 +391,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             onConnection: connection => {
                 connection.onNotification('onData', (data: string) => this.write(data));
 
-                const sendData = (data?: string) => data && connection.sendRequest('write', data);
+                // Excludes the device status code emitted by Xterm.js
+                const sendData = (data?: string) => {
+                    if (data && !this.deviceStatusCodes.has(data)) {
+                        return connection.sendRequest('write', data);
+                    }
+                };
+
                 const disposable = this.term.onData(sendData);
                 connection.onDispose(() => disposable.dispose());
 
