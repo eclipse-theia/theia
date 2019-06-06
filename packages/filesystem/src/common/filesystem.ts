@@ -49,8 +49,17 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 
     /**
      * Updates the content replacing its previous value.
+     *
+     * The optional parameter `overwriteEncoding` can be used to transform the encoding of a file.
+     *
+     * |   | encoding | overwriteEncoding | behaviour |
+     * |---|----------|-------------------|-----------|
+     * | 1 | undefined |    undefined     | read & write file in default encoding |
+     * | 2 | undefined |        ✓         | read file in default encoding; write file in `overwriteEncoding` |
+     * | 3 |     ✓    |     undefined     | read & write file in `encoding` |
+     * | 4 |     ✓    |        ✓         | read file in `encoding`; write file in `overwriteEncoding` |
      */
-    updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat>;
+    updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<FileStat>;
 
     /**
      * Moves the file to a new path identified by the resource.
@@ -104,6 +113,11 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * Returns the encoding of the given file resource.
      */
     getEncoding(uri: string): Promise<string>;
+
+    /**
+     * Guess encoding of a given file besed on its content.
+     */
+    guessEncoding(uri: string): Promise<string | undefined>;
 
     /**
      * Return list of available roots.

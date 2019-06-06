@@ -27,6 +27,8 @@ import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageser
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions, FileAccess } from '../common/filesystem';
+import * as iconv from 'iconv-lite';
+import { EncodingUtil } from './encoding-util';
 
 @injectable()
 export class FileSystemNodeOptions {
@@ -77,7 +79,8 @@ export class FileSystemNode implements FileSystem {
             throw FileSystemError.FileIsDirectory(uri, 'Cannot resolve the content.');
         }
         const encoding = await this.doGetEncoding(options);
-        const content = await fs.readFile(FileUri.fsPath(_uri), { encoding });
+        const contentBuffer = await fs.readFile(FileUri.fsPath(_uri));
+        const content = iconv.decode(contentBuffer, encoding);
         return { stat, content };
     }
 
@@ -94,7 +97,8 @@ export class FileSystemNode implements FileSystem {
             throw this.createOutOfSyncError(file, stat);
         }
         const encoding = await this.doGetEncoding(options);
-        await fs.writeFile(FileUri.fsPath(_uri), content, { encoding });
+        const encodedContent = iconv.encode(content, encoding);
+        await fs.writeFile(FileUri.fsPath(_uri), encodedContent);
         const newStat = await this.doGetStat(_uri, 1);
         if (newStat) {
             return newStat;
@@ -102,7 +106,7 @@ export class FileSystemNode implements FileSystem {
         throw FileSystemError.FileNotFound(file.uri, 'Error occurred while writing file content.');
     }
 
-    async updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat> {
+    async updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<FileStat> {
         const _uri = new URI(file.uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
@@ -114,13 +118,16 @@ export class FileSystemNode implements FileSystem {
         if (!this.checkInSync(file, stat)) {
             throw this.createOutOfSyncError(file, stat);
         }
-        if (contentChanges.length === 0) {
+        if (contentChanges.length === 0 && !(options && options.overwriteEncoding)) {
             return stat;
         }
         const encoding = await this.doGetEncoding(options);
-        const content = await fs.readFile(FileUri.fsPath(_uri), { encoding });
+        const contentBuffer = await fs.readFile(FileUri.fsPath(_uri));
+        const content = iconv.decode(contentBuffer, encoding);
         const newContent = this.applyContentChanges(content, contentChanges);
-        await fs.writeFile(FileUri.fsPath(_uri), newContent, { encoding });
+        const writeEncoding = options && options.overwriteEncoding ? options.overwriteEncoding : encoding;
+        const encodedNewContent = iconv.encode(newContent, writeEncoding);
+        await fs.writeFile(FileUri.fsPath(_uri), encodedNewContent);
         const newStat = await this.doGetStat(_uri, 1);
         if (newStat) {
             return newStat;
@@ -255,7 +262,8 @@ export class FileSystemNode implements FileSystem {
         }
         const content = await this.doGetContent(options);
         const encoding = await this.doGetEncoding(options);
-        await fs.writeFile(FileUri.fsPath(_uri), content, { encoding });
+        const encodedNewContent = iconv.encode(content, encoding);
+        await fs.writeFile(FileUri.fsPath(_uri), encodedNewContent);
         const newStat = await this.doGetStat(_uri, 1);
         if (newStat) {
             return newStat;
@@ -344,6 +352,18 @@ export class FileSystemNode implements FileSystem {
             throw FileSystemError.FileIsDirectory(uri, 'Cannot get the encoding.');
         }
         return this.options.encoding;
+    }
+
+    async guessEncoding(uri: string): Promise<string | undefined> {
+        const _uri = new URI(uri);
+        const stat = await this.doGetStat(_uri, 0);
+        if (!stat) {
+            throw FileSystemError.FileNotFound(uri);
+        }
+        if (stat.isDirectory) {
+            throw FileSystemError.FileIsDirectory(uri, 'Cannot guess the encoding.');
+        }
+        return EncodingUtil.guessEncodingByBuffer(await fs.readFile(FileUri.fsPath(_uri)));
     }
 
     async getRoots(): Promise<FileStat[]> {

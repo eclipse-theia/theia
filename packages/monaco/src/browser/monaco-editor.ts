@@ -32,7 +32,8 @@ import {
     DeltaDecorationParams,
     ReplaceTextParams,
     EditorDecoration,
-    EditorMouseEvent
+    EditorMouseEvent,
+    EncodingMode
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 
@@ -63,6 +64,8 @@ export class MonacoEditor implements TextEditor {
     protected readonly onLanguageChangedEmitter = new Emitter<string>();
     readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
     protected readonly onScrollChangedEmitter = new Emitter<void>();
+    protected readonly onEncodingChangedEmitter = new Emitter<string>();
+    readonly onEncodingChanged = this.onEncodingChangedEmitter.event;
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -82,7 +85,8 @@ export class MonacoEditor implements TextEditor {
             this.onDocumentContentChangedEmitter,
             this.onMouseDownEmitter,
             this.onLanguageChangedEmitter,
-            this.onScrollChangedEmitter
+            this.onScrollChangedEmitter,
+            this.onEncodingChangedEmitter
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -90,6 +94,22 @@ export class MonacoEditor implements TextEditor {
         this.maxHeight = options && options.maxHeight !== undefined ? options.maxHeight : -1;
         this.toDispose.push(this.create(options, override));
         this.addHandlers(this.editor);
+    }
+
+    getEncoding(): string {
+        return this.document.getEncoding() || 'utf8';
+    }
+
+    setEncoding(encoding: string, mode: EncodingMode): void {
+        if (mode === EncodingMode.Decode) {
+            // reopen file with encoding
+            this.document.reopenWithEncoding(encoding)
+                .then(() => this.onEncodingChangedEmitter.fire(encoding));
+        } else {
+            // encode and save file
+            this.document.saveWithEncoding(encoding)
+                .then(() => this.onEncodingChangedEmitter.fire(encoding));
+        }
     }
 
     protected create(options?: IEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {

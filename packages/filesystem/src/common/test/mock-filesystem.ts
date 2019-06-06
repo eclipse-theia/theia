@@ -77,6 +77,10 @@ export class MockFilesystem implements FileSystem {
         return Promise.resolve('');
     }
 
+    guessEncoding(uri: string): Promise<string | undefined> {
+        return Promise.resolve('');
+    }
+
     getRoots(): Promise<FileStat[]> {
         return Promise.resolve([mockFileStat]);
     }

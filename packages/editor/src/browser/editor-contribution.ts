@@ -27,6 +27,7 @@ import { EditorCommands } from './editor-command';
 import { EditorQuickOpenService } from './editor-quick-open-service';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
+import { SUPPORTED_ENCODINGS } from './supported-encodings';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, QuickOpenContribution {
@@ -89,10 +90,12 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         const widget = this.editorManager.currentEditor;
         const editor = widget && widget.editor;
         this.updateLanguageStatus(editor);
+        this.updateEncodingStatus(editor);
         this.setCursorPositionStatus(editor);
         if (editor) {
             this.toDisposeOnCurrentEditorChanged.pushAll([
                 editor.onLanguageChanged(() => this.updateLanguageStatus(editor)),
+                editor.onEncodingChanged(() => this.updateEncodingStatus(editor)),
                 editor.onCursorPositionChanged(() => this.setCursorPositionStatus(editor))
             ]);
         }
@@ -110,6 +113,19 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             alignment: StatusBarAlignment.RIGHT,
             priority: 1,
             command: EditorCommands.CHANGE_LANGUAGE.id
+        });
+    }
+
+    protected updateEncodingStatus(editor: TextEditor | undefined): void {
+        if (!editor) {
+            this.statusBar.removeElement('editor-status-encoding');
+            return;
+        }
+        this.statusBar.setElement('editor-status-encoding', {
+            text: SUPPORTED_ENCODINGS[editor.getEncoding()].labelShort,
+            alignment: StatusBarAlignment.RIGHT,
+            priority: 10,
+            command: EditorCommands.CHANGE_ENCODING.id
         });
     }
 
