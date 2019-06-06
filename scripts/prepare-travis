@@ -36,6 +36,13 @@ for (const name in workspaces) {
     }
 }
 
+const yarnList = child_process.execSync('yarn list -s --pattern vscode-ripgrep').toString();
+const regexp = new RegExp('vscode-ripgrep@(.*)', 'g');
+while (match = regexp.exec(yarnList)) {
+    const ripgrepPath = '/tmp/vscode-ripgrep-cache-' + match[1].trim();
+    directories.push(ripgrepPath);
+}
+
 const travisPath = path.resolve(__dirname, '../.travis.yml');
 const content = fs.readFileSync(travisPath).toString();
 const startIndex = content.indexOf('# start_cache_directories') + '# start_cache_directories'.length;
