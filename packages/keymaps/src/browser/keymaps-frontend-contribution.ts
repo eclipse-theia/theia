@@ -22,11 +22,14 @@ import {
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
+import { Widget } from '@theia/core/lib/browser';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { AbstractViewContribution } from '@theia/core/lib/browser';
 import { KeybindingWidget } from './keybindings-widget';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+
 export namespace KeymapsCommands {
     export const OPEN_KEYMAPS: Command = {
         id: 'keymaps:open',
@@ -36,12 +39,16 @@ export namespace KeymapsCommands {
     export const OPEN_KEYMAPS_JSON: Command = {
         id: 'keymaps:openJson',
         category: 'Settings',
-        label: 'Open Keyboard Shortcuts (JSON)'
+        label: 'Open Keyboard Shortcuts (JSON)',
+    };
+    export const OPEN_KEYMAPS_JSON_TOOLBAR: Command = {
+        id: 'keymaps:openJson.toolbar',
+        iconClass: 'theia-open-json-icon'
     };
 }
 
 @injectable()
-export class KeymapsFrontendContribution extends AbstractViewContribution<KeybindingWidget> implements CommandContribution, MenuContribution {
+export class KeymapsFrontendContribution extends AbstractViewContribution<KeybindingWidget> implements CommandContribution, MenuContribution, TabBarToolbarContribution {
 
     @inject(KeymapsService)
     protected readonly keymaps: KeymapsService;
@@ -65,6 +72,11 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
             isEnabled: () => true,
             execute: () => this.keymaps.open()
         });
+        commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR, {
+            isEnabled: widget => this.isKeybindingWidget(widget),
+            isVisible: widget => this.isKeybindingWidget(widget),
+            execute: () => this.keymaps.open()
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -81,4 +93,17 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         });
     }
 
+    registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        toolbar.registerItem({
+            id: KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR.id,
+            command: KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR.id,
+            tooltip: 'Open Keyboard Shortcuts in JSON'
+        });
+    }
+
+    protected isKeybindingWidget(widget: Widget | undefined = this.tryGetWidget()): boolean {
+        return widget instanceof KeybindingWidget && widget.id === KeybindingWidget.ID
+            ? true
+            : false;
+    }
 }

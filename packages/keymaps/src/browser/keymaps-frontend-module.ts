@@ -20,6 +20,7 @@ import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { KeymapsParser } from './keymaps-parser';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import './keymaps-monaco-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser';
@@ -35,6 +36,7 @@ export default new ContainerModule(bind => {
     bind(KeybindingContribution).toService(KeymapsFrontendContribution);
     bind(MenuContribution).toService(KeymapsFrontendContribution);
     bind(KeybindingWidget).toSelf();
+    bind(TabBarToolbarContribution).toService(KeymapsFrontendContribution);
     bind(WidgetFactory).toDynamicValue(context => ({
         id: KeybindingWidget.ID,
         createWidget: () => context.container.get<KeybindingWidget>(KeybindingWidget),
