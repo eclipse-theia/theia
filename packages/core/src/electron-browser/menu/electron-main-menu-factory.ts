@@ -23,6 +23,7 @@ import {
 import { PreferenceService, KeybindingRegistry, Keybinding } from '../../browser';
 import { ContextKeyService } from '../../browser/context-key-service';
 import { Anchor } from '../../browser/context-menu-renderer';
+import debounce = require('lodash.debounce');
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -39,12 +40,12 @@ export class ElectronMainMenuFactory {
         @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
     ) {
-        preferencesService.onPreferenceChanged(() => {
+        preferencesService.onPreferenceChanged(debounce(() => {
             for (const item of this._toggledCommands) {
                 this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
-                electron.remote.getCurrentWindow().setMenu(this._menu);
             }
-        });
+            electron.remote.getCurrentWindow().setMenu(this._menu);
+        }, 10));
         keybindingRegistry.onKeybindingsChanged(() => {
             const createdMenuBar = this.createMenuBar();
             if (isOSX) {
