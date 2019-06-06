@@ -148,6 +148,19 @@ export interface EditorMouseEvent {
     readonly target: MouseTarget;
 }
 
+export const enum EncodingMode {
+
+    /**
+     * Instructs the encoding support to encode the current input with the provided encoding
+     */
+    Encode,
+
+    /**
+     * Instructs the encoding support to decode the current input with the provided encoding
+     */
+    Decode
+}
+
 export interface TextEditor extends Disposable, TextEditorSelection, Navigatable {
     readonly node: HTMLElement;
 
@@ -219,6 +232,18 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     detectLanguage(): void;
     setLanguage(languageId: string): void;
     readonly onLanguageChanged: Event<string>;
+
+    /**
+     * Gets the encoding of the input if known.
+     */
+    getEncoding(): string;
+
+    /**
+     * Sets the encoding for the input for saving.
+     */
+    setEncoding(encoding: string, mode: EncodingMode): void;
+
+    readonly onEncodingChanged: Event<string>;
 }
 
 export interface Dimension {

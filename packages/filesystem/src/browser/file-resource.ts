@@ -83,8 +83,12 @@ export class FileResource implements Resource {
         }
     }
 
-    async saveContents(content: string, options?: { encoding?: string }): Promise<void> {
-        this.stat = await this.doSaveContents(content, options);
+    async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
+        if (options && options.overwriteEncoding) {
+            this.stat = await this.doSaveContents(content, { encoding: options.overwriteEncoding });
+        } else {
+            this.stat = await this.doSaveContents(content, options);
+        }
     }
     protected async doSaveContents(content: string, options?: { encoding?: string }): Promise<FileStat> {
         const stat = await this.getFileStat();
@@ -94,11 +98,18 @@ export class FileResource implements Resource {
         return this.fileSystem.createFile(this.uriString, { content, ...options });
     }
 
-    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<void> {
+    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
         if (!this.stat) {
             throw new Error(this.uriString + ' has not been read yet');
         }
         this.stat = await this.fileSystem.updateContent(this.stat, changes, options);
+    }
+
+    async guessEncoding(): Promise<string | undefined> {
+        if (!this.stat) {
+            return undefined;
+        }
+        return this.fileSystem.guessEncoding(this.uriString);
     }
 
     protected async sync(): Promise<void> {

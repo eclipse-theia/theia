@@ -30,12 +30,13 @@ export interface Resource extends Disposable {
     saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
     saveContentChanges?(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<void>;
     readonly onDidChangeContents?: Event<void>;
+    guessEncoding?(): Promise<string | undefined>
 }
 export namespace Resource {
     export interface SaveContext {
         content: string
         changes?: TextDocumentContentChangeEvent[]
-        options?: { encoding?: string }
+        options?: { encoding?: string, overwriteEncoding?: string }
     }
     export async function save(resource: Resource, context: SaveContext, token?: CancellationToken): Promise<void> {
         if (!resource.saveContents) {

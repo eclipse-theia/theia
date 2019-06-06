@@ -20,6 +20,10 @@ import URI from '@theia/core/lib/common/uri';
 import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue } from '@theia/core/lib/browser';
 import { Languages, Language } from '@theia/languages/lib/browser';
 import { EditorManager } from './editor-manager';
+import { EncodingMode } from './editor';
+import { EditorPreferences } from './editor-preferences';
+import { SUPPORTED_ENCODINGS } from './supported-encodings';
+import { ResourceProvider, MessageService } from '@theia/core';
 
 export namespace EditorCommands {
 
@@ -58,6 +62,11 @@ export namespace EditorCommands {
         id: 'textEditor.change.language',
         category: EDITOR_CATEGORY,
         label: 'Change Language Mode'
+    };
+    export const CHANGE_ENCODING: Command = {
+        id: 'textEditor.change.encoding',
+        category: EDITOR_CATEGORY,
+        label: 'Change File Encoding'
     };
 
     /**
@@ -118,8 +127,13 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
+    @inject(EditorPreferences)
+    protected readonly editorPreferences: EditorPreferences;
+
     @inject(QuickPickService)
     protected readonly quickPick: QuickPickService;
+
+    @inject(MessageService) protected readonly messageService: MessageService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -129,6 +143,9 @@ export class EditorCommandContribution implements CommandContribution {
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
@@ -140,6 +157,11 @@ export class EditorCommandContribution implements CommandContribution {
             isEnabled: () => this.canConfigureLanguage(),
             isVisible: () => this.canConfigureLanguage(),
             execute: () => this.configureLanguage()
+        });
+        registry.registerCommand(EditorCommands.CHANGE_ENCODING, {
+            isEnabled: () => this.canConfigureEncoding(),
+            isVisible: () => this.canConfigureEncoding(),
+            execute: () => this.configureEncoding()
         });
 
         registry.registerCommand(EditorCommands.GO_BACK);
@@ -182,6 +204,77 @@ export class EditorCommandContribution implements CommandContribution {
             editor.setLanguage(selected.id);
         }
     }
+
+    protected canConfigureEncoding(): boolean {
+        const widget = this.editorManager.currentEditor;
+        const editor = widget && widget.editor;
+        return !!editor;
+    }
+    protected async configureEncoding(): Promise<void> {
+        const widget = this.editorManager.currentEditor;
+        const editor = widget && widget.editor;
+        if (!editor) {
+            return;
+        }
+        const reopenWithEncodingPick = { label: 'Reopen with Encoding', value: 'reopen' };
+        const saveWithEncodingPick = { label: 'Save with Encoding', value: 'save' };
+        const actionItems: QuickPickItem<string>[] = [
+            reopenWithEncodingPick,
+            saveWithEncodingPick
+        ];
+        const action = await this.quickPick.show(actionItems, {
+            placeholder: 'Select Action'
+        });
+        if (!action) {
+            return;
+        }
+        const isReopenWithEncoding = (action === reopenWithEncodingPick.value);
+
+        const configuredEncoding = this.editorPreferences.get('files.encoding');
+
+        const resource = await this.resourceProvider(editor.uri);
+        const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;
+        resource.dispose();
+
+        const encodingItems: QuickPickItem<{ id: string, description: string }>[] = Object.keys(SUPPORTED_ENCODINGS)
+            .sort((k1, k2) => {
+                if (k1 === configuredEncoding) {
+                    return -1;
+                } else if (k2 === configuredEncoding) {
+                    return 1;
+                }
+                return SUPPORTED_ENCODINGS[k1].order - SUPPORTED_ENCODINGS[k2].order;
+            })
+            .filter(k => {
+                if (k === guessedEncoding && guessedEncoding !== configuredEncoding) {
+                    return false; // do not show encoding if it is the guessed encoding that does not match the configured
+                }
+
+                return !isReopenWithEncoding || !SUPPORTED_ENCODINGS[k].encodeOnly; // hide those that can only be used for encoding if we are about to decode
+            })
+            .map(key => ({ label: SUPPORTED_ENCODINGS[key].labelLong, value: { id: key, description: key } }));
+
+        // Insert guessed encoding
+        if (guessedEncoding && configuredEncoding !== guessedEncoding && SUPPORTED_ENCODINGS[guessedEncoding]) {
+            encodingItems.unshift({
+                label: `Guessed from content: ${SUPPORTED_ENCODINGS[guessedEncoding].labelLong}`,
+                value: { id: guessedEncoding, description: guessedEncoding }
+            });
+        }
+        const encoding = await this.quickPick.show(encodingItems, {
+            placeholder: isReopenWithEncoding ? 'Select File Encoding to Reopen File' : 'Select File Encoding to Save with'
+        });
+        if (!encoding) {
+            return;
+        }
+        if (editor.document.dirty && isReopenWithEncoding) {
+            this.messageService.info('The file is dirty. Please save it first before reopening it with another encoding.');
+            return;
+        } else {
+            editor.setEncoding(encoding.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
+        }
+    }
+
     protected async toQuickPickLanguage(value: Language, current: string): Promise<QuickPickValue<Language>> {
         const languageUri = this.toLanguageUri(value);
         const iconClass = await this.labelProvider.getIcon(languageUri) + ' file-icon';
