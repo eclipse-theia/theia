@@ -48,10 +48,9 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract clearOutput(): void;
 
-    // or separated interface TextSearchable
-    abstract showFindText(): void;
+    abstract showSearchWidget(): void;
 
-    abstract hideFindText(): void;
+    abstract hideSearchWidget(): void;
 }
 
 /**

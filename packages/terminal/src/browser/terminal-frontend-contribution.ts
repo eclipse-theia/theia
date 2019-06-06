@@ -83,13 +83,13 @@ export namespace TerminalCommands {
         id: 'terminal:find',
         category: TERMINAL_CATEGORY,
         label: 'Find'
-    }
+    };
     // Todo maybe improve context for this command: terminal widget and find widget is open.
     export const TERMINAL_FIND_TEXT_CANCEL: Command = {
         id: 'terminal:find:cancel',
         category: TERMINAL_CATEGORY,
         label: 'Hide find widget'
-    }
+    };
 }
 
 @injectable()
@@ -203,13 +203,13 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT);
         commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT.id, {
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
-            execute:() => (this.shell.activeWidget as TerminalWidget).showFindText()
-        })
+            execute: () => (this.shell.activeWidget as TerminalWidget).showSearchWidget()
+        });
         commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT_CANCEL);
         commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id, {
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
-            execute:() => (this.shell.activeWidget as TerminalWidget).hideFindText()
-        })
+            execute: () => (this.shell.activeWidget as TerminalWidget).hideSearchWidget()
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {

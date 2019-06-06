@@ -36,7 +36,8 @@ import { TerminalLinkmatcherDiffPre, TerminalLinkmatcherDiffPost } from './termi
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
-import { FindTextTerminalWidget } from './find-text-terminal-widget';
+import { FindTextTerminalWidget, FindTerminalTextWidgetFactory } from './find-text-terminal-widget';
+import { Terminal } from 'xterm';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -48,6 +49,13 @@ export default new ContainerModule(bind => {
     let terminalNum = 0;
 
     bind(FindTextTerminalWidget).toSelf();
+    bind(FindTerminalTextWidgetFactory).toFactory(ctx => (terminal: Terminal) => {
+        const child = new Container({ defaultScope: 'Singleton' });
+        child.parent = ctx.container;
+        child.bind(Terminal).toConstantValue(terminal);
+
+        return child.get(FindTextTerminalWidget);
+   });
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: TERMINAL_WIDGET_FACTORY_ID,
