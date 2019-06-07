@@ -108,9 +108,49 @@ export class KeybindingWidget extends ReactWidget {
                     if (fuzzyMatch) {
                         item[key] = fuzzyMatch.rendered;
                         matched = true;
+                    } else {
+                        // Match identical keybindings that have different orders
+                        if (key === 'keybinding') {
+                            const queryItems = this.query.split('+');
+                            const bindingItems = string.split('+');
+                            const renderedResult = [...bindingItems];
+                            let matchCounter = 0;
+
+                            queryItems.forEach(queryItem => {
+                                let keyFuzzyMatch: fuzzy.MatchResult = { rendered: '', score: 0 };
+                                let keyIndex = -1;
+                                if (string) {
+                                    bindingItems.forEach((bindingItem: string) => {
+                                        // Match every key in user query with every key in keybinding string
+                                        const tempFuzzyMatch = fuzzy.match(queryItem, bindingItem, this.fuzzyOptions);
+                                        // Select the match with the highest matching score
+                                        if (tempFuzzyMatch && tempFuzzyMatch.score > keyFuzzyMatch.score) {
+                                            keyFuzzyMatch = tempFuzzyMatch;
+                                            // Get index in the keybinding array
+                                            keyIndex = renderedResult.indexOf(bindingItem);
+                                        }
+                                    });
+
+                                    const keyRendered = keyFuzzyMatch.rendered;
+                                    if (keyRendered) {
+                                        if (keyIndex > -1) {
+                                            renderedResult[keyIndex] = keyRendered;
+                                        }
+                                        // Remove key from keybinding items if it is matched
+                                        bindingItems.splice(keyIndex, 1);
+                                        matchCounter += 1;
+                                    }
+                                }
+                            });
+                            if (matchCounter === queryItems.length) {
+                                item[key] = renderedResult.join('+');
+                                matched = true;
+                            }
+                        }
                     }
                 }
             }
+
             if (matched) {
                 this.items.push(item);
             }
