@@ -66,7 +66,7 @@ export interface ProcessOptions<T = string> {
 }
 
 /**
- * Options to fork a new process using the current Node interpeter (`fork`).
+ * Options to fork a new process using the current Node interpreter (`fork`).
  *
  * For more information please refer to the fork function of Node's
  * child_process module:

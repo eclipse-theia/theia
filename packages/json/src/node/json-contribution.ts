@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { BaseLanguageServerContribution, IConnection } from '@theia/languages/lib/node';
+import { environment } from '@theia/application-package';
 import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME } from '../common';
 import * as path from 'path';
 
@@ -26,12 +27,13 @@ export class JsonContribution extends BaseLanguageServerContribution {
     readonly name = JSON_LANGUAGE_NAME;
 
     async start(clientConnection: IConnection): Promise<void> {
-        const command = 'node';
+        // Same as https://github.com/theia-ide/theia/commit/de45794a90fc1a1a590578026f8ad527127afa0a
+        const command = process.execPath;
         const args: string[] = [
             path.resolve(__dirname, './json-starter'),
             '--stdio'
         ];
-        const serverConnection = await this.createProcessStreamConnectionAsync(command, args);
+        const serverConnection = await this.createProcessStreamConnectionAsync(command, args, { env: environment.electron.runAsNodeEnv() });
         this.forward(clientConnection, serverConnection);
     }
 
