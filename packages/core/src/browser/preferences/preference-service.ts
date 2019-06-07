@@ -86,7 +86,7 @@ export interface PreferenceService extends Disposable {
     } | undefined;
 
     overridePreferenceName(options: OverridePreferenceName): string;
-    overridenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
+    overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
 
     resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
 }
@@ -183,10 +183,10 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
             for (const preferenceName of Object.keys(changes)) {
                 let change = changes[preferenceName];
                 if (change.newValue === undefined) {
-                    const overriden = this.overridenPreferenceName(change.preferenceName);
-                    if (overriden) {
+                    const overridden = this.overriddenPreferenceName(change.preferenceName);
+                    if (overridden) {
                         change = {
-                            ...change, newValue: this.doGet(overriden.preferenceName)
+                            ...change, newValue: this.doGet(overridden.preferenceName)
                         };
                     }
                 }
@@ -285,9 +285,9 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     } {
         const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri);
         if (value === undefined) {
-            const overriden = this.overridenPreferenceName(preferenceName);
-            if (overriden) {
-                return this.doResolve(overriden.preferenceName, defaultValue, resourceUri);
+            const overridden = this.overriddenPreferenceName(preferenceName);
+            if (overridden) {
+                return this.doResolve(overridden.preferenceName, defaultValue, resourceUri);
             }
         }
         return { value, configUri };
@@ -358,9 +358,9 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     protected inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string): T | undefined {
         const value = this.doInspectInScope<T>(preferenceName, scope, resourceUri);
         if (value === undefined) {
-            const overriden = this.overridenPreferenceName(preferenceName);
-            if (overriden) {
-                return this.doInspectInScope(overriden.preferenceName, scope, resourceUri);
+            const overridden = this.overriddenPreferenceName(preferenceName);
+            if (overridden) {
+                return this.doInspectInScope(overridden.preferenceName, scope, resourceUri);
             }
         }
         return value;
@@ -369,8 +369,8 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     overridePreferenceName(options: OverridePreferenceName): string {
         return this.schema.overridePreferenceName(options);
     }
-    overridenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
-        return this.schema.overridenPreferenceName(preferenceName);
+    overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
+        return this.schema.overriddenPreferenceName(preferenceName);
     }
 
     protected doHas(preferenceName: string, resourceUri?: string): boolean {
