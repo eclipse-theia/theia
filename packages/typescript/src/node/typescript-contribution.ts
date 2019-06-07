@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct, inject } from 'inversify';
 import *  as path from 'path';
-import { ApplicationPackage } from '@theia/application-package';
+import { ApplicationPackage, environment } from '@theia/application-package';
 import { BaseLanguageServerContribution, IConnection, LanguageServerStartOptions } from '@theia/languages/lib/node';
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, TypescriptStartParams } from '../common';
 import { TypeScriptPlugin, TypeScriptInitializeParams, TypeScriptInitializationOptions } from 'typescript-language-server/lib/ts-protocol';
@@ -66,7 +66,7 @@ export class TypeScriptContribution extends BaseLanguageServerContribution {
         if (tsServerPath) {
             args.push(`--tsserver-path=${tsServerPath}`);
         }
-        const serverConnection = await this.createProcessStreamConnectionAsync(command, args);
+        const serverConnection = await this.createProcessStreamConnectionAsync(command, args, { env: environment.electron.runAsNodeEnv() });
         this.forward(clientConnection, serverConnection);
     }
 
