@@ -433,6 +433,7 @@ function loadAllLayouts(): KeyboardLayoutData[] {
         'fr-Canadian_French-mac',
         'fr-Swiss_French-pc',
         'fr-Swiss_French-mac',
+        'fr-Bepo-pc',
         'pt-Portuguese-pc',
         'pt-Portuguese-mac',
         'pt-Brazilian-mac',
