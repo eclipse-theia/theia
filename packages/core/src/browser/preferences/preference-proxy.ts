@@ -46,15 +46,15 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
     const onPreferenceChangedEmitter = new Emitter<PreferenceChangeEvent<T>>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
-        const overriden = preferences.overridenPreferenceName(e.preferenceName);
-        const preferenceName: any = overriden ? overriden.preferenceName : e.preferenceName;
+        const overridden = preferences.overriddenPreferenceName(e.preferenceName);
+        const preferenceName: any = overridden ? overridden.preferenceName : e.preferenceName;
         if (schema.properties[preferenceName]) {
             const { newValue, oldValue } = e;
             onPreferenceChangedEmitter.fire({
                 newValue, oldValue, preferenceName,
                 affects: (resourceUri, overrideIdentifier) => {
                     if (overrideIdentifier !== undefined) {
-                        if (overriden && overriden.overrideIdentifier !== overrideIdentifier) {
+                        if (overridden && overridden.overrideIdentifier !== overrideIdentifier) {
                             return false;
                         }
                     }

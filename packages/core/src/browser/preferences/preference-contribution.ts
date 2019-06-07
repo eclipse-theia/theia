@@ -156,9 +156,9 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
                 const value = schemaProps.defaultValue = this.getDefaultValue(schemaProps, preferenceName);
                 if (this.testOverrideValue(preferenceName, value)) {
-                    for (const overridenPreferenceName in value) {
-                        const overrideValue = value[overridenPreferenceName];
-                        const overridePreferenceName = `${preferenceName}.${overridenPreferenceName}`;
+                    for (const overriddenPreferenceName in value) {
+                        const overrideValue = value[overriddenPreferenceName];
+                        const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
                         changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
                     }
                 } else {
@@ -283,14 +283,14 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     getPreferenceProperty(preferenceName: string): PreferenceItem | undefined {
-        const overriden = this.overridenPreferenceName(preferenceName);
-        return this.combinedSchema.properties[overriden ? overriden.preferenceName : preferenceName];
+        const overridden = this.overriddenPreferenceName(preferenceName);
+        return this.combinedSchema.properties[overridden ? overridden.preferenceName : preferenceName];
     }
 
     overridePreferenceName({ preferenceName, overrideIdentifier }: OverridePreferenceName): string {
         return `[${overrideIdentifier}].${preferenceName}`;
     }
-    overridenPreferenceName(name: string): OverridePreferenceName | undefined {
+    overriddenPreferenceName(name: string): OverridePreferenceName | undefined {
         const index = name.indexOf('.');
         if (index === -1) {
             return undefined;
