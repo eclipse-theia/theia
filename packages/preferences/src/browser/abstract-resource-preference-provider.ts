@@ -169,9 +169,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected validate(preferenceName: string, preferenceValue: any): boolean {
-        const result = preferenceValue === undefined || this.schemaProvider.validate(preferenceName, preferenceValue);
         // in case if preferences are loaded from .vscode folder we should load even invalid
-        return result || this.configurations.getPath(this.getUri()) !== this.configurations.getPaths()[0];
+        if (this.configurations.getPath(this.getUri()) !== this.configurations.getPaths()[0]) {
+            return true;
+        }
+        return preferenceValue === undefined || this.schemaProvider.validate(preferenceName, preferenceValue);
     }
 
     protected parse(content: string): any {
