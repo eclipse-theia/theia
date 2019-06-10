@@ -63,3 +63,7 @@
     border-bottom-color: var(--theia-accent-color2);
 	position: relative;
 }
+
+.monaco-editor .parameter-hints-widget>.wrapper {
+    overflow: hidden;
+}
