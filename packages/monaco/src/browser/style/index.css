@@ -1,65 +1,70 @@
 .monaco-editor {
-    padding-bottom: 5.6px;
-    font-family: var(--theia-ui-font-family);
-    font-size: inherit !important;
+  padding-bottom: 5.6px;
+  font-family: var(--theia-ui-font-family);
+  font-size: inherit !important;
 }
 
-.monaco-editor, .monaco-editor-background {
-    background: var(--theia-layout-color0);
+.monaco-editor,
+.monaco-editor-background {
+  background: var(--theia-layout-color0);
 }
 
 .monaco-editor .margin {
-    background: var(--theia-layout-color0);
+  background: var(--theia-layout-color0);
 }
 
 .monaco-keybinding-key {
-    color: var(--theia-ui-font-color1) !important;
+  color: var(--theia-ui-font-color1) !important;
 }
 
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */
 .p-TabBar.theia-app-centers {
-    z-index: 0;
-    display: flex;
+  z-index: 0;
+  display: flex;
 }
 
 /*
  * we need to disable the background image when using font awesome icons
  */
 .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.fa {
-    background-image: none;
-    margin-right: 0px;
+  background-image: none;
+  margin-right: 0px;
 }
 
 /*
  * we need to disable the background image when using file-icons
  */
 .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
-    background-image: none;
-    margin-right: 0px;
+  background-image: none;
+  margin-right: 0px;
 }
 
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .monaco-highlighted-label .highlight {
-    color: var(--theia-accent-color1);
+  color: var(--theia-accent-color1);
 }
 
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .label-description {
-    color: var(--theia-ui-font-color2);
-    font-size: calc(var(--theia-ui-font-size0) * 0.95);
+  color: var(--theia-ui-font-color2);
+  font-size: calc(var(--theia-ui-font-size0) * 0.95);
 }
 
 .monaco-editor .zone-widget {
-	position: absolute;
-	z-index: 10;
+  position: absolute;
+  z-index: 10;
 }
 
 .monaco-editor .zone-widget .zone-widget-container {
-	border-top-style: solid;
-	border-bottom-style: solid;
-	border-top-width: 0;
-	border-bottom-width: 0;
-    border-top-color: var(--theia-accent-color2);
-    border-bottom-color: var(--theia-accent-color2);
-	position: relative;
+  border-top-style: solid;
+  border-bottom-style: solid;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  border-top-color: var(--theia-accent-color2);
+  border-bottom-color: var(--theia-accent-color2);
+  position: relative;
+}
+
+.monaco-editor .parameter-hints-widget>.wrapper {
+  overflow: hidden;
 }
