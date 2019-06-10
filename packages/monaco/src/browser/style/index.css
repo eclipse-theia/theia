@@ -64,6 +64,6 @@
 	position: relative;
 }
 
-.monaco-editor .parameter-hints-widget>.wrapper {
+.monaco-editor .parameter-hints-widget > .wrapper {
     overflow: hidden;
 }
