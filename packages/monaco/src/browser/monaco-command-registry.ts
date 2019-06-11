@@ -28,6 +28,7 @@ export interface MonacoEditorCommandHandler {
 @injectable()
 export class MonacoCommandRegistry {
 
+    /* @deprecated Monaco command is registered as it is, without prefixing */
     public static MONACO_COMMAND_PREFIX = 'monaco.';
 
     constructor(
@@ -36,20 +37,18 @@ export class MonacoCommandRegistry {
         @inject(SelectionService) protected readonly selectionService: SelectionService
     ) { }
 
+    /* @deprecated Monaco command is registered as it is, without prefixing */
     protected prefix(command: string): string {
-        return MonacoCommandRegistry.MONACO_COMMAND_PREFIX + command;
+        return command;
     }
 
     validate(command: string): string | undefined {
-        const monacoCommand = this.prefix(command);
-        return this.commands.commandIds.indexOf(monacoCommand) !== -1 ? monacoCommand : undefined;
+        const monacoCommand = this.commands.getCommand(command);
+        return monacoCommand && monacoCommand.label ? monacoCommand.id : undefined;
     }
 
     registerCommand(command: Command, handler: MonacoEditorCommandHandler): void {
-        this.commands.registerCommand({
-            ...command,
-            id: this.prefix(command.id)
-        }, this.newHandler(handler));
+        this.commands.registerCommand(command, this.newHandler(handler));
     }
 
     registerHandler(command: string, handler: MonacoEditorCommandHandler): void {
