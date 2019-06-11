@@ -88,7 +88,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                             } else {
                                 const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
                                 const toURI = fileUri;
-                                const diffUri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
+                                const diffUri = DiffUris.encode(fromURI, toURI);
                                 if (diffUri) {
                                     open(this.openerService, diffUri).catch(e => {
                                         this.notifications.error(e.message);
