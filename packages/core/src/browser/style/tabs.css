@@ -262,8 +262,9 @@
     cursor: pointer;
 }
 
-.p-TabBar-toolbar .item > div{
+.p-TabBar-toolbar .item > div {
     height: 18px;
     width: 18px;
     background-repeat: no-repeat;
+    line-height: 18px;
 }

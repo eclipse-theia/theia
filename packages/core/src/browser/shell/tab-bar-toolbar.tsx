@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('lodash.debounce');
 import * as React from 'react';
 import { inject, injectable, named } from 'inversify';
 import { Widget, ReactWidget } from '../widgets';
@@ -24,8 +25,8 @@ import { CommandRegistry, CommandService } from '../../common/command';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
-
-import debounce = require('lodash.debounce');
+import { ContextMenuRenderer } from '../context-menu-renderer';
+import { MenuModelRegistry } from '../../common/menu';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -38,25 +39,47 @@ export interface TabBarToolbarFactory {
 /**
  * Tab-bar toolbar widget representing the active [tab-bar toolbar items](TabBarToolbarItem).
  */
+@injectable()
 export class TabBarToolbar extends ReactWidget {
 
     protected current: Widget | undefined;
-    protected items = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
+    protected inline = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
+    protected more = new Map<string, TabBarToolbarItem>();
 
-    constructor(protected readonly commands: CommandRegistry, protected readonly labelParser: LabelParser) {
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
+    @inject(LabelParser)
+    protected readonly labelParser: LabelParser;
+
+    @inject(MenuModelRegistry)
+    protected readonly menus: MenuModelRegistry;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    constructor() {
         super();
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR);
         this.hide();
     }
 
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
-        this.items = new Map(items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse().map(item => [item.id, item] as [string, TabBarToolbarItem]));
+        this.inline.clear();
+        this.more.clear();
+        for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
+            if ('render' in item || item.group === undefined || item.group === 'navigation') {
+                this.inline.set(item.id, item);
+            } else {
+                this.more.set(item.id, item);
+            }
+        }
         this.setCurrent(current);
-        if (!this.items.size) {
+        if (!items.length) {
             this.hide();
         }
         this.onRender.push(Disposable.create(() => {
-            if (this.items.size) {
+            if (items.length) {
                 this.show();
             }
         }));
@@ -82,7 +105,8 @@ export class TabBarToolbar extends ReactWidget {
 
     protected render(): React.ReactNode {
         return <React.Fragment>
-            {[...this.items.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render())}
+            {this.renderMore()}
+            {[...this.inline.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render())}
         </React.Fragment>;
     }
 
@@ -111,8 +135,32 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
+    protected renderMore(): React.ReactNode {
+        return !!this.more.size && <div key='__more__' className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled'}>
+            <div id='__more__' className='fa fa-ellipsis-h' onClick={this.showMoreContextMenu} title='More...' />
+        </div>;
+    }
+
+    protected showMoreContextMenu = (event: React.MouseEvent) => {
+        const menuPath = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
+        const toDisposeOnHide = new DisposableCollection();
+        for (const [, item] of this.more) {
+            toDisposeOnHide.push(this.menus.registerMenuAction([...menuPath, item.group!], {
+                label: item.tooltip,
+                commandId: item.id,
+                when: item.when
+            }));
+        }
+        this.contextMenuRenderer.render({
+            menuPath,
+            args: [this.current],
+            anchor: event.nativeEvent,
+            onHide: () => toDisposeOnHide.dispose()
+        });
+    }
+
     shouldHandleMouseEvent(event: MouseEvent): boolean {
-        return event.target instanceof Element && !!this.items.get(event.target.id);
+        return event.target instanceof Element && (!!this.inline.get(event.target.id) || event.target.id === '__more__');
     }
 
     protected commandIsEnabled(command: string): boolean {
@@ -120,7 +168,7 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
-        const item = this.items.get(e.currentTarget.id);
+        const item = this.inline.get(e.currentTarget.id);
         if (TabBarToolbarItem.is(item)) {
             this.commands.executeCommand(item.command, this.current);
         }
@@ -190,7 +238,8 @@ export interface TabBarToolbarItem {
     readonly priority?: number;
 
     /**
-     * Optional group for the item.
+     * Optional group for the item. Default `navigation`.
+     * `navigation` group will be inlined, while all the others will be within the `...` dropdown.
      */
     readonly group?: string;
 
@@ -230,6 +279,9 @@ export interface ReactTabBarToolbarItem {
 
     // Ordering and grouping.
     readonly priority?: number;
+    /**
+     * Optional group for the item. Default `navigation`. Always inlined.
+     */
     readonly group?: string;
 }
 
@@ -240,11 +292,11 @@ export namespace TabBarToolbarItem {
      */
     export const PRIORITY_COMPARATOR = (left: TabBarToolbarItem, right: TabBarToolbarItem) => {
         // The navigation group is special as it will always be sorted to the top/beginning of a menu.
-        if (left.group === 'navigation') {
-            return -1;
-        }
-        if (right.group === 'navigation') {
+        if (left.group === undefined || left.group === 'navigation') {
             return 1;
+        }
+        if (right.group === undefined || right.group === 'navigation') {
+            return -1;
         }
         if (left.group && right.group) {
             if (left.group < right.group) {

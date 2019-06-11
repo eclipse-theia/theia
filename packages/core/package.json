@@ -6,6 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@phosphor/widgets": "^1.5.0",
+    "@primer/octicons-react": "^9.0.0",
     "@theia/application-package": "^0.7.0",
     "@types/body-parser": "^1.16.4",
     "@types/bunyan": "^1.8.0",
