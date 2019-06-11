@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Disposable, SelectionService } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, DiffUris } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from './editor';
 
@@ -44,19 +44,10 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     }
 
     getResourceUri(): URI | undefined {
-        const { uri } = this.editor;
-        if (DiffUris.isDiffUri(uri)) {
-            return DiffUris.decode(uri)[0];
-        }
-        return uri;
+        return this.editor.getResourceUri();
     }
     createMoveToUri(resourceUri: URI): URI | undefined {
-        const { uri } = this.editor;
-        if (DiffUris.isDiffUri(uri)) {
-            const [left, right] = DiffUris.decode(uri);
-            return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
-        }
-        return uri.withPath(resourceUri.path);
+        return this.editor.createMoveToUri(resourceUri);
     }
 
     protected onActivateRequest(msg: Message): void {

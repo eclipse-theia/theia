@@ -448,6 +448,13 @@ export class MonacoEditor implements TextEditor {
         }
     }
 
+    getResourceUri(): URI {
+        return this.uri;
+    }
+    createMoveToUri(resourceUri: URI): URI {
+        return this.uri.withPath(resourceUri.path);
+    }
+
 }
 
 export namespace MonacoEditor {
