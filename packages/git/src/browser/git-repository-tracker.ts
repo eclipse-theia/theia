@@ -16,10 +16,12 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Git, Repository, WorkingDirectoryStatus } from '../common';
-import { Event, Emitter, DisposableCollection } from '@theia/core';
+import { Event, Emitter, Disposable, DisposableCollection, CancellationToken, CancellationTokenSource } from '@theia/core';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import URI from '@theia/core/lib/common/uri';
+
+import debounce = require('lodash.debounce');
 
 /**
  * The repository tracker watches the selected repository for status changes. It provides a convenient way to listen on status updates.
@@ -29,7 +31,7 @@ export class GitRepositoryTracker {
 
     protected toDispose = new DisposableCollection();
     protected workingDirectoryStatus: WorkingDirectoryStatus | undefined;
-    protected readonly onGitEventEmitter = new Emitter<GitStatusChangeEvent>();
+    protected readonly onGitEventEmitter = new Emitter<GitStatusChangeEvent | undefined>();
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -38,25 +40,42 @@ export class GitRepositoryTracker {
     ) { }
 
     @postConstruct()
-    protected async init() {
-        this.repositoryProvider.onDidChangeRepository(async repository => {
-            this.workingDirectoryStatus = undefined;
-            this.toDispose.dispose();
-            if (repository) {
-                this.toDispose.push(await this.gitWatcher.watchGitChanges(repository));
-                this.toDispose.push(this.gitWatcher.onGitEvent((event: GitStatusChangeEvent) => {
-                    this.workingDirectoryStatus = event.status;
-                    this.onGitEventEmitter.fire(event);
-                }));
-                this.workingDirectoryStatus = await this.git.status(repository);
-            }
-        });
-        if (this.repositoryProvider.allRepositories.length === 0) {
-            await this.repositoryProvider.refresh();
+    protected async init(): Promise<void> {
+        this.updateStatus();
+        this.repositoryProvider.onDidChangeRepository(() => this.updateStatus());
+    }
+
+    protected updateStatus = debounce(async (): Promise<void> => {
+        this.toDispose.dispose();
+        const tokenSource = new CancellationTokenSource();
+        this.toDispose.push(Disposable.create(() => tokenSource.cancel()));
+        const token = tokenSource.token;
+        const source = this.selectedRepository;
+        if (source) {
+            const status = await this.git.status(source);
+            this.setStatus({ source, status }, token);
+            this.toDispose.push(this.gitWatcher.onGitEvent(event => {
+                if (event.source.localUri === source.localUri) {
+                    this.setStatus(event, token);
+                }
+            }));
+            this.toDispose.push(await this.gitWatcher.watchGitChanges(source));
+        } else {
+            this.setStatus(undefined, token);
         }
-        if (this.selectedRepository) {
-            this.workingDirectoryStatus = await this.git.status(this.selectedRepository);
+    }, 50);
+
+    protected async setStatus(event: GitStatusChangeEvent | undefined, token: CancellationToken): Promise<void> {
+        const status = event && event.status;
+        const scmProvider = this.repositoryProvider.selectedScmProvider;
+        if (scmProvider) {
+            await scmProvider.setStatus(status, token);
         }
+        if (token.isCancellationRequested) {
+            return;
+        }
+        this.workingDirectoryStatus = status;
+        this.onGitEventEmitter.fire(event);
     }
 
     /**
@@ -90,13 +109,13 @@ export class GitRepositoryTracker {
     /**
      * Emits when status has changed in the selected repository.
      */
-    get onGitEvent(): Event<GitStatusChangeEvent> {
+    get onGitEvent(): Event<GitStatusChangeEvent | undefined> {
         return this.onGitEventEmitter.event;
     }
 
     getPath(uri: URI): string | undefined {
         const { repositoryUri } = this;
-        const relativePath = repositoryUri && repositoryUri.relative(uri);
+        const relativePath = repositoryUri && Repository.relativePath(repositoryUri, uri);
         return relativePath && relativePath.toString();
     }
 

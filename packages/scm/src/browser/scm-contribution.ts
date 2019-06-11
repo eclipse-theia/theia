@@ -13,35 +13,49 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import {
     AbstractViewContribution,
-    FrontendApplication,
     FrontendApplicationContribution, LabelProvider,
     QuickOpenService,
     StatusBar,
     StatusBarAlignment,
-    StatusBarEntry
+    StatusBarEntry,
+    KeybindingRegistry
 } from '@theia/core/lib/browser';
-import {ScmCommand, ScmService} from './scm-service';
+import { CommandRegistry, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
-import {CommandRegistry} from '@theia/core';
-import {ScmQuickOpenService} from './scm-quick-open-service';
+import { ScmQuickOpenService } from './scm-quick-open-service';
+import { ScmRepository } from './scm-repository';
 
 export const SCM_WIDGET_FACTORY_ID = 'scm';
+
+export namespace SCM_COMMANDS {
+    export const CHANGE_REPOSITORY = {
+        id: 'scm.change.repository',
+        category: 'SCM',
+        label: 'Change Repository...'
+    };
+    export const ACCEPT_INPUT = {
+        id: 'scm.acceptInput'
+    };
+}
 
 @injectable()
 export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(ScmQuickOpenService) protected readonly scmQuickOpenService: ScmQuickOpenService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(CommandService) protected readonly commands: CommandService;
+    @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
 
-    private statusBarCommands: string[];
+    protected scmFocus: ContextKey<boolean>;
 
     constructor() {
         super({
@@ -56,69 +70,104 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         });
     }
 
-    async initializeLayout(app: FrontendApplication): Promise<void> {
+    @postConstruct()
+    protected init(): void {
+        this.scmFocus = this.contextKeys.createKey('scmFocus', false);
+    }
+
+    async initializeLayout(): Promise<void> {
         await this.openView();
     }
 
     onStart(): void {
-        const CHANGE_REPOSITORY = {
-            id: 'scm.change.repository',
-            label: 'SCM: Change Repository...'
-        };
+        this.updateStatusBar();
+        this.scmService.onDidAddRepository(() => this.updateStatusBar());
+        this.scmService.onDidRemoveRepository(() => this.updateStatusBar());
+        this.scmService.onDidChangeSelectedRepository(() => this.updateStatusBar());
+        this.scmService.onDidChangeStatusBarCommands(() => this.updateStatusBar());
 
-        const refresh = (commands: ScmCommand[]) => {
-            this.statusBarCommands = [CHANGE_REPOSITORY.id];
-            commands.forEach(command => {
-                this.statusBarCommands.push(command.id);
-                const statusBaCommand: StatusBarEntry = {
-                    text: command.text,
-                    tooltip: command.tooltip,
-                    command: command.command,
-                    alignment: StatusBarAlignment.LEFT,
-                    priority: 100
-                };
-                this.statusBar.setElement(command.id, statusBaCommand);
+        this.updateContextKeys();
+        this.shell.currentChanged.connect(() => this.updateContextKeys());
+    }
+
+    protected updateContextKeys(): void {
+        this.scmFocus.set(this.shell.currentWidget instanceof ScmWidget);
+    }
+
+    registerCommands(commandRegistry: CommandRegistry): void {
+        super.registerCommands(commandRegistry);
+        commandRegistry.registerCommand(SCM_COMMANDS.CHANGE_REPOSITORY, {
+            execute: () => this.scmQuickOpenService.changeRepository(),
+            isEnabled: () => this.scmService.repositories.length > 1
+        });
+        commandRegistry.registerCommand(SCM_COMMANDS.ACCEPT_INPUT, {
+            execute: () => this.acceptInput(),
+            isEnabled: () => !!this.scmFocus.get() && !!this.acceptInputCommand()
+        });
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        super.registerKeybindings(keybindings);
+        keybindings.registerKeybinding({
+            command: SCM_COMMANDS.ACCEPT_INPUT.id,
+            keybinding: 'ctrlcmd+enter',
+            when: 'scmFocus'
+        });
+    }
+
+    protected async acceptInput(): Promise<void> {
+        const command = this.acceptInputCommand();
+        if (command) {
+            await this.commands.executeCommand(command.command, command.repository);
+        }
+    }
+    protected acceptInputCommand(): {
+        command: string
+        repository: ScmRepository
+    } | undefined {
+        const repository = this.scmService.selectedRepository;
+        if (!repository) {
+            return undefined;
+        }
+        const command = repository.provider.acceptInputCommand;
+        if (!command || !command.command) {
+            return undefined;
+        }
+        return {
+            command: command.command,
+            repository
+        };
+    }
+
+    protected readonly statusBarDisposable = new DisposableCollection();
+    protected updateStatusBar(): void {
+        this.statusBarDisposable.dispose();
+        const repository = this.scmService.selectedRepository;
+        if (!repository) {
+            return;
+        }
+        const name = this.labelProvider.getName(new URI(repository.provider.rootUri));
+        if (this.scmService.repositories.length > 1) {
+            this.setStatusBarEntry(SCM_COMMANDS.CHANGE_REPOSITORY.id, {
+                text: `$(database) ${name}`,
+                tooltip: name.toString(),
+                command: SCM_COMMANDS.CHANGE_REPOSITORY.id,
+                alignment: StatusBarAlignment.LEFT,
+                priority: 100
             });
-        };
-        this.scmService.onDidAddRepository(repository => {
-            const onDidChangeStatusBarCommands = repository.provider.onDidChangeStatusBarCommands;
-            if (onDidChangeStatusBarCommands) {
-                onDidChangeStatusBarCommands(commands => refresh(commands));
-            }
-        });
-
-        this.scmService.onDidRemoveRepository(() => {
-            this.scmService.selectedRepository = this.scmService.repositories[0];
-        });
-
-        this.commandRegistry.registerCommand(CHANGE_REPOSITORY, {
-            execute: () => {
-                this.scmQuickOpenService.changeRepository();
-            }
-        });
-        this.scmService.onDidChangeSelectedRepositories(repository => {
-            if (repository) {
-                if (this.scmService.repositories.length === 1) {
-                    this.statusBar.removeElement(CHANGE_REPOSITORY.id);
-                } else {
-                    const path = this.labelProvider.getName(new URI(repository.provider.rootUri));
-                    this.statusBar.setElement(CHANGE_REPOSITORY.id, {
-                        text: `$(database) ${path}`,
-                        tooltip: path.toString(),
-                        command: CHANGE_REPOSITORY.id,
-                        alignment: StatusBarAlignment.LEFT,
-                        priority: 100
-                    });
-                }
-            } else {
-                this.statusBarCommands.forEach(id => {
-                    this.statusBar.removeElement(id);
-                });
-            }
-        });
+        }
+        const label = repository.provider.rootUri ? `${name} (${repository.provider.label})` : repository.provider.label;
+        this.scmService.statusBarCommands.forEach((value, index) => this.setStatusBarEntry(`scm.status.${index}`, {
+            text: value.title,
+            tooltip: label + (value.tooltip ? ` - ${value.tooltip}` : ''),
+            command: value.command,
+            alignment: StatusBarAlignment.LEFT,
+            priority: 100
+        }));
+    }
+    protected setStatusBarEntry(id: string, entry: StatusBarEntry): void {
+        this.statusBar.setElement(id, entry);
+        this.statusBarDisposable.push(Disposable.create(() => this.statusBar.removeElement(id)));
     }
 
-    onStop(app: FrontendApplication): void {
-        this.scmService.dispose();
-    }
 }

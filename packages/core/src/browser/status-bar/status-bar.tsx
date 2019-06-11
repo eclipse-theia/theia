@@ -24,7 +24,7 @@ import { LabelParser, LabelIcon } from '../label-parser';
 
 export interface StatusBarEntry {
     /**
-     * For icons we use fontawesome. Get more information and the class names
+     * For icons we use octicons and fontawesome icons. octicons take precedence over fontawesome. Get more information and the class names
      * here: http://fontawesome.io/icons/
      * To set a text with icon use the following pattern in text string:
      * $(fontawesomeClassName)
