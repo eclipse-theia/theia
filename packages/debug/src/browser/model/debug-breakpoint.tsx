@@ -187,8 +187,10 @@ export class DebugBreakpoint extends DebugBreakpointData implements TreeElement 
         return <div title={decoration.message.join('\n')} className={classNames.join(' ')}>
             <span className={'theia-debug-breakpoint-icon ' + decoration.className} />
             <input type='checkbox' checked={this.origins[0].enabled} onChange={this.setBreakpointEnabled} />
-            <span className='name'>{this.labelProvider.getName(this.uri)} </span>
-            <span className='path'>{this.labelProvider.getLongName(this.uri.parent)} </span>
+            <span className='line-info' title={this.labelProvider.getLongName(this.uri)}>
+                <span className='name'>{this.labelProvider.getName(this.uri)} </span>
+                <span className='path'>{this.labelProvider.getLongName(this.uri.parent)} </span>
+            </span>
             <span className='line'>{this.line}</span>
         </div>;
     }
