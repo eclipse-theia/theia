@@ -30,6 +30,7 @@ import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/api/model';
 import { fromViewColumn } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
+import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -69,7 +70,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
-            execute: (resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
+            execute: async (resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
                 if (!resource) {
                     throw new Error(`${VscodeCommands.OPEN.id} command requires at least URI argument.`);
                 }
@@ -77,25 +78,26 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     throw new Error(`Invalid argument for ${VscodeCommands.OPEN.id} command with URI argument. Found ${resource}`);
                 }
 
-                let position: number | undefined;
-                if (columnOrOptions) {
-                    if (typeof columnOrOptions === 'number') {
-                        position = fromViewColumn(columnOrOptions);
-                    } else if (columnOrOptions.viewColumn) {
-                        position = fromViewColumn(columnOrOptions.viewColumn);
-                    } else {
-                        throw new Error(`Invalid argument for ${VscodeCommands.OPEN.id} command with columnOrOptions argument. Found ${columnOrOptions}`);
-                    }
+                let options: TextDocumentShowOptions | undefined;
+                if (typeof columnOrOptions === 'number') {
+                    options = {
+                        viewColumn: fromViewColumn(columnOrOptions)
+                    };
+                } else if (columnOrOptions) {
+                    options = {
+                        ...columnOrOptions,
+                        viewColumn: fromViewColumn(columnOrOptions.viewColumn)
+                    };
                 }
-
-                this.commandService.executeCommand('theia.open', new TheiaURI(resource), position);
+                const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
+                await open(this.openerService, new TheiaURI(resource), editorOptions);
             }
         });
 
         commands.registerCommand(VscodeCommands.DIFF, {
             isVisible: () => false,
             // tslint:disable-next-line: no-any
-            execute: async (left: URI, right: URI, label?: string) => {
+            execute: async (left: URI, right: URI, label?: string, options?: TextDocumentShowOptions) => {
                 if (!left || !right) {
                     throw new Error(`${VscodeCommands.DIFF} command requires at least two URI arguments. Found left=${left}, right=${right} as arguments`);
                 }
@@ -107,7 +109,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
 
                 const leftURI = new TheiaURI(left);
-                await this.diffService.openDiffEditor(leftURI, new TheiaURI(right), label);
+                const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
+                await this.diffService.openDiffEditor(leftURI, new TheiaURI(right), label, editorOptions);
             }
         });
 
