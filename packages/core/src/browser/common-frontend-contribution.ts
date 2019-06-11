@@ -34,6 +34,7 @@ import { OS, isOSX } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
+import { Navigatable } from './navigatable';
 
 export namespace CommonMenus {
 
@@ -245,7 +246,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     protected initResourceContextKeys(): void {
         const updateContextKeys = () => {
-            const resourceUri = UriSelection.getUri(this.selectionService.selection);
+            const selection = this.selectionService.selection;
+            const resourceUri = Navigatable.is(selection) && selection.getResourceUri() || UriSelection.getUri(selection);
             this.resourceContextKey.set(resourceUri);
         };
         updateContextKeys();
