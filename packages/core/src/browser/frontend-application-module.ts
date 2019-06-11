@@ -94,10 +94,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(TabBarToolbarRegistry).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TabBarToolbarRegistry);
     bind(TabBarToolbarFactory).toFactory(context => () => {
-        const { container } = context;
-        const commandRegistry = container.get(CommandRegistry);
-        const labelParser = container.get(LabelParser);
-        return new TabBarToolbar(commandRegistry, labelParser);
+        const container = context.container.createChild();
+        container.bind(TabBarToolbar).toSelf().inSingletonScope();
+        return container.get(TabBarToolbar);
     });
 
     bind(DockPanelRendererFactory).toFactory(context => () => {

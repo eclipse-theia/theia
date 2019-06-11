@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CommandService } from '../../common';
-import { LabelParser, LabelIcon } from '../label-parser';
-import { injectable, inject } from 'inversify';
-import { FrontendApplicationStateService } from '../frontend-application-state';
-import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
+import { injectable, inject } from 'inversify';
+import Octicon, { getIconByName } from '@primer/octicons-react';
+import { CommandService } from '../../common';
+import { ReactWidget } from '../widgets/react-widget';
+import { FrontendApplicationStateService } from '../frontend-application-state';
+import { LabelParser, LabelIcon } from '../label-parser';
 
 export interface StatusBarEntry {
     /**
@@ -126,16 +127,16 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected render(): JSX.Element {
         const leftEntries: JSX.Element[] = [];
         const rightEntries: JSX.Element[] = [];
-        const elements = Array.from(this.entries.values()).sort((left, right) => {
-            const lp = left.priority || 0;
-            const rp = right.priority || 0;
+        const elements = Array.from(this.entries).sort((left, right) => {
+            const lp = left[1].priority || 0;
+            const rp = right[1].priority || 0;
             return rp - lp;
         });
-        elements.forEach(entry => {
+        elements.forEach(([id, entry]) => {
             if (entry.alignment === StatusBarAlignment.LEFT) {
-                leftEntries.push(this.renderElement(entry));
+                leftEntries.push(this.renderElement(id, entry));
             } else {
-                rightEntries.push(this.renderElement(entry));
+                rightEntries.push(this.renderElement(id, entry));
             }
         });
 
@@ -186,22 +187,25 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         return attrs;
     }
 
-    protected renderElement(entry: StatusBarEntry): JSX.Element {
+    protected renderElement(id: string, entry: StatusBarEntry): JSX.Element {
         const childStrings = this.entryService.parse(entry.text);
         const children: JSX.Element[] = [];
 
-        childStrings.forEach((val, idx) => {
-            const key = entry.alignment + '-' + idx;
+        childStrings.forEach((val, key) => {
             if (!(typeof val === 'string') && LabelIcon.is(val)) {
-                const classStr = `fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`;
-                children.push(<span className={classStr} key={key}></span>);
+                const octicon = getIconByName(val.name);
+                if (octicon) {
+                    children.push(<span key={key} className={val.animation ? 'fa-' + val.animation : ''}><Octicon icon={octicon} /></span>);
+                } else {
+                    children.push(<span key={key} className={`fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`}></span>);
+                }
             } else {
                 children.push(<span key={key}>{val}</span>);
             }
         });
-        const elementInnerDiv = <div>{children}</div>;
+        const elementInnerDiv = <React.Fragment>{children}</React.Fragment>;
 
-        return React.createElement('div', { key: entry.text + entry.tooltip + entry.priority + entry.command, ...this.createAttributes(entry) }, elementInnerDiv);
+        return React.createElement('div', { key: id, ...this.createAttributes(entry) }, elementInnerDiv);
     }
 
 }
