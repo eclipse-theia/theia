@@ -76,12 +76,12 @@
     font-size: smaller;
 }
 
-.flex-container-center {
+.theia-scm-flex-container-center {
     display: flex;
     align-items: center;
 }
 
-.scrolling-container {
+.theia-scm-scrolling-container {
     position: relative;
     width: 100%;
     overflow: hidden;

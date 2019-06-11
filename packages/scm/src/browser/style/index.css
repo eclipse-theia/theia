@@ -23,7 +23,7 @@
     padding-left: 19px;
 }
 
-.theia-scm:focus, .theia-scm :focus {
+.groups-outer-container:focus {
     outline: 0;
     box-shadow: none;
     border: none;
@@ -39,41 +39,6 @@
 
 .theia-scm .space-between {
     justify-content: space-between;
-}
-
-#theia-scmContainer .buttons {
-    display: flex;
-}
-
-#theia-scmContainer .buttons .toolbar-button {
-    margin: 0 2px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 3px 3px;
-}
-
-#theia-scmContainer .itemButtonsContainer .buttons .toolbar-button {
-    padding: 0 3px;
-}
-
-#theia-scmContainer .buttons .toolbar-button:hover {
-    background: var(--theia-content-font-color3);
-}
-
-#theia-scmContainer .buttons .toolbar-button .open-file {
-    height: 16px;
-    width: 12px;
-    background: var(--theia-icon-open-file) no-repeat center center;
-}
-
-#theia-scmContainer .scmItem .itemButtonsContainer .buttons {
-    display: none;
-    margin: 0 3px;
-}
-
-#theia-scmContainer .scmItem:hover .itemButtonsContainer .buttons {
-    display: flex;
 }
 
 #theia-scmContainer .changesHeader {
@@ -94,14 +59,8 @@
     flex: 1;
 }
 
-#theia-scmContainer #commandBar {
-    margin-bottom: 5px;
-    align-items: baseline;
-}
-
 #theia-scmContainer .groups-outer-container {
     overflow-y: auto;
-    border-top: 1px solid var(--theia-layout-color4);
     width: 100%;
     flex-grow: 1;
 }
@@ -110,11 +69,7 @@
     background-color: var(--theia-error-color2) !important;
 }
 
-#theia-scmContainer .placeholder {
-    width: 100%;
-}
-
-.theia-scm div:focus .theia-mod-selected{
+.theia-scm div:focus .theia-mod-selected {
     background: var(--theia-accent-color3);
 }
 
@@ -135,28 +90,26 @@
     max-height: 400px;
 }
 
-.flex-container-center {
-    display: flex;
-    align-items: center;
-}
-
 .theia-scm-input-message-container textarea {
     line-height: var(--theia-content-line-height);
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color1);
     background: var(--theia-layout-color2);
-    border-style: solid;
-    border-width: 1px;
     resize: none;
     box-sizing: border-box;
     padding-left: 4px;
+}
+
+.theia-scm-input-message-container textarea:not(:focus) {
+    border-style: solid;
+    border-width: 1px;
 }
 
 .theia-scm-input-message {
     width: 100%;
 }
 
-.theia-scm-input-message-idle {
+.theia-scm-input-message-idle:not(:focus) {
     border-color: var(--theia-border-color0);
 }
 
@@ -240,13 +193,7 @@
 .theia-scm .scmItem .path {
     color: var(--theia-ui-font-color2);
     font-size: var(--theia-ui-font-size0);
-    margin-left: 3px;
-}
-
-.theia-scm .scmItem .itemButtonsContainer {
-    display: flex;
-    justify-content: flex-end;
-    margin-left: 3px;
+    margin-left: var(--theia-ui-padding);
 }
 
 .theia-scm .scmItem .status {
@@ -267,28 +214,38 @@
     cursor: pointer;
 }
 
-.scm-theia-header:hover > .scm-change-list-buttons-container {
-    visibility: visible;
-}
-
-.scm-change-list-buttons-container {
-    display: flex;
-    margin: 0 3px;
-    visibility: hidden;
-}
-
-.scm-change-list-buttons-container .toolbar-button {
-    cursor: pointer;
-    font-size: var(--theia-ui-font-size1);
-    margin: 0 2px;
-    padding: 0 3px;
-}
-
-.scm-change-list-buttons-container .toolbar-button:hover {
-    background: var(--theia-content-font-color3);
-}
-
 .scm-tab-icon {
     -webkit-mask: url('scm.svg');
     mask: url('scm.svg');
+}
+
+.theia-scm-inline-actions-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 3px;
+    min-height: 16px;
+}
+
+.theia-scm-inline-actions {
+    display: flex;
+    margin: 0 3px;
+}
+
+.theia-scm-inline-action {
+    padding: 0px 3px;
+    font-size: var(--theia-ui-font-size1);
+    margin: 0 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.theia-scm-inline-action:hover {
+    background: var(--theia-content-font-color3);
+}
+
+.theia-scm-inline-action .open-file {
+    height: 16px;
+    width: 12px;
+    background: var(--theia-icon-open-file) no-repeat center center;
 }

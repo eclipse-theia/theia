@@ -15,14 +15,10 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { DirtyDiffContribution } from './dirty-diff-contribution';
 import { DirtyDiffDecorator } from './dirty-diff-decorator';
 
 import '../../../src/browser/style/dirty-diff.css';
 
 export function bindDirtyDiff(bind: interfaces.Bind) {
-    bind(DirtyDiffContribution).toSelf().inSingletonScope();
     bind(DirtyDiffDecorator).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(DirtyDiffContribution);
 }

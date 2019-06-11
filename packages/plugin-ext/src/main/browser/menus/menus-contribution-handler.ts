@@ -17,24 +17,23 @@
 // tslint:disable:no-any
 
 import { injectable, inject } from 'inversify';
-import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, UriSelection } from '@theia/core';
+import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
 import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget } from '../view/tree-views-main';
-import { PluginContribution, Menu } from '../../../common';
+import { PluginContribution, Menu, ScmCommandArg } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { TreeViewActions } from '../view/tree-view-actions';
-import { ScmTitleCommandRegistry } from '@theia/scm/lib/browser/scm-title-command-registry';
-import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
-import { ScmGroupCommandRegistry } from '@theia/scm/lib/browser/scm-group-command-registry';
-import { ScmResourceCommandRegistry } from '@theia/scm/lib/browser/scm-resource-command-registry';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
-
-import PATH = ScmWidget.ContextMenu.PATH;
+import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
+import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
+import { PluginScmProvider, PluginScmResourceGroup, PluginScmResource } from '../scm-main';
+import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -48,6 +47,9 @@ export class MenusContributionPointHandler {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
+    @inject(ScmService)
+    protected readonly scmService: ScmService;
+
     @inject(QuickCommandService)
     protected readonly quickCommandService: QuickCommandService;
 
@@ -60,13 +62,8 @@ export class MenusContributionPointHandler {
     @inject(TreeViewActions)
     protected readonly treeViewActions: TreeViewActions;
 
-    @inject(ScmTitleCommandRegistry)
-    protected readonly scmTitleCommandRegistry: ScmTitleCommandRegistry;
-
-    @inject(ScmGroupCommandRegistry)
-    protected readonly scmGroupCommandRegistry: ScmGroupCommandRegistry;
-    @inject(ScmResourceCommandRegistry)
-    protected readonly scmResourceCommandRegistry: ScmResourceCommandRegistry;
+    @inject(ResourceContextKey)
+    protected readonly resourceContextKey: ResourceContextKey;
 
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
@@ -82,27 +79,39 @@ export class MenusContributionPointHandler {
                 }
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
-                    this.registerEditorTitleAction(action);
+                    const selectedResource = (widget: EditorWidget) => {
+                        const resourceUri = widget.getResourceUri();
+                        return resourceUri && resourceUri['codeUri'];
+                    };
+                    this.registerTitleAction(location, action, {
+                        execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(action.command, selectedResource(widget)),
+                        isEnabled: widget => widget instanceof EditorWidget && this.commands.isEnabled(action.command, selectedResource(widget)),
+                        isVisible: widget => widget instanceof EditorWidget && this.commands.isVisible(action.command, selectedResource(widget))
+                    });
                 }
             } else if (location === 'view/item/context') {
                 for (const menu of allMenus[location]) {
                     if (menu.group && /^inline/.test(menu.group)) {
                         this.treeViewActions.registerInlineAction(menu);
                     } else {
-                        this.registerMenuAction(VIEW_ITEM_CONTEXT_MENU, menu);
+                        this.registerGlobalMenuAction(VIEW_ITEM_CONTEXT_MENU, menu);
                     }
                 }
             } else if (location === 'scm/title') {
                 for (const action of allMenus[location]) {
-                    this.registerScmTitleAction(action);
+                    this.registerScmTitleAction(location, action);
                 }
             } else if (location === 'scm/resourceGroup/context') {
-                for (const action of allMenus[location]) {
-                    this.registerScmResourceGroupAction(action);
+                for (const menu of allMenus[location]) {
+                    const inline = menu.group && /^inline/.test(menu.group) || false;
+                    const menuPath = inline ? ScmWidget.RESOURCE_GROUP_INLINE_MENU : ScmWidget.RESOURCE_GROUP_CONTEXT_MENU;
+                    this.registerScmMenuAction(menuPath, menu);
                 }
             } else if (location === 'scm/resourceState/context') {
-                for (const action of allMenus[location]) {
-                    this.registerScmResourceAction(action);
+                for (const menu of allMenus[location]) {
+                    const inline = menu.group && /^inline/.test(menu.group) || false;
+                    const menuPath = inline ? ScmWidget.RESOURCE_INLINE_MENU : ScmWidget.RESOURCE_CONTEXT_MENU;
+                    this.registerScmMenuAction(menuPath, menu);
                 }
             } else if (allMenus.hasOwnProperty(location)) {
                 const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
@@ -113,104 +122,28 @@ export class MenusContributionPointHandler {
                 const menus = allMenus[location];
                 menus.forEach(menu => {
                     for (const menuPath of menuPaths) {
-                        this.registerMenuAction(menuPath, menu);
+                        this.registerGlobalMenuAction(menuPath, menu);
                     }
                 });
             }
         }
     }
 
-    protected registerScmTitleAction(menuAction: Menu): void {
-        const id = this.createSyntheticCommandId(menuAction, { prefix: '__plugin.scm.title.action.' });
+    protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): void {
+        const id = this.createSyntheticCommandId(action, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
         const command: Command = { id };
-        this.commands.registerCommand(command, {
-            execute: () => this.commands.executeCommand(menuAction.command)
-        });
-
-        this.scmTitleCommandRegistry.registerItem({ command: id, when: menuAction.when, group: menuAction.group });
-
-        if (menuAction.group && menuAction.group !== 'navigation') {
-            const action: MenuAction = { commandId: id };
-            this.menuRegistry.registerMenuAction([...PATH, menuAction.group], action);
-        }
-
-        this.onDidRegisterCommand(menuAction.command, pluginCommand => {
-            command.iconClass = pluginCommand.iconClass;
-            command.category = pluginCommand.category;
-            command.label = pluginCommand.label;
-        });
-    }
-
-    protected registerScmResourceGroupAction(action: Menu): void {
-        const id = this.createSyntheticCommandId(action, { prefix: '__plugin.scm.resource.group.action.' });
-        const command: Command = { id };
-        this.commands.registerCommand(command, {
-            execute: arg => this.commands.executeCommand(action.command, arg)
-        });
-
-        const condition = action.when;
-        if (condition) {
-            let group = condition.substring(condition.indexOf('scmResourceGroup == ') + 20);
-            if (group.indexOf(' &&') > 0) {
-                group = group.substring(0, group.indexOf(' &&'));
-            }
-            if (action.group !== 'inline') {
-                this.menuRegistry.registerMenuAction(['scm-group-context-menu_' + group], { commandId: id });
-            } else {
-                this.scmGroupCommandRegistry.registerItem(group, { command: id, group: action.group });
-            }
-        }
-
-        this.onDidRegisterCommand(action.command, pluginCommand => {
-            command.iconClass = pluginCommand.iconClass;
-            command.category = pluginCommand.category;
-            command.label = pluginCommand.label;
-        });
-    }
-
-    protected registerScmResourceAction(action: Menu): void {
-        const id = this.createSyntheticCommandId(action, { prefix: '__plugin.scm.resource.action.' });
-        const command: Command = { id };
-        this.commands.registerCommand(command, {
-            execute: (...arg) => this.commands.executeCommand(action.command, ...arg)
-        });
-
-        const condition = action.when;
-        if (condition) {
-            let group = condition.substring(condition.indexOf('scmResourceGroup == ') + 20);
-            if (group.indexOf(' &&') > 0) {
-                group = group.substring(0, group.indexOf(' &&'));
-            }
-            if (action.group && action.group.startsWith('inline')) {
-                this.scmResourceCommandRegistry.registerItem(group, { command: id, group: 'inline' });
-            } else {
-                this.menuRegistry.registerMenuAction(['scm-resource-context-menu_' + group], { commandId: id });
-            }
-        }
-
-        this.onDidRegisterCommand(action.command, pluginCommand => {
-            command.iconClass = pluginCommand.iconClass;
-            command.category = pluginCommand.category;
-            command.label = pluginCommand.label;
-        });
-    }
-
-    protected registerEditorTitleAction(action: Menu): void {
-        const id = this.createSyntheticCommandId(action, { prefix: '__plugin.editor.title.action.' });
-        const command: Command = { id };
-        this.commands.registerCommand(command, {
-            execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(action.command, widget.editor.uri['codeUri']),
-            isEnabled: widget => widget instanceof EditorWidget && this.commands.isEnabled(action.command, widget.editor.uri['codeUri']),
-            isVisible: widget => widget instanceof EditorWidget && this.commands.isVisible(action.command, widget.editor.uri['codeUri'])
-        });
+        this.commands.registerCommand(command, handler);
 
         const { group, when } = action;
         const item: Mutable<TabBarToolbarItem> = { id, command: id, group, when };
         this.tabBarToolbar.registerItem(item);
 
         this.onDidRegisterCommand(action.command, pluginCommand => {
-            command.iconClass = pluginCommand.iconClass;
+            command.category = pluginCommand.category;
             item.tooltip = pluginCommand.label;
+            if (group === undefined || group === 'navigation') {
+                command.iconClass = pluginCommand.iconClass;
+            }
         });
     }
 
@@ -223,9 +156,53 @@ export class MenusContributionPointHandler {
         return [];
     }
 
-    protected registerMenuAction(menuPath: MenuPath, menu: Menu): void {
-        const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.menu.action.' });
-        const command: Command = { id: commandId };
+    protected registerScmTitleAction(location: string, action: Menu): void {
+        const selectedRepository = () => this.toScmArgs(this.scmService.selectedRepository);
+        this.registerTitleAction(location, action, {
+            execute: widget => widget instanceof ScmWidget && this.commands.executeCommand(action.command, selectedRepository()),
+            isEnabled: widget => widget instanceof ScmWidget && this.commands.isEnabled(action.command, selectedRepository()),
+            isVisible: widget => widget instanceof ScmWidget && this.commands.isVisible(action.command, selectedRepository())
+        });
+    }
+    protected registerScmMenuAction(menuPath: MenuPath, menu: Menu): void {
+        this.registerMenuAction(menuPath, menu, {
+            execute: (...args) => this.commands.executeCommand(menu.command, ...this.toScmArgs(...args)),
+            isEnabled: (...args) => this.commands.isEnabled(menu.command, ...this.toScmArgs(...args)),
+            isVisible: (...args) => this.commands.isVisible(menu.command, ...this.toScmArgs(...args))
+        });
+    }
+    protected toScmArgs(...args: any[]): any[] {
+        const scmArgs: any[] = [];
+        for (const arg of args) {
+            const scmArg = this.toScmArg(arg);
+            if (scmArg) {
+                scmArgs.push(scmArg);
+            }
+        }
+        return scmArgs;
+    }
+    protected toScmArg(arg: any): ScmCommandArg | undefined {
+        if (arg instanceof ScmRepository && arg.provider instanceof PluginScmProvider) {
+            return {
+                sourceControlHandle: arg.provider.handle
+            };
+        }
+        if (arg instanceof PluginScmResourceGroup) {
+            return {
+                sourceControlHandle: arg.provider.handle,
+                resourceGroupHandle: arg.handle
+            };
+        }
+        if (arg instanceof PluginScmResource) {
+            return {
+                sourceControlHandle: arg.group.provider.handle,
+                resourceGroupHandle: arg.group.handle,
+                resourceStateHandle: arg.handle
+            };
+        }
+    }
+
+    protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): void {
         const selectedResource = () => {
             const selection = this.selectionService.selection;
 
@@ -233,24 +210,34 @@ export class MenusContributionPointHandler {
                 return selection.source.toTreeViewSelection(selection[0]);
             }
 
-            const uri = UriSelection.getUri(selection);
+            const uri = this.resourceContextKey.get();
             return uri ? uri['codeUri'] : (typeof selection !== 'object' && typeof selection !== 'function') ? selection : undefined;
         };
-        this.commands.registerCommand(command, {
+        this.registerMenuAction(menuPath, menu, {
             execute: () => this.commands.executeCommand(menu.command, selectedResource()),
             isEnabled: () => this.commands.isEnabled(menu.command, selectedResource()),
             isVisible: () => this.commands.isVisible(menu.command, selectedResource())
         });
+    }
+
+    protected registerMenuAction(menuPath: MenuPath, menu: Menu, handler: CommandHandler): void {
+        const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.menu.action.' });
+        const command: Command = { id: commandId };
+        this.commands.registerCommand(command, handler);
 
         const { when } = menu;
         const [group = '', order = undefined] = (menu.group || '').split('@');
         const action: MenuAction = { commandId, order, when };
-        this.menuRegistry.registerMenuAction([...menuPath, group], action);
+        const inline = /^inline/.test(group);
+        menuPath = inline ? menuPath : [...menuPath, group];
+        this.menuRegistry.registerMenuAction(menuPath, action);
 
         this.onDidRegisterCommand(menu.command, pluginCommand => {
             command.category = pluginCommand.category;
             action.label = pluginCommand.label;
-            action.icon = pluginCommand.iconClass;
+            if (inline) {
+                action.icon = pluginCommand.iconClass;
+            }
         });
     }
 
