@@ -21,14 +21,13 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
 import { createUntitledResource } from './editor/untitled-resource';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import CodeURI from 'vscode-uri';
-import { ApplicationShell, OpenerOptions, Saveable } from '@theia/core/lib/browser';
+import { ApplicationShell, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../api/model';
 import { Range } from 'vscode-languageserver-types';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
-import { ViewColumn } from '../../plugin/types-impl';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
 
@@ -94,8 +93,9 @@ export class DocumentsMainImpl implements DocumentsMain {
         editorsAndDocuments: EditorsAndDocumentsMain,
         modelService: EditorModelService,
         rpc: RPCProtocol,
-        private editorManger: EditorManager,
+        private editorManager: EditorManager,
         private openerService: OpenerService,
+        private shell: ApplicationShell
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
         this.modelService = modelService;
@@ -183,57 +183,17 @@ export class DocumentsMainImpl implements DocumentsMain {
         // Following message is appeared in browser console
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
         try {
-            let openerOptions: OpenerOptions | undefined;
-            if (options) {
-                let range: Range | undefined;
-                if (options.selection) {
-                    const selection = options.selection;
-                    range = {
-                        start: { line: selection.startLineNumber - 1, character: selection.startColumn - 1 },
-                        end: { line: selection.endLineNumber - 1, character: selection.endColumn - 1 }
-                    };
-                }
-                let widgetOptions: ApplicationShell.WidgetOptions | undefined;
-                if (options.viewColumn) {
-                    const viewColumn = options.viewColumn;
-                    const visibleEditors = this.editorManger.all;
-                    let editorIndex = -1;
-                    if (viewColumn > 0) {
-                        editorIndex = viewColumn - 1;
-                    } else {
-                        const activeEditor = this.editorManger.activeEditor;
-                        if (activeEditor) {
-                            const activeEditorIndex = visibleEditors.indexOf(activeEditor);
-                            if (viewColumn === ViewColumn.Active) {
-                                editorIndex = activeEditorIndex;
-                            } else if (viewColumn === ViewColumn.Beside) {
-                                editorIndex = activeEditorIndex + 1;
-                            }
-                        }
-                    }
-                    if (editorIndex > -1 && visibleEditors.length > editorIndex) {
-                        widgetOptions = { ref: visibleEditors[editorIndex] };
-                    } else {
-                        widgetOptions = { mode: 'split-right' };
-                    }
-                }
-                openerOptions = {
-                    selection: range,
-                    mode: options.preserveFocus ? 'open' : 'activate',
-                    preview: options.preview,
-                    widgetOptions
-                };
-            }
+            const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
             const uriArg = new URI(CodeURI.revive(uri));
-            const opener = await this.openerService.getOpener(uriArg, openerOptions);
-            await opener.open(uriArg, openerOptions);
+            const opener = await this.openerService.getOpener(uriArg, editorOptions);
+            await opener.open(uriArg, editorOptions);
         } catch (err) {
             throw new Error(err);
         }
     }
 
     async $trySaveDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManger.getByUri(new URI(CodeURI.revive(uri)));
+        const widget = await this.editorManager.getByUri(new URI(CodeURI.revive(uri)));
         if (widget) {
             await Saveable.save(widget);
             return true;
@@ -254,7 +214,7 @@ export class DocumentsMainImpl implements DocumentsMain {
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManger.getByUri(new URI(CodeURI.revive(uri)));
+        const widget = await this.editorManager.getByUri(new URI(CodeURI.revive(uri)));
         if (widget) {
             await Saveable.save(widget);
             widget.close();
@@ -262,6 +222,39 @@ export class DocumentsMainImpl implements DocumentsMain {
         }
 
         return false;
+    }
+
+    static toEditorOpenerOptions(shell: ApplicationShell, options?: TextDocumentShowOptions): EditorOpenerOptions | undefined {
+        if (!options) {
+            return undefined;
+        }
+        let range: Range | undefined;
+        if (options.selection) {
+            const selection = options.selection;
+            range = {
+                start: { line: selection.startLineNumber - 1, character: selection.startColumn - 1 },
+                end: { line: selection.endLineNumber - 1, character: selection.endColumn - 1 }
+            };
+        }
+        /* fall back to side group -> split relative to the active widget */
+        let widgetOptions: ApplicationShell.WidgetOptions | undefined = { mode: 'split-right' };
+        const viewColumn = options.viewColumn;
+        if (viewColumn === undefined || viewColumn === -1) {
+            /* active group -> skip (default behaviour) */
+            widgetOptions = undefined;
+        } else if (viewColumn > 0) {
+            const tabBars = shell.mainAreaTabBars;
+            const tabBar = tabBars[viewColumn];
+            if (tabBar && tabBar.currentTitle) {
+                widgetOptions = { ref: tabBar.currentTitle.owner };
+            }
+        }
+        return {
+            selection: range,
+            mode: options.preserveFocus ? 'reveal' : 'activate',
+            preview: options.preview,
+            widgetOptions
+        };
     }
 
 }
