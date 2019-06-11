@@ -18,7 +18,7 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
-import { OpenerService } from '@theia/core/lib/browser';
+import { open, OpenerService, OpenerOptions } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common/message-service';
 
 @injectable()
@@ -28,7 +28,7 @@ export class DiffService {
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(MessageService) protected readonly messageService: MessageService;
 
-    public async openDiffEditor(left: URI, right: URI, label?: string) {
+    public async openDiffEditor(left: URI, right: URI, label?: string, options?: OpenerOptions) {
         if (left.scheme === 'file' && right.scheme === 'file') {
             const [leftExists, rightExists] = await Promise.all([
                 this.fileSystem.exists(left.toString()),
@@ -42,8 +42,7 @@ export class DiffService {
                 if (leftStat && rightStat) {
                     if (!leftStat.isDirectory && !rightStat.isDirectory) {
                         const uri = DiffUris.encode(left, right, label);
-                        const opener = await this.openerService.getOpener(uri);
-                        opener.open(uri);
+                        await open(this.openerService, uri, options);
                     } else {
                         const details = (() => {
                             if (leftStat.isDirectory && rightStat.isDirectory) {
@@ -62,8 +61,7 @@ export class DiffService {
             }
         } else {
             const uri = DiffUris.encode(left, right, label);
-            const opener = await this.openerService.getOpener(uri);
-            opener.open(uri);
+            await open(this.openerService, uri, options);
         }
     }
 }
