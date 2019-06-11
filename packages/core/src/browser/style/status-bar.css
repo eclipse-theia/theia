@@ -45,8 +45,15 @@
     color: var(--theia-statusBar-font-color);
     display: flex;
     align-items: center;
-    padding: 0 4px;
     font-size: var(--theia-statusBar-font-size);
+}
+
+#theia-statusBar .area .element > * {
+    margin-left: calc(var(--theia-ui-padding)/2);
+}
+
+#theia-statusBar .area .element > *:last-child {
+    margin-right: calc(var(--theia-ui-padding)/2);
 }
 
 #theia-statusBar .area .element.hasCommand:hover {
