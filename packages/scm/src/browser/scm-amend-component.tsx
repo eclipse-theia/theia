@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import React = require('react');
-import { ScmRepository, ScmAmendSupport, ScmCommit } from './scm-service';
+import '../../src/browser/style/scm-amend-component.css';
+
+import * as React from 'react';
 import { ScmAvatarService } from './scm-avatar-service';
 import { StorageService } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core';
 
-import '../../src/browser/style/scm-amend-component.css';
+import { ScmRepository } from './scm-repository';
+import { ScmAmendSupport, ScmCommit } from './scm-provider';
 
 export interface ScmAmendComponentProps {
     id: string,
@@ -87,14 +89,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         this.setState({ amendingCommits: await this.buildAmendingList(lastCommit ? lastCommit.commit : undefined), lastCommit });
 
         this.toDisposeOnUnmount.push(
-            this.props.repository.provider.onDidChange(async event => {
-                this.fetchStatusAndSetState();
-            })
-        );
-        this.toDisposeOnUnmount.push(
-            this.props.repository.provider.onDidChangeResources(async event => {
-                this.fetchStatusAndSetState();
-            })
+            this.props.repository.provider.onDidChange(() => this.fetchStatusAndSetState())
         );
     }
 
@@ -211,7 +206,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
      * 'render' can be called at any time, so be sure we don't update any 'model'
      * fields until we actually start the transition.
      */
-    protected async amend(): Promise<void> {
+    protected amend = async (): Promise<void> => {
         if (this.state.transition.state !== 'none' && this.transitionHint !== 'none') {
             return;
         }
@@ -220,7 +215,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         await this.resetAndSetMessage('HEAD~', 'HEAD');
     }
 
-    protected async unamend(): Promise<void> {
+    protected unamend = async (): Promise<void> => {
         if (this.state.transition.state !== 'none' && this.transitionHint !== 'none') {
             return;
         }
@@ -264,7 +259,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             };
 
         return (
-            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER} style={style} id={this.props.id}>
+            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER + ' no-select'} style={style} id={this.props.id}>
                 {
                     this.state.amendingCommits.length > 0 || (this.state.lastCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'down')
                         ? this.renderAmendingCommits()
@@ -329,13 +324,15 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     }
 
     protected renderAmendCommitListButtons(): React.ReactNode {
-        return <div className='scm-change-list-buttons-container'>
-            <a className='toolbar-button' title='Unamend All Commits' onClick={this.unamendAll.bind(this)}>
-                <i className='fa fa-minus' />
-            </a>
-            <a className='toolbar-button' title='Clear Amending Commits' onClick={this.clearAmending.bind(this)}>
-                <i className='fa fa-times' />
-            </a>
+        return <div className='theia-scm-inline-actions-container'>
+            <div className='theia-scm-inline-actions'>
+                <div className='theia-scm-inline-action'>
+                    <a className='fa fa-minus' title='Unamend All Commits' onClick={this.unamendAll} />
+                </div>
+                <div className='theia-scm-inline-action' >
+                    <a className='fa fa-times' title='Clear Amending Commits' onClick={this.clearAmending} />
+                </div>
+            </div>
         </div>;
     }
 
@@ -350,7 +347,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             {
                 canAmend
                     ? <div className={ScmAmendComponent.Styles.FLEX_CENTER}>
-                        <button className='theia-button' title='Amend last commit' onClick={this.amend.bind(this)}>
+                        <button className='theia-button' title='Amend last commit' onClick={this.amend}>
                             Amend
                         </button>
                     </div>
@@ -362,7 +359,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     protected renderLastCommitNoButton(lastCommit: { commit: ScmCommit, avatar: string }): React.ReactNode {
         switch (this.state.transition.state) {
             case 'none':
-                return <div ref={this.lastCommitScrollRef} className='scrolling-container'>
+                return <div ref={this.lastCommitScrollRef} className='theia-scm-scrolling-container'>
                     {this.renderCommitAvatarAndDetail(lastCommit)}
                 </div>;
 
@@ -426,7 +423,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                 {
                     isOldestAmendCommit
                         ? <div className={ScmAmendComponent.Styles.FLEX_CENTER}>
-                            <button className='theia-button' title='Unamend commit' onClick={() => this.unamend.bind(this)()}>
+                            <button className='theia-button' title='Unamend commit' onClick={this.unamend}>
                                 Unamend
                         </button>
                         </div>
@@ -570,7 +567,7 @@ export namespace ScmAmendComponent {
         export const COMMIT_MESSAGE_SUMMARY = 'theia-scm-commit-message-summary';
         export const LAST_COMMIT_MESSAGE_TIME = 'theia-scm-commit-message-time';
 
-        export const FLEX_CENTER = 'flex-container-center';
+        export const FLEX_CENTER = 'theia-scm-flex-container-center';
     }
 
 }

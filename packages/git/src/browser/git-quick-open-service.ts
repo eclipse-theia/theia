@@ -20,7 +20,6 @@ import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quic
 import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { GitErrorHandler } from './git-error-handler';
@@ -278,21 +277,6 @@ export class GitQuickOpenService {
 
             items.unshift(new SingleStringInputOpenItem('Create new branch...', createBranchItem, (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
             this.open(items, 'Select a ref to checkout or create a new local branch:');
-        }
-    }
-
-    async changeRepository(): Promise<void> {
-        const repositories = this.repositoryProvider.allRepositories;
-        if (repositories.length > 1) {
-            const items = await Promise.all(repositories.map(async repository => {
-                const uri = new URI(repository.localUri);
-                const execute = () => this.repositoryProvider.selectedRepository = repository;
-                const toLabel = () => uri.path.base;
-                const fsPath = await this.fileSystem.getFsPath(uri.toString());
-                const toDescription = () => fsPath;
-                return new GitQuickOpenItem<Repository>(repository, execute, toLabel, toDescription);
-            }));
-            this.open(items, 'Select a local Git repository to work with:');
         }
     }
 

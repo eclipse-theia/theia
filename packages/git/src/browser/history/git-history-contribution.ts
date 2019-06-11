@@ -75,15 +75,15 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         }
         );
         this.repositoryTracker.onGitEvent(event => {
-            const { source, status, oldStatus } = event;
+            const { source, status, oldStatus } = event || { source: undefined, status: undefined, oldStatus: undefined };
             let isBranchChanged = false;
             let isHeaderChanged = false;
             if (oldStatus) {
-                isBranchChanged = status.branch !== oldStatus.branch;
-                isHeaderChanged = status.currentHead !== oldStatus.currentHead;
+                isBranchChanged = !!status && status.branch !== oldStatus.branch;
+                isHeaderChanged = !!status && status.currentHead !== oldStatus.currentHead;
             }
             if (isBranchChanged || isHeaderChanged || oldStatus === undefined) {
-                this.refreshWidget(source.localUri);
+                this.refreshWidget(source && source.localUri);
             }
         });
     }

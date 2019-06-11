@@ -8,7 +8,9 @@
     "@theia/filesystem": "^0.7.0",
     "@theia/navigator": "^0.7.0",
     "@types/diff": "^3.2.2",
+    "@types/p-debounce": "^1.0.1",
     "diff": "^3.4.0",
+    "p-debounce": "^2.1.0",
     "ts-md5": "^1.2.2"
   },
   "publishConfig": {

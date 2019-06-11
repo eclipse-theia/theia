@@ -16,6 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '../common/uri';
+import Uri from 'vscode-uri';
 import { ContextKeyService, ContextKey } from './context-key-service';
 
 @injectable()
@@ -24,6 +25,7 @@ export class ResourceContextKey {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    protected resource: ContextKey<Uri>;
     protected resourceSchemeKey: ContextKey<string>;
     protected resourceFileName: ContextKey<string>;
     protected resourceExtname: ContextKey<string>;
@@ -31,13 +33,20 @@ export class ResourceContextKey {
 
     @postConstruct()
     protected init(): void {
+        this.resource = this.contextKeyService.createKey<Uri>('resource', undefined);
         this.resourceSchemeKey = this.contextKeyService.createKey<string>('resourceScheme', undefined);
         this.resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);
         this.resourceExtname = this.contextKeyService.createKey<string>('resourceExtname', undefined);
         this.resourceLangId = this.contextKeyService.createKey<string>('resourceLangId', undefined);
     }
 
+    get(): URI | undefined {
+        const codeUri = this.resource.get();
+        return codeUri && new URI(codeUri);
+    }
+
     set(resourceUri: URI | undefined): void {
+        this.resource.set(resourceUri && resourceUri['codeUri']);
         this.resourceSchemeKey.set(resourceUri && resourceUri.scheme);
         this.resourceFileName.set(resourceUri && resourceUri.path.base);
         this.resourceExtname.set(resourceUri && resourceUri.path.ext);
