@@ -15,65 +15,19 @@
  ********************************************************************************/
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import {
-    Command,
-    CommandContribution,
-    CommandRegistry, Disposable,
-    DisposableCollection,
-    Emitter,
-    Event, MenuContribution,
-    MenuModelRegistry
-} from '@theia/core';
-import {
-    DiffUris,
-    LabelProvider,
-    StatusBar,
-    StatusBarEntry,
-    Widget
-} from '@theia/core/lib/browser';
-import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import {
-    EDITOR_CONTEXT_MENU,
-    EditorContextMenu,
-    EditorManager,
-    EditorOpenerOptions,
-    EditorWidget
-} from '@theia/editor/lib/browser';
-import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
-
-import { GitCommands } from './git-commands';
+import { Command, CommandContribution, CommandRegistry, DisposableCollection, MenuContribution, MenuModelRegistry, Mutable, MenuAction } from '@theia/core';
+import { DiffUris, Widget } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { EDITOR_CONTEXT_MENU, EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
+import { Git, GitFileChange, GitFileStatus } from '../common';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitAction, GitQuickOpenService } from './git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { GitPrompt } from '../common/git-prompt';
-import {
-    ScmCommand,
-    ScmProvider,
-    ScmRepository,
-    ScmResource,
-    ScmResourceGroup,
-    ScmService,
-    ScmCommit,
-    ScmAmendSupport
-} from '@theia/scm/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { GitCommitMessageValidator } from '../browser/git-commit-message-validator';
 import { GitErrorHandler } from '../browser/git-error-handler';
-import {
-    ScmTitleCommandsContribution,
-    ScmTitleCommandRegistry
-} from '@theia/scm/lib/browser/scm-title-command-registry';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
-import {
-    ScmResourceCommandContribution,
-    ScmResourceCommandRegistry
-} from '@theia/scm/lib/browser/scm-resource-command-registry';
-import {
-    ScmGroupCommandContribution,
-    ScmGroupCommandRegistry
-} from '@theia/scm/lib/browser/scm-group-command-registry';
-import { GitDecorator } from './git-decorator';
+import { ScmResource, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -113,7 +67,8 @@ export namespace GIT_COMMANDS {
     export const COMMIT = {
         id: 'git.commit.all',
         tooltip: 'Commit all the staged changes',
-        text: 'Commit',
+        iconClass: 'fa fa-check',
+        label: 'Commit',
     };
     export const COMMIT_ADD_SIGN_OFF = {
         id: 'git-commit-add-sign-off',
@@ -126,10 +81,6 @@ export namespace GIT_COMMANDS {
     };
     export const COMMIT_SIGN_OFF = {
         id: 'git.commit.signOff'
-    };
-    export const CHANGE_REPOSITORY = {
-        id: 'git.change.repository',
-        label: 'Git: Change Repository...'
     };
     export const OPEN_FILE: Command = {
         id: 'git.open.file',
@@ -232,265 +183,98 @@ export namespace GIT_COMMANDS {
 }
 
 @injectable()
-export class GitContribution implements
-    CommandContribution,
-    MenuContribution,
-    TabBarToolbarContribution,
-    ScmTitleCommandsContribution,
-    ScmResourceCommandContribution,
-    ScmGroupCommandContribution {
+export class GitContribution implements CommandContribution, MenuContribution, TabBarToolbarContribution {
 
     static GIT_CHECKOUT = 'git.checkout';
     static GIT_SYNC_STATUS = 'git-sync-status';
 
     protected toDispose = new DisposableCollection();
 
-    protected readonly icons: Map<string, ScmCommand> = new Map();
-
-    private dirtyRepositories: Repository[] = [];
-    private scmProviders: ScmProvider[] = [];
-
-    @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService;
     @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
     @inject(GitSyncService) protected readonly syncService: GitSyncService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(GitPrompt) protected readonly prompt: GitPrompt;
-    @inject(ScmService) protected readonly scmService: ScmService;
     @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
-    @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(Git) protected readonly git: Git;
     @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(ScmWidget) protected readonly scmWidget: ScmWidget;
-    @inject(GitCommands) protected readonly gitCommands: GitCommands;
+    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
 
     onStart(): void {
-        this.repositoryProvider.allRepositories.forEach(repository => this.registerScmProvider(repository));
-        this.dirtyRepositories = this.repositoryProvider.allRepositories;
-        this.scmService.onDidChangeSelectedRepositories(scmRepository => {
-            const repository = this.repositoryProvider.allRepositories.find(repo => {
-                if (scmRepository) {
-                    return repo.localUri === scmRepository.provider.rootUri;
-                } else {
-                    return false;
-                }
-            });
-            if (repository) {
-                this.repositoryProvider.selectedRepository = repository;
-            } else {
-                this.statusBar.removeElement(GitContribution.GIT_CHECKOUT);
-                this.statusBar.removeElement(GitContribution.GIT_SYNC_STATUS);
-            }
-        });
-        this.repositoryTracker.onGitEvent(event => {
-            this.checkNewOrRemovedRepositories();
-            const { status } = event;
-            const branch = status.branch ? status.branch : status.currentHead ? status.currentHead.substring(0, 8) : 'NO-HEAD';
-            let dirty = '';
-            if (status.changes.length > 0) {
-                const conflicts = this.hasConflicts(status.changes);
-                const staged = this.allStaged(status.changes);
-                if (conflicts || staged) {
-                    if (conflicts) {
-                        dirty = '!';
-                    } else if (staged) {
-                        dirty = '+';
-                    }
-                } else {
-                    dirty = '*';
-                }
-            }
-            const scmProvider = this.scmProviders.find(provider => provider.rootUri === event.source.localUri);
-            if (scmProvider) {
-                const provider = (scmProvider as ScmProviderImpl);
-                this.getGroups(status, provider).then(groups => {
-                    provider.groups = groups;
-                    provider.fireChangeStatusBarCommands([{
-                        id: GitContribution.GIT_CHECKOUT,
-                        text: `$(code-fork) ${branch}${dirty}`,
-                        command: GIT_COMMANDS.CHECKOUT.id
-                    }]);
-                    provider.fireChangeResources();
-                    this.updateSyncStatusBarEntry(event.source.localUri);
-                });
-            }
-        });
-        this.syncService.onDidChange(() => this.updateSyncStatusBarEntry(
-            this.repositoryProvider.selectedRepository
-                ? this.repositoryProvider.selectedRepository.localUri
-                : undefined)
-        );
-    }
-
-    protected async getGroups(status: WorkingDirectoryStatus | undefined, provider: ScmProvider): Promise<ScmResourceGroup[]> {
-        const groups: ScmResourceGroup[] = [];
-        const stagedChanges = [];
-        const unstagedChanges = [];
-        const mergeChanges = [];
-        if (status) {
-            for (const change of status.changes) {
-                if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
-                    if (change.staged) {
-                        stagedChanges.push(change);
-                    } else {
-                        unstagedChanges.push(change);
-                    }
-                } else {
-                    if (!change.staged) {
-                        mergeChanges.push(change);
-                    }
-                }
-            }
-        }
-        if (stagedChanges.length > 0) {
-            groups.push(await this.getGroup('Staged changes', provider, stagedChanges));
-        }
-        if (unstagedChanges.length > 0) {
-            groups.push(await this.getGroup('Changes', provider, unstagedChanges));
-        }
-        if (mergeChanges.length > 0) {
-            groups.push(await this.getGroup('Merged Changes', provider, mergeChanges));
-        }
-        return groups;
-    }
-
-    protected async getGroup(label: string, provider: ScmProvider, changes: GitFileChange[]): Promise<ScmResourceGroup> {
-        const sort = (l: ScmResource, r: ScmResource) =>
-            l.sourceUri.toString().substring(l.sourceUri.toString().lastIndexOf('/')).localeCompare(r.sourceUri.toString().substring(r.sourceUri.toString().lastIndexOf('/')));
-        const group: ScmResourceGroup = {
-            handle: 0,
-            sourceControlHandle: 0,
-            label,
-            id: label,
-            provider,
-            onDidChange: provider.onDidChange,
-            resources: [],
-            dispose: () => { }
-        };
-        const scmResources: ScmResource[] = await Promise.all(changes.map(async change => {
-            const icon = await this.labelProvider.getIcon(new URI(change.uri));
-            const resource: ScmResource = {
-                group,
-                sourceUri: new URI(change.uri),
-                decorations: {
-                    icon,
-                    letter: GitFileStatus.toAbbreviation(change.status, change.staged),
-                    color: GitDecorator.getDecorationColor(change.status),
-                    tooltip: GitFileStatus.toString(change.status)
-                },
-                sourceControlHandle: 0,
-                groupHandle: 0,
-                handle: 0,
-                async open(): Promise<void> {
-                    open();
-                }
-            };
-            const open = async () => {
-                const uriToOpen = this.gitCommands.getUriToOpen(change);
-                this.editorManager.open(uriToOpen, { mode: 'reveal' });
-            };
-            return resource;
-        }));
-        scmResources.sort(sort);
-        scmResources.forEach(resource => group.resources.push(resource));
-        return group;
-    }
-
-    /** Detect and handle added or removed repositories. */
-    protected checkNewOrRemovedRepositories(): void {
-        const added =
-            this.repositoryProvider
-                .allRepositories
-                .find(repo => this.dirtyRepositories.every(dirtyRepo => dirtyRepo.localUri !== repo.localUri));
-        if (added) {
-            this.registerScmProvider(added);
-            this.dirtyRepositories.push(added);
-        }
-        const removed =
-            this.dirtyRepositories
-                .find(dirtyRepo => this.repositoryProvider.allRepositories.every(repo => repo.localUri !== dirtyRepo.localUri));
-        if (removed) {
-            const i = this.dirtyRepositories.indexOf(removed, 0);
-            if (i > -1) {
-                this.dirtyRepositories.splice(i, 1);
-            }
-            const removedScmRepo = this.scmService.repositories.find(scmRepo => scmRepo.provider.rootUri === removed.localUri);
-            if (removedScmRepo) {
-                removedScmRepo.dispose();
-                const index = this.scmProviders.indexOf(removedScmRepo.provider);
-                if (index > -1) {
-                    this.scmProviders.splice(index, 1);
-                }
-            }
-        }
-    }
-
-    protected registerScmProvider(repository: Repository): ScmRepository {
-        const uri = repository.localUri;
-        const disposableCollection: Disposable[] = [];
-        const onDidChangeResourcesEmitter = new Emitter<void>();
-        const onDidChangeRepositoryEmitter = new Emitter<void>();
-        disposableCollection.push(onDidChangeRepositoryEmitter);
-        disposableCollection.push(onDidChangeResourcesEmitter);
-        const amendSupport: ScmAmendSupport = new GitAmendSupport(repository, this.git);
-        const provider = new ScmProviderImpl('Git', uri.substring(uri.lastIndexOf('/') + 1), uri, amendSupport);
-        this.scmProviders.push(provider);
-        const repo = this.scmService.registerScmProvider(provider, disposableCollection);
-        repo.input.placeholder = 'Commit message';
-        repo.input.validateInput = async input => {
-            const validate = await this.commitMessageValidator.validate(input);
-            if (validate) {
-                const { message, status } = validate;
-                return { message, type: status };
-            }
-        };
-        return repo;
+        this.updateStatusBar();
+        this.repositoryTracker.onGitEvent(() => this.updateStatusBar());
+        this.syncService.onDidChange(() => this.updateStatusBar());
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL_DEFAULT, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH_DEFAULT, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE].forEach(command =>
-            menus.registerMenuAction(ScmWidget.ContextMenu.FIRST_GROUP, {
-                commandId: command.id,
-                label: command.label.slice('Git: '.length)
-            })
-        );
-        menus.registerMenuAction(ScmWidget.ContextMenu.INPUT_GROUP, {
-            commandId: GIT_COMMANDS.COMMIT_AMEND.id,
-            label: 'Commit (Amend)'
-        });
-        menus.registerMenuAction(ScmWidget.ContextMenu.INPUT_GROUP, {
-            commandId: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
-            label: 'Commit (Signed Off)'
-        });
-        menus.registerMenuAction(ScmWidget.ContextMenu.BATCH, {
-            commandId: GIT_COMMANDS.STAGE_ALL.id,
-            label: 'Stage All Changes'
-        });
-        menus.registerMenuAction(ScmWidget.ContextMenu.BATCH, {
-            commandId: GIT_COMMANDS.UNSTAGE_ALL.id,
-            label: 'Unstage All Changes'
-        });
-        menus.registerMenuAction(ScmWidget.ContextMenu.BATCH, {
-            commandId: GIT_COMMANDS.DISCARD_ALL.id,
-            label: 'Discard All Changes'
-        });
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: GIT_COMMANDS.OPEN_FILE.id
         });
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: GIT_COMMANDS.OPEN_CHANGES.id
         });
-        [GIT_COMMANDS.STASH, GIT_COMMANDS.APPLY_STASH,
-        GIT_COMMANDS.APPLY_LATEST_STASH, GIT_COMMANDS.POP_STASH,
-        GIT_COMMANDS.POP_LATEST_STASH, GIT_COMMANDS.DROP_STASH].forEach(command =>
-            menus.registerMenuAction(ScmWidget.ContextMenu.SECOND_GROUP, {
-                commandId: command.id,
-                label: command.label
-            })
-        );
+
+        const registerResourceAction = (group: string, action: MenuAction) => {
+            menus.registerMenuAction(ScmWidget.RESOURCE_INLINE_MENU, action);
+            menus.registerMenuAction([...ScmWidget.RESOURCE_CONTEXT_MENU, group], action);
+        };
+
+        registerResourceAction('navigation', {
+            commandId: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree'
+        });
+        registerResourceAction('1_modification', {
+            commandId: GIT_COMMANDS.DISCARD.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree'
+        });
+        registerResourceAction('1_modification', {
+            commandId: GIT_COMMANDS.STAGE.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree'
+        });
+
+        registerResourceAction('navigation', {
+            commandId: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+            when: 'scmProvider == git && scmResourceGroup == index'
+        });
+        registerResourceAction('1_modification', {
+            commandId: GIT_COMMANDS.UNSTAGE.id,
+            when: 'scmProvider == git && scmResourceGroup == index'
+        });
+
+        registerResourceAction('navigation', {
+            commandId: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
+            when: 'scmProvider == git && scmResourceGroup == merge'
+        });
+        registerResourceAction('1_modification', {
+            commandId: GIT_COMMANDS.DISCARD.id,
+            when: 'scmProvider == git && scmResourceGroup == merge'
+        });
+        registerResourceAction('1_modification', {
+            commandId: GIT_COMMANDS.STAGE.id,
+            when: 'scmProvider == git && scmResourceGroup == merge'
+        });
+
+        const registerResourceGroupAction = (group: string, action: MenuAction) => {
+            menus.registerMenuAction(ScmWidget.RESOURCE_GROUP_INLINE_MENU, action);
+            menus.registerMenuAction([...ScmWidget.RESOURCE_GROUP_INLINE_MENU, group], action);
+        };
+
+        registerResourceGroupAction('1_modification', {
+            commandId: GIT_COMMANDS.STAGE_ALL.id,
+            when: 'scmProvider == git && scmResourceGroup == merge',
+        });
+        registerResourceGroupAction('1_modification', {
+            commandId: GIT_COMMANDS.UNSTAGE_ALL.id,
+            when: 'scmProvider == git && scmResourceGroup == index',
+        });
+        registerResourceGroupAction('1_modification', {
+            commandId: GIT_COMMANDS.STAGE_ALL.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree',
+        });
+        registerResourceGroupAction('1_modification', {
+            commandId: GIT_COMMANDS.DISCARD_ALL.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree',
+        });
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -523,46 +307,42 @@ export class GitContribution implements
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_SIGN_OFF, {
-            execute: () => this.gitCommands.doCommit(this.repositoryTracker.selectedRepository, 'sign-off'),
+            execute: () => this.commit({ signOff: true }),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
             execute: async () => {
-                const { selectedRepository } = this.repositoryTracker;
-                if (!!selectedRepository) {
-                    try {
-                        const message = await this.quickOpenService.commitMessageForAmend();
-                        this.gitCommands.doCommit(selectedRepository, 'amend', message);
-                    } catch (e) {
-                        if (!(e instanceof Error) || e.message !== 'User abort.') {
-                            throw e;
-                        }
+                try {
+                    const message = await this.quickOpenService.commitMessageForAmend();
+                    await this.commit({ message, amend: true });
+                } catch (e) {
+                    if (!(e instanceof Error) || e.message !== 'User abort.') {
+                        throw e;
                     }
                 }
             },
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.STAGE_ALL, {
-            execute: async () => {
-                this.gitCommands.stageAll();
+            execute: () => {
+                const provider = this.repositoryProvider.selectedScmProvider;
+                return provider && provider.stageAll();
             },
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE_ALL, {
-            execute: async () => {
-                this.gitCommands.unstageAll();
+            execute: () => {
+                const provider = this.repositoryProvider.selectedScmProvider;
+                return provider && provider.unstageAll();
             },
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
+            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.DISCARD_ALL, {
-            execute: async () => {
-                this.gitCommands.discardAll();
+            execute: () => {
+                const provider = this.repositoryProvider.selectedScmProvider;
+                return provider && provider.discardAll();
             },
-            isEnabled: () => !!this.repositoryTracker.selectedRepository
-        });
-        registry.registerCommand(GIT_COMMANDS.CHANGE_REPOSITORY, {
-            execute: () => this.quickOpenService.changeRepository(),
-            isEnabled: () => this.hasMultipleRepositories()
+            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_FILE, {
             execute: widget => this.openFile(widget),
@@ -586,122 +366,48 @@ export class GitContribution implements
         });
         registry.registerCommand(GIT_COMMANDS.CLONE, {
             isEnabled: () => this.workspaceService.opened,
-            // tslint:disable-next-line:no-any
-            execute: (...args: any[]) => {
-                let url: string | undefined = undefined;
-                let folder: string | undefined = undefined;
-                let branch: string | undefined = undefined;
-                if (args) {
-                    [url, folder, branch] = args;
-                }
-                return this.quickOpenService.clone(url, folder, branch);
-            }
+            execute: (url?: string, folder?: string, branch?: string) =>
+                this.quickOpenService.clone(url, folder, branch)
         });
-        const commit = () => {
-            const scmRepository = this.scmService.selectedRepository;
-            if (scmRepository) {
-                const localUri = scmRepository.provider.rootUri;
-                const message = scmRepository.input.value;
-                if (localUri) {
-                    this.gitCommands.doCommit({ localUri }, undefined, message);
-                }
-            }
-        };
-        registry.registerCommand(GIT_COMMANDS.COMMIT,
-            {
-                // tslint:disable-next-line:no-any
-                execute(): any {
-                    commit();
-                }
-            });
-        const refresh = () => {
-            this.repositoryProvider.refresh();
-        };
+        registry.registerCommand(GIT_COMMANDS.COMMIT, {
+            execute: () => this.commit(),
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
+        });
         registry.registerCommand(GIT_COMMANDS.REFRESH, {
-            // tslint:disable-next-line:no-any
-            execute(...args): any {
-                refresh();
-            }
+            execute: () => this.repositoryProvider.refresh()
         });
-        const doSignOff = async () => {
-            const { selectedRepository } = this.repositoryProvider;
-            if (selectedRepository) {
-                const [username, email] = await this.gitCommands.getUserConfig(selectedRepository);
-                const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
-                const commitTextArea = document.getElementById(ScmWidget.Styles.INPUT_MESSAGE) as HTMLTextAreaElement;
-                if (commitTextArea) {
-                    const content = commitTextArea.value;
-                    if (content.endsWith(signOff)) {
-                        commitTextArea.value = content.substr(0, content.length - signOff.length);
-                    } else {
-                        commitTextArea.value = `${content}${signOff}`;
-                    }
-                    this.scmWidget.resize(commitTextArea);
-                    commitTextArea.focus();
-                }
-            }
-        };
         registry.registerCommand(GIT_COMMANDS.COMMIT_ADD_SIGN_OFF, {
-            // tslint:disable-next-line:no-any
-            execute(...args): any {
-                doSignOff();
-            }
+            execute: async () => this.addSignOff(),
+            isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
-        const unstage = async (uri: string) => {
-            const repository = this.repositoryProvider.selectedRepository;
-            if (repository) {
-                const status = await this.git.status(repository);
-                const gitChange = status.changes.find(change => change.uri === uri);
-                if (gitChange) {
-                    this.gitCommands.unstage(repository, gitChange);
-                }
-            }
-        };
         registry.registerCommand(GIT_COMMANDS.UNSTAGE, {
-            // tslint:disable-next-line:no-any
-            execute(...args): any {
-                unstage(args[0].uri);
-            }
+            execute: (arg: string | ScmResource) => {
+                const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
+                const provider = this.repositoryProvider.selectedScmProvider;
+                return provider && provider.unstage(uri);
+            },
+            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
-        const stage = async (uri: string) => {
-            const repository = this.repositoryProvider.selectedRepository;
-            if (repository) {
-                const status = await this.git.status(repository);
-                const gitChange = status.changes.find(change => change.uri === uri);
-                if (gitChange) {
-                    this.gitCommands.stage(repository, gitChange);
-                }
-            }
-        };
         registry.registerCommand(GIT_COMMANDS.STAGE, {
-            // tslint:disable-next-line:no-any
-            execute(...args): any {
-                stage(args[0].uri);
-            }
+            execute: (arg: string | ScmResource) => {
+                const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
+                const provider = this.repositoryProvider.selectedScmProvider;
+                return provider && provider.stage(uri);
+            },
+            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
-        const discard = async (uri: string) => {
-            const repository = this.repositoryProvider.selectedRepository;
-            if (repository) {
-                const status = await this.git.status(repository);
-                const gitChange = status.changes.find(change => change.uri === uri);
-                if (gitChange) {
-                    this.gitCommands.discard(repository, gitChange);
-                }
-            }
-        };
         registry.registerCommand(GIT_COMMANDS.DISCARD, {
-            // tslint:disable-next-line:no-any
-            execute(...args): any {
-                discard(args[0].uri);
-            }
+            execute: (arg: string | ScmResource) => {
+                const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
+                const provider = this.repositoryProvider.selectedScmProvider;
+                return provider && provider.discard(uri);
+            },
+            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
-        const open = async (uri: string) => {
-            this.gitCommands.openFile(new URI(uri));
-        };
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGED_FILE, {
-            // tslint:disable-next-line:no-any
-            execute(...args): any {
-                open(args[0].uri);
+            execute: (arg: string | ScmResource) => {
+                const uri = typeof arg === 'string' ? new URI(arg) : arg.sourceUri;
+                this.editorManager.open(uri, { mode: 'reveal' });
             }
         });
         registry.registerCommand(GIT_COMMANDS.STASH, {
@@ -743,6 +449,83 @@ export class GitContribution implements
             command: GIT_COMMANDS.OPEN_CHANGES.id,
             tooltip: GIT_COMMANDS.OPEN_CHANGES.label
         });
+
+        const registerItem = (item: Mutable<TabBarToolbarItem>) => {
+            const commandId = item.command;
+            const id = '__git.tabbar.toolbar.' + commandId;
+            const command = this.commands.getCommand(commandId);
+            this.commands.registerCommand({ id, iconClass: command && command.iconClass }, {
+                execute: (widget, ...args) => widget instanceof ScmWidget && this.commands.executeCommand(commandId, ...args),
+                isEnabled: (widget, ...args) => widget instanceof ScmWidget && this.commands.isEnabled(commandId, ...args),
+                isVisible: (widget, ...args) => widget instanceof ScmWidget && this.commands.isVisible(commandId, ...args),
+            });
+            item.command = id;
+            registry.registerItem(item);
+        };
+
+        registerItem({
+            id: GIT_COMMANDS.COMMIT.id,
+            command: GIT_COMMANDS.COMMIT.id,
+            tooltip: GIT_COMMANDS.COMMIT.label
+        });
+        registerItem({
+            id: GIT_COMMANDS.REFRESH.id,
+            command: GIT_COMMANDS.REFRESH.id,
+            tooltip: GIT_COMMANDS.REFRESH.label
+        });
+        registerItem({
+            id: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id,
+            command: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id,
+            tooltip: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.label
+        });
+        registerItem({
+            id: GIT_COMMANDS.COMMIT_AMEND.id,
+            command: GIT_COMMANDS.COMMIT_AMEND.id,
+            tooltip: 'Commit (Amend)',
+            group: '1_input'
+        });
+        registerItem({
+            id: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
+            command: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
+            tooltip: 'Commit (Signed Off)',
+            group: '1_input'
+        });
+        [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL_DEFAULT, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH_DEFAULT, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE].forEach(command =>
+            registerItem({
+                id: command.id,
+                command: command.id,
+                tooltip: command.label.slice('Git: '.length),
+                group: '2_other'
+            })
+        );
+        [GIT_COMMANDS.STASH, GIT_COMMANDS.APPLY_STASH,
+        GIT_COMMANDS.APPLY_LATEST_STASH, GIT_COMMANDS.POP_STASH,
+        GIT_COMMANDS.POP_LATEST_STASH, GIT_COMMANDS.DROP_STASH].forEach(command =>
+            registerItem({
+                id: command.id,
+                command: command.id,
+                tooltip: command.label,
+                group: '3_other'
+            })
+        );
+        registerItem({
+            id: GIT_COMMANDS.STAGE_ALL.id,
+            command: GIT_COMMANDS.STAGE_ALL.id,
+            tooltip: 'Stage All Changes',
+            group: '3_batch'
+        });
+        registerItem({
+            id: GIT_COMMANDS.UNSTAGE_ALL.id,
+            command: GIT_COMMANDS.UNSTAGE_ALL.id,
+            tooltip: 'Unstage All Changes',
+            group: '3_batch'
+        });
+        registerItem({
+            id: GIT_COMMANDS.DISCARD_ALL.id,
+            command: GIT_COMMANDS.DISCARD_ALL.id,
+            tooltip: 'Discard All Changes',
+            group: '3_batch'
+        });
     }
 
     protected hasConflicts(changes: GitFileChange[]): boolean {
@@ -772,17 +555,22 @@ export class GitContribution implements
     async openChanges(widget?: Widget): Promise<EditorWidget | undefined> {
         const options = this.getOpenChangesOptions(widget);
         if (options) {
-            return this.gitCommands.openChange(options.change, options.options);
+            const provider = this.repositoryProvider.selectedScmProvider;
+            return provider && provider.openChange(options.change, options.options);
         }
         return undefined;
     }
 
     protected getOpenChangesOptions(widget?: Widget): GitOpenChangesOptions | undefined {
+        const provider = this.repositoryProvider.selectedScmProvider;
+        if (!provider) {
+            return undefined;
+        }
         const ref = widget ? widget : this.editorManager.currentEditor;
         if (ref instanceof EditorWidget && !DiffUris.isDiffUri(ref.editor.uri)) {
             const uri = ref.editor.uri;
-            const change = this.gitCommands.findChange(uri);
-            if (change && this.gitCommands.getUriToOpen(change).toString() !== uri.toString()) {
+            const change = provider.findChange(uri);
+            if (change && provider.getUriToOpen(change).toString() !== uri.toString()) {
                 const selection = ref.editor.selection;
                 return { change, options: { selection, widgetOptions: { ref } } };
             }
@@ -790,111 +578,122 @@ export class GitContribution implements
         return undefined;
     }
 
-    protected hasMultipleRepositories(): boolean {
-        return this.repositoryTracker.allRepositories.length > 1;
-    }
-
-    protected updateSyncStatusBarEntry(repositoryUri: string | undefined): void {
-        const entry = this.getStatusBarEntry();
-        if (entry && repositoryUri) {
-            const scmProvider = this.scmProviders.find(provider => provider.rootUri === repositoryUri);
-            if (scmProvider) {
-                (scmProvider as ScmProviderImpl).fireChangeStatusBarCommands([{
-                    id: GitContribution.GIT_SYNC_STATUS,
-                    text: entry.text,
-                    tooltip: entry.tooltip,
-                    command: entry.command,
-                }]);
-            }
-        } else {
-            this.statusBar.removeElement(GitContribution.GIT_SYNC_STATUS);
+    protected updateStatusBar(): void {
+        const scmProvider = this.repositoryProvider.selectedScmProvider;
+        if (!scmProvider) {
+            return;
         }
+        const statusBarCommands: ScmCommand[] = [];
+
+        const checkoutCommand = this.getCheckoutStatusBarCommand();
+        if (checkoutCommand) {
+            statusBarCommands.push(checkoutCommand);
+        }
+
+        const syncCommand = this.getSyncStatusBarCommand();
+        if (syncCommand) {
+            statusBarCommands.push(syncCommand);
+        }
+        scmProvider.statusBarCommands = statusBarCommands;
     }
-    protected getStatusBarEntry(): (Pick<StatusBarEntry, 'text'> & Partial<StatusBarEntry>) | undefined {
+    protected getCheckoutStatusBarCommand(): ScmCommand | undefined {
+        const scmProvider = this.repositoryProvider.selectedScmProvider;
+        if (!scmProvider) {
+            return undefined;
+        }
+        const status = scmProvider.getStatus();
+        if (!status) {
+            return undefined;
+        }
+        const branch = status.branch ? status.branch : status.currentHead ? status.currentHead.substring(0, 8) : 'NO-HEAD';
+        const changes = (scmProvider.unstagedChanges.length > 0 ? '*' : '')
+            + (scmProvider.stagedChanges.length > 0 ? '+' : '')
+            + (scmProvider.mergeChanges.length > 0 ? '!' : '');
+        return {
+            command: GIT_COMMANDS.CHECKOUT.id,
+            title: `$(code-fork) ${branch}${changes}`,
+            tooltip: 'Checkout...'
+        };
+    }
+    protected getSyncStatusBarCommand(): ScmCommand | undefined {
         const status = this.repositoryTracker.selectedRepositoryStatus;
         if (!status || !status.branch) {
             return undefined;
         }
         if (this.syncService.isSyncing()) {
             return {
-                text: '$(refresh~spin)',
+                title: '$(refresh~spin)',
                 tooltip: 'Synchronizing Changes...'
             };
         }
         const { upstreamBranch, aheadBehind } = status;
         if (upstreamBranch) {
             return {
-                text: '$(refresh)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
+                title: '$(refresh)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
                 tooltip: 'Synchronize Changes'
             };
         }
         return {
-            text: '$(cloud-upload)',
+            title: '$(cloud-upload)',
             command: GIT_COMMANDS.PUBLISH.id,
             tooltip: 'Publish Changes'
         };
     }
 
-    registerScmTitleCommands(registry: ScmTitleCommandRegistry): void {
-        registry.registerItem({ command: GIT_COMMANDS.REFRESH.id, group: 'navigation' });
-        registry.registerItem({ command: GIT_COMMANDS.COMMIT_ADD_SIGN_OFF.id, group: 'navigation'});
+    async commit(options: Git.Options.Commit & { message?: string } = {}): Promise<void> {
+        const scmRepository = this.repositoryProvider.selectedScmRepository;
+        if (!scmRepository) {
+            return;
+        }
+        const message = options.message || scmRepository.input.value;
+        if (!message.trim()) {
+            scmRepository.input.issue = {
+                type: 'error',
+                message: 'Please provide a commit message'
+            };
+            scmRepository.input.focus();
+            return;
+        }
+        if (!scmRepository.provider.stagedChanges.length) {
+            scmRepository.input.issue = {
+                type: 'error',
+                message: 'No changes added to commit'
+            };
+            scmRepository.input.focus();
+            return;
+        }
+        scmRepository.input.issue = undefined;
+        try {
+            // We can make sure, repository exists, otherwise we would not have this button.
+            const { signOff, amend } = options;
+            const repository = scmRepository.provider.repository;
+            await this.git.commit(repository, message, { signOff, amend });
+            scmRepository.input.value = '';
+        } catch (error) {
+            this.gitErrorHandler.handleError(error);
+        }
     }
 
-    registerScmResourceCommands(registry: ScmResourceCommandRegistry): void {
-        registry.registerItems('Changes', [
-            {
-                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
-                group: 'navigation'
-            },
-            {
-                command: GIT_COMMANDS.DISCARD.id,
-                group: 'navigation'
-            },
-            {
-                command: GIT_COMMANDS.STAGE.id,
-                group: 'navigation'
-            }
-        ]);
-        registry.registerItems('Staged changes', [
-            {
-                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
-                group: 'navigation'
-            },
-            {
-                command: GIT_COMMANDS.UNSTAGE.id,
-                group: 'navigation'
-            }
-        ]);
-        registry.registerItems('Merged Changes', [
-            {
-                command: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
-                group: 'navigation'
-            },
-            {
-                command: GIT_COMMANDS.DISCARD.id,
-                group: 'navigation'
-            },
-            {
-                command: GIT_COMMANDS.STAGE.id,
-                group: 'navigation'
-            }
-        ]);
-    }
+    async addSignOff(): Promise<void> {
+        const scmRepository = this.repositoryProvider.selectedScmRepository;
+        if (!scmRepository) {
+            return;
+        }
+        const repository = scmRepository.provider.repository;
+        const [username, email] = (await Promise.all([
+            this.git.exec(repository, ['config', 'user.name']),
+            this.git.exec(repository, ['config', 'user.email'])
+        ])).map(result => result.stdout.trim());
 
-    registerScmGroupCommands(registry: ScmGroupCommandRegistry): void {
-        registry.registerItems('Changes', [
-            {
-                command: GIT_COMMANDS.DISCARD_ALL.id,
-                group: 'inline'
-            },
-            {
-                command: GIT_COMMANDS.STAGE_ALL.id,
-                group: 'inline'
-            }
-        ]);
-        registry.registerItems('Staged changes', [{ command: GIT_COMMANDS.UNSTAGE_ALL.id, group: 'inline' }]);
-        registry.registerItems('Merged Changes', [{ command: GIT_COMMANDS.STAGE_ALL.id, group: 'inline' }]);
+        const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
+        const value = scmRepository.input.value;
+        if (value.endsWith(signOff)) {
+            scmRepository.input.value = value.substr(0, value.length - signOff.length);
+        } else {
+            scmRepository.input.value = `${value}${signOff}`;
+        }
+        scmRepository.input.focus();
     }
 }
 export interface GitOpenFileOptions {
@@ -904,156 +703,4 @@ export interface GitOpenFileOptions {
 export interface GitOpenChangesOptions {
     readonly change: GitFileChange
     readonly options?: EditorOpenerOptions
-}
-
-export class ScmProviderImpl implements ScmProvider {
-    private static ID = 0;
-
-    private onDidChangeEmitter = new Emitter<void>();
-    private onDidChangeResourcesEmitter = new Emitter<void>();
-    private onDidChangeCommitTemplateEmitter = new Emitter<string>();
-    private onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[]>();
-    private disposableCollection: DisposableCollection = new DisposableCollection();
-    private _groups: ScmResourceGroup[];
-    private _count: number | undefined;
-    readonly handle = 0;
-
-    constructor(
-        private _contextValue: string,
-        private _label: string,
-        private _rootUri: string | undefined,
-        private _amendSupport: ScmAmendSupport,
-    ) {
-        this.disposableCollection.push(this.onDidChangeEmitter);
-        this.disposableCollection.push(this.onDidChangeResourcesEmitter);
-        this.disposableCollection.push(this.onDidChangeCommitTemplateEmitter);
-        this.disposableCollection.push(this.onDidChangeStatusBarCommandsEmitter);
-    }
-
-    private _id = `scm${ScmProviderImpl.ID++}`;
-
-    get id(): string {
-        return this._id;
-    }
-    get groups(): ScmResourceGroup[] {
-        return this._groups;
-    }
-
-    set groups(groups: ScmResourceGroup[]) {
-        this._groups = groups;
-    }
-
-    get label(): string {
-        return this._label;
-    }
-
-    get rootUri(): string | undefined {
-        return this._rootUri;
-    }
-
-    get contextValue(): string {
-        return this._contextValue;
-    }
-
-    get onDidChangeResources(): Event<void> {
-        return this.onDidChangeResourcesEmitter.event;
-    }
-
-    get commitTemplate(): string | undefined {
-        return undefined;
-    }
-
-    get acceptInputCommand(): ScmCommand | undefined {
-        return GIT_COMMANDS.COMMIT;
-    }
-
-    get statusBarCommands(): ScmCommand[] | undefined {
-        return undefined;
-    }
-
-    get count(): number | undefined {
-        return this._count;
-    }
-
-    set count(count: number | undefined) {
-        this._count = count;
-    }
-
-    get onDidChangeCommitTemplate(): Event<string> {
-        return this.onDidChangeCommitTemplateEmitter.event;
-    }
-
-    get onDidChangeStatusBarCommands(): Event<ScmCommand[]> {
-        return this.onDidChangeStatusBarCommandsEmitter.event;
-    }
-
-    get onDidChange(): Event<void> {
-        return this.onDidChangeEmitter.event;
-    }
-
-    dispose(): void {
-        this.disposableCollection.dispose();
-    }
-
-    async getOriginalResource(uri: URI): Promise<URI | undefined> {
-        return undefined;
-    }
-
-    fireChangeStatusBarCommands(commands: ScmCommand[]): void {
-        this.onDidChangeStatusBarCommandsEmitter.fire(commands);
-    }
-
-    fireChangeResources(): void {
-        this.onDidChangeResourcesEmitter.fire(undefined);
-    }
-
-    fireChange(): void {
-        this.onDidChangeEmitter.fire(undefined);
-    }
-
-    get amendSupport(): ScmAmendSupport | undefined {
-        return this._amendSupport;
-    }
-}
-
-export class GitAmendSupport implements ScmAmendSupport {
-
-    constructor(protected readonly repository: Repository, protected readonly git: Git) { }
-
-    public async getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]> {
-        const commits = await this.git.log(
-            this.repository,
-            {
-                range: { toRevision: amendingHeadCommitSha, fromRevision: latestCommitSha },
-                maxCount: 50
-            }
-        );
-
-        return commits.map(this.createScmCommit);
-    }
-
-    public async getMessage(commit: string): Promise<string> {
-        return (await this.git.exec(this.repository, ['log', '-n', '1', '--format=%B', commit])).stdout.trim();
-    }
-
-    public async reset(commit: string): Promise<void> {
-        await this.git.exec(this.repository, ['reset', commit, '--soft']);
-    }
-
-    public async getLastCommit(): Promise<ScmCommit | undefined> {
-        const commits = await this.git.log(this.repository, { maxCount: 1 });
-        if (commits.length > 0) {
-            return this.createScmCommit(commits[0]);
-        }
-    }
-
-    private createScmCommit(gitCommit: CommitWithChanges) {
-        return {
-            id: gitCommit.sha,
-            summary: gitCommit.summary,
-            authorName: gitCommit.author.name,
-            authorEmail: gitCommit.author.email,
-            authorDateRelative: gitCommit.authorDateRelative
-        };
-    }
 }

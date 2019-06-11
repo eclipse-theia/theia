@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution, ResourceResolver } from '@theia/core/lib/common';
 import {
@@ -27,8 +29,7 @@ import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherS
 import { GitContribution } from './git-contribution';
 import { bindGitDiffModule } from './diff/git-diff-frontend-module';
 import { bindGitHistoryModule } from './history/git-history-frontend-module';
-import { GitCommands } from './git-commands';
-import { GitResourceResolver } from './git-resource';
+import { GitResourceResolver } from './git-resource-resolver';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
 import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
@@ -40,11 +41,7 @@ import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
-
-import '../../src/browser/style/index.css';
-import { ScmTitleCommandsContribution } from '@theia/scm/lib/browser/scm-title-command-registry';
-import { ScmResourceCommandContribution } from '@theia/scm/lib/browser/scm-resource-command-registry';
-import { ScmGroupCommandContribution } from '@theia/scm/lib/browser/scm-group-command-registry';
+import { GitScmProvider } from './git-scm-provider';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -63,15 +60,11 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).toService(GitContribution);
     bind(FrontendApplicationContribution).toService(GitContribution);
     bind(TabBarToolbarContribution).toService(GitContribution);
-    bind(ScmTitleCommandsContribution).toService(GitContribution);
-    bind(ScmResourceCommandContribution).toService(GitContribution);
-    bind(ScmGroupCommandContribution).toService(GitContribution);
-
-    bind(GitCommands).toSelf().inSingletonScope();
 
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(GitResourceResolver);
 
+    bind(GitScmProvider.Factory).toFactory(GitScmProvider.createFactory);
     bind(GitRepositoryProvider).toSelf().inSingletonScope();
     bind(GitQuickOpenService).toSelf().inSingletonScope();
 

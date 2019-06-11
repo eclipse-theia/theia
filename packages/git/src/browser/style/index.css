@@ -30,15 +30,6 @@
     border: none;
 }
 
-#theia-gitContainer .flexcontainer {
-    display: flex;
-}
-
-#theia-gitContainer .row {
-    width: 100%;
-    margin-bottom: 5px;
-}
-
 .theia-git .noWrapInfo {
     white-space: nowrap;
     overflow: hidden;
@@ -70,12 +61,6 @@
 .theia-git .gitItem .path {
     color: var(--theia-ui-font-color2);
     font-size: var(--theia-ui-font-size0);
-    margin-left: 3px;
-}
-
-.theia-git .gitItem .itemButtonsContainer {
-    display: flex;
-    justify-content: flex-end;
     margin-left: 3px;
 }
 
@@ -112,79 +97,6 @@
     color: var(--theia-brand-color0);
 }
 
-#theia-gitContainer .buttons {
-    display: flex;
-}
-
-#theia-gitContainer .buttons .toolbar-button {
-    margin: 0 2px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 3px 3px;
-}
-
-#theia-gitContainer .itemButtonsContainer .buttons .toolbar-button {
-    padding: 0 3px;
-}
-
-#theia-gitContainer .buttons .toolbar-button:hover {
-    background: var(--theia-content-font-color3);
-}
-
-#theia-gitContainer .buttons .toolbar-button .open-file {
-    height: 16px;
-    width: 12px;
-    background: var(--theia-icon-open-file) no-repeat center center;
-}
-
-#theia-gitContainer .gitItem .itemButtonsContainer .buttons {
-    display: none;
-    margin: 0 3px;
-}
-
-#theia-gitContainer .gitItem:hover .itemButtonsContainer .buttons {
-    display: flex;
-}
-
-#theia-gitContainer .changesHeader {
-    font-weight: bold;
-}
-
-#theia-gitContainer .changesContainer {
-    margin: 5px 0;
-}
-
-#theia-gitContainer #messageInputContainer {
-    position: relative;
-}
-
-#theia-gitContainer #repositoryListContainer {
-    display: flex;
-    margin-bottom: 5px;
-    flex: 1;
-}
-
-#theia-gitContainer #commandBar {
-    margin-bottom: 5px;
-    align-items: baseline;
-}
-
-#theia-gitContainer .changesOuterContainer {
-    overflow-y: auto;
-    border-top: 1px solid var(--theia-layout-color4);
-    width: 100%;
-    flex-grow: 1;
-}
-
-#theia-gitContainer .warn {
-    background-color: var(--theia-error-color2) !important;
-}
-
-#theia-gitContainer .placeholder {
-    width: 100%;
-}
-
 .theia-git div:focus .theia-mod-selected{
     background: var(--theia-accent-color3);
 }
@@ -197,11 +109,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-}
-
-.flex-container-center {
-    display: flex;
-    align-items: center;
 }
 
 .theia-git-commit-message-container textarea {
@@ -270,20 +177,6 @@
     color: var(--theia-error-font-color0);
 }
 
-.no-select {
-    cursor: default;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-}
-
- .no-select:focus {
-    outline: none;
-}
-
 .git-tab-icon {
     -webkit-mask: url('git.svg');
     mask: url('git.svg');
@@ -298,28 +191,4 @@
 .git-theia-header:hover {
     background-color: var(--theia-layout-color2);
     cursor: pointer;
-}
-
-#theia-gitContainer .git-change-list-buttons-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-left: 3px;
-}
-
-#theia-gitContainer .git-change-list-buttons-container .buttons {
-    display: none;
-    margin: 0 3px;
-}
-
-#theia-gitContainer .git-theia-header:hover .git-change-list-buttons-container .buttons {
-    display: flex;
-}
-
- #theia-gitContainer .git-change-list-buttons-container .buttons .toolbar-button {
-    font-size: var(--theia-ui-font-size1);
-    padding: 0 3px;
-}
-
-#theia-gitContainer .git-change-list-buttons-container .buttons .toolbar-button:hover {
-    background: var(--theia-content-font-color3);
 }

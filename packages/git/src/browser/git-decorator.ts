@@ -46,7 +46,7 @@ export class GitDecorator implements TreeDecorator {
 
     @postConstruct()
     protected init(): void {
-        this.repositories.onGitEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event.status)));
+        this.repositories.onGitEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event && event.status)));
         this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event));
         this.enabled = this.preferences['git.decorations.enabled'];
         this.showColors = this.preferences['git.decorations.colors'];
@@ -68,12 +68,12 @@ export class GitDecorator implements TreeDecorator {
         this.emitter.fire(event);
     }
 
-    protected collectDecorators(tree: Tree, status: WorkingDirectoryStatus): Map<string, TreeDecoration.Data> {
+    protected collectDecorators(tree: Tree, status: WorkingDirectoryStatus | undefined): Map<string, TreeDecoration.Data> {
         const result = new Map();
         if (tree.root === undefined || !this.enabled) {
             return result;
         }
-        const markers = this.appendContainerChanges(tree, status.changes);
+        const markers = this.appendContainerChanges(tree, status ? status.changes : []);
         for (const treeNode of new DepthFirstTreeIterator(tree.root)) {
             const uri = FileStatNode.getUri(treeNode);
             if (uri) {
@@ -115,7 +115,7 @@ export class GitDecorator implements TreeDecorator {
 
     protected toDecorator(change: GitFileChange): TreeDecoration.Data {
         const data = GitFileStatus.toAbbreviation(change.status, change.staged);
-        const color = GitDecorator.getDecorationColor(change.status, change.staged);
+        const color = GitFileStatus.getColor(change.status, change.staged);
         const tooltip = GitFileStatus.toString(change.status, change.staged);
         let decorationData: TreeDecoration.Data = {
             tailDecorations: [
@@ -141,17 +141,6 @@ export class GitDecorator implements TreeDecorator {
 
     protected compare(left: GitFileChange, right: GitFileChange): number {
         return GitFileStatus.statusCompare(left.status, right.status);
-    }
-
-    static getDecorationColor(status: GitFileStatus, staged?: boolean): string {
-        switch (status) {
-            case GitFileStatus.New: return 'var(--theia-success-color0)';
-            case GitFileStatus.Renamed: // Fall through.
-            case GitFileStatus.Copied: // Fall through.
-            case GitFileStatus.Modified: return 'var(--theia-brand-color0)';
-            case GitFileStatus.Deleted: return 'var(--theia-warn-color0)';
-            case GitFileStatus.Conflicted: return 'var(--theia-error-color0)';
-        }
     }
 
     protected async handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): Promise<void> {
