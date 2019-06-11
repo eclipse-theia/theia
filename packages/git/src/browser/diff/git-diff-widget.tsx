@@ -371,7 +371,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         } else if (change.status === GitFileStatus.New) {
             uriToOpen = toURI;
         } else {
-            uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
+            uriToOpen = DiffUris.encode(fromURI, toURI);
         }
         return uriToOpen;
     }

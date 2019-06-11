@@ -481,7 +481,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         } else if (change.status === GitFileStatus.New) {
             uriToOpen = toURI;
         } else {
-            uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
+            uriToOpen = DiffUris.encode(fromURI, toURI);
         }
         open(this.openerService, uriToOpen, { mode: 'reveal' });
     }
