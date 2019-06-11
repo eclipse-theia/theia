@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable:no-any
+
 import { injectable, inject } from 'inversify';
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
@@ -24,7 +26,6 @@ import {
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
-import { Anchor } from '../context-menu-renderer';
 
 @injectable()
 export class BrowserMainMenuFactory {
@@ -67,31 +68,31 @@ export class BrowserMainMenuFactory {
         }
     }
 
-    createContextMenu(path: MenuPath, anchor?: Anchor): MenuWidget {
+    createContextMenu(path: MenuPath, args?: any[]): MenuWidget {
         const menuModel = this.menuProvider.getMenu(path);
-        const phosphorCommands = this.createPhosphorCommands(menuModel, anchor);
+        const phosphorCommands = this.createPhosphorCommands(menuModel, args);
 
         const contextMenu = new DynamicMenuWidget(menuModel, { commands: phosphorCommands }, this.contextKeyService);
         return contextMenu;
     }
 
-    protected createPhosphorCommands(menu: CompositeMenuNode, anchor?: Anchor): PhosphorCommandRegistry {
+    protected createPhosphorCommands(menu: CompositeMenuNode, args: any[] = []): PhosphorCommandRegistry {
         const commands = new PhosphorCommandRegistry();
-        this.addPhosphorCommands(commands, menu, anchor);
+        this.addPhosphorCommands(commands, menu, args);
         return commands;
     }
 
-    protected addPhosphorCommands(commands: PhosphorCommandRegistry, menu: CompositeMenuNode, anchor?: Anchor): void {
+    protected addPhosphorCommands(commands: PhosphorCommandRegistry, menu: CompositeMenuNode, args: any[]): void {
         for (const child of menu.children) {
             if (child instanceof ActionMenuNode) {
-                this.addPhosphorCommand(commands, child, anchor);
+                this.addPhosphorCommand(commands, child, args);
             } else if (child instanceof CompositeMenuNode) {
-                this.addPhosphorCommands(commands, child, anchor);
+                this.addPhosphorCommands(commands, child, args);
             }
         }
     }
 
-    protected addPhosphorCommand(commands: PhosphorCommandRegistry, menu: ActionMenuNode, anchor?: Anchor): void {
+    protected addPhosphorCommand(commands: PhosphorCommandRegistry, menu: ActionMenuNode, args: any[]): void {
         const command = this.commandRegistry.getCommand(menu.action.commandId);
         if (!command) {
             return;
@@ -100,14 +101,13 @@ export class BrowserMainMenuFactory {
             // several menu items can be registered for the same command in different contexts
             return;
         }
-        const args = anchor ? [anchor] : [];
         commands.addCommand(command.id, {
             execute: () => this.commandRegistry.executeCommand(command.id, ...args),
             label: menu.label,
             icon: menu.icon,
             isEnabled: () => this.commandRegistry.isEnabled(command.id, ...args),
             isVisible: () => this.commandRegistry.isVisible(command.id, ...args),
-            isToggled: () => this.commandRegistry.isToggled(command.id)
+            isToggled: () => this.commandRegistry.isToggled(command.id, ...args)
         });
 
         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);
