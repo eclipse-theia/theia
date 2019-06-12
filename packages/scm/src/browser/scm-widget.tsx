@@ -18,6 +18,7 @@
 // tslint:disable:no-null-keyword
 
 import * as React from 'react';
+import TextareaAutosize from 'react-autosize-textarea';
 import { Message } from '@phosphor/messaging';
 import { ElementExt } from '@phosphor/domutils';
 import { injectable, inject, postConstruct } from 'inversify';
@@ -48,10 +49,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     static RESOURCE_INLINE_MENU = ['RESOURCE_INLINE_MENU'];
     static RESOURCE_CONTEXT_MENU = ['RESOURCE_CONTEXT_MENU'];
 
-    protected static MESSAGE_BOX_MIN_HEIGHT = 25;
     protected static LABEL = 'Source Control';
-
-    protected messageBoxHeight = ScmWidget.MESSAGE_BOX_MIN_HEIGHT;
 
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -193,8 +191,6 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected renderInput(input: ScmInput, repository: ScmRepository): React.ReactNode {
-        this.onRender.push(Disposable.create(() => this.resizeInput()));
-
         const validationStatus = input.issue ? input.issue.type : 'idle';
         const validationMessage = input.issue ? input.issue.message : '';
         const format = (value: string, ...args: string[]): string => {
@@ -210,20 +206,18 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         const keybinding = this.keybindings.acceleratorFor(this.keybindings.getKeybindingsForCommand('scm.acceptInput')[0]).join('+');
         const message = format(input.placeholder || '', keybinding);
         return <div className={ScmWidget.Styles.INPUT_MESSAGE_CONTAINER}>
-            <textarea
+            <TextareaAutosize
                 className={`${ScmWidget.Styles.INPUT_MESSAGE} theia-scm-input-message-${validationStatus}`}
-                style={{
-                    height: this.messageBoxHeight,
-                    overflow: this.messageBoxHeight > ScmWidget.MESSAGE_BOX_MIN_HEIGHT ? 'auto' : 'hidden'
-                }}
                 id={ScmWidget.Styles.INPUT_MESSAGE}
                 placeholder={message}
                 autoFocus={true}
                 tabIndex={1}
                 value={input.value}
                 onChange={this.setInputValue}
-                ref={this.setInput}>
-            </textarea>
+                innerRef={this.setInput}
+                rows={1}
+                maxRows={6} /* from VS Code */>
+            </TextareaAutosize>
             <div
                 className={
                     `${ScmWidget.Styles.VALIDATION_MESSAGE} ${ScmWidget.Styles.NO_SELECT}
@@ -243,37 +237,6 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     protected focusInput(): void {
         if (this.input) {
             this.input.focus();
-        }
-    }
-    /** TODO: a hack has to be implemented via React */
-    protected resizeInput(): void {
-        const input = this.input;
-        if (!input) {
-            return;
-        }
-        const fontSize = Number.parseInt(window.getComputedStyle(input, undefined).getPropertyValue('font-size').split('px')[0] || '0', 10);
-        const { value } = input;
-        if (Number.isInteger(fontSize) && fontSize > 0) {
-            const requiredHeight = fontSize * value.split(/\r?\n/).length;
-            if (requiredHeight < input.scrollHeight) {
-                input.style.height = `${requiredHeight}px`;
-            }
-        }
-        if (input.clientHeight < input.scrollHeight) {
-            input.style.height = `${input.scrollHeight}px`;
-            if (input.clientHeight < input.scrollHeight) {
-                input.style.height = `${(input.scrollHeight * 2 - input.clientHeight)}px`;
-            }
-        }
-        const updatedHeight = input.style.height;
-        if (updatedHeight) {
-            this.messageBoxHeight = parseInt(updatedHeight, 10) || ScmWidget.MESSAGE_BOX_MIN_HEIGHT;
-            if (this.messageBoxHeight > ScmWidget.MESSAGE_BOX_MIN_HEIGHT) {
-                input.style.overflow = 'auto';
-            } else {
-                // Hide the scroll-bar if we shrink down the size.
-                input.style.overflow = 'hidden';
-            }
         }
     }
 
