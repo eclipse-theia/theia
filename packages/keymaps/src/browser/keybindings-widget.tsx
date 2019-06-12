@@ -112,7 +112,23 @@ export class KeybindingWidget extends ReactWidget {
                         // Match identical keybindings that have different orders
                         if (key === 'keybinding') {
                             const queryItems = this.query.split('+');
-                            const bindingItems = string.split('+');
+
+                            // Handle key chords
+                            const tempItems = string.split(' ');
+                            // Store positions of `space` in the keybinding string
+                            const spaceIndexArr = [0];
+                            let bindingItems: string[] = [];
+                            if (tempItems.length > 1) {
+                                tempItems.forEach(tItem => {
+                                    const tKeys = tItem.split('+');
+                                    spaceIndexArr.push(tKeys.length + spaceIndexArr[-1]);
+                                    bindingItems.push(...tKeys);
+                                });
+                            } else {
+                                bindingItems = string.split('+');
+                            }
+                            spaceIndexArr.shift();
+
                             const renderedResult = [...bindingItems];
                             let matchCounter = 0;
 
@@ -137,12 +153,27 @@ export class KeybindingWidget extends ReactWidget {
                                             renderedResult[keyIndex] = keyRendered;
                                         }
                                         // Remove key from keybinding items if it is matched
-                                        bindingItems.splice(keyIndex, 1);
+                                        bindingItems.splice(keyIndex, 1, '');
                                         matchCounter += 1;
                                     }
                                 }
                             });
                             if (matchCounter === queryItems.length) {
+                                // Handle rendering of key chords
+                                if (spaceIndexArr.length > 0) {
+                                    const chordRenderedResult = '';
+                                    renderedResult.forEach((resultKey, index) => {
+                                        if (index === 0) {
+                                            chordRenderedResult.concat(resultKey);
+                                        } else if (spaceIndexArr.indexOf(index) !== -1) {
+                                            chordRenderedResult.concat(' ' + resultKey);
+                                        } else {
+                                            chordRenderedResult.concat('+' + resultKey);
+                                        }
+                                    });
+                                    item[key] = chordRenderedResult;
+                                }
+
                                 item[key] = renderedResult.join('+');
                                 matched = true;
                             }
@@ -265,6 +296,19 @@ export class KeybindingWidget extends ReactWidget {
                         return <span key={index} className='monaco-keybinding-key'>
                             {this.renderMatchedData(key)}
                         </span>;
+                    } else if (key.includes(' ')) {
+                        // Handle key chords, which have space as the separator
+                        // Example: `k Ctrl` in key chords `Ctrl+k Ctrl+p`
+                        let chordKeys = key.split('<match> </match>');
+                        if (chordKeys.length === 1) {
+                            chordKeys = key.split(' ');
+                        }
+                        return <React.Fragment key={index}>
+                            <span className='monaco-keybinding-separator'>+</span>
+                            <span className='monaco-keybinding-key'>{this.renderKeybinding(chordKeys[0])}</span>
+                            <span className='monaco-keybinding-separator'>&nbsp;&nbsp;</span>
+                            <span className='monaco-keybinding-key'>{this.renderKeybinding(chordKeys[1])}</span>
+                        </React.Fragment>;
                     } else {
                         return <React.Fragment key={index}>
                             <span className='monaco-keybinding-separator'>+</span>
