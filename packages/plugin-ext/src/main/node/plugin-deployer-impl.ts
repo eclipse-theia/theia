@@ -111,7 +111,6 @@ export class PluginDeployerImpl implements PluginDeployer {
 
     public async deploy(pluginEntry: string): Promise<void> {
         await this.deployMultipleEntries([pluginEntry]);
-        return Promise.resolve();
     }
 
     protected async deployMultipleEntries(pluginEntries: string[]): Promise<void> {
@@ -125,9 +124,6 @@ export class PluginDeployerImpl implements PluginDeployer {
         await this.applyDirectoryFileHandlers();
 
         await this.deployPlugins();
-
-        return Promise.resolve();
-
     }
 
     /**
