@@ -207,7 +207,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             throw new Error('terminal is not started');
         }
-        if (this.terminalService.getById(this.terminalId.toString())) {
+        if (this.terminalService.getById(this.id)) {
             return this.shellTerminalServer.getCwdURI(this.terminalId)
                 .then(cwdUrl => new URI(cwdUrl));
         }
@@ -469,7 +469,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected resizeTerminalProcess(): void {
         if (!IBaseTerminalServer.validateId(this.terminalId)
-            && !this.terminalService.getById(this.terminalId.toString())) {
+            && !this.terminalService.getById(this.id)) {
             return;
         }
         const { cols, rows } = this.term;

@@ -40,6 +40,10 @@ export interface TerminalService {
 
     readonly all: TerminalWidget[];
 
+    /**
+     * @param id - the widget id (NOT the terminal id!)
+     * @return the widget
+     */
     getById(id: string): TerminalWidget | undefined;
 
     readonly onDidCreateTerminal: Event<TerminalWidget>;
