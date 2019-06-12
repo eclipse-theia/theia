@@ -21,45 +21,110 @@ import '../../src/browser/find-text.css';
 import { Terminal } from 'xterm';
 import * as ReactDOM from 'react-dom';
 import { findNext, findPrevious } from 'xterm/lib/addons/search/search';
+import { ISearchOptions } from 'xterm/lib/addons/search/Interfaces';
 
 export const FIND_TERMINAL_TEXT_WIDGET_FACTORY_ID = 'find-terminal-text-widget';
-
 export const FindTerminalTextWidgetFactory = Symbol('FindTerminalWidgetFactory');
 export type FindTerminalTextWidgetFactory = (terminal: Terminal) => FindTextTerminalWidget;
 
 export const FIND_TERMINAL_TEXT_WIDGET_ID = 'find-terminal-text-widget';
 
+export enum TerminalSearchOption {
+    CaseSensitiv = 'caseSensitive',
+    WholeWord = 'wholeWord',
+    RegExp = 'regex'
+}
+
 @injectable()
 export class FindTextTerminalWidget extends ReactWidget {
 
-    private searchInpt: HTMLInputElement | null;
+    private searchInput: HTMLInputElement | null;
+    private searchBox: HTMLDivElement | null;
+    private searcOptions: ISearchOptions = {};
 
     @inject(Terminal)
     protected terminal: Terminal;
 
     focus(): void {
-        if (this.searchInpt) {
-            this.searchInpt.focus();
+        if (this.searchInput) {
+            this.searchInput.focus();
         }
     }
 
     update(): void {
-        ReactDOM.render(<React.Fragment>{this.render()}</React.Fragment>, this.node, () => console.log('clean up'));
+        ReactDOM.render(<React.Fragment>{this.render()}</React.Fragment>, this.node);
     }
 
     render(): React.ReactNode {
-        this.node.classList.add('find-terminal-widget-text-parent');
-        return <div className='find-terminal-widget-text'>
-                <input className='find-terminal-widget-text input'
-                       type='text'
-                       placeholder='Find'
-                       ref={ip => this.searchInpt = ip}
-                       onKeyUp = {() => this.search()}
-                       ></input>
-                <button className='find-terminal-widget-text button' onClick={() => this.findPrevious()}>&#171;</button>
-                <button className='find-terminal-widget-text button' onClick={() => this.findNext()}>&#187;</button>
-                <button className='find-terminal-widget-text button' onClick={() => this.hide()}>&#215;</button>
-            </div>;
+        this.node.classList.add('find-terminal-widget-parent');
+        return <div className='find-terminal-widget'>
+            <div className='search-elem-box' ref={searchBox => this.searchBox = searchBox} >
+                <input
+                    title='Find'
+                    type='text'
+                    placeholder='Find'
+                    ref={ip => this.searchInput = ip}
+                    onKeyUp = {() => this.search()}
+                    onFocus = {() => this.onSearchInputFocus()}
+                    onBlur = {() => this.onSearchInputBlur()}
+                />
+                {this.renderSearchOptions()}
+            </div>
+            <button title='Previous match' className='search-elem' onClick={() => this.findPrevious()}>&#171;</button>
+            <button title='Next match' className='search-elem' onClick={() => this.findNext()}>&#187;</button>
+            <button title='Close' className='search-elem close' onClick={() => this.hide()}></button>
+       </div>;
+    }
+
+    onSearchInputFocus() {
+        if (this.searchBox) {
+            this.searchBox.classList.add('option-enabled');
+        }
+    }
+
+    onSearchInputBlur() {
+        if (this.searchBox) {
+            this.searchBox.classList.remove('option-enabled');
+        }
+    }
+
+    protected renderSearchOptions(): React.ReactNode[] {
+        const nodes: React.ReactNode[] = [];
+        nodes.push(this.renderSearchOption('search-elem match-case', TerminalSearchOption.CaseSensitiv, 'Match case'));
+        nodes.push(this.renderSearchOption('search-elem whole-word', TerminalSearchOption.WholeWord, 'Match whole word'));
+        nodes.push(this.renderSearchOption('search-elem use-regexp', TerminalSearchOption.RegExp, 'Use regular expression'));
+        return nodes;
+    }
+
+    protected renderSearchOption(style: string, optionName: string, title: string): React.ReactNode {
+        return <span title={title} className={style} onClick={event => this.onOptionClicked(event, optionName)}></span>;
+    }
+
+    private onOptionClicked(event: React.MouseEvent<HTMLSpanElement>, optionName: string) {
+        let enabled: boolean;
+        switch (optionName) {
+            case TerminalSearchOption.CaseSensitiv: {
+                this.searcOptions.caseSensitive = enabled = !this.searcOptions.caseSensitive;
+                break;
+            }
+            case TerminalSearchOption.WholeWord: {
+                this.searcOptions.wholeWord = enabled = !this.searcOptions.wholeWord;
+                break;
+            }
+            case TerminalSearchOption.RegExp: {
+                this.searcOptions.regex = enabled = !this.searcOptions.regex;
+                break;
+            }
+            default: throw new Error('Unknown search option!');
+        }
+
+        if (enabled) {
+            event.currentTarget.classList.add('option-enabled');
+        } else {
+            event.currentTarget.classList.remove('option-enabled');
+        }
+        this.searchInput!.focus();
+        this.search();
     }
 
     search() {
@@ -67,16 +132,16 @@ export class FindTextTerminalWidget extends ReactWidget {
     }
 
     protected findNext(incremental?: boolean): void {
-        if (this.searchInpt) {
-            const text = this.searchInpt.value;
-            findNext(this.terminal, text, {caseSensitive: false, regex: false, wholeWord: false, incremental});
+        if (this.searchInput) {
+            const text = this.searchInput.value;
+            findNext(this.terminal, text, {...this.searcOptions, incremental});
         }
     }
 
     protected findPrevious(): void {
-        if (this.searchInpt) {
-            const text = this.searchInpt.value;
-            findPrevious(this.terminal, text, {caseSensitive: false, regex: false, wholeWord: false, incremental: false});
+        if (this.searchInput) {
+            const text = this.searchInput.value;
+            findPrevious(this.terminal, text, {...this.searcOptions, incremental: false});
         }
     }
 

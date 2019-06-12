@@ -83,7 +83,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
-
     @postConstruct()
     protected init() {
         this.title.caption = this.options.title || this.TERMINAL;

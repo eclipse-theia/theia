@@ -14,35 +14,82 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.find-terminal-widget-text-parent {
-    padding: 0px;
+.search-elem-box {
+    display: flex;
     margin: 0px;
+    border: var(--theia-border-width) solid transparent;
+    padding: 0px;
+    align-items: center;
+    background: var(--theia-layout-color2);
+}
 
-    border: 1px solid var(--theia-layout-color0);
+.search-elem {
+    border: var(--theia-border-width) solid transparent;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 18px;
+    width: 18px;
+    margin: 1px;
+    opacity: 0.7;
+}
+
+.search-elem:hover {
+    opacity: 1;
+}
+
+.option-enabled {
+    border: var(--theia-border-width) var(--theia-accent-color3) solid;
+}
+
+.whole-word {
+    background-image: var(--theia-icon-whole-word);
+}
+
+.match-case {
+    background-image: var(--theia-icon-case-sensitive);
+}
+
+.use-regexp {
+    background-image: var(--theia-icon-regex);
+}
+
+.find-terminal-widget-parent {
+    color: var(--theia-ui-font-color1);
+    background: var(--theia-layout-color1);
 
     position: absolute;
-    top: 0px;
-    right: 20px;
+
+    margin: 0px;
+    border: 1px solid var(--theia-layout-color1);
+    padding: 0px;
+
+    top: 1px;
+    right: 19px;
+
     z-index: 10;
-
-    width: 200px;
-    height: 25px;
 }
 
-.find-terminal-widget-text {
+.find-terminal-widget-parent .find-terminal-widget {
+    margin: 2px;
+    display: flex;
+    align-items: center;
     font: var(--theia-content-font-size);
-    line-height: var(--theia-content-line-height);
-    color: var(--theia-content-font-color0);
-
-    border: 1px solid var(--theia-layout-color0);
-
+    color: var(--theia-ui-font-color1);
 }
 
-.find-terminal-widget-text input {
+.find-terminal-widget input {
+    margin-left: 5px;
+    padding: 0px;
     width: 100px;
+    border: 0px solid transparent;
+    height: 18px;
 }
 
-.find-terminal-widget-text button {
-    width: 25px;
-    color: black;
+.find-terminal-widget button {
+    background-color: rgb(0, 0, 0, 0);
+    color: var(--theia-ui-font-color1);
+}
+
+.search-elem.close {
+    background-image: var(--theia-icon-close);
 }
