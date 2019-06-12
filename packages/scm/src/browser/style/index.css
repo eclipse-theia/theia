@@ -97,7 +97,9 @@
     background: var(--theia-layout-color2);
     resize: none;
     box-sizing: border-box;
-    padding-left: 4px;
+    height: 26px;
+    min-height: 26px;
+    padding: 4px 4px 4px 4px;
 }
 
 .theia-scm-input-message-container textarea:not(:focus) {
