@@ -196,10 +196,6 @@ export abstract class Process {
             });
         } else if (!isWindows) {
             return new Promise<string>(resolve => {
-                resolve(FileUri.create(this.initialCwd).toString());
-            });
-        } else {
-            return new Promise<string>(resolve => {
                 fs.readlink('/proc/' + this.pid + '/cwd', (err, linkedstr) => {
                     if (err || !linkedstr) {
                         resolve(FileUri.create(this.initialCwd).toString());
@@ -207,6 +203,10 @@ export abstract class Process {
                         resolve(FileUri.create(linkedstr).toString());
                     }
                 });
+            });
+        } else {
+            return new Promise<string>(resolve => {
+                resolve(FileUri.create(this.initialCwd).toString());
             });
         }
     }
