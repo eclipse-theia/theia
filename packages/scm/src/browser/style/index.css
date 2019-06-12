@@ -102,6 +102,12 @@
     padding: 4px 4px 4px 4px;
 }
 
+.theia-scm-input-message-container textarea:placeholder-shown { 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .theia-scm-input-message-container textarea:not(:focus) {
     border-style: solid;
     border-width: 1px;
