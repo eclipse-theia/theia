@@ -52,7 +52,7 @@ export class SelectionCommandHandler<S> implements CommandHandler {
         }
         const globalSelection = this.getSingleSelection(this.selectionService.selection);
         if (this.isMulti()) {
-            return this.getMulitSelection(globalSelection);
+            return this.getMultiSelection(globalSelection);
         }
         return this.getSingleSelection(globalSelection);
     }
@@ -73,7 +73,7 @@ export class SelectionCommandHandler<S> implements CommandHandler {
         return undefined;
     }
 
-    protected getMulitSelection(arg: Object | undefined): S[] | undefined {
+    protected getMultiSelection(arg: Object | undefined): S[] | undefined {
         let selection = this.toSelection(arg);
         if (selection) {
             return [selection];

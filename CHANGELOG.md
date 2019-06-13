@@ -7,6 +7,7 @@ Breaking changes:
 - [plugin] 'Hosted mode' extracted in `plugin-dev` extension
 - [core] `scheme` is mandatory for URI
   - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
+- [core] `SelectionCommandHandler.getMulitSelection()` is renamed into `SelectionCommandHandler.getMultiSelection()`
 - [debug] align commands with VS Code [#5102](https://github.com/theia-ide/theia/issues/5102)
     - `debug.restart` renamed to `workbench.action.debug.restart`
 - [preferences] renamed overridenPreferenceName to overriddenPreferenceName
