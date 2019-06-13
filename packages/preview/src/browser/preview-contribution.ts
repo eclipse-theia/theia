@@ -67,6 +67,10 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     protected readonly synchronizedUris = new Set<string>();
 
+    protected scrollSyncLockOn: 'preview' | 'editor' | undefined = undefined;
+
+    protected scrollSyncLockTimeout: number | undefined;
+
     onStart() {
         this.onCreated(previewWidget => {
             this.registerOpenOnDoubleClick(previewWidget);
@@ -75,6 +79,16 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         this.editorManager.onCreated(editorWidget => {
             this.registerEditorAndPreviewSync(editorWidget);
         });
+    }
+
+    protected async lockScrollSync(on: 'preview' | 'editor', delay: number = 50) {
+        this.scrollSyncLockOn = on;
+        if (this.scrollSyncLockTimeout) {
+            window.clearTimeout(this.scrollSyncLockTimeout);
+        }
+        this.scrollSyncLockTimeout = window.setTimeout(() => {
+            this.scrollSyncLockOn = undefined;
+        }, delay);
     }
 
     protected async registerEditorAndPreviewSync(source: PreviewWidget | EditorWidget): Promise<void> {
@@ -101,7 +115,17 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         editorWidget.disposed.connect(() => syncDisposables.dispose());
 
         const editor = editorWidget.editor;
-        syncDisposables.push(editor.onCursorPositionChanged(debounce(position => this.revealSourceLineInPreview(previewWidget!, position)), 100));
+        syncDisposables.push(editor.onScrollChanged(debounce(() => {
+            if (this.scrollSyncLockOn === 'editor') {
+                // avoid recursive scroll synchronization
+                return;
+            }
+            this.lockScrollSync('preview');
+            const range = editor.getVisibleRanges();
+            if (range.length > 0) {
+                this.revealSourceLineInPreview(previewWidget!, range[0].start);
+            }
+        }), 100));
         syncDisposables.push(this.synchronizeScrollToEditor(previewWidget, editor));
 
         this.synchronizedUris.add(uri);
@@ -114,7 +138,12 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     protected synchronizeScrollToEditor(previewWidget: PreviewWidget, editor: TextEditor): Disposable {
         return previewWidget.onDidScroll(sourceLine => {
+            if (this.scrollSyncLockOn === 'preview') {
+                // avoid recursive scroll synchronization
+                return;
+            }
             const line = Math.floor(sourceLine);
+            this.lockScrollSync('editor'); // avoid recursive scroll synchronization
             editor.revealRange({
                 start: {
                     line,
