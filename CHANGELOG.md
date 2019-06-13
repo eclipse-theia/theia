@@ -1,5 +1,22 @@
 # Change Log
 
+## v0.7.2
+
+Bugfix release:
+
+- [scm] fix #5449: scm input should be focusable programmatically
+- [core/scm/git] Use `TextareaAutosize` for the `textarea` resizing
+- [scm] Use a `text-overflow` style for the `placeholder`
+- [scm/git] rework scm, recover git extension
+- [core] compute resource context keys based on underlying resource URI…
+- [core/statusbar] render more item + allow octicon icons
+- [plugin] respect opener options for vscode.diff and vscode.open commands
+- [core] fix label encoding for diff uris
+- [core] allow to pass command args to context menus
+- [electron] GH-5385: Do not spawn electron for the TS LS
+- [electron] GH-4800: Fixed issue when exiting the electron app
+- [electron] GH-5284: Debounced the menu update for electron
+
 ## v0.7.1
 
 Bugfix release:
