@@ -42,6 +42,7 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { TerminalSearchKeybindingContext } from './find-terminal-widget-keybinding-context';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -242,12 +243,12 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT.id,
             keybinding: 'ctrlcmd+f',
-            context: TerminalKeybindingContexts.terminalActive
+            context: TerminalSearchKeybindingContext.enableSearch
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
             keybinding: 'esc',
-            context: TerminalKeybindingContexts.terminalActive
+            context: TerminalSearchKeybindingContext.disableSearch
         });
 
         keybindings.registerKeybinding({

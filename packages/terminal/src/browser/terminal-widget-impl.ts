@@ -206,6 +206,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.hoverMessage.style.display = 'none';
     }
 
+    isSearchActivated(): boolean {
+        return this.findTextWidget.node.clientWidth > 0;
+    }
+
     showSearchWidget() {
         this.findTextWidget.show();
         this.findTextWidget.focus();

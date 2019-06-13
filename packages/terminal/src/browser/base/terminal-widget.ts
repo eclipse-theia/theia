@@ -51,6 +51,8 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract showSearchWidget(): void;
 
     abstract hideSearchWidget(): void;
+
+    abstract isSearchActivated(): boolean;
 }
 
 /**

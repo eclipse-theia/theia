@@ -38,10 +38,13 @@ import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
 import { FindTextTerminalWidget, FindTerminalTextWidgetFactory } from './find-text-terminal-widget';
 import { Terminal } from 'xterm';
+import { TerminalSearchEnableContext, TerminalSearchDisableContext } from './find-terminal-widget-keybinding-context';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
     bind(KeybindingContext).to(TerminalActiveContext).inSingletonScope();
+    bind(KeybindingContext).to(TerminalSearchEnableContext).inSingletonScope();
+    bind(KeybindingContext).to(TerminalSearchDisableContext).inSingletonScope();
 
     bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();

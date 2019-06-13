@@ -149,4 +149,11 @@ export class FindTextTerminalWidget extends ReactWidget {
         super.hide();
         this.terminal.focus();
     }
+
+    show(): void {
+        super.show();
+        if (this.searchInput) {
+            this.searchInput.select();
+        }
+    }
 }
