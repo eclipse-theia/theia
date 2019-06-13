@@ -341,9 +341,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
             return [];
         }
         if (this._workspace.isDirectory) {
-            const utitledWorkspace = await this.getUntitledWorkspace();
-            if (utitledWorkspace) {
-                await this.save(utitledWorkspace);
+            const untitledWorkspace = await this.getUntitledWorkspace();
+            if (untitledWorkspace) {
+                await this.save(untitledWorkspace);
             }
         }
         const currentData = await this.getWorkspaceDataFromFile();
