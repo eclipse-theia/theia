@@ -543,6 +543,7 @@ export interface PluginMetadata {
     source: PluginPackage;
     model: PluginModel;
     lifecycle: PluginLifecycle;
+    originalPath: string;
 }
 
 export const MetadataProcessor = Symbol('MetadataProcessor');

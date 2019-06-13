@@ -59,7 +59,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
         for (const plugin of frontendPlugins) {
-            const metadata = await this.reader.getPluginMetadata(plugin.path());
+            const metadata = await this.reader.getPluginMetadata(plugin.path(), plugin.originalPath());
             if (metadata) {
                 if (this.currentFrontendPluginsMetadata.some(value => value.model.id === metadata.model.id)) {
                     continue;
@@ -76,7 +76,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
         for (const plugin of backendPlugins) {
-            const metadata = await this.reader.getPluginMetadata(plugin.path());
+            const metadata = await this.reader.getPluginMetadata(plugin.path(), plugin.originalPath());
             if (metadata) {
                 if (this.currentBackendPluginsMetadata.some(value => value.model.id === metadata.model.id)) {
                     continue;

@@ -57,33 +57,26 @@ export class HostedPluginReader implements BackendApplicationContribution {
         });
     }
 
-    async getPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
-        return this.doGetPluginMetadata(pluginPath);
-    }
-
-    /**
-     * MUST never throw to isolate plugin deployment
-     */
-    async doGetPluginMetadata(pluginPath: string | undefined) {
+    async getPluginMetadata(pluginPath: string | undefined, originalPath?: string): Promise<PluginMetadata | undefined> {
         try {
-            if (!pluginPath) {
-                return undefined;
+            if (pluginPath) {
+                pluginPath = path.normalize(pluginPath + '/');
+                return await this.loadPluginMetadata(pluginPath, originalPath ? originalPath : pluginPath);
             }
-            pluginPath = path.normalize(pluginPath + '/');
-            return await this.loadPluginMetadata(pluginPath);
         } catch (e) {
             this.logger.error(`Failed to load plugin metadata from "${pluginPath}"`, e);
-            return undefined;
         }
+
+        return undefined;
     }
 
-    protected async loadPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
+    protected async loadPluginMetadata(pluginPath: string, originalPath: string): Promise<PluginMetadata | undefined> {
         const manifest = await this.loadManifest(pluginPath);
         if (!manifest) {
             return undefined;
         }
         manifest.packagePath = pluginPath;
-        const pluginMetadata = this.scanner.getPluginMetadata(manifest);
+        const pluginMetadata = this.scanner.getPluginMetadata(manifest, originalPath);
         if (pluginMetadata.model.entryPoint.backend) {
             pluginMetadata.model.entryPoint.backend = path.resolve(pluginPath, pluginMetadata.model.entryPoint.backend);
         }

@@ -29,13 +29,14 @@ export class MetadataScanner {
         });
     }
 
-    getPluginMetadata(plugin: PluginPackage): PluginMetadata {
+    getPluginMetadata(plugin: PluginPackage, originalPath: string): PluginMetadata {
         const scanner = this.getScanner(plugin);
         return {
             host: 'main',
             source: plugin,
             model: scanner.getModel(plugin),
-            lifecycle: scanner.getLifecycle(plugin)
+            lifecycle: scanner.getLifecycle(plugin),
+            originalPath
         };
     }
 

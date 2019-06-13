@@ -34,7 +34,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     protected deployerHandler: HostedPluginDeployerHandler;
 
     async initialize() {
-        this.pluginReader.doGetPluginMetadata(process.env.HOSTED_PLUGIN)
+        this.pluginReader.getPluginMetadata(process.env.HOSTED_PLUGIN)
             .then(this.hostedPlugin.resolve.bind(this.hostedPlugin));
 
         const pluginPath = process.env.HOSTED_PLUGIN;
