@@ -64,18 +64,18 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         this.channel.onClose(() => this.channel = undefined);
 
         this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
-        this.communicationProvider.output.on('close', () => this.fireExited());
+        this.communicationProvider.output.on('close', () => this.onDebugAdapterExit(1, undefined)); // FIXME pass a proper exit code
         this.communicationProvider.output.on('error', error => this.onDebugAdapterError(error));
         this.communicationProvider.input.on('error', error => this.onDebugAdapterError(error));
     }
 
-    protected fireExited(): void {
+    protected onDebugAdapterExit(exitCode: number, signal: string | undefined): void {
         const event: DebugProtocol.ExitedEvent = {
             type: 'event',
             event: 'exited',
             seq: -1,
             body: {
-                exitCode: 1 // FIXME pass a proper exit code
+                exitCode
             }
         };
         this.send(JSON.stringify(event));

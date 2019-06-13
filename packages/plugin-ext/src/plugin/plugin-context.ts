@@ -211,7 +211,7 @@ export function createAPIFactory(
             },
             registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
                 // Dummy implementation.
-                return new Disposable(() => {});
+                return new Disposable(() => { });
             }
         };
 
@@ -368,7 +368,7 @@ export function createAPIFactory(
                 return decorationsExt.registerDecorationProvider(provider);
             },
             registerUriHandler(handler: theia.UriHandler): theia.Disposable {
-                return new Disposable(() => {});
+                return new Disposable(() => { });
             }
         };
 
@@ -635,6 +635,9 @@ export function createAPIFactory(
             },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
                 return debugExt.registerDebugConfigurationProvider(debugType, provider);
+            },
+            registerDebugAdapterTrackerFactory(debugType: string, factory: theia.DebugAdapterTrackerFactory): Disposable {
+                return debugExt.registerDebugAdapterTrackerFactory(debugType, factory);
             },
             startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): Thenable<boolean> {
                 return debugExt.startDebugging(folder, nameOrConfiguration);
