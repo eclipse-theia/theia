@@ -73,6 +73,9 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         return this._scrollContainer;
     }
 
+    /** don't modify DOM use React! only exposed for `focusInput` */
+    protected readonly inputRef = React.createRef<HTMLTextAreaElement>();
+
     constructor() {
         super();
         this.node.tabIndex = 0;
@@ -119,7 +122,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        (this.input || this.node).focus();
+        (this.inputRef.current || this.node).focus();
     }
 
     protected onAfterShow(msg: Message): void {
@@ -214,7 +217,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
                 tabIndex={1}
                 value={input.value}
                 onChange={this.setInputValue}
-                innerRef={this.setInput}
+                ref={this.inputRef}
                 rows={1}
                 maxRows={6} /* from VS Code */>
             </TextareaAutosize>
@@ -229,14 +232,9 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         </div>;
     }
 
-    /** don't modify DOM use React! only exposed for `focusInput` */
-    protected input: HTMLTextAreaElement | null;
-    protected setInput = (input: HTMLTextAreaElement | null) => {
-        this.input = input;
-    }
     protected focusInput(): void {
-        if (this.input) {
-            this.input.focus();
+        if (this.inputRef.current) {
+            this.inputRef.current.focus();
         }
     }
 
