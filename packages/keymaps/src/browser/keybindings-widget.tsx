@@ -239,9 +239,6 @@ export class KeybindingWidget extends ReactWidget {
                     className={(this.items.length > 0) ? '' : 'no-kb'}
                     type='text' placeholder='Search keybindings' onKeyUp={this.searchKeybindings}></input >
             </div>
-            <div className='kb-json'>For more detailed keybinding customizations open and edit&nbsp;
-                <a href='#' onClick={this.openKeybindings}>keymaps.json</a>
-            </div>
         </div>;
     }
 
