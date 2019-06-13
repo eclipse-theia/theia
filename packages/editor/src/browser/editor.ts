@@ -168,6 +168,9 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
 
     readonly onMouseDown: Event<EditorMouseEvent>;
 
+    readonly onScrollChanged: Event<void>;
+    getVisibleRanges(): Range[];
+
     revealPosition(position: Position, options?: RevealPositionOptions): void;
     revealRange(range: Range, options?: RevealRangeOptions): void;
 
