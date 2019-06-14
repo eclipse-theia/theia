@@ -97,6 +97,8 @@ export interface TaskExitedEvent {
     // Exactly one of code and signal will be set.
     readonly code?: number;
     readonly signal?: string;
+
+    readonly config?: TaskConfiguration;
 }
 
 export interface TaskClient {
