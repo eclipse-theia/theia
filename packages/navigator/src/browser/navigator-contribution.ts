@@ -208,10 +208,16 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         // });
 
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
-            commandId: CommonCommands.COPY.id
+            commandId: CommonCommands.COPY.id,
+            order: 'a'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
-            commandId: CommonCommands.PASTE.id
+            commandId: CommonCommands.PASTE.id,
+            order: 'b'
+        });
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
+            order: 'z'
         });
 
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {

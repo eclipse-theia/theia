@@ -64,6 +64,7 @@ Breaking changes:
 - [preferences] renamed overridenPreferenceName to overriddenPreferenceName
 - [task] `cwd`, which used to be defined directly under `Task`, is moved into `Task.options` object
 - [workspace] `isMultiRootWorkspaceOpened()` is renamed into `isMultiRootWorkspaceEnabled()`
+- [filesystem] Changed `FileDownloadService` API to support streaming download of huge files.
 
 ## v0.7.0
 

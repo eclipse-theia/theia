@@ -152,7 +152,18 @@ export class FileMenuContribution implements MenuContribution {
             commandId: FileDownloadCommands.DOWNLOAD.id,
             order: 'b'
         });
+    }
 
+}
+
+@injectable()
+export class EditMenuContribution implements MenuContribution {
+
+    registerMenus(registry: MenuModelRegistry) {
+        registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
+            commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
+            order: '9999'
+        });
     }
 
 }

@@ -106,7 +106,7 @@ export abstract class FileDownloadHandler {
     /**
      * Streams the file and pipe it to the Response to avoid any OOM issues
      */
-    protected streamDownload(status: number, response: Response, stream: fs.ReadStream, id: string) {
+    protected streamDownload(status: number, response: Response, stream: fs.ReadStream, id: string): void {
         response.status(status);
         stream.on('error', error => {
             this.fileDownloadCache.deleteDownload(id);
