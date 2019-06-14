@@ -1,0 +1,64 @@
+/********************************************************************************
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-progress-monitor {
+    padding-left: 15px;
+    padding-top: 15px;
+    padding-right: 15px;
+}
+
+.theia-progress-monitor-item-container-left {
+    width: 90%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.theia-progress-monitor-item-container-right {
+    width: 10%;
+    text-align: right;
+}
+
+.theia-progress-content {
+    z-index: 10000;
+    width: 300px;
+    height: 275px;
+    background-color: var(--theia-ui-dialog-color);
+    color: var(--theia-ui-dialog-font-color);
+}
+
+.theia-progress-widget-dialog {
+    z-index: 1000000;
+    position: fixed;
+    bottom: var(--theia-statusBar-height);
+}
+
+.theia-progress-status-bar {
+    flex-direction: row-reverse;
+}
+
+.theia-progress-widget {
+    height: inherit;
+    z-index: 1000000;
+}
+
+#progress-monitor-list-container {
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.theia-no-items-found {
+    justify-content: center;
+}

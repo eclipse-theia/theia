@@ -16,6 +16,7 @@
 
 import { RequestType, NotificationType } from 'vscode-jsonrpc';
 import { TextDocumentIdentifier, Command, MessageType, ExecuteCommandParams } from '@theia/languages/lib/browser';
+import { ProgressReport } from '@theia/progress-monitor/lib/browser';
 
 export interface StatusReport {
     message: string;
@@ -55,4 +56,8 @@ export namespace CompileWorkspaceRequest {
 
 export namespace ExecuteClientCommand {
     export const type = new RequestType<ExecuteCommandParams, undefined, void, void>('workspace/executeClientCommand');
+}
+
+export namespace ProgressReportNotification {
+    export const type = new NotificationType<ProgressReport, void>('language/progressReport');
 }

@@ -46,6 +46,7 @@
     "@theia/preview": "^0.7.0",
     "@theia/process": "^0.7.0",
     "@theia/python": "^0.7.0",
+    "@theia/progress-monitor": "^0.7.0",
     "@theia/search-in-workspace": "^0.7.0",
     "@theia/task": "^0.7.0",
     "@theia/terminal": "^0.7.0",

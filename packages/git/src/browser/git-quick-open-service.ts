@@ -20,6 +20,7 @@ import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quic
 import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { ProgressService } from '@theia/progress-monitor/lib/browser/progress-service';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -45,6 +46,7 @@ export class GitQuickOpenService {
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
         @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(ProgressService) protected readonly progressService: ProgressService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) { }
@@ -77,11 +79,27 @@ export class GitQuickOpenService {
                     dynamicItems.push(new SingleStringInputOpenItem(
                         `Clone the Git repository: ${lookFor}. ${suffix}`,
                         async () => {
+                            const progressReport = {
+                                id: `git-clone-${lookFor}`,
+                                task: 'Cloning git repositories',
+                                location: lookFor,
+                                totalWork: 1,
+                                workDone: 0,
+                                complete: false
+                            };
+                            gitQuickOpenService.progressService.addOrUpdateContribution(progressReport);
                             try {
-                                await gitQuickOpenService.git.clone(lookFor, { localUri: await gitQuickOpenService.buildDefaultProjectPath(gitCloneLocalTargetFolder, lookFor) });
+                                const progressCallback =  (progress: Git.CloneProgress) => {
+                                    progressReport.workDone = progress.value;
+                                };
+                                const localUri = await gitQuickOpenService.buildDefaultProjectPath(gitCloneLocalTargetFolder, lookFor);
+                                await gitQuickOpenService.git.clone(lookFor, { localUri }, progressCallback);
+                                progressReport.workDone = progressReport.totalWork;
                             } catch (error) {
                                 gitQuickOpenService.gitErrorHandler.handleError(error);
                             }
+                            progressReport.complete = true;
+                            gitQuickOpenService.progressService.addOrUpdateContribution(progressReport);
                         }
                     ));
                 }

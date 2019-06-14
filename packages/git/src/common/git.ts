@@ -33,6 +33,18 @@ export const Git = Symbol('Git');
 
 export namespace Git {
 
+    export interface CloneProgress {
+        readonly kind: 'clone';
+        /**
+         * The progress of the operation, represented as a fraction between 0 and 1.
+         */
+        readonly value: number;
+        /**
+         * An informative text for user consumption indicating the current operation state.
+         */
+        readonly title: string;
+    }
+
     /**
      * Options for various Git commands.
      */
@@ -597,7 +609,7 @@ export interface Git extends Disposable {
      * @param remoteUrl the URL of the remote.
      * @param options the clone options.
      */
-    clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository>;
+    clone(remoteUrl: string, options: Git.Options.Clone,  progressCallback?: (progress: Git.CloneProgress) => void): Promise<Repository>;
 
     /**
      * Resolves to an array of repositories discovered in the workspace given with the workspace root URI.

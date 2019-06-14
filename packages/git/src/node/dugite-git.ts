@@ -333,11 +333,11 @@ export class DugiteGit implements Git {
         this.gitInit.dispose();
     }
 
-    async clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository> {
+    async clone(remoteUrl: string, options: Git.Options.Clone, progressCallback?: (progress: Git.CloneProgress) => void): Promise<Repository> {
         await this.ready.promise;
         const { localUri, branch } = options;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
-        await clone(remoteUrl, this.getFsPath(localUri), { branch }, { exec, env });
+        await clone(remoteUrl, this.getFsPath(localUri), { branch }, { exec, env }, progressCallback);
         return { localUri };
     }
 

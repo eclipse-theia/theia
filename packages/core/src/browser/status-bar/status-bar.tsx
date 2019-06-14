@@ -65,6 +65,8 @@ export interface StatusBar {
     setColor(color?: string): Promise<void>;
     setElement(id: string, entry: StatusBarEntry): Promise<void>;
     removeElement(id: string): Promise<void>;
+    hasElement(id: string): Promise<boolean>;
+    getElementByClass(className: string): Promise<HTMLCollectionOf<Element>>;
 }
 
 @injectable()
@@ -95,10 +97,20 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         this.update();
     }
 
+    async hasElement(id: string): Promise<boolean> {
+        await this.ready;
+        return this.entries.has(id);
+    }
+
     async removeElement(id: string): Promise<void> {
         await this.ready;
         this.entries.delete(id);
         this.update();
+    }
+
+    async getElementByClass(className: string) {
+        await this.ready;
+        return Object.assign({}, this.node.getElementsByClassName(className));
     }
 
     async setBackgroundColor(color?: string): Promise<void> {
