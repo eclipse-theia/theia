@@ -24,9 +24,12 @@ import { Languages } from '@theia/languages/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection } from '@theia/core';
 import { EditorCommands } from './editor-command';
+import { EditorQuickOpenService } from './editor-quick-open-service';
+import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
+import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
 
 @injectable()
-export class EditorContribution implements FrontendApplicationContribution {
+export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, QuickOpenContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
@@ -34,6 +37,9 @@ export class EditorContribution implements FrontendApplicationContribution {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(EditorQuickOpenService)
+    protected readonly editorQuickOpenService: EditorQuickOpenService;
 
     onStart(): void {
         this.initEditorContextKeys();
@@ -118,5 +124,22 @@ export class EditorContribution implements FrontendApplicationContribution {
             alignment: StatusBarAlignment.RIGHT,
             priority: 100
         });
+    }
+
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
+            execute: () => this.editorQuickOpenService.open()
+        });
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
+            command: EditorCommands.SHOW_ALL_OPENED_EDITORS.id,
+            keybinding: 'ctrlcmd+k ctrlcmd+p'
+        });
+    }
+
+    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
+        handlers.registerHandler(this.editorQuickOpenService);
     }
 }

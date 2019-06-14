@@ -92,6 +92,14 @@ export namespace EditorCommands {
         category: EDITOR_CATEGORY,
         label: 'Clear Editor History'
     };
+    /**
+     * Command that displays all editors that are currently opened.
+     */
+    export const SHOW_ALL_OPENED_EDITORS: Command = {
+        id: 'workbench.action.showAllEditors',
+        category: 'View',
+        label: 'Show All Opened Editors'
+    };
 }
 
 @injectable()

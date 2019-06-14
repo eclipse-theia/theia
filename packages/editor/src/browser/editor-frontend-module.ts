@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
+import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContext, KeybindingContribution, QuickOpenContribution } from '@theia/core/lib/browser';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { EditorManager, EditorAccess, ActiveEditorAccess, CurrentEditorAccess } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
@@ -32,6 +32,7 @@ import { NavigationLocationService } from './navigation/navigation-location-serv
 import { NavigationLocationSimilarity } from './navigation/navigation-location-similarity';
 import { EditorVariableContribution } from './editor-variable-contribution';
 import { SemanticHighlightingService } from './semantic-highlight/semantic-highlighting-service';
+import { EditorQuickOpenService } from './editor-quick-open-service';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -62,6 +63,11 @@ export default new ContainerModule(bind => {
     bind(VariableContribution).to(EditorVariableContribution).inSingletonScope();
 
     bind(SemanticHighlightingService).toSelf().inSingletonScope();
+
+    [CommandContribution, KeybindingContribution, QuickOpenContribution].forEach(serviceIdentifier => {
+        bind(serviceIdentifier).toService(EditorContribution);
+    });
+    bind(EditorQuickOpenService).toSelf().inSingletonScope();
 
     bind(CurrentEditorAccess).toSelf().inSingletonScope();
     bind(ActiveEditorAccess).toSelf().inSingletonScope();
