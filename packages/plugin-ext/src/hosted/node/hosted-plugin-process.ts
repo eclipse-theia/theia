@@ -131,6 +131,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         if (this.childProcess) {
             this.terminatePluginServer();
         }
+        console.log('----->>>>>>>>>>>>>>>>>>>>>>>> HOSTED PLUGIN WORK');
         this.childProcess = this.fork({
             serverName: 'hosted-plugin',
             logger: this.logger,
@@ -180,6 +181,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         const childProcess = cp.fork(path.resolve(__dirname, 'plugin-host.js'), options.args, forkOptions);
+        console.log('Current path dir!!!! ', __dirname);
+        console.log('>>>>>>>>>>>>>>Plugin resolve path to script!!!! ', path.resolve(__dirname, 'plugin-host.js'));
+
         childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
         childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
 
