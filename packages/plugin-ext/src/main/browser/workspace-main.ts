@@ -36,7 +36,7 @@ import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 
 export class WorkspaceMainImpl implements WorkspaceMain {
 
-    private proxy: WorkspaceExt;
+    private readonly proxy: WorkspaceExt;
 
     private storageProxy: StorageExt;
 
@@ -291,8 +291,8 @@ export class TextContentResourceResolver implements ResourceResolver {
 
 export class TextContentResource implements Resource {
 
-    private onDidChangeContentsEmmiter: Emitter<void> = new Emitter<void>();
-    readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmmiter.event;
+    private onDidChangeContentsEmitter: Emitter<void> = new Emitter<void>();
+    readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
 
     // cached content
     cache: string | undefined;
@@ -321,7 +321,7 @@ export class TextContentResource implements Resource {
 
     setContent(content: string) {
         this.cache = content;
-        this.onDidChangeContentsEmmiter.fire(undefined);
+        this.onDidChangeContentsEmitter.fire(undefined);
     }
 
 }

@@ -30,7 +30,7 @@ export interface ExtPluginApiProvider {
 
 /**
  * Plugin API extension description.
- * This inteface describes scripts for both plugin runtimes: frontend(WebWorker) and backend(NodeJs)
+ * This interface describes scripts for both plugin runtimes: frontend(WebWorker) and backend(NodeJs)
  */
 export interface ExtPluginApi {
 
