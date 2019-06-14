@@ -123,11 +123,11 @@ export class TreeViewsExtImpl implements TreeViewsExt {
 
 class TreeViewExtImpl<T> extends Disposable {
 
-    private onDidExpandElementEmmiter: Emitter<TreeViewExpansionEvent<T>> = new Emitter<TreeViewExpansionEvent<T>>();
-    public readonly onDidExpandElement = this.onDidExpandElementEmmiter.event;
+    private onDidExpandElementEmitter: Emitter<TreeViewExpansionEvent<T>> = new Emitter<TreeViewExpansionEvent<T>>();
+    public readonly onDidExpandElement = this.onDidExpandElementEmitter.event;
 
-    private onDidCollapseElementEmmiter: Emitter<TreeViewExpansionEvent<T>> = new Emitter<TreeViewExpansionEvent<T>>();
-    public readonly onDidCollapseElement = this.onDidCollapseElementEmmiter.event;
+    private onDidCollapseElementEmitter: Emitter<TreeViewExpansionEvent<T>> = new Emitter<TreeViewExpansionEvent<T>>();
+    public readonly onDidCollapseElement = this.onDidCollapseElementEmitter.event;
 
     private selection: T[] = [];
     get selectedElements(): T[] { return this.selection; }
@@ -282,7 +282,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
         // fire an event
         if (cachedElement) {
-            this.onDidExpandElementEmmiter.fire({
+            this.onDidExpandElementEmitter.fire({
                 element: cachedElement
             });
         }
@@ -294,7 +294,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
         // fire an event
         if (cachedElement) {
-            this.onDidCollapseElementEmmiter.fire({
+            this.onDidCollapseElementEmitter.fire({
                 element: cachedElement
             });
         }
