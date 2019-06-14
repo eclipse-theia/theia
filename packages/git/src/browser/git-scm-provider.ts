@@ -260,17 +260,20 @@ export class GitScmProvider implements ScmProvider {
 
     async stageAll(): Promise<void> {
         try {
-            const { repository, unstagedChanges } = this;
-            const uris = unstagedChanges.map(c => c.uri);
-            await this.git.add(repository, uris);
+            // TODO resolve deletion conflicts
+            // TODO confirm staging unresolved files
+            await this.git.add(this.repository, []);
         } catch (error) {
             this.gitErrorHandler.handleError(error);
         }
     }
     async stage(uri: string): Promise<void> {
         try {
-            const { repository, unstagedChanges } = this;
-            if (unstagedChanges.some(change => change.uri === uri)) {
+            const { repository, unstagedChanges, mergeChanges } = this;
+            const hasUnstagedChanges = unstagedChanges.some(change => change.uri === uri) || mergeChanges.some(change => change.uri === uri);
+            if (hasUnstagedChanges) {
+                // TODO resolve deletion conflicts
+                // TODO confirm staging of a unresolved file
                 await this.git.add(repository, uri);
             }
         } catch (error) {
