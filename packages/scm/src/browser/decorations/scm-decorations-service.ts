@@ -38,9 +38,9 @@ export class ScmDecorationsService {
     private dirtyState: boolean = true;
 
     constructor(@inject(DirtyDiffDecorator) protected readonly decorator: DirtyDiffDecorator,
-                @inject(ScmService) protected readonly scmService: ScmService,
-                @inject(EditorManager) protected readonly editorManager: EditorManager,
-                @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider) {
+        @inject(ScmService) protected readonly scmService: ScmService,
+        @inject(EditorManager) protected readonly editorManager: EditorManager,
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider) {
         this.diffComputer = new DiffComputer();
         this.editorManager.onCreated(async editor => this.applyEditorDecorations(editor.editor));
         this.scmService.onDidAddRepository(repository => repository.provider.onDidChange(() => {
@@ -57,7 +57,7 @@ export class ScmDecorationsService {
                 }
             }
         }));
-        this.scmService.onDidChangeSelectedRepositories(() => {
+        this.scmService.onDidChangeSelectedRepository(() => {
             const editor = this.editorManager.currentEditor;
             if (editor) {
                 this.applyEditorDecorations(editor.editor);
@@ -69,7 +69,7 @@ export class ScmDecorationsService {
         const currentRepo = this.scmService.selectedRepository;
         if (currentRepo) {
             try {
-                const uri = editor.uri.withScheme(currentRepo.provider.contextValue).withQuery(`{"ref":"", "path":"${editor.uri.path.toString()}"}`);
+                const uri = editor.uri.withScheme(currentRepo.provider.id).withQuery(`{"ref":"", "path":"${editor.uri.path.toString()}"}`);
                 const previousResource = await this.resourceProvider(uri);
                 const previousContent = await previousResource.readContents();
                 const previousLines = ContentLines.fromString(previousContent);

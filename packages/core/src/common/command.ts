@@ -40,9 +40,6 @@ export interface Command {
      * A category of this command.
      */
     category?: string;
-
-    // tslint:disable-next-line:no-any
-    props?: { [key: string]: any }
 }
 
 export namespace Command {
@@ -245,9 +242,10 @@ export class CommandRegistry implements CommandService {
     /**
      * Test whether there is a toggled handler for the given command.
      */
-    isToggled(command: string): boolean {
+    // tslint:disable-next-line:no-any
+    isToggled(command: string, ...args: any[]): boolean {
         const handler = this.getToggledHandler(command);
-        return handler && handler.isToggled ? handler.isToggled() : false;
+        return handler && handler.isToggled ? handler.isToggled(...args) : false;
     }
 
     /**

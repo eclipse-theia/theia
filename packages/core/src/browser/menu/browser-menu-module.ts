@@ -23,5 +23,6 @@ import { BrowserContextMenuRenderer } from './browser-context-menu-renderer';
 export default new ContainerModule(bind => {
     bind(BrowserMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(BrowserContextMenuRenderer).inSingletonScope();
-    bind(FrontendApplicationContribution).to(BrowserMenuBarContribution).inSingletonScope();
+    bind(BrowserMenuBarContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(BrowserMenuBarContribution);
 });

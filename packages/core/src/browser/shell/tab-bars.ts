@@ -24,6 +24,7 @@ import { Message } from '@phosphor/messaging';
 import { ArrayExt } from '@phosphor/algorithm';
 import { ElementExt } from '@phosphor/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
+import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -70,6 +71,9 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     contextMenuPath?: MenuPath;
 
+    // TODO refactor shell, rendered should only receive props with event handlers
+    // events should be handled by clients, like ApplicationShell
+    // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderes and clients
     constructor(protected readonly contextMenuRenderer?: ContextMenuRenderer) {
         super();
     }
@@ -88,7 +92,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.li(
             {
                 key, className, id, title: title.caption, style, dataset,
-                oncontextmenu: this.handleContextMenuEvent
+                oncontextmenu: this.handleContextMenuEvent,
+                ondblclick: this.handleDblClickEvent
             },
             this.renderIcon(data),
             this.renderLabel(data),
@@ -183,6 +188,19 @@ export class TabBarRenderer extends TabBar.Renderer {
             this.contextMenuRenderer.render(this.contextMenuPath, event);
         }
     }
+
+    protected handleDblClickEvent = (event: MouseEvent) => {
+        if (this.tabBar && event.currentTarget instanceof HTMLElement) {
+            const id = event.currentTarget.id;
+            // tslint:disable-next-line:no-null-keyword
+            const title = this.tabBar.titles.find(t => this.createTabId(t) === id) || null;
+            const area = title && title.owner.parent;
+            if (area instanceof TheiaDockPanel && (area.id === BOTTOM_AREA_ID || area.id === MAIN_AREA_ID)) {
+                area.toggleMaximized();
+            }
+        }
+    }
+
 }
 
 /**

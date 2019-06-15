@@ -22,18 +22,12 @@ import { MaybePromise, CommandContribution, ResourceResolver, bindContributionPr
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
-import { HostedPluginLogViewer } from '../../hosted/browser/hosted-plugin-log-viewer';
-import { HostedPluginManagerClient } from '../../hosted/browser/hosted-plugin-manager-client';
 import { OpenUriCommandHandler } from './commands';
 import { PluginApiFrontendContribution } from './plugin-frontend-contribution';
 import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from '../../common/plugin-protocol';
 import { ModalNotification } from './dialogs/modal-notification';
 import { PluginWidget } from './plugin-ext-widget';
 import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
-
-import { HostedPluginInformer } from '../../hosted/browser/hosted-plugin-informer';
-import { bindHostedPluginPreferences } from '../../hosted/browser/hosted-plugin-preferences';
-import { HostedPluginController } from '../../hosted/browser/hosted-plugin-controller';
 
 import '../../../src/main/browser/style/index.css';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
@@ -64,19 +58,13 @@ import { TreeViewActions } from './view/tree-view-actions';
 import { TreeViewContextKeyService } from './view/tree-view-context-key-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bindHostedPluginPreferences(bind);
 
     bind(ModalNotification).toSelf().inSingletonScope();
 
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
-    bind(HostedPluginLogViewer).toSelf().inSingletonScope();
-    bind(HostedPluginManagerClient).toSelf().inSingletonScope();
     bind(SelectionProviderCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(SelectionProviderCommandContribution);
-
-    bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
-    bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
 
     bind(OpenUriCommandHandler).toSelf().inSingletonScope();
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();

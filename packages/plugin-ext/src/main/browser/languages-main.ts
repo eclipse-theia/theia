@@ -14,6 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+// Method `$changeLanguage` copied and modified
+// from https://github.com/microsoft/vscode/blob/e9c50663154c369a06355ce752b447af5b580dc3/src/vs/workbench/api/browser/mainThreadLanguages.ts#L30-L42
+
 import {
     LanguagesMain,
     SerializedLanguageConfiguration,
@@ -54,6 +62,20 @@ export class LanguagesMainImpl implements LanguagesMain {
 
     $getLanguages(): Promise<string[]> {
         return Promise.resolve(monaco.languages.getLanguages().map(l => l.id));
+    }
+
+    $changeLanguage(resource: URI, languageId: string): Promise<void> {
+        const uri = URI.revive(resource);
+        const model = monaco.editor.getModel(uri);
+        if (!model) {
+            return Promise.reject(new Error('Invalid uri'));
+        }
+        const langId = monaco.languages.getEncodedLanguageId(languageId);
+        if (!langId) {
+            return Promise.reject(new Error(`Unknown language ID: ${languageId}`));
+        }
+        monaco.editor.setModelLanguage(model, languageId);
+        return Promise.resolve(undefined);
     }
 
     $unregister(handle: number): void {

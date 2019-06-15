@@ -70,7 +70,7 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { SymbolInformation } from 'vscode-languageserver-types';
-import { ScmCommand } from '@theia/scm/lib/browser';
+import { ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ArgumentProcessor } from '../plugin/command-registry';
 
 export interface PluginInitData {
@@ -441,9 +441,18 @@ export class TreeViewItem {
 
     collapsibleState?: TreeViewItemCollapsibleState;
 
-    metadata?: any;
     contextValue?: string;
 
+}
+
+export interface TreeViewSelection {
+    treeViewId: string
+    treeItemId: string
+}
+export namespace TreeViewSelection {
+    export function is(arg: Object | any): arg is TreeViewSelection {
+        return !!arg && typeof arg === 'object' && 'treeViewId' in arg && 'treeItemId' in arg;
+    }
 }
 
 /**
@@ -474,6 +483,17 @@ export interface NotificationExt {
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): PromiseLike<R>;
     $onCancel(id: string): void;
+}
+
+export interface ScmCommandArg {
+    sourceControlHandle: number
+    resourceGroupHandle?: number
+    resourceStateHandle?: number
+}
+export namespace ScmCommandArg {
+    export function is(arg: Object | undefined): arg is ScmCommandArg {
+        return !!arg && typeof arg === 'object' && 'sourceControlHandle' in arg;
+    }
 }
 
 export interface ScmExt {
@@ -850,7 +870,8 @@ export interface DocumentsExt {
 
 export interface DocumentsMain {
     $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents>;
-    $tryOpenDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
+    $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
+    $tryOpenDocument(uri: UriComponents): Promise<boolean>;
     $trySaveDocument(uri: UriComponents): Promise<boolean>;
     $tryCloseDocument(uri: UriComponents): Promise<boolean>;
 }
@@ -1048,6 +1069,7 @@ export interface LanguagesExt {
 
 export interface LanguagesMain {
     $getLanguages(): Promise<string[]>;
+    $changeLanguage(resource: UriComponents, languageId: string): Promise<void>;
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void;
     $unregister(handle: number): void;
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;

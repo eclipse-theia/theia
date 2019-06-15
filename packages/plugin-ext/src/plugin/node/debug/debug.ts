@@ -36,6 +36,7 @@ import { startDebugAdapter, connectDebugAdapter } from './plugin-debug-adapter-s
 import { resolveDebugAdapterExecutable } from './plugin-debug-adapter-executable-resolver';
 import URI from 'vscode-uri';
 import { Path } from '@theia/core/lib/common/path';
+import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 
 // tslint:disable:no-any
 
@@ -51,6 +52,7 @@ export class DebugExtImpl implements DebugExt {
     // providers by type
     private configurationProviders = new Map<string, Set<theia.DebugConfigurationProvider>>();
     private debuggersContributions = new Map<string, DebuggerContribution>();
+    private trackerFactories: [string, theia.DebugAdapterTrackerFactory][] = [];
     private contributionPaths = new Map<string, string>();
 
     private connectionExt: ConnectionExtImpl;
@@ -133,6 +135,17 @@ export class DebugExtImpl implements DebugExt {
         return this.proxy.$startDebugging(folder, nameOrConfiguration);
     }
 
+    registerDebugAdapterTrackerFactory(debugType: string, factory: theia.DebugAdapterTrackerFactory): Disposable {
+        if (!factory) {
+            return Disposable.create(() => { });
+        }
+
+        this.trackerFactories.push([debugType, factory]);
+        return Disposable.create(() => {
+            this.trackerFactories = this.trackerFactories.filter(tuple => tuple[1] !== factory);
+        });
+    }
+
     registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
         console.log(`Debug configuration provider has been registered: ${debugType}`);
         const providers = this.configurationProviders.get(debugType) || new Set<theia.DebugConfigurationProvider>();
@@ -199,6 +212,7 @@ export class DebugExtImpl implements DebugExt {
             (command: string, args?: any) => this.proxy.$customRequest(sessionId, command, args));
         this.sessions.set(sessionId, debugAdapterSession);
 
+        await this.configureTracker(debugAdapterSession);
         const connection = await this.connectionExt!.ensureConnection(sessionId);
         debugAdapterSession.start(new PluginWebSocketChannel(connection));
 
@@ -273,6 +287,11 @@ export class DebugExtImpl implements DebugExt {
         }
 
         return current;
+    }
+
+    protected async configureTracker(session: PluginDebugAdapterSession): Promise<void> {
+        const tracker = await PluginDebugAdapterTracker.create(session, this.trackerFactories);
+        session.configureTracker(tracker);
     }
 
     private async getExecutable(debugConfiguration: theia.DebugConfiguration): Promise<DebugAdapterExecutable> {

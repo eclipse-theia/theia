@@ -77,11 +77,11 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
     protected relativePath(uri: URI | string): string {
         const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
         const repo = this.repositoryProvider.findRepository(parsedUri);
-        if (repo) {
-            return Repository.relativePath(repo, parsedUri).toString();
-        } else {
-            return this.labelProvider.getLongName(parsedUri);
+        const relativePath = repo && Repository.relativePath(repo, parsedUri);
+        if (relativePath) {
+            return relativePath.toString();
         }
+        return this.labelProvider.getLongName(parsedUri);
     }
 
     protected getRepositoryLabel(uri: string): string | undefined {

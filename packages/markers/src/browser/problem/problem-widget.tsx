@@ -102,7 +102,9 @@ export class ProblemWidget extends TreeWidget {
             if (problemMarker.data.severity) {
                 severityClass = this.getSeverityClass(problemMarker.data.severity);
             }
-            return <div className='markerNode'>
+            return <div
+                className='markerNode'
+                title={`${problemMarker.data.message} (${problemMarker.data.range.start.line + 1}, ${problemMarker.data.range.start.character + 1})`}>
                 <div>
                     <i className={severityClass}></i>
                 </div>

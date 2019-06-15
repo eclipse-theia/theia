@@ -211,7 +211,7 @@ export function createAPIFactory(
             },
             registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
                 // Dummy implementation.
-                return new Disposable(() => {});
+                return new Disposable(() => { });
             }
         };
 
@@ -271,7 +271,7 @@ export function createAPIFactory(
                         documentOptions = { preserveFocus };
                     }
                 }
-                await documents.openDocument(uri, documentOptions);
+                await documents.showDocument(uri, documentOptions);
                 const textEditor = editors.getVisibleTextEditors().find(editor => editor.document.uri.toString() === uri.toString());
                 if (textEditor) {
                     return Promise.resolve(textEditor);
@@ -368,7 +368,7 @@ export function createAPIFactory(
                 return decorationsExt.registerDecorationProvider(provider);
             },
             registerUriHandler(handler: theia.UriHandler): theia.Disposable {
-                return new Disposable(() => {});
+                return new Disposable(() => { });
             }
         };
 
@@ -507,6 +507,9 @@ export function createAPIFactory(
             getLanguages(): PromiseLike<string[]> {
                 return languagesExt.getLanguages();
             },
+            setTextDocumentLanguage(document: theia.TextDocument, languageId: string): PromiseLike<theia.TextDocument> {
+                return languagesExt.changeLanguage(document.uri, languageId);
+            },
             match(selector: theia.DocumentSelector, document: theia.TextDocument): number {
                 return score(fromDocumentSelector(selector), document.uri, document.languageId, true);
             },
@@ -632,6 +635,9 @@ export function createAPIFactory(
             },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
                 return debugExt.registerDebugConfigurationProvider(debugType, provider);
+            },
+            registerDebugAdapterTrackerFactory(debugType: string, factory: theia.DebugAdapterTrackerFactory): Disposable {
+                return debugExt.registerDebugAdapterTrackerFactory(debugType, factory);
             },
             startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): Thenable<boolean> {
                 return debugExt.startDebugging(folder, nameOrConfiguration);

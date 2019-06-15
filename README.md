@@ -1,5 +1,3 @@
-> [Register Now!](https://theiadevcon.org#register) for TheiaDevCon June 2019 in Stockholm, Sweden ([learn more](https://theiadevcon.org))
-
 <br/>
 <div id="theia-logo" align="center">
     <br />

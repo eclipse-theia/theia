@@ -98,7 +98,27 @@ export class FileTreeWidget extends TreeWidget {
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
         event.stopPropagation();
-        this.setTreeNodeAsData(event.dataTransfer, node);
+        let selectedNodes;
+        if (this.model.selectedNodes.find(selected => TreeNode.equals(selected, node))) {
+            selectedNodes = [...this.model.selectedNodes];
+        } else {
+            selectedNodes = [node];
+        }
+        this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
+        if (event.dataTransfer) {
+            let label: string;
+            if (selectedNodes.length === 1) {
+                label = node.name;
+            } else {
+                label = String(selectedNodes.length);
+            }
+            const dragImage = document.createElement('div');
+            dragImage.className = 'theia-file-tree-drag-image';
+            dragImage.textContent = label;
+            document.body.appendChild(dragImage);
+            event.dataTransfer.setDragImage(dragImage, -10, -10);
+            setTimeout(() => document.body.removeChild(dragImage), 0);
+        }
     }
 
     protected handleDragEnterEvent(node: TreeNode | undefined, event: React.DragEvent): void {
@@ -139,9 +159,11 @@ export class FileTreeWidget extends TreeWidget {
             event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
             const containing = DirNode.getContainingDir(node);
             if (containing) {
-                const source = this.getTreeNodeFromData(event.dataTransfer);
-                if (source) {
-                    await this.model.move(source, containing);
+                const resources = this.getSelectedTreeNodesFromData(event.dataTransfer);
+                if (resources.length > 0) {
+                    for (const treeNode of resources) {
+                        await this.model.move(treeNode, containing);
+                    }
                 } else {
                     await this.uploadService.upload(containing.uri, { source: event.dataTransfer });
                 }
@@ -157,9 +179,21 @@ export class FileTreeWidget extends TreeWidget {
         data.setData('tree-node', node.id);
     }
 
+    protected setSelectedTreeNodesAsData(data: DataTransfer, sourceNode: TreeNode, relatedNodes: TreeNode[]): void {
+        this.setTreeNodeAsData(data, sourceNode);
+        data.setData('selected-tree-nodes', JSON.stringify(relatedNodes.map(node => node.id)));
+    }
+
     protected getTreeNodeFromData(data: DataTransfer): TreeNode | undefined {
         const id = data.getData('tree-node');
         return this.model.getNode(id);
     }
-
+    protected getSelectedTreeNodesFromData(data: DataTransfer): TreeNode[] {
+        const resources = data.getData('selected-tree-nodes');
+        if (!resources) {
+            return [];
+        }
+        const ids: string[] = JSON.parse(resources);
+        return ids.map(id => this.model.getNode(id)).filter(node => node !== undefined) as TreeNode[];
+    }
 }

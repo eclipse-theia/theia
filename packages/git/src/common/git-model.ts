@@ -119,6 +119,17 @@ export namespace GitFileStatus {
      */
     export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => GitFileStatus.toString(status, staged).charAt(0);
 
+    export function getColor(status: GitFileStatus, staged?: boolean): string {
+        switch (status) {
+            case GitFileStatus.New: return 'var(--theia-success-color0)';
+            case GitFileStatus.Renamed: // Fall through.
+            case GitFileStatus.Copied: // Fall through.
+            case GitFileStatus.Modified: return 'var(--theia-brand-color0)';
+            case GitFileStatus.Deleted: return 'var(--theia-warn-color0)';
+            case GitFileStatus.Conflicted: return 'var(--theia-error-color0)';
+        }
+    }
+
 }
 
 /**
@@ -184,9 +195,9 @@ export namespace Repository {
     export function is(repository: Object | undefined): repository is Repository {
         return !!repository && 'localUri' in repository;
     }
-    export function relativePath(repository: Repository | string, uri: URI | string): Path {
-        const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : repository);
-        return new Path(uri.toString().substr(repositoryUri.toString().length + 1));
+    export function relativePath(repository: Repository | URI | string, uri: URI | string): Path | undefined {
+        const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : String(repository));
+        return repositoryUri.relative(new URI(String(uri)));
     }
     export const sortComparator = (ra: Repository, rb: Repository) => rb.localUri.length - ra.localUri.length;
 }

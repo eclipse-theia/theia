@@ -1,18 +1,79 @@
 # Change Log
 
-## v0.7.0
-
-- [core] added support for several international keyboard layouts
-- [core] implemented auto-detection of keyboard layout based on pressed keys
-- [core] added command to manually choose a keyboard layout
+## v0.8.0
 
 Breaking changes:
 
-- [preferences] refactored to integrate launch configurations as preferences
+- [plugin] 'Hosted mode' extracted in `plugin-dev` extension
+- [core] `scheme` is mandatory for URI
+  - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
+- [core] `SelectionCommandHandler.getMulitSelection()` is renamed into `SelectionCommandHandler.getMultiSelection()`
+- [debug] align commands with VS Code [#5102](https://github.com/theia-ide/theia/issues/5102)
+    - `debug.restart` renamed to `workbench.action.debug.restart`
+- [preferences] renamed overridenPreferenceName to overriddenPreferenceName
+
+## v0.7.0
+
+- [console] added `Clear Console` command and toolbar item
+- [console] fixed issue where the debug console auto-scrolls when is it located at the bottom
+- [core] added command to manually choose a keyboard layout
+- [core] added functionality for the toolbar to respond to mouse events
+- [core] added launch preferences support
+- [core] added preference to control the number of recently used items to display
+- [core] added support for recently used commands
+- [core] added support for several international keyboard layouts
+- [core] added the command `Clear Command History`
+- [core] fixed issue allowing the load of Theia in an iframe over a protected connection
+- [core] implemented auto-detection of keyboard layout based on pressed keys
+- [core] updated monaco configurations on default preference changes
+- [cpp] added support for OpenCL file types
+- [debug] added support for debug configuration prefixed quick-open menu
+- [electron] added the command `Close Window`
+- [file-upload] fixed reporting uploaded URIs
+- [filesystem] added support for multiple files drag and drop
+- [java] added new preference to add command line arguments when starting language server
+- [markers] added `Collapse All` toolbar item to the problems-widget
+- [mini-browser] fixed issue where the mini-browser resizes unnecessarily
+- [monaco] removed overriding dark-plus theming
+- [navigator] added the command `Collapse Folders in Explorer`
+- [navigator] fixed the commands `Remove Folder` and `Add Folder`
+- [outline] added informative tooltips to outline view items
+- [plugin-ext] added `onDidEndTaskProcess` Plug-in API
+- [plugin-ext] added `onDidStartTaskProcess` Plug-in API
+- [plugin-ext] added ability to match browser displayed nodes with the plugin created node
+- [plugin-ext] added additional command to install VSCode extensions
+- [plugin-ext] added support for inline actions
+- [plugin-ext] aligned views with Theia styles
+- [plugin-ext] fixed he loading of icons
+- [plugin-ext] fixed issue of overriding preferences
+- [plugin-ext] fixed issue to support single source deployment state
+- [plugin-ext] fixed issue where the hosted plugin instance did not properly stop
+- [plugin-ext] fixed plugin folder path in Windows
+- [plugin-ext] fixed the rendering of png icons
+- [plugin-ext] implemented command `workbench.action.reloadWindow`
+- [plugin] added file management vscode commands
+- [plugin] fixed plugin export
+- [preferences] added additional information to the preference tooltips
+- [process] added link matcher for local files
+- [process] normalized task types and processes
+- [tabbar] fixed widget leaking via phosphor VDOM
+- [terminal] added ability to activate links with `cmd + click`
+- [terminal] added support for basic link matching
+- [terminal] fixed random 1px white border in Firefox
+- [typescript] fixed broken code actions
+- [workspace] allowed `WorkspaceCommandContribution` to be re-bindable by extensions
+- [xterm] upgraded xterm to fix terminal dragging between areas
+
+Breaking changes:
+
 - [filesystem] extracted `FileUploadService` and refactored `FileTreeWidget` to use it [#5086](https://github.com/theia-ide/theia/pull/5086)
   - moved `FileDownloadCommands.UPLOAD` to `FileSystemCommands.UPLOAD`
+- [git] bind Git UI to SCM
+- [output] moved the channel selection and clear icons to the toolbar.
+  - The CLEAR_BUTTON and OVERLAY constants are no longer available. Furthermore OutputChannelManager API has changed.
+- [preferences] refactored to integrate launch configurations as preferences
 - [scm] added Source Control Model
-- [git] bind Git UI to SCM  
+- [core] renamed the `src/electron-main` folder to `src/electron-node` in `@theia/core`. Removed `preventStop` from the `FrontendApplication` API. Move the `DefaultWindowService` class into its own module.
 
 ## v0.6.0
 

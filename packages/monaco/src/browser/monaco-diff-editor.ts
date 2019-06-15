@@ -21,6 +21,7 @@ import { Dimension, DiffNavigator, DeltaDecorationParams } from '@theia/editor/l
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 
 import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
 import IDiffEditorConstructionOptions = monaco.editor.IDiffEditorConstructionOptions;
@@ -88,4 +89,13 @@ export class MonacoDiffEditor extends MonacoEditor {
         console.warn('`deltaDecorations` should be called on either the original, or the modified editor.');
         return [];
     }
+
+    getResourceUri(): URI {
+        return new URI(this.originalModel.uri);
+    }
+    createMoveToUri(resourceUri: URI): URI {
+        const [left, right] = DiffUris.decode(this.uri);
+        return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
+    }
+
 }

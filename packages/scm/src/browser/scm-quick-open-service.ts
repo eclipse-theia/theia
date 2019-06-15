@@ -20,18 +20,16 @@ import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quic
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { ScmRepository } from './scm-service';
-import { ScmService } from './';
+import { ScmService } from './scm-service';
+import { ScmRepository } from './scm-repository';
 
 @injectable()
 export class ScmQuickOpenService {
 
-    constructor(
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
-        @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(ScmService) protected readonly scmService: ScmService,
-    ) { }
+    @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
+    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(ScmService) protected readonly scmService: ScmService;
 
     async changeRepository(): Promise<void> {
         const repositories = this.scmService.repositories;

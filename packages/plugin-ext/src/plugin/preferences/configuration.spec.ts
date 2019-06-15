@@ -201,7 +201,7 @@ describe('Configuration:', () => {
             configuration = new Configuration(
                 defaultConfiguration, userConfiguration, workspaceConfiguration, folderConfigurations
             );
-            const resource = URI.revive({ path: project });
+            const resource = URI.revive({ path: project, scheme: '', authority: '', query: '', fragment: '' });
             inspect = configuration.inspect(propertyName, workspace, resource);
         });
 

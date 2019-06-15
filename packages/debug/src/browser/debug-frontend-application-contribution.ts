@@ -72,7 +72,7 @@ export namespace DebugCommands {
         iconClass: 'fa fa-stop'
     };
     export const RESTART: Command = {
-        id: 'debug.restart',
+        id: 'workbench.action.debug.restart',
         category: DEBUG_CATEGORY,
         label: 'Restart Debugging',
     };

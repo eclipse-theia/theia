@@ -6370,6 +6370,19 @@ declare module '@theia/plugin' {
         export function getLanguages(): PromiseLike<string[]>;
 
         /**
+         * Set (and change) the [language](#TextDocument.languageId) that is associated
+         * with the given document.
+         *
+         * *Note* that calling this function will trigger the [`onDidCloseTextDocument`](#workspace.onDidCloseTextDocument) event
+         * followed by the [`onDidOpenTextDocument`](#workspace.onDidOpenTextDocument) event.
+         *
+         * @param document The document which language is to be changed
+         * @param languageId The new language identifier.
+         * @returns A thenable that resolves with the updated document.
+         */
+        export function setTextDocumentLanguage(document: TextDocument, languageId: string): PromiseLike<TextDocument>;
+
+        /**
          * Compute the match between a document [selector](#DocumentSelector) and a document. Values
          * greater than zero mean the selector matches the document.
          *
@@ -7159,6 +7172,47 @@ declare module '@theia/plugin' {
         resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
     }
 
+	/**
+	 * A Debug Adapter Tracker is a means to track the communication between VS Code and a Debug Adapter.
+	 */
+    export interface DebugAdapterTracker {
+		/**
+		 * A session with the debug adapter is about to be started.
+		 */
+        onWillStartSession?(): void;
+		/**
+		 * The debug adapter is about to receive a Debug Adapter Protocol message from VS Code.
+		 */
+        onWillReceiveMessage?(message: any): void;
+		/**
+		 * The debug adapter has sent a Debug Adapter Protocol message to VS Code.
+		 */
+        onDidSendMessage?(message: any): void;
+		/**
+		 * The debug adapter session is about to be stopped.
+		 */
+        onWillStopSession?(): void;
+		/**
+		 * An error with the debug adapter has occurred.
+		 */
+        onError?(error: Error): void;
+		/**
+		 * The debug adapter has exited with the given exit code or signal.
+		 */
+        onExit?(code: number | undefined, signal: string | undefined): void;
+    }
+
+    export interface DebugAdapterTrackerFactory {
+		/**
+		 * The method 'createDebugAdapterTracker' is called at the start of a debug session in order
+		 * to return a "tracker" object that provides read-access to the communication between VS Code and a debug adapter.
+		 *
+		 * @param session The [debug session](#DebugSession) for which the debug adapter tracker will be used.
+		 * @return A [debug adapter tracker](#DebugAdapterTracker) or undefined.
+		 */
+        createDebugAdapterTracker(session: DebugSession): ProviderResult<DebugAdapterTracker>;
+    }
+
     /**
      * Represents the debug console.
      */
@@ -7315,6 +7369,15 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): Disposable;
+
+		/**
+		 * Register a debug adapter tracker factory for the given debug type.
+		 *
+		 * @param debugType The debug type for which the factory is registered or '*' for matching all debug types.
+		 * @param factory The [debug adapter tracker factory](#DebugAdapterTrackerFactory) to register.
+		 * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
+		 */
+        export function registerDebugAdapterTrackerFactory(debugType: string, factory: DebugAdapterTrackerFactory): Disposable;
 
         /**
          * Start debugging by using either a named launch or named compound configuration,

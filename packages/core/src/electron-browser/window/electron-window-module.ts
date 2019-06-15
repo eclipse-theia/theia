@@ -17,7 +17,9 @@
 import { ContainerModule } from 'inversify';
 import { WindowService } from '../../browser/window/window-service';
 import { ElectronWindowService } from './electron-window-service';
+import { FrontendApplicationContribution } from '../../browser/frontend-application';
 
 export default new ContainerModule(bind => {
     bind(WindowService).to(ElectronWindowService).inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WindowService);
 });

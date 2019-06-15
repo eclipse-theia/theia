@@ -16,6 +16,7 @@
 
 // tslint:disable:no-null-keyword
 
+import Uri from 'vscode-uri';
 import { injectable, inject, postConstruct } from 'inversify';
 import { ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
@@ -220,11 +221,11 @@ export class MonacoWorkspace implements lang.Workspace {
 
     createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): lang.FileSystemWatcher {
         const disposables = new DisposableCollection();
-        const onDidCreateEmitter = new lang.Emitter<monaco.Uri>();
+        const onDidCreateEmitter = new lang.Emitter<Uri>();
         disposables.push(onDidCreateEmitter);
-        const onDidChangeEmitter = new lang.Emitter<monaco.Uri>();
+        const onDidChangeEmitter = new lang.Emitter<Uri>();
         disposables.push(onDidChangeEmitter);
-        const onDidDeleteEmitter = new lang.Emitter<monaco.Uri>();
+        const onDidDeleteEmitter = new lang.Emitter<Uri>();
         disposables.push(onDidDeleteEmitter);
         disposables.push(this.fileSystemWatcher.onFilesChanged(changes => {
             for (const change of changes) {
@@ -239,8 +240,7 @@ export class MonacoWorkspace implements lang.Workspace {
                     continue;
                 }
                 const uri = change.uri.toString();
-                // tslint:disable-next-line:no-any
-                const { codeUri } = (change.uri as any);
+                const codeUri = change.uri['codeUri'];
                 if (testGlob(globPattern, uri)) {
                     if (fileChangeType === FileChangeType.ADDED) {
                         onDidCreateEmitter.fire(codeUri);

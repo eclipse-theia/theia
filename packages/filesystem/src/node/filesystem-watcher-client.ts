@@ -69,7 +69,8 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
             errorHandler: new ConnectionErrorHandler({
                 serverName: NSFW_WATCHER,
                 logger: this.logger
-            })
+            }),
+            env: process.env
         }, connection => this.proxyFactory.listen(connection));
     }
 

@@ -37,6 +37,7 @@
           "vscode-languageserver-protocol",
           "vscode-languageserver-types",
           "vscode-ws-jsonrpc",
+          "vscode-uri",
           "yargs"
         ]
       ]

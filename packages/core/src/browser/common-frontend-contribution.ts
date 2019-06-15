@@ -34,6 +34,7 @@ import { OS, isOSX } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
+import { Navigatable } from './navigatable';
 
 export namespace CommonMenus {
 
@@ -150,6 +151,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     };
+    export const TOGGLE_MAXIMIZED: Command = {
+        id: 'core.toggleMaximized',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Maximized'
+    };
 
     export const SAVE: Command = {
         id: 'core.save',
@@ -240,7 +246,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     protected initResourceContextKeys(): void {
         const updateContextKeys = () => {
-            const resourceUri = UriSelection.getUri(this.selectionService.selection);
+            const selection = this.selectionService.selection;
+            const resourceUri = Navigatable.is(selection) && selection.getResourceUri() || UriSelection.getUri(selection);
             this.resourceContextKey.set(resourceUri);
         };
         updateContextKeys();
@@ -330,6 +337,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.COLLAPSE_PANEL.id,
             label: 'Collapse',
             order: '4'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.TOGGLE_MAXIMIZED.id,
+            label: 'Toggle Maximized',
+            order: '5'
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
@@ -459,6 +471,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
+            isEnabled: () => this.shell.canToggleMaximized(),
+            isVisible: () => this.shell.canToggleMaximized(),
+            execute: () => this.shell.toggleMaximized()
+        });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
             execute: () => this.shell.save()
@@ -584,6 +601,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 command: CommonCommands.COLLAPSE_ALL_PANELS.id,
                 keybinding: 'alt+shift+c',
             },
+            {
+                command: CommonCommands.TOGGLE_MAXIMIZED.id,
+                keybinding: 'ctrl+m',
+            },
             // Saving
             {
                 command: CommonCommands.SAVE.id,
@@ -615,7 +636,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }
 
         window.document.addEventListener('keydown', event => {
-            this.shouldPreventClose = isCtrlCmd(event) || event.code === 'KeyW';
+            this.shouldPreventClose = isCtrlCmd(event) && event.code === 'KeyW';
         });
 
         window.document.addEventListener('keyup', () => {

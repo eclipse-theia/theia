@@ -14,8 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { setUriThrowOnMissingScheme } from 'vscode-uri';
 import Uri from 'vscode-uri';
 import { Path } from './path';
+
+// TODO: disable it because of #4487
+setUriThrowOnMissingScheme(false);
 
 export default class URI {
 
@@ -82,13 +86,6 @@ export default class URI {
             scheme
         });
         return new URI(newCodeUri);
-    }
-
-    /**
-     * return this URI without a scheme
-     */
-    withoutScheme(): URI {
-        return this.withScheme('');
     }
 
     /**

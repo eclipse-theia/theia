@@ -130,7 +130,7 @@ describe('Task server / back-end', function () {
 
     it('task is executed successfully with cwd as a file URI', async function () {
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
-        const config = createProcessTaskConfig('shell', FileUri.fsPath(command), [], FileUri.create(wsRoot).toString());
+        const config = createProcessTaskConfig('shell', command, [], FileUri.create(wsRoot).toString());
         const taskInfo: TaskInfo = await taskServer.run(config, wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
@@ -140,7 +140,7 @@ describe('Task server / back-end', function () {
 
     it('task is executed successfully using terminal process', async function () {
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
-        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', FileUri.fsPath(command), []), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', command, []), wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 

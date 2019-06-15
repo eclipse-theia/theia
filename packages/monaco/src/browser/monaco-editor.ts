@@ -62,6 +62,7 @@ export class MonacoEditor implements TextEditor {
     protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
     protected readonly onLanguageChangedEmitter = new Emitter<string>();
     readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
+    protected readonly onScrollChangedEmitter = new Emitter<void>();
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -80,7 +81,8 @@ export class MonacoEditor implements TextEditor {
             this.onFocusChangedEmitter,
             this.onDocumentContentChangedEmitter,
             this.onMouseDownEmitter,
-            this.onLanguageChangedEmitter
+            this.onLanguageChangedEmitter,
+            this.onScrollChangedEmitter
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -139,6 +141,13 @@ export class MonacoEditor implements TextEditor {
                 event: e.event.browserEvent
             });
         }));
+        this.toDispose.push(codeEditor.onDidScrollChange(e => {
+            this.onScrollChangedEmitter.fire(undefined);
+        }));
+    }
+
+    getVisibleRanges(): Range[] {
+        return this.editor.getVisibleRanges().map(range => this.m2p.asRange(range));
     }
 
     protected mapModelContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
@@ -182,6 +191,10 @@ export class MonacoEditor implements TextEditor {
 
     get onSelectionChanged(): Event<Range> {
         return this.onSelectionChangedEmitter.event;
+    }
+
+    get onScrollChanged(): Event<void> {
+        return this.onScrollChangedEmitter.event;
     }
 
     revealPosition(raw: Position, options: RevealPositionOptions = { vertical: 'center' }): void {
@@ -446,6 +459,13 @@ export class MonacoEditor implements TextEditor {
         for (const document of this.documents) {
             monaco.editor.setModelLanguage(document.textEditorModel, languageId);
         }
+    }
+
+    getResourceUri(): URI {
+        return this.uri;
+    }
+    createMoveToUri(resourceUri: URI): URI {
+        return this.uri.withPath(resourceUri.path);
     }
 
 }

@@ -47,6 +47,8 @@ export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
     export const TERMINAL_NEW = [...TERMINAL, '1_terminal'];
     export const TERMINAL_TASKS = [...TERMINAL, '2_terminal'];
+    export const TERMINAL_TASKS_INFO = [...TERMINAL_TASKS, '3_terminal'];
+    export const TERMINAL_TASKS_CONFIG = [...TERMINAL_TASKS, '4_terminal'];
     export const TERMINAL_NAVIGATOR_CONTEXT_MENU = ['navigator-context-menu', 'navigation'];
 }
 
@@ -349,7 +351,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected async selectTerminalCwd(): Promise<string | undefined> {
         const roots = this.workspaceService.tryGetRoots();
         return this.quickPick.show(roots.map(
-            ({ uri }) => ({ label: this.labelProvider.getLongName(new URI(uri).withoutScheme()), value: uri })
+            ({ uri }) => ({ label: this.labelProvider.getLongName(new URI(uri)), value: uri })
         ), { placeholder: 'Select current working directory for new terminal' });
     }
 

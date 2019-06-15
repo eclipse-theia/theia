@@ -282,10 +282,13 @@ export class FileUploadService {
 
     protected async indexDataTransferItemList(targetUri: URI, items: DataTransferItemList, context: FileUploadService.Context): Promise<void> {
         checkCancelled(context.token);
+        const entries: WebKitEntry[] = [];
         for (let i = 0; i < items.length; i++) {
             const entry = items[i].webkitGetAsEntry() as WebKitEntry;
-            await this.indexEntry(targetUri, entry, context);
+            entries.push(entry);
         }
+        await this.indexEntries(targetUri, entries, context);
+
     }
 
     protected async indexEntry(targetUri: URI, entry: WebKitEntry | null, context: FileUploadService.Context): Promise<void> {

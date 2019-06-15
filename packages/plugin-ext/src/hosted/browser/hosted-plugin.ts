@@ -92,7 +92,6 @@ export class HostedPluginSupport {
     public initPlugins(): void {
         Promise.all([
             this.server.getDeployedMetadata(),
-            this.server.getHostedPlugin(),
             this.pluginPathsService.provideHostLogPath(),
             this.storagePathService.provideHostStoragePath(),
             this.server.getExtPluginAPI(),
@@ -102,23 +101,18 @@ export class HostedPluginSupport {
         ]).then(metadata => {
             const pluginsInitData: PluginsInitializationData = {
                 plugins: metadata['0'],
-                hostedPlugin: metadata['1'],
-                logPath: metadata['2'],
-                storagePath: metadata['3'],
-                pluginAPIs: metadata['4'],
-                globalStates: metadata['5'],
-                workspaceStates: metadata['6'],
-                roots: metadata['7']
+                logPath: metadata['1'],
+                storagePath: metadata['2'],
+                pluginAPIs: metadata['3'],
+                globalStates: metadata['4'],
+                workspaceStates: metadata['5'],
+                roots: metadata['6']
             };
             this.loadPlugins(pluginsInitData, this.container);
         }).catch(e => console.error(e));
     }
 
     loadPlugins(initData: PluginsInitializationData, container: interfaces.Container): void {
-        if (initData.hostedPlugin) {
-            initData.plugins.push(initData.hostedPlugin);
-        }
-
         // don't load plugins twice
         initData.plugins = initData.plugins.filter(value => !this.loadedPlugins.has(value.model.id));
 
@@ -232,7 +226,6 @@ export class HostedPluginSupport {
 
 interface PluginsInitializationData {
     plugins: PluginMetadata[],
-    hostedPlugin: PluginMetadata | undefined,
     logPath: string,
     storagePath: string | undefined,
     pluginAPIs: ExtPluginApi[],

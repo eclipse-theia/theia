@@ -105,6 +105,21 @@ export class OutlineViewWidget extends TreeWidget {
         return undefined;
     }
 
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+        const elementAttrs = super.createNodeAttributes(node, props);
+        return {
+            ...elementAttrs,
+            title: this.getNodeTooltip(node)
+        };
+    }
+
+    protected getNodeTooltip(node: TreeNode): string | undefined {
+        if (OutlineSymbolInformationNode.is(node)) {
+            return node.name + ` (${node.iconClass})`;
+        }
+        return undefined;
+    }
+
     protected isExpandable(node: TreeNode): node is ExpandableTreeNode {
         return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
     }

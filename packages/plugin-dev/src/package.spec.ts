@@ -14,4 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './scm-service';
+/* note: this bogus test file is required so that
+   we are able to run mocha unit tests on this
+   package, without having any actual unit tests in it.
+   This way a coverage report will be generated,
+   showing 0% coverage, instead of no report.
+   This file can be removed once we have real unit
+   tests in place. */
+
+describe('plugin-dev package', () => {
+
+    it('support code coverage statistics', () => true);
+});

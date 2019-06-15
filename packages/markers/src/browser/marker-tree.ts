@@ -21,6 +21,7 @@ import { Marker } from '../common/marker';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { ProblemSelection } from './problem/problem-selection';
 
 export const MarkerOptions = Symbol('MarkerOptions');
 export interface MarkerOptions {
@@ -126,12 +127,12 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
     }
 }
 
-export interface MarkerNode extends UriSelection, SelectableTreeNode {
+export interface MarkerNode extends UriSelection, SelectableTreeNode, ProblemSelection {
     marker: Marker<object>;
 }
 export namespace MarkerNode {
     export function is(node: TreeNode | undefined): node is MarkerNode {
-        return UriSelection.is(node) && SelectableTreeNode.is(node) && 'marker' in node;
+        return UriSelection.is(node) && SelectableTreeNode.is(node) && ProblemSelection.is(node);
     }
 }
 

@@ -13,266 +13,103 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
-import { injectable } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
 
-export interface ScmProvider extends Disposable {
-    readonly label: string;
-    readonly id: string;
-    readonly handle: number;
-    readonly contextValue: string;
+// tslint:disable:no-any
 
-    readonly groups: ScmResourceGroup[];
-
-    readonly onDidChangeResources: Event<void>;
-
-    readonly rootUri?: string;
-    readonly onDidChangeCommitTemplate?: Event<string>;
-    readonly onDidChangeStatusBarCommands?: Event<ScmCommand[]>;
-    readonly acceptInputCommand?: ScmCommand;
-    readonly onDidChange: Event<void>;
-
-    readonly amendSupport?: ScmAmendSupport;
-}
-
-export interface ScmResourceGroup extends Disposable {
-    readonly handle: number,
-    readonly sourceControlHandle: number,
-    readonly resources: ScmResource[];
-    readonly provider: ScmProvider;
-    readonly label: string;
-    readonly id: string;
-    readonly onDidChange: Event<void>;
-}
-
-export interface ScmResource {
-    readonly handle: number;
-    readonly groupHandle: number;
-    readonly sourceControlHandle: number;
-    readonly group: ScmResourceGroup;
-    readonly sourceUri: URI;
-    readonly decorations?: ScmResourceDecorations;
-    readonly selected?: boolean;
-
-    open(): Promise<void>;
-}
-
-export interface ScmResourceDecorations {
-    icon?: string;
-    tooltip?: string;
-    source?: string;
-    letter?: string;
-    color?: string;
-}
-
-export interface ScmCommand {
-    id: string;
-    text: string;
-    tooltip?: string;
-    command?: string;
-}
-
-export interface InputValidation {
-    message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
-}
-
-export interface InputValidator {
-    (value: string): Promise<InputValidation | undefined>;
-}
-
-export interface ScmInput extends Disposable {
-    value: string;
-    placeholder: string;
-    validateInput: InputValidator;
-
-    readonly onDidChange: Event<string>;
-}
-
-export interface ScmCommit {
-    id: string,  // eg Git sha or Mercurial revision number
-    summary: string,
-    authorName: string,
-    authorEmail: string,
-    authorDateRelative: string
-}
-
-export interface ScmAmendSupport {
-    getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]>
-    getMessage(commit: string): Promise<string>;
-    reset(commit: string): Promise<void>;
-    getLastCommit(): Promise<ScmCommit | undefined>;
-}
+import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { injectable, inject } from 'inversify';
+import { ScmContextKeyService } from './scm-context-key-service';
+import { ScmRepository, ScmProviderOptions } from './scm-repository';
+import { ScmCommand, ScmProvider } from './scm-provider';
 
 @injectable()
 export class ScmService {
-    private providerIds = new Set<string>();
-    private _repositories: ScmRepository[] = [];
-    private _selectedRepository: ScmRepository | undefined;
 
-    private disposableCollection: DisposableCollection = new DisposableCollection();
-    private onDidChangeSelectedRepositoriesEmitter = new Emitter<ScmRepository | undefined>();
-    private onDidAddProviderEmitter = new Emitter<ScmRepository>();
-    private onDidRemoveProviderEmitter = new Emitter<ScmRepository>();
+    @inject(ScmContextKeyService)
+    protected readonly contextKeys: ScmContextKeyService;
 
-    readonly onDidChangeSelectedRepositories: Event<ScmRepository | undefined> = this.onDidChangeSelectedRepositoriesEmitter.event;
+    protected readonly _repositories = new Map<string, ScmRepository>();
+    protected _selectedRepository: ScmRepository | undefined;
 
-    constructor() {
-        this.disposableCollection.push(this.onDidChangeSelectedRepositoriesEmitter);
-        this.disposableCollection.push(this.onDidAddProviderEmitter);
-        this.disposableCollection.push(this.onDidRemoveProviderEmitter);
+    protected readonly onDidChangeSelectedRepositoryEmitter = new Emitter<ScmRepository | undefined>();
+    readonly onDidChangeSelectedRepository = this.onDidChangeSelectedRepositoryEmitter.event;
+
+    protected readonly onDidAddRepositoryEmitter = new Emitter<ScmRepository>();
+    readonly onDidAddRepository = this.onDidAddRepositoryEmitter.event;
+
+    protected readonly onDidRemoveRepositoryEmitter = new Emitter<ScmRepository>();
+    readonly onDidRemoveRepository = this.onDidAddRepositoryEmitter.event;
+
+    protected readonly onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[]>();
+    readonly onDidChangeStatusBarCommands = this.onDidChangeStatusBarCommandsEmitter.event;
+    protected fireDidChangeStatusBarCommands(): void {
+        this.onDidChangeStatusBarCommandsEmitter.fire(this.statusBarCommands);
+    }
+    get statusBarCommands(): ScmCommand[] {
+        const repository = this.selectedRepository;
+        return repository && repository.provider.statusBarCommands || [];
     }
 
     get repositories(): ScmRepository[] {
-        return [...this._repositories];
+        return [...this._repositories.values()];
     }
 
     get selectedRepository(): ScmRepository | undefined {
         return this._selectedRepository;
     }
 
+    protected readonly toDisposeOnSelected = new DisposableCollection();
     set selectedRepository(repository: ScmRepository | undefined) {
+        if (this._selectedRepository === repository) {
+            return;
+        }
+        this.toDisposeOnSelected.dispose();
         this._selectedRepository = repository;
-        this.onDidChangeSelectedRepositoriesEmitter.fire(repository);
-    }
-
-    get onDidAddRepository(): Event<ScmRepository> {
-        return this.onDidAddProviderEmitter.event;
-    }
-
-    get onDidRemoveRepository(): Event<ScmRepository> {
-        return this.onDidRemoveProviderEmitter.event;
-    }
-
-    registerScmProvider(provider: ScmProvider, disposables?: Disposable[]): ScmRepository {
-
-        if (this.providerIds.has(provider.id)) {
-            throw new Error(`SCM Provider ${provider.id} already exists.`);
+        if (!repository) {
+            this._selectedRepository = this._repositories.values().next().value;
         }
-
-        this.providerIds.add(provider.id);
-
-        const disposable: Disposable = Disposable.create(() => {
-            const index = this._repositories.indexOf(repository);
-            if (index < 0) {
-                return;
+        this.updateContextKeys();
+        if (this._selectedRepository) {
+            this.toDisposeOnSelected.push(this._selectedRepository.onDidChange(() => this.updateContextKeys()));
+            if (this._selectedRepository.provider.onDidChangeStatusBarCommands) {
+                this.toDisposeOnSelected.push(this._selectedRepository.provider.onDidChangeStatusBarCommands(() => this.fireDidChangeStatusBarCommands()));
             }
-            this.providerIds.delete(provider.id);
-            this._repositories.splice(index, 1);
-            this.onDidRemoveProviderEmitter.fire(repository);
-        });
-
-        const disposableCollection: DisposableCollection = new DisposableCollection(disposable);
-        if (disposables) {
-            disposableCollection.pushAll(disposables);
         }
-        const repository = new ScmRepository(provider, disposableCollection);
+        this.onDidChangeSelectedRepositoryEmitter.fire(this._selectedRepository);
+        this.fireDidChangeStatusBarCommands();
+    }
 
-        this._repositories.push(repository);
-        this.onDidAddProviderEmitter.fire(repository);
-
-        if (this._repositories.length === 1) {
+    registerScmProvider(provider: ScmProvider, options: ScmProviderOptions = {}): ScmRepository {
+        const key = provider.id + ':' + provider.rootUri;
+        if (this._repositories.has(key)) {
+            throw new Error(`${provider.label} provider for '${provider.rootUri}' already exists.`);
+        }
+        const repository = new ScmRepository(provider, options);
+        const dispose = repository.dispose;
+        repository.dispose = () => {
+            this._repositories.delete(key);
+            dispose.bind(repository)();
+            this.onDidRemoveRepositoryEmitter.fire(repository);
+            if (this._selectedRepository === repository) {
+                this.selectedRepository = undefined;
+            }
+        };
+        this._repositories.set(key, repository);
+        this.onDidAddRepositoryEmitter.fire(repository);
+        if (this._repositories.size === 1) {
             this.selectedRepository = repository;
         }
-
         return repository;
     }
 
-    dispose(): void {
-        this.disposableCollection.dispose();
-    }
-}
-
-export class ScmRepository implements Disposable {
-
-    private onDidFocusEmitter = new Emitter<void>();
-    readonly onDidFocus: Event<void> = this.onDidFocusEmitter.event;
-
-    private onDidChangeSelectionEmitter = new Emitter<boolean>();
-    readonly onDidChangeSelection: Event<boolean> = this.onDidChangeSelectionEmitter.event;
-
-    private readonly disposables: DisposableCollection = new DisposableCollection();
-
-    readonly input: ScmInput = new ScmInputImpl();
-
-    constructor(
-        public readonly provider: ScmProvider,
-        private disposable: DisposableCollection
-    ) {
-        this.disposables.push(this.disposable);
-        this.disposables.push(this.onDidChangeSelectionEmitter);
-        this.disposables.push(this.input);
-    }
-
-    focus(): void {
-        this.onDidFocusEmitter.fire(undefined);
-    }
-
-    dispose(): void {
-        this.disposables.dispose();
-        this.provider.dispose();
-    }
-}
-
-class ScmInputImpl implements ScmInput {
-
-    private _value: string;
-    private _placeholder: string;
-    private _validateInput: InputValidator;
-    private readonly disposables: DisposableCollection;
-    private readonly onDidChangePlaceholderEmitter: Emitter<string>;
-    private readonly onDidChangeValidateInputEmitter: Emitter<void>;
-    private readonly onDidChangeEmitter: Emitter<string>;
-
-    constructor() {
-        this._value = '';
-        this._placeholder = '';
-        this._validateInput = () => Promise.resolve(undefined);
-        this.onDidChangePlaceholderEmitter = new Emitter();
-        this.onDidChangeValidateInputEmitter = new Emitter();
-        this.onDidChangeEmitter = new Emitter();
-        this.disposables = new DisposableCollection();
-        this.disposables.push(this.onDidChangePlaceholderEmitter);
-        this.disposables.push(this.onDidChangeValidateInputEmitter);
-        this.disposables.push(this.onDidChangeEmitter);
-    }
-
-    get value(): string {
-        return this._value;
-    }
-
-    set value(value: string) {
-        if (this._value === value) {
-            return;
+    protected updateContextKeys(): void {
+        if (this._selectedRepository) {
+            this.contextKeys.scmProvider.set(this._selectedRepository.provider.id);
+            this.contextKeys.scmResourceGroup.set(this._selectedRepository.selectedResource && this._selectedRepository.selectedResource.group.id);
+        } else {
+            this.contextKeys.scmProvider.reset();
+            this.contextKeys.scmResourceGroup.reset();
         }
-        this._value = value;
-        this.onDidChangeEmitter.fire(value);
     }
 
-    get onDidChange(): Event<string> {
-        return this.onDidChangeEmitter.event;
-    }
-
-    get placeholder(): string {
-        return this._placeholder;
-    }
-
-    set placeholder(placeholder: string) {
-        this._placeholder = placeholder;
-        this.onDidChangePlaceholderEmitter.fire(placeholder);
-    }
-
-    get validateInput(): InputValidator {
-        return this._validateInput;
-    }
-
-    set validateInput(validateInput: InputValidator) {
-        this._validateInput = validateInput;
-        this.onDidChangeValidateInputEmitter.fire(undefined);
-    }
-
-    dispose(): void {
-        this.disposables.dispose();
-    }
 }

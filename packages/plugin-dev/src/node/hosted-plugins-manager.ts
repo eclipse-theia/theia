@@ -18,8 +18,8 @@ import { inject, injectable } from 'inversify';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import { sep as PATH_SEPARATOR } from 'path';
-import { HostedPluginSupport } from './hosted-plugin';
-import { LogType } from '../../common/types';
+import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
+import { LogType } from '@theia/plugin-ext/lib/common/types';
 
 export const HostedPluginsManager = Symbol('HostedPluginsManager');
 

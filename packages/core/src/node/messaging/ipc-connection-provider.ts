@@ -27,6 +27,7 @@ export interface ResolvedIPCConnectionOptions {
     readonly logger: ILogger
     readonly args: string[]
     readonly errorHandler?: ConnectionErrorHandler
+    readonly env?: NodeJS.ProcessEnv
 }
 export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
     readonly serverName: string

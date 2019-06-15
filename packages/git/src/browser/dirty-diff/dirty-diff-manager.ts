@@ -17,14 +17,16 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import { EditorManager, EditorWidget, TextEditor, TextEditorDocument, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { DiffComputer, DirtyDiff } from './diff-computer';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
+import { ContentLines } from '@theia/scm/lib/browser/dirty-diff/content-lines';
+import { DirtyDiffUpdate } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-decorator';
+import { DiffComputer, DirtyDiff } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { GitPreferences, GitConfiguration } from '../git-preferences';
 import { PreferenceChangeEvent } from '@theia/core/lib/browser';
-import { GitResourceResolver, GIT_RESOURCE_SCHEME } from '../git-resource';
-import { WorkingDirectoryStatus, GitFileStatus, GitFileChange, Repository, Git } from '../../common';
+import { GIT_RESOURCE_SCHEME } from '../git-resource';
+import { GitResourceResolver } from '../git-resource-resolver';
+import { WorkingDirectoryStatus, GitFileStatus, GitFileChange, Repository, Git, GitStatusChangeEvent } from '../../common';
 import { GitRepositoryTracker } from '../git-repository-tracker';
-import { ContentLines } from './content-lines';
 
 import throttle = require('lodash.throttle');
 
@@ -54,7 +56,8 @@ export class DirtyDiffManager {
     @postConstruct()
     protected async initialize() {
         this.editorManager.onCreated(async e => this.handleEditorCreated(e));
-        this.repositoryTracker.onGitEvent(throttle(async event => this.handleGitStatusUpdate(event.source, event.status), 500));
+        this.repositoryTracker.onGitEvent(throttle(async (event: GitStatusChangeEvent | undefined) =>
+            this.handleGitStatusUpdate(event && event.source, event && event.status), 500));
         const gitStatus = this.repositoryTracker.selectedRepositoryStatus;
         const repository = this.repositoryTracker.selectedRepository;
         if (gitStatus && repository) {
@@ -112,9 +115,9 @@ export class DirtyDiffManager {
         };
     }
 
-    protected async handleGitStatusUpdate(repository: Repository, status: WorkingDirectoryStatus): Promise<void> {
+    protected async handleGitStatusUpdate(repository: Repository | undefined, status: WorkingDirectoryStatus | undefined): Promise<void> {
         const uris = new Set(this.models.keys());
-        const relevantChanges = status.changes.filter(c => uris.has(c.uri));
+        const relevantChanges = status ? status.changes.filter(c => uris.has(c.uri)) : [];
         for (const model of this.models.values()) {
             const uri = model.editor.uri.toString();
             const changes = relevantChanges.filter(c => c.uri === uri);
@@ -122,10 +125,6 @@ export class DirtyDiffManager {
         }
     }
 
-}
-
-export interface DirtyDiffUpdate extends DirtyDiff {
-    readonly editor: TextEditor;
 }
 
 export class DirtyDiffModel implements Disposable {
@@ -207,7 +206,7 @@ export class DirtyDiffModel implements Disposable {
         this.update();
     }
 
-    async handleGitStatusUpdate(repository: Repository, relevantChanges: GitFileChange[]): Promise<void> {
+    async handleGitStatusUpdate(repository: Repository | undefined, relevantChanges: GitFileChange[]): Promise<void> {
         const noRelevantChanges = relevantChanges.length === 0;
         const isNewAndStaged = relevantChanges.some(c => c.status === GitFileStatus.New && !!c.staged);
         const isNewAndUnstaged = relevantChanges.some(c => c.status === GitFileStatus.New && !c.staged);
@@ -236,9 +235,12 @@ export class DirtyDiffModel implements Disposable {
         this.update();
     }
 
-    protected async isInGitRepository(repository: Repository): Promise<boolean> {
-        const modelUri = this.editor.uri.withoutScheme().toString();
-        const repoUri = new URI(repository.localUri).withoutScheme().toString();
+    protected async isInGitRepository(repository: Repository | undefined): Promise<boolean> {
+        if (!repository) {
+            return false;
+        }
+        const modelUri = this.editor.uri.withScheme('file').toString();
+        const repoUri = new URI(repository.localUri).withScheme('file').toString();
         return modelUri.startsWith(repoUri) && this.previousRevision.isVersionControlled();
     }
 

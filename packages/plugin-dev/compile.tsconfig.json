@@ -1,0 +1,15 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib",
+    "lib": [
+      "es6",
+      "dom"
+    ]
+  },
+  "include": [
+    "src"
+  ]
+}
+

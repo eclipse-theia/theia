@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,27 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export interface MetadataSelection {
-    // tslint:disable-next-line:no-any
-    readonly metadata: any
-}
+import { ContainerModule } from 'inversify';
+import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { ElectronShutdownHook } from './electron-shutdown-hook';
 
-export namespace MetadataSelection {
-
-    export function is(arg: Object | undefined): arg is MetadataSelection {
-        // tslint:disable-next-line:no-any
-        return typeof arg === 'object' && ('metadata' in arg);
-    }
-
-    // tslint:disable-next-line:no-any
-    export function getMetadata(selection: Object | undefined): any | undefined {
-        if (is(selection)) {
-            return selection.metadata;
-        }
-        if (Array.isArray(selection) && is(selection[0])) {
-            return selection[0].metadata;
-        }
-        return undefined;
-    }
-
-}
+export default new ContainerModule(bind => {
+    bind(ElectronShutdownHook).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ElectronShutdownHook);
+});

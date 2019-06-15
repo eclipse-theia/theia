@@ -32,6 +32,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
+import { TerminalService } from './base/terminal-service';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -73,6 +74,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject('terminal-dom-id') public readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
+    @inject(TerminalService) protected readonly terminalService: TerminalService;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -205,7 +207,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             throw new Error('terminal is not started');
         }
-        return this.shellTerminalServer.getCwdURI(this.terminalId).then(cwdUrl => new URI(cwdUrl));
+        if (this.terminalService.getById(this.id)) {
+            return this.shellTerminalServer.getCwdURI(this.terminalId)
+                .then(cwdUrl => new URI(cwdUrl));
+        }
+        return Promise.resolve(new URI());
     }
 
     get processId(): Promise<number> {
@@ -462,7 +468,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected resizeTerminalProcess(): void {
-        if (typeof this.terminalId !== 'number') {
+        if (!IBaseTerminalServer.validateId(this.terminalId)
+            && !this.terminalService.getById(this.id)) {
             return;
         }
         const { cols, rows } = this.term;

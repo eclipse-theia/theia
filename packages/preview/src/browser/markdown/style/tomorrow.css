@@ -18,6 +18,14 @@
 /* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
 /* Original theme - https://github.com/chriskempson/tomorrow-theme */
 
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+ /* copied from https://github.com/microsoft/vscode/blob/08537497eecd3172390194693d3d7c0ec8f52b70/extensions/markdown-language-features/media/tomorrow.css
+    with modifications */
+
 /* Tomorrow Comment */
 .theia-preview-widget .hljs-comment,
 .theia-preview-widget .hljs-quote {

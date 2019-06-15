@@ -24,7 +24,7 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 @injectable()
 export class RustContribution implements LanguageGrammarDefinitionContribution {
     readonly id = 'rust';
-    // copid from https://github.com/Microsoft/vscode/blob/9e1975d98598ef268ca760b8381ee628f27fc121/extensions/rust/language-configuration.json
+    // copied from https://github.com/Microsoft/vscode/blob/9e1975d98598ef268ca760b8381ee628f27fc121/extensions/rust/language-configuration.json
     readonly config: monaco.languages.LanguageConfiguration = {
         comments: {
             lineComment: '//',

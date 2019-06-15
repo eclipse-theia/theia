@@ -121,6 +121,16 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.proxy.$getLanguages();
     }
 
+    changeLanguage(uri: URI, languageId: string): Promise<theia.TextDocument> {
+        return this.proxy.$changeLanguage(uri, languageId).then(() => {
+            const doc = this.documents.getDocumentData(uri);
+            if (!doc) {
+                throw new Error('No document found by URI ' + uri.toString());
+            }
+            return doc.document;
+        });
+    }
+
     setLanguageConfiguration(language: string, configuration: theia.LanguageConfiguration): theia.Disposable {
         const { wordPattern } = configuration;
 

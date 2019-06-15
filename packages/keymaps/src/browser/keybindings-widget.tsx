@@ -18,7 +18,7 @@ import React = require('react');
 import debounce = require('lodash.debounce');
 import * as fuzzy from 'fuzzy';
 import { injectable, inject, postConstruct } from 'inversify';
-import { CommandRegistry, Command } from '@theia/core/lib/common';
+import { CommandRegistry, Command, Emitter, Event } from '@theia/core/lib/common';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
@@ -68,6 +68,9 @@ export class KeybindingWidget extends ReactWidget {
         post: '</match>',
     };
 
+    protected readonly onDidUpdateEmitter = new Emitter<void>();
+    readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
+
     protected readonly searchKeybindings: () => void = debounce(() => this.doSearchKeybindings(), 50);
 
     @postConstruct()
@@ -88,12 +91,33 @@ export class KeybindingWidget extends ReactWidget {
         }
     }
 
+    /**
+     * Determine if there currently is a search term.
+     * @returns `true` if a search term is present.
+     */
+    public hasSearch(): boolean {
+        return !!this.query.length;
+    }
+
+    /**
+     * Clear the search and reset the view.
+     */
+    public clearSearch(): void {
+        const search = this.findSearchField();
+        if (search) {
+            search.value = '';
+            this.query = '';
+            this.doSearchKeybindings();
+        }
+    }
+
     protected onActivateRequest(msg: Message) {
         super.onActivateRequest(msg);
         this.focusInputField();
     }
 
     protected doSearchKeybindings(): void {
+        this.onDidUpdateEmitter.fire(undefined);
         this.items = [];
         const searchField = this.findSearchField();
         this.query = searchField ? searchField.value.trim().toLocaleLowerCase() : '';
@@ -108,9 +132,80 @@ export class KeybindingWidget extends ReactWidget {
                     if (fuzzyMatch) {
                         item[key] = fuzzyMatch.rendered;
                         matched = true;
+                    } else {
+                        // Match identical keybindings that have different orders
+                        if (key === 'keybinding') {
+                            const queryItems = this.query.split('+');
+
+                            // Handle key chords
+                            const tempItems = string.split(' ');
+                            // Store positions of `space` in the keybinding string
+                            const spaceIndexArr = [0];
+                            let bindingItems: string[] = [];
+                            if (tempItems.length > 1) {
+                                tempItems.forEach(tItem => {
+                                    const tKeys = tItem.split('+');
+                                    spaceIndexArr.push(tKeys.length + spaceIndexArr[-1]);
+                                    bindingItems.push(...tKeys);
+                                });
+                            } else {
+                                bindingItems = string.split('+');
+                            }
+                            spaceIndexArr.shift();
+
+                            const renderedResult = [...bindingItems];
+                            let matchCounter = 0;
+
+                            queryItems.forEach(queryItem => {
+                                let keyFuzzyMatch: fuzzy.MatchResult = { rendered: '', score: 0 };
+                                let keyIndex = -1;
+                                if (string) {
+                                    bindingItems.forEach((bindingItem: string) => {
+                                        // Match every key in user query with every key in keybinding string
+                                        const tempFuzzyMatch = fuzzy.match(queryItem, bindingItem, this.fuzzyOptions);
+                                        // Select the match with the highest matching score
+                                        if (tempFuzzyMatch && tempFuzzyMatch.score > keyFuzzyMatch.score) {
+                                            keyFuzzyMatch = tempFuzzyMatch;
+                                            // Get index in the keybinding array
+                                            keyIndex = renderedResult.indexOf(bindingItem);
+                                        }
+                                    });
+
+                                    const keyRendered = keyFuzzyMatch.rendered;
+                                    if (keyRendered) {
+                                        if (keyIndex > -1) {
+                                            renderedResult[keyIndex] = keyRendered;
+                                        }
+                                        // Remove key from keybinding items if it is matched
+                                        bindingItems.splice(keyIndex, 1, '');
+                                        matchCounter += 1;
+                                    }
+                                }
+                            });
+                            if (matchCounter === queryItems.length) {
+                                // Handle rendering of key chords
+                                if (spaceIndexArr.length > 0) {
+                                    const chordRenderedResult = '';
+                                    renderedResult.forEach((resultKey, index) => {
+                                        if (index === 0) {
+                                            chordRenderedResult.concat(resultKey);
+                                        } else if (spaceIndexArr.indexOf(index) !== -1) {
+                                            chordRenderedResult.concat(' ' + resultKey);
+                                        } else {
+                                            chordRenderedResult.concat('+' + resultKey);
+                                        }
+                                    });
+                                    item[key] = chordRenderedResult;
+                                }
+
+                                item[key] = renderedResult.join('+');
+                                matched = true;
+                            }
+                        }
                     }
                 }
             }
+
             if (matched) {
                 this.items.push(item);
             }
@@ -143,9 +238,6 @@ export class KeybindingWidget extends ReactWidget {
                 <input id='search-kb'
                     className={(this.items.length > 0) ? '' : 'no-kb'}
                     type='text' placeholder='Search keybindings' onKeyUp={this.searchKeybindings}></input >
-            </div>
-            <div className='kb-json'>For more detailed keybinding customizations open and edit&nbsp;
-                <a href='#' onClick={this.openKeybindings}>keymaps.json</a>
             </div>
         </div>;
     }
@@ -225,6 +317,19 @@ export class KeybindingWidget extends ReactWidget {
                         return <span key={index} className='monaco-keybinding-key'>
                             {this.renderMatchedData(key)}
                         </span>;
+                    } else if (key.includes(' ')) {
+                        // Handle key chords, which have space as the separator
+                        // Example: `k Ctrl` in key chords `Ctrl+k Ctrl+p`
+                        let chordKeys = key.split('<match> </match>');
+                        if (chordKeys.length === 1) {
+                            chordKeys = key.split(' ');
+                        }
+                        return <React.Fragment key={index}>
+                            <span className='monaco-keybinding-separator'>+</span>
+                            <span className='monaco-keybinding-key'>{this.renderKeybinding(chordKeys[0])}</span>
+                            <span className='monaco-keybinding-separator'>&nbsp;&nbsp;</span>
+                            <span className='monaco-keybinding-key'>{this.renderKeybinding(chordKeys[1])}</span>
+                        </React.Fragment>;
                     } else {
                         return <React.Fragment key={index}>
                             <span className='monaco-keybinding-separator'>+</span>
@@ -240,9 +345,6 @@ export class KeybindingWidget extends ReactWidget {
         const commands = this.commandRegistry.commands.sort((a, b) => this.compareCommands(a, b));
         const items: KeybindingItem[] = [];
         for (let i = 0; i < commands.length; i++) {
-            if (!commands[i].label) {
-                continue;
-            }
             const keybindings = this.keybindingRegistry.getKeybindingsForCommand(commands[i].id);
             const item: KeybindingItem = {
                 id: commands[i].id,

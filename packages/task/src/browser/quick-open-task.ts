@@ -26,6 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { TaskActionProvider } from './task-action-provider';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 @injectable()
 export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
@@ -327,5 +328,114 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
         this.taskService.configure(this.task);
 
         return true;
+    }
+}
+
+@injectable()
+export class TaskTerminateQuickOpen implements QuickOpenModel {
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
+    async onType(_lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+        const items: QuickOpenItem[] = [];
+        const runningTasks: TaskInfo[] = await this.taskService.getRunningTasks();
+        if (runningTasks.length <= 0) {
+            items.push(new QuickOpenItem({
+                label: 'No task is currently running',
+                run: (): boolean => false,
+            }));
+        } else {
+            runningTasks.forEach((task: TaskInfo) => {
+                items.push(new QuickOpenItem({
+                    label: task.config.label,
+                    run: (mode: QuickOpenMode): boolean => {
+                        if (mode !== QuickOpenMode.OPEN) {
+                            return false;
+                        }
+                        this.taskService.kill(task.taskId);
+                        return true;
+                    }
+                }));
+            });
+            if (runningTasks.length > 1) {
+                items.push(new QuickOpenItem({
+                    label: 'All running tasks',
+                    run: (mode: QuickOpenMode): boolean => {
+                        if (mode !== QuickOpenMode.OPEN) {
+                            return false;
+                        }
+                        runningTasks.forEach((t: TaskInfo) => {
+                            this.taskService.kill(t.taskId);
+                        });
+                        return true;
+                    }
+                }));
+            }
+        }
+        acceptor(items);
+    }
+
+    async open(): Promise<void> {
+        this.quickOpenService.open(this, {
+            placeholder: 'Select task to terminate',
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
+        });
+    }
+
+}
+
+@injectable()
+export class TaskRunningQuickOpen implements QuickOpenModel {
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
+
+    async onType(_lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+        const items: QuickOpenItem[] = [];
+        const runningTasks: TaskInfo[] = await this.taskService.getRunningTasks();
+        if (runningTasks.length <= 0) {
+            items.push(new QuickOpenItem({
+                label: 'No task is currently running',
+                run: (): boolean => false,
+            }));
+        } else {
+            runningTasks.forEach((task: TaskInfo) => {
+                items.push(new QuickOpenItem({
+                    label: task.config.label,
+                    run: (mode: QuickOpenMode): boolean => {
+                        if (mode !== QuickOpenMode.OPEN) {
+                            return false;
+                        }
+                        if (task.terminalId) {
+                            const terminal = this.terminalService.getById('terminal-' + task.terminalId);
+                            if (terminal) {
+                                this.terminalService.open(terminal);
+                            }
+                        }
+                        return true;
+                    }
+                }));
+            });
+        }
+        acceptor(items);
+    }
+
+    async open(): Promise<void> {
+        this.quickOpenService.open(this, {
+            placeholder: 'Select the task to show its output',
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
+        });
     }
 }

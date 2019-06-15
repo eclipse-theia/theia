@@ -51,7 +51,6 @@
     margin-left: calc(var(--theia-ui-padding)/2);
 }
 
-.theia-source-breakpoint .path,
 .theia-debug-session .label,
 .theia-debug-thread .label,
 .theia-debug-stack-frame .expression {
@@ -61,13 +60,16 @@
     text-overflow: ellipsis;
 }
 
-.theia-source-breakpoint .name {
-    white-space: nowrap;
-}
-
 .theia-source-breakpoint .path {
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-ui-font-color2);
+}
+
+.theia-source-breakpoint .line-info {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    white-space: nowrap;
 }
 
 .theia-source-breakpoint .line,

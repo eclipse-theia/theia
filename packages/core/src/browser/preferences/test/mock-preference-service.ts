@@ -52,7 +52,7 @@ export class MockPreferenceService implements PreferenceService {
     overridePreferenceName(options: OverridePreferenceName): string {
         return options.preferenceName;
     }
-    overridenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
+    overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
         return undefined;
     }
 }
