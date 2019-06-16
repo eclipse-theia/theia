@@ -78,7 +78,7 @@ export interface ScmCommit {
 }
 
 export interface ScmAmendSupport {
-    getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]>
+    getInitialAmendingCommits(amendingHeadCommitId: string, latestCommitId: string | undefined): Promise<ScmCommit[]>
     getMessage(commit: string): Promise<string>;
     reset(commit: string): Promise<void>;
     getLastCommit(): Promise<ScmCommit | undefined>;
