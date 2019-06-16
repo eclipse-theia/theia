@@ -45,6 +45,10 @@ export namespace KeymapsCommands {
         id: 'keymaps:openJson.toolbar',
         iconClass: 'theia-open-json-icon'
     };
+    export const CLEAR_KEYBINDINGS_SEARCH: Command = {
+        id: 'keymaps.clearSearch',
+        iconClass: 'clear-all'
+    };
 }
 
 @injectable()
@@ -73,9 +77,14 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
             execute: () => this.keymaps.open()
         });
         commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR, {
-            isEnabled: widget => this.isKeybindingWidget(widget),
-            isVisible: widget => this.isKeybindingWidget(widget),
-            execute: () => this.keymaps.open()
+            isEnabled: w => this.withWidget(w, () => true),
+            isVisible: w => this.withWidget(w, () => true),
+            execute: w => this.withWidget(w, widget => this.keymaps.open(widget)),
+        });
+        commands.registerCommand(KeymapsCommands.CLEAR_KEYBINDINGS_SEARCH, {
+            isEnabled: w => this.withWidget(w, widget => widget.hasSearch()),
+            isVisible: w => this.withWidget(w, () => true),
+            execute: w => this.withWidget(w, widget => widget.clearSearch()),
         });
     }
 
@@ -86,24 +95,35 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         });
     }
 
-    registerKeybindings(keybidings: KeybindingRegistry): void {
-        keybidings.registerKeybinding({
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
             command: KeymapsCommands.OPEN_KEYMAPS.id,
             keybinding: 'ctrl+alt+,'
         });
     }
 
-    registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+    async registerToolbarItems(toolbar: TabBarToolbarRegistry): Promise<void> {
+        const widget = await this.widget;
+        const onDidChange = widget.onDidUpdate;
         toolbar.registerItem({
             id: KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR.id,
             command: KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR.id,
-            tooltip: 'Open Keyboard Shortcuts in JSON'
+            tooltip: 'Open Keyboard Shortcuts in JSON',
+            priority: 0,
+        });
+        toolbar.registerItem({
+            id: KeymapsCommands.CLEAR_KEYBINDINGS_SEARCH.id,
+            command: KeymapsCommands.CLEAR_KEYBINDINGS_SEARCH.id,
+            tooltip: 'Clear Keybindings Search Input',
+            priority: 1,
+            onDidChange,
         });
     }
 
-    protected isKeybindingWidget(widget: Widget | undefined = this.tryGetWidget()): boolean {
-        return widget instanceof KeybindingWidget && widget.id === KeybindingWidget.ID
-            ? true
-            : false;
+    protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: KeybindingWidget) => T): T | false {
+        if (widget instanceof KeybindingWidget && widget.id === KeybindingWidget.ID) {
+            return fn(widget);
+        }
+        return false;
     }
 }

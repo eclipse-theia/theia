@@ -18,7 +18,7 @@ import React = require('react');
 import debounce = require('lodash.debounce');
 import * as fuzzy from 'fuzzy';
 import { injectable, inject, postConstruct } from 'inversify';
-import { CommandRegistry, Command } from '@theia/core/lib/common';
+import { CommandRegistry, Command, Emitter, Event } from '@theia/core/lib/common';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
@@ -68,6 +68,9 @@ export class KeybindingWidget extends ReactWidget {
         post: '</match>',
     };
 
+    protected readonly onDidUpdateEmitter = new Emitter<void>();
+    readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
+
     protected readonly searchKeybindings: () => void = debounce(() => this.doSearchKeybindings(), 50);
 
     @postConstruct()
@@ -88,12 +91,33 @@ export class KeybindingWidget extends ReactWidget {
         }
     }
 
+    /**
+     * Determine if there currently is a search term.
+     * @returns `true` if a search term is present.
+     */
+    public hasSearch(): boolean {
+        return !!this.query.length;
+    }
+
+    /**
+     * Clear the search and reset the view.
+     */
+    public clearSearch(): void {
+        const search = this.findSearchField();
+        if (search) {
+            search.value = '';
+            this.query = '';
+            this.doSearchKeybindings();
+        }
+    }
+
     protected onActivateRequest(msg: Message) {
         super.onActivateRequest(msg);
         this.focusInputField();
     }
 
     protected doSearchKeybindings(): void {
+        this.onDidUpdateEmitter.fire(undefined);
         this.items = [];
         const searchField = this.findSearchField();
         this.query = searchField ? searchField.value.trim().toLocaleLowerCase() : '';
@@ -214,9 +238,6 @@ export class KeybindingWidget extends ReactWidget {
                 <input id='search-kb'
                     className={(this.items.length > 0) ? '' : 'no-kb'}
                     type='text' placeholder='Search keybindings' onKeyUp={this.searchKeybindings}></input >
-            </div>
-            <div className='kb-json'>For more detailed keybinding customizations open and edit&nbsp;
-                <a href='#' onClick={this.openKeybindings}>keymaps.json</a>
             </div>
         </div>;
     }
