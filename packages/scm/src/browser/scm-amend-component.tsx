@@ -98,6 +98,8 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     }
 
     async fetchStatusAndSetState(): Promise<void> {
+        const storageKey = this.getStorageKey();
+
         const nextCommit = await this.getLastCommit();
         if (nextCommit && this.state.lastCommit && nextCommit.commit.id === this.state.lastCommit.commit.id) {
             // No change here
@@ -119,32 +121,37 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             // the view just updates without transition.
             this.setState({ amendingCommits: [], lastCommit: nextCommit });
         } else {
+            const amendingCommits = this.state.amendingCommits.concat([]); // copy the array
+
+            const direction: 'up' | 'down' = this.transitionHint === 'amend' ? 'up' : 'down';
+            switch (this.transitionHint) {
+                case 'amend':
+                    if (this.state.lastCommit) {
+                        amendingCommits.push(this.state.lastCommit);
+
+                        const serializedState = JSON.stringify({
+                            amendingHeadCommitSha: amendingCommits[0].commit.id,
+                            latestCommitSha: nextCommit ? nextCommit.commit.id : undefined
+                        });
+                        this.props.storageService.setData<string | undefined>(storageKey, serializedState);
+                    }
+                    break;
+                case 'unamend':
+                    amendingCommits.pop();
+                    if (amendingCommits.length === 0) {
+                        this.props.storageService.setData<string | undefined>(storageKey, undefined);
+                    } else {
+                        const serializedState = JSON.stringify({
+                            amendingHeadCommitSha: amendingCommits[0].commit.id,
+                            latestCommitSha: nextCommit ? nextCommit.commit.id : undefined
+                        });
+                        this.props.storageService.setData<string | undefined>(storageKey, serializedState);
+                    }
+                    break;
+            }
+
             if (this.state.lastCommit && nextCommit) {
-                const direction: 'up' | 'down' = this.transitionHint === 'amend' ? 'up' : 'down';
                 const transitionData = { direction, previousLastCommit: this.state.lastCommit };
-                const amendingCommits = this.state.amendingCommits.concat([]); // copy the array
-                switch (this.transitionHint) {
-                    case 'amend':
-                        if (this.state.lastCommit) {
-                            amendingCommits.push(this.state.lastCommit);
-
-                            const storageKey = this.getStorageKey();
-                            const serializedState = JSON.stringify({
-                                amendingHeadCommitSha: amendingCommits[0].commit.id,
-                                latestCommitSha: nextCommit.commit.id
-                            });
-                            this.props.storageService.setData<string | undefined>(storageKey, serializedState);
-                        }
-                        break;
-                    case 'unamend':
-                        amendingCommits.pop();
-                        if (amendingCommits.length === 0) {
-                            const storageKey = this.getStorageKey();
-                            this.props.storageService.setData<string | undefined>(storageKey, undefined);
-                        }
-                        break;
-                }
-
                 this.setState({ lastCommit: nextCommit, amendingCommits, transition: { ...transitionData, state: 'start' } });
                 this.onNextFrame(() => {
                     this.setState({ transition: { ...transitionData, state: 'transitioning' } });
@@ -157,7 +164,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                     TRANSITION_TIME_MS);
             } else {
                 // No previous last commit so no transition
-                this.setState({ transition: { state: 'none' }, lastCommit: nextCommit });
+                this.setState({ transition: { state: 'none' }, amendingCommits, lastCommit: nextCommit });
             }
         }
 
@@ -176,14 +183,14 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         // Restore list of commits from saved amending head commit up through parents until the
         // current commit.  (If we don't reach the current commit, the repository has been changed in such
         // a way then unamending commits can no longer be done).
-        if (storedState && lastCommit) {
+        if (storedState) {
             const { amendingHeadCommitSha, latestCommitSha } = JSON.parse(storedState);
-            if (lastCommit.id !== latestCommitSha) {
+            if (!this.commitsAreEqual(lastCommit, latestCommitSha)) {
                 // The head commit in the repository has changed.  It is not the same commit that was the
                 // head commit after the last 'amend'.
                 return [];
             }
-            const commits = await this.props.scmAmendSupport.getInitialAmendingCommits(amendingHeadCommitSha, lastCommit.id);
+            const commits = await this.props.scmAmendSupport.getInitialAmendingCommits(amendingHeadCommitSha, lastCommit ? lastCommit.id : undefined);
 
             const amendingCommitPromises = commits.map(async commit => {
                 const avatar = await this.props.avatarService.getAvatar(commit.authorEmail);
@@ -197,6 +204,17 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     private getStorageKey(): string {
         return REPOSITORY_STORAGE_KEY + ':' + this.props.repository.provider.rootUri;
+    }
+
+    /**
+     * Commits are equal if the ids are equal or if both are undefined.
+     * (If a commit is undefined, it represents the initial empty state of a repository,
+     * before the inital commit).
+     */
+    private commitsAreEqual(lastCommit: ScmCommit | undefined, savedLastCommitId: string | undefined): boolean {
+        return lastCommit
+            ? lastCommit.id === savedLastCommitId
+            : savedLastCommitId === undefined;
     }
 
     /**
