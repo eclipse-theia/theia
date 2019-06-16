@@ -160,7 +160,7 @@ export class WebSocketConnectionProvider {
      */
     protected createWebSocketUrl(path: string): string {
         const endpoint = new Endpoint({ path });
-        return endpoint.getWebSocketUrl().toString();
+        return endpoint.getWebSocketUrl().toString(true);
     }
 
     /**
