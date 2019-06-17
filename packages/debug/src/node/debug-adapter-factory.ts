@@ -35,9 +35,11 @@ import {
     CommunicationProvider,
     DebugAdapterSession,
     DebugAdapterSessionFactory,
-    DebugAdapterFactory
+    DebugAdapterFactory,
+    DebugAdapterForkExecutable
 } from '../common/debug-model';
 import { DebugAdapterSessionImpl } from './debug-adapter-session';
+import { environment } from '@theia/application-package';
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -67,10 +69,12 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
             !!forkOptions && !!forkOptions.modulePath;
 
         const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
-        const options = { stdio: ['pipe', 'pipe', 2] };
+        const options: { stdio: (string | number)[], env?: object, execArgv?: string[] } = { stdio: ['pipe', 'pipe', 2] };
 
         if (isForkOptions(processOptions)) {
             options.stdio.push('ipc');
+            options.env = environment.electron.runAsNodeEnv();
+            options.execArgv = (executable as DebugAdapterForkExecutable).execArgv;
         }
 
         processOptions.options = options;
