@@ -25,7 +25,6 @@ import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem }
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
 import { TreeViewSelection } from '../../common';
-import { SelectionServiceExt } from '../selection-provider-ext';
 import { PluginPackage } from '../../common/plugin-protocol';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
@@ -34,7 +33,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
 
     private treeViews: Map<string, TreeViewExtImpl<any>> = new Map<string, TreeViewExtImpl<any>>();
 
-    constructor(rpc: RPCProtocol, private commandRegistry: CommandRegistryImpl, private selectionService: SelectionServiceExt) {
+    constructor(rpc: RPCProtocol, commandRegistry: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN);
         commandRegistry.registerArgumentProcessor({
             processArgument: arg => {
@@ -62,7 +61,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             throw new Error('Options with treeDataProvider is mandatory');
         }
 
-        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry, this.selectionService);
+        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy);
         this.treeViews.set(treeViewId, treeView);
 
         return {
@@ -110,15 +109,6 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         }
     }
 
-    async $setSelection(treeViewId: string, treeItemId: string, contextSelection: boolean): Promise<any> {
-        const treeView = this.treeViews.get(treeViewId);
-        if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
-        }
-
-        treeView.onSelectionChanged(treeItemId, contextSelection);
-    }
-
 }
 
 class TreeViewExtImpl<T> extends Disposable {
@@ -140,9 +130,7 @@ class TreeViewExtImpl<T> extends Disposable {
         private plugin: Plugin,
         private treeViewId: string,
         private treeDataProvider: TreeDataProvider<T>,
-        private proxy: TreeViewsMain,
-        private commandRegistry: CommandRegistryImpl,
-        private selectionService: SelectionServiceExt) {
+        private proxy: TreeViewsMain) {
 
         super(() => {
             this.dispose();
@@ -298,26 +286,6 @@ class TreeViewExtImpl<T> extends Disposable {
                 element: cachedElement
             });
         }
-    }
-
-    async onSelectionChanged(treeItemId: string, contextSelection: boolean): Promise<any> {
-        // get element from a cache
-        const cachedElement = this.getTreeItem(treeItemId);
-
-        this.selectionService.selection = undefined;
-
-        if (cachedElement) {
-            this.selection = [cachedElement];
-
-            // Ask data provider for a tree item for the value
-            const treeItem = await this.treeDataProvider.getTreeItem(cachedElement);
-
-            if (!contextSelection && treeItem.command) {
-                await this.commandRegistry.executeCommand((treeItem.command.command || treeItem.command.id)!, ...(treeItem.command.arguments || []));
-            }
-        }
-
-        this.selectionService.selection = cachedElement;
     }
 
 }

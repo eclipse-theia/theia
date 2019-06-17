@@ -801,16 +801,24 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             const contextMenuPath = this.props.contextMenuPath;
             if (contextMenuPath) {
                 const { x, y } = event.nativeEvent;
+                const args = this.toContextMenuArgs(node);
                 this.onRender.push(Disposable.create(() =>
-                    setTimeout(() =>
-                        this.contextMenuRenderer.render(contextMenuPath, { x, y })
-                    )
+                    setTimeout(() => this.contextMenuRenderer.render({
+                        menuPath: contextMenuPath,
+                        anchor: { x, y },
+                        args
+                    }))
                 ));
             }
             this.update();
         }
         event.stopPropagation();
         event.preventDefault();
+    }
+
+    // tslint:disable-next-line:no-any
+    protected toContextMenuArgs(node: SelectableTreeNode): any[] | undefined {
+        return undefined;
     }
 
     protected hasCtrlCmdMask(event: TreeWidget.ModifierAwareEvent): boolean {

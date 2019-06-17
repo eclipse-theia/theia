@@ -420,7 +420,6 @@ export interface TreeViewsMain {
 export interface TreeViewsExt {
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
-    $setSelection(treeViewId: string, treeItemId: string, contextSelection: boolean): Promise<any>;
 }
 
 export class TreeViewItem {
