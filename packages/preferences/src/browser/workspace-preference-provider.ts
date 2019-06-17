@@ -77,7 +77,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         if (!workspace) {
             return undefined;
         }
-        if (workspace.isDirectory) {
+        if (!this.workspaceService.isMultiRootWorkspaceOpened) {
             return this.folderPreferenceProvider;
         }
         return this.workspaceFileProviderFactory({
@@ -109,9 +109,8 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     }
 
     protected ensureResourceUri(): string | undefined {
-        const workspace = this.workspaceService.workspace;
-        if (workspace && workspace.isDirectory) {
-            return workspace.uri;
+        if (this.workspaceService.workspace && !this.workspaceService.isMultiRootWorkspaceOpened) {
+            return this.workspaceService.workspace!.uri;
         }
         return undefined;
     }
