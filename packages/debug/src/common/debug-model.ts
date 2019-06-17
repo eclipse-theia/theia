@@ -70,6 +70,7 @@ export interface DebugAdapterSpawnExecutable {
  */
 export interface DebugAdapterForkExecutable {
     modulePath: string;
+    execArgv?: string[];
     args?: string[];
 }
 
