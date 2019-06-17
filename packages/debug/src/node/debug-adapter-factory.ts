@@ -35,7 +35,8 @@ import {
     CommunicationProvider,
     DebugAdapterSession,
     DebugAdapterSessionFactory,
-    DebugAdapterFactory
+    DebugAdapterFactory,
+    DebugAdapterSpawnExecutable
 } from '../common/debug-model';
 import { DebugAdapterSessionImpl } from './debug-adapter-session';
 
@@ -65,6 +66,12 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
         // tslint:disable-next-line:no-any
         const isForkOptions = (forkOptions: RawForkOptions | any): forkOptions is RawForkOptions =>
             !!forkOptions && !!forkOptions.modulePath;
+
+        if (!isForkOptions(executable)) {
+            if ((executable as DebugAdapterSpawnExecutable).command === 'node') {
+                (executable as DebugAdapterSpawnExecutable).command = process.execPath;
+            }
+        }
 
         const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
         const options = { stdio: ['pipe', 'pipe', 2] };
