@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Container, interfaces } from 'inversify';
-import { Tree, TreeModel, TreeProps, defaultTreeProps, TreeDecoratorService } from '@theia/core/lib/browser';
+import { Tree, TreeModel, TreeProps, defaultTreeProps, TreeDecoratorService, TreeProgressService } from '@theia/core/lib/browser';
 import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileNavigatorTree } from './navigator-tree';
@@ -23,6 +23,8 @@ import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorWidget } from './navigator-widget';
 import { NAVIGATOR_CONTEXT_MENU } from './navigator-contribution';
 import { NavigatorDecoratorService, NavigatorTreeDecorator } from './navigator-decorator-service';
+import { NavigatorProgressService, NavigatorTreeProgress } from './navigator-progress-service';
+import { NoopTreeProgressContribution } from '@theia/core/lib/browser/tree/tree-progress';
 
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -51,6 +53,11 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
     child.bind(NavigatorDecoratorService).toSelf().inSingletonScope();
     child.rebind(TreeDecoratorService).toService(NavigatorDecoratorService);
     bindContributionProvider(child, NavigatorTreeDecorator);
+
+    child.bind(NavigatorProgressService).toSelf().inSingletonScope();
+    child.rebind(TreeProgressService).toService(NavigatorProgressService);
+    bindContributionProvider(child, NavigatorTreeProgress);
+    child.bind(NavigatorTreeProgress).to(NoopTreeProgressContribution);
 
     return child;
 }

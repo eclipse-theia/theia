@@ -65,3 +65,23 @@
     bottom: 40%;
     right: 25%;
 }
+
+.theia-TreeNodeProgress {
+    -webkit-animation: fa-spin 2s infinite linear;
+    animation: fa-spin 2s infinite linear;
+    width: 13px;
+    height: 13px;
+    background-position: center;
+    position: absolute;
+    left: -9px;
+    top: 4px;
+}
+
+.theia-TreeNodeProgress:before {
+    content: "\f110";
+    font-family: FontAwesome;
+    font-size:10px;
+    position: absolute;
+    top: -4px;
+    left: 1px; 
+}

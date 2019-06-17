@@ -23,4 +23,5 @@ export * from './tree-model';
 export * from './tree-widget';
 export * from './tree-container';
 export * from './tree-decorator';
+export * from './tree-progress';
 export * from './tree-search';

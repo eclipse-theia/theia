@@ -23,6 +23,7 @@ import { TreeSelectionServiceImpl } from './tree-selection-impl';
 import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
+import { TreeProgressService, NoopTreeProgressService } from './tree-progress';
 import { TreeSearch } from './tree-search';
 import { FuzzySearch } from './fuzzy-search';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
@@ -62,5 +63,6 @@ export function createTreeContainer(parent: interfaces.Container, props?: Partia
     );
 
     child.bind(TreeDecoratorService).to(NoopTreeDecoratorService).inSingletonScope();
+    child.bind(TreeProgressService).to(NoopTreeProgressService).inSingletonScope();
     return child;
 }

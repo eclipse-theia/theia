@@ -26,6 +26,7 @@ import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeDecoration, TreeDecoratorService } from './tree-decorator';
+import { TreeProgressService } from './tree-progress';
 import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
@@ -49,6 +50,7 @@ export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
 
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
+export const TREE_NODE_PROGRESS_CLASS = 'theia-TreeNodeProgress';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 
 export const TreeProps = Symbol('TreeProps');
@@ -125,6 +127,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(TreeDecoratorService)
     protected readonly decoratorService: TreeDecoratorService;
+    @inject(TreeProgressService)
+    protected readonly progressService: TreeProgressService;
     @inject(TreeSearch)
     protected readonly treeSearch: TreeSearch;
     @inject(SearchBoxFactory)
@@ -184,7 +188,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
-            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations())
+            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations()),
+            this.progressService.onDidChangeProgress(() => this.update())
         ]);
         setTimeout(() => {
             this.updateRows();
@@ -386,6 +391,18 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.handleClickEvent(node, event);
         }
         event.stopPropagation();
+    }
+
+    protected renderProgressIndicator(node: TreeNode, props: NodeProps): React.ReactNode {
+        const progressData = this.progressService.getProgressIndicators(node);
+        if (progressData.length === 0) {
+            // tslint:disable-next-line:no-null-keyword
+            return null;
+        }
+        return <div
+            className={TREE_NODE_PROGRESS_CLASS}
+            title={progressData.filter(data => data.title).map(data => data.title).join('\n')}
+        />;
     }
 
     protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
@@ -603,7 +620,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             return undefined;
         }
         const attributes = this.createNodeAttributes(node, props);
-        const content = <div className={TREE_NODE_CONTENT_CLASS}>
+        const content = <div className={TREE_NODE_CONTENT_CLASS} style={{ position: 'relative' }}>
+            {this.renderProgressIndicator(node, props)}
             {this.renderExpansionToggle(node, props)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
             {this.renderCaptionAffixes(node, props, 'captionPrefixes')}

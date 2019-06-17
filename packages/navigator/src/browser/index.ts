@@ -17,3 +17,4 @@
 export * from './navigator-model';
 export * from './navigator-widget';
 export * from './navigator-decorator-service';
+export * from './navigator-progress-service';

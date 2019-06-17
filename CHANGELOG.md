@@ -2,6 +2,8 @@
 
 ## v0.8.0
 
+- [navigator] added support for progress indicators to items in navigation and other trees
+
 Breaking changes:
 
 - [plugin] 'Hosted mode' extracted in `plugin-dev` extension
