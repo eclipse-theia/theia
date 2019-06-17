@@ -12,6 +12,8 @@ Breaking changes:
     - `debug.restart` renamed to `workbench.action.debug.restart`
 - [preferences] renamed overridenPreferenceName to overriddenPreferenceName
 - [task] `cwd`, which used to be defined directly under `Task`, is moved into `Task.options` object
+- [preferences] removed constructor from the `FolderPreferenceProvider` class
+- [workspace] `isMultiRootWorkspaceOpened()` is renamed into `isMultiRootWorkspaceEnabled()`
 
 ## v0.7.0
 

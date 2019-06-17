@@ -18,7 +18,8 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export const FolderPreferenceProviderFactory = Symbol('FolderPreferenceProviderFactory');
 export interface FolderPreferenceProviderFactory {
@@ -36,9 +37,10 @@ export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider
 
     readonly folderUri: URI;
 
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+
     constructor(
         @inject(FolderPreferenceProviderOptions) protected readonly options: FolderPreferenceProviderOptions,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         super();
         this.folderUri = new URI(this.options.folder.uri);
@@ -49,6 +51,10 @@ export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider
     }
 
     protected getScope(): PreferenceScope {
+        if (!this.workspaceService.isMultiRootWorkspaceOpened) {
+            // when FolderPreferenceProvider is used as a delegate of WorkspacePreferenceProvider in a one-folder workspace
+            return PreferenceScope.Workspace;
+        }
         return PreferenceScope.Folder;
     }
 

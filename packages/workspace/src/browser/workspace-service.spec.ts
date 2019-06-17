@@ -600,10 +600,10 @@ describe('WorkspaceService', () => {
         });
     });
 
-    describe('isMultiRootWorkspaceOpened status', () => {
+    describe('isMultiRootWorkspaceEnabled status', () => {
         it('should be true if there is an opened workspace and preference["workspace.supportMultiRootWorkspace"] = true, otherwise false', () => {
             mockPreferenceValues['workspace.supportMultiRootWorkspace'] = true;
-            expect(wsService.isMultiRootWorkspaceOpened).to.be.false;
+            expect(wsService.isMultiRootWorkspaceEnabled).to.be.false;
 
             const file = <FileStat>{
                 uri: 'file:///home/file',
@@ -612,9 +612,31 @@ describe('WorkspaceService', () => {
             };
             wsService['_workspace'] = file;
             mockPreferenceValues['workspace.supportMultiRootWorkspace'] = true;
-            expect(wsService.isMultiRootWorkspaceOpened).to.be.true;
+            expect(wsService.isMultiRootWorkspaceEnabled).to.be.true;
 
             mockPreferenceValues['workspace.supportMultiRootWorkspace'] = false;
+            expect(wsService.isMultiRootWorkspaceEnabled).to.be.false;
+        });
+    });
+
+    describe('isMultiRootWorkspaceOpened status', () => {
+        it('should be true if there is an opened workspace and the workspace is not a directory, otherwise false', () => {
+            expect(wsService.isMultiRootWorkspaceOpened).to.be.false;
+
+            const file = <FileStat>{
+                uri: 'file:///home/file',
+                lastModification: 0,
+                isDirectory: false
+            };
+            wsService['_workspace'] = file;
+            expect(wsService.isMultiRootWorkspaceOpened).to.be.true;
+
+            const dir = <FileStat>{
+                uri: 'file:///home/dir',
+                lastModification: 0,
+                isDirectory: true
+            };
+            wsService['_workspace'] = dir;
             expect(wsService.isMultiRootWorkspaceOpened).to.be.false;
         });
     });

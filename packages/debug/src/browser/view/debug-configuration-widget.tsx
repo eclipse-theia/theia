@@ -97,7 +97,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         return configuration.name + '__CONF__' + workspaceFolderUri;
     }
     protected toName({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
-        if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceOpened) {
+        if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceEnabled) {
             return configuration.name;
         }
         return configuration.name + ' (' + new URI(workspaceFolderUri).path.base + ')';
