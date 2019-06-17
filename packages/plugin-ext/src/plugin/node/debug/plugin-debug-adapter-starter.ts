@@ -15,20 +15,36 @@
  ********************************************************************************/
 
 import * as net from 'net';
-import { CommunicationProvider, DebugAdapterExecutable } from '@theia/debug/lib/common/debug-model';
+import * as theia from '@theia/plugin';
+import { CommunicationProvider, DebugAdapterForkExecutable } from '@theia/debug/lib/common/debug-model';
 import { ChildProcess, spawn, fork } from 'child_process';
 
 /**
  * Starts debug adapter process.
  */
-export function startDebugAdapter(executable: DebugAdapterExecutable): CommunicationProvider {
+export function startDebugAdapter(executable: theia.DebugAdapterExecutable): CommunicationProvider {
+    // tslint:disable-next-line: no-any
+    const options: any = { stdio: ['pipe', 'pipe', 2] };
+
+    if (executable.options) {
+        options.cwd = executable.options.cwd;
+
+        // The additional environment of the executed program or shell. If omitted
+        // the parent process' environment is used. If provided it is merged with
+        // the parent process' environment.
+        options.env = Object.assign({}, process.env);
+        Object.assign(options.env, executable.options.env);
+    }
+
     let childProcess: ChildProcess;
     if ('command' in executable) {
         const { command, args } = executable;
-        childProcess = spawn(command, args, { stdio: ['pipe', 'pipe', 2] }) as ChildProcess;
+        childProcess = spawn(command, args, options);
     } else if ('modulePath' in executable) {
-        const { modulePath, args } = executable;
-        childProcess = fork(modulePath, args, { stdio: ['pipe', 'pipe', 2, 'ipc'] });
+        const forkExecutable = <DebugAdapterForkExecutable>executable;
+        const { modulePath, args } = forkExecutable;
+        options.stdio.push('ipc');
+        childProcess = fork(modulePath, args, options);
     } else {
         throw new Error(`It is not possible to launch debug adapter with the command: ${JSON.stringify(executable)}`);
     }
@@ -43,8 +59,8 @@ export function startDebugAdapter(executable: DebugAdapterExecutable): Communica
 /**
  * Connects to a remote debug server.
  */
-export function connectDebugAdapter(serverPort: number): CommunicationProvider {
-    const socket = net.createConnection(serverPort);
+export function connectDebugAdapter(server: theia.DebugAdapterServer): CommunicationProvider {
+    const socket = net.createConnection(server.port, server.host);
     return {
         input: socket,
         output: socket,

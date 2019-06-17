@@ -94,6 +94,8 @@ import {
     TaskRevealKind,
     TaskGroup,
     Task,
+    DebugAdapterExecutable,
+    DebugAdapterServer,
     Breakpoint,
     SourceBreakpoint,
     FunctionBreakpoint,
@@ -633,6 +635,9 @@ export function createAPIFactory(
             get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
                 return debugExt.onDidChangeBreakpoints;
             },
+            registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
+                return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);
+            },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
                 return debugExt.registerDebugConfigurationProvider(debugType, provider);
             },
@@ -767,6 +772,8 @@ export function createAPIFactory(
             TaskPanelKind,
             TaskGroup,
             Task,
+            DebugAdapterExecutable,
+            DebugAdapterServer,
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,

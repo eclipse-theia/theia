@@ -1739,6 +1739,63 @@ export class Task {
     }
 }
 
+export class DebugAdapterExecutable {
+    /**
+     * The command or path of the debug adapter executable.
+     * A command must be either an absolute path of an executable or the name of an command to be looked up via the PATH environment variable.
+     * The special value 'node' will be mapped to VS Code's built-in Node.js runtime.
+     */
+    readonly command: string;
+
+    /**
+     * The arguments passed to the debug adapter executable. Defaults to an empty array.
+     */
+    readonly args?: string[];
+
+    /**
+     * Optional options to be used when the debug adapter is started.
+     * Defaults to undefined.
+     */
+    readonly options?: theia.DebugAdapterExecutableOptions;
+
+    /**
+     * Creates a description for a debug adapter based on an executable program.
+     *
+     * @param command The command or executable path that implements the debug adapter.
+     * @param args Optional arguments to be passed to the command or executable.
+     * @param options Optional options to be used when starting the command or executable.
+     */
+    constructor(command: string, args?: string[], options?: theia.DebugAdapterExecutableOptions) {
+        this.command = command;
+        this.args = args;
+        this.options = options;
+    }
+}
+
+/**
+ * Represents a debug adapter running as a socket based server.
+ */
+export class DebugAdapterServer {
+
+    /**
+     * The port.
+     */
+    readonly port: number;
+
+    /**
+     * The host.
+     */
+    readonly host?: string;
+
+    /**
+     * Create a description for a debug adapter running as a socket based server.
+     */
+    constructor(port: number, host?: string) {
+        this.port = port;
+        this.host = host;
+    }
+}
+
 /**
  * The base class of all breakpoint types.
  */
