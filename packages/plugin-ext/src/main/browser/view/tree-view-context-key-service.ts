@@ -39,4 +39,8 @@ export class TreeViewContextKeyService {
         this._viewItem = this.contextKeyService.createKey('viewItem', '');
     }
 
+    match(expression: string | undefined): boolean {
+        return !expression || this.contextKeyService.match(expression);
+    }
+
 }

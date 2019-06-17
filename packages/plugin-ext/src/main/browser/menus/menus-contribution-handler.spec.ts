@@ -32,7 +32,6 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TreeViewActions } from '../view/tree-view-actions';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 
@@ -67,7 +66,6 @@ before(() => {
         // tslint:disable-next-line:no-any mock PluginSharedStyle
         bind(PluginSharedStyle).toConstantValue({} as any);
         bind(SelectionService).toSelf().inSingletonScope();
-        bind(TreeViewActions).toSelf().inSingletonScope();
         // tslint:disable-next-line:no-any mock ScmService
         bind(ScmService).toConstantValue({} as any);
         // tslint:disable-next-line:no-any mock ScmService

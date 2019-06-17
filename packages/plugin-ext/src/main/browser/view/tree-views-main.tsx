@@ -36,16 +36,16 @@ import {
     TREE_NODE_TAIL_CLASS
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
-import { Command, CommandService } from '@theia/core/lib/common/command';
-import { MenuPath } from '@theia/core/lib/common/menu';
+import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';
-import { TreeViewActions } from './tree-view-actions';
 import { TreeViewContextKeyService } from './tree-view-context-key-service';
+import { CommandRegistry } from '@theia/core';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
+export const VIEW_ITEM_INLINE_MNUE: MenuPath = ['view-item-inline-menu'];
 
 export class TreeViewsMainImpl implements TreeViewsMain {
 
@@ -130,8 +130,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
         treeViewWidget.model.onSelectionChanged(event => {
             if (event.length === 1) {
-                const { id, contextValue } = event[0] as TreeViewNode;
-                this.proxy.$setSelection(treeViewId, id, treeViewWidget.contextSelection);
+                const { contextValue } = event[0] as TreeViewNode;
                 this.contextKeys.viewItem.set(contextValue);
             } else {
                 this.contextKeys.viewItem.set('');
@@ -238,11 +237,11 @@ export class TreeViewWidget extends TreeWidget {
 
     protected _contextSelection = false;
 
-    @inject(TreeViewActions)
-    protected readonly actions: TreeViewActions;
+    @inject(MenuModelRegistry)
+    protected readonly menus: MenuModelRegistry;
 
-    @inject(CommandService)
-    protected readonly commands: CommandService;
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
 
     @inject(TreeViewContextKeyService)
     protected readonly contextKeys: TreeViewContextKeyService;
@@ -266,20 +265,7 @@ export class TreeViewWidget extends TreeWidget {
         });
     }
 
-    get contextSelection(): boolean {
-        return this._contextSelection;
-    }
-
-    protected handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        try {
-            this._contextSelection = true;
-            super.handleContextMenuEvent(node, event);
-        } finally {
-            this._contextSelection = false;
-        }
-    }
-
-    public updateWidget() {
+    updateWidget() {
         this.updateRows();
 
         // Need to wait for 20 miliseconds until rows become updated.
@@ -348,6 +334,7 @@ export class TreeViewWidget extends TreeWidget {
         if (this.model.selectedNodes.every(selected => selected.id !== node.id) && node.id !== this.hoverNodeId) {
             return false;
         }
+        const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MNUE);
         const view = this.contextKeys.view.get();
         const viewItem = this.contextKeys.viewItem.get();
         this.contextKeys.view.set(this.id);
@@ -355,7 +342,7 @@ export class TreeViewWidget extends TreeWidget {
         try {
             const arg = this.toTreeViewSelection(node);
             return <React.Fragment>
-                {this.actions.getInlineCommands(arg).map(command => this.renderInlineCommand(command, arg))}
+                {menu.children.map((item, index) => item instanceof ActionMenuNode && this.renderInlineCommand(item, index, arg))}
             </React.Fragment>;
         } finally {
             this.contextKeys.view.set(view);
@@ -368,14 +355,15 @@ export class TreeViewWidget extends TreeWidget {
     }
 
     // tslint:disable-next-line:no-any
-    protected renderInlineCommand(command: Command, arg: any): React.ReactNode {
-        if (!command.iconClass) {
+    protected renderInlineCommand(node: ActionMenuNode, index: number, arg: any): React.ReactNode {
+        const { icon } = node;
+        if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !this.contextKeys.match(node.action.when)) {
             return false;
         }
-        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, command.iconClass, 'theia-tree-view-inline-action'].join(' ');
-        return <div key={command.id} className={className} title={command.label || ''} onClick={e => {
+        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, 'theia-tree-view-inline-action'].join(' ');
+        return <div key={index} className={className} title={node.label} onClick={e => {
             e.stopPropagation();
-            this.commands.executeCommand(command.id, arg);
+            this.commands.executeCommand(node.action.commandId, arg);
         }} />;
     }
 
@@ -391,6 +379,10 @@ export class TreeViewWidget extends TreeWidget {
             onMouseOver: () => this.setHoverNodeId(node.id),
             onMouseOut: () => this.setHoverNodeId(undefined)
         };
+    }
+
+    protected toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
+        return [this.toTreeViewSelection(node)];
     }
 
 }
