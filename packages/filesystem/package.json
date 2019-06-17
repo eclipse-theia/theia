@@ -1,9 +1,9 @@
 {
   "name": "@theia/filesystem",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/core": "^0.7.1",
+    "@theia/core": "^0.7.2",
     "@types/body-parser": "^1.17.0",
     "@types/fs-extra": "^4.0.2",
     "@types/mime-types": "^2.1.0",
@@ -67,7 +67,7 @@
     "test:watch": "theiaext test:watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.7.1"
+    "@theia/ext-scripts": "^0.7.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -1,9 +1,9 @@
 {
   "name": "@theia/bunyan",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Theia - bunyan Logger Extension",
   "dependencies": {
-    "@theia/core": "^0.7.1",
+    "@theia/core": "^0.7.2",
     "@types/bunyan": "^1.8.0",
     "bunyan": "^1.8.10"
   },
@@ -39,7 +39,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.7.1"
+    "@theia/ext-scripts": "^0.7.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
