@@ -52,8 +52,26 @@
     min-height: 16px;
 }
 
-.kb table th,
-.kb table td {
+.th-action, .th-keybinding,
+.kb-actions, .kb-keybinding {
+    min-height: 18px;
+    overflow: hidden;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.th-action,
+.kb-actions {
+    padding: 2px 0px 5px 0px;
+}
+
+.th-keybinding,
+.kb-keybinding {
+    padding: 2px 10px 5px 10px;
+}
+
+.th-label, .th-scope, .th-context, .th-command,
+.kb-label, .kb-scope, .kb-context, .kb-command {
     padding: 2px 10px 5px 10px;
     min-height: 18px;
     overflow: hidden;
@@ -86,7 +104,7 @@
     background-color: var(--theia-accent-color4);
 }
 
-.kb table tbody tr:hover .kb-action-item{
+.kb table tbody tr:hover .kb-action-item {
     visibility: visible;
     color: var(--theia-ui-font-color1);
     text-decoration: none;
@@ -105,28 +123,29 @@
 }
 
 .kb table .th-action {
-    width: 20px;
-}
-
-.kb table .th-command {
-    width: 200px;
-}
-
-.kb table .th-context {
-    width: 70px;
+    width: 35px;
 }
 
 .kb table .th-label {
-    width: 150px;
+    width: 25%;
 }
 
 .kb table .th-keybinding {
-    width: 70px;
+    width: 20%;
 }
 
 .kb table .th-scope {
-    width: 30px;
+    width: 10%;
 }
+
+.kb table .th-context {
+    width: 15%;
+}
+
+.kb table .th-command {
+    width: 30%;
+}
+
 
 .message-container {
     align-items: center;
@@ -162,4 +181,11 @@
 .kb-item-row td a:focus {
     outline: 0;
     border: none;
+}
+
+.kb-actions-icons {
+    display: block;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
 }
