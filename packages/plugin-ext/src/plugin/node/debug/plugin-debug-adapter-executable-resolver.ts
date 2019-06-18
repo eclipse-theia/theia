@@ -15,18 +15,18 @@
  ********************************************************************************/
 
 import * as path from 'path';
+import * as theia from '@theia/plugin';
 import { PlatformSpecificAdapterContribution, DebuggerContribution } from '../../../common';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
-import { DebugAdapterExecutable } from '@theia/debug/lib/common/debug-model';
 
 /**
  * Resolves [DebugAdapterExecutable](#DebugAdapterExecutable) based on contribution.
  */
-export async function resolveDebugAdapterExecutable(pluginPath: string, debuggerContribution: DebuggerContribution): Promise<DebugAdapterExecutable> {
+export async function resolveDebugAdapterExecutable(pluginPath: string, debuggerContribution: DebuggerContribution): Promise<theia.DebugAdapterExecutable | undefined> {
     const info = toPlatformInfo(debuggerContribution);
     let program = (info && info.program || debuggerContribution.program);
     if (!program) {
-        throw new Error('It is not possible to provide debug adapter executable. Program not found.');
+        return undefined;
     }
     program = path.join(pluginPath, program);
     const programArgs = info && info.args || debuggerContribution.args || [];
