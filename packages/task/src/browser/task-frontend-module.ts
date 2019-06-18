@@ -31,6 +31,7 @@ import { bindProcessTaskModule } from './process/process-task-frontend-module';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskActionProvider, ConfigureTaskAction } from './task-action-provider';
 import '../../src/browser/style/index.css';
+import './tasks-monaco-contribution';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
