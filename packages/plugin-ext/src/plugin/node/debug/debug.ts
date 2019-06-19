@@ -324,7 +324,7 @@ export class DebugExtImpl implements DebugExt {
         }
 
         if ('debugServer' in debugConfiguration) {
-            return connectDebugAdapter(debugConfiguration.debugServer);
+            return connectDebugAdapter({ port: debugConfiguration.debugServer });
         } else {
             if (!executable) {
                 throw new Error('It is not possible to provide debug adapter executable.');
