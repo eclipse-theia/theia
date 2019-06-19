@@ -135,6 +135,7 @@ import { QuickPick, QuickPickItem } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
 import { DecorationProvider, LineChange } from '@theia/plugin';
 import { DecorationsExtImpl } from './decorations';
+import { ClipboardExt } from './clipboard-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -144,7 +145,8 @@ export function createAPIFactory(
     preferenceRegistryExt: PreferenceRegistryExtImpl,
     editorsAndDocumentsExt: EditorsAndDocumentsExtImpl,
     workspaceExt: WorkspaceExtImpl,
-    messageRegistryExt: MessageRegistryExt
+    messageRegistryExt: MessageRegistryExt,
+    clipboard: ClipboardExt
 ): PluginAPIFactory {
 
     const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -478,7 +480,7 @@ export function createAPIFactory(
             get machineId() { return envExt.machineId; },
             get sessionId() { return envExt.sessionId; },
             get uriScheme() { return envExt.uriScheme; },
-
+            clipboard,
             getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
                 return envExt.getEnvVariable(envVarName);
             },

@@ -38,7 +38,8 @@
           "vscode-languageserver-types",
           "vscode-ws-jsonrpc",
           "vscode-uri",
-          "yargs"
+          "yargs",
+          "electron"
         ]
       ]
     },

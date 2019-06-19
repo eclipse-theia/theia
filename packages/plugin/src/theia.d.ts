@@ -2941,6 +2941,24 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The clipboard provides read and write access to the system's clipboard.
+     */
+    export interface Clipboard {
+
+        /**
+         * Read the current clipboard contents as text.
+         * @returns A thenable that resolves to a string.
+         */
+        readText(): PromiseLike<string>;
+
+        /**
+         * Writes text into the clipboard.
+         * @returns A thenable that resolves when writing happened.
+         */
+        writeText(value: string): PromiseLike<void>;
+    }
+
+    /**
      * A uri handler is responsible for handling system-wide [uris](#Uri).
      *
      * @see [window.registerUriHandler](#window.registerUriHandler).
@@ -3911,11 +3929,11 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * A type that filesystem providers should use to signal errors.
-	 *
-	 * This class has factory methods for common error-cases, like `EntryNotFound` when
-	 * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.EntryNotFound(someUri);`
-	 */
+     * A type that filesystem providers should use to signal errors.
+     *
+     * This class has factory methods for common error-cases, like `EntryNotFound` when
+     * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.EntryNotFound(someUri);`
+     */
     export class FileSystemError extends Error {
 
         /**
@@ -4491,6 +4509,11 @@ declare module '@theia/plugin' {
          * Represents the preferred user-language, like `de-CH`, `fr`, or `en-US`.
          */
         export const language: string;
+
+        /**
+         * The system clipboard.
+         */
+        export const clipboard: Clipboard;
 
         /**
          * A unique identifier for the computer.
@@ -7172,9 +7195,9 @@ declare module '@theia/plugin' {
         resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
     }
 
-	/**
-	 * A Debug Adapter Tracker is a means to track the communication between VS Code and a Debug Adapter.
-	 */
+    /**
+     * A Debug Adapter Tracker is a means to track the communication between VS Code and a Debug Adapter.
+     */
     export interface DebugAdapterTracker {
         /**
          * A session with the debug adapter is about to be started.
@@ -7246,9 +7269,9 @@ declare module '@theia/plugin' {
         readonly options?: DebugAdapterExecutableOptions;
     }
 
-	/**
-	 * Options for a debug adapter executable.
-	 */
+    /**
+     * Options for a debug adapter executable.
+     */
     export interface DebugAdapterExecutableOptions {
 
         /**

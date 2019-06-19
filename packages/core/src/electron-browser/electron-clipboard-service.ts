@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,16 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { WindowService } from '../../browser/window/window-service';
-import { DefaultWindowService } from '../../browser/window/default-window-service';
-import { FrontendApplicationContribution } from '../frontend-application';
-import { ClipboardService } from '../clipboard-service';
-import { BrowserClipboardService } from '../browser-clipboard-service';
+import { clipboard } from 'electron';
+import { injectable } from 'inversify';
+import { ClipboardService } from '../browser/clipboard-service';
 
-export default new ContainerModule(bind => {
-    bind(DefaultWindowService).toSelf().inSingletonScope();
-    bind(WindowService).toService(DefaultWindowService);
-    bind(FrontendApplicationContribution).toService(DefaultWindowService);
-    bind(ClipboardService).to(BrowserClipboardService).inSingletonScope();
-});
+@injectable()
+export class ElectronClipboardService implements ClipboardService {
+
+    readText(): string {
+        return clipboard.readText();
+    }
+
+    writeText(value: string): void {
+        clipboard.writeText(value);
+    }
+
+}

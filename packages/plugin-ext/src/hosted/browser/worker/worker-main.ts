@@ -28,6 +28,7 @@ import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-document
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
 import { WorkerEnvExtImpl } from './worker-env-ext';
+import { ClipboardExt } from '../../../plugin/clipboard-ext';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -55,6 +56,7 @@ const messageRegistryExt = new MessageRegistryExt(rpc);
 const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments, messageRegistryExt);
 const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
+const clipboardExt = new ClipboardExt(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
     // tslint:disable-next-line:no-any
@@ -133,7 +135,8 @@ const apiFactory = createAPIFactory(
     preferenceRegistryExt,
     editorsAndDocuments,
     workspaceExt,
-    messageRegistryExt
+    messageRegistryExt,
+    clipboardExt
 );
 let defaultApi: typeof theia;
 
