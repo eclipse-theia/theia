@@ -16,6 +16,7 @@
 
 // tslint:disable:no-any
 
+import CodeUri from 'vscode-uri';
 import { injectable, inject } from 'inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
@@ -33,6 +34,19 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { PluginScmProvider, PluginScmResourceGroup, PluginScmResource } from '../scm-main';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
+import { WebviewWidget } from '../webview/webview';
+import { Navigatable } from '@theia/core/lib/browser/navigatable';
+
+type CodeEditorWidget = EditorWidget | WebviewWidget;
+export namespace CodeEditorWidget {
+    export function is(arg: any): arg is CodeEditorWidget {
+        return arg instanceof EditorWidget || arg instanceof WebviewWidget;
+    }
+    export function getResourceUri(editor: CodeEditorWidget): CodeUri | undefined {
+        const resourceUri = Navigatable.is(editor) && editor.getResourceUri();
+        return resourceUri ? resourceUri['codeUri'] : undefined;
+    }
+}
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -75,14 +89,10 @@ export class MenusContributionPointHandler {
                 }
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
-                    const selectedResource = (widget: EditorWidget) => {
-                        const resourceUri = widget.getResourceUri();
-                        return resourceUri && resourceUri['codeUri'];
-                    };
                     this.registerTitleAction(location, action, {
-                        execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(action.command, selectedResource(widget)),
-                        isEnabled: widget => widget instanceof EditorWidget && this.commands.isEnabled(action.command, selectedResource(widget)),
-                        isVisible: widget => widget instanceof EditorWidget && this.commands.isVisible(action.command, selectedResource(widget))
+                        execute: widget => CodeEditorWidget.is(widget) && this.commands.executeCommand(action.command, CodeEditorWidget.getResourceUri(widget)),
+                        isEnabled: widget => CodeEditorWidget.is(widget) && this.commands.isEnabled(action.command, CodeEditorWidget.getResourceUri(widget)),
+                        isVisible: widget => CodeEditorWidget.is(widget) && this.commands.isVisible(action.command, CodeEditorWidget.getResourceUri(widget))
                     });
                 }
             } else if (location === 'view/item/context') {
@@ -154,14 +164,28 @@ export class MenusContributionPointHandler {
         const command: Command = { id };
         this.commands.registerCommand(command, handler);
 
-        const { group, when } = action;
-        const item: Mutable<TabBarToolbarItem> = { id, command: id, group, when };
+        const { when } = action;
+        let group = (action.group || '').trim();
+        let priority: number | undefined = undefined;
+        const sortIndex = group.indexOf('@');
+        if (sortIndex !== -1) {
+            const sort = group.substr(sortIndex + 1).trim();
+            priority = !!sort ? Number(sort) : undefined;
+            priority = priority && !Number.isNaN(priority) ? priority : undefined;
+
+            group = group.substr(0, sortIndex);
+        }
+        if (!group) {
+            group = 'navigation';
+        }
+
+        const item: Mutable<TabBarToolbarItem> = { id, command: id, group, priority, when };
         this.tabBarToolbar.registerItem(item);
 
         this.onDidRegisterCommand(action.command, pluginCommand => {
             command.category = pluginCommand.category;
             item.tooltip = pluginCommand.label;
-            if (group === undefined || group === 'navigation') {
+            if (group === 'navigation') {
                 command.iconClass = pluginCommand.iconClass;
             }
         });
