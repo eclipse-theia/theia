@@ -17,18 +17,18 @@
 import * as PDFObject from 'pdfobject';
 import { inject, injectable, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { PanelLayout, SplitPanel } from '@phosphor/widgets';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { Emitter, Event } from '@theia/core/lib/common/event';
+import { Emitter } from '@theia/core/lib/common/event';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { FrontendApplicationContribution, ApplicationShell, parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
+import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { BaseWidget, addEventListener, FocusTracker, Widget } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, addEventListener} from '@theia/core/lib/browser/widgets/widget';
 import { LocationMapperService } from './location-mapper-service';
+import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
 import debounce = require('lodash.debounce');
 
@@ -155,87 +155,6 @@ export namespace MiniBrowserProps {
 
 }
 
-/**
- * Contribution that tracks `mouseup` and `mousedown` events.
- *
- * This is required to be able to track the `TabBar`, `DockPanel`, and `SidePanel` resizing and drag and drop events correctly
- * all over the application. By default, when the mouse is over an `iframe` we lose the mouse tracking ability, so whenever
- * we click (`mousedown`), we overlay a transparent `div` over the `iframe` in the Mini Browser, then we set the `display` of
- * the transparent `div` to `none` on `mouseup` events.
- */
-@injectable()
-export class MiniBrowserMouseClickTracker implements FrontendApplicationContribution {
-
-    @inject(ApplicationShell)
-    protected readonly applicationShell: ApplicationShell;
-
-    protected readonly toDispose = new DisposableCollection();
-    protected readonly toDisposeOnActiveChange = new DisposableCollection();
-
-    protected readonly mouseupEmitter = new Emitter<MouseEvent>();
-    protected readonly mousedownEmitter = new Emitter<MouseEvent>();
-    protected readonly mouseupListener: (e: MouseEvent) => void = e => this.mouseupEmitter.fire(e);
-    protected readonly mousedownListener: (e: MouseEvent) => void = e => this.mousedownEmitter.fire(e);
-
-    onStart(): void {
-        // Here we need to attach a `mousedown` listener to the `TabBar`s, `DockPanel`s and the `SidePanel`s. Otherwise, Phosphor handles the event and stops the propagation.
-        // Track the `mousedown` on the `TabBar` for the currently active widget.
-        this.applicationShell.activeChanged.connect((shell: ApplicationShell, args: FocusTracker.IChangedArgs<Widget>) => {
-            this.toDisposeOnActiveChange.dispose();
-            if (args.newValue) {
-                const tabBar = shell.getTabBarFor(args.newValue);
-                if (tabBar) {
-                    this.toDisposeOnActiveChange.push(addEventListener(tabBar.node, 'mousedown', this.mousedownListener, true));
-                }
-            }
-        });
-
-        // Track the `mousedown` events for the `SplitPanel`s, if any.
-        const { layout } = this.applicationShell;
-        if (layout instanceof PanelLayout) {
-            this.toDispose.pushAll(
-                layout.widgets.filter(MiniBrowserMouseClickTracker.isSplitPanel).map(splitPanel => addEventListener(splitPanel.node, 'mousedown', this.mousedownListener, true))
-            );
-        }
-        // Track the `mousedown` on each `DockPanel`.
-        const { mainPanel, bottomPanel, leftPanelHandler, rightPanelHandler } = this.applicationShell;
-        this.toDispose.pushAll([mainPanel, bottomPanel, leftPanelHandler.dockPanel, rightPanelHandler.dockPanel]
-            .map(panel => addEventListener(panel.node, 'mousedown', this.mousedownListener, true)));
-
-        // The `mouseup` event has to be tracked on the `document`. Phosphor attaches to there.
-        document.addEventListener('mouseup', this.mouseupListener, true);
-
-        // Make sure it is disposed in the end.
-        this.toDispose.pushAll([
-            this.mousedownEmitter,
-            this.mouseupEmitter,
-            Disposable.create(() => document.removeEventListener('mouseup', this.mouseupListener, true))
-        ]);
-    }
-
-    onStop(): void {
-        this.toDispose.dispose();
-        this.toDisposeOnActiveChange.dispose();
-    }
-
-    get onMouseup(): Event<MouseEvent> {
-        return this.mouseupEmitter.event;
-    }
-
-    get onMousedown(): Event<MouseEvent> {
-        return this.mousedownEmitter.event;
-    }
-
-}
-
-export namespace MiniBrowserMouseClickTracker {
-
-    export function isSplitPanel(arg: Widget): arg is SplitPanel {
-        return arg instanceof SplitPanel;
-    }
-
-}
-
 export const MiniBrowserContentFactory = Symbol('MiniBrowserContentFactory');
 export type MiniBrowserContentFactory = (props: MiniBrowserProps) => MiniBrowserContent;
 
@@ -254,8 +173,8 @@ export class MiniBrowserContent extends BaseWidget {
     @inject(KeybindingRegistry)
     protected readonly keybindings: KeybindingRegistry;
 
-    @inject(MiniBrowserMouseClickTracker)
-    protected readonly mouseTracker: MiniBrowserMouseClickTracker;
+    @inject(ApplicationShellMouseTracker)
+    protected readonly mouseTracker: ApplicationShellMouseTracker;
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;

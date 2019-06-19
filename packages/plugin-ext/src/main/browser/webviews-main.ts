@@ -26,6 +26,7 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeRulesService } from './webview/theme-rules-service';
 import { DisposableCollection } from '@theia/core';
 import { ViewColumnService } from './view-column-service';
+import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
 import debounce = require('lodash.debounce');
 
@@ -48,9 +49,12 @@ export class WebviewsMainImpl implements WebviewsMain {
         visible: boolean;
     }>();
 
+    protected readonly mouseTracker: ApplicationShellMouseTracker;
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
+        this.mouseTracker = container.get(ApplicationShellMouseTracker);
         this.keybindingRegistry = container.get(KeybindingRegistry);
         this.viewColumnService = container.get(ViewColumnService);
         this.updateViewOptions = debounce<() => void>(() => {
@@ -101,7 +105,8 @@ export class WebviewsMainImpl implements WebviewsMain {
                         this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
                     }));
                 }
-            });
+            },
+            this.mouseTracker);
         view.disposed.connect(() => {
             toDispose.dispose();
             this.onCloseView(panelId);
