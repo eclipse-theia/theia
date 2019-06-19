@@ -96,15 +96,22 @@ export class PluginHostRPC {
                 try {
                     // cleaning the cache for all files of that plug-in.
                     Object.keys(require.cache).forEach(function (key) {
-                        const mod = require.cache[key];
+                        const mod: NodeJS.Module = require.cache[key];
 
-                        // remove children that are extensions
+                        // attempting to reload a native module will throw an error, so skip them
+                        if (mod.id.endsWith('.node')) {
+                            return;
+                        }
+
+                        // remove children that are part of the plug-in
                         let i = mod.children.length;
                         while (i--) {
                             const childMod: NodeJS.Module = mod.children[i];
-                            if (childMod && childMod.id.startsWith(plugin.pluginFolder)) {
-                                // cleanup exports
-                                childMod.exports = {};
+                            // ensure the child module is not null, is in the plug-in folder, and is not a native module (see above)
+                            if (childMod && childMod.id.startsWith(plugin.pluginFolder) && !childMod.id.endsWith('.node')) {
+                                // cleanup exports - note that some modules (e.g. ansi-styles) define their
+                                // exports in an immutable manner, so overwriting the exports throws an error
+                                delete childMod.exports;
                                 mod.children.splice(i, 1);
                                 for (let j = 0; j < childMod.children.length; j++) {
                                     delete childMod.children[j];
@@ -115,9 +122,9 @@ export class PluginHostRPC {
                         if (key.startsWith(plugin.pluginFolder)) {
                             // delete entry
                             delete require.cache[key];
-                            const ix = mod.parent.children.indexOf(mod);
+                            const ix = mod.parent!.children.indexOf(mod);
                             if (ix >= 0) {
-                                mod.parent.children.splice(ix, 1);
+                                mod.parent!.children.splice(ix, 1);
                             }
                         }
 
