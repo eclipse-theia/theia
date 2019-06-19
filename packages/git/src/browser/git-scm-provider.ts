@@ -151,15 +151,15 @@ export class GitScmProvider implements ScmProvider {
                 }
             }
         }
+        state.groups.push(await this.createGroup('merge', 'Merged Changes', state.mergeChanges, true));
+        if (token.isCancellationRequested) {
+            return;
+        }
         state.groups.push(await this.createGroup('index', 'Staged changes', state.stagedChanges, true));
         if (token.isCancellationRequested) {
             return;
         }
         state.groups.push(await this.createGroup('workingTree', 'Changes', state.unstagedChanges, false));
-        if (token.isCancellationRequested) {
-            return;
-        }
-        state.groups.push(await this.createGroup('merge', 'Merged Changes', state.mergeChanges, true));
         if (token.isCancellationRequested) {
             return;
         }
