@@ -11,6 +11,7 @@ Breaking changes:
 - [debug] align commands with VS Code [#5102](https://github.com/theia-ide/theia/issues/5102)
     - `debug.restart` renamed to `workbench.action.debug.restart`
 - [preferences] renamed overridenPreferenceName to overriddenPreferenceName
+- [task] `cwd`, which used to be defined directly under `Task`, is moved into `Task.options` object
 
 ## v0.7.0
 

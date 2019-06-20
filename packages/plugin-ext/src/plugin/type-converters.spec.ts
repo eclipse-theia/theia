@@ -184,8 +184,7 @@ describe('Type converters:', () => {
             scope: undefined,
             command,
             args,
-            cwd,
-            options: {},
+            options: { cwd },
             additionalProperty
         };
 
@@ -212,8 +211,7 @@ describe('Type converters:', () => {
             scope: undefined,
             command,
             args,
-            cwd,
-            options: {}
+            options: { cwd }
         };
 
         const pluginTaskWithCommandLine: theia.Task = {

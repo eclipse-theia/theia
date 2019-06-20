@@ -995,7 +995,10 @@ export interface LanguagesContributionMain {
 export interface CommandProperties {
     command: string;
     args?: string[];
-    options?: { [key: string]: any };
+    options?: {
+        cwd?: string;
+        [key: string]: any
+    };
 }
 
 export interface TaskDto {
@@ -1014,7 +1017,6 @@ export interface TaskExecutionDto {
 
 export interface ProcessTaskDto extends TaskDto, CommandProperties {
     windows?: CommandProperties;
-    cwd?: string;
 }
 
 export interface LanguagesExt {
