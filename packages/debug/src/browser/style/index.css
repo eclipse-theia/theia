@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 .theia-debug-container,
-.theia-session-container,
-.theia-debug-widget-container {
+.theia-session-container {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -26,13 +25,6 @@
 .theia-side-panel .theia-debug-container .theia-ExpansionToggle {
     padding-right: 4px;
     min-width: 10px;
-}
-
-#theia-bottom-content-panel .theia-session-container .theia-view-container {
-    flex-direction: row;
-}
-#theia-bottom-content-panel .theia-session-container .theia-view-container-part {
-    flex: 1;
 }
 
 .theia-source-breakpoint,
@@ -137,6 +129,7 @@
 
 .debug-toolbar .debug-configuration {
     width: 100%;
+    min-width: 40px;
 }
 
 .debug-toolbar .debug-action {
