@@ -242,13 +242,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShellMouseTracker).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ApplicationShellMouseTracker);
 
+    bind(ViewContainer.Services).toSelf();
     bind(ViewContainer.Factory).toFactory(context => (...descriptors: ViewContainer.Factory.WidgetDescriptor[]) => {
         const { container } = context;
-        const services: ViewContainer.Services = {
-            contextMenuRenderer: container.get(ContextMenuRenderer),
-            commandRegistry: container.get(CommandRegistry),
-            menuRegistry: container.get(MenuModelRegistry)
-        };
+        const services = container.get(ViewContainer.Services);
         const inputs: Array<{ widget: Widget, options?: ViewContainer.Factory.WidgetOptions }> = [];
         for (const descriptor of descriptors) {
             const { widget, options } = descriptor;

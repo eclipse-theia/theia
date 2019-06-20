@@ -15,14 +15,16 @@
  ********************************************************************************/
 
 import { injectable, postConstruct, inject, interfaces, Container } from 'inversify';
-import { BaseWidget, PanelLayout, Message, ApplicationShell, Widget } from '@theia/core/lib/browser';
+import {
+    BaseWidget, PanelLayout, Message, ApplicationShell, Widget, StatefulWidget, ViewContainer
+} from '@theia/core/lib/browser';
 import { DebugSessionWidget } from './debug-session-widget';
 import { DebugConfigurationWidget } from './debug-configuration-widget';
 import { DebugViewModel } from './debug-view-model';
 import { DebugSessionManager } from '../debug-session-manager';
 
 @injectable()
-export class DebugWidget extends BaseWidget implements ApplicationShell.TrackableWidgetProvider {
+export class DebugWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
 
     static createContainer(parent: interfaces.Container): Container {
         const child = DebugSessionWidget.createContainer(parent, {});
@@ -77,8 +79,16 @@ export class DebugWidget extends BaseWidget implements ApplicationShell.Trackabl
         this.toolbar.focus();
     }
 
-    async getTrackableWidgets(): Promise<Widget[]> {
+    getTrackableWidgets(): Widget[] {
         return this.sessionWidget.getTrackableWidgets();
+    }
+
+    storeState(): object {
+        return this.sessionWidget.storeState();
+    }
+
+    restoreState(oldState: ViewContainer.State): void {
+        this.sessionWidget.restoreState(oldState);
     }
 
 }

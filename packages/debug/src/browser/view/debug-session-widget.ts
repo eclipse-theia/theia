@@ -15,21 +15,21 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct, interfaces, Container } from 'inversify';
-import { Message, ApplicationShell, Widget, SplitPanel, BaseWidget, PanelLayout } from '@theia/core/lib/browser';
+import {
+    Message, ApplicationShell, Widget, BaseWidget, PanelLayout, StatefulWidget, ViewContainer
+} from '@theia/core/lib/browser';
 import { DebugThreadsWidget } from './debug-threads-widget';
 import { DebugStackFramesWidget } from './debug-stack-frames-widget';
 import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
 import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel, DebugViewOptions } from './debug-view-model';
-import { BOTTOM_AREA_ID, MAIN_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
-import { ViewContainer } from '@theia/core/lib/browser/view-container';
 
 export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
 
 @injectable()
-export class DebugSessionWidget extends BaseWidget implements ApplicationShell.TrackableWidgetProvider {
+export class DebugSessionWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
 
     static createContainer(parent: interfaces.Container, options: DebugViewOptions): Container {
         const child = new Container({ defaultScope: 'Singleton' });
@@ -48,7 +48,6 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
         return DebugSessionWidget.createContainer(parent, options).get(DebugSessionWidget);
     }
 
-    protected readonly container = new SplitPanel();
     protected viewContainer: ViewContainer;
 
     @inject(ViewContainer.Factory)
@@ -68,44 +67,32 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
         this.title.iconClass = 'fa debug-tab-icon';
         this.addClass('theia-session-container');
 
-        this.container.addClass('theia-debug-widget-container');
         this.viewContainer = this.viewContainerFactory(...[
             {
                 widget: DebugThreadsWidget,
-                options: {
-                    weight: 30
-                }
+                options: { weight: 30 }
             },
             {
                 widget: DebugStackFramesWidget,
-                options: {
-                    weight: 20
-                }
+                options: { weight: 20 }
             },
             {
                 widget: DebugVariablesWidget,
-                options: {
-                    weight: 10
-                }
+                options: { weight: 10 }
             },
             {
                 widget: DebugBreakpointsWidget,
-                options: {
-                    weight: 10
-                }
+                options: { weight: 10 }
             }]);
-
-        this.container.addWidget(this.viewContainer);
 
         this.toDispose.pushAll([
             this.toolbar,
-            this.container,
             this.viewContainer
         ]);
 
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.toolbar);
-        layout.addWidget(this.container);
+        layout.addWidget(this.viewContainer);
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -119,16 +106,16 @@ export class DebugSessionWidget extends BaseWidget implements ApplicationShell.T
         return viewContainer;
     }
 
-    async getTrackableWidgets(): Promise<Widget[]> {
+    getTrackableWidgets(): Widget[] {
         return this.viewContainer.getTrackableWidgets();
     }
 
-    onAfterAttach(msg: Message): void {
-        const parentId = this.node.parentElement!.parentElement!.getAttribute('id');
-        this.container.orientation =
-            parentId === BOTTOM_AREA_ID || parentId === MAIN_AREA_ID
-                ? 'horizontal'
-                : 'vertical';
-        super.onAfterAttach(msg);
+    storeState(): object {
+        return this.viewContainer.storeState();
     }
+
+    restoreState(oldState: ViewContainer.State): void {
+        this.viewContainer.restoreState(oldState);
+    }
+
 }
