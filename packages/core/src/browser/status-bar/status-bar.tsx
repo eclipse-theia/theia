@@ -195,7 +195,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             if (!(typeof val === 'string') && LabelIcon.is(val)) {
                 const octicon = getIconByName(val.name);
                 if (octicon) {
-                    children.push(<span key={key} className={val.animation ? 'fa-' + val.animation : ''}><Octicon icon={octicon} /></span>);
+                    children.push(<span key={key} className={val.animation ? 'fa-' + val.animation : 'fa'}><Octicon icon={octicon} height={12.5} width={12.5} /></span>);
                 } else {
                     children.push(<span key={key} className={`fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`}></span>);
                 }
