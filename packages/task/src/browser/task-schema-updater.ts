@@ -77,10 +77,6 @@ const taskConfigurationSchema: IJSONSchema = {
                             default: 'shell',
                             description: 'Determines what type of process will be used to execute the task. Only shell types will have output shown on the user interface'
                         },
-                        cwd: {
-                            type: 'string',
-                            description: 'The directory in which the command will be executed'
-                        },
                         command: {
                             type: 'string',
                             description: 'The actual command or script to execute'
@@ -92,9 +88,42 @@ const taskConfigurationSchema: IJSONSchema = {
                                 type: 'string'
                             }
                         },
+                        options: {
+                            type: 'object',
+                            description: 'The command options used when the command is executed',
+                            properties: {
+                                cwd: {
+                                    type: 'string',
+                                    description: 'The directory in which the command will be executed',
+                                    default: '${workspaceFolder}'
+                                },
+                                env: {
+                                    type: 'object',
+                                    description: 'The environment of the executed program or shell. If omitted the parent process\' environment is used'
+                                },
+                                shell: {
+                                    type: 'object',
+                                    description: 'Configuration of the shell when task type is `shell`',
+                                    properties: {
+                                        executable: {
+                                            type: 'string',
+                                            description: 'The shell to use'
+                                        },
+                                        args: {
+                                            type: 'array',
+                                            description: `The arguments to be passed to the shell executable to run in command mode
+                                                (e.g ['-c'] for bash or ['/S', '/C'] for cmd.exe)`,
+                                            items: {
+                                                type: 'string'
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         windows: {
                             type: 'object',
-                            'description': 'Windows specific command configuration overrides command and args',
+                            description: 'Windows specific command configuration overrides command and args',
                             properties: {
                                 command: {
                                     type: 'string',

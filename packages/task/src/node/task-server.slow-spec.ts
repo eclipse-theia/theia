@@ -363,7 +363,7 @@ function createTaskConfig(taskType: string, command: string, args: string[]): Ta
         _scope: '/source/folder',
         command,
         args,
-        cwd: wsRoot,
+        options: { cwd: wsRoot }
     };
     return options;
 }
@@ -376,7 +376,7 @@ function createProcessTaskConfig(processType: ProcessType, command: string, args
         _scope: '/source/folder',
         command,
         args,
-        cwd,
+        options: { cwd: wsRoot },
     };
 }
 
@@ -386,7 +386,7 @@ function createProcessTaskConfig2(processType: ProcessType, command: string, arg
         type: processType,
         command,
         args,
-        cwd: wsRoot,
+        options: { cwd: wsRoot },
     };
 }
 
@@ -396,12 +396,13 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
         type: processType,
         _source: '/source/folder',
         _scope: '/source/folder',
-        cwd: wsRoot,
+        options: { cwd: wsRoot },
         command: commandLongRunning,
         args: [],
         windows: {
             command: FileUri.fsPath(wsRootUri.resolve(commandLongRunningWindows)),
             args: [],
+            options: { cwd: wsRoot }
         }
     };
 }

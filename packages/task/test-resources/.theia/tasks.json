@@ -4,12 +4,13 @@
         {
             "label": "test task",
             "type": "shell",
-            "cwd": "${workspaceFolder}",
             "command": "./task",
             "args": [
                 "test"
             ],
-            "options": {},
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "windows": {
                 "command": "cmd.exe",
                 "args": [
@@ -22,10 +23,11 @@
         {
             "label": "long running test task",
             "type": "shell",
-            "cwd": "${workspaceFolder}",
             "command": "./task-long-running",
             "args": [],
-            "options": {},
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "windows": {
                 "command": "cmd.exe",
                 "args": [
@@ -38,12 +40,14 @@
         {
             "label": "list all files",
             "type": "shell",
-            "cwd": "${workspaceFolder}",
             "command": "ls",
             "args": [
                 "-alR",
                 "/"
             ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "windows": {
                 "command": "cmd.exe",
                 "args": [
