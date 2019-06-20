@@ -602,6 +602,9 @@ export function createAPIFactory(
                     return new Plugin(pluginManager, plg);
                 }
                 return undefined;
+            },
+            get onDidChange(): theia.Event<void> {
+                return pluginManager.onDidChange;
             }
         };
 

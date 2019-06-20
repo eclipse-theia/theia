@@ -78,6 +78,9 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
         },
         getExtension(pluginId: string): any | undefined {
             return withExtensionPath(vscode.plugins.getPlugin(pluginId));
+        },
+        get onDidChange(): theia.Event<void> {
+            return vscode.plugins.onDidChange;
         }
     };
 
