@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2019 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -22,14 +22,21 @@ import * as Converter from '../type-converters';
 import { mixin } from '../../common/types';
 import { Position } from '../../api/plugin-api';
 import { CompletionContext, CompletionResultDto, Completion, CompletionDto } from '../../api/model';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class CompletionAdapter {
     private cacheId = 0;
-    private cache = new Map<number, theia.CompletionItem[]>();
+    private cache = new Map<string, Map<number, theia.CompletionItem[]>>();
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(private readonly delegate: theia.CompletionItemProvider,
         private readonly documents: DocumentsExtImpl) {
-
+        this.toDispose.push(
+            this.documents.onDidRemoveDocument(
+                document => this.clearCache(document.uri.toString())
+            )
+        );
     }
 
     provideCompletionItems(resource: URI, position: Position, context: CompletionContext, token: theia.CancellationToken): Promise<CompletionResultDto | undefined> {
@@ -39,9 +46,10 @@ export class CompletionAdapter {
         }
 
         const doc = document.document;
-
         const pos = Converter.toPosition(position);
         return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, token, context)).then(value => {
+            this.clearCache(doc.uri.toString());
+
             const id = this.cacheId++;
             const result: CompletionResultDto = {
                 id,
@@ -67,7 +75,12 @@ export class CompletionAdapter {
                     result.completions.push(suggestion);
                 }
             }
-            this.cache.set(id, list.items);
+            let docCache = this.cache.get(doc.uri.toString());
+            if (!docCache) {
+                docCache = new Map<number, theia.CompletionItem[]>();
+                this.cache.set(doc.uri.toString(), docCache);
+            }
+            docCache.set(id, list.items);
 
             return result;
         });
@@ -79,7 +92,7 @@ export class CompletionAdapter {
         }
 
         const { parentId, id } = (<CompletionDto>completion);
-        const item = this.cache.has(parentId) && this.cache.get(parentId)![id];
+        const item = this.getCompletionItemFromCache(parentId, id);
         if (!item) {
             return Promise.resolve(completion);
         }
@@ -103,7 +116,7 @@ export class CompletionAdapter {
     }
 
     releaseCompletionItems(id: number) {
-        this.cache.delete(id);
+        this.clearCacheForId(id);
         return Promise.resolve();
     }
 
@@ -161,5 +174,38 @@ export class CompletionAdapter {
 
     static hasResolveSupport(provider: theia.CompletionItemProvider): boolean {
         return typeof provider.resolveCompletionItem === 'function';
+    }
+
+    private clearCache(affectedUri?: string): void {
+        if (affectedUri) {
+            const cacheToClear = this.cache.get(affectedUri);
+            if (cacheToClear) {
+                cacheToClear.clear();
+            }
+        }
+    }
+
+    private clearCacheForId(id: number): void {
+        for (const uri of this.cache.keys()) {
+            const docCache = this.cache.get(uri);
+            if (docCache) {
+                if (docCache.has(id)) {
+                    docCache.delete(id);
+                }
+            }
+        }
+    }
+
+    private getCompletionItemFromCache(parentId: number, id: number): theia.CompletionItem | undefined {
+        for (const uri of this.cache.keys()) {
+            const docCache = this.cache.get(uri);
+            if (docCache) {
+                const items = docCache.get(parentId);
+                if (items) {
+                    return items[id];
+                }
+            }
+        }
+        return undefined;
     }
 }

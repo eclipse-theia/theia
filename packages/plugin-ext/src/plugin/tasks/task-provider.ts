@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2019 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -27,6 +27,8 @@ export class TaskProviderAdapter {
 
     provideTasks(token?: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         return Promise.resolve(this.provider.provideTasks(token)).then(tasks => {
+            this.cache.clear();
+
             if (!Array.isArray(tasks)) {
                 return undefined;
             }

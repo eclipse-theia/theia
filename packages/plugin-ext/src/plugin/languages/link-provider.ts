@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2019 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -20,15 +20,26 @@ import { DocumentsExtImpl } from '../documents';
 import { DocumentLink } from '../../api/model';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class LinkProviderAdapter {
     private cacheId = 0;
-    private cache = new Map<number, theia.DocumentLink>();
+    private cache = new Map<string, Map<number, theia.DocumentLink>>();
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(
         private readonly provider: theia.DocumentLinkProvider,
         private readonly documents: DocumentsExtImpl
-    ) { }
+    ) {
+        this.toDispose.push(
+            this.documents.onDidRemoveDocument(
+                document => {
+                    this.clearCache(document.uri.toString());
+                }
+            )
+        );
+    }
 
     provideLinks(resource: URI, token: theia.CancellationToken): Promise<DocumentLink[] | undefined> {
         const document = this.documents.getDocumentData(resource);
@@ -37,8 +48,9 @@ export class LinkProviderAdapter {
         }
 
         const doc = document.document;
-
         return Promise.resolve(this.provider.provideDocumentLinks(doc, token)).then(links => {
+            this.clearCache(doc.uri.toString());
+
             if (!Array.isArray(links)) {
                 return undefined;
             }
@@ -47,7 +59,12 @@ export class LinkProviderAdapter {
                 const data = Converter.fromDocumentLink(link);
                 const id = this.cacheId++;
                 ObjectIdentifier.mixin(data, id);
-                this.cache.set(id, link);
+                let docCache = this.cache.get(doc.uri.toString());
+                if (!docCache) {
+                    docCache = new Map<number, theia.CodeLens>();
+                    this.cache.set(doc.uri.toString(), docCache);
+                }
+                docCache.set(id, link);
                 result.push(data);
             }
             return result;
@@ -59,15 +76,38 @@ export class LinkProviderAdapter {
             return Promise.resolve(undefined);
         }
         const id = ObjectIdentifier.of(link);
-        const item = this.cache.get(id);
+        const item = this.getLinkFromCache(id);
         if (!item) {
             return Promise.resolve(undefined);
         }
+
         return Promise.resolve(this.provider.resolveDocumentLink(item, token)).then(value => {
             if (value) {
                 return Converter.fromDocumentLink(value);
             }
             return undefined;
         });
+    }
+
+    private clearCache(affectedUri?: string): void {
+        if (affectedUri) {
+            const cacheToClear = this.cache.get(affectedUri);
+            if (cacheToClear) {
+                cacheToClear.clear();
+            }
+        }
+    }
+
+    private getLinkFromCache(linkId: number): theia.DocumentLink | undefined {
+        for (const uri of this.cache.keys()) {
+            const docCache = this.cache.get(uri);
+            if (docCache) {
+                const link = docCache.get(linkId);
+                if (link) {
+                    return link;
+                }
+            }
+        }
+        return undefined;
     }
 }
