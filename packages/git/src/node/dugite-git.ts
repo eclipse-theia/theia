@@ -728,7 +728,8 @@ export class DugiteGit implements Git {
     async lsFiles(repository: Repository, uri: string, options?: Git.Options.LsFiles): Promise<any> {
         await this.ready.promise;
         const args = ['ls-files'];
-        const file = Path.relative(this.getFsPath(repository), this.getFsPath(uri));
+        const relativePath = Path.relative(this.getFsPath(repository), this.getFsPath(uri));
+        const file = (relativePath === '') ? '.' : relativePath;
         if (options && options.errorUnmatch) {
             args.push('--error-unmatch', file);
             const successExitCodes = new Set([0, 1]);
