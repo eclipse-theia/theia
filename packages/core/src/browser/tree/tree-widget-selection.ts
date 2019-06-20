@@ -29,7 +29,7 @@ export namespace TreeWidgetSelection {
     }
     export function is(selection: Object | undefined): selection is TreeWidgetSelection {
         // tslint:disable-next-line:no-any
-        return Array.isArray(selection) && ('source' in selection) && <any>selection['source'] instanceof TreeWidget;
+        return Array.isArray(selection) && ('source' in selection) /*&& <any>selection['source'] instanceof TreeWidget*/;
     }
     export function create(source: TreeWidget): TreeWidgetSelection {
         return Object.assign(source.model.selectedNodes, { source });

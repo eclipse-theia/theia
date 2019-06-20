@@ -26,6 +26,9 @@ import { NavigatorDecoratorService, NavigatorTreeDecorator } from './navigator-d
 import { NavigatorProgressService, NavigatorTreeProgress } from './navigator-progress-service';
 import { NoopTreeProgressContribution } from '@theia/core/lib/browser/tree/tree-progress';
 
+// Nigel
+import { TestTreeProgressContribution } from './navigator-contribution';
+
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{
     ...defaultTreeProps,
     contextMenuPath: NAVIGATOR_CONTEXT_MENU,
@@ -58,6 +61,7 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
     child.rebind(TreeProgressService).toService(NavigatorProgressService);
     bindContributionProvider(child, NavigatorTreeProgress);
     child.bind(NavigatorTreeProgress).to(NoopTreeProgressContribution);
+    child.bind(NavigatorTreeProgress).to(TestTreeProgressContribution);
 
     return child;
 }

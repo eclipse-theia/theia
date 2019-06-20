@@ -34,6 +34,11 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 
+// Nigel
+import { FileStatNode } from '@theia/filesystem/lib/browser';
+import { Emitter } from '@theia/core/lib/common';
+import { TreeNode, TreeProgress } from '@theia/core/lib/browser/tree';
+
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
         id: 'navigator.reveal',
@@ -362,4 +367,19 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         }
     }
 
+}
+
+@injectable()
+export class TestTreeProgressContribution implements TreeProgress {
+
+    protected readonly emitter = new Emitter<void>();
+    readonly onDidChangeProgress = this.emitter.event;
+
+    getProgressIndicator(node: TreeNode) {
+        if (FileStatNode.is(node)) {
+            if (node.fileStat.uri.endsWith('docs')) {
+                return { title: 'my test' };
+            }
+        }
+    }
 }
