@@ -192,7 +192,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 const first = sortedResults[0];
                 sortedResults.shift();
                 if (first) {
-                    const item = await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: true });
+                    const item = await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: !!recentlyUsedItems.length });
                     if (token.isCancellationRequested) {
                         return;
                     }
