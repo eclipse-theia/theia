@@ -205,7 +205,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get cwd(): Promise<URI> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
-            throw new Error('terminal is not started');
+            return Promise.reject(new Error('terminal is not started'));
         }
         if (this.terminalService.getById(this.id)) {
             return this.shellTerminalServer.getCwdURI(this.terminalId)
@@ -216,7 +216,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get processId(): Promise<number> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
-            throw new Error('terminal is not started');
+            return Promise.reject(new Error('terminal is not started'));
         }
         return this.shellTerminalServer.getProcessId(this.terminalId);
     }
