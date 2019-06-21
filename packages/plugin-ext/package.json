@@ -24,8 +24,8 @@
     "@theia/task": "^0.9.0",
     "@theia/terminal": "^0.9.0",
     "@theia/workspace": "^0.9.0",
-    "@types/request": "^2.0.3",
     "decompress": "^4.2.0",
+    "escape-html": "^1.0.3",
     "getmac": "^1.4.6",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
@@ -71,8 +71,10 @@
   "devDependencies": {
     "@theia/ext-scripts": "^0.9.0",
     "@types/decompress": "^4.2.2",
+    "@types/escape-html": "^0.0.20",
     "@types/lodash.clonedeep": "^4.5.3",
-    "@types/ps-tree": "^1.1.0"
+    "@types/ps-tree": "^1.1.0",
+    "@types/request": "^2.0.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

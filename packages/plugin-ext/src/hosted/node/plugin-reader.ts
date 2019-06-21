@@ -19,6 +19,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as express from 'express';
+import * as escape_html from 'escape-html';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject } from 'inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -45,14 +46,16 @@ export class HostedPluginReader implements BackendApplicationContribution {
     configure(app: express.Application): void {
         app.get('/hostedPlugin/:pluginId/:path(*)', (req, res) => {
             const pluginId = req.params.pluginId;
-            const filePath = decodeURIComponent(req.params.path);
+            const filePath = req.params.path;
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
                 const fileToServe = path.join(localPath, filePath);
-                res.sendFile(fileToServe);
+                res.sendFile(fileToServe, { root: localPath }, (error: Error) => {
+                    res.status(404).send(`No such file for plugin with id '${escape_html(pluginId)}'.`);
+                });
             } else {
-                res.status(404).send("The plugin with id '" + pluginId + "' does not exist.");
+                res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
             }
         });
     }
