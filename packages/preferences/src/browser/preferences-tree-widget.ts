@@ -136,13 +136,18 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         }
 
         this.treeWidget = await this.widgetManager.getOrCreateWidget<PreferencesTreeWidget>(PreferencesTreeWidget.ID);
-        this.treeWidget.onPreferenceSelected(value => {
+        this.treeWidget.onPreferenceSelected(async value => {
             const preferenceName = Object.keys(value)[0];
             const preferenceValue = value[preferenceName];
             if (this.dirty) {
-                this.messageService.warn('Preferences editor(s) has/have unsaved changes');
-            } else if (this.currentEditor) {
-                this.preferenceService.set(preferenceName, preferenceValue, this.currentEditor.scope, this.currentEditor.editor.uri.toString());
+                const selected = await this.showDirtyMessage();
+                if (selected) {
+                    this.save();
+                }
+            }
+            if (this.currentEditor) {
+                await this.preferenceService.set(preferenceName, preferenceValue, this.currentEditor.scope, this.currentEditor.editor.uri.toString());
+                this.currentEditor.update();
             }
         });
 
@@ -244,6 +249,15 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
             const firstRoot = roots[0];
             await this.editorsContainer.refreshFoldersPreferencesEditorWidget(firstRoot ? firstRoot.uri : undefined);
         }
+    }
+
+    /**
+     * Show a message when there are unsaved preference editors.
+     * Users will have the opportunity to save and retry an edit.
+     * @returns a Promise that resolves to the user's selection or `undefined`.
+     */
+    private showDirtyMessage(): Promise<string | undefined> {
+        return this.messageService.warn('Preferences editor(s) has/have unsaved changes', 'Save and Retry');
     }
 }
 
