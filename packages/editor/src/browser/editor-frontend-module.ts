@@ -36,7 +36,8 @@ import { SemanticHighlightingService } from './semantic-highlight/semantic-highl
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
 
-    bind(WidgetFactory).to(EditorWidgetFactory).inSingletonScope();
+    bind(EditorWidgetFactory).toSelf().inSingletonScope();
+    bind(WidgetFactory).toService(EditorWidgetFactory);
 
     bind(EditorManager).toSelf().inSingletonScope();
     bind(OpenHandler).toService(EditorManager);
