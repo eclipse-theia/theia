@@ -443,6 +443,8 @@ export class TreeViewItem {
 
     contextValue?: string;
 
+    command?: Command;
+
 }
 
 export interface TreeViewSelection {
