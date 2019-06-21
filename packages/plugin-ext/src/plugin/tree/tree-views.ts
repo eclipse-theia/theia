@@ -251,7 +251,8 @@ class TreeViewExtImpl<T> extends Disposable {
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
-                    contextValue: treeItem.contextValue
+                    contextValue: treeItem.contextValue,
+                    command: treeItem.command
                 } as TreeViewItem;
 
                 treeItems.push(treeViewItem);

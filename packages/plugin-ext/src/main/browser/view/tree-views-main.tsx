@@ -16,6 +16,7 @@
 
 import { interfaces, injectable, inject, Container } from 'inversify';
 import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewSelection } from '../../../api/plugin-api';
+import { Command } from '../../../api/model';
 import { RPCProtocol } from '../../../api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
 import { Message } from '@phosphor/messaging';
@@ -63,6 +64,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
     private readonly contextKeys: TreeViewContextKeyService;
     private readonly sharedStyle: PluginSharedStyle;
+    private readonly commands: CommandRegistry;
 
     constructor(rpc: RPCProtocol, private container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT);
@@ -70,6 +72,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
         this.contextKeys = this.container.get(TreeViewContextKeyService);
         this.sharedStyle = this.container.get(PluginSharedStyle);
+        this.commands = this.container.get(CommandRegistry);
     }
 
     $registerTreeDataProvider(treeViewId: string): void {
@@ -136,6 +139,12 @@ export class TreeViewsMainImpl implements TreeViewsMain {
                 this.contextKeys.viewItem.set('');
             }
             this.contextKeys.view.set(treeViewId);
+
+            // execute TreeItem.command if present
+            const treeNode = event[0] as TreeViewNode;
+            if (treeNode && treeNode.command) {
+                this.commands.executeCommand(treeNode.command.id, ...(treeNode.command.arguments || []));
+            }
         });
     }
 
@@ -147,7 +156,8 @@ export interface SelectionEventHandler {
 }
 
 export interface TreeViewNode extends SelectableTreeNode {
-    contextValue?: string
+    contextValue?: string;
+    command?: Command;
 }
 
 export interface CompositeTreeViewNode extends TreeViewNode, ExpandableTreeNode, CompositeTreeNode {
@@ -188,7 +198,8 @@ export class TreeViewDataProviderMain {
             parent: undefined,
             visible: true,
             selected: false,
-            contextValue: item.contextValue
+            contextValue: item.contextValue,
+            command: item.command
         };
     }
 
