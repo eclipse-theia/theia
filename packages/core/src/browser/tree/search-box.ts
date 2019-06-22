@@ -111,6 +111,7 @@ export class SearchBox extends BaseWidget {
     }
 
     handle(event: KeyboardEvent): void {
+        event.preventDefault();
         const keyCode = KeyCode.createKeyCode(event);
         if (this.canHandle(keyCode)) {
             if (Key.equals(Key.ESCAPE, keyCode)) {
@@ -171,11 +172,11 @@ export class SearchBox extends BaseWidget {
         this.addClass(SearchBox.Styles.SEARCH_BOX);
 
         const input = document.createElement('input');
-        input.readOnly = true;
+        input.readOnly = false;
         input.type = 'text';
+        input.onkeydown = ev => this.handle.bind(this)(ev);
         input.classList.add(
-            SearchBox.Styles.SEARCH_INPUT,
-            SearchBox.Styles.NON_SELECTABLE
+            SearchBox.Styles.SEARCH_INPUT
         );
         this.node.appendChild(input);
 
