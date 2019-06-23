@@ -154,7 +154,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @postConstruct()
     protected init(): void {
         if (this.props.search) {
-            this.searchBox = this.searchBoxFactory(SearchBoxProps.DEFAULT);
+            this.searchBox = this.searchBoxFactory({ ...SearchBoxProps.DEFAULT, showButtons: true });
             this.toDispose.pushAll([
                 this.searchBox,
                 this.searchBox.onTextChange(async data => {
@@ -163,8 +163,18 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     this.update();
                 }),
                 this.searchBox.onClose(data => this.treeSearch.filter(undefined)),
-                this.searchBox.onNext(() => this.model.selectNextNode()),
-                this.searchBox.onPrevious(() => this.model.selectPrevNode()),
+                this.searchBox.onNext(() => {
+                    // Enable next selection if there are currently highlights.
+                    if (this.searchHighlights.size > 1) {
+                        this.model.selectNextNode();
+                    }
+                }),
+                this.searchBox.onPrevious(() => {
+                    // Enable previous selection if there are currently highlights.
+                    if (this.searchHighlights.size > 1) {
+                        this.model.selectPrevNode();
+                    }
+                }),
                 this.treeSearch,
                 this.treeSearch.onFilteredNodesChanged(nodes => {
                     const node = nodes.find(SelectableTreeNode.is);
