@@ -5,6 +5,7 @@
 Breaking changes:
 
 - [task] changed `TaskSchemaUpdater.update()` from asynchronous to synchronous [#6483](https://github.com/eclipse-theia/theia/pull/6483)
+- [monaco] monaco prefix has been removed from commands [#5590](https://github.com/eclipse-theia/theia/pull/5590)
 
 ## v0.12.0
 

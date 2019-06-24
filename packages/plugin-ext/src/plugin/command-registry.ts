@@ -23,8 +23,8 @@ import * as model from '../common/plugin-api-rpc-model';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
-import { KnownCommands } from './type-converters';
 import { DisposableCollection } from '@theia/core';
+import { KnownCommands } from '../common/known-commands';
 
 // tslint:disable-next-line:no-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
@@ -102,9 +102,12 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
-        } else {
+        } else if (KnownCommands.mapped(id)) {
+            // Using the KnownCommand exclusions, convert the commands manually
             return KnownCommands.map(id, args, (mappedId: string, mappedArgs: any[] | undefined) =>
                 this.proxy.$executeCommand(mappedId, ...mappedArgs));
+        } else {
+            return this.proxy.$executeCommand(id, args);
         }
     }
     // tslint:enable:no-any

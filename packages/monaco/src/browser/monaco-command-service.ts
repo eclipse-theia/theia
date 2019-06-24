@@ -57,6 +57,11 @@ export class MonacoCommandService implements ICommandService {
             this._onWillExecuteCommand.fire({ commandId });
             return handler.execute(...args);
         }
+        return this.executeMonacoCommand(commandId, ...args);
+    }
+
+    // tslint:disable-next-line:no-any
+    async executeMonacoCommand(commandId: any, ...args: any[]): Promise<any> {
         if (this.delegate) {
             return this.delegate.executeCommand(commandId, ...args);
         }

@@ -25,6 +25,7 @@ import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
+import { MonacoCommandService } from './monaco-command-service';
 
 export type MonacoCommand = Command & { delegate?: string };
 export namespace MonacoCommands {
@@ -118,7 +119,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             if (command.startsWith('_execute')) {
                 this.commandRegistry.registerCommand(
                     {
-                        id: MonacoCommandRegistry.MONACO_COMMAND_PREFIX + command
+                        id: command
                     },
                     {
                         // tslint:disable-next-line:no-any
@@ -273,7 +274,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
     protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {
         const delegate = action.delegate;
-        return delegate ? this.newCommandHandler(delegate) : this.newActionHandler(action.id);
+        return delegate ? this.newDelegateHandler(delegate) : this.newActionHandler(action.id);
     }
 
     protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
@@ -290,6 +291,11 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         return {
             execute: editor => editor.runAction(action),
             isEnabled: editor => editor.isActionSupported(action)
+        };
+    }
+    protected newDelegateHandler(action: string): MonacoEditorCommandHandler {
+        return {
+            execute: (editor, ...args) => (editor.commandService as MonacoCommandService).executeMonacoCommand(action, ...args)
         };
     }
 
