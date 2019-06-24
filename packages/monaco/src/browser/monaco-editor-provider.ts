@@ -199,7 +199,7 @@ export class MonacoEditorProvider {
         const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
         await Promise.race([
             new Promise(reject => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
-            await editor.commandService.executeCommand('monaco.editor.action.formatDocument')
+            await editor.commandService.executeCommand('editor.action.formatDocument')
         ]);
         return [];
     }

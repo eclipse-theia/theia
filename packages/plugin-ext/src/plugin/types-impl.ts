@@ -13,6 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+// copied from https://github.com/microsoft/vscode/blob/1.37.0/src/vs/workbench/api/common/extHostTypes.ts
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
 
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { illegalArgument } from '../common/errors';
@@ -784,6 +789,17 @@ export class Location {
         } else if (rangeOrPosition instanceof Position) {
             this.range = new Range(rangeOrPosition, rangeOrPosition);
         }
+    }
+
+    static isLocation(thing: {}): thing is theia.Location {
+        if (thing instanceof Location) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return Range.isRange((<Location>thing).range)
+            && URI.isUri((<Location>thing).uri);
     }
 }
 

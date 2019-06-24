@@ -37,7 +37,7 @@ import URI from 'vscode-uri';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
-import { SymbolInformation, Range as R, Position as P, SymbolKind as S, Location as L } from 'vscode-languageserver-types';
+import { SymbolInformation, Range as R, Position as P, SymbolKind as S } from 'vscode-languageserver-types';
 import { Item } from './quick-open';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
@@ -505,64 +505,6 @@ export namespace SignatureHelp {
             signatures: help.signatures && help.signatures.map(SignatureInformation.to)
         };
     }
-}
-
-export namespace KnownCommands {
-    // tslint:disable: no-any
-    const mappings: { [id: string]: [string, (args: any[] | undefined) => any[] | undefined] } = {};
-    mappings['editor.action.showReferences'] = ['textEditor.commands.showReferences', createConversionFunction(
-        (uri: URI) => uri.toString(),
-        fromPositionToP,
-        toArrayConversion(fromLocationToL))];
-
-    export function mapped(id: string): boolean {
-        return !!mappings[id];
-    }
-
-    export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined) => T): T {
-        if (mappings[id]) {
-            return toDo(mappings[id][0], mappings[id][1](args));
-        } else {
-            return toDo(id, args);
-        }
-    }
-
-    type conversionFunction = ((parameter: any) => any) | undefined;
-    function createConversionFunction(...conversions: conversionFunction[]): (args: any[] | undefined) => any[] | undefined {
-        return function (args: any[] | undefined): any[] | undefined {
-            if (!args) {
-                return args;
-            }
-            return args.map(function (arg: any, index: number): any {
-                if (index < conversions.length) {
-                    const conversion = conversions[index];
-                    if (conversion) {
-                        return conversion(arg);
-                    }
-                }
-                return arg;
-            });
-        };
-    }
-    // tslint:enable: no-any
-    function fromPositionToP(p: theia.Position): P {
-        return P.create(p.line, p.character);
-    }
-
-    function fromRangeToR(r: theia.Range): R {
-        return R.create(fromPositionToP(r.start), fromPositionToP(r.end));
-    }
-
-    function fromLocationToL(l: theia.Location): L {
-        return L.create(l.uri.toString(), fromRangeToR(l.range));
-    }
-
-}
-
-function toArrayConversion<T, U>(f: (a: T) => U): (a: T[]) => U[] {
-    return function (a: T[]): U[] {
-        return a.map(f);
-    };
 }
 
 // tslint:disable-next-line:no-any

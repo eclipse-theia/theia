@@ -323,7 +323,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeDocumentSymbolProvider'
             },
             {
-                execute: (resource: URI) => commands.executeCommand('monaco._executeDocumentSymbolProvider',
+                execute: (resource: URI) => commands.executeCommand('_executeDocumentSymbolProvider',
                     { resource: monaco.Uri.parse(resource.toString()) }
                 ).then((value: any) => {
                     if (!Array.isArray(value) || value === undefined) {

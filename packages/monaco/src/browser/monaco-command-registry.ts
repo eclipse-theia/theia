@@ -29,8 +29,6 @@ export interface MonacoEditorCommandHandler {
 @injectable()
 export class MonacoCommandRegistry {
 
-    public static MONACO_COMMAND_PREFIX = 'monaco.';
-
     @inject(MonacoEditorProvider)
     protected readonly monacoEditors: MonacoEditorProvider;
 
@@ -38,19 +36,14 @@ export class MonacoCommandRegistry {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
 
-    protected prefix(command: string): string {
-        return MonacoCommandRegistry.MONACO_COMMAND_PREFIX + command;
-    }
-
     validate(command: string): string | undefined {
-        const monacoCommand = this.prefix(command);
-        return this.commands.commandIds.indexOf(monacoCommand) !== -1 ? monacoCommand : undefined;
+        return this.commands.commandIds.indexOf(command) !== -1 ? command : undefined;
     }
 
     registerCommand(command: Command, handler: MonacoEditorCommandHandler): void {
         this.commands.registerCommand({
             ...command,
-            id: this.prefix(command.id)
+            id: command.id
         }, this.newHandler(handler));
     }
 
