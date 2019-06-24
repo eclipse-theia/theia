@@ -49,6 +49,7 @@
     "prepare": "node scripts/skip-prepare || ( yarn prepare:travis && yarn rebuild:clean && yarn build:clean && yarn prepare:hoisting )",
     "prepare:travis": "node scripts/prepare-travis",
     "prepare:hoisting": "theia check:hoisted -s",
+    "preinstall": "node-gyp install",
     "build": "run build",
     "build:clean": "run prepare",
     "docs": "rimraf gh-pages/docs/next && typedoc --tsconfig configs/typedoc-tsconfig.json --options configs/typedoc.json",
