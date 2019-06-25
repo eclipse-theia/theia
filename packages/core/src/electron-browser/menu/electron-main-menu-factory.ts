@@ -182,9 +182,9 @@ export class ElectronMainMenuFactory {
             // This is workaround for https://github.com/theia-ide/theia/issues/446.
             // Electron menus do not update based on the `isEnabled`, `isVisible` property of the command.
             // We need to check if we can execute it.
-            if (this._menu && this.commandRegistry.isEnabled(command, ...args)) {
+            if (this.commandRegistry.isEnabled(command, ...args)) {
                 await this.commandRegistry.executeCommand(command, ...args);
-                if (this.commandRegistry.isVisible(command, ...args)) {
+                if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
                     this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command, ...args);
                     electron.remote.getCurrentWindow().setMenu(this._menu);
                 }
