@@ -161,7 +161,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         const items = await this.taskService.getRunningTasks();
         if (!!items.length) {
             this.statusBar.setElement(id, {
-                text: `$(wrench) ${items.length}`,
+                text: `$(tools) ${items.length}`,
                 tooltip: 'Show Running Tasks',
                 alignment: StatusBarAlignment.LEFT,
                 priority: 2,
