@@ -20,7 +20,7 @@ import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration }
 import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-protocol';
 import * as http from 'http';
 import * as https from 'https';
-import { isWindows } from '@theia/core/lib/common/os';
+import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { FileUri } from '@theia/core/lib/node';
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
@@ -34,9 +34,11 @@ import URI from '@theia/core/lib/common/uri';
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
-const commandShortrunningindows = '.\\task.bat';
+const commandShortRunningOsx = './task-osx';
+const commandShortRunningWindows = '.\\task.bat';
 
 const commandLongRunning = './task-long-running';
+const commandLongRunningOsx = './task-long-running-osx';
 const commandLongRunningWindows = '.\\task-long-running.bat';
 
 const bogusCommand = 'thisisnotavalidcommand';
@@ -82,7 +84,7 @@ describe('Task server / back-end', function () {
         }
 
         // create task using terminal process
-        const command = isWindows ? commandShortrunningindows : commandShortRunning;
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', `${command} ${someString}`), wsRoot);
         const terminalId = taskInfo.terminalId;
 
@@ -93,7 +95,7 @@ describe('Task server / back-end', function () {
             channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
             channel.onMessage(msg => {
                 // check output of task on terminal is what we expect
-                const expected = `tasking... ${someString}`;
+                const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
                 if (msg.toString().indexOf(expected) !== -1) {
                     resolve();
                 } else {
@@ -106,7 +108,7 @@ describe('Task server / back-end', function () {
 
     it('task using raw process - task server success response shall not contain a terminal id', async function () {
         const someString = 'someSingleWordString';
-        const command = isWindows ? commandShortrunningindows : commandShortRunning;
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const executable = FileUri.fsPath(wsRootUri.resolve(command));
 
         // create task using raw process
@@ -129,7 +131,7 @@ describe('Task server / back-end', function () {
     });
 
     it('task is executed successfully with cwd as a file URI', async function () {
-        const command = isWindows ? commandShortrunningindows : commandShortRunning;
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const config = createProcessTaskConfig('shell', command, [], FileUri.create(wsRoot).toString());
         const taskInfo: TaskInfo = await taskServer.run(config, wsRoot);
 
@@ -139,7 +141,7 @@ describe('Task server / back-end', function () {
     });
 
     it('task is executed successfully using terminal process', async function () {
-        const command = isWindows ? commandShortrunningindows : commandShortRunning;
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', command, []), wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
@@ -148,7 +150,7 @@ describe('Task server / back-end', function () {
     });
 
     it('task is executed successfully using raw process', async function () {
-        const command = isWindows ? commandShortrunningindows : commandShortRunning;
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const executable = FileUri.fsPath(wsRootUri.resolve(command));
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, []));
 
@@ -403,6 +405,9 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
             command: FileUri.fsPath(wsRootUri.resolve(commandLongRunningWindows)),
             args: [],
             options: { cwd: wsRoot }
+        },
+        osx: {
+            command: FileUri.fsPath(wsRootUri.resolve(commandLongRunningOsx))
         }
     };
 }

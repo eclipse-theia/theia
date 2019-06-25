@@ -14,8 +14,7 @@ Each task configuration looks like this:
         "-alR"
     ],
     "options": {
-        "cwd": "${workspaceFolder}",
-
+        "cwd": "${workspaceFolder}"
     },
     "windows": {
         "command": "cmd.exe",
@@ -41,8 +40,13 @@ Each task configuration looks like this:
 - *env*: the environment of the executed program or shell. If omitted the parent process' environment is used.
 - *shell*: configuration of the shell when task type is `shell`, where users can specify the shell to use with *shell*, and the arguments to be passed to the shell executable to run in command mode with *args*.
 
+By default, *command* and *args* above are used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on Linux, MacOS, and Windows, it is better to have separated command, command arguments, and options.
 
-*windows*: by default, *command* and *args* above are used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *args*, when a task is executed on a Windows backend.
+*windows*: if *windows* is defined, its command, command arguments, and options (i.e., *windows.command*, *windows.args*, and *windows.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a Windows backend.
+
+*osx*: if *osx* is defined, its command, command arguments, and options (i.e., *osx.command*, *osx.args*, and *osx.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a MacOS backend.
+
+*linux*: if *linux* is defined, its command, command arguments, and options (i.e., *linux.command*, *linux.args*, and *linux.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a Linux backend.
 
 Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`:
 ``` json
@@ -54,9 +58,9 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
             "type": "shell",
             "command": "./task",
             "args": [
-                "1",
-                "2",
-                "3"
+                "default 1",
+                "default 2",
+                "default 3"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/"
@@ -66,7 +70,14 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
                 "args": [
                     "/c",
                     "task.bat",
-                    "abc"
+                    "windows abc"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "linux 1",
+                    "linux 2",
+                    "linux 3"
                 ]
             }
         },
@@ -128,6 +139,13 @@ The variables are supported in the following properties, using `${variableName}`
 - `options.cwd`
 - `windows.command`
 - `windows.args`
+- `windows.options.cwd`
+- `osx.command`
+- `osx.args`
+- `osx.options.cwd`
+- `linux.command`
+- `linux.args`
+- `linux.options.cwd`
 
 See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
