@@ -80,6 +80,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
+        // FIX the problem
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         return tabBar;
     }
