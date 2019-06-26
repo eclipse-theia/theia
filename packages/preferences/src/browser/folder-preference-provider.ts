@@ -35,15 +35,11 @@ export interface FolderPreferenceProviderOptions {
 @injectable()
 export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider {
 
-    readonly folderUri: URI;
-
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(FolderPreferenceProviderOptions) protected readonly options: FolderPreferenceProviderOptions;
 
-    constructor(
-        @inject(FolderPreferenceProviderOptions) protected readonly options: FolderPreferenceProviderOptions,
-    ) {
-        super();
-        this.folderUri = new URI(this.options.folder.uri);
+    get folderUri(): URI {
+        return new URI(this.options.folder.uri);
     }
 
     protected getUri(): URI {

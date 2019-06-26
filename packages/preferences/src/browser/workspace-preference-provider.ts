@@ -110,7 +110,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
 
     protected ensureResourceUri(): string | undefined {
         if (this.workspaceService.workspace && !this.workspaceService.isMultiRootWorkspaceOpened) {
-            return this.workspaceService.workspace!.uri;
+            return this.workspaceService.workspace.uri;
         }
         return undefined;
     }
