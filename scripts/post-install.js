@@ -26,7 +26,7 @@ async function main() {
     if (fs.existsSync(electronCodecTestLogPath)) {
         console.log('@theia/electron last logs:');
         console.log(fs.readFileSync(electronCodecTestLogPath, { encoding: 'utf8' }).trimRight());
-    } else {
+    } else if (!process.env.THEIA_ELECTRON_SKIP_REPLACE_FFMPEG) {
         throw new Error('Cannot find the log file for the Electron codecs test.');
     }
 }
