@@ -364,12 +364,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async initializeLayout(): Promise<void> {
-        ((async () => {
-            const supported = await this.configurations.supported;
-            if (supported.next().value) {
-                await this.openView();
-            }
-        })());
+        await this.openView();
     }
 
     protected firstSessionStart = true;
