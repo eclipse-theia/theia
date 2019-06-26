@@ -43,6 +43,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
 
         this.updateProviders();
         this.workspaceService.onWorkspaceChanged(() => this.updateProviders());
+
         const readyPromises: Promise<void>[] = [];
         for (const provider of this.providers.values()) {
             readyPromises.push(provider.ready.catch(e => console.error(e)));
