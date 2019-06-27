@@ -63,9 +63,9 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     async init(): Promise<void> {
         const recentTasks = this.taskService.recentTasks;
         const configuredTasks = this.taskService.getConfiguredTasks();
-        const providedTasks = await this.taskService.getProvidedTasks();
+        const detectedTasks = await this.taskService.getProvidedTasks();
 
-        const { filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks(recentTasks, configuredTasks, providedTasks);
+        const { filteredRecentTasks, filteredConfiguredTasks, filteredDetectedTasks } = this.getFilteredTasks(recentTasks, configuredTasks, detectedTasks);
         const stat = this.workspaceService.workspace;
         const isMulti = stat ? !stat.isDirectory : false;
         this.items = [];
@@ -84,7 +84,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                             : index === 0 ? true : false
                     )
                 })),
-            ...filteredProvidedTasks.map((task, index) =>
+            ...filteredDetectedTasks.map((task, index) =>
                 new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
                     groupLabel: index === 0 ? 'detected tasks' : undefined,
                     showBorder: (
@@ -187,36 +187,40 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         return `Task id: ${task.taskId}, label: ${task.config.label}`;
     }
 
-    private getFilteredTasks(recentTasks: TaskConfiguration[], configuredTasks: TaskConfiguration[], providedTasks: TaskConfiguration[])
-        : { filteredRecentTasks: TaskConfiguration[], filteredConfiguredTasks: TaskConfiguration[], filteredProvidedTasks: TaskConfiguration[] } {
+    private getFilteredTasks(recentTasks: TaskConfiguration[], configuredTasks: TaskConfiguration[], detectedTasks: TaskConfiguration[])
+        : { filteredRecentTasks: TaskConfiguration[], filteredConfiguredTasks: TaskConfiguration[], filteredDetectedTasks: TaskConfiguration[] } {
 
         const filteredRecentTasks: TaskConfiguration[] = [];
-        recentTasks.forEach(recent => {
-            const exist = [...configuredTasks, ...providedTasks].some(t => TaskConfiguration.equals(recent, t));
-            if (exist) {
-                filteredRecentTasks.push(recent);
+        for (const recent of recentTasks) {
+            const taskConfig = configuredTasks.find(task => recent.label === task.label) || detectedTasks.find(task => TaskConfiguration.equals(task, recent));
+            if (!taskConfig) {
+                continue;
             }
-        });
 
-        const filteredProvidedTasks: TaskConfiguration[] = [];
-        providedTasks.forEach(provided => {
-            const exist = [...filteredRecentTasks, ...configuredTasks].some(t => TaskConfiguration.equals(provided, t));
+            const exist = filteredRecentTasks.some(task => TaskConfiguration.equals(task, taskConfig));
             if (!exist) {
-                filteredProvidedTasks.push(provided);
+                filteredRecentTasks.push(taskConfig);
             }
-        });
+        }
 
         const filteredConfiguredTasks: TaskConfiguration[] = [];
         configuredTasks.forEach(configured => {
-            const exist = filteredRecentTasks.some(t => TaskConfiguration.equals(configured, t));
+            const exist = filteredRecentTasks.some(recent => TaskConfiguration.equals(configured, recent));
             if (!exist) {
                 filteredConfiguredTasks.push(configured);
             }
         });
 
-        return {
-            filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks
-        };
+        const filteredDetectedTasks: TaskConfiguration[] = [];
+        detectedTasks.forEach(detected => {
+            const exist = filteredRecentTasks.some(recent => TaskConfiguration.equals(detected, recent)) ||
+                configuredTasks.some(configured => configured.label === detected.label);
+            if (!exist) {
+                filteredDetectedTasks.push(detected);
+            }
+        });
+
+        return { filteredRecentTasks, filteredConfiguredTasks, filteredDetectedTasks };
     }
 }
 
