@@ -461,7 +461,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const needConfirm = !SearchInWorkspaceFileNode.is(node) && !SearchInWorkspaceResultLineNode.is(node);
         if (!needConfirm || await this.confirmReplaceAll(this.getResultCount(replaceForNode), this.getFileCount(replaceForNode))) {
             (node ? [node] : Array.from(this.resultTree.values())).forEach(n => {
-                this.replaceResult(n);
+                this.replaceResult(n, !!node);
                 this.removeNode(n);
             });
         }
@@ -483,10 +483,15 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         rightPositionedNodes.map(r => r.character += diff);
     }
 
-    protected async replaceResult(node: TreeNode) {
+    /**
+     * Replace text either in all search matches under a node or in all search matches, and save the changes.
+     * @param node - node in the tree widget in which the "replace all" is performed.
+     * @param {boolean} replaceOne - whether the function is to replace all matches under a node. If it is false, replace all.
+     */
+    protected async replaceResult(node: TreeNode, replaceOne: boolean): Promise<void> {
         const toReplace: SearchInWorkspaceResultLineNode[] = [];
         if (SearchInWorkspaceRootFolderNode.is(node)) {
-            node.children.forEach(fileNode => this.replaceResult(fileNode));
+            node.children.forEach(fileNode => this.replaceResult(fileNode, replaceOne));
         } else if (SearchInWorkspaceFileNode.is(node)) {
             toReplace.push(...node.children);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
@@ -495,8 +500,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
 
         if (toReplace.length > 0) {
-            const widget = await this.doOpen(toReplace[0]);
-            const source = widget.editor.document.getText();
+            // Store the state of all tracked editors before another editor widget might be created for text replacing.
+            const trackedEditors: EditorWidget[] = this.editorManager.all;
+            // Open the file only if the function is called to replace all matches under a specific node.
+            const widget: EditorWidget = replaceOne ? await this.doOpen(toReplace[0]) : await this.doGetWidget(toReplace[0]);
+            const source: string = widget.editor.document.getText();
             const replaceOperations = toReplace.map(resultLineNode => ({
                 text: this._replaceTerm,
                 range: {
@@ -510,10 +518,19 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     }
                 }
             } as ReplaceOperation));
+            // Replace the text.
             await widget.editor.replaceText({
                 source,
                 replaceOperations
             });
+            // Save the text replacement changes in the editor.
+            await widget.saveable.save();
+            // Dispose the widget if it is not opened but created for `replaceAll`.
+            if (!replaceOne) {
+                if (trackedEditors.indexOf(widget) === -1) {
+                    widget.dispose();
+                }
+            }
         }
     }
 
@@ -635,6 +652,17 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             <span className={className}> {node.lineText.substr(node.character - 1, node.length)}</span>
             {replaceTerm}
         </React.Fragment>;
+    }
+
+    /**
+     * Get the editor widget by the node.
+     * @param {SearchInWorkspaceResultLineNode} node - the node representing a match in the search results.
+     * @returns The editor widget to which the text replace will be done.
+     */
+    protected async doGetWidget(node: SearchInWorkspaceResultLineNode): Promise<EditorWidget> {
+        const fileUri = new URI(node.fileUri);
+        const editorWidget = await this.editorManager.getOrCreateByUri(fileUri);
+        return editorWidget;
     }
 
     protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
