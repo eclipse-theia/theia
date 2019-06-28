@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.9.0
+
+Breaking changes:
+
+- [plugin] fixed typo in 'HostedInstanceState' enum from RUNNNING to RUNNING in `plugin-dev` extension
+- [plugin] removed member `processOptions` from `AbstractHostedInstanceManager` as it is not initialized or used
+
 ## v0.8.0
 
 - [core] added bépo keyboard layout

@@ -79,7 +79,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
                     this.hostedPluginManagerClient.onStateChanged(e => {
                         if (e.state === HostedInstanceState.STARTING) {
                             this.onHostedPluginStarting();
-                        } else if (e.state === HostedInstanceState.RUNNNING) {
+                        } else if (e.state === HostedInstanceState.RUNNING) {
                             this.onHostedPluginRunning();
                         } else if (e.state === HostedInstanceState.STOPPED) {
                             this.onHostedPluginStopped();
@@ -149,7 +149,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * Display status bar element for running plugin.
      */
     protected async onHostedPluginRunning(): Promise<void> {
-        this.pluginState = HostedInstanceState.RUNNNING;
+        this.pluginState = HostedInstanceState.RUNNING;
 
         let entryText: string;
         if (this.hostedPluginPreferences['hosted-plugin.watchMode'] && this.watcherSuccess) {
@@ -216,7 +216,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * @param event hosted instance state change event
      */
     protected async handleWatchers(event: HostedInstanceData): Promise<void> {
-        if (event.state === HostedInstanceState.RUNNNING) {
+        if (event.state === HostedInstanceState.RUNNING) {
             if (this.hostedPluginPreferences['hosted-plugin.watchMode']) {
                 await this.runWatchCompilation(event.pluginLocation.toString());
                 // update status bar
@@ -289,7 +289,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             commands
         });
 
-        if (this.pluginState === HostedInstanceState.RUNNNING) {
+        if (this.pluginState === HostedInstanceState.RUNNING) {
             this.addCommandsForRunningPlugin(commands, menu);
         } else if (this.pluginState === HostedInstanceState.STOPPED || this.pluginState === HostedInstanceState.FAILED) {
             this.addCommandsForStoppedPlugin(commands, menu);

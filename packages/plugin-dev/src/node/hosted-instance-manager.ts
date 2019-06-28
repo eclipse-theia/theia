@@ -30,6 +30,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
+
 const processTree = require('ps-tree');
 
 export const HostedInstanceManager = Symbol('HostedInstanceManager');
@@ -97,8 +98,7 @@ delete PROCESS_OPTIONS.env.ELECTRON_RUN_AS_NODE;
 @injectable()
 export abstract class AbstractHostedInstanceManager implements HostedInstanceManager {
     protected hostedInstanceProcess: cp.ChildProcess;
-    protected processOptions: cp.SpawnOptions;
-    protected isPluginRunnig: boolean = false;
+    protected isPluginRunning: boolean = false;
     protected instanceUri: URI;
     protected pluginUri: URI;
     protected instanceOptions: object;
@@ -110,7 +110,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     protected readonly metadata: MetadataScanner;
 
     isRunning(): boolean {
-        return this.isPluginRunnig;
+        return this.isPluginRunning;
     }
 
     async run(pluginUri: URI, port?: number): Promise<URI> {
@@ -122,7 +122,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     private async doRun(pluginUri: URI, port?: number, debugConfig?: DebugConfiguration): Promise<URI> {
-        if (this.isPluginRunnig) {
+        if (this.isPluginRunning) {
             this.hostedPluginSupport.sendLog({ data: 'Hosted plugin instance is already running.', type: LogType.Info });
             throw new Error('Hosted instance is already running.');
         }
@@ -131,7 +131,8 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         let processOptions: cp.SpawnOptions;
         if (pluginUri.scheme === 'file') {
             processOptions = { ...PROCESS_OPTIONS };
-            processOptions.env.HOSTED_PLUGIN = pluginUri.path.toString();
+            // get filesystem path that work cross operating systems
+            processOptions.env.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
 
             // Disable all the other plugins on this instance
             processOptions.env.THEIA_PLUGINS = '';
@@ -154,7 +155,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     terminate(): void {
-        if (this.isPluginRunnig) {
+        if (this.isPluginRunning) {
             // tslint:disable-next-line:no-any
             processTree(this.hostedInstanceProcess.pid, (err: Error, children: Array<any>) => {
                 // tslint:disable-next-line:no-any
@@ -168,14 +169,14 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     getInstanceURI(): URI {
-        if (this.isPluginRunnig) {
+        if (this.isPluginRunning) {
             return this.instanceUri;
         }
         throw new Error('Hosted plugin instance is not running.');
     }
 
     getPluginURI(): URI {
-        if (this.isPluginRunnig) {
+        if (this.isPluginRunning) {
             return this.pluginUri;
         }
         throw new Error('Hosted plugin instance is not running.');
@@ -290,7 +291,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     protected runHostedPluginTheiaInstance(command: string[], options: cp.SpawnOptions): Promise<URI> {
-        this.isPluginRunnig = true;
+        this.isPluginRunning = true;
         return new Promise((resolve, reject) => {
             let started = false;
             const outputListener = (data: string | Buffer) => {
@@ -304,8 +305,8 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             };
 
             this.hostedInstanceProcess = cp.spawn(command.shift()!, command, options);
-            this.hostedInstanceProcess.on('error', () => { this.isPluginRunnig = false; });
-            this.hostedInstanceProcess.on('exit', () => { this.isPluginRunnig = false; });
+            this.hostedInstanceProcess.on('error', () => { this.isPluginRunning = false; });
+            this.hostedInstanceProcess.on('exit', () => { this.isPluginRunning = false; });
             this.hostedInstanceProcess.stdout.addListener('data', outputListener);
 
             this.hostedInstanceProcess.stdout.addListener('data', data => {
@@ -318,7 +319,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             setTimeout(() => {
                 if (!started) {
                     this.terminate();
-                    this.isPluginRunnig = false;
+                    this.isPluginRunning = false;
                     reject(new Error('Timeout.'));
                 }
             }, HOSTED_INSTANCE_START_TIMEOUT_MS);
