@@ -68,7 +68,7 @@ export namespace HostedPluginCommands {
 export enum HostedInstanceState {
     STOPPED = 'stopped',
     STARTING = 'starting',
-    RUNNNING = 'running',
+    RUNNING = 'running',
     STOPPING = 'stopping',
     FAILED = 'failed'
 }
@@ -161,7 +161,7 @@ export class HostedPluginManagerClient {
             await this.openPluginWindow();
 
             this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
-            this.stateChanged.fire({ state: HostedInstanceState.RUNNNING, pluginLocation: this.pluginLocation });
+            this.stateChanged.fire({ state: HostedInstanceState.RUNNING, pluginLocation: this.pluginLocation });
         } catch (error) {
             this.messageService.error('Failed to run hosted plugin instance: ' + this.getErrorMessage(error));
             this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation });
@@ -224,7 +224,7 @@ export class HostedPluginManagerClient {
                     this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation!.toString());
                     await this.openPluginWindow();
                     this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
-                    this.stateChanged.fire({ state: HostedInstanceState.RUNNNING, pluginLocation: this.pluginLocation! });
+                    this.stateChanged.fire({ state: HostedInstanceState.RUNNING, pluginLocation: this.pluginLocation! });
                     return;
                 } catch (error) {
                     lastError = error;
