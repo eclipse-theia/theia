@@ -20,7 +20,7 @@ import * as fuzzy from 'fuzzy';
 import { injectable, inject, postConstruct } from 'inversify';
 import { CommandRegistry, Emitter, Event } from '@theia/core/lib/common';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope } from '@theia/core/lib/browser';
+import { KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key } from '@theia/core/lib/browser';
 import { KeymapsParser } from './keymaps-parser';
 import { KeymapsService, KeybindingJson } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
@@ -383,7 +383,7 @@ export class KeybindingWidget extends ReactWidget {
      * @param item {KeybindingItem} the keybinding item for the row.
      */
     protected renderReset(item: KeybindingItem): React.ReactNode {
-        return (item.source && item.source === KeybindingScope[1].toLocaleLowerCase())
+        return (item.source && this.getRawValue(item.source) === KeybindingScope[1].toLocaleLowerCase())
             ? <a title='Reset Keybinding' href='#' onClick={a => this.resetKeybinding(item)}><i className='fa fa-undo kb-action-item'></i></a> : '';
     }
 
@@ -500,11 +500,11 @@ export class KeybindingWidget extends ReactWidget {
         const id = this.getRawValue(item.id);
         const keybinding = (item.keybinding) ? this.getRawValue(item.keybinding) : '';
         const context = (item.context) ? this.getRawValue(item.context) : '';
-        const dialog = new SingleTextInputDialog({
+        const dialog = new EditKeybindingDialog({
             title: `Edit Keybinding For ${command}`,
             initialValue: keybinding,
             validate: newKeybinding => this.validateKeybinding(command, keybinding, newKeybinding),
-        });
+        }, this.keymapsService, item);
         dialog.open().then(async newKeybinding => {
             if (newKeybinding) {
                 await this.keymapsService.setKeybinding({ 'command': id, 'keybinding': newKeybinding, 'context': context });
@@ -628,6 +628,91 @@ export class KeybindingWidget extends ReactWidget {
      */
     protected getRawValue(property: string): string {
         return property.replace(new RegExp(this.regexp), '$1');
+    }
+
+}
+/**
+ * Dialog used to edit keybindings, and reset custom keybindings.
+ */
+class EditKeybindingDialog extends SingleTextInputDialog {
+
+    /**
+     * The keybinding item in question.
+     */
+    protected item: KeybindingItem;
+
+    /**
+     * HTMLButtonElement used to reset custom keybindings.
+     * Custom keybindings have a `User` scope (exist in `keymaps.json`).
+     */
+    protected resetButton: HTMLButtonElement | undefined;
+
+    constructor(
+        @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps,
+        @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
+        item: KeybindingItem
+    ) {
+        super(props);
+        this.item = item;
+        // Add the `Reset` button if the command currently has a custom keybinding.
+        if (this.item.source &&
+            this.getRaw(this.item.source) === KeybindingScope[1].toLocaleLowerCase()) {
+            this.appendResetButton();
+        }
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        if (this.resetButton) {
+            this.addResetAction(this.resetButton, 'click');
+        }
+    }
+
+    /**
+     * Add `Reset` action used to reset a custom keybinding, and close the dialog.
+     * @param element {HTMLElement} the HTML element in question.
+     * @param additionalEventTypes {K[]} additional event types.
+     */
+    protected addResetAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
+        this.addKeyListener(element, Key.ENTER, () => {
+            this.reset();
+            this.close();
+        }, ...additionalEventTypes);
+    }
+
+    /**
+     * Create the `Reset` button, and append it to the dialog.
+     *
+     * @returns the `Reset` button.
+     */
+    protected appendResetButton(): HTMLButtonElement {
+        // Create the `Reset` button.
+        this.resetButton = this.createButton('Reset');
+        // Add the `Reset` button to the dialog control panel, before the `Accept` button.
+        this.controlPanel.insertBefore(this.resetButton, this.acceptButton!);
+        this.resetButton.title = 'Reset Keybinding';
+        this.resetButton.classList.add('secondary');
+        return this.resetButton;
+    }
+
+    /**
+     * Perform keybinding reset.
+     */
+    protected reset(): void {
+        // Extract the raw id from the keybinding item (without fuzzy matching).
+        const id = this.getRaw(this.item.id);
+        // Remove the custom keybinding, resetting it to its default value.
+        this.keymapsService.removeKeybinding(id);
+    }
+
+    /**
+     * Extract the raw value from a string (without fuzzy matching).
+     * @param a {string} given string value for extraction.
+     *
+     * @returns the raw value of a string without any fuzzy matching.
+     */
+    protected getRaw(a: string): string {
+        return a.replace(new RegExp(/<match>(.*?)<\/match>/g), '$1');
     }
 
 }
