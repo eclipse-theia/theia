@@ -69,6 +69,7 @@ cache:
   - packages/debug-nodejs/download
 before_cache:
   - rm -rf node_modules/@theia/electron
+  - rm -rf node_modules/electron
 branches:
   only:
   - master
