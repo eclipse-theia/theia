@@ -67,6 +67,8 @@ cache:
 # end_cache_directories
   - packages/java-debug/download
   - packages/debug-nodejs/download
+before_cache:
+  - rm -rf node_modules/@theia/electron
 branches:
   only:
   - master
