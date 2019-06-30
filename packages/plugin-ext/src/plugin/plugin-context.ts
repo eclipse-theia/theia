@@ -132,7 +132,6 @@ import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system';
 import { QuickPick, QuickPickItem } from '@theia/plugin';
-import { SelectionServiceExt } from './selection-provider-ext';
 import { ScmExtImpl } from './scm';
 import { DecorationProvider, LineChange } from '@theia/plugin';
 import { DecorationsExtImpl } from './decorations';
@@ -145,11 +144,10 @@ export function createAPIFactory(
     preferenceRegistryExt: PreferenceRegistryExtImpl,
     editorsAndDocumentsExt: EditorsAndDocumentsExtImpl,
     workspaceExt: WorkspaceExtImpl,
-    messageRegistryExt: MessageRegistryExt,
-    selectionServiceExt: SelectionServiceExt
+    messageRegistryExt: MessageRegistryExt
 ): PluginAPIFactory {
 
-    const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc, selectionServiceExt));
+    const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
@@ -161,7 +159,7 @@ export function createAPIFactory(
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
-    const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry, selectionServiceExt));
+    const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
@@ -604,6 +602,9 @@ export function createAPIFactory(
                     return new Plugin(pluginManager, plg);
                 }
                 return undefined;
+            },
+            get onDidChange(): theia.Event<void> {
+                return pluginManager.onDidChange;
             }
         };
 

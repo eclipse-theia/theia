@@ -15,7 +15,9 @@
  ********************************************************************************/
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
-import { Disposable, DisposableCollection } from '@theia/core';
+import { Disposable } from '@theia/core';
+import { MiniBrowserContent } from '@theia/mini-browser/lib/browser/mini-browser-content';
+import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
 // tslint:disable:no-any
 
@@ -31,14 +33,19 @@ export interface WebviewEvents {
 
 export class WebviewWidget extends BaseWidget {
     private static readonly ID = new IdGenerator('webview-widget-');
-    protected readonly toDispose = new DisposableCollection();
     private iframe: HTMLIFrameElement;
     private state: { [key: string]: any } | undefined = undefined;
     private loadTimeout: number | undefined;
     private scrollY: number;
     private readyToReceiveMessage: boolean = false;
+    // tslint:disable-next-line:max-line-length
+    // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets. On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
+    protected readonly transparentOverlay: HTMLElement;
 
-    constructor(title: string, private options: WebviewWidgetOptions, private eventDelegate: WebviewEvents) {
+    constructor(title: string,
+        private options: WebviewWidgetOptions,
+        private eventDelegate: WebviewEvents,
+        protected readonly mouseTracker: ApplicationShellMouseTracker) {
         super();
         this.node.tabIndex = 0;
         this.id = WebviewWidget.ID.nextId();
@@ -46,6 +53,22 @@ export class WebviewWidget extends BaseWidget {
         this.title.label = title;
         this.addClass(WebviewWidget.Styles.WEBVIEW);
         this.scrollY = 0;
+
+        this.transparentOverlay = document.createElement('div');
+        this.transparentOverlay.classList.add(MiniBrowserContent.Styles.TRANSPARENT_OVERLAY);
+        this.transparentOverlay.style.display = 'none';
+        this.node.appendChild(this.transparentOverlay);
+
+        this.toDispose.push(this.mouseTracker.onMousedown(e => {
+            if (this.iframe.style.display !== 'none') {
+                this.transparentOverlay.style.display = 'block';
+            }
+        }));
+        this.toDispose.push(this.mouseTracker.onMouseup(e => {
+            if (this.iframe.style.display !== 'none') {
+                this.transparentOverlay.style.display = 'none';
+            }
+        }));
     }
 
     protected handleMessage(message: any) {

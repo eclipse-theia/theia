@@ -252,7 +252,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         }
         if (ContributedTaskConfiguration.is(this.task)) {
             if (this.task._scope) {
-                return new URI(this.task._scope).path.toString();
+                return new URI(this.task._scope).displayName;
             }
             return this.task._source;
         } else {

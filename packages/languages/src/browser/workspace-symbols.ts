@@ -29,7 +29,7 @@ import { Range, Position } from 'vscode-languageserver-types';
 export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContribution, KeybindingContribution, CommandHandler, QuickOpenHandler, QuickOpenContribution {
 
     readonly prefix = '#';
-    readonly description = 'Go to symbol in workspace';
+    readonly description = 'Go to Symbol in Workspace';
 
     private command: Command = {
         id: 'languages.workspace.symbol',

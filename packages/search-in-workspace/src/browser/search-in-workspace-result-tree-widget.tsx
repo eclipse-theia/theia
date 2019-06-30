@@ -315,7 +315,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             id: rootUri,
             parent: this.model.root as SearchInWorkspaceRoot,
             icon: FOLDER_ICON,
-            visible: this.workspaceService.workspace && !this.workspaceService.workspace.isDirectory
+            visible: this.workspaceService.isMultiRootWorkspaceOpened
         };
     }
 

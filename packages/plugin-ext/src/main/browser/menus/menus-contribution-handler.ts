@@ -23,11 +23,10 @@ import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
-import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget } from '../view/tree-views-main';
-import { PluginContribution, Menu, ScmCommandArg } from '../../../common';
+import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget, VIEW_ITEM_INLINE_MNUE } from '../view/tree-views-main';
+import { PluginContribution, Menu, ScmCommandArg, TreeViewSelection } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
-import { TreeViewActions } from '../view/tree-view-actions';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
@@ -59,9 +58,6 @@ export class MenusContributionPointHandler {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
-    @inject(TreeViewActions)
-    protected readonly treeViewActions: TreeViewActions;
-
     @inject(ResourceContextKey)
     protected readonly resourceContextKey: ResourceContextKey;
 
@@ -91,11 +87,9 @@ export class MenusContributionPointHandler {
                 }
             } else if (location === 'view/item/context') {
                 for (const menu of allMenus[location]) {
-                    if (menu.group && /^inline/.test(menu.group)) {
-                        this.treeViewActions.registerInlineAction(menu);
-                    } else {
-                        this.registerGlobalMenuAction(VIEW_ITEM_CONTEXT_MENU, menu);
-                    }
+                    const inline = menu.group && /^inline/.test(menu.group) || false;
+                    const menuPath = inline ? VIEW_ITEM_INLINE_MNUE : VIEW_ITEM_CONTEXT_MENU;
+                    this.registerTreeMenuAction(menuPath, menu);
                 }
             } else if (location === 'scm/title') {
                 for (const action of allMenus[location]) {
@@ -129,6 +123,32 @@ export class MenusContributionPointHandler {
         }
     }
 
+    protected static parseMenuPaths(value: string): MenuPath[] {
+        switch (value) {
+            case 'editor/context': return [EDITOR_CONTEXT_MENU];
+            case 'explorer/context': return [NAVIGATOR_CONTEXT_MENU];
+            case 'debug/callstack/context': return [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU];
+        }
+        return [];
+    }
+
+    protected registerTreeMenuAction(menuPath: MenuPath, menu: Menu): void {
+        this.registerMenuAction(menuPath, menu, {
+            execute: (...args) => this.commands.executeCommand(menu.command, ...this.toTreeArgs(...args)),
+            isEnabled: (...args) => this.commands.isEnabled(menu.command, ...this.toTreeArgs(...args)),
+            isVisible: (...args) => this.commands.isVisible(menu.command, ...this.toTreeArgs(...args))
+        });
+    }
+    protected toTreeArgs(...args: any[]): any[] {
+        const treeArgs: any[] = [];
+        for (const arg of args) {
+            if (TreeViewSelection.is(arg)) {
+                treeArgs.push(arg);
+            }
+        }
+        return treeArgs;
+    }
+
     protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): void {
         const id = this.createSyntheticCommandId(action, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
         const command: Command = { id };
@@ -145,15 +165,6 @@ export class MenusContributionPointHandler {
                 command.iconClass = pluginCommand.iconClass;
             }
         });
-    }
-
-    protected static parseMenuPaths(value: string): MenuPath[] {
-        switch (value) {
-            case 'editor/context': return [EDITOR_CONTEXT_MENU];
-            case 'explorer/context': return [NAVIGATOR_CONTEXT_MENU];
-            case 'debug/callstack/context': return [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU];
-        }
-        return [];
     }
 
     protected registerScmTitleAction(location: string, action: Menu): void {

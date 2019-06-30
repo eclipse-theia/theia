@@ -90,13 +90,12 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     }
 
     async onType(_lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        const isMulti: boolean = !!this.workspaceService.workspace && !this.workspaceService.workspace.isDirectory;
         const items: QuickOpenItem[] = [];
         const configurations = this.debugConfigurationManager.all;
         Array.from(configurations).forEach(config => {
             items.push(new QuickOpenItem({
                 label: config.configuration.name,
-                description: isMulti
+                description: this.workspaceService.isMultiRootWorkspaceOpened
                     ? this.labelProvider.getName(new URI(config.workspaceFolderUri))
                     : '',
                 run: (mode: QuickOpenMode) => {

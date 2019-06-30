@@ -27,6 +27,7 @@ import { bindFileNavigatorPreferences } from './navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { NavigatorDiff } from './navigator-diff';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
@@ -47,4 +48,6 @@ export default new ContainerModule(bind => {
         id: FILE_NAVIGATOR_ID,
         createWidget: () => context.container.get<FileNavigatorWidget>(FileNavigatorWidget)
     }));
+
+    bind(NavigatorDiff).toSelf().inSingletonScope();
 });

@@ -256,7 +256,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
         const registerResourceGroupAction = (group: string, action: MenuAction) => {
             menus.registerMenuAction(ScmWidget.RESOURCE_GROUP_INLINE_MENU, action);
-            menus.registerMenuAction([...ScmWidget.RESOURCE_GROUP_INLINE_MENU, group], action);
+            menus.registerMenuAction([...ScmWidget.RESOURCE_GROUP_CONTEXT_MENU, group], action);
         };
 
         registerResourceGroupAction('1_modification', {

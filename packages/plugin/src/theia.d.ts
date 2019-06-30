@@ -155,6 +155,12 @@ declare module '@theia/plugin' {
          * All plug-ins currently known to the system.
          */
         export let all: Plugin<any>[];
+
+        /**
+         * An event which fires when `plugins.all` changes. This can happen when extensions are
+         * installed, uninstalled, enabled or disabled.
+         */
+        export let onDidChange: Event<void>;
     }
 
     /**

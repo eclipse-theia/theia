@@ -134,7 +134,7 @@ Theia repository has multiple folders:
  - `doc` folder provides documentation about how Theia works
  - `scripts` folder contains JavaScript scripts used by npm scripts when
 installing
-- the root folder lists dev dependencies and wires everything together with [Lerna](https://lernajs.io/)
+- the root folder lists dev dependencies and wires everything together with [Lerna](https://lerna.js.org/)
 
 ## Build core, extensions and examples packages
 

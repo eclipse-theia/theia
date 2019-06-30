@@ -1541,7 +1541,7 @@ export enum TaskScope {
 }
 
 export class Task {
-    private taskDefinition: theia.TaskDefinition | undefined;
+    private taskDefinition: theia.TaskDefinition;
     private taskScope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
     private taskName: string;
     private taskExecution: ProcessExecution | ShellExecution | undefined;
@@ -1616,11 +1616,11 @@ export class Task {
         this.isTaskBackground = false;
     }
 
-    get definition(): theia.TaskDefinition | undefined {
+    get definition(): theia.TaskDefinition {
         return this.taskDefinition;
     }
 
-    set definition(value: theia.TaskDefinition | undefined) {
+    set definition(value: theia.TaskDefinition) {
         if (value === undefined || value === null) {
             throw illegalArgument('Kind can\'t be undefined or null');
         }

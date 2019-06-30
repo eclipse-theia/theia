@@ -34,6 +34,7 @@ import { PreferenceRegistryExtImpl } from './preference-registry';
 import { Memento, KeyValueStorageProxy } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../api/rpc-protocol';
+import { Emitter } from '@theia/core/lib/common/event';
 
 export interface PluginHost {
 
@@ -65,6 +66,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     private pluginActivationPromises = new Map<string, Deferred<void>>();
     private pluginContextsMap: Map<string, theia.PluginContext> = new Map();
     private storageProxy: KeyValueStorageProxy;
+
+    private onDidChangeEmitter = new Emitter<void>();
+    protected fireOnDidChange(): void {
+        this.onDidChangeEmitter.fire(undefined);
+    }
 
     constructor(
         private readonly host: PluginHost,
@@ -102,8 +108,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.storageProxy = this.rpc.set(
             MAIN_RPC_CONTEXT.STORAGE_EXT,
             new KeyValueStorageProxy(this.rpc.getProxy(PLUGIN_RPC_CONTEXT.STORAGE_MAIN),
-                                     pluginInit.globalState,
-                                     pluginInit.workspaceState)
+                pluginInit.globalState,
+                pluginInit.workspaceState)
         );
 
         // init query parameters
@@ -143,6 +149,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         if (this.host.loadTests) {
             return this.host.loadTests();
         }
+        this.fireOnDidChange();
         return Promise.resolve();
     }
 
@@ -219,6 +226,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
         this.pluginActivationPromises.set(pluginId, deferred);
         return deferred.promise;
+    }
+
+    get onDidChange(): theia.Event<void> {
+        return this.onDidChangeEmitter.event;
     }
 
 }

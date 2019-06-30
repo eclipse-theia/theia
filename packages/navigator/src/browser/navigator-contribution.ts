@@ -32,6 +32,7 @@ import { WorkspaceNode } from './navigator-tree';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
+import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -89,6 +90,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(MenuModelRegistry)
     protected readonly menuRegistry: MenuModelRegistry;
+
+    @inject(NavigatorDiff)
+    protected readonly navigatorDiff: NavigatorDiff;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -151,6 +155,21 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             execute: widget => this.withWidget(widget, () => this.collapseFileNavigatorTree()),
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
+
+        registry.registerCommand(NavigatorDiffCommands.COMPARE_FIRST, {
+            execute: () => {
+                this.navigatorDiff.addFirstComparisonFile();
+            },
+            isEnabled: () => true,
+            isVisible: () => true
+        });
+        registry.registerCommand(NavigatorDiffCommands.COMPARE_SECOND, {
+            execute: () => {
+                this.navigatorDiff.compareFiles();
+            },
+            isEnabled: () => this.navigatorDiff.isFirstFileSelected,
+            isVisible: () => this.navigatorDiff.isFirstFileSelected
         });
     }
 
@@ -228,6 +247,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
             label: 'Collapse All',
             order: 'z2'
+        });
+
+        registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
+            commandId: NavigatorDiffCommands.COMPARE_FIRST.id,
+            order: 'z'
+        });
+        registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
+            commandId: NavigatorDiffCommands.COMPARE_SECOND.id,
+            order: 'z'
         });
     }
 

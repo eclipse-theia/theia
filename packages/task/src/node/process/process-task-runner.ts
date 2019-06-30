@@ -29,7 +29,7 @@ import { TaskFactory } from './process-task';
 import { TaskRunner } from '../task-runner';
 import { Task } from '../task';
 import { TaskConfiguration } from '../../common/task-protocol';
-import { ProcessTaskError } from '../../common/process/task-protocol';
+import { ProcessTaskError, CommandOptions } from '../../common/process/task-protocol';
 import * as fs from 'fs';
 
 /**
@@ -61,13 +61,15 @@ export class ProcessTaskRunner implements TaskRunner {
 
         let command: string | undefined;
         let args: Array<string | QuotedString> | undefined;
-        let options: any; // tslint:disable-line:no-any
+        let options: CommandOptions = {};
 
-        // on windows, prefer windows-specific options, if available
+        // on windows, windows-specific options, if available, takes precedence
         if (isWindows && taskConfig.windows !== undefined) {
-            command = taskConfig.windows.command;
-            args = taskConfig.windows.args;
-            options = taskConfig.windows.options;
+            if (taskConfig.windows.command) {
+                command = taskConfig.windows.command;
+                args = taskConfig.windows.args;
+                options = taskConfig.windows.options;
+            }
         } else {
             command = taskConfig.command;
             args = taskConfig.args;
@@ -76,17 +78,18 @@ export class ProcessTaskRunner implements TaskRunner {
 
         // sanity checks:
         // - we expect the cwd to be set by the client.
-        if (!taskConfig.cwd) {
+        if (!options || !options.cwd) {
             throw new Error("Can't run a task when 'cwd' is not provided by the client");
         }
 
-        const cwd = this.asFsPath(taskConfig.cwd);
         // Use task's cwd with spawned process and pass node env object to
         // new process, so e.g. we can re-use the system path
-        options = {
-            cwd: cwd,
-            env: process.env
-        };
+        if (options) {
+            options.env = {
+                ...process.env,
+                ...(options.env || {})
+            };
+        }
 
         try {
             const processType = taskConfig.type === 'process' ? 'process' : 'shell';

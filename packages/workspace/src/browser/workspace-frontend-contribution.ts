@@ -90,7 +90,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             execute: () => this.quickOpenWorkspace.select()
         });
         commands.registerCommand(WorkspaceCommands.SAVE_WORKSPACE_AS, {
-            isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+            isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
             execute: () => this.saveWorkspaceAs()
         });
         commands.registerCommand(WorkspaceCommands.SAVE_AS,

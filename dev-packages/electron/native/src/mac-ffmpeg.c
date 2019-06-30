@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-// @ts-check
 /********************************************************************************
  * Copyright (C) 2019 Ericsson and others.
  *
@@ -16,28 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-const cp = require('child_process');
+#ifndef MAC_FFMPEG
+#define MAC_FFMPEG
 
-const timeout = 60000;
+/**
+ * Mac seems to use the same libraries as Linux.
+ * Difference is that the compiler doesn't need to be told to use `-ldl`.
+ */
+#include "./linux-ffmpeg.c"
 
-const electronApp = cp.fork(require.resolve('./electron-cli.js'), [
-    require.resolve('./electron-h264-test-application/test-application.js'),
-    '--headless',
-]);
-
-electronApp.on('error', error => {
-    console.error(error);
-    process.exit(127);
-})
-
-electronApp.on('close', (code, signal) => {
-    if (code || signal) {
-        if (signal) console.error(signal);
-        process.exit(code || 1);
-    } else process.exit(0);
-})
-
-setTimeout(() => {
-    console.error('Error: electron process timeout');
-    process.exit(4);
-}, timeout);
+#endif // MAC_FFMPEG guard

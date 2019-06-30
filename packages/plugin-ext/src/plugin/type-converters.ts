@@ -627,7 +627,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, command, args, options, windows, cwd, ...properties } = taskDto;
+    const { type, label, source, scope, command, args, options, windows, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -674,7 +674,6 @@ export function fromProcessExecution(execution: theia.ProcessExecution, processT
 
     const options = execution.options;
     if (options) {
-        processTaskDto.cwd = options.cwd;
         processTaskDto.options = options;
     }
     return processTaskDto;
@@ -683,7 +682,6 @@ export function fromProcessExecution(execution: theia.ProcessExecution, processT
 export function fromShellExecution(execution: theia.ShellExecution, processTaskDto: ProcessTaskDto): ProcessTaskDto {
     const options = execution.options;
     if (options) {
-        processTaskDto.cwd = options.cwd;
         processTaskDto.options = getShellExecutionOptions(options);
     }
 
@@ -720,7 +718,6 @@ export function getProcessExecution(processTaskDto: ProcessTaskDto): theia.Proce
 
     const options = processTaskDto.options;
     execution.options = options ? options : {};
-    execution.options.cwd = processTaskDto.cwd;
 
     return execution;
 }
@@ -730,7 +727,6 @@ export function getShellExecution(processTaskDto: ProcessTaskDto): theia.ShellEx
 
     const options = processTaskDto.options;
     execution.options = options ? options : {};
-    execution.options.cwd = processTaskDto.cwd;
     execution.args = processTaskDto.args;
 
     execution.command = processTaskDto.command;
@@ -781,6 +777,11 @@ export function getShellExecutionOptions(options: theia.ShellExecutionOptions): 
     const shellArgs = options.shellArgs;
     if (shellArgs) {
         result['shellArgs'] = shellArgs;
+    }
+
+    const cwd = options.cwd;
+    if (cwd) {
+        Object.assign(result, { cwd });
     }
 
     return result;

@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
+ * Copyright (C) 2019 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +15,4 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export class SelectionServiceExt {
-
-    private currentSelection: Object | undefined;
-
-    get selection(): Object | undefined {
-        return this.currentSelection;
-    }
-
-    set selection(selection: Object | undefined) {
-        this.currentSelection = selection;
-    }
-}
+require('node-gyp/bin/node-gyp.js')
