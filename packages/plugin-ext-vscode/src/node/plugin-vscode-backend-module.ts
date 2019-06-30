@@ -23,12 +23,14 @@ import { VsCodePluginDeployerResolver } from './plugin-vscode-resolver';
 import { PluginVsCodeCliContribution } from './plugin-vscode-cli-contribution';
 import { CliContribution } from '@theia/core/lib/node';
 import { PluginHostEnvironmentVariable } from '@theia/plugin-ext/lib/common';
+import { VsCodeLocalPluginDeployerResolver } from './plugin-vscode-local-resolver';
 
 export default new ContainerModule(bind => {
     bind(PluginDeployerFileHandler).to(PluginVsCodeFileHandler).inSingletonScope();
     bind(PluginDeployerDirectoryHandler).to(PluginVsCodeDirectoryHandler).inSingletonScope();
     bind(PluginScanner).to(VsCodePluginScanner).inSingletonScope();
     bind(PluginDeployerResolver).to(VsCodePluginDeployerResolver).inSingletonScope();
+    bind(PluginDeployerResolver).to(VsCodeLocalPluginDeployerResolver).inSingletonScope();
 
     bind(PluginVsCodeCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(PluginVsCodeCliContribution);
