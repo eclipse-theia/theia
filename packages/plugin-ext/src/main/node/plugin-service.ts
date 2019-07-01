@@ -16,6 +16,7 @@
 import * as express from 'express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { injectable } from 'inversify';
+import { FileUri } from '@theia/core/lib/node';
 
 const pluginPath = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + './theia/plugins/';
 
@@ -28,11 +29,7 @@ export class PluginApiContribution implements BackendApplicationContribution {
         });
 
         app.get('/webview/:path(*)', (req, res) => {
-            let filePath: string = req.params.path;
-            if (filePath.charAt(0) !== '/') {
-                filePath = '/' + filePath;
-            }
-            res.sendFile(filePath);
+            res.sendFile(FileUri.fsPath('file:/' + req.params.path));
         });
     }
 }
