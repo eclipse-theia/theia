@@ -150,7 +150,7 @@ export class WebviewImpl implements theia.Webview {
         this.checkIsDisposed();
         // replace theia-resource: content in the given message
         const decoded = JSON.stringify(message);
-        let newMessage = decoded.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
+        let newMessage = decoded.replace(new RegExp('theia-resource:/', 'g'), 'webview/');
         if (this._options && this._options.localResourceRoots) {
             newMessage = this.filterLocalRoots(newMessage, this._options.localResourceRoots);
         }
@@ -191,7 +191,7 @@ export class WebviewImpl implements theia.Webview {
     }
 
     set html(html: string) {
-        let newHtml = html.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
+        let newHtml = html.replace(new RegExp('theia-resource:/', 'g'), 'webview/');
         if (this._options && this._options.localResourceRoots) {
             newHtml = this.filterLocalRoots(newHtml, this._options.localResourceRoots);
         }
