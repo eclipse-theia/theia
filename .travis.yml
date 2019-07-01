@@ -141,7 +141,7 @@ jobs:
         if ! [ "$BEFORE_DEPLOY_RUN" ]; then
           export BEFORE_DEPLOY_RUN=1
           printf "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}\n" >> ~/.npmrc
-          yarn
+          THEIA_SKIP_NPM_PREPARE=1 yarn install --skip-integrity-check # fix cache we meddled-with
           yarn run docs
         fi
     deploy:
