@@ -35,6 +35,7 @@ import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common';
+import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
 
 export type PluginHost = 'frontend' | string;
 
@@ -76,6 +77,9 @@ export class HostedPluginSupport {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(MonacoTextmateService)
+    protected readonly monacoTextmateService: MonacoTextmateService;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers: PluginManagerExt[] = [];
@@ -89,6 +93,11 @@ export class HostedPluginSupport {
     protected init(): void {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
         this.storagePathService.onStoragePathChanged(path => this.updateStoragePath(path));
+
+        for (const id of this.monacoTextmateService.activatedLanguages) {
+            this.activateByLanguage(id);
+        }
+        this.monacoTextmateService.onDidActivateLanguage(id => this.activateByLanguage(id));
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -195,6 +204,10 @@ export class HostedPluginSupport {
         for (const manager of this.managers) {
             manager.$activateByEvent(activationEvent);
         }
+    }
+
+    activateByLanguage(languageId: string): void {
+        this.activateByEvent(`onLanguage:${languageId}`);
     }
 
 }
