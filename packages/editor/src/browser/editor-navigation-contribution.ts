@@ -26,6 +26,7 @@ import { EditorManager } from './editor-manager';
 import { TextEditor, Position, Range, TextDocumentChangeEvent } from './editor';
 import { NavigationLocation } from './navigation/navigation-location';
 import { NavigationLocationService } from './navigation/navigation-location-service';
+import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser';
 
 @injectable()
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {
@@ -46,6 +47,9 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -73,6 +77,10 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             execute: () => this.locationStack.clearHistory(),
             isEnabled: () => this.locationStack.locations().length > 0
         });
+        this.commandRegistry.registerHandler(EditorCommands.TOGGLE_MINIMAP.id, {
+            execute: () => this.toggleMinimap(),
+            isEnabled: () => true
+        });
     }
 
     async onStart(): Promise<void> {
@@ -86,6 +94,14 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    /**
+     * Toggle the display of minimap in the editor.
+     */
+    protected async toggleMinimap(): Promise<void> {
+        const value: boolean | undefined = this.preferenceService.get('editor.minimap.enabled');
+        this.preferenceService.set('editor.minimap.enabled', !value, PreferenceScope.User);
     }
 
     protected onCurrentEditorChanged(editorWidget: EditorWidget | undefined): void {
