@@ -292,26 +292,18 @@ export namespace TabBarToolbarItem {
      */
     export const PRIORITY_COMPARATOR = (left: TabBarToolbarItem, right: TabBarToolbarItem) => {
         // The navigation group is special as it will always be sorted to the top/beginning of a menu.
-        if (left.group === undefined || left.group === 'navigation') {
-            return 1;
-        }
-        if (right.group === undefined || right.group === 'navigation') {
-            return -1;
-        }
-        if (left.group && right.group) {
-            if (left.group < right.group) {
-                return -1;
-            } else if (left.group > right.group) {
-                return 1;
-            } else {
-                return 0;
+        const compareGroup = (leftGroup: string | undefined = 'navigation', rightGroup: string | undefined = 'navigation') => {
+            if (leftGroup === 'navigation') {
+                return rightGroup === 'navigation' ? 0 : -1;
             }
-        }
-        if (left.group) {
-            return -1;
-        }
-        if (right.group) {
-            return 1;
+            if (rightGroup === 'navigation') {
+                return leftGroup === 'navigation' ? 0 : 1;
+            }
+            return leftGroup.localeCompare(rightGroup);
+        };
+        const result = compareGroup(left.group, right.group);
+        if (result !== 0) {
+            return result;
         }
         return (left.priority || 0) - (right.priority || 0);
     };
