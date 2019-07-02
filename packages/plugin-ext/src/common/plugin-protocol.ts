@@ -49,6 +49,7 @@ export interface PluginPackage {
     description: string;
     contributes?: PluginPackageContribution;
     packagePath: string;
+    activationEvents?: string[];
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
