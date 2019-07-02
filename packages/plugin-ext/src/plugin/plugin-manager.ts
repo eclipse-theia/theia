@@ -61,7 +61,7 @@ class ActivatedPlugin {
 
 export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
-    static SUPPORTED_ACTIVATION_EVENTS = new Set(['*']);
+    static SUPPORTED_ACTIVATION_EVENTS = new Set(['*', 'onLanguage']);
 
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
