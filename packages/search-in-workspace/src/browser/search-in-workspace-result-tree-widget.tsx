@@ -573,7 +573,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const icon = node.icon;
         return <div className='result'>
             <div className='result-head'>
-                <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>
+                <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
+                    title={new URI(node.fileUri).path.toString()}>
                     <span className={`file-icon ${icon || ''}`}></span>
                     <span className={'file-name'}>
                         {node.name}
@@ -593,7 +594,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
         const prefix = node.character > 26 ? '... ' : '';
-        return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`}>
+        return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`} title={node.lineText.trim()}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
                 {prefix + node.lineText.substr(0, node.character - 1).substr(-25)}
