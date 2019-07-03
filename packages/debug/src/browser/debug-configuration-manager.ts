@@ -23,7 +23,7 @@ import debounce = require('p-debounce');
 import { visit } from 'jsonc-parser';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Event, Emitter } from '@theia/core/lib/common/event';
+import { Event, Emitter, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { StorageService, PreferenceService } from '@theia/core/lib/browser';
@@ -36,6 +36,9 @@ import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-k
 import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
+
+export interface WillProvideDebugConfiguration extends WaitUntilEvent {
+}
 
 @injectable()
 export class DebugConfigurationManager {
@@ -63,6 +66,9 @@ export class DebugConfigurationManager {
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
+
+    protected readonly onWillProvideDebugConfigurationEmitter = new Emitter<WillProvideDebugConfiguration>();
+    readonly onWillProvideDebugConfiguration: Event<WillProvideDebugConfiguration> = this.onWillProvideDebugConfigurationEmitter.event;
 
     protected debugConfigurationTypeKey: ContextKey<string>;
 
@@ -254,7 +260,7 @@ export class DebugConfigurationManager {
     protected async doCreate(model: DebugConfigurationModel): Promise<URI> {
         const uri = new URI(model.workspaceFolderUri).resolve('.theia/launch.json');
         const debugType = await this.selectDebugType();
-        const configurations = debugType ? await this.debug.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
+        const configurations = debugType ? await this.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
         const content = this.getInitialConfigurationContent(configurations);
         try {
             await this.filesystem.createFile(uri.toString(), { content });
@@ -264,6 +270,14 @@ export class DebugConfigurationManager {
             }
         }
         return uri;
+    }
+
+    protected async provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
+        await this.fireWillProvideDebugConfiguration();
+        return this.debug.provideDebugConfigurations(debugType, workspaceFolderUri);
+    }
+    protected async fireWillProvideDebugConfiguration(): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillProvideDebugConfigurationEmitter, {});
     }
 
     protected getInitialConfigurationContent(initialConfigurations: DebugConfiguration[]): string {

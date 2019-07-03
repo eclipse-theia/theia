@@ -37,8 +37,12 @@ import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common';
 import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
+import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
+import { WaitUntilEvent } from '@theia/core/lib/common/event';
 
 export type PluginHost = 'frontend' | string;
+export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
 
 @injectable()
 export class HostedPluginSupport {
@@ -84,6 +88,12 @@ export class HostedPluginSupport {
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+
+    @inject(DebugConfigurationManager)
+    protected readonly debugConfigurationManager: DebugConfigurationManager;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers: PluginManagerExt[] = [];
@@ -103,6 +113,9 @@ export class HostedPluginSupport {
         }
         this.monacoTextmateService.onDidActivateLanguage(id => this.activateByLanguage(id));
         this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
+        this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
+        this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
+        this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -241,6 +254,21 @@ export class HostedPluginSupport {
         ]);
         p.then(() => listener.dispose(), () => listener.dispose());
         event.waitUntil(p);
+    }
+
+    protected ensureDebugActivation(event: WaitUntilEvent, activationEvent?: DebugActivationEvent, debugType?: string): void {
+        event.waitUntil(this.activateByDebug(activationEvent, debugType));
+    }
+
+    async activateByDebug(activationEvent?: DebugActivationEvent, debugType?: string): Promise<void> {
+        const promises = [this.activateByEvent('onDebug')];
+        if (activationEvent) {
+            promises.push(this.activateByEvent(activationEvent));
+            if (debugType) {
+                promises.push(this.activateByEvent(activationEvent + ':' + debugType));
+            }
+        }
+        await Promise.all(promises);
     }
 
 }
