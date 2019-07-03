@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import parseArgv = require('string-argv');
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ProcessTaskConfiguration } from '@theia/task/lib/common/process/task-protocol';
+import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
 import { TaskContribution, TaskProvider, TaskProviderRegistry, TaskResolver, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
 import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
-import { ContributedTaskConfiguration, TaskConfiguration } from '@theia/task/lib/common/task-protocol';
+import { ContributedTaskConfiguration, TaskConfiguration, } from '@theia/task/lib/common/task-protocol';
 
 /**
  * Data required to define a C/C++ build task the user could run.
@@ -35,7 +36,13 @@ const CPP_BUILD_TASK_SOURCE: string = 'cpp';
 export class CppTaskProvider implements TaskContribution, TaskProvider, TaskResolver {
 
     @inject(TaskResolverRegistry) protected readonly taskResolverRegistry: TaskResolverRegistry;
+    @inject(TaskDefinitionRegistry) protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
     @inject(CppBuildConfigurationManager) protected readonly cppBuildConfigurationManager: CppBuildConfigurationManager;
+
+    @postConstruct()
+    protected init(): void {
+        this.registerTaskDefinition();
+    }
 
     registerProviders(registry: TaskProviderRegistry) {
         registry.register(CPP_BUILD_TASK_SOURCE, this);
@@ -107,5 +114,15 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         }
 
         return taskConfigs;
+    }
+
+    private registerTaskDefinition(): void {
+        this.taskDefinitionRegistry.register({
+            taskType: CPP_BUILD_TASK_TYPE_KEY,
+            properties: {
+                required: ['label'],
+                all: ['label']
+            }
+        });
     }
 }

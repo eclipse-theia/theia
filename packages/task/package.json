@@ -11,7 +11,8 @@
     "@theia/terminal": "^0.8.0",
     "@theia/variable-resolver": "^0.8.0",
     "@theia/workspace": "^0.8.0",
-    "jsonc-parser": "^2.0.2"
+    "jsonc-parser": "^2.0.2",
+    "vscode-uri": "^1.0.8"
   },
   "publishConfig": {
     "access": "public"

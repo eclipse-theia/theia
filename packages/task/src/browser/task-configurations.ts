@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration } from '../common/task-protocol';
+import { TaskConfiguration, TaskCustomization, ContributedTaskConfiguration } from '../common';
+import { TaskDefinitionRegistry } from './task-definition-registry';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -47,6 +48,8 @@ export class TaskConfigurations implements Disposable {
      * For the inner map (i.e., task config map), the key is task label and value TaskConfiguration
      */
     protected tasksMap = new Map<string, Map<string, TaskConfiguration>>();
+    protected taskCustomizations: TaskCustomization[] = [];
+
     protected watchedConfigFileUris: string[] = [];
     protected watchersMap = new Map<string, Disposable>(); // map of watchers for task config files, where the key is folder uri
 
@@ -65,6 +68,9 @@ export class TaskConfigurations implements Disposable {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     constructor(
         @inject(FileSystemWatcher) protected readonly watcherServer: FileSystemWatcher,
@@ -173,6 +179,10 @@ export class TaskConfigurations implements Disposable {
         this.tasksMap.delete(source);
     }
 
+    getTaskCustomizations(type: string): TaskCustomization[] {
+        return this.taskCustomizations.filter(c => c.type === type);
+    }
+
     /** returns the string uri of where the config file would be, if it existed under a given root directory */
     protected getConfigFileUri(rootDir: string): string {
         return new URI(rootDir).resolve(this.TASKFILEPATH).resolve(this.TASKFILE).toString();
@@ -198,21 +208,37 @@ export class TaskConfigurations implements Disposable {
      * If reading a config file wasn't successful then does nothing.
      */
     protected async refreshTasks(configFileUri: string) {
-        const tasksConfigsArray = await this.readTasks(configFileUri);
-        if (tasksConfigsArray) {
+        const tasksArray = await this.readTasks(configFileUri);
+        if (tasksArray) {
+            const configuredTasksArray: TaskConfiguration[] = [];
+            const customizations: TaskCustomization[] = [];
+
+            tasksArray.forEach(t => {
+                if (this.isConfiguredTask(t)) {
+                    customizations.push(t);
+                } else {
+                    configuredTasksArray.push(t);
+                }
+            });
+
             // only clear tasks map when successful at parsing the config file
             // this way we avoid clearing and re-filling it multiple times if the
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
             this.removeTasks(configFileUri);
 
-            if (tasksConfigsArray.length > 0) {
+            if (configuredTasksArray.length > 0) {
                 const newTaskMap = new Map<string, TaskConfiguration>();
-                for (const task of tasksConfigsArray) {
+                for (const task of configuredTasksArray) {
                     newTaskMap.set(task.label, task);
                 }
                 const source = this.getSourceFolderFromConfigUri(configFileUri);
                 this.tasksMap.set(source, newTaskMap);
+            }
+
+            if (customizations.length > 0) {
+                this.taskCustomizations.length = 0;
+                this.taskCustomizations = customizations;
             }
         }
     }
@@ -288,7 +314,7 @@ export class TaskConfigurations implements Disposable {
     protected filterDuplicates(tasks: TaskConfiguration[]): TaskConfiguration[] {
         const filteredTasks: TaskConfiguration[] = [];
         for (const task of tasks) {
-            if (filteredTasks.some(t => t.label === task.label)) {
+            if (filteredTasks.some(t => !this.isConfiguredTask(t) && t.label === task.label)) {
                 // TODO: create a problem marker so that this issue will be visible in the editor?
                 console.error(`Error parsing ${this.TASKFILE}: found duplicate entry for label: ${task.label}`);
             } else {
@@ -300,5 +326,11 @@ export class TaskConfigurations implements Disposable {
 
     private getSourceFolderFromConfigUri(configFileUri: string): string {
         return new URI(configFileUri).parent.parent.path.toString();
+    }
+
+    private isConfiguredTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
+        const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
+        // it is considered as a customization if the task definition registry finds a def for the task configuration
+        return !!taskDefinition;
     }
 }

@@ -16,3 +16,4 @@
 
 export * from './task-protocol';
 export * from './task-watcher';
+export * from './problem-matcher-protocol';
