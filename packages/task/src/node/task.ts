@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { ILogger, Emitter, Event, MaybePromise } from '@theia/core/lib/common/';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core/lib/common/';
 import { TaskManager } from './task-manager';
 import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputEvent } from '../common/task-protocol';
 
@@ -26,9 +26,10 @@ export interface TaskOptions {
 }
 
 @injectable()
-export abstract class Task {
+export abstract class Task implements Disposable {
 
     protected taskId: number;
+    protected readonly toDispose: DisposableCollection = new DisposableCollection();
     readonly exitEmitter: Emitter<TaskExitedEvent>;
     readonly outputEmitter: Emitter<TaskOutputEvent>;
 
@@ -40,6 +41,8 @@ export abstract class Task {
         this.taskId = this.taskManager.register(this, this.options.context);
         this.exitEmitter = new Emitter<TaskExitedEvent>();
         this.outputEmitter = new Emitter<TaskOutputEvent>();
+        this.toDispose.push(this.exitEmitter);
+        this.toDispose.push(this.outputEmitter);
     }
 
     /** Terminates the task. */
@@ -75,5 +78,9 @@ export abstract class Task {
 
     get label() {
         return this.options.label;
+    }
+
+    dispose() {
+        this.toDispose.dispose();
     }
 }

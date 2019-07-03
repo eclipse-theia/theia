@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { ILogger } from '@theia/core/lib/common/';
+import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common/';
 import {
     TaskClient,
     TaskExitedEvent,
@@ -32,10 +32,12 @@ import { ProcessTask } from './process/process-task';
 import { ProblemCollector } from './task-problem-collector';
 
 @injectable()
-export class TaskServerImpl implements TaskServer {
+export class TaskServerImpl implements TaskServer, Disposable {
 
     /** Task clients, to send notifications-to. */
     protected clients: TaskClient[] = [];
+    /** Map of task id and task disposable */
+    protected readonly toDispose = new Map<number, DisposableCollection>();
 
     @inject(ILogger) @named('task')
     protected readonly logger: ILogger;
@@ -50,12 +52,21 @@ export class TaskServerImpl implements TaskServer {
     private problemCollectors: Map<string, Map<number, ProblemCollector>> = new Map();
 
     dispose() {
-        // do nothing
+        for (const toDispose of this.toDispose.values()) {
+            toDispose.dispose();
+        }
+        this.toDispose.clear();
+    }
+
+    protected disposeByTaskId(taskId: number): void {
+        if (this.toDispose.has(taskId)) {
+            this.toDispose.get(taskId)!.dispose();
+            this.toDispose.delete(taskId);
+        }
     }
 
     async getTasks(context?: string): Promise<TaskInfo[]> {
         const taskInfo: TaskInfo[] = [];
-
         const tasks = this.taskManager.getTasks(context);
         if (tasks !== undefined) {
             for (const task of tasks) {
@@ -71,31 +82,40 @@ export class TaskServerImpl implements TaskServer {
         const runner = this.runnerRegistry.getRunner(taskConfiguration.type);
         const task = await runner.run(taskConfiguration, ctx);
 
-        task.onExit(event => {
-            this.taskManager.delete(task);
-            this.fireTaskExitedEvent(event);
-            this.removedCachedProblemCollector(event.ctx || '', event.taskId);
-        });
+        if (!this.toDispose.has(task.id)) {
+            this.toDispose.set(task.id, new DisposableCollection());
+        }
+        this.toDispose.get(task.id)!.push(
+            task.onExit(event => {
+                this.taskManager.delete(task);
+                this.fireTaskExitedEvent(event);
+                this.removedCachedProblemCollector(event.ctx || '', event.taskId);
+                this.disposeByTaskId(event.taskId);
+            })
+        );
 
         const resolvedMatchers = option && option.customization ? option.customization.problemMatcher || [] : [];
         if (resolvedMatchers.length > 0) {
-            task.onOutput(event => {
-                let collector: ProblemCollector | undefined = this.getCachedProblemCollector(event.ctx || '', event.taskId);
-                if (!collector) {
-                    collector = new ProblemCollector(resolvedMatchers);
-                    this.cacheProblemCollector(event.ctx || '', event.taskId, collector);
-                }
+            this.toDispose.get(task.id)!.push(
+                task.onOutput(event => {
+                    let collector: ProblemCollector | undefined = this.getCachedProblemCollector(event.ctx || '', event.taskId);
+                    if (!collector) {
+                        collector = new ProblemCollector(resolvedMatchers);
+                        this.cacheProblemCollector(event.ctx || '', event.taskId, collector);
+                    }
 
-                const problems = collector.processLine(event.line);
-                if (problems.length > 0) {
-                    this.fireTaskOutputProcessedEvent({
-                        taskId: event.taskId,
-                        ctx: event.ctx,
-                        problems
-                    });
-                }
-            });
+                    const problems = collector.processLine(event.line);
+                    if (problems.length > 0) {
+                        this.fireTaskOutputProcessedEvent({
+                            taskId: event.taskId,
+                            ctx: event.ctx,
+                            problems
+                        });
+                    }
+                })
+            );
         }
+        this.toDispose.get(task.id)!.push(task);
 
         const taskInfo = await task.getRuntimeInfo();
         this.fireTaskCreatedEvent(taskInfo);
