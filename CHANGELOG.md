@@ -1,6 +1,7 @@
 # Change Log
 
 ## v0.9.0
+- [task] added support for VS Code task contribution points: `taskDefinitions`, `problemMatchers`, and `problemPatterns`
 
 - [plugin] added support of debug activation events [#5645](https://github.com/theia-ide/theia/pull/5645)
 

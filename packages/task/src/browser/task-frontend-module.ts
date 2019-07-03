@@ -30,6 +30,9 @@ import { TaskWatcher } from '../common/task-watcher';
 import { bindProcessTaskModule } from './process/process-task-frontend-module';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskActionProvider, ConfigureTaskAction } from './task-action-provider';
+import { TaskDefinitionRegistry } from './task-definition-registry';
+import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
+import { ProblemPatternRegistry } from './task-problem-pattern-registry';
 import '../../src/browser/style/index.css';
 import './tasks-monaco-contribution';
 
@@ -54,6 +57,10 @@ export default new ContainerModule(bind => {
         const taskWatcher = ctx.container.get(TaskWatcher);
         return connection.createProxy<TaskServer>(taskPath, taskWatcher.getTaskClient());
     }).inSingletonScope();
+
+    bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
+    bind(ProblemMatcherRegistry).toSelf().inSingletonScope();
+    bind(ProblemPatternRegistry).toSelf().inSingletonScope();
 
     createCommonBindings(bind);
 

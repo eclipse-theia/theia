@@ -28,6 +28,7 @@ import { PluginSharedStyle } from './plugin-shared-style';
 import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common/command';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
+import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
 
 @injectable()
 export class PluginContributionHandler {
@@ -60,6 +61,15 @@ export class PluginContributionHandler {
 
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(ProblemMatcherRegistry)
+    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
+    @inject(ProblemPatternRegistry)
+    protected readonly problemPatternRegistry: ProblemPatternRegistry;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -155,6 +165,18 @@ export class PluginContributionHandler {
                     source: snippet.source
                 });
             }
+        }
+
+        if (contributions.taskDefinitions) {
+            contributions.taskDefinitions.forEach(def => this.taskDefinitionRegistry.register(def));
+        }
+
+        if (contributions.problemPatterns) {
+            contributions.problemPatterns.forEach(pattern => this.problemPatternRegistry.register(pattern));
+        }
+
+        if (contributions.problemMatchers) {
+            contributions.problemMatchers.forEach(matcher => this.problemMatcherRegistry.register(matcher));
         }
     }
 

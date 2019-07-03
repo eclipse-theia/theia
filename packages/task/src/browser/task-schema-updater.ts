@@ -112,7 +112,7 @@ const taskConfigurationSchema: IJSONSchema = {
             allOf: [
                 {
                     type: 'object',
-                    required: ['type', 'label'],
+                    required: ['type'],
                     properties: {
                         label: {
                             type: 'string',
@@ -153,6 +153,21 @@ const taskConfigurationSchema: IJSONSchema = {
                                 args: commandArgSchema,
                                 options: commandOptionsSchema
                             }
+                        },
+                        problemMatcher: {
+                            oneOf: [
+                                {
+                                    type: 'object',
+                                    description: 'User defined problem matcher(s) to parse the output of the task',
+                                },
+                                {
+                                    type: 'array',
+                                    description: 'Name(s) of the problem matcher(s) to parse the output of the task',
+                                    items: {
+                                        type: 'string'
+                                    }
+                                }
+                            ]
                         }
                     }
                 }

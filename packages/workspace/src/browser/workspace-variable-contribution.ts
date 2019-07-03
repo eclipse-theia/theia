@@ -82,6 +82,14 @@ export class WorkspaceVariableContribution implements VariableContribution {
             }
         });
         variables.registerVariable({
+            name: 'cwd',
+            description: 'The path of the current working directory',
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
+                return (uri && uri.path.toString()) || '';
+            }
+        });
+        variables.registerVariable({
             name: 'file',
             description: 'The path of the currently opened file',
             resolve: () => {
