@@ -61,7 +61,7 @@ class ActivatedPlugin {
 
 export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
-    static SUPPORTED_ACTIVATION_EVENTS = new Set(['*', 'onLanguage']);
+    static SUPPORTED_ACTIVATION_EVENTS = new Set(['*', 'onLanguage', 'onCommand']);
 
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
@@ -153,7 +153,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             const activation = () => this.loadPlugin(plugin, configStorage);
             const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
             if (unsupportedActivationEvents.length) {
-                console.warn(`Unsupported activation events: ${unsupportedActivationEvents}, please open an issue. ${plugin.model.id} extension will be activated eagerly`);
+                console.warn(`${plugin.model.id} extension will be activated eagerly.`);
+                console.warn(`Unsupported activation events: ${unsupportedActivationEvents}, please open an issue: https://github.com/theia-ide/theia/issues/new`);
                 this.setActivation('*', activation);
             } else {
                 for (let activationEvent of plugin.rawModel.activationEvents) {
@@ -165,7 +166,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             }
         }
     }
-    protected setActivation(activationEvent: string, activation: () => Promise<void>) {
+    protected setActivation(activationEvent: string, activation: () => Promise<void>): void {
         const activations = this.activations.get(activationEvent) || [];
         activations.push(activation);
         this.activations.set(activationEvent, activations);

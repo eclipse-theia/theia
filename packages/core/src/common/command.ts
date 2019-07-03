@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
+import { Event, Emitter } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 
@@ -117,6 +118,19 @@ export interface CommandContribution {
     registerCommands(commands: CommandRegistry): void;
 }
 
+export interface WillExecuteCommandEvent {
+    commandId: string;
+    // tslint:disable:no-any
+    /**
+     * Allows to pause the command execution
+     * in order to register or activate a command handler.
+     *
+     * *Note:* It can only be called during event dispatch and not in an asynchronous manner
+     */
+    waitUntil(thenable: Promise<any>): void;
+    // tslint:enable:no-any
+}
+
 export const commandServicePath = '/services/commands';
 export const CommandService = Symbol('CommandService');
 /**
@@ -130,6 +144,12 @@ export interface CommandService {
      */
     // tslint:disable-next-line:no-any
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
+    /**
+     * An event is emmited when a command is about to be executed.
+     *
+     * It can be used to install or activate a command handler.
+     */
+    readonly onWillExecuteCommand: Event<WillExecuteCommandEvent>;
 }
 
 /**
@@ -143,6 +163,9 @@ export class CommandRegistry implements CommandService {
 
     // List of recently used commands.
     protected _recent: Command[] = [];
+
+    protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
+    readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
@@ -255,6 +278,7 @@ export class CommandRegistry implements CommandService {
      */
     // tslint:disable-next-line:no-any
     async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
+        await this.fireWillExecuteCommand(commandId);
         const handler = this.getActiveHandler(commandId, ...args);
         if (handler) {
             const result = await handler.execute(...args);
@@ -266,6 +290,25 @@ export class CommandRegistry implements CommandService {
         }
         const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
         throw new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
+    }
+
+    protected async fireWillExecuteCommand(commandId: string): Promise<void> {
+        const waitables: Promise<void>[] = [];
+        this.onWillExecuteCommandEmitter.fire({
+            commandId,
+            waitUntil: (thenable: Promise<void>) => {
+                if (Object.isFrozen(waitables)) {
+                    throw new Error('waitUntil cannot be called asynchronously.');
+                }
+                waitables.push(thenable);
+            }
+        });
+        if (!waitables.length) {
+            return;
+        }
+        // Asynchronous calls to `waitUntil` should fail.
+        Object.freeze(waitables);
+        await Promise.race([Promise.all(waitables), new Promise(resolve => setTimeout(resolve, 30000))]);
     }
 
     /**

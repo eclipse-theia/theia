@@ -36,10 +36,14 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 
     // replace command API as it will send only the ID as a string parameter
     const registerCommand = vscode.commands.registerCommand;
-    vscode.commands.registerCommand = function (command: any, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): any {
+    vscode.commands.registerCommand = function (command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): any {
         // use of the ID when registering commands
-        if (typeof command === 'string' && handler) {
-            return vscode.commands.registerHandler(command, handler, thisArg);
+        if (typeof command === 'string') {
+            const commands = plugin.model.contributes && plugin.model.contributes.commands;
+            if (handler && commands && commands.some(item => item.command === command)) {
+                return vscode.commands.registerHandler(command, handler, thisArg);
+            }
+            return registerCommand({ id: command }, handler, thisArg);
         }
         return registerCommand(command, handler, thisArg);
     };

@@ -22,7 +22,7 @@ import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/pl
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
-import { ILogger, ContributionProvider } from '@theia/core';
+import { ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
@@ -36,6 +36,7 @@ import { KeysToKeysToAnyValue } from '../../common/types';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common';
 import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export type PluginHost = 'frontend' | string;
 
@@ -80,6 +81,9 @@ export class HostedPluginSupport {
     @inject(MonacoTextmateService)
     protected readonly monacoTextmateService: MonacoTextmateService;
 
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers: PluginManagerExt[] = [];
@@ -98,6 +102,7 @@ export class HostedPluginSupport {
             this.activateByLanguage(id);
         }
         this.monacoTextmateService.onDidActivateLanguage(id => this.activateByLanguage(id));
+        this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -196,18 +201,46 @@ export class HostedPluginSupport {
         }
     }
 
-    activateByEvent(activationEvent: string): void {
+    async activateByEvent(activationEvent: string): Promise<void> {
         if (this.activationEvents.has(activationEvent)) {
             return;
         }
         this.activationEvents.add(activationEvent);
+        const activation: Promise<void>[] = [];
         for (const manager of this.managers) {
-            manager.$activateByEvent(activationEvent);
+            activation.push(manager.$activateByEvent(activationEvent));
         }
+        await Promise.all(activation);
     }
 
-    activateByLanguage(languageId: string): void {
-        this.activateByEvent(`onLanguage:${languageId}`);
+    async activateByLanguage(languageId: string): Promise<void> {
+        await this.activateByEvent(`onLanguage:${languageId}`);
+    }
+
+    async activateByCommand(commandId: string): Promise<void> {
+        await this.activateByEvent(`onCommand:${commandId}`);
+    }
+
+    protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {
+        const activation = this.activateByCommand(event.commandId);
+        if (this.commands.getCommand(event.commandId) &&
+            (!this.contributionHandler.hasCommand(event.commandId) ||
+                this.contributionHandler.hasCommandHandler(event.commandId))) {
+            return;
+        }
+        const waitForCommandHandler = new Deferred<void>();
+        const listener = this.contributionHandler.onDidRegisterCommandHandler(id => {
+            if (id === event.commandId) {
+                listener.dispose();
+                waitForCommandHandler.resolve();
+            }
+        });
+        const p = Promise.all([
+            activation,
+            waitForCommandHandler.promise
+        ]);
+        p.then(() => listener.dispose(), () => listener.dispose());
+        event.waitUntil(p);
     }
 
 }

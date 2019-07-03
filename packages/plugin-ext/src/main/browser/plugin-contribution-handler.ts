@@ -25,7 +25,9 @@ import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/br
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 import { PluginSharedStyle } from './plugin-shared-style';
-import { CommandRegistry } from '@theia/core';
+import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common/command';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Emitter } from '@theia/core/lib/common/event';
 
 @injectable()
 export class PluginContributionHandler {
@@ -58,6 +60,11 @@ export class PluginContributionHandler {
 
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
+
+    protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
+
+    protected readonly onDidRegisterCommandHandlerEmitter = new Emitter<string>();
+    readonly onDidRegisterCommandHandler = this.onDidRegisterCommandHandlerEmitter.event;
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {
@@ -157,13 +164,47 @@ export class PluginContributionHandler {
         }
         for (const { iconUrl, command, category, title } of contribution.commands) {
             const iconClass = iconUrl ? this.style.toIconClass(iconUrl) : undefined;
-            this.commands.registerCommand({
+            this.registerCommand({
                 id: command,
                 category,
                 label: title,
                 iconClass
             });
         }
+    }
+
+    registerCommand(command: Command): Disposable {
+        const toDispose = new DisposableCollection();
+        toDispose.push(this.commands.registerCommand(command, {
+            execute: async (...args) => {
+                const handler = this.commandHandlers.get(command.id);
+                if (!handler) {
+                    throw new Error(`command '${command.id}' not found`);
+                }
+                return handler(...args);
+            },
+            // Always enabled - a command can be executed programmatically or via the commands palette.
+            isEnabled() { return true; },
+            // Visibility rules are defined via the `menus` contribution point.
+            isVisible() { return true; }
+        }));
+        this.commandHandlers.set(command.id, undefined);
+        toDispose.push(Disposable.create(() => this.commandHandlers.delete(command.id)));
+        return toDispose;
+    }
+
+    registerCommandHandler(id: string, execute: CommandHandler['execute']): Disposable {
+        this.commandHandlers.set(id, execute);
+        this.onDidRegisterCommandHandlerEmitter.fire(id);
+        return Disposable.create(() => this.commandHandlers.set(id, undefined));
+    }
+
+    hasCommand(id: string): boolean {
+        return this.commandHandlers.has(id);
+    }
+
+    hasCommandHandler(id: string): boolean {
+        return !!this.commandHandlers.get(id);
     }
 
     private updateConfigurationSchema(schema: PreferenceSchema): void {
