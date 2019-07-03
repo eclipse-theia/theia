@@ -276,7 +276,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const workspaceFolderOrWorkspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
         if (workspaceFolderOrWorkspaceFileUri) {
             const destinationFolder = await this.fileSystem.getFileStat(workspaceFolderOrWorkspaceFileUri.toString());
-            if (destinationFolder) {
+            const current = this.workspaceService.workspace;
+            if (!current || (destinationFolder && current.uri !== destinationFolder.uri)) {
                 this.workspaceService.open(workspaceFolderOrWorkspaceFileUri);
                 return workspaceFolderOrWorkspaceFileUri;
             }
