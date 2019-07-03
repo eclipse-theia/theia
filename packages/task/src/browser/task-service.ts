@@ -32,6 +32,8 @@ import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { Range } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 
+const deepmerge: (args: object[]) => object = require('deepmerge').default.all;
+
 @injectable()
 export class TaskService implements TaskConfigurationClient {
     /**
@@ -250,8 +252,11 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and provided tasks.
+     * The last parameter may contain additional task type specific properties
+     * which are used only for this request over persistent configuration of the task.
      */
-    async run(source: string, taskLabel: string): Promise<void> {
+    // tslint:disable-next-line:no-any
+    async run(source: string, taskLabel: string, overrides?: { [key: string]: any }): Promise<void> {
         let task = await this.getProvidedTask(source, taskLabel);
         if (!task) {
             task = this.taskConfigurations.getTask(source, taskLabel);
@@ -259,6 +264,10 @@ export class TaskService implements TaskConfigurationClient {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;
             }
+        }
+
+        if (overrides) {
+            task = <TaskConfiguration>deepmerge([task, overrides]);
         }
 
         this.runTask(task);

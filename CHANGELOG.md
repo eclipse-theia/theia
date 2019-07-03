@@ -2,6 +2,8 @@
 
 ## v0.9.0
 
+- [task] allowed running existing tasks with temporary, one-time changes
+
 Breaking changes:
 
 - [plugin] fixed typo in 'HostedInstanceState' enum from RUNNNING to RUNNING in `plugin-dev` extension
