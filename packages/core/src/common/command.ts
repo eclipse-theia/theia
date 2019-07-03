@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { Event, Emitter } from './event';
+import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 
@@ -118,17 +118,8 @@ export interface CommandContribution {
     registerCommands(commands: CommandRegistry): void;
 }
 
-export interface WillExecuteCommandEvent {
+export interface WillExecuteCommandEvent extends WaitUntilEvent {
     commandId: string;
-    // tslint:disable:no-any
-    /**
-     * Allows to pause the command execution
-     * in order to register or activate a command handler.
-     *
-     * *Note:* It can only be called during event dispatch and not in an asynchronous manner
-     */
-    waitUntil(thenable: Promise<any>): void;
-    // tslint:enable:no-any
 }
 
 export const commandServicePath = '/services/commands';
@@ -293,22 +284,7 @@ export class CommandRegistry implements CommandService {
     }
 
     protected async fireWillExecuteCommand(commandId: string): Promise<void> {
-        const waitables: Promise<void>[] = [];
-        this.onWillExecuteCommandEmitter.fire({
-            commandId,
-            waitUntil: (thenable: Promise<void>) => {
-                if (Object.isFrozen(waitables)) {
-                    throw new Error('waitUntil cannot be called asynchronously.');
-                }
-                waitables.push(thenable);
-            }
-        });
-        if (!waitables.length) {
-            return;
-        }
-        // Asynchronous calls to `waitUntil` should fail.
-        Object.freeze(waitables);
-        await Promise.race([Promise.all(waitables), new Promise(resolve => setTimeout(resolve, 30000))]);
+        await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId }, 30000);
     }
 
     /**

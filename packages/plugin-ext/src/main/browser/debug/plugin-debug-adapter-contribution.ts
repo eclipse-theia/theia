@@ -19,6 +19,7 @@ import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration'
 import { IJSONSchemaSnippet, IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
+import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 
 /**
  * Plugin [DebugAdapterContribution](#DebugAdapterContribution).
@@ -26,7 +27,8 @@ import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 export class PluginDebugAdapterContribution {
     constructor(
         protected readonly description: DebuggerDescription,
-        protected readonly debugExt: DebugExt) { }
+        protected readonly debugExt: DebugExt,
+        protected readonly pluginService: HostedPluginSupport) { }
 
     get type(): string {
         return this.description.type;
@@ -57,6 +59,7 @@ export class PluginDebugAdapterContribution {
     }
 
     async createDebugSession(config: DebugConfiguration): Promise<string> {
+        await this.pluginService.activateByDebug('onDebugAdapterProtocolTracker', config.type);
         return this.debugExt.$createDebugSession(config);
     }
 
