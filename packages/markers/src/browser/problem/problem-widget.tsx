@@ -61,11 +61,34 @@ export class ProblemWidget extends TreeWidget {
         return;
     }
 
+    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        super.handleClickEvent(node, event);
+        if (MarkerNode.is(node)) {
+            this.model.revealNode(node);
+        }
+    }
+
     protected handleCopy(event: ClipboardEvent) {
         const uris = this.model.selectedNodes.filter(MarkerNode.is).map(node => node.uri.toString());
         if (uris.length > 0 && event.clipboardData) {
             event.clipboardData.setData('text/plain', uris.join('\n'));
             event.preventDefault();
+        }
+    }
+
+    protected handleDown(event: KeyboardEvent): void {
+        const node = this.model.getNextSelectableNode();
+        super.handleDown(event);
+        if (MarkerNode.is(node)) {
+            this.model.revealNode(node);
+        }
+    }
+
+    protected handleUp(event: KeyboardEvent): void {
+        const node = this.model.getPrevSelectableNode();
+        super.handleUp(event);
+        if (MarkerNode.is(node)) {
+            this.model.revealNode(node);
         }
     }
 
