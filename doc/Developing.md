@@ -45,9 +45,10 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
- - Node.js `>= 10.2.0`.
+ - Node.js `>= 10.2.0` **AND** `< 12.x`.
    - Preferably, **use** version `10.15.3`, it has the [active LTS](https://github.com/nodejs/Release).
    - Node.js `11.x` is untested.
+   - Node.js `12.x` is [unsupported](https://github.com/theia-ide/theia/issues/5117).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
