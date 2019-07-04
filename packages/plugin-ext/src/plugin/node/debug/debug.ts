@@ -270,19 +270,20 @@ export class DebugExtImpl implements DebugExt {
     async $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration | undefined> {
         let current = debugConfiguration;
 
-        const providers = this.configurationProviders.get(debugConfiguration.type);
-        if (providers) {
-            for (const provider of providers) {
-                if (provider.resolveDebugConfiguration) {
-                    try {
-                        const next = await provider.resolveDebugConfiguration(this.toWorkspaceFolder(workspaceFolderUri), current);
-                        if (next) {
-                            current = next;
-                        } else {
-                            return current;
+        for (const providers of [this.configurationProviders.get(debugConfiguration.type), this.configurationProviders.get('*')]) {
+            if (providers) {
+                for (const provider of providers) {
+                    if (provider.resolveDebugConfiguration) {
+                        try {
+                            const next = await provider.resolveDebugConfiguration(this.toWorkspaceFolder(workspaceFolderUri), current);
+                            if (next) {
+                                current = next;
+                            } else {
+                                return current;
+                            }
+                        } catch (e) {
+                            console.error(e);
                         }
-                    } catch (e) {
-                        console.error(e);
                     }
                 }
             }
