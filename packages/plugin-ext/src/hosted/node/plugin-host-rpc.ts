@@ -67,7 +67,8 @@ export class PluginHostRPC {
 
     // tslint:disable-next-line:no-any
     initContext(contextPath: string, plugin: Plugin): any {
-        console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + contextPath + ')');
+        const { name, version } = plugin.rawModel;
+        console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');
         try {
             const backendInit = require(contextPath);
             backendInit.doInitialization(this.apiFactory, plugin);
