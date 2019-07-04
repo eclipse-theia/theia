@@ -68,25 +68,33 @@ export class FileSearchServiceImpl implements FileSearchService {
             }
         }
 
-        const exactMatches = new Set<string>();
-        const fuzzyMatches = new Set<string>();
+        const matches = new Set<string>();
         const stringPattern = searchPattern.toLocaleLowerCase();
+
         await Promise.all(Object.keys(roots).map(async root => {
             try {
                 const rootUri = new URI(root);
                 const rootOptions = roots[root];
+
+                // Get 'exact' match results.
                 await this.doFind(rootUri, rootOptions, candidate => {
                     const fileUri = rootUri.resolve(candidate).toString();
-                    if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
-                        return;
-                    }
                     if (!searchPattern || searchPattern === '*' || candidate.toLocaleLowerCase().indexOf(stringPattern) !== -1) {
-                        exactMatches.add(fileUri);
-                    } else if (opts.fuzzyMatch && fuzzy.test(searchPattern, candidate)) {
-                        fuzzyMatches.add(fileUri);
+                        if (matches.size === opts.limit) {
+                            cancellationSource.cancel();
+                        }
+                        matches.add(fileUri);
                     }
-                    if (exactMatches.size + fuzzyMatches.size === opts.limit) {
-                        cancellationSource.cancel();
+                }, token);
+
+                // Get the 'fuzzy' match results.
+                await this.doFind(rootUri, rootOptions, candidate => {
+                    const fileUri = rootUri.resolve(candidate).toString();
+                    if (opts.fuzzyMatch && fuzzy.test(searchPattern, candidate)) {
+                        if (matches.size === opts.limit) {
+                            cancellationSource.cancel();
+                        }
+                        matches.add(fileUri);
                     }
                 }, token);
             } catch (e) {
@@ -96,7 +104,8 @@ export class FileSearchServiceImpl implements FileSearchService {
         if (clientToken && clientToken.isCancellationRequested) {
             return [];
         }
-        return [...exactMatches, ...fuzzyMatches];
+
+        return [...matches];
     }
 
     private doFind(rootUri: URI, options: FileSearchService.BaseOptions,
