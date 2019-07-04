@@ -107,6 +107,16 @@ export class MenusContributionPointHandler {
                     const menuPath = inline ? ScmWidget.RESOURCE_INLINE_MENU : ScmWidget.RESOURCE_CONTEXT_MENU;
                     this.registerScmMenuAction(menuPath, menu);
                 }
+            } else if (location === 'debug/callstack/context') {
+                for (const menu of allMenus[location]) {
+                    for (const menuPath of [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU]) {
+                        this.registerMenuAction(menuPath, menu, {
+                            execute: (...args) => this.commands.executeCommand(menu.command, args[0]),
+                            isEnabled: (...args) => this.commands.isEnabled(menu.command, args[0]),
+                            isVisible: (...args) => this.commands.isVisible(menu.command, args[0])
+                        });
+                    }
+                }
             } else if (allMenus.hasOwnProperty(location)) {
                 const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
                 if (!menuPaths.length) {
@@ -127,7 +137,6 @@ export class MenusContributionPointHandler {
         switch (value) {
             case 'editor/context': return [EDITOR_CONTEXT_MENU];
             case 'explorer/context': return [NAVIGATOR_CONTEXT_MENU];
-            case 'debug/callstack/context': return [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU];
         }
         return [];
     }
@@ -216,13 +225,11 @@ export class MenusContributionPointHandler {
     protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): void {
         const selectedResource = () => {
             const selection = this.selectionService.selection;
-
             if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
                 return selection.source.toTreeViewSelection(selection[0]);
             }
-
             const uri = this.resourceContextKey.get();
-            return uri ? uri['codeUri'] : (typeof selection !== 'object' && typeof selection !== 'function') ? selection : undefined;
+            return uri ? uri['codeUri'] : undefined;
         };
         this.registerMenuAction(menuPath, menu, {
             execute: () => this.commands.executeCommand(menu.command, selectedResource()),

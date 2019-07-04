@@ -2,11 +2,13 @@
 
 ## v0.9.0
 
+- [plugin] added support of debug activation events [#5645](https://github.com/theia-ide/theia/pull/5645)
+
 Breaking changes:
 
 - [plugin] fixed typo in 'HostedInstanceState' enum from RUNNNING to RUNNING in `plugin-dev` extension
 - [plugin] removed member `processOptions` from `AbstractHostedInstanceManager` as it is not initialized or used
-- [plugin] added support of activation events [#5622](https://github.com/theia-ide/theia/pull/5622)
+- [plugin] added basic support of activation events [#5622](https://github.com/theia-ide/theia/pull/5622)
   - `HostedPluginSupport` is refactored to support multiple `PluginManagerExt` properly
 
 ## v0.8.0
