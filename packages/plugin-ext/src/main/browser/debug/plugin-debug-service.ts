@@ -104,9 +104,20 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
         let resolved = config;
 
-        const contributor = this.contributors.get(config.type);
-        if (contributor && contributor.resolveDebugConfiguration) {
-            resolved = await contributor.resolveDebugConfiguration(resolved, workspaceFolderUri) || resolved;
+        // we should iterate over all to handle configuration providers for `*`
+        for (const contributor of this.contributors.values()) {
+            if (contributor) {
+                try {
+                    const next = await contributor.resolveDebugConfiguration(resolved, workspaceFolderUri);
+                    if (next) {
+                        resolved = next;
+                    } else {
+                        return resolved;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
         }
 
         return this.delegated.resolveDebugConfiguration(resolved, workspaceFolderUri);
