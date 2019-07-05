@@ -65,7 +65,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         '*',
         'onLanguage',
         'onCommand',
-        'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker'
+        'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker',
+        'workspaceContains'
     ]);
 
     private readonly registry = new Map<string, Plugin>();
@@ -156,6 +157,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.registry.set(plugin.model.id, plugin);
         if (plugin.pluginPath && Array.isArray(plugin.rawModel.activationEvents)) {
             const activation = () => this.loadPlugin(plugin, configStorage);
+            // an internal activation event is a subject to change
+            this.setActivation(`onPlugin:${plugin.model.id}`, activation);
             const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
             if (unsupportedActivationEvents.length) {
                 console.warn(`Unsupported activation events: ${unsupportedActivationEvents.join(', ')}, please open an issue: https://github.com/theia-ide/theia/issues/new`);
@@ -164,7 +167,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             } else {
                 for (let activationEvent of plugin.rawModel.activationEvents) {
                     if (activationEvent === 'onUri') {
-                        activationEvent = `onUri:${plugin.model.id}`;
+                        activationEvent = `onUri:theia://${plugin.model.publisher.toLowerCase()}.${plugin.model.name.toLowerCase()}`;
                     }
                     this.setActivation(activationEvent, activation);
                 }
