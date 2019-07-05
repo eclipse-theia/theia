@@ -10,6 +10,7 @@ Breaking changes:
 - [plugin] removed member `processOptions` from `AbstractHostedInstanceManager` as it is not initialized or used
 - [plugin] added basic support of activation events [#5622](https://github.com/theia-ide/theia/pull/5622)
   - `HostedPluginSupport` is refactored to support multiple `PluginManagerExt` properly
+- [plugin] added support of `workspaceContains` activation events [#5649](https://github.com/theia-ide/theia/pull/5649)
 
 ## v0.8.0
 
