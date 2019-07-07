@@ -16,7 +16,9 @@
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
+import { AddressInfo } from 'net';
 import * as cp from 'child_process';
+import { runner as runTests } from 'mocha-headless-chrome';
 import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
@@ -67,25 +69,25 @@ export class ApplicationPackageManager {
     async build(args: string[] = []): Promise<void> {
         await this.generate();
         await this.copy();
-        return this.__process.run('webpack', args);
+        return this.__process.run('webpack', args.filter(arg => arg !== '--testing'));
     }
 
-    async start(args: string[] = []): Promise<void> {
+    start(args: string[] = []): cp.ChildProcess {
         if (this.pck.isElectron()) {
             return this.startElectron(args);
         }
         return this.startBrowser(args);
     }
 
-    async startElectron(args: string[]): Promise<void> {
+    startElectron(args: string[]): cp.ChildProcess {
         const { mainArgs, options } = this.adjustArgs([this.pck.frontend('electron-main.js'), ...args]);
         const electronCli = require.resolve('electron/cli.js', { paths: [this.pck.projectPath] });
-        this.__process.fork(electronCli, mainArgs, options);
+        return this.__process.fork(electronCli, mainArgs, options);
     }
 
-    async startBrowser(args: string[]): Promise<void> {
+    startBrowser(args: string[]): cp.ChildProcess {
         const { mainArgs, options } = this.adjustArgs(args);
-        this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
+        return this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
     }
 
     private adjustArgs(args: string[], forkOptions: cp.ForkOptions = {}): Readonly<{ mainArgs: string[]; options: cp.ForkOptions }> {
@@ -113,6 +115,15 @@ export class ApplicationPackageManager {
                 THEIA_PARENT_PID: String(process.pid)
             }
         };
+    }
+
+    async test(): Promise<void> {
+        const address: AddressInfo = await require(this.pck.backend('main.js'));
+        const { result } = await runTests({
+            file: `http://${address.address}:${address.port}`,
+            args: ['no-sandbox']
+        });
+        process.exit(result.stats.failures > 0 ? 1 : 0);
     }
 
 }

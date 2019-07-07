@@ -63,6 +63,9 @@
     },
     {
       "frontendElectron": "lib/electron-browser/shutdown-hook/electron-shutdown-hook-module"
+    },
+    {
+      "frontendTest": "lib/browser/mocha-frontend-module"
     }
   ],
   "keywords": [

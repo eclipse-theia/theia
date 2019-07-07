@@ -10,6 +10,12 @@
       "@theia/application-package/lib/*": [
         "dev-packages/application-package/src/*"
       ],
+      "@theia/application-manager": [
+        "dev-packages/application-manager/src"
+      ],
+      "@theia/application-manager/lib/*": [
+        "dev-packages/application-manager/src/*"
+      ],
       "@theia/core": [
         "packages/core/src/common"
       ],

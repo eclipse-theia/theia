@@ -14,6 +14,7 @@
     }
   },
   "dependencies": {
+    "@theia/api-tests": "^0.8.0",
     "@theia/callhierarchy": "^0.8.0",
     "@theia/console": "^0.8.0",
     "@theia/core": "^0.8.0",
@@ -67,7 +68,7 @@
     "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
     "start": "theia start --plugins=local-dir:../../plugins",
     "start:debug": "yarn start --log-level=debug",
-    "test": "wdio wdio.conf.js",
+    "test": "theia build --mode development --testing && theia test",
     "test-non-headless": "wdio wdio-non-headless.conf.js",
     "coverage:compile": "yarn build --config coverage-webpack.config.js",
     "coverage:remap": "remap-istanbul -i coverage/coverage.json -o coverage/coverage-final.json --exclude 'frontend/index.js' && rimraf coverage/coverage.json",

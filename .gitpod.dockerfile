@@ -9,6 +9,7 @@ RUN apt-get update \
     && apt-get install -y libgtk-3-0 libnss3 libasound2 \
     # native-keymap
     && apt-get install -y libx11-dev libxkbfile-dev \
+    # clean up
     && apt-get clean && rm -rf /var/cache/apt/* && rm -rf /var/lib/apt/lists/* && rm -rf /tmp/*
 
 USER gitpod

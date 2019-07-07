@@ -22,6 +22,7 @@ export class FrontendGenerator extends AbstractGenerator {
     async generate(): Promise<void> {
         const frontendModules = this.pck.targetFrontendModules;
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
+        await this.write(this.pck.frontend('main.js'), this.compileMainJs(frontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
         if (this.pck.isElectron()) {
             await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain());
@@ -51,7 +52,8 @@ export class FrontendGenerator extends AbstractGenerator {
 </head>
 
 <body>
-  <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
+  <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>${this.ifTesting(`
+  <div id='mocha' style='display:none' />`)}
 </body>
 
 </html>`;
@@ -62,12 +64,11 @@ export class FrontendGenerator extends AbstractGenerator {
   <meta charset="UTF-8">`;
     }
 
-    protected compileIndexJs(frontendModules: Map<string, string>): string {
+    protected compileMainJs(frontendModules: Map<string, string>): string {
         return `// @ts-check
-${this.ifBrowser("require('es6-promise/auto');")}
-require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');
+const { setFrontendApplicationContainer } = require('@theia/core/lib/browser/frontend-application-container');
 const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
 const { messagingFrontendModule } = require('@theia/core/lib/browser/messaging/messaging-frontend-module');
 const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
@@ -88,20 +89,43 @@ function load(raw) {
 }
 
 function start() {
+    setFrontendApplicationContainer(container);
+
     const themeService = ThemeService.get();
     themeService.loadUserTheme();
 
     const application = container.get(FrontendApplication);
-    application.start();
+    return application.start();
 }
 
 module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendModules)}
-    .then(start).catch(reason => {
-        console.error('Failed to start the frontend application.');
-        if (reason) {
-            console.error(reason);
-        }
-    });`;
+    .then(start);`;
+    }
+
+    protected compileIndexJs(frontendModules: Map<string, string>): string {
+        return `// @ts-check
+${this.ifBrowser("require('es6-promise/auto');")}
+require('reflect-metadata');${this.ifTesting(`
+
+require('mocha');
+mocha.setup({
+    ui: 'bdd'
+});
+mocha.checkLeaks();`)}
+
+module.exports = require('./main')${this.ifTesting(`.then(() => mocha.run(failures => {
+    if (failures > 0) {
+        console.error(failures + ' tests failed.');
+    }
+    const { getFrontendApplicationContainer } = require('@theia/core/lib/browser/frontend-application-container');
+    const { MochaFrontendContribution } = require('@theia/core/lib/browser/mocha-frontend-module');
+    getFrontendApplicationContainer().get(MochaFrontendContribution).openView();
+}))`)}.catch(reason => {
+    console.error('Failed to start the frontend application.');
+    if (reason) {
+        console.error(reason);
+    }
+});`;
     }
 
     protected compileElectronMain(): string {

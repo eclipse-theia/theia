@@ -30,6 +30,10 @@ const argv = yargs.option('mode', {
 }).option('app-target', {
     description: 'The target application type. Overrides ["theia.target"] in the application\'s package.json.',
     choices: ['browser', 'electron'],
+}).option('testing', {
+    type: 'boolean',
+    default: false,
+    description: 'Run frontend API tests.'
 }).argv;
 const mode: 'development' | 'production' = argv.mode;
 const splitFrontend: boolean = argv['split-frontend'] === undefined ? mode === 'development' : argv['split-frontend'];
@@ -39,6 +43,10 @@ export abstract class AbstractGenerator {
     constructor(
         protected readonly pck: ApplicationPackage
     ) { }
+
+    protected ifTesting(value: string, defaultValue: string = '') {
+        return argv.testing ? value : defaultValue;
+    }
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
         return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require');

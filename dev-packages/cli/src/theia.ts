@@ -55,16 +55,29 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
 (function () {
     const projectPath = process.cwd();
     const appTarget: ApplicationProps.Target = yargs.argv['app-target'];
-    const manager = new ApplicationPackageManager({ projectPath, appTarget });
+    const testing: boolean = yargs.argv['testing'];
+    const manager = new ApplicationPackageManager({ projectPath, appTarget, testing });
     const target = manager.pck.target;
 
     yargs
         .command({
-            command: 'start',
-            describe: 'start the ' + manager.pck.target + ' backend',
+            command: 'test',
+            describe: 'run frontend tests',
             handler: async () => {
                 try {
-                    await manager.start(commandArgs('start'));
+                    await manager.test();
+                } catch (err) {
+                    console.error(err);
+                    process.exit(1);
+                }
+            }
+        })
+        .command({
+            command: 'start',
+            describe: 'start the ' + manager.pck.target + ' backend',
+            handler: () => {
+                try {
+                    manager.start(commandArgs('start'));
                 } catch (err) {
                     console.error(err);
                     process.exit(1);

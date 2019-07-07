@@ -31,6 +31,7 @@ export class ApplicationPackageOptions {
     readonly error?: ApplicationLog;
     readonly registry?: NpmRegistry;
     readonly appTarget?: ApplicationProps.Target;
+    readonly testing?: boolean;
 }
 
 export type ApplicationModuleResolver = (modulePath: string) => string;
@@ -163,12 +164,19 @@ export class ApplicationPackage {
         for (const extensionPackage of this.extensionPackages) {
             const extensions = extensionPackage.theiaExtensions;
             if (extensions) {
-                for (const extension of extensions) {
-                    const modulePath = extension[primary] || (secondary && extension[secondary]);
+                const acceptModule = (modulePath: string | undefined) => {
                     if (typeof modulePath === 'string') {
                         const extensionPath = paths.join(extensionPackage.name, modulePath).split(paths.sep).join('/');
                         result.set(`${primary}_${moduleIndex}`, extensionPath);
                         moduleIndex = moduleIndex + 1;
+                    }
+                };
+                for (const extension of extensions) {
+                    acceptModule(extension[primary] || (secondary && extension[secondary]));
+                    if (this.options.testing) {
+                        if (primary === 'frontend' || secondary === 'frontend') {
+                            acceptModule(extension['frontendTest']);
+                        }
                     }
                 }
             }
