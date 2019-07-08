@@ -21,3 +21,20 @@
 .theia-TreeNodeHyperlink:focus {
     border: none;
 }
+
+.theia-tree-view-icon {
+    padding-right: var(--theia-ui-padding);
+    -webkit-font-smoothing: antialiased;
+}
+
+.theia-tree-view-inline-action {
+    background-size: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.theia-tree-view .theia-TreeNodeContent {
+    align-items: center;
+    height: 100%;
+}
+
