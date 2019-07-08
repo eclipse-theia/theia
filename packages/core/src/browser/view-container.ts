@@ -165,6 +165,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return this.panel.layout as ViewContainerLayout;
     }
 
+    children(): IIterator<Widget> {
+        return this.panel.children();
+    }
+
     protected get orientation(): SplitLayout.Orientation {
         return ViewContainer.getOrientation(this.node);
     }
