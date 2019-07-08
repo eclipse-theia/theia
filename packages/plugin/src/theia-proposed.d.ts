@@ -43,7 +43,7 @@ declare module '@theia/plugin' {
     }
 
     // Experimental API
-    // https://github.com/Microsoft/vscode/blob/1.30.2/src/vs/vscode.proposed.d.ts#L1020 
+    // https://github.com/Microsoft/vscode/blob/1.30.2/src/vs/vscode.proposed.d.ts#L1020
     export interface FileWillRenameEvent {
         readonly oldUri: Uri;
         readonly newUri: Uri;
@@ -186,4 +186,38 @@ declare module '@theia/plugin' {
     export namespace window {
         export function registerDecorationProvider(provider: DecorationProvider): Disposable;
     }
+
+    //#region Tree View
+    // copied from https://github.com/microsoft/vscode/blob/3ea5c9ddbebd8ec68e3b821f9c39c3ec785fde97/src/vs/vscode.proposed.d.ts#L1447-L1476
+    /**
+     * Label describing the [Tree item](#TreeItem)
+     */
+    export interface TreeItemLabel {
+
+        /**
+         * A human-readable string describing the [Tree item](#TreeItem).
+         */
+        label: string;
+
+        /**
+         * Ranges in the label to highlight. A range is defined as a tuple of two number where the
+         * first is the inclusive start index and the second the exclusive end index
+         */
+        // TODO highlights?: [number, number][];
+
+    }
+
+    export class TreeItem2 extends TreeItem {
+        /**
+         * Label describing this item. When `falsy`, it is derived from [resourceUri](#TreeItem.resourceUri).
+         */
+        label?: string | TreeItemLabel | /* for compilation */ any;
+
+        /**
+         * @param label Label describing this item
+         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         */
+        constructor(label: TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
+    }
+    //#endregion
 }
