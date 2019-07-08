@@ -6,8 +6,9 @@
     "yarn": "1.0.x || >=1.2.1",
     "node": ">=10.2.0"
   },
-  "resolution": {
-    "**/@types/node": "~10.3.6"
+  "resolutions": {
+    "**/@types/node": "~10.3.6",
+    "**/mem": "^4.0.0"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
