@@ -245,6 +245,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (token.isCancellationRequested) {
                     return;
                 }
+                // Sort the result map by folder URI.
+                this.resultTree = new Map([...this.resultTree]
+                    .sort((a: [string, SearchInWorkspaceRootFolderNode], b: [string, SearchInWorkspaceRootFolderNode]) => this.compare(a[1].folderUri, b[1].folderUri)));
+                // Update the list of children nodes, sorting them by their file URI.
+                Array.from(this.resultTree.values())
+                    .forEach((folder: SearchInWorkspaceRootFolderNode) => {
+                        folder.children = folder.children.sort((a: SearchInWorkspaceFileNode, b: SearchInWorkspaceFileNode) => this.compare(a.fileUri, b.fileUri));
+                    });
                 this.refreshModelChildren();
             }
         }, searchOptions).catch(e => { return; });
@@ -707,4 +715,17 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
         return decorations;
     }
+
+    /**
+     * Compare two normalized strings.
+     *
+     * @param a {string} the first string.
+     * @param b {string} the second string.
+     */
+    private compare(a: string, b: string): number {
+        const itemA: string = a.toLowerCase().trim();
+        const itemB: string = b.toLowerCase().trim();
+        return itemA.localeCompare(itemB);
+    }
+
 }
