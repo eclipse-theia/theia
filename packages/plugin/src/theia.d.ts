@@ -3659,7 +3659,7 @@ declare module '@theia/plugin' {
          * @param resourceUri The [uri](#Uri) of the resource representing this item.
          * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
-        // constructor(resourceUri: Uri, collapsibleState?: TreeItemCollapsibleState);
+        constructor(resourceUri: Uri, collapsibleState?: TreeItemCollapsibleState);
     }
 
     /**

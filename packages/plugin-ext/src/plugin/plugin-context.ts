@@ -782,6 +782,7 @@ export function createAPIFactory(
             TextDocumentSaveReason,
             CodeAction,
             TreeItem,
+            TreeItem2: TreeItem,
             TreeItemCollapsibleState,
             SymbolKind,
             DocumentSymbol,

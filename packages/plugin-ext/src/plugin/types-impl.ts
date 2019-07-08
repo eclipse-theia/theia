@@ -1113,7 +1113,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
 
 export class TreeItem {
 
-    label?: string;
+    label?: string | theia.TreeItemLabel;
 
     id?: string;
 
@@ -1127,9 +1127,9 @@ export class TreeItem {
 
     contextValue?: string;
 
-    constructor(label: string, collapsibleState?: theia.TreeItemCollapsibleState)
+    constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState)
     constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)
-    constructor(arg1: string | URI, public collapsibleState: theia.TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
+    constructor(arg1: string | theia.TreeItemLabel | URI, public collapsibleState: theia.TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
         if (arg1 instanceof URI) {
             this.resourceUri = arg1;
         } else {

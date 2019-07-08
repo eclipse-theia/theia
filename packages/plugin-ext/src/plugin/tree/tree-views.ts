@@ -18,7 +18,7 @@
 
 import * as path from 'path';
 import URI from 'vscode-uri';
-import { TreeDataProvider, TreeView, TreeViewExpansionEvent } from '@theia/plugin';
+import { TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem2, TreeItemLabel } from '@theia/plugin';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, ThemeIcon } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../api/plugin-api';
@@ -183,7 +183,7 @@ class TreeViewExtImpl<T> extends Disposable {
 
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
-                const treeItem = await this.treeDataProvider.getTreeItem(value);
+                const treeItem: TreeItem2 = await this.treeDataProvider.getTreeItem(value);
 
                 // Generate the ID
                 // ID is used for caching the element
@@ -195,7 +195,12 @@ class TreeViewExtImpl<T> extends Disposable {
                 // Convert theia.TreeItem to the TreeViewItem
 
                 // Take a label
-                let label = treeItem.label;
+                let label: string | TreeItemLabel | undefined = treeItem.label;
+                if (typeof label === 'object' && typeof label.label === 'string') {
+                    label = label.label;
+                } else {
+                    label = treeItem.label;
+                }
 
                 // Use resource URI if label is not set
                 if (!label && treeItem.resourceUri) {
@@ -247,7 +252,7 @@ class TreeViewExtImpl<T> extends Disposable {
                 }
                 const treeViewItem = {
                     id,
-                    label: label,
+                    label,
                     icon,
                     iconUrl,
                     themeIconId,
