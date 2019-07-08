@@ -89,6 +89,7 @@ body {
 
 .p-Widget {
   font-size: var(--theia-ui-font-size1);
+  color: var(--theia-ui-font-color1);
 }
 
 .p-Widget.p-mod-hidden {
