@@ -156,11 +156,18 @@ export class PluginContributionHandler {
         if (contributions.viewsContainers) {
             for (const location in contributions.viewsContainers) {
                 if (contributions.viewsContainers!.hasOwnProperty(location)) {
-                    const viewContainers = contributions.viewsContainers[location];
-                    viewContainers.forEach(container => {
-                        const views = contributions.views && contributions.views[container.id] ? contributions.views[container.id] : [];
-                        this.viewRegistry.registerViewContainer(location, container, views);
-                    });
+                    for (const viewContainer of contributions.viewsContainers[location]) {
+                        this.viewRegistry.registerViewContainer(location, viewContainer);
+                    }
+                }
+            }
+        }
+        // TODO: register after view containers from all extensions are registered
+        if (contributions.views) {
+            // tslint:disable-next-line:forin
+            for (const location in contributions.views) {
+                for (const view of contributions.views[location]) {
+                    this.viewRegistry.registerView(location, view);
                 }
             }
         }

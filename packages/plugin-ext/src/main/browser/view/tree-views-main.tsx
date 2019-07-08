@@ -19,7 +19,6 @@ import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewSelection } from
 import { Command } from '../../../api/model';
 import { RPCProtocol } from '../../../api/rpc-protocol';
 import { ViewRegistry } from './view-registry';
-import { Message } from '@phosphor/messaging';
 import {
     TreeWidget,
     TreeNode,
@@ -38,7 +37,6 @@ import {
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
-import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { TreeViewContextKeyService } from './tree-view-context-key-service';
@@ -58,8 +56,6 @@ export class TreeViewsMainImpl implements TreeViewsMain {
      */
     private dataProviders: Map<string, TreeViewDataProviderMain> = new Map<string, TreeViewDataProviderMain>();
 
-    private treeViewWidgets: Map<string, TreeViewWidget> = new Map<string, TreeViewWidget>();
-
     private viewRegistry: ViewRegistry;
 
     private readonly contextKeys: TreeViewContextKeyService;
@@ -76,22 +72,41 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     }
 
     $registerTreeDataProvider(treeViewId: string): void {
+        const viewPanel = this.viewRegistry.getView(treeViewId);
+        if (!viewPanel) {
+            console.error('view is not registered: ' + treeViewId);
+            return;
+        }
         const dataProvider = new TreeViewDataProviderMain(treeViewId, this.proxy, this.sharedStyle);
         this.dataProviders.set(treeViewId, dataProvider);
 
         const treeViewContainer = this.createTreeViewContainer(dataProvider);
         const treeViewWidget = treeViewContainer.get(TreeViewWidget);
         treeViewWidget.id = treeViewId;
-
-        this.treeViewWidgets.set(treeViewId, treeViewWidget);
-
-        this.viewRegistry.registerTreeView(treeViewId, treeViewWidget);
+        treeViewWidget.addClass('theia-tree-view');
+        treeViewWidget.node.style.height = '100%';
+        viewPanel.addWidget(treeViewWidget);
+        const root: CompositeTreeNode & ExpandableTreeNode = {
+            id: '',
+            parent: undefined,
+            name: '',
+            visible: false,
+            expanded: true,
+            children: []
+        };
+        treeViewWidget.model.root = root;
 
         this.handleTreeEvents(treeViewId, treeViewWidget);
     }
 
+    protected getTreeViewWidget(treeViewId: string): TreeViewWidget | undefined {
+        const viewPanel = this.viewRegistry.getView(treeViewId);
+        const widget = viewPanel && viewPanel.widgets[0];
+        return widget instanceof TreeViewWidget && widget || undefined;
+    }
+
     $refresh(treeViewId: string): void {
-        const treeViewWidget = this.treeViewWidgets.get(treeViewId);
+        const treeViewWidget = this.getTreeViewWidget(treeViewId);
         if (treeViewWidget) {
             treeViewWidget.model.refresh();
         }
@@ -99,7 +114,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
     // tslint:disable-next-line:no-any
     async $reveal(treeViewId: string, treeItemId: string): Promise<any> {
-        const treeViewWidget = this.treeViewWidgets.get(treeViewId);
+        const treeViewWidget = this.getTreeViewWidget(treeViewId);
         if (treeViewWidget) {
             const treeNode = treeViewWidget.model.getNode(treeItemId);
             if (treeNode && SelectableTreeNode.is(treeNode)) {
@@ -257,37 +272,9 @@ export class TreeViewWidget extends TreeWidget {
     @inject(TreeViewContextKeyService)
     protected readonly contextKeys: TreeViewContextKeyService;
 
-    protected onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-
-        setTimeout(() => {
-            // Set root node
-            const node = {
-                id: '',
-                parent: undefined,
-                name: '',
-                visible: false,
-                expanded: true,
-                selected: false,
-                children: []
-            };
-
-            this.model.root = node;
-        });
-    }
-
-    updateWidget() {
-        this.updateRows();
-
-        // Need to wait for 20 miliseconds until rows become updated.
-        setTimeout(() => {
-            ReactDOM.render(<React.Fragment>{this.render()}</React.Fragment>, this.node, () => this.onRender.dispose());
-        }, 20);
-    }
-
-    renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (node.icon) {
-            return <div className={node.icon + ' tree-view-icon'}></div>;
+            return <div className={node.icon + ' theia-tree-view-icon'}></div>;
         }
         return undefined;
     }
@@ -313,7 +300,7 @@ export class TreeViewWidget extends TreeWidget {
         return React.createElement('div', attrs, ...children);
     }
 
-    getCaption(node: TreeNode): React.ReactNode[] {
+    protected getCaption(node: TreeNode): React.ReactNode[] {
         const nodes: React.ReactNode[] = [];
 
         let work = node.name;

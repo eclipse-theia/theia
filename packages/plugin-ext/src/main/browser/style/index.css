@@ -51,6 +51,5 @@
 }
 
 @import './plugin-sidebar.css';
-@import './view-registry.css';
 @import './webview.css';
 @import './tree.css';
