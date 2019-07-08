@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { ApplicationShell, ViewContainer as ViewContainerWidget, Panel } from '@theia/core/lib/browser';
+import { injectable, inject, postConstruct } from 'inversify';
+import { ApplicationShell, ViewContainer as ViewContainerWidget, Panel, WidgetManager } from '@theia/core/lib/browser';
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
+import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 
 @injectable()
 export class ViewRegistry {
@@ -31,8 +32,23 @@ export class ViewRegistry {
     @inject(ViewContainerWidget.Factory)
     protected readonly viewContainerFactory: ViewContainerWidget.Factory;
 
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
+
     private readonly views = new Map<string, Panel>();
+    private readonly viewsByContainer = new Map<string, Panel[]>();
     private readonly viewContainers = new Map<string, ViewContainerWidget>();
+
+    @postConstruct()
+    protected init(): void {
+        this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
+            if (factoryId === DebugWidget.ID && widget instanceof DebugWidget) {
+                const viewContainer = widget['sessionWidget']['viewContainer'];
+                this.setViewContainer('debug', viewContainer);
+                widget.disposed.connect(() => this.viewContainers.delete('debug'));
+            }
+        });
+    }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): void {
         if (this.viewContainers.has(viewContainer.id)) {
@@ -49,7 +65,7 @@ export class ViewRegistry {
         containerWidget.title.label = viewContainer.title;
         containerWidget.title.caption = viewContainer.title;
         containerWidget.title.iconClass = iconClass;
-        this.viewContainers.set(viewContainer.id, containerWidget);
+        this.setViewContainer(viewContainer.id, containerWidget);
 
         this.applicationShell.addWidget(containerWidget, {
             area: ApplicationShell.isSideArea(location) ? location : 'left'
@@ -61,18 +77,40 @@ export class ViewRegistry {
             console.warn('view with such id alredy registered: ', JSON.stringify(view));
             return;
         }
+        const panel = new Panel();
+        panel.id = view.id;
+        panel.title.label = view.name;
+        panel.node.style.height = '100%';
+
+        const views = this.viewsByContainer.get(viewContainerId) || [];
+        views.push(panel);
+        this.views.set(view.id, panel);
+        this.viewsByContainer.set(viewContainerId, views);
+
         const viewContainer = this.viewContainers.get(viewContainerId);
         if (viewContainer) {
-            const panel = new Panel();
-            panel.id = view.id;
-            panel.title.label = view.name;
-            panel.node.style.height = '100%';
-            viewContainer.addWidget(panel);
-            this.views.set(view.id, panel);
+            this.addViewWidget(viewContainer, panel);
         }
     }
 
     getView(viewId: string): Panel | undefined {
         return this.views.get(viewId);
+    }
+
+    protected setViewContainer(id: string, viewContainer: ViewContainerWidget): void {
+        this.viewContainers.set(id, viewContainer);
+        const views = this.viewsByContainer.get(id);
+        if (views) {
+            for (const view of views) {
+                this.addViewWidget(viewContainer, view);
+            }
+        }
+    }
+
+    protected addViewWidget(viewContainer: ViewContainerWidget, view: Panel): void {
+        viewContainer.addWidget(view, {
+            initiallyCollapsed: !!viewContainer.children().next()
+        });
+
     }
 }

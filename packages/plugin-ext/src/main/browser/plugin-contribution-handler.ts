@@ -162,7 +162,6 @@ export class PluginContributionHandler {
                 }
             }
         }
-        // TODO: register after view containers from all extensions are registered
         if (contributions.views) {
             // tslint:disable-next-line:forin
             for (const location in contributions.views) {
