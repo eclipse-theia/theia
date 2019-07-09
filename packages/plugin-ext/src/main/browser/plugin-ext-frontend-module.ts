@@ -54,7 +54,8 @@ import { PluginSharedStyle } from './plugin-shared-style';
 import { FSResourceResolver } from './file-system-main';
 import { SelectionProviderCommandContribution } from './selection-provider-command';
 import { ViewColumnService } from './view-column-service';
-import { TreeViewContextKeyService } from './view/tree-view-context-key-service';
+import { ViewContextKeyService } from './view/view-context-key-service';
+import { PluginViewWidget, PluginViewWidgetFactory, PluginViewWidgetOptions } from './view/plugin-view-widget';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -106,7 +107,14 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
     }).inSingletonScope();
 
-    bind(TreeViewContextKeyService).toSelf().inSingletonScope();
+    bind(ViewContextKeyService).toSelf().inSingletonScope();
+
+    bind(PluginViewWidget).toSelf();
+    bind(PluginViewWidgetFactory).toDynamicValue(({ container }) => (options: PluginViewWidgetOptions) => {
+        const child = container.createChild();
+        child.bind(PluginViewWidgetOptions).toConstantValue(options);
+        return child.get(PluginViewWidget);
+    }).inSingletonScope();
 
     bind(PluginSharedStyle).toSelf().inSingletonScope();
     bind(ViewRegistry).toSelf().inSingletonScope();

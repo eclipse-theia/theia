@@ -19,6 +19,7 @@ import { ApplicationShell, ViewContainer as ViewContainerWidget, Panel, WidgetMa
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
+import { PluginViewWidgetFactory, PluginViewWidget } from './plugin-view-widget';
 
 @injectable()
 export class ViewRegistry {
@@ -32,11 +33,13 @@ export class ViewRegistry {
     @inject(ViewContainerWidget.Factory)
     protected readonly viewContainerFactory: ViewContainerWidget.Factory;
 
+    @inject(PluginViewWidgetFactory)
+    protected readonly viewWidgetFactory: PluginViewWidgetFactory;
+
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
-
-    private readonly views = new Map<string, Panel>();
-    private readonly viewsByContainer = new Map<string, Panel[]>();
+    private readonly views = new Map<string, PluginViewWidget>();
+    private readonly viewsByContainer = new Map<string, PluginViewWidget[]>();
     private readonly viewContainers = new Map<string, ViewContainerWidget>();
 
     @postConstruct()
@@ -77,19 +80,19 @@ export class ViewRegistry {
             console.warn('view with such id alredy registered: ', JSON.stringify(view));
             return;
         }
-        const panel = new Panel();
-        panel.id = view.id;
-        panel.title.label = view.name;
-        panel.node.style.height = '100%';
+        const widget = this.viewWidgetFactory({ view });
+        widget.id = view.id;
+        widget.title.label = view.name;
+        widget.node.style.height = '100%';
 
         const views = this.viewsByContainer.get(viewContainerId) || [];
-        views.push(panel);
-        this.views.set(view.id, panel);
+        views.push(widget);
+        this.views.set(view.id, widget);
         this.viewsByContainer.set(viewContainerId, views);
 
         const viewContainer = this.viewContainers.get(viewContainerId);
         if (viewContainer) {
-            this.addViewWidget(viewContainer, panel);
+            this.addViewWidget(viewContainer, widget);
         }
     }
 

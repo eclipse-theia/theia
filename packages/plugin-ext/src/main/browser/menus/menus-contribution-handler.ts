@@ -33,6 +33,7 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { PluginScmProvider, PluginScmResourceGroup, PluginScmResource } from '../scm-main';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
+import { PLUGIN_VIEW_TITLE_MENU } from '../view/plugin-view-widget';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -83,6 +84,15 @@ export class MenusContributionPointHandler {
                         execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(action.command, selectedResource(widget)),
                         isEnabled: widget => widget instanceof EditorWidget && this.commands.isEnabled(action.command, selectedResource(widget)),
                         isVisible: widget => widget instanceof EditorWidget && this.commands.isVisible(action.command, selectedResource(widget))
+                    });
+                }
+            } else if (location === 'view/title') {
+                for (const menu of allMenus[location]) {
+                    const group = 'inline' + (menu.group ? ':' + menu.group : '');
+                    this.registerMenuAction(PLUGIN_VIEW_TITLE_MENU, { ...menu, group }, {
+                        execute: () => this.commands.executeCommand(menu.command),
+                        isEnabled: () => this.commands.isEnabled(menu.command),
+                        isVisible: () => this.commands.isVisible(menu.command)
                     });
                 }
             } else if (location === 'view/item/context') {
