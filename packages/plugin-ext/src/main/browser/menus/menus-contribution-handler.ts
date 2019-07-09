@@ -88,12 +88,7 @@ export class MenusContributionPointHandler {
                 }
             } else if (location === 'view/title') {
                 for (const menu of allMenus[location]) {
-                    const group = 'inline' + (menu.group ? ':' + menu.group : '');
-                    this.registerMenuAction(PLUGIN_VIEW_TITLE_MENU, { ...menu, group }, {
-                        execute: () => this.commands.executeCommand(menu.command),
-                        isEnabled: () => this.commands.isEnabled(menu.command),
-                        isVisible: () => this.commands.isVisible(menu.command)
-                    });
+                    this.registerViewTitleAction(PLUGIN_VIEW_TITLE_MENU, menu);
                 }
             } else if (location === 'view/item/context') {
                 for (const menu of allMenus[location]) {
@@ -264,6 +259,29 @@ export class MenusContributionPointHandler {
             command.category = pluginCommand.category;
             action.label = pluginCommand.label;
             if (inline) {
+                action.icon = pluginCommand.iconClass;
+            }
+        });
+    }
+
+    protected registerViewTitleAction(menuPath: MenuPath, menu: Menu): void {
+        const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.view.title.action.' });
+        const command: Command = { id: commandId };
+        this.commands.registerCommand(command, {
+            execute: () => this.commands.executeCommand(menu.command),
+            isEnabled: () => this.commands.isEnabled(menu.command),
+            isVisible: () => this.commands.isVisible(menu.command)
+        });
+
+        const { when } = menu;
+        const [group = 'navigation', order = undefined] = (menu.group || '').split('@');
+        const action: MenuAction = { commandId, order, when };
+        this.menuRegistry.registerMenuAction([...menuPath, group], action);
+
+        this.onDidRegisterCommand(menu.command, pluginCommand => {
+            command.category = pluginCommand.category;
+            action.label = pluginCommand.label;
+            if (group === 'navigation') {
                 action.icon = pluginCommand.iconClass;
             }
         });
