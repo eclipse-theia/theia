@@ -411,7 +411,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return <div
             data-node-id={node.id}
             className={className}
-            style={{ paddingLeft: '4px' }}
+            style={{ paddingLeft: '4px', paddingRight: '4px' }}
             onClick={this.toggle}>
         </div>;
     }
