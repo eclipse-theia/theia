@@ -26,6 +26,7 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TheiaDockPanel } from './theia-dock-panel';
 import { SidePanelToolbar } from './side-panel-toolbar';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
+import { DisposableCollection, Disposable } from '../../common/disposable';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -173,7 +174,7 @@ export class SidePanelHandler {
         contentBox.addWidget(this.toolBar);
         BoxPanel.setStretch(this.dockPanel, 1);
         contentBox.addWidget(this.dockPanel);
-        const contentPanel = new BoxPanel({layout: contentBox});
+        const contentPanel = new BoxPanel({ layout: contentBox });
 
         const side = this.side;
         let direction: BoxLayout.Direction;
@@ -336,6 +337,12 @@ export class SidePanelHandler {
         this.dockPanel.addWidget(widget);
     }
 
+    // should be a property to preserve fn identity
+    protected updateToolbarTitle = (): void => {
+        const currentTitle = this.tabBar && this.tabBar.currentTitle;
+        this.toolBar.toolbarTitle = currentTitle || undefined;
+    }
+
     /**
      * Refresh the visibility of the side bar and dock panel.
      */
@@ -348,8 +355,6 @@ export class SidePanelHandler {
         const currentTitle = tabBar.currentTitle;
         const hideDockPanel = currentTitle === null;
         let relativeSizes: number[] | undefined;
-
-        this.toolBar.toolbarTitle = currentTitle || undefined;
 
         if (hideDockPanel) {
             container.addClass(COLLAPSED_CLASS);
@@ -465,11 +470,19 @@ export class SidePanelHandler {
         return result;
     }
 
+    protected readonly toDisposeOnCurrentTabChanged = new DisposableCollection();
+
     /**
      * Handle a `currentChanged` signal from the sidebar. The side panel is refreshed so it displays
      * the new selected widget.
      */
     protected onCurrentTabChanged(sender: SideTabBar, { currentTitle, currentIndex }: TabBar.ICurrentChangedArgs<Widget>): void {
+        this.toDisposeOnCurrentTabChanged.dispose();
+        if (currentTitle) {
+            this.updateToolbarTitle();
+            currentTitle.changed.connect(this.updateToolbarTitle);
+            this.toDisposeOnCurrentTabChanged.push(Disposable.create(() => currentTitle.changed.disconnect(this.updateToolbarTitle)));
+        }
         if (currentIndex >= 0) {
             this.state.lastActiveTabIndex = currentIndex;
             sender.revealTab(currentIndex);

@@ -27,7 +27,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import {
-    ApplicationShell, ContextMenuRenderer, SELECTED_CLASS, StorageService,
+    ContextMenuRenderer, SELECTED_CLASS, StorageService,
     ReactWidget, Key, LabelProvider, DiffUris, KeybindingRegistry, Widget, StatefulWidget
 } from '@theia/core/lib/browser';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
@@ -56,7 +56,6 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(ScmContextKeyService) protected readonly contextKeys: ScmContextKeyService;
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService;
     @inject(StorageService) protected readonly storageService: StorageService;
@@ -103,12 +102,6 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         this.title.label = ScmWidget.LABEL;
         if (repository) {
             this.title.label += ': ' + repository.provider.label;
-        }
-        const area = this.shell.getAreaFor(this);
-        if (area === 'left') {
-            this.shell.leftPanelHandler.refresh();
-        } else if (area === 'right') {
-            this.shell.rightPanelHandler.refresh();
         }
         this.update();
         if (repository) {
