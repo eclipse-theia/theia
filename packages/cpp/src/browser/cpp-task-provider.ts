@@ -17,10 +17,12 @@
 import parseArgv = require('string-argv');
 import { inject, injectable, postConstruct } from 'inversify';
 import { ProcessTaskConfiguration } from '@theia/task/lib/common/process/task-protocol';
-import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
 import { TaskContribution, TaskProvider, TaskProviderRegistry, TaskResolver, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
 import { CppBuildConfigurationManager, CppBuildConfiguration } from './cpp-build-configurations';
-import { ContributedTaskConfiguration, TaskConfiguration, } from '@theia/task/lib/common/task-protocol';
+import { ContributedTaskConfiguration, TaskConfiguration } from '@theia/task/lib/common/task-protocol';
+import { TaskDefinitionRegistry } from '@theia/task/lib/browser/task-definition-registry';
+import { ProblemMatcherRegistry } from '@theia/task/lib/browser/task-problem-matcher-registry';
+import { ProblemPatternRegistry } from '@theia/task/lib/browser/task-problem-pattern-registry';
 
 /**
  * Data required to define a C/C++ build task the user could run.
@@ -38,10 +40,33 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
     @inject(TaskResolverRegistry) protected readonly taskResolverRegistry: TaskResolverRegistry;
     @inject(TaskDefinitionRegistry) protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
     @inject(CppBuildConfigurationManager) protected readonly cppBuildConfigurationManager: CppBuildConfigurationManager;
+    @inject(ProblemMatcherRegistry) protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+    @inject(ProblemPatternRegistry) protected readonly problemPatternRegistry: ProblemPatternRegistry;
 
     @postConstruct()
     protected init(): void {
         this.registerTaskDefinition();
+        this.problemPatternRegistry.register({
+            'name': 'clangTidyPattern',
+            'regexp': '^(.+):(\\d+):(\\d+):\\s+(error|warning|info|note):\\s+(.+?)\\s+\\[(.+)\\]$',
+            'file': 1,
+            'line': 2,
+            'character': 3,
+            'severity': 4,
+            'message': 5,
+            'code': 6
+        });
+        this.problemMatcherRegistry.register({
+            'name': 'clangTidyMatcher',
+            'label': 'Clang-tidy problems',
+            'owner': 'clang-tidy',
+            'source': 'clang-tidy-task',
+            'applyTo': 'alldocuments',
+            'fileLocation': [
+                'absolute'
+            ],
+            'pattern': 'clangTidyPattern'
+        });
     }
 
     registerProviders(registry: TaskProviderRegistry) {
@@ -77,7 +102,7 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
             type: 'shell',
             command,
             args,
-            options: { cwd: task.config.directory }
+            cwd: task.config.directory,
         };
         return resolver.resolveTask(resolvedTask);
     }
