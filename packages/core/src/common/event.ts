@@ -243,3 +243,46 @@ export class Emitter<T> {
         this._disposed = true;
     }
 }
+
+export interface WaitUntilEvent {
+    // tslint:disable:no-any
+    /**
+     * Allows to pause the event loop until the provided thenable resolved.
+     *
+     * *Note:* It can only be called during event dispatch and not in an asynchronous manner
+     *
+     * @param thenable A thenable that delays execution.
+     */
+    waitUntil(thenable: Promise<any>): void;
+    // tslint:enable:no-any
+}
+export namespace WaitUntilEvent {
+    export async function fire<T extends WaitUntilEvent>(
+        emitter: Emitter<T>,
+        event: Pick<T, Exclude<keyof T, 'waitUntil'>>,
+        timeout: number | undefined = undefined
+    ): Promise<void> {
+        const waitables: Promise<void>[] = [];
+        const asyncEvent = Object.assign(event, {
+            // tslint:disable-next-line:no-any
+            waitUntil: (thenable: Promise<any>) => {
+                if (Object.isFrozen(waitables)) {
+                    throw new Error('waitUntil cannot be called asynchronously.');
+                }
+                waitables.push(thenable);
+            }
+        }) as T;
+        emitter.fire(asyncEvent);
+        // Asynchronous calls to `waitUntil` should fail.
+        Object.freeze(waitables);
+        delete asyncEvent['waitUntil'];
+        if (!waitables.length) {
+            return;
+        }
+        if (timeout !== undefined) {
+            await Promise.race([Promise.all(waitables), new Promise(resolve => setTimeout(resolve, timeout))]);
+        } else {
+            await Promise.all(waitables);
+        }
+    }
+}

@@ -49,6 +49,16 @@ export class ProcessTaskResolver implements TaskResolver {
                 args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args, variableResolverOptions) : undefined,
                 options: processTaskConfig.windows.options
             } : undefined,
+            osx: processTaskConfig.osx ? {
+                command: await this.variableResolverService.resolve(processTaskConfig.osx.command, variableResolverOptions),
+                args: processTaskConfig.osx.args ? await this.variableResolverService.resolveArray(processTaskConfig.osx.args, variableResolverOptions) : undefined,
+                options: processTaskConfig.osx.options
+            } : undefined,
+            linux: processTaskConfig.linux ? {
+                command: await this.variableResolverService.resolve(processTaskConfig.linux.command, variableResolverOptions),
+                args: processTaskConfig.linux.args ? await this.variableResolverService.resolveArray(processTaskConfig.linux.args, variableResolverOptions) : undefined,
+                options: processTaskConfig.linux.options
+            } : undefined,
             options: {
                 cwd: await this.variableResolverService.resolve(processTaskConfig.options && processTaskConfig.options.cwd || '${workspaceFolder}', variableResolverOptions),
                 env: processTaskConfig.options && processTaskConfig.options.env,

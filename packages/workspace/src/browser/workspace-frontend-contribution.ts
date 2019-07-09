@@ -179,7 +179,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             canSelectFolders: true,
             canSelectFiles: true
         }, rootStat);
-        if (destinationUri) {
+        if (destinationUri && this.getCurrentWorkspaceUri().toString() !== destinationUri.toString()) {
             const destination = await this.fileSystem.getFileStat(destinationUri.toString());
             if (destination) {
                 if (destination.isDirectory) {
@@ -235,7 +235,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         };
         const [rootStat] = await this.workspaceService.roots;
         const destinationFolderUri = await this.fileDialogService.showOpenDialog(props, rootStat);
-        if (destinationFolderUri) {
+        if (destinationFolderUri &&
+            this.getCurrentWorkspaceUri().toString() !== destinationFolderUri.toString()) {
             const destinationFolder = await this.fileSystem.getFileStat(destinationFolderUri.toString());
             if (destinationFolder && destinationFolder.isDirectory) {
                 this.workspaceService.open(destinationFolderUri);
@@ -274,7 +275,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const props = await this.openWorkspaceOpenFileDialogProps();
         const [rootStat] = await this.workspaceService.roots;
         const workspaceFolderOrWorkspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
-        if (workspaceFolderOrWorkspaceFileUri) {
+        if (workspaceFolderOrWorkspaceFileUri &&
+            this.getCurrentWorkspaceUri().toString() !== workspaceFolderOrWorkspaceFileUri.toString()) {
             const destinationFolder = await this.fileSystem.getFileStat(workspaceFolderOrWorkspaceFileUri.toString());
             if (destinationFolder) {
                 this.workspaceService.open(workspaceFolderOrWorkspaceFileUri);
@@ -381,6 +383,15 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     private isElectron(): boolean {
         return environment.electron.is();
+    }
+
+    /**
+     * Get the current workspace URI.
+     *
+     * @returns the current workspace URI.
+     */
+    private getCurrentWorkspaceUri(): URI {
+        return new URI(this.workspaceService.workspace && this.workspaceService.workspace.uri);
     }
 
 }

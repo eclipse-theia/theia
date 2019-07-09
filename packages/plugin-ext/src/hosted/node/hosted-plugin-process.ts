@@ -24,7 +24,7 @@ import { HostedPluginClient, ServerPluginRunner, PluginMetadata, PluginHostEnvir
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
-import {HostedPluginProcessesCache} from './hosted-plugin-processes-cache';
+import { HostedPluginProcessesCache } from './hosted-plugin-processes-cache';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -180,8 +180,8 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         const childProcess = cp.fork(path.resolve(__dirname, 'plugin-host.js'), options.args, forkOptions);
-        childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
-        childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
+        childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
+        childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
         childProcess.once('exit', () => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC exited`));

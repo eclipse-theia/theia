@@ -169,16 +169,18 @@ describe('Type converters:', () => {
     });
 
     describe('convert tasks:', () => {
-        const type = 'shell';
+        const customType = 'custom';
+        const shellType = 'shell';
         const label = 'yarn build';
         const source = 'source';
         const command = 'yarn';
+        const commandLine = 'yarn run build';
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
         const additionalProperty = 'some property';
 
         const shellTaskDto: ProcessTaskDto = {
-            type,
+            type: shellType,
             label,
             source,
             scope: undefined,
@@ -192,7 +194,7 @@ describe('Type converters:', () => {
             name: label,
             source,
             definition: {
-                type,
+                type: shellType,
                 additionalProperty
             },
             execution: {
@@ -204,24 +206,39 @@ describe('Type converters:', () => {
             }
         };
 
-        const taskDtoWithCommandLine: ProcessTaskDto = {
-            type,
-            label,
-            source,
-            scope: undefined,
-            command,
-            args,
-            options: { cwd }
-        };
-
         const pluginTaskWithCommandLine: theia.Task = {
             name: label,
             source,
             definition: {
-                type
+                type: shellType,
+                additionalProperty
             },
             execution: {
-                commandLine: 'yarn run build',
+                commandLine,
+                options: {
+                    cwd
+                }
+            }
+        };
+
+        const customTaskDto: ProcessTaskDto = { ...shellTaskDto, type: customType };
+
+        const customPluginTask: theia.Task = {
+            ...shellPluginTask, definition: {
+                type: customType,
+                additionalProperty
+            }
+        };
+
+        const customPluginTaskWithCommandLine: theia.Task = {
+            name: label,
+            source,
+            definition: {
+                type: customType,
+                additionalProperty
+            },
+            execution: {
+                commandLine,
                 options: {
                     cwd
                 }
@@ -252,7 +269,34 @@ describe('Type converters:', () => {
 
             // then
             assert.notEqual(result, undefined);
-            assert.deepEqual(result, taskDtoWithCommandLine);
+            assert.deepEqual(result, shellTaskDto);
+        });
+
+        it('should convert task with custom type to dto', () => {
+            // when
+            const result: TaskDto | undefined = Converter.fromTask(customPluginTask);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, customTaskDto);
+        });
+
+        it('should convert task with custom type from dto', () => {
+            // when
+            const result: theia.Task = Converter.toTask(customTaskDto);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, customPluginTask);
+        });
+
+        it('should convert to task dto from custom task with commandline', () => {
+            // when
+            const result: TaskDto | undefined = Converter.fromTask(customPluginTaskWithCommandLine);
+
+            // then
+            assert.notEqual(result, undefined);
+            assert.deepEqual(result, customTaskDto);
         });
     });
 

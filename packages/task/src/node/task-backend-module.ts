@@ -24,12 +24,13 @@ import { TaskManager } from './task-manager';
 import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
 import { TaskServerImpl } from './task-server';
 import { createCommonBindings } from '../common/task-common-module';
-import { TaskClient, TaskServer, taskPath } from '../common/task-protocol';
+import { TaskClient, TaskServer, taskPath } from '../common';
 
 export default new ContainerModule(bind => {
 
     bind(TaskManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(TaskManager);
+
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {

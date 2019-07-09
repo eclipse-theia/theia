@@ -1226,6 +1226,11 @@ export enum FileChangeType {
     Deleted = 3,
 }
 
+export enum CommentThreadCollapsibleState {
+    Collapsed = 0,
+    Expanded = 1
+}
+
 export class FileSystemError extends Error {
 
     static FileExists(messageOrUri?: string | URI): FileSystemError {
@@ -1728,12 +1733,14 @@ export class Task {
         if (this.taskExecution instanceof ProcessExecution) {
             Object.assign(this.taskDefinition, {
                 type: 'process',
-                id: this.taskExecution.computeId()
+                id: this.taskExecution.computeId(),
+                taskType: this.taskDefinition!.type
             });
         } else if (this.taskExecution instanceof ShellExecution) {
             Object.assign(this.taskDefinition, {
                 type: 'shell',
-                id: this.taskExecution.computeId()
+                id: this.taskExecution.computeId(),
+                taskType: this.taskDefinition!.type
             });
         }
     }

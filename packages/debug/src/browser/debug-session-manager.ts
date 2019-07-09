@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Emitter, Event, DisposableCollection, MessageService } from '@theia/core';
+import { Emitter, Event, DisposableCollection, MessageService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -31,6 +31,14 @@ import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import URI from '@theia/core/lib/common/uri';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugConfiguration } from '../common/debug-common';
+
+export interface WillStartDebugSession extends WaitUntilEvent {
+}
+
+export interface WillResolveDebugConfiguration extends WaitUntilEvent {
+    debugType: string
+}
 
 export interface DidChangeActiveDebugSession {
     previous: DebugSession | undefined
@@ -51,6 +59,12 @@ export interface DebugSessionCustomEvent {
 @injectable()
 export class DebugSessionManager {
     protected readonly _sessions = new Map<string, DebugSession>();
+
+    protected readonly onWillStartDebugSessionEmitter = new Emitter<WillStartDebugSession>();
+    readonly onWillStartDebugSession: Event<WillStartDebugSession> = this.onWillStartDebugSessionEmitter.event;
+
+    protected readonly onWillResolveDebugConfigurationEmitter = new Emitter<WillResolveDebugConfiguration>();
+    readonly onWillResolveDebugConfiguration: Event<WillResolveDebugConfiguration> = this.onWillResolveDebugConfigurationEmitter.event;
 
     protected readonly onDidCreateDebugSessionEmitter = new Emitter<DebugSession>();
     readonly onDidCreateDebugSession: Event<DebugSession> = this.onDidCreateDebugSessionEmitter.event;
@@ -126,6 +140,7 @@ export class DebugSessionManager {
 
     async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         try {
+            await this.fireWillStartDebugSession();
             const resolved = await this.resolveConfiguration(options);
             const sessionId = await this.debug.createDebugSession(resolved.configuration);
             return this.doStart(sessionId, resolved);
@@ -140,13 +155,18 @@ export class DebugSessionManager {
             throw e;
         }
     }
+
+    protected async fireWillStartDebugSession(): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillStartDebugSessionEmitter, {});
+    }
+
     protected configurationIds = new Map<string, number>();
     protected async resolveConfiguration(options: Readonly<DebugSessionOptions>): Promise<InternalDebugSessionOptions> {
         if (InternalDebugSessionOptions.is(options)) {
             return options;
         }
         const { workspaceFolderUri } = options;
-        const resolvedConfiguration = await this.debug.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
+        const resolvedConfiguration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
         const configuration = await this.variableResolver.resolve(resolvedConfiguration);
         const key = configuration.name + workspaceFolderUri;
         const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
@@ -157,6 +177,15 @@ export class DebugSessionManager {
             workspaceFolderUri
         };
     }
+
+    protected async resolveDebugConfiguration(configuration: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
+        await this.fireWillResolveDebugConfiguration(configuration.type);
+        return this.debug.resolveDebugConfiguration(configuration, workspaceFolderUri);
+    }
+    protected async fireWillResolveDebugConfiguration(debugType: string): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillResolveDebugConfigurationEmitter, { debugType });
+    }
+
     protected async doStart(sessionId: string, options: DebugSessionOptions): Promise<DebugSession> {
         const contrib = this.sessionContributionRegistry.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;

@@ -104,21 +104,20 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         } else if (nextCommit === undefined && this.state.lastCommit === undefined) {
             // No change here
         } else if (this.transitionHint === 'none') {
-            if (this.state.lastCommit) {
-                // If the 'last' commit changes, but we are not expecting an 'amend'
-                // or 'unamend' to occur, then we clear out the list of amended commits.
-                // This is because an unexpected change has happened to the repoistory,
-                // perhaps the user commited, merged, or something.  The amended commits
-                // will no longer be valid.
-                await this.clearAmendingCommits();
-                // There is a change to the last commit, but no transition hint so
-                // the view just updates without transition.
-                this.setState({ amendingCommits: [], lastCommit: nextCommit });
-            } else {
-                // There should always be a previous 'last commit'
-                throw new Error('unexpected state');
-                // this.setState({ amendingCommits: await this.buildAmendingList(), lastCommit: nextCommit });
-            }
+            // If the 'last' commit changes, but we are not expecting an 'amend'
+            // or 'unamend' to occur, then we clear out the list of amended commits.
+            // This is because an unexpected change has happened to the repoistory,
+            // perhaps the user commited, merged, or something.  The amended commits
+            // will no longer be valid.
+
+            // Note that there may or may not have been a previous lastCommit (if the
+            // repository was previously empty with no initial commit then lastCommit
+            // will be undefined).  Either way we clear the amending commits.
+            await this.clearAmendingCommits();
+
+            // There is a change to the last commit, but no transition hint so
+            // the view just updates without transition.
+            this.setState({ amendingCommits: [], lastCommit: nextCommit });
         } else {
             if (this.state.lastCommit && nextCommit) {
                 const direction: 'up' | 'down' = this.transitionHint === 'amend' ? 'up' : 'down';

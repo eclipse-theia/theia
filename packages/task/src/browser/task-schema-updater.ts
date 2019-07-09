@@ -59,13 +59,60 @@ export class TaskSchemaUpdater {
     }
 }
 
+const commandSchema: IJSONSchema = {
+    type: 'string',
+    description: 'The actual command or script to execute'
+};
+
+const commandArgSchema: IJSONSchema = {
+    type: 'array',
+    description: 'A list of strings, each one being one argument to pass to the command',
+    items: {
+        type: 'string'
+    }
+};
+
+const commandOptionsSchema: IJSONSchema = {
+    type: 'object',
+    description: 'The command options used when the command is executed',
+    properties: {
+        cwd: {
+            type: 'string',
+            description: 'The directory in which the command will be executed',
+            default: '${workspaceFolder}'
+        },
+        env: {
+            type: 'object',
+            description: 'The environment of the executed program or shell. If omitted the parent process\' environment is used'
+        },
+        shell: {
+            type: 'object',
+            description: 'Configuration of the shell when task type is `shell`',
+            properties: {
+                executable: {
+                    type: 'string',
+                    description: 'The shell to use'
+                },
+                args: {
+                    type: 'array',
+                    description: `The arguments to be passed to the shell executable to run in command mode
+                        (e.g ['-c'] for bash or ['/S', '/C'] for cmd.exe)`,
+                    items: {
+                        type: 'string'
+                    }
+                }
+            }
+        }
+    }
+};
+
 const taskConfigurationSchema: IJSONSchema = {
     oneOf: [
         {
-            'allOf': [
+            allOf: [
                 {
                     type: 'object',
-                    required: ['type', 'label'],
+                    required: ['type'],
                     properties: {
                         label: {
                             type: 'string',
@@ -77,68 +124,51 @@ const taskConfigurationSchema: IJSONSchema = {
                             default: 'shell',
                             description: 'Determines what type of process will be used to execute the task. Only shell types will have output shown on the user interface'
                         },
-                        command: {
-                            type: 'string',
-                            description: 'The actual command or script to execute'
-                        },
-                        args: {
-                            type: 'array',
-                            description: 'A list of strings, each one being one argument to pass to the command',
-                            items: {
-                                type: 'string'
-                            }
-                        },
-                        options: {
-                            type: 'object',
-                            description: 'The command options used when the command is executed',
-                            properties: {
-                                cwd: {
-                                    type: 'string',
-                                    description: 'The directory in which the command will be executed',
-                                    default: '${workspaceFolder}'
-                                },
-                                env: {
-                                    type: 'object',
-                                    description: 'The environment of the executed program or shell. If omitted the parent process\' environment is used'
-                                },
-                                shell: {
-                                    type: 'object',
-                                    description: 'Configuration of the shell when task type is `shell`',
-                                    properties: {
-                                        executable: {
-                                            type: 'string',
-                                            description: 'The shell to use'
-                                        },
-                                        args: {
-                                            type: 'array',
-                                            description: `The arguments to be passed to the shell executable to run in command mode
-                                                (e.g ['-c'] for bash or ['/S', '/C'] for cmd.exe)`,
-                                            items: {
-                                                type: 'string'
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
+                        command: commandSchema,
+                        args: commandArgSchema,
+                        options: commandOptionsSchema,
                         windows: {
                             type: 'object',
-                            description: 'Windows specific command configuration overrides command and args',
+                            description: 'Windows specific command configuration that overrides the command, args, and options',
                             properties: {
-                                command: {
-                                    type: 'string',
-                                    description: 'The actual command or script to execute'
+                                command: commandSchema,
+                                args: commandArgSchema,
+                                options: commandOptionsSchema
+                            }
+                        },
+                        osx: {
+                            type: 'object',
+                            description: 'MacOS specific command configuration that overrides the command, args, and options',
+                            properties: {
+                                command: commandSchema,
+                                args: commandArgSchema,
+                                options: commandOptionsSchema
+                            }
+                        },
+                        linux: {
+                            type: 'object',
+                            description: 'Linux specific command configuration that overrides the default command, args, and options',
+                            properties: {
+                                command: commandSchema,
+                                args: commandArgSchema,
+                                options: commandOptionsSchema
+                            }
+                        },
+                        problemMatcher: {
+                            oneOf: [
+                                {
+                                    type: 'object',
+                                    description: 'User defined problem matcher(s) to parse the output of the task',
                                 },
-                                args: {
+                                {
                                     type: 'array',
-                                    description: 'A list of strings, each one being one argument to pass to the command',
+                                    description: 'Name(s) of the problem matcher(s) to parse the output of the task',
                                     items: {
                                         type: 'string'
                                     }
-                                },
-                            }
+                                }
+                            ]
                         }
-
                     }
                 }
             ]

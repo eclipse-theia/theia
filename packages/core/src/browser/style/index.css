@@ -84,8 +84,7 @@ body {
 .theia-header {
   text-transform: uppercase;
   font-size: var(--theia-ui-font-size0);
-  font-weight: 800;
-  margin: 10px 0 5px 0;
+  font-weight: 450;
 }
 
 .p-Widget {

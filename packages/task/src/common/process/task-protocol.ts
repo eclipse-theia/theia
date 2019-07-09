@@ -52,7 +52,7 @@ export interface CommandOptions {
 }
 
 export interface CommandProperties<T = string> {
-    readonly command: string;
+    readonly command?: string;
     readonly args?: T[];
     readonly options?: CommandOptions;
 }
@@ -62,9 +62,19 @@ export interface ProcessTaskConfiguration<T = string> extends TaskConfiguration,
     readonly type: ProcessType;
 
     /**
-     * Windows version of CommandProperties. Used in preference on Windows, if defined.
+     * Windows specific task configuration
      */
     readonly windows?: CommandProperties<T>;
+
+    /**
+     * macOS specific task configuration
+     */
+    readonly osx?: CommandProperties<T>;
+
+    /**
+     * Linux specific task configuration
+     */
+    readonly linux?: CommandProperties<T>;
 }
 
 export interface ProcessTaskInfo extends TaskInfo {

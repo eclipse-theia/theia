@@ -23,12 +23,26 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration, ContributedTaskConfiguration } from '../common/task-protocol';
+import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
+import {
+    ProblemMatcher,
+    ProblemMatchData,
+    ProblemMatcherContribution,
+    TaskServer,
+    TaskExitedEvent,
+    TaskInfo,
+    TaskConfiguration,
+    TaskCustomization,
+    TaskOutputProcessedEvent,
+    RunTaskOption
+} from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
+import { TaskDefinitionRegistry } from './task-definition-registry';
+import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { Range } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 
@@ -88,6 +102,15 @@ export class TaskService implements TaskConfigurationClient {
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(ProblemManager)
+    protected readonly problemManager: ProblemManager;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(ProblemMatcherRegistry)
+    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
     /**
      * @deprecated To be removed in 0.5.0
      */
@@ -112,13 +135,40 @@ export class TaskService implements TaskConfigurationClient {
         this.taskWatcher.onTaskCreated((event: TaskInfo) => {
             if (this.isEventForThisClient(event.ctx)) {
                 const task = event.config;
-                const taskIdentifier =
-                    task
-                        ? ContributedTaskConfiguration.is(task)
-                            ? `${task._source}: ${task.label}`
-                            : `${task.type}: ${task.label}`
-                        : `${event.taskId}`;
+                let taskIdentifier = event.taskId.toString();
+                if (task) {
+                    taskIdentifier = !!this.taskDefinitionRegistry.getDefinition(task) ? `${task._source}: ${task.label}` : `${task.type}: ${task.label}`;
+                }
                 this.messageService.info(`Task ${taskIdentifier} has been started`);
+            }
+        });
+
+        this.taskWatcher.onOutputProcessed((event: TaskOutputProcessedEvent) => {
+            if (!this.isEventForThisClient(event.ctx)) {
+                return;
+            }
+            if (event.problems) {
+                event.problems.forEach(problem => {
+                    const existingMarkers = this.problemManager.findMarkers({ owner: problem.description.owner });
+                    const uris = new Set<string>();
+                    existingMarkers.forEach(marker => uris.add(marker.uri));
+                    if (ProblemMatchData.is(problem) && problem.resource) {
+                        const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
+                        if (uris.has(uri.toString())) {
+                            const newData = [
+                                ...existingMarkers
+                                    .filter(marker => marker.uri === uri.toString())
+                                    .map(markerData => markerData.data),
+                                problem.marker
+                            ];
+                            this.problemManager.setMarkers(uri, problem.description.owner, newData);
+                        } else {
+                            this.problemManager.setMarkers(uri, problem.description.owner, [problem.marker]);
+                        }
+                    } else { // should have received an event for finding the "background task begins" pattern
+                        uris.forEach(uriString => this.problemManager.setMarkers(new URI(uriString), problem.description.owner, []));
+                    }
+                });
             }
         });
 
@@ -129,12 +179,12 @@ export class TaskService implements TaskConfigurationClient {
             }
 
             const taskConfiguration = event.config;
-            const taskIdentifier =
-                taskConfiguration
-                    ? ContributedTaskConfiguration.is(taskConfiguration)
-                        ? `${taskConfiguration._source}: ${taskConfiguration.label}`
-                        : `${taskConfiguration.type}: ${taskConfiguration.label}`
-                    : `${event.taskId}`;
+            let taskIdentifier = event.taskId.toString();
+            if (taskConfiguration) {
+                taskIdentifier = !!this.taskDefinitionRegistry.getDefinition(taskConfiguration)
+                    ? `${taskConfiguration._source}: ${taskConfiguration.label}`
+                    : `${taskConfiguration.type}: ${taskConfiguration.label}`;
+            }
 
             if (event.code !== undefined) {
                 const message = `Task ${taskIdentifier} has exited with code ${event.code}.`;
@@ -233,7 +283,7 @@ export class TaskService implements TaskConfigurationClient {
             return;
         }
 
-        this.runTask(task);
+        this.run(source, taskLabel);
     }
 
     /**
@@ -253,18 +303,51 @@ export class TaskService implements TaskConfigurationClient {
      */
     async run(source: string, taskLabel: string): Promise<void> {
         let task = await this.getProvidedTask(source, taskLabel);
-        if (!task) {
+        const matchers: (string | ProblemMatcherContribution)[] = [];
+        if (!task) { // if a provided task cannot be found, search from tasks.json
             task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;
+            } else if (task.problemMatcher) {
+                if (Array.isArray(task.problemMatcher)) {
+                    matchers.push(...task.problemMatcher);
+                } else {
+                    matchers.push(task.problemMatcher);
+                }
+            }
+        } else { // if a provided task is found, check if it is customized in tasks.json
+            const taskType = task.taskType || task.type;
+            const customizations = this.taskConfigurations.getTaskCustomizations(taskType);
+            const matcherContributions = this.getProblemMatchers(task, customizations);
+            matchers.push(...matcherContributions);
+        }
+        await this.problemMatcherRegistry.onReady();
+        const resolvedMatchers: ProblemMatcher[] = [];
+        // resolve matchers before passing them to the server
+        for (const matcher of matchers) {
+            let resolvedMatcher: ProblemMatcher | undefined;
+            if (typeof matcher === 'string') {
+                resolvedMatcher = this.problemMatcherRegistry.get(matcher);
+            } else {
+                resolvedMatcher = await this.problemMatcherRegistry.getProblemMatcherFromContribution(matcher);
+            }
+            if (resolvedMatcher) {
+                const scope = task._scope || task._source;
+                if (resolvedMatcher.filePrefix && scope) {
+                    const options = { context: new URI(scope).withScheme('file') };
+                    const resolvedPrefix = await this.variableResolverService.resolve(resolvedMatcher.filePrefix, options);
+                    Object.assign(resolvedMatcher, { filePrefix: resolvedPrefix });
+                }
+                resolvedMatchers.push(resolvedMatcher);
             }
         }
-
-        this.runTask(task);
+        this.runTask(task, {
+            customization: { type: task.taskType || task.type, problemMatcher: resolvedMatchers }
+        });
     }
 
-    async runTask(task: TaskConfiguration): Promise<void> {
+    async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<void> {
         const source = task._source;
         const taskLabel = task.label;
 
@@ -279,9 +362,11 @@ export class TaskService implements TaskConfigurationClient {
             return;
         }
 
+        await this.removeProblemMarks(option);
+
         let taskInfo: TaskInfo;
         try {
-            taskInfo = await this.taskServer.run(resolvedTask, this.getContext());
+            taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
             this.lastTask = { source, taskLabel };
         } catch (error) {
             const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
@@ -295,6 +380,41 @@ export class TaskService implements TaskConfigurationClient {
         // open terminal widget if the task is based on a terminal process (type: shell)
         if (taskInfo.terminalId !== undefined) {
             this.attach(taskInfo.terminalId, taskInfo.taskId);
+        }
+    }
+
+    private getProblemMatchers(taskConfiguration: TaskConfiguration, customizations: TaskCustomization[]): (string | ProblemMatcherContribution)[] {
+        const hasCustomization = customizations.length > 0;
+        const problemMatchers: (string | ProblemMatcherContribution)[] = [];
+        if (hasCustomization) {
+            const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfiguration);
+            if (taskDefinition) {
+                const cus = customizations.filter(customization =>
+                    taskDefinition.properties.required.every(rp => customization[rp] === taskConfiguration[rp])
+                )[0]; // Only support having one customization per task
+                if (cus && cus.problemMatcher) {
+                    if (Array.isArray(cus.problemMatcher)) {
+                        problemMatchers.push(...cus.problemMatcher);
+                    } else {
+                        problemMatchers.push(cus.problemMatcher);
+                    }
+                }
+            }
+        }
+        return problemMatchers;
+    }
+
+    private async removeProblemMarks(option?: RunTaskOption): Promise<void> {
+        if (option && option.customization) {
+            const matchersFromOption = option.customization.problemMatcher || [];
+            for (const matcher of matchersFromOption) {
+                if (matcher && matcher.owner) {
+                    const existingMarkers = this.problemManager.findMarkers({ owner: matcher.owner });
+                    const uris = new Set<string>();
+                    existingMarkers.forEach(marker => uris.add(marker.uri));
+                    uris.forEach(uriString => this.problemManager.setMarkers(new URI(uriString), matcher.owner, []));
+                }
+            }
         }
     }
 

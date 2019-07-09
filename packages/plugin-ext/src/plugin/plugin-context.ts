@@ -106,7 +106,8 @@ import {
     ColorPresentation,
     OperatingSystem,
     WebviewPanelTargetArea,
-    FileSystemError
+    FileSystemError,
+    CommentThreadCollapsibleState
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -696,9 +697,31 @@ export function createAPIFactory(
             }
         };
 
+        const comment: typeof theia.comment = {
+            createCommentController(id: string, label: string): theia.CommentController {
+                return {
+                    id, label, inputBox: undefined,
+                    createCommentThread(commentId: string, resource: Uri, range: Range, comments: Comment[]): theia.CommentThread {
+                        return {
+                            id: commentId,
+                            resource,
+                            range,
+                            comments,
+                            collapsibleState: 0,
+                            dispose(): void {
+                            }
+                        };
+                    },
+                    dispose(): void {
+                    }
+                };
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             commands,
+            comment,
             window,
             workspace,
             env,
@@ -785,7 +808,8 @@ export function createAPIFactory(
             FoldingRangeKind,
             OperatingSystem,
             WebviewPanelTargetArea,
-            FileSystemError
+            FileSystemError,
+            CommentThreadCollapsibleState
         };
     };
 }

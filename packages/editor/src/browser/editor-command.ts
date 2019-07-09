@@ -100,6 +100,14 @@ export namespace EditorCommands {
         category: 'View',
         label: 'Show All Opened Editors'
     };
+    /**
+     * Command that toggles the minimap.
+     */
+    export const TOGGLE_MINIMAP: Command = {
+        id: 'editor.action.toggleMinimap',
+        category: 'View',
+        label: 'Toggle Minimap'
+    };
 }
 
 @injectable()
@@ -138,6 +146,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.GO_FORWARD);
         registry.registerCommand(EditorCommands.GO_LAST_EDIT);
         registry.registerCommand(EditorCommands.CLEAR_EDITOR_HISTORY);
+        registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
-import { isWindows, ILogger } from '@theia/core';
+import { isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import {
     TerminalProcessOptions,
@@ -59,39 +59,9 @@ export class ProcessTaskRunner implements TaskRunner {
             throw new Error("Process task config must have 'command' property specified");
         }
 
-        let command: string | undefined;
-        let args: Array<string | QuotedString> | undefined;
-        let options: CommandOptions = {};
-
-        // on windows, windows-specific options, if available, takes precedence
-        if (isWindows && taskConfig.windows !== undefined) {
-            if (taskConfig.windows.command) {
-                command = taskConfig.windows.command;
-                args = taskConfig.windows.args;
-                options = taskConfig.windows.options;
-            }
-        } else {
-            command = taskConfig.command;
-            args = taskConfig.args;
-            options = taskConfig.options;
-        }
-
-        // sanity checks:
-        // - we expect the cwd to be set by the client.
-        if (!options || !options.cwd) {
-            throw new Error("Can't run a task when 'cwd' is not provided by the client");
-        }
-
-        // Use task's cwd with spawned process and pass node env object to
-        // new process, so e.g. we can re-use the system path
-        if (options) {
-            options.env = {
-                ...process.env,
-                ...(options.env || {})
-            };
-        }
-
         try {
+            const { command, args, options } = this.getResolvedCommand(taskConfig);
+
             const processType = taskConfig.type === 'process' ? 'process' : 'shell';
             let proc: Process;
 
@@ -137,6 +107,71 @@ export class ProcessTaskRunner implements TaskRunner {
             this.logger.error(`Error occurred while creating task: ${error}`);
             throw error;
         }
+    }
+
+    private getResolvedCommand(taskConfig: TaskConfiguration): {
+        command: string | undefined,
+        args: Array<string | QuotedString> | undefined,
+        options: CommandOptions
+    } {
+        let systemSpecificCommand: {
+            command: string | undefined,
+            args: Array<string | QuotedString> | undefined,
+            options: CommandOptions
+        };
+        // on windows, windows-specific options, if available, take precedence
+        if (isWindows && taskConfig.windows !== undefined) {
+            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, 'windows');
+        } else if (isOSX && taskConfig.osx !== undefined) { // on macOS, mac-specific options, if available, take precedence
+            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, 'osx');
+        } else if (!isWindows && !isOSX && taskConfig.linux !== undefined) { // on linux, linux-specific options, if available, take precedence
+            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, 'linux');
+        } else { // system-specific options are unavailable, use the default
+            systemSpecificCommand = this.getSystemSpecificCommand(taskConfig, undefined);
+        }
+
+        const options = systemSpecificCommand.options;
+        // sanity checks:
+        // - we expect the cwd to be set by the client.
+        if (!options || !options.cwd) {
+            throw new Error("Can't run a task when 'cwd' is not provided by the client");
+        }
+
+        // Use task's cwd with spawned process and pass node env object to
+        // new process, so e.g. we can re-use the system path
+        if (options) {
+            options.env = {
+                ...process.env,
+                ...(options.env || {})
+            };
+        }
+
+        return systemSpecificCommand;
+    }
+
+    private getSystemSpecificCommand(taskConfig: TaskConfiguration, system: 'windows' | 'linux' | 'osx' | undefined): {
+        command: string | undefined,
+        args: Array<string | QuotedString> | undefined,
+        options: CommandOptions
+    } {
+        // initialise with default values from the `taskConfig`
+        let command: string | undefined = taskConfig.command;
+        let args: Array<string | QuotedString> | undefined = taskConfig.args;
+        let options: CommandOptions = taskConfig.options || {};
+
+        if (system) {
+            if (taskConfig[system].command) {
+                command = taskConfig[system].command;
+            }
+            if (taskConfig[system].args) {
+                args = taskConfig[system].args;
+            }
+            if (taskConfig[system].options) {
+                options = taskConfig[system].options;
+            }
+        }
+
+        return { command, args, options };
     }
 
     protected asFsPath(uriOrPath: string) {

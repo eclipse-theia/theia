@@ -16,14 +16,13 @@
 
 // tslint:disable:no-any
 
-import { injectable, inject, interfaces, named } from 'inversify';
+import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, ConfigStorage, PluginManagerExt } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
-import { ILogger, ContributionProvider } from '@theia/core';
+import { ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
@@ -35,6 +34,15 @@ import { getPreferences } from '../../main/browser/preference-registry-main';
 import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common';
+import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
+import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
+import { WaitUntilEvent } from '@theia/core/lib/common/event';
+
+export type PluginHost = 'frontend' | string;
+export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
 
 @injectable()
 export class HostedPluginSupport {
@@ -62,26 +70,52 @@ export class HostedPluginSupport {
     @inject(PreferenceProviderProvider)
     protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
+    @inject(PreferenceServiceImpl)
+    private readonly preferenceServiceImpl: PreferenceServiceImpl;
+
+    @inject(PluginPathsService)
+    private readonly pluginPathsService: PluginPathsService;
+
+    @inject(StoragePathService)
+    private readonly storagePathService: StoragePathService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(MonacoTextmateService)
+    protected readonly monacoTextmateService: MonacoTextmateService;
+
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+
+    @inject(DebugConfigurationManager)
+    protected readonly debugConfigurationManager: DebugConfigurationManager;
+
     private theiaReadyPromise: Promise<any>;
-    private frontendExtManagerProxy: PluginManagerExt;
-    private backendExtManagerProxy: PluginManagerExt;
+
+    protected readonly managers: PluginManagerExt[] = [];
 
     // loaded plugins per #id
-    private loadedPlugins: Set<string> = new Set<string>();
+    private readonly loadedPlugins = new Set<string>();
 
-    // per #hostKey
-    private rpc: Map<string, RPCProtocol> = new Map<string, RPCProtocol>();
+    protected readonly activationEvents = new Set<string>();
 
-    constructor(
-        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl,
-        @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
-        @inject(StoragePathService) private readonly storagePathService: StoragePathService,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-    ) {
+    @postConstruct()
+    protected init(): void {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
-        this.storagePathService.onStoragePathChanged(path => {
-            this.updateStoragePath(path);
-        });
+        this.storagePathService.onStoragePathChanged(path => this.updateStoragePath(path));
+
+        for (const id of this.monacoTextmateService.activatedLanguages) {
+            this.activateByLanguage(id);
+        }
+        this.monacoTextmateService.onDidActivateLanguage(id => this.activateByLanguage(id));
+        this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
+        this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
+        this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
+        this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -112,93 +146,54 @@ export class HostedPluginSupport {
         }).catch(e => console.error(e));
     }
 
-    loadPlugins(initData: PluginsInitializationData, container: interfaces.Container): void {
+    async loadPlugins(initData: PluginsInitializationData, container: interfaces.Container): Promise<void> {
         // don't load plugins twice
         initData.plugins = initData.plugins.filter(value => !this.loadedPlugins.has(value.model.id));
 
-        const confStorage: ConfigStorage = {
-            hostLogPath: initData.logPath,
-            hostStoragePath: initData.storagePath || ''
-        };
-        const [frontend, backend] = this.initContributions(initData.plugins);
-        this.theiaReadyPromise.then(() => {
-            if (frontend) {
-                const worker = new PluginWorker();
-                const hostedExtManager = worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                hostedExtManager.$init({
-                    plugins: initData.plugins,
-                    preferences: getPreferences(this.preferenceProviderProvider, initData.roots),
-                    globalState: initData.globalStates,
-                    workspaceState: initData.workspaceStates,
-                    env: { queryParams: getQueryParameters(), language: navigator.language },
-                    extApi: initData.pluginAPIs
-                }, confStorage);
-                setUpPluginApi(worker.rpc, container);
-                this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(worker.rpc, container));
-                this.frontendExtManagerProxy = hostedExtManager;
-            }
-
-            if (backend) {
-                // sort plugins per host
-                const pluginsPerHost = initData.plugins.reduce((map: any, pluginMetadata) => {
-                    const host = pluginMetadata.host;
-                    if (!map[host]) {
-                        map[host] = [pluginMetadata];
-                    } else {
-                        map[host].push(pluginMetadata);
-                    }
-                    return map;
-                }, {});
-
-                // create one RPC per host and init.
-                Object.keys(pluginsPerHost).forEach(hostKey => {
-                    const plugins: PluginMetadata[] = pluginsPerHost[hostKey];
-                    let pluginID = hostKey;
-                    if (plugins.length >= 1) {
-                        pluginID = getPluginId(plugins[0].model);
-                    }
-
-                    let rpc = this.rpc.get(hostKey);
-                    if (!rpc) {
-                        rpc = this.createServerRpc(pluginID, hostKey);
-                        setUpPluginApi(rpc, container);
-                        this.rpc.set(hostKey, rpc);
-                    }
-
-                    const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-                    hostedExtManager.$init({
-                        plugins: plugins,
-                        preferences: getPreferences(this.preferenceProviderProvider, initData.roots),
-                        globalState: initData.globalStates,
-                        workspaceState: initData.workspaceStates,
-                        env: { queryParams: getQueryParameters(), language: navigator.language },
-                        extApi: initData.pluginAPIs
-                    }, confStorage);
-                    this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc!, container));
-                    this.backendExtManagerProxy = hostedExtManager;
-                });
-            }
-
-            // update list with loaded plugins
-            initData.plugins.forEach(value => this.loadedPlugins.add(value.model.id));
-        });
-    }
-
-    private initContributions(pluginsMetadata: PluginMetadata[]): [boolean, boolean] {
-        const result: [boolean, boolean] = [false, false];
-        for (const plugin of pluginsMetadata) {
-            if (plugin.model.entryPoint.frontend) {
-                result[0] = true;
-            } else {
-                result[1] = true;
-            }
-
+        const hostToPlugins = new Map<PluginHost, PluginMetadata[]>();
+        for (const plugin of initData.plugins) {
+            const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
+            const plugins = hostToPlugins.get(plugin.host) || [];
+            plugins.push(plugin);
+            hostToPlugins.set(host, plugins);
             if (plugin.model.contributes) {
                 this.contributionHandler.handleContributions(plugin.model.contributes);
             }
         }
+        await this.theiaReadyPromise;
+        for (const [host, plugins] of hostToPlugins) {
+            const pluginId = getPluginId(plugins[0].model);
+            const rpc = this.initRpc(host, pluginId, container);
+            this.initPluginHostManager(rpc, { ...initData, plugins });
+        }
 
-        return result;
+        // update list with loaded plugins
+        initData.plugins.forEach(value => this.loadedPlugins.add(value.model.id));
+    }
+
+    protected initRpc(host: PluginHost, pluginId: string, container: interfaces.Container): RPCProtocol {
+        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(pluginId, host);
+        setUpPluginApi(rpc, container);
+        this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, container));
+        return rpc;
+    }
+
+    protected initPluginHostManager(rpc: RPCProtocol, data: PluginsInitializationData): void {
+        const manager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
+        this.managers.push(manager);
+
+        manager.$init({
+            plugins: data.plugins,
+            preferences: getPreferences(this.preferenceProviderProvider, data.roots),
+            globalState: data.globalStates,
+            workspaceState: data.workspaceStates,
+            env: { queryParams: getQueryParameters(), language: navigator.language },
+            extApi: data.pluginAPIs,
+            activationEvents: [...this.activationEvents]
+        }, {
+                hostLogPath: data.logPath,
+                hostStoragePath: data.storagePath || ''
+            });
     }
 
     private createServerRpc(pluginID: string, hostID: string): RPCProtocol {
@@ -214,12 +209,66 @@ export class HostedPluginSupport {
     }
 
     private updateStoragePath(path: string | undefined): void {
-        if (this.frontendExtManagerProxy) {
-            this.frontendExtManagerProxy.$updateStoragePath(path);
+        for (const manager of this.managers) {
+            manager.$updateStoragePath(path);
         }
-        if (this.backendExtManagerProxy) {
-            this.backendExtManagerProxy.$updateStoragePath(path);
+    }
+
+    async activateByEvent(activationEvent: string): Promise<void> {
+        if (this.activationEvents.has(activationEvent)) {
+            return;
         }
+        this.activationEvents.add(activationEvent);
+        const activation: Promise<void>[] = [];
+        for (const manager of this.managers) {
+            activation.push(manager.$activateByEvent(activationEvent));
+        }
+        await Promise.all(activation);
+    }
+
+    async activateByLanguage(languageId: string): Promise<void> {
+        await this.activateByEvent(`onLanguage:${languageId}`);
+    }
+
+    async activateByCommand(commandId: string): Promise<void> {
+        await this.activateByEvent(`onCommand:${commandId}`);
+    }
+
+    protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {
+        const activation = this.activateByCommand(event.commandId);
+        if (this.commands.getCommand(event.commandId) &&
+            (!this.contributionHandler.hasCommand(event.commandId) ||
+                this.contributionHandler.hasCommandHandler(event.commandId))) {
+            return;
+        }
+        const waitForCommandHandler = new Deferred<void>();
+        const listener = this.contributionHandler.onDidRegisterCommandHandler(id => {
+            if (id === event.commandId) {
+                listener.dispose();
+                waitForCommandHandler.resolve();
+            }
+        });
+        const p = Promise.all([
+            activation,
+            waitForCommandHandler.promise
+        ]);
+        p.then(() => listener.dispose(), () => listener.dispose());
+        event.waitUntil(p);
+    }
+
+    protected ensureDebugActivation(event: WaitUntilEvent, activationEvent?: DebugActivationEvent, debugType?: string): void {
+        event.waitUntil(this.activateByDebug(activationEvent, debugType));
+    }
+
+    async activateByDebug(activationEvent?: DebugActivationEvent, debugType?: string): Promise<void> {
+        const promises = [this.activateByEvent('onDebug')];
+        if (activationEvent) {
+            promises.push(this.activateByEvent(activationEvent));
+            if (debugType) {
+                promises.push(this.activateByEvent(activationEvent + ':' + debugType));
+            }
+        }
+        await Promise.all(promises);
     }
 
 }

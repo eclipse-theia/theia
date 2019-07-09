@@ -71,7 +71,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     get name(): string | undefined {
-        if (this.workspaceFolders) {
+        if (this.workspaceFolders && this.workspaceFolders.length > 0) {
             return new Path(this.workspaceFolders[0].uri.path).base;
         }
 

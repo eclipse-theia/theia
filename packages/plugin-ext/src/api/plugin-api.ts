@@ -80,6 +80,7 @@ export interface PluginInitData {
     workspaceState: KeysToKeysToAnyValue;
     env: EnvInit;
     extApi?: ExtPluginApi[];
+    activationEvents: string[]
 }
 
 export interface PreferenceData {
@@ -163,6 +164,8 @@ export interface PluginManagerExt {
     $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
 
     $updateStoragePath(path: string | undefined): PromiseLike<void>;
+
+    $activateByEvent(event: string): Promise<void>;
 }
 
 export interface CommandRegistryMain {
