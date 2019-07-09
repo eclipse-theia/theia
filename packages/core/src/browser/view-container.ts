@@ -657,7 +657,21 @@ export class ViewContainerPart extends BaseWidget {
         title.classList.add('label', 'noselect');
         title.innerText = this.wrapped.title.label;
         header.appendChild(title);
+        return {
+            header,
+            disposable
+        };
+    }
 
+    protected readonly toHideToolbar = new DisposableCollection();
+    hideToolbar(): void {
+        this.toHideToolbar.dispose();
+    }
+
+    showToolbar(): void {
+        if (!this.toHideToolbar.disposed || this.collapsed) {
+            return;
+        }
         if (ViewContainerPart.ContainedWidget.is(this.wrapped)) {
             for (const { tooltip, execute, className } of this.wrapped.toolbarElements.filter(e => e.enabled !== false)) {
                 const toolbarItem = document.createElement('span');
@@ -668,19 +682,17 @@ export class ViewContainerPart extends BaseWidget {
                     className.forEach(a => toolbarItem.classList.add(...a.split(' ')));
                 }
                 toolbarItem.title = tooltip;
-                disposable.push(addEventListener(toolbarItem, 'click', async event => {
+                this.toHideToolbar.push(addEventListener(toolbarItem, 'click', async event => {
                     event.stopPropagation();
                     event.preventDefault();
                     await execute();
                     this.update();
                 }));
-                header.appendChild(toolbarItem);
+                this.header.appendChild(toolbarItem);
+                this.toHideToolbar.push(Disposable.create(() => this.header.removeChild(toolbarItem)));
             }
         }
-        return {
-            header,
-            disposable
-        };
+        this.toDisposeOnDetach.push(this.toHideToolbar);
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -691,10 +703,21 @@ export class ViewContainerPart extends BaseWidget {
     }
 
     protected onUpdateRequest(msg: Message): void {
+        if (this.collapsed) {
+            this.hideToolbar();
+        } else if (this.node.matches(':hover')) {
+            this.showToolbar();
+        }
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onUpdateRequest(msg);
+    }
+
+    protected onBeforeAttach(msg: Message): void {
+        super.onBeforeAttach(msg);
+        this.addEventListener(this.node, 'mouseenter', () => this.showToolbar());
+        this.addEventListener(this.node, 'mouseleave', () => this.hideToolbar());
     }
 
     protected onAfterAttach(msg: Message): void {
