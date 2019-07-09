@@ -79,7 +79,9 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         this.title.iconClass = 'fa debug-tab-icon';
         this.addClass('theia-session-container');
 
-        this.viewContainer = this.viewContainerFactory();
+        this.viewContainer = this.viewContainerFactory({
+            id: 'debug:view-container'
+        });
         this.viewContainer.addWidget(this.threads, { weight: 30 });
         this.viewContainer.addWidget(this.stackFrames, { weight: 20 });
         this.viewContainer.addWidget(this.variables, { weight: 10 });

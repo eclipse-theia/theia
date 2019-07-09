@@ -60,11 +60,11 @@ export class ViewRegistry {
             -webkit-mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
         `);
 
-        const containerWidget = this.viewContainerFactory();
-        containerWidget.id = 'plugin-view-container:' + viewContainer.id;
-        containerWidget.title.label = viewContainer.title;
-        containerWidget.title.caption = viewContainer.title;
-        containerWidget.title.iconClass = iconClass;
+        const containerWidget = this.viewContainerFactory({
+            id: 'plugin:view-container:' + viewContainer.id,
+            label: viewContainer.title,
+            iconClass
+        });
         this.setViewContainer(viewContainer.id, containerWidget);
 
         this.applicationShell.addWidget(containerWidget, {

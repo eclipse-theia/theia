@@ -241,7 +241,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShellMouseTracker).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ApplicationShellMouseTracker);
 
-    bind(ViewContainer.Factory).toFactory(context => (options: ViewContainerOptions = {}) => {
+    bind(ViewContainer.Factory).toFactory(context => (options: ViewContainerOptions) => {
         const container = context.container.createChild();
         container.bind(ViewContainerOptions).toConstantValue(options);
         container.bind(ViewContainer).toSelf().inSingletonScope();
