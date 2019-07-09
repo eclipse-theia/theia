@@ -39,7 +39,7 @@ import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';
-import { TreeViewContextKeyService } from './tree-view-context-key-service';
+import { ViewContextKeyService } from './view-context-key-service';
 import { CommandRegistry } from '@theia/core';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
@@ -58,7 +58,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
 
     private viewRegistry: ViewRegistry;
 
-    private readonly contextKeys: TreeViewContextKeyService;
+    private readonly contextKeys: ViewContextKeyService;
     private readonly sharedStyle: PluginSharedStyle;
     private readonly commands: CommandRegistry;
 
@@ -66,7 +66,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT);
         this.viewRegistry = container.get(ViewRegistry);
 
-        this.contextKeys = this.container.get(TreeViewContextKeyService);
+        this.contextKeys = this.container.get(ViewContextKeyService);
         this.sharedStyle = this.container.get(PluginSharedStyle);
         this.commands = this.container.get(CommandRegistry);
     }
@@ -269,8 +269,8 @@ export class TreeViewWidget extends TreeWidget {
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
-    @inject(TreeViewContextKeyService)
-    protected readonly contextKeys: TreeViewContextKeyService;
+    @inject(ViewContextKeyService)
+    protected readonly contextKeys: ViewContextKeyService;
 
     protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (node.icon) {
@@ -332,20 +332,13 @@ export class TreeViewWidget extends TreeWidget {
         if (this.model.selectedNodes.every(selected => selected.id !== node.id) && node.id !== this.hoverNodeId) {
             return false;
         }
-        const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MNUE);
-        const view = this.contextKeys.view.get();
-        const viewItem = this.contextKeys.viewItem.get();
-        this.contextKeys.view.set(this.id);
-        this.contextKeys.viewItem.set(node.contextValue);
-        try {
+        return this.contextKeys.with({ view: this.id, viewItem: node.contextValue }, () => {
+            const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MNUE);
             const arg = this.toTreeViewSelection(node);
             return <React.Fragment>
                 {menu.children.map((item, index) => item instanceof ActionMenuNode && this.renderInlineCommand(item, index, arg))}
             </React.Fragment>;
-        } finally {
-            this.contextKeys.view.set(view);
-            this.contextKeys.viewItem.set(viewItem);
-        }
+        });
     }
 
     toTreeViewSelection(node: TreeNode): TreeViewSelection {

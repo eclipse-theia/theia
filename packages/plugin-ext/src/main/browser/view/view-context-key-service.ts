@@ -18,7 +18,7 @@ import { injectable, postConstruct, inject } from 'inversify';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
-export class TreeViewContextKeyService {
+export class ViewContextKeyService {
 
     protected _view: ContextKey<string>;
     get view(): ContextKey<string> {
@@ -41,6 +41,19 @@ export class TreeViewContextKeyService {
 
     match(expression: string | undefined): boolean {
         return !expression || this.contextKeyService.match(expression);
+    }
+
+    with<T>(input: { view?: string, viewItem?: string }, cb: () => T): T {
+        const view = this.view.get();
+        const viewItem = this.viewItem.get();
+        this.view.set(input.view);
+        this.viewItem.set(input.viewItem);
+        try {
+            return cb();
+        } finally {
+            this.view.set(view);
+            this.viewItem.set(viewItem);
+        }
     }
 
 }
