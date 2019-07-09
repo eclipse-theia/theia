@@ -74,8 +74,7 @@ import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
-import { ViewContainer } from './view-container';
-import { Widget } from './widgets';
+import { ViewContainer, ViewContainerOptions } from './view-container';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -242,20 +241,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShellMouseTracker).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ApplicationShellMouseTracker);
 
-    bind(ViewContainer.Services).toSelf();
-    bind(ViewContainer.Factory).toFactory(context => (...descriptors: ViewContainer.Factory.WidgetDescriptor[]) => {
-        const { container } = context;
-        const services = container.get(ViewContainer.Services);
-        const inputs: Array<{ widget: Widget, options?: ViewContainer.Factory.WidgetOptions }> = [];
-        for (const descriptor of descriptors) {
-            const { widget, options } = descriptor;
-            if (widget instanceof Widget) {
-                inputs.push({ widget, options });
-            } else {
-                inputs.push({ widget: container.get(widget), options });
-            }
-        }
-        return new ViewContainer(services, ...inputs);
+    bind(ViewContainer.Factory).toFactory(context => (options: ViewContainerOptions = {}) => {
+        const container = context.container.createChild();
+        container.bind(ViewContainerOptions).toConstantValue(options);
+        container.bind(ViewContainer).toSelf().inSingletonScope();
+        return container.get(ViewContainer);
     });
 });
 
