@@ -31,6 +31,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
+import { TabBarToolbarItem } from './shell/tab-bar-toolbar';
 
 @injectable()
 export class ViewContainerOptions {
@@ -198,8 +199,29 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     event.stopPropagation();
                     this.contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
                 }
-            })
+            }),
+            newPart.onMoreContextMenu(event => this.showMoreContextMenu(event))
         );
+    }
+
+    protected showMoreContextMenu(event: ViewContainerPart.MoreContextMenuEvent): void {
+        const menuPath = ['VIEW_CONTAINER_TOOLBAR_MORE_CONTEXT_MENU'];
+        const toDisposeOnHide = new DisposableCollection();
+        event.items.forEach((item, index) => {
+            const commandId = `__command_${this.id}_${index}`;
+            this.commandRegistry.registerCommand({ id: commandId }, {
+                execute: () => item.execute(event.anchor)
+            });
+            toDisposeOnHide.push(this.menuRegistry.registerMenuAction([...menuPath, item.group!], {
+                label: item.tooltip,
+                commandId
+            }));
+        });
+        this.contextMenuRenderer.render({
+            menuPath,
+            anchor: event.anchor,
+            onHide: () => toDisposeOnHide.dispose()
+        });
     }
 
     removeWidget(widget: Widget): boolean {
@@ -455,6 +477,8 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly contextMenuEmitter = new Emitter<MouseEvent>();
     protected readonly onVisibilityChangedEmitter = new Emitter<boolean>();
     readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
+    protected readonly onMoreContextMenuEmitter = new Emitter<ViewContainerPart.MoreContextMenuEvent>();
+    readonly onMoreContextMenu = this.onMoreContextMenuEmitter.event;
 
     protected _collapsed: boolean;
     /**
@@ -673,26 +697,47 @@ export class ViewContainerPart extends BaseWidget {
             return;
         }
         if (ViewContainerPart.ContainedWidget.is(this.wrapped)) {
-            for (const { tooltip, execute, className } of this.wrapped.toolbarElements.filter(e => e.enabled !== false)) {
-                const toolbarItem = document.createElement('span');
-                toolbarItem.classList.add('element');
-                if (typeof className === 'string') {
-                    toolbarItem.classList.add(...className.split(' '));
-                } else if (Array.isArray(className)) {
-                    className.forEach(a => toolbarItem.classList.add(...a.split(' ')));
+            const more: ViewContainerPart.ToolbarElement[] = [];
+            for (const item of this.wrapped.toolbarElements.filter(e => e.enabled !== false).sort(TabBarToolbarItem.PRIORITY_COMPARATOR)) {
+                if (item.group === undefined || item.group === 'navigation') {
+                    this.toHideToolbar.push(this.addToolbarItem(item));
+                } else {
+                    more.push(item);
                 }
-                toolbarItem.title = tooltip;
-                this.toHideToolbar.push(addEventListener(toolbarItem, 'click', async event => {
-                    event.stopPropagation();
-                    event.preventDefault();
-                    await execute();
-                    this.update();
+            }
+            if (more.length) {
+                this.toHideToolbar.push(this.addToolbarItem({
+                    className: 'fa fa-ellipsis-h',
+                    tooltip: 'More Actions...',
+                    execute: event => {
+                        const { x, y } = event;
+                        this.onMoreContextMenuEmitter.fire({ anchor: { x, y }, items: more });
+                    }
                 }));
-                this.header.appendChild(toolbarItem);
-                this.toHideToolbar.push(Disposable.create(() => this.header.removeChild(toolbarItem)));
             }
         }
         this.toDisposeOnDetach.push(this.toHideToolbar);
+    }
+
+    protected addToolbarItem(item: ViewContainerPart.ToolbarElement): Disposable {
+        const toolbarItem = document.createElement('span');
+        toolbarItem.classList.add('element');
+        if (typeof item.className === 'string') {
+            toolbarItem.classList.add(...item.className.split(' '));
+        } else if (Array.isArray(item.className)) {
+            item.className.forEach(a => toolbarItem.classList.add(...a.split(' ')));
+        }
+        toolbarItem.title = item.tooltip;
+        const toDispose = new DisposableCollection();
+        toDispose.push(addEventListener(toolbarItem, 'click', async event => {
+            event.stopPropagation();
+            event.preventDefault();
+            await item.execute(event);
+            this.update();
+        }));
+        this.header.appendChild(toolbarItem);
+        toDispose.push(Disposable.create(() => this.header.removeChild(toolbarItem)));
+        return toDispose;
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -778,13 +823,13 @@ export namespace ViewContainerPart {
      */
     export const HEADER_HEIGHT = 22;
 
-    export interface ToolbarElement {
+    export interface ToolbarElement extends TabBarToolbarItem.Comparable {
         /** default true */
         readonly enabled?: boolean
-        readonly className: string | string[]
+        readonly className?: string | string[]
         readonly tooltip: string
         // tslint:disable-next-line:no-any
-        execute(): any
+        execute(event: Anchor): any
     }
 
     export interface ContainedWidget extends Widget {
@@ -812,6 +857,11 @@ export namespace ViewContainerPart {
             }
         }
         return undefined;
+    }
+
+    export interface MoreContextMenuEvent {
+        anchor: Anchor
+        items: ToolbarElement[]
     }
 }
 

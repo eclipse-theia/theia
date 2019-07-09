@@ -287,10 +287,15 @@ export interface ReactTabBarToolbarItem {
 
 export namespace TabBarToolbarItem {
 
+    export interface Comparable {
+        group?: string
+        priority?: number
+    }
+
     /**
      * Compares the items by `priority` in ascending. Undefined priorities will be treated as `0`.
      */
-    export const PRIORITY_COMPARATOR = (left: TabBarToolbarItem, right: TabBarToolbarItem) => {
+    export const PRIORITY_COMPARATOR = (left: Comparable, right: Comparable) => {
         // The navigation group is special as it will always be sorted to the top/beginning of a menu.
         const compareGroup = (leftGroup: string | undefined = 'navigation', rightGroup: string | undefined = 'navigation') => {
             if (leftGroup === 'navigation') {

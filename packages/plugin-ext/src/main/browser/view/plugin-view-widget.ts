@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { Panel } from '@phosphor/widgets';
-import { MenuModelRegistry, ActionMenuNode, MenuPath } from '@theia/core/lib/common/menu';
+import { MenuModelRegistry, ActionMenuNode, MenuPath, CompositeMenuNode } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ViewContainerPart } from '@theia/core/lib/browser/view-container';
 import { View } from '../../../common';
@@ -51,15 +51,22 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
         return this.contextKeys.with({ view: this.options.view.id }, () => {
             const menu = this.menus.getMenu(PLUGIN_VIEW_TITLE_MENU);
             const elements: ViewContainerPart.ToolbarElement[] = [];
-            for (const item of menu.children) {
-                if (item instanceof ActionMenuNode) {
-                    const { icon } = item;
-                    if (icon && this.commands.isVisible(item.action.commandId) && this.contextKeys.match(item.action.when)) {
-                        elements.push({
-                            className: icon,
-                            tooltip: item.label,
-                            execute: () => this.commands.executeCommand(item.action.commandId)
-                        });
+            for (const groupItem of menu.children) {
+                if (groupItem instanceof CompositeMenuNode) {
+                    const group = groupItem.id;
+                    for (const item of groupItem.children) {
+                        if (item instanceof ActionMenuNode) {
+                            if (this.commands.isVisible(item.action.commandId) && this.contextKeys.match(item.action.when)) {
+                                const priority = item.action.order !== undefined && Number(item.action.order) || undefined;
+                                elements.push({
+                                    className: item.icon,
+                                    tooltip: item.label,
+                                    group,
+                                    priority,
+                                    execute: () => this.commands.executeCommand(item.action.commandId)
+                                });
+                            }
+                        }
                     }
                 }
             }

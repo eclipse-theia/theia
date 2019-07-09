@@ -51,6 +51,7 @@
     background: var(--theia-menu-color0);
     line-height: 22px;
     z-index: 10;
+    margin-right: 4px;
 }
 
 .theia-view-container .part > .header .theia-ExpansionToggle {
@@ -67,21 +68,21 @@
 }
 
 .theia-view-container .part > .header .label {
-    width: 100%;
+    flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
 .theia-view-container .part > .header .element {
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
     min-width: 16px;
     min-height: 16px;
-    padding-left: calc(var(--theia-ui-padding)*2);
-    display: none;
-}
-
-.theia-view-container .part:hover > .header .element {
-    display: block;
+    background-size: 16px;
+    line-height: 16px;
+    background-repeat: no-repeat;
 }
 
 .theia-view-container .part > .body {
