@@ -59,6 +59,18 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     @inject(DebugToolBar)
     protected readonly toolbar: DebugToolBar;
 
+    @inject(DebugThreadsWidget)
+    protected readonly threads: DebugThreadsWidget;
+
+    @inject(DebugStackFramesWidget)
+    protected readonly stackFrames: DebugStackFramesWidget;
+
+    @inject(DebugVariablesWidget)
+    protected readonly variables: DebugVariablesWidget;
+
+    @inject(DebugBreakpointsWidget)
+    protected readonly breakpoints: DebugBreakpointsWidget;
+
     @postConstruct()
     protected init(): void {
         this.id = 'debug:session:' + this.model.id;
@@ -67,23 +79,11 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         this.title.iconClass = 'fa debug-tab-icon';
         this.addClass('theia-session-container');
 
-        this.viewContainer = this.viewContainerFactory(...[
-            {
-                widget: DebugThreadsWidget,
-                options: { weight: 30 }
-            },
-            {
-                widget: DebugStackFramesWidget,
-                options: { weight: 20 }
-            },
-            {
-                widget: DebugVariablesWidget,
-                options: { weight: 10 }
-            },
-            {
-                widget: DebugBreakpointsWidget,
-                options: { weight: 10 }
-            }]);
+        this.viewContainer = this.viewContainerFactory();
+        this.viewContainer.addWidget(this.threads, { weight: 30 });
+        this.viewContainer.addWidget(this.stackFrames, { weight: 20 });
+        this.viewContainer.addWidget(this.variables, { weight: 10 });
+        this.viewContainer.addWidget(this.breakpoints, { weight: 10 });
 
         this.toDispose.pushAll([
             this.toolbar,
@@ -98,12 +98,6 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.toolbar.focus();
-    }
-
-    protected createViewContainer(widget: Widget): Widget {
-        const viewContainer = this.viewContainerFactory({ widget });
-        viewContainer.addWidget(widget);
-        return viewContainer;
     }
 
     getTrackableWidgets(): Widget[] {

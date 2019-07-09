@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces, injectable, inject } from 'inversify';
+import { interfaces, injectable, inject, postConstruct } from 'inversify';
 import { v4 } from 'uuid';
 import { IIterator, toArray, find, some, every, map } from '@phosphor/algorithm';
 import {
@@ -33,19 +33,54 @@ import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
 
+@injectable()
+export class ViewContainerOptions {
+    id?: string;
+    label?: string;
+    caption?: string;
+}
+
 /**
  * A view container holds an arbitrary number of widgets inside a split panel.
  * Each widget is wrapped in a _part_ that displays the widget title and toolbar
  * and allows to collapse / expand the widget content.
  */
+@injectable()
 export class ViewContainer extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
 
-    protected readonly panel: SplitPanel;
-    protected readonly attached = new Deferred<void>();
+    protected panel: SplitPanel;
+    protected attached = new Deferred<void>();
 
-    constructor(protected readonly services: ViewContainer.Services, ...inputs: { widget: Widget, options?: ViewContainer.Factory.WidgetOptions }[]) {
-        super();
-        this.id = `view-container-widget-${v4()}`;
+    @inject(FrontendApplicationStateService)
+    protected readonly applicationStateService: FrontendApplicationStateService;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(MenuModelRegistry)
+    protected readonly menuRegistry: MenuModelRegistry;
+
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
+
+    @inject(SplitPositionHandler)
+    protected readonly splitPositionHandler: SplitPositionHandler;
+
+    @inject(ViewContainerOptions)
+    protected readonly options: ViewContainerOptions;
+
+    @postConstruct()
+    protected init(): void {
+        this.id = this.options.id || `view-container-widget-${v4()}`;
+        if (this.options.label) {
+            this.title.label = this.options.label;
+        }
+        if (this.options.caption) {
+            this.title.caption = this.options.caption;
+        }
         this.addClass('theia-view-container');
         const layout = new PanelLayout();
         this.layout = layout;
@@ -56,17 +91,11 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 spacing: 2,
                 headerSize: ViewContainerPart.HEADER_HEIGHT,
                 animationDuration: 200
-            }, services.splitPositionHandler)
+            }, this.splitPositionHandler)
         });
         layout.addWidget(this.panel);
-        for (const { widget, options } of inputs) {
-            this.addWidget(widget, options);
-        }
-        this.attached.promise.then(() => {
-            this.containerLayout.setPartSizes(inputs.map(({ options }) => options ? options.weight : undefined));
-        });
 
-        const { commandRegistry, menuRegistry, contextMenuRenderer } = this.services;
+        const { commandRegistry, menuRegistry, contextMenuRenderer } = this;
         commandRegistry.registerCommand({ id: this.globalHideCommandId }, {
             execute: (anchor: Anchor) => {
                 const toHide = this.findPartForAnchor(anchor);
@@ -115,7 +144,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (find(this.containerLayout.iter(), ({ wrapped }) => wrapped.id === widget.id)) {
             return Disposable.NULL;
         }
-        const description = this.services.widgetManager.getDescription(widget);
+        const description = this.widgetManager.getDescription(widget);
         const partId = description ? JSON.stringify(description) : widget.id;
         const newPart = new ViewContainerPart(widget, partId, this.id, options);
         this.registerPart(newPart);
@@ -133,14 +162,28 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.update();
         return new DisposableCollection(
             Disposable.create(() => this.removeWidget(widget)),
+            newPart.onVisibilityChanged(() => {
+                const visibleParts = this.containerLayout.widgets.filter(part => part.isVisible);
+                if (this.options.label) {
+                    this.title.label = this.options.label;
+                    if (visibleParts.length === 1) {
+                        this.title.label += ':' + visibleParts[0].wrapped.title.label;
+                    }
+                }
+                if (this.options.caption) {
+                    this.title.caption = this.options.caption;
+                    if (visibleParts.length === 1) {
+                        this.title.caption += ':' + visibleParts[0].wrapped.title.caption;
+                    }
+                }
+            }),
             newPart.onCollapsed(() => this.containerLayout.updateCollapsed(newPart, this.enableAnimation)),
             newPart.onMoveBefore(toMoveId => this.moveBefore(toMoveId, newPart.id)),
             newPart.onContextMenu(event => {
                 if (event.button === 2) {
                     event.preventDefault();
                     event.stopPropagation();
-                    const { contextMenuRenderer } = this.services;
-                    contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
+                    this.contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
                 }
             })
         );
@@ -174,7 +217,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected get enableAnimation(): boolean {
-        return this.services.applicationStateService.state === 'ready';
+        return this.applicationStateService.state === 'ready';
     }
 
     protected lastVisibleState: ViewContainer.State | undefined;
@@ -247,9 +290,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      */
     protected registerPart(toRegister: ViewContainerPart): void {
         if (toRegister.canHide) {
-            const { commandRegistry } = this.services;
             const commandId = this.toggleVisibilityCommandId(toRegister);
-            commandRegistry.registerCommand({ id: commandId }, {
+            this.commandRegistry.registerCommand({ id: commandId }, {
                 execute: () => {
                     const toHide = find(this.containerLayout.iter(), part => part.id === toRegister.id);
                     if (toHide) {
@@ -273,10 +315,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      */
     protected refreshMenu(part: ViewContainerPart) {
         if (part.canHide) {
-            const { menuRegistry } = this.services;
             const commandId = this.toggleVisibilityCommandId(part);
-            menuRegistry.unregisterMenuAction(commandId);
-            menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], {
+            this.menuRegistry.unregisterMenuAction(commandId);
+            this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], {
                 commandId: commandId,
                 label: part.wrapped.title.label,
                 order: this.containerLayout.widgets.indexOf(part).toString()
@@ -285,10 +326,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected unregisterPart(part: ViewContainerPart): void {
-        const { commandRegistry, menuRegistry } = this.services;
         const commandId = this.toggleVisibilityCommandId(part);
-        commandRegistry.unregisterCommand(commandId);
-        menuRegistry.unregisterMenuAction(commandId);
+        this.commandRegistry.unregisterCommand(commandId);
+        this.menuRegistry.unregisterMenuAction(commandId);
     }
 
     protected get contextMenuPath(): MenuPath {
@@ -355,25 +395,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
 export namespace ViewContainer {
 
-    @injectable()
-    export class Services {
-        @inject(FrontendApplicationStateService)
-        readonly applicationStateService: FrontendApplicationStateService;
-        @inject(ContextMenuRenderer)
-        readonly contextMenuRenderer: ContextMenuRenderer;
-        @inject(CommandRegistry)
-        readonly commandRegistry: CommandRegistry;
-        @inject(MenuModelRegistry)
-        readonly menuRegistry: MenuModelRegistry;
-        @inject(WidgetManager)
-        readonly widgetManager: WidgetManager;
-        @inject(SplitPositionHandler)
-        readonly splitPositionHandler: SplitPositionHandler;
-    }
-
     export const Factory = Symbol('ViewContainerFactory');
     export interface Factory {
-        (...widgets: Factory.WidgetDescriptor[]): ViewContainer;
+        (options?: ViewContainerOptions): ViewContainer;
     }
 
     export namespace Factory {
@@ -416,6 +440,8 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly collapsedEmitter = new Emitter<boolean>();
     protected readonly moveBeforeEmitter = new Emitter<string>();
     protected readonly contextMenuEmitter = new Emitter<MouseEvent>();
+    protected readonly onVisibilityChangedEmitter = new Emitter<boolean>();
+    readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
 
     protected _collapsed: boolean;
     /**
@@ -445,6 +471,7 @@ export class ViewContainerPart extends BaseWidget {
             this.collapsedEmitter,
             this.moveBeforeEmitter,
             this.contextMenuEmitter,
+            this.onVisibilityChangedEmitter,
             this.registerDND(),
             this.registerContextMenu()
         ]);
@@ -674,6 +701,7 @@ export class ViewContainerPart extends BaseWidget {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
+        this.onVisibilityChangedEmitter.fire(this.isVisible);
     }
 
     protected onBeforeHide(msg: Message): void {
@@ -688,6 +716,7 @@ export class ViewContainerPart extends BaseWidget {
         if (this.wrapped.isAttached && this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
+        this.onVisibilityChangedEmitter.fire(this.isVisible);
     }
 
 }
