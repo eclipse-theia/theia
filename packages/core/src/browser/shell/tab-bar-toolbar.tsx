@@ -355,16 +355,21 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      *
      * @param item the item to register.
      */
-    registerItem(item: TabBarToolbarItem | ReactTabBarToolbarItem): void {
+    registerItem(item: TabBarToolbarItem | ReactTabBarToolbarItem): Disposable {
         const { id } = item;
         if (this.items.has(id)) {
             throw new Error(`A toolbar item is already registered with the '${id}' ID.`);
         }
         this.items.set(id, item);
         this.fireOnDidChange();
+        const toDispose = new DisposableCollection(
+            Disposable.create(() => this.fireOnDidChange()),
+            Disposable.create(() => this.items.delete(id))
+        );
         if (item.onDidChange) {
-            item.onDidChange(() => this.fireOnDidChange());
+            toDispose.push(item.onDidChange(() => this.fireOnDidChange()));
         }
+        return toDispose;
     }
 
     /**
