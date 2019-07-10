@@ -27,6 +27,8 @@ import { TheiaDockPanel } from './theia-dock-panel';
 import { SidePanelToolbar } from './side-panel-toolbar';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
 import { DisposableCollection, Disposable } from '../../common/disposable';
+import { ContextMenuRenderer } from '../context-menu-renderer';
+import { MenuPath } from '../../common/menu';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -35,6 +37,8 @@ export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
 const COLLAPSED_CLASS = 'theia-mod-collapsed';
 
 export const SidePanelHandlerFactory = Symbol('SidePanelHandlerFactory');
+
+export const SIDE_PANEL_TOOLBAR_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_TOOLBAR_CONTEXT_MENU'];
 
 /**
  * A class which manages a dock panel and a related side bar. This is used for the left and right
@@ -97,6 +101,9 @@ export class SidePanelHandler {
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     /**
      * Create the side bar and dock panel widgets.
@@ -165,7 +172,23 @@ export class SidePanelHandler {
 
     protected createToolbar(): SidePanelToolbar {
         const toolbar = new SidePanelToolbar(this.tabBarToolBarRegistry, this.tabBarToolBarFactory, this.side);
+        toolbar.onContextMenu(e => this.showContextMenu(e));
         return toolbar;
+    }
+
+    protected showContextMenu(e: MouseEvent): void {
+        const title = this.tabBar.currentTitle;
+        if (!title) {
+            return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+
+        this.contextMenuRenderer.render({
+            args: [title.owner],
+            menuPath: SIDE_PANEL_TOOLBAR_CONTEXT_MENU,
+            anchor: e
+        });
     }
 
     protected createContainer(): Panel {

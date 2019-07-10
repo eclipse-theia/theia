@@ -17,20 +17,33 @@
 import { Widget, Title } from '@phosphor/widgets';
 import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar';
 import { Message } from '@phosphor/messaging';
+import { BaseWidget } from '../widgets';
+import { Emitter } from '../../common/event';
 
-export class SidePanelToolbar extends Widget {
+export class SidePanelToolbar extends BaseWidget {
 
     protected titleContainer: HTMLElement | undefined;
     private _toolbarTitle: Title<Widget> | undefined;
     protected toolbar: TabBarToolbar | undefined;
+
+    protected readonly onContextMenuEmitter = new Emitter<MouseEvent>();
+    readonly onContextMenu = this.onContextMenuEmitter.event;
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         protected readonly tabBarToolbarFactory: () => TabBarToolbar,
         protected readonly side: 'left' | 'right') {
         super();
+        this.toDispose.push(this.onContextMenuEmitter);
         this.init();
         this.tabBarToolbarRegistry.onDidChange(() => this.update());
+    }
+
+    protected onBeforeAttach(msg: Message): void {
+        super.onBeforeAttach(msg);
+        if (this.titleContainer) {
+            this.addEventListener(this.titleContainer, 'contextmenu', e => this.onContextMenuEmitter.fire(e));
+        }
     }
 
     protected onAfterAttach(msg: Message): void {
