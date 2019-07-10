@@ -142,6 +142,9 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected showMoreContextMenu = (event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+
         const menuPath = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
         const toDisposeOnHide = new DisposableCollection();
         for (const [, item] of this.more) {

@@ -24,8 +24,8 @@ import { Event, Emitter } from '../common/event';
 import { Deferred } from '../common/promise-util';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { CommandRegistry } from '../common/command';
-import { MenuModelRegistry, MenuPath } from '../common/menu';
-import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions } from './shell';
+import { MenuModelRegistry, MenuPath, MenuAction } from '../common/menu';
+import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions, SIDE_PANEL_TOOLBAR_CONTEXT_MENU } from './shell';
 import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
@@ -363,7 +363,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                         return !widgetToToggle.isHidden;
                     }
                     return false;
-                }
+                },
+                isEnabled: arg => !this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id),
+                isVisible: arg => !this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)
             });
         }
     }
@@ -376,11 +378,15 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (part.canHide) {
             const commandId = this.toggleVisibilityCommandId(part);
             this.menuRegistry.unregisterMenuAction(commandId);
-            this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], {
+            const action: MenuAction = {
                 commandId: commandId,
                 label: part.wrapped.title.label,
                 order: this.containerLayout.widgets.indexOf(part).toString()
-            });
+            };
+            this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], action);
+            if (this.options.title) {
+                this.menuRegistry.registerMenuAction([...SIDE_PANEL_TOOLBAR_CONTEXT_MENU, 'navigation'], action);
+            }
         }
     }
 
