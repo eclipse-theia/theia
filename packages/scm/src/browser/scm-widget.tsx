@@ -49,8 +49,6 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     static RESOURCE_INLINE_MENU = ['RESOURCE_INLINE_MENU'];
     static RESOURCE_CONTEXT_MENU = ['RESOURCE_CONTEXT_MENU'];
 
-    protected static LABEL = 'Source Control';
-
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
@@ -81,11 +79,6 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         this.id = 'theia-scmContainer';
         this.addClass('theia-scm');
         this.scrollContainer = ScmWidget.Styles.GROUPS_CONTAINER;
-
-        this.title.iconClass = 'scm-tab-icon';
-        this.title.label = ScmWidget.LABEL;
-        this.title.caption = ScmWidget.LABEL;
-        this.title.closable = true;
     }
 
     @postConstruct()
@@ -99,10 +92,8 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = ScmWidget.LABEL;
-        if (repository) {
-            this.title.label += ': ' + repository.provider.label;
-        }
+        this.title.label = repository ? repository.provider.label : '';
+        this.title.caption = this.title.label;
         this.update();
         if (repository) {
             this.toDisposeOnRefresh.push(repository.onDidChange(() => this.update()));

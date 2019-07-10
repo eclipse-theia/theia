@@ -20,6 +20,7 @@ import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidgetFactory, PluginViewWidget } from './plugin-view-widget';
+import { SCM_WIDGET_FACTORY_ID } from '@theia/scm/lib/browser/scm-contribution';
 
 @injectable()
 export class ViewRegistry {
@@ -38,6 +39,7 @@ export class ViewRegistry {
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
+
     private readonly views = new Map<string, PluginViewWidget>();
     private readonly viewsByContainer = new Map<string, PluginViewWidget[]>();
     private readonly viewContainers = new Map<string, ViewContainerWidget>();
@@ -49,6 +51,10 @@ export class ViewRegistry {
                 const viewContainer = widget['sessionWidget']['viewContainer'];
                 this.setViewContainer('debug', viewContainer);
                 widget.disposed.connect(() => this.viewContainers.delete('debug'));
+            }
+            if (factoryId === SCM_WIDGET_FACTORY_ID && widget instanceof ViewContainerWidget) {
+                this.setViewContainer('scm', widget);
+                widget.disposed.connect(() => this.viewContainers.delete('scm'));
             }
         });
     }
@@ -67,7 +73,8 @@ export class ViewRegistry {
             id: 'plugin:view-container:' + viewContainer.id,
             title: {
                 label: viewContainer.title,
-                iconClass
+                iconClass,
+                closeable: true
             }
         });
         this.setViewContainer(viewContainer.id, containerWidget);
