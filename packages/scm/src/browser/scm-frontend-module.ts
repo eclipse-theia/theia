@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, ViewContainer } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution } from './scm-contribution';
 
@@ -36,7 +36,21 @@ export default new ContainerModule(bind => {
     bind(ScmWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SCM_WIDGET_FACTORY_ID,
-        createWidget: () => ctx.container.get(ScmWidget)
+        createWidget: () => {
+            const container = ctx.container.get<ViewContainer.Factory>(ViewContainer.Factory)({
+                id: 'scm-view-container',
+                title: {
+                    label: 'Source Control',
+                    iconClass: 'scm-tab-icon',
+                    closeable: true
+                }
+            });
+            container.addWidget(ctx.container.get(ScmWidget), {
+                canHide: false,
+                initiallyCollapsed: false
+            });
+            return container;
+        }
     })).inSingletonScope();
 
     bind(ScmQuickOpenService).toSelf().inSingletonScope();

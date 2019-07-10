@@ -17,6 +17,7 @@
     color: var(--theia-ui-font-color1);
     padding: 5px;
     box-sizing: border-box;
+    height: 100%;
 }
 
 .theia-side-panel .theia-scm {
@@ -102,7 +103,7 @@
     padding: 4px 4px 4px 4px;
 }
 
-.theia-scm-input-message-container textarea:placeholder-shown { 
+.theia-scm-input-message-container textarea:placeholder-shown {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

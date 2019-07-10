@@ -24,6 +24,7 @@ import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';
+import { ViewContainer } from '../view-container';
 
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean
@@ -31,7 +32,7 @@ export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     reveal?: boolean;
 }
 
-export interface ViewContributionOptions {
+export interface ViewContributionOptions<T extends Widget> {
     widgetId: string;
     widgetName: string;
     defaultWidgetOptions: ApplicationShell.WidgetOptions;
@@ -54,13 +55,13 @@ export function bindViewContribution<T extends AbstractViewContribution<any>>(bi
 @injectable()
 export abstract class AbstractViewContribution<T extends Widget> implements CommandContribution, MenuContribution, KeybindingContribution {
 
-    @inject(WidgetManager) protected widgetManager: WidgetManager;
-    @inject(ApplicationShell) protected shell: ApplicationShell;
+    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     readonly toggleCommand?: Command;
 
     constructor(
-        protected readonly options: ViewContributionOptions
+        protected readonly options: ViewContributionOptions<T>
     ) {
         if (options.toggleCommandId) {
             this.toggleCommand = {
@@ -71,16 +72,19 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     }
 
     get widget(): Promise<T> {
-        return this.widgetManager.getOrCreateWidget<T>(this.options.widgetId);
+        return (async () => {
+            const widget = await this.widgetManager.getOrCreateWidget(this.options.widgetId);
+            return this.toWidget(widget);
+        })();
     }
 
     tryGetWidget(): T | undefined {
-        return this.widgetManager.tryGetWidget(this.options.widgetId);
+        return this.toWidget(this.widgetManager.tryGetWidget(this.options.widgetId));
     }
 
     async openView(args: Partial<OpenViewArguments> = {}): Promise<T> {
         const shell = this.shell;
-        const widget = await this.widget;
+        const widget = await this.widgetManager.getOrCreateWidget(this.options.widgetId);
         const tabBar = shell.getTabBarFor(widget);
         const area = shell.getAreaFor(widget);
         if (!tabBar) {
@@ -99,7 +103,25 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         } else if (widget.isAttached && args.reveal) {
             shell.revealWidget(widget.id);
         }
-        return widget;
+        return this.toWidget(widget);
+    }
+
+    protected toWidget(widget: undefined): undefined;
+    protected toWidget(widget: Widget): T;
+    protected toWidget(widget: Widget | undefined): T | undefined;
+    protected toWidget(widget: Widget | undefined): T | undefined {
+        if (widget instanceof ViewContainer) {
+            for (const child of widget.getTrackableWidgets()) {
+                if (this.isWidget(child)) {
+                    return child;
+                }
+            }
+        }
+        return this.isWidget(widget) ? widget : undefined;
+    }
+
+    protected isWidget(widget: Widget | undefined): widget is T {
+        return !!widget;
     }
 
     registerCommands(commands: CommandRegistry): void {

@@ -79,12 +79,12 @@ export class LeftPanel {
     }
 
     isScmContainerVisible(): boolean {
-        return (this.driver.isExisting('#theia-scmContainer') && this.driver.element('#theia-scmContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
+        return (this.driver.isExisting('#scm-view-container') && this.driver.element('#scm-view-container').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1
             && this.isPanelVisible());
     }
 
     waitForScmViewVisible(): void {
-        this.driver.waitForVisible('#theia-scmContainer');
+        this.driver.waitForVisible('#scm-view-container');
         // Wait for animations to finish
         this.driver.pause(300);
     }

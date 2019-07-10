@@ -21,7 +21,8 @@ import {
     StatusBar,
     StatusBarAlignment,
     StatusBarEntry,
-    KeybindingRegistry
+    KeybindingRegistry,
+    Widget
 } from '@theia/core/lib/browser';
 import { CommandRegistry, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -68,6 +69,10 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             toggleCommandId: 'scmView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+g'
         });
+    }
+
+    protected isWidget(widget: Widget | undefined): widget is ScmWidget {
+        return widget instanceof ScmWidget;
     }
 
     @postConstruct()

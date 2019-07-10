@@ -37,6 +37,7 @@ export interface ViewContainerTitle {
     label: string;
     caption?: string;
     iconClass?: string;
+    closeable?: boolean;
 }
 
 @injectable()
@@ -134,17 +135,20 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected readonly toDisposeOnUpdateTitle = new DisposableCollection();
 
-    protected updateTitle(): void {
+    // should be a property to preserver fn identity
+    protected updateTitle = (): void => {
         this.toDisposeOnUpdateTitle.dispose();
         this.toDisposeOnDetach.push(this.toDisposeOnUpdateTitle);
         const title = this.options.title;
         if (!title) {
             return;
         }
-        const visibleParts = this.containerLayout.widgets.filter(part => part.isVisible);
+        const visibleParts = this.containerLayout.widgets.filter(part => !part.isHidden);
         this.title.label = title.label;
         if (visibleParts.length === 1) {
             const part = visibleParts[0];
+            part.wrapped.title.changed.connect(this.updateTitle);
+            this.toDisposeOnUpdateTitle.push(Disposable.create(() => part.wrapped.title.changed.disconnect(this.updateTitle)));
             const partLabel = part.wrapped.title.label;
             if (partLabel) {
                 this.title.label += ': ' + partLabel;
@@ -177,6 +181,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
         if (title.iconClass) {
             this.title.iconClass = title.iconClass;
+        }
+        if (title.closeable !== undefined) {
+            this.title.closable = title.closeable;
         }
     }
 
@@ -214,7 +221,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.update();
         return new DisposableCollection(
             Disposable.create(() => this.removeWidget(widget)),
-            newPart.onVisibilityChanged(() => this.updateTitle()),
+            newPart.onVisibilityChanged(this.updateTitle),
             newPart.onCollapsed(() => this.containerLayout.updateCollapsed(newPart, this.enableAnimation)),
             newPart.onMoveBefore(toMoveId => this.moveBefore(toMoveId, newPart.id)),
             newPart.onContextMenu(event => {
@@ -348,26 +355,27 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      * Register a command to toggle the visibility of the new part.
      */
     protected registerPart(toRegister: ViewContainerPart): void {
-        if (toRegister.canHide) {
-            const commandId = this.toggleVisibilityCommandId(toRegister);
-            this.commandRegistry.registerCommand({ id: commandId }, {
-                execute: () => {
-                    const toHide = find(this.containerLayout.iter(), part => part.id === toRegister.id);
-                    if (toHide) {
-                        this.toggleVisibility(toHide);
-                    }
-                },
-                isToggled: () => {
-                    const widgetToToggle = find(this.containerLayout.iter(), part => part.id === toRegister.id);
-                    if (widgetToToggle) {
-                        return !widgetToToggle.isHidden;
-                    }
-                    return false;
-                },
-                isEnabled: arg => !this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id),
-                isVisible: arg => !this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)
-            });
-        }
+        const commandId = this.toggleVisibilityCommandId(toRegister);
+        this.commandRegistry.registerCommand({ id: commandId }, {
+            execute: () => {
+                const toHide = find(this.containerLayout.iter(), part => part.id === toRegister.id);
+                if (toHide) {
+                    this.toggleVisibility(toHide);
+                }
+            },
+            isToggled: () => {
+                if (!toRegister.canHide) {
+                    return true;
+                }
+                const widgetToToggle = find(this.containerLayout.iter(), part => part.id === toRegister.id);
+                if (widgetToToggle) {
+                    return !widgetToToggle.isHidden;
+                }
+                return false;
+            },
+            isEnabled: arg => toRegister.canHide && (!this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)),
+            isVisible: arg => !this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)
+        });
     }
 
     /**
@@ -375,18 +383,16 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      * The menu action is unregistered first to enable refreshing the order of menu actions.
      */
     protected refreshMenu(part: ViewContainerPart) {
-        if (part.canHide) {
-            const commandId = this.toggleVisibilityCommandId(part);
-            this.menuRegistry.unregisterMenuAction(commandId);
-            const action: MenuAction = {
-                commandId: commandId,
-                label: part.wrapped.title.label,
-                order: this.containerLayout.widgets.indexOf(part).toString()
-            };
-            this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], action);
-            if (this.options.title) {
-                this.menuRegistry.registerMenuAction([...SIDE_PANEL_TOOLBAR_CONTEXT_MENU, 'navigation'], action);
-            }
+        const commandId = this.toggleVisibilityCommandId(part);
+        this.menuRegistry.unregisterMenuAction(commandId);
+        const action: MenuAction = {
+            commandId: commandId,
+            label: part.wrapped.title.label,
+            order: this.containerLayout.widgets.indexOf(part).toString()
+        };
+        this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], action);
+        if (this.options.title) {
+            this.menuRegistry.registerMenuAction([...SIDE_PANEL_TOOLBAR_CONTEXT_MENU, 'navigation'], action);
         }
     }
 
@@ -612,8 +618,13 @@ export class ViewContainerPart extends BaseWidget {
         if (display === 'none') {
             return;
         }
+        const height = this.body.style.height;
+        this.body.style.height = '100%';
         this.header.style.display = 'none';
-        this.toShowHeader.push(Disposable.create(() => this.header.style.display = display));
+        this.toShowHeader.push(Disposable.create(() => {
+            this.header.style.display = display;
+            this.body.style.height = height;
+        }));
     }
 
     protected getScrollContainer(): HTMLElement {
@@ -831,7 +842,6 @@ export class ViewContainerPart extends BaseWidget {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
-        this.onVisibilityChangedEmitter.fire(this.isVisible);
     }
 
     protected onBeforeHide(msg: Message): void {
@@ -846,7 +856,20 @@ export class ViewContainerPart extends BaseWidget {
         if (this.wrapped.isAttached && this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
-        this.onVisibilityChangedEmitter.fire(this.isVisible);
+    }
+
+    setFlag(flag: Widget.Flag): void {
+        super.setFlag(flag);
+        if (flag === Widget.Flag.IsVisible) {
+            this.onVisibilityChangedEmitter.fire(this.isVisible);
+        }
+    }
+
+    clearFlag(flag: Widget.Flag): void {
+        super.clearFlag(flag);
+        if (flag === Widget.Flag.IsVisible) {
+            this.onVisibilityChangedEmitter.fire(this.isVisible);
+        }
     }
 
 }
