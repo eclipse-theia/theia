@@ -31,14 +31,18 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
-import { TabBarToolbarItem } from './shell/tab-bar-toolbar';
+import { TabBarToolbarItem, TabBarToolbarRegistry } from './shell/tab-bar-toolbar';
+
+export interface ViewContainerTitle {
+    label: string;
+    caption?: string;
+    iconClass?: string;
+}
 
 @injectable()
 export class ViewContainerOptions {
     id: string;
-    label?: string;
-    caption?: string;
-    iconClass?: string;
+    title?: ViewContainerTitle;
 }
 
 /**
@@ -73,6 +77,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     @inject(ViewContainerOptions)
     protected readonly options: ViewContainerOptions;
 
+    @inject(TabBarToolbarRegistry)
+    protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry;
+
     @postConstruct()
     protected init(): void {
         this.id = this.options.id;
@@ -89,7 +96,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }, this.splitPositionHandler)
         });
         layout.addWidget(this.panel);
-        this.updateTitles();
+        this.updateTitle();
 
         const { commandRegistry, menuRegistry, contextMenuRenderer } = this;
         commandRegistry.registerCommand({ id: this.globalHideCommandId }, {
@@ -125,23 +132,40 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         ]);
     }
 
-    protected updateTitles(): void {
-        const visibleParts = this.containerLayout.widgets.filter(part => part.isVisible);
-        if (this.options.label) {
-            this.title.label = this.options.label;
-            if (visibleParts.length === 1) {
-                const part = visibleParts[0];
-                const partLabel = part.wrapped.title.label;
-                if (partLabel) {
-                    this.title.label += ': ' + partLabel;
-                }
-                part.collapsed = false;
-                part.hideTitle();
-            } else {
-                visibleParts.forEach(part => part.showTitle());
-            }
+    protected readonly toDisposeOnUpdateTitle = new DisposableCollection();
+
+    protected updateTitle(): void {
+        this.toDisposeOnUpdateTitle.dispose();
+        this.toDisposeOnDetach.push(this.toDisposeOnUpdateTitle);
+        const title = this.options.title;
+        if (!title) {
+            return;
         }
-        const caption = this.options.caption || this.options.label;
+        const visibleParts = this.containerLayout.widgets.filter(part => part.isVisible);
+        this.title.label = title.label;
+        if (visibleParts.length === 1) {
+            const part = visibleParts[0];
+            const partLabel = part.wrapped.title.label;
+            if (partLabel) {
+                this.title.label += ': ' + partLabel;
+            }
+            part.collapsed = false;
+            part.hideTitle();
+            part.toolbarElements.forEach((item, index) => {
+                const { priority, group, className, tooltip } = item;
+                const iconClass = Array.isArray(className) ? className.join(' ') : className;
+                const id = `__${this.id}:toolbar:${index}`;
+                this.toDisposeOnUpdateTitle.push(this.commandRegistry.registerCommand({ id, iconClass }, {
+                    execute: (_, anchor: Anchor) => item.execute(anchor),
+                    isEnabled: (widget: Widget) => widget.id === this.id,
+                    isVisible: (widget: Widget) => widget.id === this.id
+                }));
+                this.toDisposeOnUpdateTitle.push(this.tabBarToolbarRegistry.registerItem({ id, command: id, priority, group, tooltip }));
+            });
+        } else {
+            visibleParts.forEach(part => part.showTitle());
+        }
+        const caption = title.caption || title.label;
         if (caption) {
             this.title.caption = caption;
             if (visibleParts.length === 1) {
@@ -151,8 +175,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 }
             }
         }
-        if (this.options.iconClass) {
-            this.title.iconClass = this.options.iconClass;
+        if (title.iconClass) {
+            this.title.iconClass = title.iconClass;
         }
     }
 
@@ -186,11 +210,11 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             this.containerLayout.addWidget(newPart);
         }
         this.refreshMenu(newPart);
-        this.updateTitles();
+        this.updateTitle();
         this.update();
         return new DisposableCollection(
             Disposable.create(() => this.removeWidget(widget)),
-            newPart.onVisibilityChanged(() => this.updateTitles()),
+            newPart.onVisibilityChanged(() => this.updateTitle()),
             newPart.onCollapsed(() => this.containerLayout.updateCollapsed(newPart, this.enableAnimation)),
             newPart.onMoveBefore(toMoveId => this.moveBefore(toMoveId, newPart.id)),
             newPart.onContextMenu(event => {
@@ -209,9 +233,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         const toDisposeOnHide = new DisposableCollection();
         event.items.forEach((item, index) => {
             const commandId = `__command_${this.id}_${index}`;
-            this.commandRegistry.registerCommand({ id: commandId }, {
+            toDisposeOnHide.push(this.commandRegistry.registerCommand({ id: commandId }, {
                 execute: () => item.execute(event.anchor)
-            });
+            }));
             toDisposeOnHide.push(this.menuRegistry.registerMenuAction([...menuPath, item.group!], {
                 label: item.tooltip,
                 commandId
@@ -696,27 +720,32 @@ export class ViewContainerPart extends BaseWidget {
         if (!this.toHideToolbar.disposed || this.collapsed) {
             return;
         }
-        if (ViewContainerPart.ContainedWidget.is(this.wrapped)) {
-            const more: ViewContainerPart.ToolbarElement[] = [];
-            for (const item of this.wrapped.toolbarElements.filter(e => e.enabled !== false).sort(TabBarToolbarItem.PRIORITY_COMPARATOR)) {
-                if (item.group === undefined || item.group === 'navigation') {
-                    this.toHideToolbar.push(this.addToolbarItem(item));
-                } else {
-                    more.push(item);
-                }
-            }
-            if (more.length) {
-                this.toHideToolbar.push(this.addToolbarItem({
-                    className: 'fa fa-ellipsis-h',
-                    tooltip: 'More Actions...',
-                    execute: event => {
-                        const { x, y } = event;
-                        this.onMoreContextMenuEmitter.fire({ anchor: { x, y }, items: more });
-                    }
-                }));
+        const more: ViewContainerPart.ToolbarElement[] = [];
+        for (const item of this.toolbarElements.sort(TabBarToolbarItem.PRIORITY_COMPARATOR)) {
+            if (item.group === undefined || item.group === 'navigation') {
+                this.toHideToolbar.push(this.addToolbarItem(item));
+            } else {
+                more.push(item);
             }
         }
+        if (more.length) {
+            this.toHideToolbar.push(this.addToolbarItem({
+                className: 'fa fa-ellipsis-h',
+                tooltip: 'More Actions...',
+                execute: event => {
+                    const { x, y } = event;
+                    this.onMoreContextMenuEmitter.fire({ anchor: { x, y }, items: more });
+                }
+            }));
+        }
         this.toDisposeOnDetach.push(this.toHideToolbar);
+    }
+
+    get toolbarElements(): ViewContainerPart.ToolbarElement[] {
+        if (ViewContainerPart.ContainedWidget.is(this.wrapped)) {
+            return this.wrapped.toolbarElements.filter(e => e.enabled !== false);
+        }
+        return [];
     }
 
     protected addToolbarItem(item: ViewContainerPart.ToolbarElement): Disposable {

@@ -65,8 +65,10 @@ export class ViewRegistry {
 
         const containerWidget = this.viewContainerFactory({
             id: 'plugin:view-container:' + viewContainer.id,
-            label: viewContainer.title,
-            iconClass
+            title: {
+                label: viewContainer.title,
+                iconClass
+            }
         });
         this.setViewContainer(viewContainer.id, containerWidget);
 
