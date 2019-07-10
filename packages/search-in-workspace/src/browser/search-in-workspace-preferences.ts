@@ -24,12 +24,19 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             description: 'Controls whether to show line numbers for search results.',
             default: false,
             type: 'boolean',
+        },
+        'search.collapseResults': {
+            description: 'Controls whether the search results will be collapsed or expanded.',
+            default: 'auto',
+            type: 'string',
+            enum: ['auto', 'alwaysCollapse', 'alwaysExpand'],
         }
     }
 };
 
 export class SearchInWorkspaceConfiguration {
     'search.lineNumbers': boolean;
+    'search.collapseResults': string;
 }
 
 export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');

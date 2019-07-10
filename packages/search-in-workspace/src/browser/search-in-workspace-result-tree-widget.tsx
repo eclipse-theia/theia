@@ -198,6 +198,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
+        const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
         this.resultTree.clear();
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
@@ -222,11 +223,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
                             fileNode.children.push(line);
                         }
-                        if (fileNode.children.length >= 20 && fileNode.expanded) {
-                            fileNode.expanded = false;
-                        }
+                        this.collapseFileNode(fileNode, collapseValue);
                     } else {
                         const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                        this.collapseFileNode(newFileNode, collapseValue);
                         const line = this.createResultLineNode(result, newFileNode);
                         newFileNode.children.push(line);
                         rootFolderNode.children.push(newFileNode);
@@ -235,8 +235,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 } else {
                     const newRootFolderNode = this.createRootFolderNode(result.root);
                     tree.set(result.root, newRootFolderNode);
-
                     const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
+                    this.collapseFileNode(newFileNode, collapseValue);
                     newFileNode.children.push(this.createResultLineNode(result, newFileNode));
                     newRootFolderNode.children.push(newFileNode);
                 }
@@ -270,6 +270,20 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 this.node.focus();
                 this.model.selectNode(node);
             }
+        }
+    }
+
+    /**
+     * Collapse the search-in-workspace file node
+     * based on the preference value.
+     */
+    protected collapseFileNode(node: SearchInWorkspaceFileNode, preferenceValue: string): void {
+        if (preferenceValue === 'auto' && node.children.length >= 10) {
+            node.expanded = false;
+        } else if (preferenceValue === 'alwaysCollapse') {
+            node.expanded = false;
+        } else if (preferenceValue === 'alwaysExpand') {
+            node.expanded = true;
         }
     }
 
