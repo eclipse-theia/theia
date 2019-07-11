@@ -214,7 +214,7 @@ export class TaskConfigurations implements Disposable {
             const customizations: TaskCustomization[] = [];
 
             tasksArray.forEach(t => {
-                if (this.isConfiguredTask(t)) {
+                if (this.isDetectedTask(t)) {
                     customizations.push(t);
                 } else {
                     configuredTasksArray.push(t);
@@ -314,7 +314,7 @@ export class TaskConfigurations implements Disposable {
     protected filterDuplicates(tasks: TaskConfiguration[]): TaskConfiguration[] {
         const filteredTasks: TaskConfiguration[] = [];
         for (const task of tasks) {
-            if (filteredTasks.some(t => !this.isConfiguredTask(t) && t.label === task.label)) {
+            if (filteredTasks.some(t => !this.isDetectedTask(t) && t.label === task.label)) {
                 // TODO: create a problem marker so that this issue will be visible in the editor?
                 console.error(`Error parsing ${this.TASKFILE}: found duplicate entry for label: ${task.label}`);
             } else {
@@ -328,7 +328,8 @@ export class TaskConfigurations implements Disposable {
         return new URI(configFileUri).parent.parent.path.toString();
     }
 
-    private isConfiguredTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
+    /** checks if the config is a detected / contributed task */
+    private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
         const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
         // it is considered as a customization if the task definition registry finds a def for the task configuration
         return !!taskDefinition;
