@@ -57,7 +57,6 @@
     background: var(--theia-menu-color0);
     line-height: var(--theia-view-container-title-height);
     z-index: 10;
-    margin-right: 4px;
 }
 
 .theia-view-container .part > .header .theia-ExpansionToggle {

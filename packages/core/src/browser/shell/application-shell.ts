@@ -564,18 +564,18 @@ export class ApplicationShell extends Widget {
         const { mainPanel, bottomPanel, leftPanel, rightPanel, activeWidgetId } = this.getValidatedLayoutData(layoutData);
         if (leftPanel) {
             this.leftPanelHandler.setLayoutData(leftPanel);
-            this.registerWithFocusTracker(leftPanel);
+            await this.registerWithFocusTracker(leftPanel);
         }
         if (rightPanel) {
             this.rightPanelHandler.setLayoutData(rightPanel);
-            this.registerWithFocusTracker(rightPanel);
+            await this.registerWithFocusTracker(rightPanel);
         }
         // Proceed with the bottom panel once the side panels are set up
         await Promise.all([this.leftPanelHandler.state.pendingUpdate, this.rightPanelHandler.state.pendingUpdate]);
         if (bottomPanel) {
             if (bottomPanel.config) {
                 this.bottomPanel.restoreLayout(bottomPanel.config);
-                this.registerWithFocusTracker(bottomPanel.config.main);
+                await this.registerWithFocusTracker(bottomPanel.config.main);
             }
             if (bottomPanel.size) {
                 this.bottomPanelState.lastPanelSize = bottomPanel.size;
@@ -591,7 +591,7 @@ export class ApplicationShell extends Widget {
         await this.bottomPanelState.pendingUpdate;
         if (mainPanel) {
             this.mainPanel.restoreLayout(mainPanel);
-            this.registerWithFocusTracker(mainPanel.main);
+            await this.registerWithFocusTracker(mainPanel.main);
         }
         if (activeWidgetId) {
             this.activateWidget(activeWidgetId);
@@ -640,22 +640,22 @@ export class ApplicationShell extends Widget {
     /**
      * Track all widgets that are referenced by the given layout data.
      */
-    protected registerWithFocusTracker(data: DockLayout.ITabAreaConfig | DockLayout.ISplitAreaConfig | SidePanel.LayoutData | null): void {
+    protected async registerWithFocusTracker(data: DockLayout.ITabAreaConfig | DockLayout.ISplitAreaConfig | SidePanel.LayoutData | null): Promise<void> {
         if (data) {
             if (data.type === 'tab-area') {
                 for (const widget of data.widgets) {
                     if (widget) {
-                        this.track(widget);
+                        await this.track(widget);
                     }
                 }
             } else if (data.type === 'split-area') {
                 for (const child of data.children) {
-                    this.registerWithFocusTracker(child);
+                    await this.registerWithFocusTracker(child);
                 }
             } else if (data.type === 'sidepanel' && data.items) {
                 for (const item of data.items) {
                     if (item.widget) {
-                        this.track(item.widget);
+                        await this.track(item.widget);
                     }
                 }
             }
@@ -889,6 +889,20 @@ export class ApplicationShell extends Widget {
      * @returns the activated widget if it was found
      */
     activateWidget(id: string): Widget | undefined {
+        let widget = this.tracker.widgets.find(w => w.id === id);
+        while (widget) {
+            if (widget.id) {
+                const result = this.doActivateWidget(widget.id);
+                if (result) {
+                    return result;
+                }
+            }
+            widget = widget.parent || undefined;
+        }
+        return undefined;
+    }
+
+    protected doActivateWidget(id: string): Widget | undefined {
         let widget = find(this.mainPanel.widgets(), w => w.id === id);
         if (widget) {
             this.mainPanel.activateWidget(widget);
