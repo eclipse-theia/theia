@@ -133,6 +133,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
     }
 
+    protected isWidget(widget: Widget | undefined): widget is FileNavigatorWidget {
+        return widget instanceof FileNavigatorWidget;
+    }
+
     async initializeLayout(app: FrontendApplication): Promise<void> {
         await this.openView();
     }
