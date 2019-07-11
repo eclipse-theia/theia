@@ -21,6 +21,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ViewContainerPart } from '@theia/core/lib/browser/view-container';
 import { ViewContextKeyService } from './view-context-key-service';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
+import { Message } from '@phosphor/messaging';
 
 export const PLUGIN_VIEW_TITLE_MENU: MenuPath = ['plugin-view-title-menu'];
 
@@ -44,14 +45,15 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
     @inject(PluginViewWidgetIdentifier)
     readonly options: PluginViewWidgetIdentifier;
 
+    constructor() {
+        super();
+        this.node.tabIndex = 0;
+        this.node.style.height = '100%';
+    }
+
     @postConstruct()
     protected init(): void {
         this.id = this.options.id;
-    }
-
-    constructor() {
-        super();
-        this.node.style.height = '100%';
     }
 
     get toolbarElements(): ViewContainerPart.ToolbarElement[] {
@@ -79,6 +81,16 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
             }
             return elements;
         });
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        const widget = this.widgets[0];
+        if (widget) {
+            widget.activate();
+        } else {
+            this.node.focus();
+        }
     }
 
     storeState(): PluginViewWidget.State {
